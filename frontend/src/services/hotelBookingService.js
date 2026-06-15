@@ -116,9 +116,50 @@ async function requestHotelJson(urlOrPath, options = {}, fallbackMessage = "Hote
   return payload;
 }
 
+const CITY_TO_IATA = {
+  hyderabad: "HYD",
+  bengaluru: "BLR",
+  bangalore: "BLR",
+  mumbai: "BOM",
+  delhi: "DEL",
+  "new delhi": "DEL",
+  goa: "GOI",
+  jaipur: "JAI",
+  chennai: "MAA",
+  kolkata: "CCU",
+  pune: "PNQ",
+  ahmedabad: "AMD",
+  kochi: "COK",
+  cochin: "COK",
+  tirupati: "TIR",
+};
+
+function resolveCityCode(cityInput) {
+  if (!cityInput) return "HYD";
+  const cleanInput = String(cityInput).trim().toLowerCase();
+
+  const bracketMatch = cleanInput.match(/\(([^)]+)\)/);
+  if (bracketMatch && bracketMatch[1].trim().length === 3) {
+    return bracketMatch[1].trim().toUpperCase();
+  }
+
+  if (cleanInput.length === 3) {
+    return cleanInput.toUpperCase();
+  }
+
+  const cityNameOnly = cleanInput.split(",")[0].split("(")[0].trim();
+  if (CITY_TO_IATA[cityNameOnly]) {
+    return CITY_TO_IATA[cityNameOnly];
+  }
+
+  const alphaOnly = cityNameOnly.replace(/[^a-z]/g, "");
+  return alphaOnly.slice(0, 3).toUpperCase() || "HYD";
+}
+
 export async function searchHotelOffers({ cityCode, checkInDate, checkOutDate, adults = 1, rooms = 1 }) {
+  const resolvedCode = resolveCityCode(cityCode);
   const params = new URLSearchParams({
-    cityCode,
+    cityCode: resolvedCode,
     checkInDate,
     checkOutDate,
     adults: String(Math.max(1, Number(adults) || 1)),

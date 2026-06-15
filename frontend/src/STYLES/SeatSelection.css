@@ -1,0 +1,544 @@
+/* SeatSelection.css */
+
+/* Legend styling */
+/* Legend styling */
+.seat-selection-legends-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 14px;
+  gap: 16px;
+}
+
+.seat-selection-legend {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border-radius: 999px; /* Pill shape */
+  border: 1px solid #cbd5e1;
+  box-sizing: border-box;
+}
+
+.legend-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.legend-section.gender-legend {
+  border-left: none;
+  padding-left: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.legend-color {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+}
+
+.legend-color.available {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.legend-color.selected {
+  background-color: #10b981; /* Green */
+  border-color: #10b981;
+}
+
+.legend-color.booked {
+  background-color: #e4e4e7;
+  border-color: #e4e4e7;
+}
+
+.legend-color.booked-female {
+  background-color: #fbcfe8; /* Soft pink */
+  border-color: #f472b6;
+}
+
+.legend-color.booked-male {
+  background-color: #bfdbfe; /* Soft blue */
+  border-color: #60a5fa;
+}
+
+.legend-color.extra-legroom {
+  background-color: #fff7ed;
+  border-color: #fb923c;
+}
+
+@media (max-width: 640px) {
+  .seat-selection-legends-container {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .seat-selection-legend {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Bus Layout Coach Container */
+.seat-selection-component {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.bus-coach-container {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  border: 3px solid #475569;
+  border-radius: 14px;
+  background-color: #f1f5f9;
+  padding: 6px 10px;
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.05), 0 8px 20px rgba(71, 85, 105, 0.08);
+  overflow: hidden; /* Prevent container scroll so only floor scrolls */
+  gap: 6px;
+}
+
+/* Bus Deck Label & Steering Wheel in Corner */
+.bus-deck-label-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border-right: 2px solid #cbd5e1; /* divider to seats */
+  padding: 2px 4px;
+  margin-right: 4px;
+  flex-shrink: 0;
+  background-color: #f8fafc;
+  border-radius: 8px 0 0 8px;
+  min-height: 100%;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bus-deck-label-text {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #475569; /* slate-600 */
+  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.bus-deck-steering-wheel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: auto;
+}
+
+.bus-deck-steering-wheel svg {
+  width: 100%;
+  height: 100%;
+  animation: steering-wiggle 4s ease-in-out infinite;
+}
+
+@keyframes steering-wiggle {
+  0%, 100% { transform: rotate(-90deg); }
+  25% { transform: rotate(-75deg); }
+  75% { transform: rotate(-105deg); }
+}
+
+
+
+/* Flight Layout Fuselage Container */
+.flight-fuselage-container {
+  position: relative;
+  max-width: 440px;
+  margin: 0 auto;
+  border: 4px solid #94a3b8;
+  border-radius: 120px 120px 24px 24px;
+  background-color: #f8fafc;
+  padding: 80px 20px 24px;
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.05), 0 10px 25px rgba(148, 163, 184, 0.1);
+}
+
+.flight-nose-cone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: radial-gradient(circle at bottom, rgba(148, 163, 184, 0.15), transparent 70%);
+  border-radius: 120px 120px 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 12px;
+}
+
+.flight-cockpit-window {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Exit Row Divider */
+.exit-row-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 16px 0;
+  padding: 6px 0;
+  background-color: #fef2f2;
+  border-top: 2px dashed #f87171;
+  border-bottom: 2px dashed #f87171;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+/* Layout Grid and Seat Buttons */
+.seats-grid-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.seat-row-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.seat-row-number {
+  flex: 0 0 24px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* Seat Buttons */
+.seat-button-wrapper {
+  flex: 1;
+  aspect-ratio: 1;
+  max-width: 44px;
+  min-width: 32px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.seat-button-wrapper:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.seat-button-wrapper:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.seat-button-wrapper:disabled {
+  cursor: not-allowed;
+}
+
+/* Elongated Sleeper Seat Box sizing */
+.seat-button-wrapper.sleeper-seat {
+  aspect-ratio: 1 / 2.3;
+  max-width: 44px;
+  height: auto;
+}
+
+/* Wider Business class seats */
+.seat-button-wrapper.business-seat {
+  max-width: 54px;
+}
+
+/* Aisle Space Divider */
+.aisle-spacer-col {
+  flex: 0 0 20px;
+  height: 32px;
+  background-color: transparent;
+}
+
+.seat-gap-placeholder {
+  flex: 1;
+  max-width: 44px;
+  aspect-ratio: 1;
+  background-color: transparent;
+}
+
+/* Seat Icons styling */
+.seat-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.seat-icon .seat-body {
+  fill: #ffffff;
+  stroke: #cbd5e1; /* slate-300 */
+  transition: all 0.2s ease;
+}
+
+.seat-icon .seat-headrest,
+.seat-icon .seat-armrest,
+.seat-icon .sleeper-pillow {
+  fill: #cbd5e1;
+  stroke: #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.seat-icon .seat-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  fill: #475569;
+  transition: all 0.2s ease;
+}
+
+/* Premium / Extra legroom style */
+.seat-button-wrapper.status-extra .seat-icon .seat-body {
+  fill: #fff7ed; /* Soft orange */
+  stroke: #fb923c;
+}
+
+.seat-button-wrapper.status-extra .seat-icon .seat-headrest,
+.seat-button-wrapper.status-extra .seat-icon .seat-armrest {
+  fill: #ffedd5;
+  stroke: #fb923c;
+}
+
+.seat-button-wrapper.status-extra .seat-icon .seat-label {
+  fill: #ea580c;
+}
+
+/* Booked status style */
+.seat-button-wrapper.status-booked .seat-icon {
+  pointer-events: none;
+}
+
+.seat-button-wrapper.status-booked .seat-icon .seat-body {
+  fill: #e4e4e7; /* zinc-200 */
+  stroke: #e4e4e7;
+}
+
+.seat-button-wrapper.status-booked .seat-icon .seat-headrest,
+.seat-button-wrapper.status-booked .seat-icon .seat-armrest,
+.seat-button-wrapper.status-booked .seat-icon .sleeper-pillow {
+  fill: #d4d4d8;
+  stroke: #d4d4d8;
+}
+
+.seat-button-wrapper.status-booked .seat-icon .seat-label {
+  fill: #a1a1aa;
+}
+
+/* Selected status style - Green */
+.seat-button-wrapper.status-selected .seat-icon .seat-body {
+  fill: #10b981; /* Green/Emerald */
+  stroke: #10b981;
+}
+
+.seat-button-wrapper.status-selected .seat-icon .seat-headrest,
+.seat-button-wrapper.status-selected .seat-icon .seat-armrest,
+.seat-button-wrapper.status-selected .seat-icon .sleeper-pillow {
+  fill: #059669; /* Darker Green */
+  stroke: #059669;
+}
+
+.seat-button-wrapper.status-selected .seat-icon .seat-label {
+  fill: #ffffff;
+}
+
+/* Booked Female status style - Pink */
+.seat-button-wrapper.status-booked-female .seat-icon {
+  pointer-events: none;
+}
+
+.seat-button-wrapper.status-booked-female .seat-icon .seat-body {
+  fill: #fbcfe8; /* pink-200 */
+  stroke: #f472b6; /* pink-400 */
+}
+
+.seat-button-wrapper.status-booked-female .seat-icon .seat-headrest,
+.seat-button-wrapper.status-booked-female .seat-icon .seat-armrest,
+.seat-button-wrapper.status-booked-female .seat-icon .sleeper-pillow {
+  fill: #f472b6;
+  stroke: #f472b6;
+}
+
+.seat-button-wrapper.status-booked-female .seat-icon .seat-label {
+  fill: #be185d; /* pink-700 */
+}
+
+/* Booked Male status style - Blue */
+.seat-button-wrapper.status-booked-male .seat-icon {
+  pointer-events: none;
+}
+
+.seat-button-wrapper.status-booked-male .seat-icon .seat-body {
+  fill: #bfdbfe; /* blue-200 */
+  stroke: #60a5fa; /* blue-400 */
+}
+
+.seat-button-wrapper.status-booked-male .seat-icon .seat-headrest,
+.seat-button-wrapper.status-booked-male .seat-icon .seat-armrest,
+.seat-button-wrapper.status-booked-male .seat-icon .sleeper-pillow {
+  fill: #60a5fa;
+  stroke: #60a5fa;
+}
+
+.seat-button-wrapper.status-booked-male .seat-icon .seat-label {
+  fill: #1d4ed8; /* blue-700 */
+}
+
+/* Female Adjacent status style */
+.seat-button-wrapper.status-female-adjacent:not(.status-selected) .seat-icon .seat-body {
+  fill: #fff5f7; /* Very light pink background */
+  stroke: #f472b6; /* Pink border */
+}
+
+.seat-button-wrapper.status-female-adjacent:not(.status-selected) .seat-icon .seat-headrest,
+.seat-button-wrapper.status-female-adjacent:not(.status-selected) .seat-icon .seat-armrest,
+.seat-button-wrapper.status-female-adjacent:not(.status-selected) .seat-icon .sleeper-pillow {
+  fill: #f472b6;
+  stroke: #f472b6;
+}
+
+.seat-button-wrapper.status-female-adjacent:not(.status-selected) .seat-icon .seat-label {
+  fill: #db2777;
+}
+
+/* Male Adjacent status style */
+.seat-button-wrapper.status-male-adjacent:not(.status-selected) .seat-icon .seat-body {
+  fill: #f0f7ff; /* Very light blue background */
+  stroke: #60a5fa; /* Blue border */
+}
+
+.seat-button-wrapper.status-male-adjacent:not(.status-selected) .seat-icon .seat-headrest,
+.seat-button-wrapper.status-male-adjacent:not(.status-selected) .seat-icon .seat-armrest,
+.seat-button-wrapper.status-male-adjacent:not(.status-selected) .seat-icon .sleeper-pillow {
+  fill: #60a5fa;
+  stroke: #60a5fa;
+}
+
+.seat-button-wrapper.status-male-adjacent:not(.status-selected) .seat-icon .seat-label {
+  fill: #2563eb;
+}
+
+/* Responsive Scaling for Tooltip */
+.bus-flow-seat-tooltip {
+  position: fixed;
+  background-color: #1e293b;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 1800;
+}
+
+/* Scoped Overrides for Horizontal Bus Layout */
+.bus-coach-floor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bus-coach-floor .seats-grid-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.bus-coach-container .seat-row-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.bus-coach-container .seat-button-wrapper {
+  flex: 0 0 auto;
+  aspect-ratio: auto;
+  max-width: none;
+  min-width: auto;
+}
+
+.bus-coach-container .seat-button-wrapper.seater-seat {
+  width: 34px;
+  height: 34px;
+}
+
+.bus-coach-container .seat-button-wrapper.sleeper-seat {
+  width: 78px;
+  height: 34px;
+}
+
+.bus-coach-container .seat-gap-placeholder {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  max-width: none;
+  aspect-ratio: auto;
+}
+
+.bus-coach-container .bus-horizontal-aisle {
+  width: 100%;
+  height: 8px;
+  background-color: transparent;
+  flex: 0 0 auto;
+}
+
+.bus-decks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* Subtle vertical gap between Lower and Upper Decks */
+  width: 100%;
+}

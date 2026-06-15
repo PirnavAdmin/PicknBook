@@ -1,0 +1,21 @@
+<svg width="640" height="820" viewBox="0 0 640 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">TGSRTC Background</title>
+  <desc id="desc">Charminar inspired skyline</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7fb5e5"/>
+      <stop offset="100%" stop-color="#c9dff2"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="820" fill="url(#sky)"/>
+  <rect y="530" width="640" height="290" fill="#7f8c93"/>
+  <g fill="#d5c5ac" stroke="#9f8d75" stroke-width="4">
+    <rect x="200" y="300" width="240" height="230" rx="12"/>
+    <rect x="170" y="250" width="40" height="280" rx="20"/>
+    <rect x="430" y="250" width="40" height="280" rx="20"/>
+    <rect x="240" y="220" width="40" height="310" rx="20"/>
+    <rect x="360" y="220" width="40" height="310" rx="20"/>
+  </g>
+  <rect x="245" y="380" width="150" height="150" rx="80" fill="#4f4f55"/>
+  <rect x="0" y="520" width="640" height="300" fill="#6f7a82" opacity="0.6"/>
+</svg>

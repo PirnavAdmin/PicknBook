@@ -1,16 +1,32 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Info, Ticket, Tag } from "lucide-react";
+import { Info, Ticket, Tag, Mail, Phone } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "../../STYLES/FlightBookingFlow.css";
+import "../../STYLES/BusBookingFlow.css";
 import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
 } from "./flightBookingFlowStore";
+import { openAuthModal } from "../../utils/authModalEvents";
+import { isTokenExpired } from "../../services/authSession";
 import { getFlightPricingPreview, getFlightPromotions } from "../../services/flightBookingService";
 import { toApiUrl } from "../../services/apiClient";
+import { listTravelers, normalizeTraveler } from "../../services/travelerService";
+
+const TRAVELER_STORAGE_KEY = "my_traveler_data";
+
+function readLocalTravelers() {
+  try {
+    const raw = localStorage.getItem(TRAVELER_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((t) => normalizeTraveler(t));
+  } catch {
+    return [];
+  }
+}
 
 function formatCurrency(amount) {
-  return `INR ${new Intl.NumberFormat("en-IN", {
+  return `₹ ${new Intl.NumberFormat("en-IN", {
     maximumFractionDigits: 0,
   }).format(Math.round(Number(amount) || 0))}`;
 }
@@ -144,6 +160,104 @@ export default function FlightPassengerDetailsPage() {
   );
   const [agreedToTerms, setAgreedToTerms] = useState(Boolean(flowState.agreedToTerms));
   const [formError, setFormError] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const [passengerModes, setPassengerModes] = useState(() =>
+    passengers.map(() => false)
+  );
+  const [savedTravelers, setSavedTravelers] = useState([]);
+  const [travelerLoadError, setTravelerLoadError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      const localList = readLocalTravelers();
+      if (isMounted && localList.length > 0) {
+        setSavedTravelers(localList);
+      }
+      try {
+        const apiList = await listTravelers();
+        if (!isMounted) return;
+        if (Array.isArray(apiList) && apiList.length > 0) {
+          const apiById = new Map(apiList.map((t) => [String(t.id), t]));
+          const merged = [...apiList];
+          for (const local of localList) {
+            if (!apiById.has(String(local.id))) {
+              merged.push(local);
+            }
+          }
+          setSavedTravelers(merged);
+          setTravelerLoadError("");
+        } else if (apiList.length === 0 && localList.length > 0) {
+          setSavedTravelers(localList);
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        setTravelerLoadError("Using locally saved travelers.");
+        console.warn("listTravelers API error:", err.message);
+      }
+    };
+    load();
+    return () => { isMounted = false; };
+  }, []);
+
+  const setPassengerMode = (index, isExisting) => {
+    setPassengerModes((prev) =>
+      prev.map((mode, i) => (i === index ? isExisting : mode))
+    );
+    setPassengers((prev) =>
+      prev.map((passenger, i) => {
+        if (i !== index) return passenger;
+        return {
+          ...passenger,
+          selectedTravelerId: "",
+          title: "Mr",
+          firstName: "",
+          lastName: "",
+          gender: "Male",
+          dob: "",
+        };
+      })
+    );
+  };
+
+  const handleSelectExistingTraveler = (index, travelerId) => {
+    if (!travelerId) {
+      setPassengers((prev) =>
+        prev.map((passenger, i) =>
+          i === index
+            ? {
+                ...passenger,
+                selectedTravelerId: "",
+                firstName: "",
+                lastName: "",
+                dob: "",
+              }
+            : passenger
+        )
+      );
+      return;
+    }
+
+    const found = savedTravelers.find((t) => String(t.id) === travelerId);
+    if (!found) return;
+
+    setPassengers((prev) =>
+      prev.map((passenger, i) =>
+        i === index
+          ? {
+              ...passenger,
+              selectedTravelerId: travelerId,
+              title: found.title || "Mr",
+              firstName: found.firstName || "",
+              lastName: found.lastName || "",
+              gender: found.gender || "Male",
+              dob: found.dobInput || "",
+            }
+          : passenger
+      )
+    );
+  };
 
   // Load available coupons and featured offers on mount
   useEffect(() => {
@@ -267,6 +381,11 @@ export default function FlightPassengerDetailsPage() {
         passengerIndex === index ? { ...passenger, [field]: value } : passenger
       )
     );
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[`passenger_${index}_${field}`];
+      return copy;
+    });
   };
 
   const finalPayable = pricingBreakdown ? pricingBreakdown.finalAmount : flowState.fareSummary?.totalFare || 0;
@@ -275,34 +394,58 @@ export default function FlightPassengerDetailsPage() {
   const tax = pricingBreakdown ? pricingBreakdown.supplierTaxAmount : flowState.fareSummary?.tax || 0;
   const markup = pricingBreakdown ? pricingBreakdown.markupAmount : 0;
   const totalDiscount = pricingBreakdown ? (pricingBreakdown.promotionDiscount + pricingBreakdown.couponDiscount) : 0;
+  const isPassengerValid = (p) => p.title && p.firstName && p.lastName && p.gender && p.dob;
+  const allPassengersValid = passengers.every(isPassengerValid);
 
-  const handleContinue = () => {
-    if (!allPassengersValid) {
-      setFormError("Fill all mandatory passenger fields.");
-      return;
+  const validateForm = () => {
+    const newErrors = {};
+    passengers.forEach((p, idx) => {
+      if (!p.title) newErrors[`passenger_${idx}_title`] = "Required";
+      if (!p.firstName || !p.firstName.trim()) newErrors[`passenger_${idx}_firstName`] = "Required";
+      if (!p.lastName || !p.lastName.trim()) newErrors[`passenger_${idx}_lastName`] = "Required";
+      if (!p.gender) newErrors[`passenger_${idx}_gender`] = "Required";
+      if (!p.dob) newErrors[`passenger_${idx}_dob`] = "Required";
+    });
+
+    if (!contact.email || !contact.email.trim()) {
+      newErrors.contact_email = "Required";
+    } else if (!isValidEmail(contact.email)) {
+      newErrors.contact_email = "Invalid";
     }
 
-    if (!isValidEmail(contact.email)) {
-      setFormError("Enter a valid email address.");
-      return;
-    }
-
-    if (!isValidMobile(contact.mobile)) {
-      setFormError("Enter a valid mobile number.");
-      return;
+    if (!contact.mobile || !contact.mobile.trim()) {
+      newErrors.contact_mobile = "Required";
+    } else if (!isValidMobile(contact.mobile)) {
+      newErrors.contact_mobile = "Invalid";
     }
 
     if (contact.whatsappUpdates) {
-      const whatsappValue = contact.whatsappNumber || contact.mobile;
-
-      if (!isValidMobile(whatsappValue)) {
-        setFormError("Enter a valid WhatsApp number or disable WhatsApp updates.");
-        return;
+      const waNum = contact.whatsappNumber || contact.mobile;
+      if (!waNum || !waNum.trim()) {
+        newErrors.contact_whatsappNumber = "Required";
+      } else if (!isValidMobile(waNum)) {
+        newErrors.contact_whatsappNumber = "Invalid";
       }
     }
 
     if (!agreedToTerms) {
-      setFormError("Please accept fare rules and terms before continuing.");
+      newErrors.agreedToTerms = "Required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleContinue = () => {
+    const isValid = validateForm();
+    if (!isValid) {
+      setFormError("Please correct the errors in the form to proceed.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token || isTokenExpired(token)) {
+      openAuthModal("login");
       return;
     }
 
@@ -335,200 +478,452 @@ export default function FlightPassengerDetailsPage() {
     navigate("/flight/payment", { state: payload });
   };
 
+  const renderPassengerFields = (passenger, index) => (
+    <div className="passenger-fields flight-passenger-fields">
+      <label className="passenger-field">
+        <span>Title *</span>
+        <select
+          value={passenger.title || ""}
+          onChange={(event) => updatePassenger(index, "title", event.target.value)}
+          className={errors[`passenger_${index}_title`] ? "field-has-error" : ""}
+        >
+          <option value="">Title *</option>
+          <option value="Mr">Mr</option>
+          <option value="Mrs">Mrs</option>
+          <option value="Ms">Ms</option>
+        </select>
+        {errors[`passenger_${index}_title`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_title`]}</span>
+        )}
+      </label>
+
+      <label className="passenger-field">
+        <span>First Name *</span>
+        <input
+          type="text"
+          placeholder="First Name *"
+          value={passenger.firstName}
+          onChange={(event) =>
+            updatePassenger(index, "firstName", event.target.value)
+          }
+          className={errors[`passenger_${index}_firstName`] ? "field-has-error" : ""}
+        />
+        {errors[`passenger_${index}_firstName`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_firstName`]}</span>
+        )}
+      </label>
+
+      <label className="passenger-field">
+        <span>Last Name *</span>
+        <input
+          type="text"
+          placeholder="Last Name *"
+          value={passenger.lastName}
+          onChange={(event) =>
+            updatePassenger(index, "lastName", event.target.value)
+          }
+          className={errors[`passenger_${index}_lastName`] ? "field-has-error" : ""}
+        />
+        {errors[`passenger_${index}_lastName`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_lastName`]}</span>
+        )}
+      </label>
+
+      <label className="passenger-field">
+        <span>Gender *</span>
+        <select
+          value={passenger.gender || ""}
+          onChange={(event) => updatePassenger(index, "gender", event.target.value)}
+          className={errors[`passenger_${index}_gender`] ? "field-has-error" : ""}
+        >
+          <option value="">Gender *</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        {errors[`passenger_${index}_gender`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_gender`]}</span>
+        )}
+      </label>
+
+      <label className="passenger-field">
+        <span>Date of Birth *</span>
+        <input
+          type={passenger.dob ? "date" : "text"}
+          placeholder="Date of Birth *"
+          value={passenger.dob || ""}
+          onFocus={(e) => (e.target.type = "date")}
+          onBlur={(e) => {
+            if (!e.target.value) e.target.type = "text";
+          }}
+          onChange={(event) => updatePassenger(index, "dob", event.target.value)}
+          className={errors[`passenger_${index}_dob`] ? "field-has-error" : ""}
+        />
+        {errors[`passenger_${index}_dob`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_dob`]}</span>
+        )}
+      </label>
+
+      <label className="passenger-field">
+        <span>Frequent Flyer (Optional)</span>
+        <input
+          type="text"
+          placeholder="Frequent Flyer"
+          value={passenger.frequentFlyer || ""}
+          onChange={(event) =>
+            updatePassenger(index, "frequentFlyer", event.target.value)
+          }
+        />
+      </label>
+    </div>
+  );
+
   return (
-    <main className="flight-flow-page">
-      <div className="flight-flow-shell">
-        <section className="flight-passenger-layout">
-          <div className="flight-section-card">
-            <header className="flight-card-head">
-              <div>
-                <h2>Passenger Details</h2>
-                <span>{flight.airlineName} {flight.flightNumber}</span>
+    <main className="bus-flow-page">
+      <div className="bus-flow-shell">
+        <section className="bus-passenger-layout">
+
+          {/* ── LEFT COLUMN ── */}
+          <div className="bus-passenger-main">
+
+            {/* Flight Details */}
+            <article className="flow-card">
+              <header>
+                <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2L2 22M17 22H21" />
+                  </svg>
+                </span>
+                Flight Details
+              </header>
+              <div className="flow-card-body">
+                <div className="bus-journey-grid">
+                  <div>
+                    <strong style={{ fontSize: '1.05rem', color: '#0f172a', fontWeight: 'bold', display: 'block' }}>
+                      {searchContext?.source} → {searchContext?.destination}
+                    </strong>
+                    <span className="date-badge">
+                      {flight.airlineName} {flight.flightNumber}
+                    </span>
+                  </div>
+                  <div>
+                    <small>Depart Time</small>
+                    <strong>{flight.departureTime || "10:00"}</strong>
+                  </div>
+                  <div className="journey-timeline-center">
+                    <div className="timeline-line-wrap">
+                      <div className="timeline-dot"></div>
+                      <div className="timeline-line"></div>
+                      <span className="timeline-bus-icon">✈️</span>
+                      <div className="timeline-line"></div>
+                      <div className="timeline-dot"></div>
+                    </div>
+                    <span className="timeline-duration">{flight.duration || "2h 30m"}</span>
+                  </div>
+                  <div>
+                    <small>Arrival Time</small>
+                    <strong>{flight.arrivalTime || "12:30"}</strong>
+                  </div>
+                  <div>
+                    <small>Seat No</small>
+                    <strong>
+                      {selectedSeats.map((s) => s.label).join(", ") || "Auto Assign"}
+                    </strong>
+                  </div>
+                </div>
               </div>
-              <span>{searchContext?.source} to {searchContext?.destination}</span>
-            </header>
+            </article>
 
-            <div className="flight-form-grid">
-              {passengers.map((passenger, index) => (
-                <article className="flight-passenger-row" key={passenger.id}>
-                  <header>
-                    <h4>
-                      Passenger {index + 1} - {passenger.passengerType}
-                    </h4>
-                    <span>{passenger.seatLabel ? `Seat ${passenger.seatLabel}` : "No Seat"}</span>
-                  </header>
+            {/* Passenger Details */}
+            <article className="flow-card">
+              <header>
+                <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                Passenger Details
+              </header>
+              <div className="flow-card-body">
+                {passengers.map((passenger, index) => {
+                  const isExisting = passengerModes[index];
+                  return (
+                    <div className="passenger-row" key={passenger.id}>
+                      <h4>
+                        Passenger {index + 1}
+                        <span>({passenger.passengerType}) {passenger.seatLabel ? `— Seat ${passenger.seatLabel}` : ""}</span>
+                      </h4>
 
-                  <div className="flight-passenger-fields">
-                    <select
-                      value={passenger.title}
-                      onChange={(event) => updatePassenger(index, "title", event.target.value)}
-                    >
-                      <option value="Mr">Mr</option>
-                      <option value="Mrs">Mrs</option>
-                      <option value="Ms">Ms</option>
-                    </select>
+                      {/* ── Mode Toggle ── */}
+                      <div className="passenger-mode-toggle">
+                        <button
+                          type="button"
+                          className={`pmode-btn${isExisting ? " pmode-btn--active" : ""}`}
+                          onClick={() => setPassengerMode(index, true)}
+                        >
+                          Existing Traveler
+                        </button>
+                        <button
+                          type="button"
+                          className={`pmode-btn${!isExisting ? " pmode-btn--active" : ""}`}
+                          onClick={() => setPassengerMode(index, false)}
+                        >
+                          Add New Traveler
+                        </button>
+                      </div>
 
+                      {/* ── Existing Traveler ── */}
+                      {isExisting ? (
+                        <div className="passenger-existing-wrap">
+                          {travelerLoadError && (
+                            <p className="pmode-warn">{travelerLoadError}</p>
+                          )}
+
+                          <select
+                            className="passenger-existing-select"
+                            value={passenger.selectedTravelerId || ""}
+                            onChange={(e) =>
+                              handleSelectExistingTraveler(index, e.target.value)
+                            }
+                          >
+                            <option value="">-- Select Existing Traveler --</option>
+                            {savedTravelers.length === 0 ? (
+                              <option disabled>No saved travelers found</option>
+                            ) : (
+                              savedTravelers.map((t) => (
+                                <option key={t.id} value={String(t.id)}>
+                                  {[t.title, t.firstName, t.lastName]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                  {t.mobile
+                                    ? ` — ${t.mobile}`
+                                    : t.email
+                                    ? ` — ${t.email}`
+                                    : ""}
+                                </option>
+                              ))
+                            )}
+                          </select>
+
+                          {passenger.selectedTravelerId &&
+                            renderPassengerFields(passenger, index)}
+                        </div>
+                      ) : (
+                        renderPassengerFields(passenger, index)
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+
+            {/* Contact Details */}
+            <article className="flow-card">
+              <header>
+                <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </span>
+                Contact Details
+              </header>
+              <div className="flow-card-body contact-grid">
+                <label>
+                  <span>Enter Your Email: *</span>
+                  <div className={`contact-input ${errors.contact_email ? "field-has-error" : ""}`}>
+                    <Mail size={14} />
                     <input
-                      type="text"
-                      placeholder="First Name"
-                      value={passenger.firstName}
-                      onChange={(event) =>
-                        updatePassenger(index, "firstName", event.target.value)
-                      }
-                    />
-
-                    <input
-                      type="text"
-                      placeholder="Last Name"
-                      value={passenger.lastName}
-                      onChange={(event) =>
-                        updatePassenger(index, "lastName", event.target.value)
-                      }
-                    />
-
-                    <select
-                      value={passenger.gender}
-                      onChange={(event) => updatePassenger(index, "gender", event.target.value)}
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-
-                    <input
-                      type="date"
-                      value={passenger.dob}
-                      onChange={(event) => updatePassenger(index, "dob", event.target.value)}
-                    />
-
-                    <input
-                      type="text"
-                      placeholder="Frequent Flyer (Optional)"
-                      value={passenger.frequentFlyer}
-                      onChange={(event) =>
-                        updatePassenger(index, "frequentFlyer", event.target.value)
-                      }
+                      type="email"
+                      placeholder="Email id *"
+                      value={contact.email}
+                      onChange={(e) => {
+                        setContact(prev => ({ ...prev, email: e.target.value }));
+                        setErrors(prev => { const c = { ...prev }; delete c.contact_email; return c; });
+                      }}
                     />
                   </div>
-                </article>
-              ))}
-            </div>
+                  {errors.contact_email && (
+                    <span className="field-error-text">{errors.contact_email}</span>
+                  )}
+                </label>
 
-            <div className="flight-contact-grid">
-              <label>
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={contact.email}
-                  onChange={(event) =>
-                    setContact((previous) => ({ ...previous, email: event.target.value }))
-                  }
-                  placeholder="name@example.com"
-                />
-              </label>
+                <label>
+                  <span>Enter Your Mobile: *</span>
+                  <div className={`contact-input ${errors.contact_mobile ? "field-has-error" : ""}`}>
+                    <Phone size={14} />
+                    <input
+                      type="text"
+                      placeholder="Mobile *"
+                      value={contact.mobile}
+                      onChange={(e) => {
+                        setContact(prev => ({ ...prev, mobile: e.target.value }));
+                        setErrors(prev => { const c = { ...prev }; delete c.contact_mobile; return c; });
+                      }}
+                    />
+                  </div>
+                  {errors.contact_mobile && (
+                    <span className="field-error-text">{errors.contact_mobile}</span>
+                  )}
+                </label>
 
-              <label>
-                <span>Mobile</span>
-                <input
-                  type="text"
-                  value={contact.mobile}
-                  onChange={(event) =>
-                    setContact((previous) => ({
-                      ...previous,
-                      mobile: event.target.value,
-                      whatsappNumber:
-                        previous.whatsappUpdates && !previous.whatsappNumber
-                          ? event.target.value
-                          : previous.whatsappNumber,
-                    }))
-                  }
-                  placeholder="+91XXXXXXXXXX"
-                />
-              </label>
+                <label style={{ gridColumn: "1 / -1" }}>
+                  <span>WhatsApp Updates:</span>
+                  <div
+                    className={`contact-input ${errors.contact_whatsappNumber ? "field-has-error" : ""}`}
+                    style={{ gridTemplateColumns: "auto 1fr" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={contact.whatsappUpdates}
+                      onChange={(e) => {
+                        setContact(prev => ({
+                          ...prev,
+                          whatsappUpdates: e.target.checked,
+                          whatsappNumber: e.target.checked ? prev.whatsappNumber || prev.mobile : ""
+                        }));
+                        setErrors(prev => { const c = { ...prev }; delete c.contact_whatsappNumber; return c; });
+                      }}
+                      style={{ width: 16, height: 16, margin: 0 }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="WhatsApp no. (defaults to mobile)"
+                      value={contact.whatsappNumber}
+                      onChange={(e) => {
+                        setContact(prev => ({ ...prev, whatsappNumber: e.target.value }));
+                        setErrors(prev => { const c = { ...prev }; delete c.contact_whatsappNumber; return c; });
+                      }}
+                      disabled={!contact.whatsappUpdates}
+                    />
+                  </div>
+                  {errors.contact_whatsappNumber && (
+                    <span className="field-error-text">{errors.contact_whatsappNumber}</span>
+                  )}
+                </label>
+              </div>
+            </article>
 
-              <label style={{ gridColumn: "1 / -1" }}>
-                <span>WhatsApp Updates</span>
-                <div className="flight-whatsapp-row">
-                  <input
-                    type="checkbox"
-                    checked={contact.whatsappUpdates}
-                    onChange={(event) =>
-                      setContact((previous) => ({
-                        ...previous,
-                        whatsappUpdates: event.target.checked,
-                        whatsappNumber:
-                          event.target.checked && !previous.whatsappNumber
-                            ? previous.mobile
-                            : previous.whatsappNumber,
-                      }))
-                    }
-                    style={{ width: 16, height: 16, alignSelf: "center" }}
-                  />
+            {/* Special Assistance & Acknowledgement */}
+            <article className="flow-card">
+              <header>
+                <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </span>
+                Fare Rules &amp; Acknowledgement
+              </header>
+              <div className="flow-card-body acknowledgement">
+                <label style={{ display: 'block', marginBottom: '16px' }}>
+                  <span>Special Assistance / Requests (Optional)</span>
                   <input
                     type="text"
-                    value={contact.whatsappNumber}
-                    onChange={(event) =>
-                      setContact((previous) => ({
-                        ...previous,
-                        whatsappNumber: event.target.value,
-                      }))
-                    }
-                    disabled={!contact.whatsappUpdates}
-                    placeholder="WhatsApp no. (defaults to mobile)"
+                    value={specialAssistance}
+                    onChange={(event) => setSpecialAssistance(event.target.value)}
+                    placeholder="Wheelchair, diabetic meal, etc."
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #E5E7EB', borderRadius: '9px', marginTop: '6px' }}
                   />
-                </div>
-              </label>
+                </label>
 
-              <label style={{ gridColumn: "1 / -1" }}>
-                <span>Special Assistance / Requests</span>
-                <input
-                  type="text"
-                  value={specialAssistance}
-                  onChange={(event) => setSpecialAssistance(event.target.value)}
-                  placeholder="Wheelchair, diabetic meal, etc. (optional)"
-                />
-              </label>
-            </div>
+                <label className={`ack-checkbox ${errors.agreedToTerms ? "field-has-error-text" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => {
+                      setAgreedToTerms(e.target.checked);
+                      setErrors(prev => { const c = { ...prev }; delete c.agreedToTerms; return c; });
+                    }}
+                  />
+                  <span>
+                    I agree to the rules and restrictions of this fare, and the
+                    terms of this fare. <span className="mandatory-star" style={{ color: 'red', fontWeight: 'bold', marginLeft: '4px' }}>*</span>
+                  </span>
+                </label>
+                {errors.agreedToTerms && (
+                  <span className="field-error-text" style={{ marginTop: '2px', display: 'block', marginBottom: '10px' }}>{errors.agreedToTerms}</span>
+                )}
+
+                {formError && (
+                  <div className="form-error-summary-box" style={{ marginTop: '12px' }}>
+                    <div className="error-summary-header">
+                      <span>Please correct the following issues to proceed:</span>
+                    </div>
+                    <ul className="error-summary-list">
+                      <li>{formError}</li>
+                    </ul>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="flow-continue-btn align-right"
+                  onClick={handleContinue}
+                >
+                  Continue
+                </button>
+              </div>
+            </article>
           </div>
 
-          <aside className="flight-side-card">
-            <h3>Fare Summary</h3>
-            <div className="flight-fare-list">
-              <div>
-                <span>Base Fare</span>
-                <strong>{formatCurrency(baseFare)}</strong>
-              </div>
-              {markup > 0 && (
+          {/* ── RIGHT COLUMN ── */}
+          <aside className="bus-passenger-side">
+            <article className="flow-card">
+              <header>
+                <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', lineHeight: 1 }}>₹</span>
+                </span>
+                Fare Details
+              </header>
+              <div className="flow-card-body fare-list">
                 <div>
-                  <span>Service Markup</span>
-                  <strong>{formatCurrency(markup)}</strong>
+                  <span>Base Fare</span>
+                  <strong>{formatCurrency(baseFare)}</strong>
                 </div>
-              )}
-              {tax > 0 && (
+                {markup > 0 && (
+                  <div>
+                    <span>Service Markup</span>
+                    <strong>{formatCurrency(markup)}</strong>
+                  </div>
+                )}
+                {tax > 0 && (
+                  <div>
+                    <span>Taxes &amp; Fees</span>
+                    <strong>{formatCurrency(tax)}</strong>
+                  </div>
+                )}
                 <div>
-                  <span>Taxes</span>
-                  <strong>{formatCurrency(tax)}</strong>
+                  <span>Convenience Fee</span>
+                  <strong>{formatCurrency(convenienceFee)}</strong>
                 </div>
-              )}
-              <div>
-                <span>Convenience Fee</span>
-                <strong>{formatCurrency(convenienceFee)}</strong>
-              </div>
-              {totalDiscount > 0 && (
-                <div>
-                  <span>Promotion Discount</span>
-                  <strong style={{ color: "#2e7d32" }}>-{formatCurrency(totalDiscount)}</strong>
+                {totalDiscount > 0 && (
+                  <div>
+                    <span>Promotion Discount</span>
+                    <strong style={{ color: "#2e7d32" }}>-{formatCurrency(totalDiscount)}</strong>
+                  </div>
+                )}
+                <div className="grand-total">
+                  <span>Grand Total</span>
+                  <strong>{formatCurrency(finalPayable)}</strong>
                 </div>
-              )}
-              <div className="total">
-                <span>Payable</span>
-                <strong>{formatCurrency(finalPayable)}</strong>
               </div>
-            </div>
+            </article>
 
-            <div className="flight-options-group">
-              <label>
+            {/* Apply Coupon Card */}
+            <article className="flow-card coupon-sheet-card">
+              <header className="coupon-sheet-header">
+                <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
+                </span>
                 <span>Apply Coupon</span>
-                <div className="flight-coupon-row">
+                {isApplying && <span className="coupon-sheet-loading">Loading...</span>}
+              </header>
+              <div className="flow-card-body coupon-sheet-body">
+                <div className="coupon-manual-row">
                   <input
                     type="text"
                     value={couponCode}
@@ -537,130 +932,118 @@ export default function FlightPassengerDetailsPage() {
                     disabled={isApplying || selectedFeaturedOfferId !== null}
                   />
                   {couponCode && pricingBreakdown?.couponDiscount > 0 ? (
-                    <button type="button" onClick={handleRemoveCoupon} style={{ backgroundColor: "#d32f2f" }}>Remove</button>
+                    <button type="button" onClick={handleRemoveCoupon} className="coupon-action-button is-remove">Remove</button>
                   ) : (
-                    <button type="button" onClick={handleApplyCoupon} disabled={isApplying || selectedFeaturedOfferId !== null}>
-                      {isApplying ? "Applying..." : "Apply"}
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={isApplying || selectedFeaturedOfferId !== null}
+                      className="coupon-action-button is-apply"
+                    >
+                      {isApplying ? "Applying..." : "APPLY"}
                     </button>
                   )}
                 </div>
-              </label>
-              
-              {couponError && <p className="flight-flow-error" style={{ marginTop: 5 }}>{couponError}</p>}
-              {couponSuccess && <p className="coupon-success-text" style={{ color: "#2e7d32", fontSize: "0.85rem", marginTop: 5 }}>{couponSuccess}</p>}
-            </div>
+                
+                {couponError && (
+                  <p className="coupon-sheet-message is-error" style={{ marginTop: 5 }}>
+                    {couponError}
+                  </p>
+                )}
+                {couponSuccess && (
+                  <p className="coupon-sheet-message is-success" style={{ marginTop: 5 }}>
+                    {couponSuccess}
+                  </p>
+                )}
 
-            {/* Available Promotions section */}
-            {availableCoupons.length > 0 && (
-              <div className="promo-chips-section" style={{ marginTop: 15 }}>
-                <p style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 5 }}>Available Coupons:</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {availableCoupons.map((coupon) => (
-                    <button
-                      key={coupon.id}
-                      type="button"
-                      onClick={() => loadPricing(coupon.name, null)}
-                      disabled={isApplying || selectedFeaturedOfferId !== null}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: "0.8rem",
-                        backgroundColor: "#f5f5f5",
-                        border: "1px dashed #ccc",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        color: "#333"
-                      }}
-                    >
-                      <strong>{coupon.name}</strong> - {coupon.description || `${coupon.discountValue} Off`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {featuredOffers.length > 0 && (
-              <div className="featured-offers-section" style={{ marginTop: 15 }}>
-                <p style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 5 }}>Featured Offers:</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  {featuredOffers.map((offer) => {
-                    const isSelected = selectedFeaturedOfferId === offer.id;
-                    return (
-                      <div
-                        key={offer.id}
-                        style={{
-                          padding: 8,
-                          fontSize: "0.8rem",
-                          backgroundColor: isSelected ? "#e8f5e9" : "#fff",
-                          border: isSelected ? "1px solid #2e7d32" : "1px solid #ddd",
-                          borderRadius: 4,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center"
-                        }}
-                      >
-                        <div>
-                          <strong>{offer.title}</strong>
-                          <p style={{ margin: 0, color: "#666", fontSize: "0.75rem" }}>{offer.subtitle}</p>
+                {/* Available Coupons */}
+                {availableCoupons.length > 0 && (
+                  <div className="coupon-chip-block" style={{ marginTop: 15 }}>
+                    <p className="coupon-section-label">Available Coupons:</p>
+                    <div className="coupon-chip-list">
+                      {availableCoupons.map((coupon) => (
+                        <div
+                          key={coupon.id}
+                          className={`coupon-voucher-card ${couponCode === coupon.name ? "is-selected" : ""}`}
+                        >
+                          <div className="voucher-header">
+                            <span className="voucher-discount">
+                              {coupon.discountValue}% OFF
+                            </span>
+                            <span className="voucher-code-badge">{coupon.name}</span>
+                          </div>
+                          <div className="voucher-body">
+                            <div className="voucher-title">{coupon.name}</div>
+                            <p className="voucher-description">{coupon.description || `${coupon.discountValue} Off`}</p>
+                            <div className="voucher-action-row">
+                              {couponCode === coupon.name ? (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveCoupon}
+                                  className="voucher-remove-btn"
+                                >Remove</button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => loadPricing(coupon.name, null)}
+                                  disabled={isApplying || selectedFeaturedOfferId !== null}
+                                  className="voucher-apply-btn"
+                                >Apply</button>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        {isSelected ? (
-                          <button
-                            type="button"
-                            onClick={handleRemoveOffer}
-                            style={{
-                              padding: "2px 6px",
-                              backgroundColor: "#d32f2f",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: 3,
-                              cursor: "pointer"
-                            }}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Featured Offers */}
+                {featuredOffers.length > 0 && (
+                  <div className="coupon-featured-block" style={{ marginTop: 15 }}>
+                    <p className="coupon-section-label">Featured Offers:</p>
+                    <div className="coupon-featured-list">
+                      {featuredOffers.map((offer) => {
+                        const isSelected = selectedFeaturedOfferId === offer.id;
+                        return (
+                          <div
+                            key={offer.id}
+                            className={`coupon-voucher-card coupon-featured-offer ${isSelected ? "is-selected" : ""}`}
                           >
-                            Remove
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSelectOffer(offer.id)}
-                            disabled={isApplying || couponCode !== ""}
-                            style={{
-                              padding: "2px 6px",
-                              backgroundColor: "#1976d2",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: 3,
-                              cursor: "pointer"
-                            }}
-                          >
-                            Apply
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                            <div className="voucher-header">
+                              <span className="voucher-discount">OFFER</span>
+                              <span className="voucher-code-badge">{offer.title}</span>
+                            </div>
+                            <div className="voucher-body">
+                              <div className="voucher-title">{offer.title}</div>
+                              <p className="voucher-description">{offer.subtitle || offer.description}</p>
+                              <div className="voucher-action-row">
+                                {isSelected ? (
+                                  <button
+                                    type="button"
+                                    onClick={handleRemoveOffer}
+                                    className="voucher-remove-btn"
+                                  >Remove</button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectOffer(offer.id)}
+                                    disabled={isApplying || couponCode !== ""}
+                                    className="voucher-apply-btn"
+                                  >Apply</button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-
-            <label className="flight-check-row" style={{ marginTop: 15 }}>
-              <input
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(event) => setAgreedToTerms(event.target.checked)}
-              />
-              <span>I accept fare rules, cancellation policy, and passenger details are correct.</span>
-            </label>
-
-            {formError && (
-              <p className="flight-flow-error">
-                <Info size={14} />
-                {formError}
-              </p>
-            )}
-
-            <button type="button" className="flight-primary-btn" onClick={handleContinue} style={{ marginTop: 10 }}>
-              Continue to Payment
-            </button>
+            </article>
           </aside>
+
         </section>
       </div>
     </main>

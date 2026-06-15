@@ -20,14 +20,14 @@
 
 .pb-top-row button {
   border: 1px solid #f1d9ce;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffffff;
   color: #24364f;
-  padding: 9px 18px;
-  font-size: 0.78rem;
-  font-weight: 900;
+  padding: 6px 12px; /* smaller */
+  font-size: 0.72rem; /* smaller */
+  font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(125, 59, 31, 0.08);
+  box-shadow: 0 8px 18px rgba(125, 59, 31, 0.06);
 }
 
 .pb-top-row div {
@@ -47,9 +47,9 @@
 .pb-select-shell h1 {
   margin: 0;
   color: #102f6d;
-  font-size: 2.2rem;
-  line-height: 1.1;
-  font-weight: 900;
+  font-size: 1.4rem; /* reduced further */
+  line-height: 1.05;
+  font-weight: 800;
   letter-spacing: 0;
 }
 
@@ -237,22 +237,22 @@
 }
 
 .pb-ticket-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 40px; /* smaller */
+  height: 40px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #dc1e26 0%, #b8141b 100%);
   color: #ffffff;
   display: grid;
   place-items: center;
-  font-size: 0.96rem;
+  font-size: 0.78rem;
   font-weight: 900;
-  box-shadow: 0 16px 30px rgba(220, 30, 38, 0.2);
+  box-shadow: 0 10px 20px rgba(220, 30, 38, 0.12);
 }
 
 .pb-ticket-title strong {
   display: block;
   color: #071b3d;
-  font-size: 1.08rem;
+  font-size: 0.95rem; /* smaller */
   line-height: 1.15;
   font-weight: 900;
 }
@@ -274,9 +274,10 @@
 
 .pb-ticket-card {
   width: 100%;
-  height: var(--pb-ticket-height);
+  /* allow the card to expand when content is taller than the design height */
+  height: auto;
   min-height: var(--pb-ticket-min-height);
-  overflow: hidden;
+  overflow: visible; /* allow stub / QR to render outside the clipping radius */
   border: 1px solid rgba(241, 217, 206, 0.95);
   border-radius: 28px;
   background: #ffffff;
@@ -286,14 +287,14 @@
 }
 
 .pb-ticket-head {
-  min-height: 58px;
+  min-height: 48px; /* reduced */
   background: linear-gradient(135deg, var(--theme-primary-strong, #b8141b) 0%, var(--theme-primary, #dc1e26) 100%);
   color: #ffffff;
-  padding: 13px 24px;
+  padding: 10px 18px; /* reduced */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .pb-ticket-head span {
@@ -308,7 +309,7 @@
 .pb-ticket-head h2 {
   margin: 4px 0 0;
   color: #ffffff;
-  font-size: 0.98rem;
+  font-size: 0.88rem; /* smaller */
   font-weight: 900;
   letter-spacing: 0;
 }
@@ -327,7 +328,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 172px;
+  /* reduce stub width to give more space and smaller visual footprint */
+  grid-template-columns: minmax(0, 1fr) 120px; /* narrower stub */
   background: #ffffff;
 }
 
@@ -336,13 +338,13 @@
 }
 
 .pb-ticket-main {
-  padding: 18px 24px;
+  padding: 12px 18px; /* reduced */
 }
 
 .pb-route-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 140px minmax(0, 1fr);
+  gap: 8px;
   align-items: start;
 }
 
@@ -401,11 +403,11 @@
 .pb-time-row,
 .pb-detail-grid {
   border-top: 1px dashed #d8dee8;
-  margin-top: 16px;
-  padding-top: 15px;
+  margin-top: 12px;
+  padding-top: 10px;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  gap: 12px;
 }
 
 .pb-time-row div:nth-child(1),
@@ -463,15 +465,17 @@
 
 .pb-passengers {
   display: grid;
-  gap: 7px;
-  margin-top: 9px;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 120px; /* limit height to keep layout compact */
+  overflow: auto; /* allow scrolling if many passengers */
 }
 
 .pb-passenger-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 32px;
+  gap: 8px;
+  min-height: 28px;
 }
 
 .pb-passenger-row b {
@@ -488,7 +492,7 @@
 .pb-passenger-row span {
   flex: 1;
   color: #071b3d;
-  font-size: 0.78rem;
+  font-size: 0.72rem; /* smaller */
   font-weight: 800;
 }
 
@@ -504,12 +508,15 @@
 .pb-ticket-stub {
   border-left: 1px dashed #d8dee8;
   background: #eef2f7;
-  padding: 20px 14px;
+  /* even tighter padding for compact mode */
+  padding: 8px 6px; /* smaller */
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 8px;
+  gap: 6px;
   position: relative;
+  z-index: 2; /* ensure stub (and QR) sit above the ticket body */
+  overflow: visible;
 }
 
 .pb-ticket-stub::before,
@@ -561,6 +568,20 @@
   color: #6f7888;
   font-size: 0.56rem;
   font-weight: 700;
+}
+
+/* Force QR image smaller to match reduced stub */
+.pb-ticket-stub img {
+  width: 64px; /* smaller QR */
+  height: 64px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* Slight overall ticket scale to fit more on screen */
+.pb-preview-shell .pb-ticket-section .pb-ticket-card {
+  transform: scale(0.94);
+  transform-origin: top center;
 }
 
 @media print {

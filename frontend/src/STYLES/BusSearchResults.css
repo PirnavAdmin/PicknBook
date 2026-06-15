@@ -339,19 +339,19 @@
 }
  
 .bus-loading-screen {
-  margin-top: 10px;
-  border: 1px solid #ffd8a5;
-  border-radius: 18px;
-  min-height: calc(100vh - 210px);
-  padding: clamp(14px, 2vw, 24px);
-  display: grid;
-  gap: 16px;
-  align-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
   background:
-    radial-gradient(circle at 10% 16%, rgba(255, 183, 70, 0.28), transparent 33%),
-    radial-gradient(circle at 88% 8%, rgba(88, 208, 255, 0.24), transparent 34%),
-    linear-gradient(150deg, #fff9ef 0%, #fff4dd 42%, #eaf8ff 100%);
-  box-shadow: 0 20px 34px rgba(76, 67, 41, 0.18);
+    radial-gradient(circle at 10% 16%, rgba(220, 30, 38, 0.08), transparent 33%),
+    radial-gradient(circle at 88% 8%, rgba(88, 208, 255, 0.06), transparent 34%),
+    linear-gradient(150deg, #ffffff 0%, #fffbf8 45%, #f6faff 100%);
 }
  
 .bus-loading-media-card {
@@ -594,15 +594,32 @@
   display: grid;
   grid-template-columns: 306px 1fr;
   gap: 10px;
+  align-items: start;
 }
  
 .bus-filters-rail {
+  position: sticky;
+  top: 76px;
+  height: calc(100vh - 96px);
+  overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid #f3c7b8;
   border-radius: 12px;
   background: #fff7f3;
   box-shadow: 0 12px 28px rgba(96, 36, 18, 0.1);
-  overflow-y: auto;
-  max-height: calc(100vh - 136px);
+  scrollbar-width: thin;
+  scrollbar-color: #f3c7b8 transparent;
+}
+
+.bus-filters-rail::-webkit-scrollbar {
+  width: 4px;
+}
+.bus-filters-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+.bus-filters-rail::-webkit-scrollbar-thumb {
+  background: #f3c7b8;
+  border-radius: 4px;
 }
  
 .bus-filters-header {
@@ -1803,10 +1820,20 @@
 }
  
 @media (max-width: 1250px) {
-  .bus-results-layout,
+  .bus-results-layout {
+    grid-template-columns: 1fr;
+  }
+
   .bus-result-card {
     grid-template-columns: 1fr;
     border-radius: 14px;
+  }
+
+  .bus-filters-rail {
+    position: static;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .operator-group-card {
@@ -1884,7 +1911,7 @@
  
 @media (max-width: 820px) {
   .bus-loading-screen {
-    min-height: calc(100vh - 180px);
+    min-height: 100vh;
   }
  
   .bus-loading-search-details {
@@ -1949,8 +1976,8 @@
   }
 
   .bus-loading-screen {
-    min-height: calc(100vh - 156px);
-    border-radius: 14px;
+    min-height: 100vh;
+    border-radius: 0;
     padding: 12px;
   }
  
@@ -2115,11 +2142,11 @@
 }
 
 .bus-loading-screen {
-  border-color: #ffd0bf;
+  border: 0;
   background:
-    radial-gradient(circle at 10% 16%, rgba(220, 30, 38, 0.18), transparent 33%),
-    radial-gradient(circle at 88% 8%, rgba(220, 30, 38, 0.18), transparent 34%),
-    linear-gradient(150deg, #fffaf6 0%, #fff3ec 48%, #ffffff 100%);
+    radial-gradient(circle at 10% 16%, rgba(220, 30, 38, 0.08), transparent 33%),
+    radial-gradient(circle at 88% 8%, rgba(88, 208, 255, 0.06), transparent 34%),
+    linear-gradient(150deg, #ffffff 0%, #fffbf8 45%, #f6faff 100%);
 }
 
 .bus-loading-progress,

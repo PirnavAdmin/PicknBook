@@ -6,6 +6,8 @@ import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
 } from "./busBookingFlowStore";
+import { openAuthModal } from "../../utils/authModalEvents";
+import { isTokenExpired } from "../../services/authSession";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import {
   getBusPricingPreview,
@@ -1426,6 +1428,12 @@ export default function BusPassengerDetailsPage() {
   };
 
   const handleProceedPayment = async () => {
+    const token = localStorage.getItem("token");
+    if (!token || isTokenExpired(token)) {
+      openAuthModal("login");
+      return;
+    }
+
     const cleanedPassengers = passengers.map((passenger) => {
       const ageNumber = Number(passenger.age);
       return {

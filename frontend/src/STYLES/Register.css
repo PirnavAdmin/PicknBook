@@ -1,0 +1,498 @@
+@media (max-height: 700px) {
+  .travel-auth-page {
+    align-items: flex-start;
+  }
+}
+
+/* Remove Chrome autofill blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #000 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.travel-auth-register {
+  --login-card-width: 450px;
+  --login-card-height: auto;
+}
+
+.travel-auth-card {
+  height: auto;
+}
+
+.travel-auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;   /* ✅ full screen */
+  padding: 20px 0;     /* allow vertical growth */
+}
+
+.travel-auth-register .travel-auth-card {
+  border-radius: 24px;
+}
+
+.travel-auth-register .travel-auth-form-panel {
+  padding: 10px 16px 9px;
+  display: flex;
+  flex-direction: column;
+}
+
+.travel-auth-register .travel-auth-heading {
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.travel-auth-register .travel-auth-subheading {
+  margin-top: 4px;
+  font-size: 10.5px;
+}
+
+.travel-auth-register .travel-auth-status {
+  margin: 5px 0 3px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.travel-auth-register .travel-auth-status.is-success {
+  margin: 8px 0 4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #16a34a;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.travel-auth-status {
+  text-align: left;
+  width: 100%;
+}
+
+.travel-auth-register .travel-auth-form {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.travel-register-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 10px;
+}
+
+.travel-auth-register .travel-field {
+  margin-bottom: 0;
+}
+
+.travel-auth-register .travel-email-field,
+.travel-auth-register .travel-otp-field {
+  grid-column: 1 / -1;
+}
+
+.travel-auth-register .travel-field label {
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.travel-auth-register .travel-required-star {
+  color: var(--auth-orange-strong);
+  font-weight: 800;
+}
+
+.travel-field-line input,
+.travel-field-line select {
+  padding: 0 6px;   /* ✅ tighter inside spacing */
+}
+
+.travel-auth-register .travel-field-line {
+  height: 38px;              /* fixed height */
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  padding: 0 10px;
+}
+
+.travel-auth-register .travel-email-otp-line {
+  gap: 8px;
+  padding-right: 6px;
+}
+
+.travel-field-line input {
+   padding: 0;
+  margin: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.travel-field-line input:-webkit-autofill {
+  background: transparent !important;
+}
+
+.travel-auth-register .travel-field-line input,
+.travel-auth-register .travel-field-line select {
+  height: 100%;
+  width: 100%;
+  font-size: 13px;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.travel-auth-register .travel-eye-btn {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.travel-send-otp-btn {
+  flex: 0 0 auto;
+  height: 28px;
+  min-width: 82px;
+  border: 0;
+  border-radius: 8px;
+  background: #ef3b24;
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.travel-send-otp-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.travel-auth-register .travel-otp-boxes {
+  display: grid;
+  grid-template-columns: repeat(6, 40px);
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.travel-auth-register .travel-otp-boxes input {
+  width: 40px;
+  height: 38px;
+  border: 1.5px solid #ff7a5a;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.travel-auth-register .travel-otp-boxes input:focus {
+  border-color: #ef3b24;
+  box-shadow: 0 0 0 3px rgba(239, 59, 36, 0.14);
+}
+
+.travel-auth-register .travel-otp-boxes.has-error input {
+  border-color: #e53935;
+  background: #fff5f5;
+}
+
+.travel-auth-register .travel-otp-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.travel-auth-register .travel-otp-timer {
+  color: #0b3a78;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.travel-auth-register .travel-otp-timer.is-expired {
+  color: #e53935;
+}
+
+.travel-resend-otp-btn {
+  border: 1px solid #ef3b24;
+  border-radius: 8px;
+  min-height: 28px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #ef3b24;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.travel-resend-otp-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.travel-auth-register .travel-signup-otp-btn {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 0;
+  border-radius: 10px;
+}
+
+.travel-field-check {
+  color: #ff6b00; /* orange */
+}
+
+.travel-auth-register .travel-field-check,
+.travel-auth-register .travel-eye-btn {
+  font-size: 12.6px;
+}
+
+.travel-auth-register .travel-field-error {
+  min-height: 14px;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--auth-error);
+  line-height: 1.15;
+}
+
+.form-global-error {
+  color: #e53935;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.25;
+  padding: 0 0 0 4px;
+  margin: 2px 0 8px;
+}
+
+.travel-field-line:not(.has-error) .travel-field-check {
+  color: #ff6b00; /* orange */
+}
+
+.travel-field-line.has-error {
+  border: 1.5px solid #e53935;
+  background: #fff5f5;
+}
+
+.travel-field-line {
+  background: #fff;   /* full input background */
+}
+
+.travel-terms-wrap {
+  margin-top: 1px;
+}
+
+.travel-field-error {
+  min-height: 4px;
+  margin: 0;
+}
+
+.travel-terms {
+  gap: 8px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 4px 6px;
+  line-height: 1.25;
+}
+
+.travel-terms input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 1px 0 0;
+  flex: 0 0 14px;
+}
+
+.travel-terms.has-error {
+  border-color: transparent;
+  background: transparent;
+}
+
+.travel-terms.has-error input[type="checkbox"] {
+  outline: 1.5px solid #e53935;
+  outline-offset: 1px;
+  accent-color: #e53935;
+}
+
+.travel-auth-register .travel-auth-actions {
+  margin-top: 3px;
+  padding-top: 0;
+}
+
+.travel-auth-register .travel-btn {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+.travel-auth-register .travel-btn-secondary {
+  display: none;
+}
+
+.travel-auth-register .travel-auth-footnote {
+  margin: 6px 0 1px;
+  padding-top: 0;
+  color: #0b3a78;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.travel-footnote-link {
+  border: none;
+  background: transparent;
+  color: #3f7ed8;
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 500;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.travel-terms {
+  display: flex;
+  align-items: flex-start;
+  color: var(--auth-muted);
+}
+
+.travel-terms input[type="checkbox"] {
+  accent-color: var(--auth-orange);
+}
+
+.travel-terms-link {
+  color: var(--auth-orange-strong);
+  font-weight: 700;
+}
+
+/* Final terms checkbox state */
+.travel-auth-register .travel-terms input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin: 1px 0 0;
+  border: 1.5px solid #9ca3af;
+  border-radius: 2px;
+  background: #ffffff;
+  display: grid;
+  place-content: center;
+  flex: 0 0 14px;
+  cursor: pointer;
+}
+
+.travel-auth-register .travel-terms input[type="checkbox"]::before {
+  content: "";
+  width: 7px;
+  height: 4px;
+  border-left: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(-45deg) scale(0);
+  transform-origin: center;
+}
+
+.travel-auth-register .travel-terms input[type="checkbox"]:checked {
+  border-color: var(--auth-orange);
+  background: var(--auth-orange);
+}
+
+.travel-auth-register .travel-terms input[type="checkbox"]:checked::before {
+  transform: rotate(-45deg) scale(1);
+}
+
+.travel-auth-register .travel-terms.has-error input[type="checkbox"] {
+  border-color: #e53935;
+  background: #fff5f5;
+  box-shadow: 0 0 0 1px #e53935;
+}
+
+.travel-auth-register .travel-field-error {
+  min-height: 14px;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--auth-error);
+  line-height: 1.15;
+}
+
+@media (max-width: 920px) {
+  .travel-auth-register {
+    --login-card-width: 94vw;
+    --login-card-height: 590px;
+  }
+
+  .travel-auth-register .travel-auth-card {
+    border-radius: 22px;
+  }
+
+  .travel-auth-register .travel-auth-form-panel {
+    padding: 16px 14px 14px;
+  }
+
+  .travel-auth-register .travel-auth-heading {
+    font-size: 25.2px;
+  }
+
+  .travel-auth-register .travel-auth-subheading {
+    font-size: 10.8px;
+  }
+
+  .travel-auth-register .travel-field-error {
+    min-height: 14px;
+    margin-top: 4px;
+    font-size: 9.9px;
+  }
+
+  .travel-auth-register .travel-btn {
+    min-height: 46px;
+    font-size: 16.2px;
+  }
+}
+
+@media (max-width: 540px) {
+  .travel-auth-register {
+    --login-card-width: 100%;
+    --login-card-height: auto;
+  }
+
+  .travel-auth-register .travel-auth-card {
+    width: min(100%, 420px);
+    border-radius: 18px;
+  }
+
+  .travel-auth-register .travel-auth-form-panel {
+    padding: 14px 12px;
+  }
+
+  .travel-auth-register .travel-auth-heading {
+    font-size: 23px;
+  }
+
+  .travel-auth-register .travel-auth-footnote {
+    font-size: 12.5px;
+  }
+
+  .travel-auth-register .travel-otp-boxes {
+    grid-template-columns: repeat(6, 36px);
+    gap: 6px;
+  }
+
+  .travel-auth-register .travel-otp-boxes input {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}

@@ -291,7 +291,7 @@ function mapTicketToBus(ticket, fallbackPnr) {
 
 // ============ HELPER COMPONENTS ============
 
-const QRCode = ({ text = 'GOB2024ABC', size = 100 }) => {
+const QRCode = ({ text = 'GOB2024ABC', size = 64 }) => {
   const encoded = encodeURIComponent(text);
   const src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}`;
   return (
@@ -442,7 +442,7 @@ const BusTicket = ({ data, id }) => (
             `Passenger(s): ${data.passengers.map((p) => `${p.name} Seat ${p.seat}`).join(", ")}`,
             `Fare: ${data.fare}`,
           ].join("\n")}
-          size={102}
+          size={64}
         />
         <small>Show to conductor</small>
       </aside>

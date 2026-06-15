@@ -249,7 +249,7 @@ export default function AuthModal() {
       const guestUser = buildGuestUserFromMobile(mobile);
       localStorage.setItem("user", JSON.stringify(guestUser));
       localStorage.setItem("userId", guestUser.userId);
-      localStorage.removeItem("token");
+      localStorage.setItem("token", "otp-verified-session");
       localStorage.removeItem("role");
       localStorage.removeItem("challengeId");
       sessionStorage.removeItem("role");

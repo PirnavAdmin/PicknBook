@@ -1,0 +1,17 @@
+<svg width="640" height="820" viewBox="0 0 640 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GSRTC Background</title>
+  <desc id="desc">Monument inspired skyline</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#78b6e2"/>
+      <stop offset="100%" stop-color="#c8dff0"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="820" fill="url(#sky)"/>
+  <rect y="530" width="640" height="290" fill="#5d707c"/>
+  <rect x="286" y="300" width="68" height="240" fill="#64656d"/>
+  <path d="M320 180l36 120h-72z" fill="#4d4f55"/>
+  <rect x="248" y="530" width="144" height="28" fill="#4b5b67"/>
+  <rect x="220" y="558" width="200" height="20" fill="#42505a"/>
+  <rect x="0" y="545" width="640" height="275" fill="#4d5e69" opacity="0.5"/>
+</svg>

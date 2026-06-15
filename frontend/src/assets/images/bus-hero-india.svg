@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Bus travel across India landmarks">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0a7ed5"/>
+      <stop offset="0.42" stop-color="#62b9ee"/>
+      <stop offset="0.68" stop-color="#ffe29a"/>
+      <stop offset="1" stop-color="#f59a35"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffe3a6"/>
+      <stop offset="0.5" stop-color="#ca8a2a"/>
+      <stop offset="1" stop-color="#8a5518"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7e2"/>
+      <stop offset="1" stop-color="#c6a678"/>
+    </linearGradient>
+    <linearGradient id="busBody" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dce7ed"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fffef0"/>
+      <stop offset="0.48" stop-color="#ffe77a"/>
+      <stop offset="1" stop-color="#ffb02f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#241304" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="192" cy="334" r="150" fill="url(#sun)"/>
+  <circle cx="218" cy="338" r="50" fill="#fffbea"/>
+
+  <g opacity="0.86" fill="#fff7df">
+    <ellipse cx="470" cy="100" rx="74" ry="19"/>
+    <ellipse cx="535" cy="92" rx="47" ry="15"/>
+    <ellipse cx="610" cy="120" rx="83" ry="22"/>
+    <ellipse cx="890" cy="80" rx="78" ry="20"/>
+    <ellipse cx="972" cy="102" rx="52" ry="15"/>
+    <ellipse cx="1210" cy="125" rx="94" ry="25"/>
+    <ellipse cx="1320" cy="102" rx="56" ry="16"/>
+  </g>
+
+  <g opacity="0.98">
+    <path d="M516 440 700 186l132 186 92-136 180 232Z" fill="#174c74"/>
+    <path d="M724 188 758 279l42-48 30 142Z" fill="#f7fbff"/>
+    <path d="M1070 468 1248 94l114 256 58-106 174 240Z" fill="#1b5a84"/>
+    <path d="M1248 94 1282 250l53-82 55 268Z" fill="#f8fbff"/>
+    <path d="M890 456 1016 232l82 190 78-110 118 164Z" fill="#22658d"/>
+    <path d="M1016 232 1044 338l38-54 45 168Z" fill="#f6fbff"/>
+  </g>
+
+  <g opacity="0.92">
+    <path d="M0 515c150-95 248-76 370-78 170-2 294-79 510-30 162 37 263 32 420-13 136-39 208-10 300 42v464H0Z" fill="#2f7d36"/>
+    <path d="M0 570c180-82 330-60 520-80 178-19 284-12 430 39 186 65 332-31 650-19v390H0Z" fill="#1f612c"/>
+  </g>
+
+  <g transform="translate(624 260)" filter="url(#softShadow)">
+    <path d="M54 220h476l-30-144H82Z" fill="url(#gold)"/>
+    <path d="M94 76h356l38 144H58Z" fill="#c17a24"/>
+    <path d="M134 34h52v42h-52zM260 18h56v58h-56zM396 38h50v38h-50z" fill="#d18a2e"/>
+    <path d="M118 18a42 42 0 0 1 84 0v18h-84zM244 0a44 44 0 0 1 88 0v22h-88zM380 22a42 42 0 0 1 84 0v18h-84z" fill="#a8661b"/>
+    <g fill="#5b3710">
+      <rect x="100" y="108" width="42" height="60" rx="20"/>
+      <rect x="168" y="108" width="42" height="60" rx="20"/>
+      <rect x="236" y="108" width="42" height="60" rx="20"/>
+      <rect x="304" y="108" width="42" height="60" rx="20"/>
+      <rect x="372" y="108" width="42" height="60" rx="20"/>
+      <rect x="440" y="108" width="42" height="60" rx="20"/>
+    </g>
+    <path d="M20 220h544v54H20z" fill="#9a5d19"/>
+    <path d="M0 274h590v38H0z" fill="#704110"/>
+  </g>
+
+  <g transform="translate(338 430)" filter="url(#softShadow)">
+    <path d="M90 158h230v108H90z" fill="#f7f0dc"/>
+    <path d="M205 42c52 12 80 50 80 116H125c0-66 28-104 80-116Z" fill="#faf7ef"/>
+    <path d="M92 150h226v22H92z" fill="#d8c4a4"/>
+    <rect x="188" y="178" width="34" height="88" rx="16" fill="#5d5146"/>
+    <g fill="#faf7ef" stroke="#d4c5aa" stroke-width="8">
+      <rect x="48" y="106" width="38" height="160" rx="19"/>
+      <rect x="324" y="106" width="38" height="160" rx="19"/>
+      <rect x="0" y="140" width="32" height="126" rx="16"/>
+      <rect x="378" y="140" width="32" height="126" rx="16"/>
+    </g>
+  </g>
+
+  <g transform="translate(1118 450)" filter="url(#softShadow)">
+    <path d="M86 52 166 0l82 52 60 170H24Z" fill="#f8f0dc"/>
+    <path d="M166 0 176 222H24Z" fill="#efe4cc"/>
+    <path d="M166 0 308 222H176Z" fill="#ffffff"/>
+    <path d="M82 222h168v46H82z" fill="#d0a95f"/>
+  </g>
+
+  <g transform="translate(1264 390)" filter="url(#softShadow)">
+    <path d="M72 0h160v310H72z" fill="url(#stone)"/>
+    <path d="M40 70h224v44H40zM0 114h304v58H0zM32 310h240v40H32z" fill="#bd8945"/>
+    <path d="M110 206a44 44 0 0 1 88 0v104h-88z" fill="#5a3b20"/>
+    <rect x="104" y="30" width="96" height="22" fill="#935f28"/>
+    <text x="152" y="47" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#5a3b20">INDIA</text>
+  </g>
+
+  <g transform="translate(930 390)" filter="url(#softShadow)">
+    <path d="M0 198h282l-36-86H36z" fill="#7f531a"/>
+    <path d="M32 112 142 18l108 94Z" fill="#3a2a15"/>
+    <path d="M52 120h180v78H52z" fill="#a47022"/>
+    <g fill="#281d12">
+      <rect x="78" y="142" width="24" height="56" rx="12"/>
+      <rect x="130" y="132" width="28" height="66" rx="14"/>
+      <rect x="184" y="142" width="24" height="56" rx="12"/>
+    </g>
+  </g>
+
+  <g transform="translate(18 382)" filter="url(#softShadow)">
+    <path d="M40 60h112v258H40z" fill="#b28a53"/>
+    <path d="M24 86h144M24 130h144M24 174h144M24 218h144M24 262h144" stroke="#6e471f" stroke-width="8"/>
+    <path d="M18 44h156l-18-34H36z" fill="#d0ac70"/>
+    <g fill="#402611">
+      <rect x="58" y="100" width="18" height="24"/>
+      <rect x="96" y="100" width="18" height="24"/>
+      <rect x="58" y="150" width="18" height="24"/>
+      <rect x="96" y="150" width="18" height="24"/>
+      <rect x="58" y="200" width="18" height="24"/>
+      <rect x="96" y="200" width="18" height="24"/>
+    </g>
+  </g>
+
+  <path d="M0 742c220-54 454-72 702-44 276 30 532 40 898-20v222H0Z" fill="#182527" opacity="0.78"/>
+  <path d="M0 803c240-80 563-98 905-62 236 25 430 22 695-28v187H0Z" fill="#2f302b"/>
+  <path d="M0 760c218-42 444-49 664-28 290 28 576 30 936-38" fill="none" stroke="#f3efe1" stroke-width="10" opacity="0.78"/>
+  <path d="M208 812c250-56 514-63 786-34 184 20 352 17 516-15" fill="none" stroke="#efb640" stroke-width="5" stroke-dasharray="54 42" opacity="0.95"/>
+
+  <g transform="translate(480 586)" filter="url(#softShadow)">
+    <path d="M58 28h458c72 0 124 54 124 122v92H30V58c0-17 12-30 28-30Z" fill="url(#busBody)"/>
+    <path d="M110 54h330c50 0 88 36 96 86H92V72c0-10 8-18 18-18Z" fill="#0c2c3b"/>
+    <path d="M548 70c44 18 70 54 70 102v46h-88V92c0-17 6-27 18-22Z" fill="#0b2835"/>
+    <path d="M72 174h430" stroke="#f06423" stroke-width="12" stroke-linecap="round"/>
+    <path d="M82 198h412" stroke="#29a460" stroke-width="7" stroke-linecap="round"/>
+    <rect x="90" y="204" width="238" height="38" rx="10" fill="#fff2d6"/>
+    <text x="208" y="229" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#13243a">Incredible India</text>
+    <g fill="#15313f" opacity="0.95">
+      <rect x="118" y="68" width="58" height="70" rx="8"/>
+      <rect x="192" y="68" width="58" height="70" rx="8"/>
+      <rect x="266" y="68" width="58" height="70" rx="8"/>
+      <rect x="340" y="68" width="58" height="70" rx="8"/>
+      <rect x="414" y="68" width="58" height="70" rx="8"/>
+    </g>
+    <circle cx="156" cy="250" r="44" fill="#101820"/>
+    <circle cx="156" cy="250" r="22" fill="#b9c7ce"/>
+    <circle cx="520" cy="250" r="44" fill="#101820"/>
+    <circle cx="520" cy="250" r="22" fill="#b9c7ce"/>
+    <path d="M36 146h52v72H36z" fill="#f6fbff"/>
+    <path d="M28 244h604" stroke="#c6d3d8" stroke-width="8"/>
+  </g>
+
+  <g transform="translate(1258 720)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="258" height="74" rx="8" fill="#d5a968"/>
+    <text x="129" y="46" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="700" fill="#4b2a12">Incredible India</text>
+  </g>
+
+  <rect width="1600" height="900" fill="rgba(4,16,24,0.08)"/>
+</svg>

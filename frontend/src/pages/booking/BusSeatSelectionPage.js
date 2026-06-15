@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Clock3, Info } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "../../STYLES/HolographicBus.css";
+import "../../STYLES/BusBookingFlow.css";
+import SeatSelection from "../../components/forms/SeatSelection";
 import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
@@ -188,6 +189,29 @@ function getSeatKindFromData(definition, backendSeat) {
     return "sleeper";
   }
 
+  return "seater";
+}
+
+function resolveKindFromBusType(busType, seatLabel) {
+  const layoutKind = getBusLayoutKind(busType);
+  const label = String(seatLabel || "").toUpperCase();
+
+  if (layoutKind === "seater") {
+    return "seater";
+  }
+
+  if (layoutKind === "sleeper") {
+    return "sleeper";
+  }
+
+  // hybrid: seater/sleeper
+  if (label.startsWith("LS")) {
+    return "sleeper";
+  }
+  if (label.startsWith("U")) {
+    return "sleeper";
+  }
+  // L-codes and seater codes (1A, 2B, etc.) are seaters in hybrid
   return "seater";
 }
 
@@ -502,7 +526,7 @@ function createSeatCatalog(bus) {
       displayLabel: definition.displayLabel,
       deck: definition.deck,
       deckGroup: definition.deckGroup || definition.deck,
-      kind: definition.kind,
+      kind: resolveKindFromBusType(bus.busType, definition.label),
       status,
       bookedGender: "",
       fare: fareBands[index % fareBands.length],
@@ -803,7 +827,7 @@ export default function BusSeatSelectionPage({
           displayLabel: definition.displayLabel,
           deck: definition.deck,
           deckGroup: definition.deckGroup || definition.deck,
-          kind: definition.kind,
+          kind: resolveKindFromBusType(bus.busType, definition.label),
           position: definition.position,
           row: definition.row,
           column: definition.column,
@@ -1516,7 +1540,7 @@ export default function BusSeatSelectionPage({
                   <div className="bus-flow-fares-head">
                     <h3>{bus.availableSeats} Seats Available</h3>
                     <button type="button" className="bus-flow-info-btn" title="Seat Information">
-                      <Info size={18} />
+                      <Info size={12} />
                     </button>
                   </div>
                   <div className="bus-flow-fare-chips">
@@ -1541,19 +1565,47 @@ export default function BusSeatSelectionPage({
                 </div>
 
                 <div className="bus-flow-seat-legend">
-                  <span className="legend available">Available Seats</span>
-                  <span className="legend female">Available for Female</span>
-                  <span className="legend booked">Booked Seats</span>
-                  <span className="legend male">Available for Male</span>
-                  <span className="legend selected">Selected Seats</span>
+                  <div className="legend-item">
+                    <div className="legend-color available" />
+                    <span>Available</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-color selected" />
+                    <span>Selected</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-color booked" />
+                    <span>Booked</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-color booked-female" />
+                    <span>Female</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-color booked-male" />
+                    <span>Male</span>
+                  </div>
                 </div>
               </header>
 
-              <div className="hologram-bus-container">
-                <div className="hologram-floor" />
-                <div className="bus-flow-vertical-layout">
-                  {renderBusLayout()}
-                </div>
+              <div className="modern-seat-layout-wrapper">
+                <SeatSelection
+                  vehicleType="bus"
+                  layoutKind={layoutKind}
+                  hasDeckSections={hasDeckSections}
+                  hasBackendSections={hasBackendSections}
+                  seatDeckGroups={seatDeckGroups}
+                  lowerDeckRows={lowerDeckRows}
+                  upperDeckRows={upperDeckRows}
+                  mainDeckRows={mainDeckRows}
+                  selectedSeatLabels={selectedSeatLabels}
+                  activeFareFilter={activeFareFilter}
+                  onSeatToggle={handleSeatToggle}
+                  onSeatHover={setHoveredSeat}
+                  onSeatMouseLeave={() => setHoveredSeat(null)}
+                  allSeatRows={allSeatRows}
+                  seatsByLabel={seatsByLabel}
+                />
               </div>
 
               {hoveredSeat && (

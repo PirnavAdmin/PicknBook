@@ -462,10 +462,19 @@ export default function FlightSearchResults() {
       setIsLoadingFlights(true);
       setSearchError("");
 
+      const normalizeCity = (city) => {
+        if (!city) return "";
+        const clean = city.trim().toLowerCase();
+        if (clean === "bangalore") return "Bengaluru";
+        if (clean === "new delhi") return "Delhi";
+        if (clean === "cochin") return "Kochi";
+        return city.trim();
+      };
+
       try {
         const result = await searchFlights({
-          from: sourceName,
-          to: destinationName,
+          from: normalizeCity(sourceName),
+          to: normalizeCity(destinationName),
           date: formatDateInput(selectedDate),
           travelClass: cabinClass,
         });
@@ -919,22 +928,6 @@ export default function FlightSearchResults() {
               autoplay
               style={{ width: "100%", height: "100%" }}
             />
-          </div>
-          <div className="flight-loading-details">
-            <div className="flight-loading-details-header">
-              <span>Search details</span>
-              <strong>
-                {sourceCode} to {destinationCode}
-              </strong>
-            </div>
-            <div className="flight-loading-details-grid">
-              {loadingSearchDetails.map((detail) => (
-                <div className="flight-loading-detail-card" key={detail.id}>
-                  <span>{detail.label}</span>
-                  <strong>{detail.value}</strong>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
       )}

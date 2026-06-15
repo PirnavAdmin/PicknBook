@@ -248,22 +248,35 @@ export default function OffersPage() {
         ) : (
           <div className="offers-grid">
             {filteredOffers.map((offer) => (
-              <article className="offer-full-card" key={offer.id}>
-                <div className="offer-card-image">
-                  <OfferImage offer={offer} />
-                  <span className="offer-type-badge">{offer.bookingType}</span>
-                </div>
-                <div className="offer-card-info">
-                  <h3>{offer.title}</h3>
-                  <p>{offer.description}</p>
-                  <div className="offer-card-footer">
+              <article className="offer-voucher-card" key={offer.id}>
+                <div className="voucher-details">
+                  <span className="voucher-kicker">Exclusive {offer.bookingType || "travel"} offer</span>
+                  <div className="voucher-content">
+                    <h3 className="voucher-title">{offer.title}</h3>
+                    <p className="voucher-desc">{offer.description}</p>
                     {offer.couponCode && (
-                      <div className="coupon-box">
-                        <span>Code:</span>
-                        <strong>{offer.couponCode}</strong>
+                      <div className="voucher-coupon">
+                        <span className="coupon-label">PROMO CODE</span>
+                        <strong className="coupon-code">{offer.couponCode}</strong>
                       </div>
                     )}
-                    <button onClick={() => handleBookNow(offer)}>Book Now</button>
+                  </div>
+                  <button className="voucher-book-btn" onClick={() => handleBookNow(offer)}>
+                    Book Now
+                  </button>
+                </div>
+                <div className="voucher-divider" aria-hidden="true" />
+                <div className="voucher-visual">
+                  <div className="voucher-image-container">
+                    <OfferImage offer={offer} />
+                  </div>
+                  <div className="voucher-discount-badge">
+                    <strong>
+                      {offer.discountValue
+                        ? `${offer.discountValue}${offer.discountType === "Percentage" ? "%" : ""}`
+                        : "Deal"}
+                    </strong>
+                    <span>{offer.discountValue ? "OFF" : "OFFER"}</span>
                   </div>
                 </div>
               </article>

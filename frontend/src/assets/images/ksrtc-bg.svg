@@ -1,0 +1,25 @@
+<svg width="640" height="820" viewBox="0 0 640 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">KSRTC Background</title>
+  <desc id="desc">Assembly building inspired architecture</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f93d0"/>
+      <stop offset="100%" stop-color="#7dc3ea"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="820" fill="url(#sky)"/>
+  <rect y="540" width="640" height="280" fill="#4d6b74"/>
+  <g fill="#e6ddd0" stroke="#b59e8a" stroke-width="4">
+    <rect x="120" y="360" width="400" height="180" rx="10"/>
+    <rect x="210" y="280" width="220" height="90" rx="8"/>
+    <rect x="290" y="220" width="60" height="60" rx="8"/>
+    <rect x="145" y="410" width="24" height="130"/>
+    <rect x="190" y="410" width="24" height="130"/>
+    <rect x="235" y="410" width="24" height="130"/>
+    <rect x="280" y="410" width="24" height="130"/>
+    <rect x="325" y="410" width="24" height="130"/>
+    <rect x="370" y="410" width="24" height="130"/>
+    <rect x="415" y="410" width="24" height="130"/>
+    <rect x="460" y="410" width="24" height="130"/>
+  </g>
+</svg>

@@ -120,7 +120,14 @@ const ADMIN_PATHS = {
   pin: "/admin/pin",
 };
 
-const USER_PROTECTED_PATH_PREFIXES = [];
+const USER_PROTECTED_PATH_PREFIXES = [
+  "/bus/payment",
+  "/flight/payment",
+  "/hotel/payment",
+  "/dashboard",
+  "/edit-profile",
+  "/change-password",
+];
 
 function isUserProtectedPath(pathname) {
   const normalizedPath = String(pathname || "").toLowerCase();

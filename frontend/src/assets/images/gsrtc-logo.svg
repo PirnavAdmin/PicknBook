@@ -1,0 +1,18 @@
+<svg width="220" height="220" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GSRTC Logo</title>
+  <desc id="desc">Gujarat State Road Transport Corporation</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#fff6dc"/>
+      <stop offset="100%" stop-color="#f0d095"/>
+    </radialGradient>
+  </defs>
+  <circle cx="110" cy="110" r="102" fill="#ffffff"/>
+  <circle cx="110" cy="110" r="92" fill="#e7562b"/>
+  <circle cx="110" cy="110" r="82" fill="#ffffff"/>
+  <circle cx="110" cy="110" r="64" fill="url(#bg)" stroke="#2e7a3d" stroke-width="6"/>
+  <path d="M88 134h44v12H88z" fill="#2e7a3d"/>
+  <path d="M96 130l14-38l14 38z" fill="#1e1e1e"/>
+  <text x="110" y="66" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="900" fill="#e14922">GSRTC</text>
+  <text x="110" y="171" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#2e7a3d">GUJARAT STATE</text>
+</svg>

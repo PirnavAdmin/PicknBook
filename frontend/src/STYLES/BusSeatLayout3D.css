@@ -1,0 +1,554 @@
+/* ============================================================
+   Bus Seat Layout 3D - Clean & Professional Design
+   ============================================================ */
+
+.bus-seat-layout-3d {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #f0f2f5 100%);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   Header Section
+   ============================================================ */
+
+.seat-layout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.seat-layout-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a202c;
+  letter-spacing: -0.5px;
+}
+
+.seat-count-info {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #718096;
+  background: rgba(66, 153, 225, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   Sections Container
+   ============================================================ */
+
+.seat-layout-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.seat-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.seat-section:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   Section Header
+   ============================================================ */
+
+.section-header {
+  width: 100%;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #f7fafc 0%, #edf2f7 100%);
+  border: none;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.section-header:hover {
+  background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 100%);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-width: 60px;
+}
+
+.section-badge.seater {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.section-badge.sleeper {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(245, 87, 108, 0.3);
+}
+
+.section-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.section-chevron {
+  color: #718096;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.section-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* ============================================================
+   Section Content
+   ============================================================ */
+
+.section-content {
+  padding: 20px;
+  background: #ffffff;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.no-seats {
+  padding: 40px 20px;
+  text-align: center;
+  color: #a0aec0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ============================================================
+   Seater Layout
+   ============================================================ */
+
+.seater-layout {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.seats-grid.seater-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.row-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.row-seats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ============================================================
+   Sleeper Layout (3D Bunk Style)
+   ============================================================ */
+
+.sleeper-layout {
+  display: flex;
+  justify-content: center;
+}
+
+.sleeper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 12px;
+  max-width: 100%;
+}
+
+.sleeper-bunk {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.bunk-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bunk-seats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/* ============================================================
+   Seat Button
+   ============================================================ */
+
+.seat-button {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.seat-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 1px;
+}
+
+.seat-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.seat-position {
+  font-size: 8px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   Seat States
+   ============================================================ */
+
+/* Available Seat */
+.seat-button.seat-available {
+  border-color: #cbd5e0;
+  color: #4a5568;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.seat-button.seat-available:hover:not(:disabled) {
+  border-color: #4299e1;
+  background: linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+}
+
+.seat-button.seat-available:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(66, 153, 225, 0.1);
+}
+
+/* Selected Seat */
+.seat-button.seat-selected {
+  border-color: #48bb78;
+  color: #22543d;
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+  font-weight: 800;
+}
+
+.seat-button.seat-selected:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+}
+
+.seat-button.seat-selected::before {
+  content: "✓";
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  font-size: 16px;
+  color: #48bb78;
+  font-weight: 900;
+}
+
+/* Booked Seat */
+.seat-button.seat-booked {
+  border-color: #cbd5e0;
+  color: #718096;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.seat-button.seat-booked:disabled {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Female Seat */
+.seat-button.seat-female {
+  border-color: #ed64a6;
+  color: #97113f;
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  box-shadow: 0 2px 6px rgba(237, 100, 166, 0.2);
+}
+
+.seat-button.seat-female:hover:not(:disabled) {
+  border-color: #d53f8c;
+  background: linear-gradient(135deg, #f687b3 0%, #ed64a6 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(237, 100, 166, 0.3);
+}
+
+/* Blocked Seat */
+.seat-button.seat-blocked {
+  border-color: #f56565;
+  color: #742a2a;
+  background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%);
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Invalid Seat */
+.seat-button.seat-invalid {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Disabled State */
+.seat-button:disabled {
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Seat Legend
+   ============================================================ */
+
+.seat-legend {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.legend-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2d3748;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.legend-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.legend-seat {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #cbd5e0;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.legend-seat.seat-available {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-color: #cbd5e0;
+}
+
+.legend-seat.seat-selected {
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  border-color: #48bb78;
+}
+
+.legend-seat.seat-booked {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
+  border-color: #a0aec0;
+  opacity: 0.6;
+}
+
+.legend-seat.seat-female {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  border-color: #ed64a6;
+}
+
+.legend-seat.seat-blocked {
+  background: linear-gradient(135deg, #fed7d7 0%, #fc8181 100%);
+  border-color: #f56565;
+  opacity: 0.5;
+}
+
+/* ============================================================
+   Responsive Design
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .bus-seat-layout-3d {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .seat-layout-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .seat-layout-header h2 {
+    font-size: 18px;
+  }
+
+  .section-content {
+    padding: 16px;
+  }
+
+  .seat-button {
+    width: 40px;
+    height: 40px;
+    font-size: 10px;
+  }
+
+  .sleeper-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+  }
+
+  .row-seats {
+    gap: 4px;
+  }
+
+  .legend-items {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .bus-seat-layout-3d {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .section-header {
+    padding: 12px;
+  }
+
+  .section-content {
+    padding: 12px;
+  }
+
+  .seat-button {
+    width: 36px;
+    height: 36px;
+    font-size: 9px;
+  }
+
+  .seat-label {
+    font-size: 9px;
+  }
+
+  .seat-row {
+    gap: 8px;
+  }
+
+  .row-label {
+    min-width: 24px;
+    font-size: 10px;
+  }
+
+  .sleeper-grid {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 8px;
+  }
+
+  .legend-items {
+    grid-template-columns: 1fr;
+  }
+
+  .legend-item {
+    font-size: 11px;
+  }
+}

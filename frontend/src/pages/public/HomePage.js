@@ -22,16 +22,17 @@ import {
   X,
   Clock,
   IndianRupee,
+  Tag,
 } from "lucide-react";
 import travelServiceRoute from "../../assets/images/illustrations/travel-service-route.png";
 import travelServiceFares from "../../assets/images/illustrations/travel-service-fares.png";
 import travelServiceTraveller from "../../assets/images/illustrations/travel-service-traveller.png";
-import flightServiceRoute from "../../assets/images/illustrations/flight-service-route.svg";
-import flightServiceFares from "../../assets/images/illustrations/flight-service-fares.svg";
-import flightServiceTraveller from "../../assets/images/illustrations/flight-service-traveller.svg";
-import hotelServiceSearch from "../../assets/images/illustrations/hotel-service-search.svg";
-import hotelServiceRooms from "../../assets/images/illustrations/hotel-service-rooms.svg";
-import hotelServiceCheckin from "../../assets/images/illustrations/hotel-service-checkin.svg";
+import flightServiceRoute from "../../assets/images/illustrations/flight-service-route.png";
+import flightServiceFares from "../../assets/images/illustrations/flight-service-fares.png";
+import flightServiceTraveller from "../../assets/images/illustrations/flight-service-traveller.png";
+import hotelServiceSearch from "../../assets/images/illustrations/hotel-service-search.png";
+import hotelServiceRooms from "../../assets/images/illustrations/hotel-service-rooms.png";
+import hotelServiceCheckin from "../../assets/images/illustrations/hotel-service-checkin.png";
 import airIndiaExpress from "../../assets/images/brands/air-india-express.png";
 import airIndia from "../../assets/images/brands/air-india.png";
 import akasaAir from "../../assets/images/brands/akasa-air.png";
@@ -44,11 +45,13 @@ import spiceJet from "../../assets/images/airlines/Spicejet.png";
 import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
-import { getActiveOffers } from "../../services/adminFeaturedOffersService";
-import { getPopularBusRoutesFromSearchHistory } from "../../services/busSearchHistoryService";
+import { getActiveOffers, getPublicFeaturedOffers } from "../../services/adminFeaturedOffersService";
+import { listHotBusRoutes } from "../../services/busBookingService";
 import { listHotFlightRoutes } from "../../services/flightBookingService";
+import { searchHotels } from "../../services/hotelBookingService";
 import { toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
+import { openAuthModal } from "../../utils/authModalEvents";
 
 const CLASS_OPTIONS = [
   "Economy",
@@ -231,6 +234,165 @@ const FALLBACK_BUS_ROUTES = [
   },
 ];
 
+/* ─── City photo lookup — full names + IATA codes + aliases ────────────── */
+const CITY_IMAGES = {
+  /* ── Hyderabad ── */
+  hyderabad:      "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
+  hyd:            "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
+  /* ── Mumbai ── */
+  mumbai:         "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
+  bombay:         "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
+  bom:            "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
+  /* ── Delhi / New Delhi ── */
+  delhi:          "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
+  "new delhi":    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
+  del:            "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
+  ixi:            "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
+  /* ── Bengaluru / Bangalore ── */
+  bengaluru:      "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
+  bangalore:      "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
+  blr:            "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
+  bng:            "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
+  /* ── Chennai ── */
+  chennai:        "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  madras:         "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  maa:            "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  /* ── Kolkata ── */
+  kolkata:        "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
+  calcutta:       "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
+  ccu:            "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
+  /* ── Pune ── */
+  pune:           "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=560&q=75&fit=crop&auto=format",
+  pnq:            "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=560&q=75&fit=crop&auto=format",
+  /* ── Ahmedabad ── */
+  ahmedabad:      "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=560&q=75&fit=crop&auto=format",
+  amd:            "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=560&q=75&fit=crop&auto=format",
+  /* ── Jaipur ── */
+  jaipur:         "https://images.unsplash.com/photo-1477587458883-47145ed6979c?w=560&q=75&fit=crop&auto=format",
+  jai:            "https://images.unsplash.com/photo-1477587458883-47145ed6979c?w=560&q=75&fit=crop&auto=format",
+  /* ── Goa ── */
+  goa:            "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?w=560&q=75&fit=crop&auto=format",
+  panaji:         "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?w=560&q=75&fit=crop&auto=format",
+  goi:            "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?w=560&q=75&fit=crop&auto=format",
+  /* ── Vijayawada ── */
+  vijayawada:     "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
+  vga:            "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
+  /* ── Visakhapatnam / Vizag ── */
+  visakhapatnam:  "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  vizag:          "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  vtz:            "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  /* ── Agra ── */
+  agra:           "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=560&q=75&fit=crop&auto=format",
+  agr:            "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=560&q=75&fit=crop&auto=format",
+  /* ── Kochi / Cochin ── */
+  kochi:          "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?w=560&q=75&fit=crop&auto=format",
+  cochin:         "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?w=560&q=75&fit=crop&auto=format",
+  cok:            "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?w=560&q=75&fit=crop&auto=format",
+  /* ── Coimbatore ── */
+  coimbatore:     "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  cjb:            "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
+  /* ── Patna ── */
+  patna:          "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
+  pat:            "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
+  /* ── Proddatur ── */
+  proddatur:      "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
+  /* ── Lucknow ── */
+  lucknow:        "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
+  lko:            "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
+  /* ── International ── */
+  dubai:          "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=560&q=75&fit=crop&auto=format",
+  dxb:            "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=560&q=75&fit=crop&auto=format",
+  "new york":     "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=560&q=75&fit=crop&auto=format",
+  nyc:            "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=560&q=75&fit=crop&auto=format",
+  jfk:            "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=560&q=75&fit=crop&auto=format",
+  doha:           "https://images.unsplash.com/photo-1570284613060-bf9d6d580e8c?w=560&q=75&fit=crop&auto=format",
+  doh:            "https://images.unsplash.com/photo-1570284613060-bf9d6d580e8c?w=560&q=75&fit=crop&auto=format",
+  singapore:      "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=560&q=75&fit=crop&auto=format",
+  sin:            "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=560&q=75&fit=crop&auto=format",
+  london:         "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=560&q=75&fit=crop&auto=format",
+  lhr:            "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=560&q=75&fit=crop&auto=format",
+  /* ── Fallbacks ── */
+  bus_default:    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=560&q=75&fit=crop&auto=format",
+  flight_default: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=560&q=75&fit=crop&auto=format",
+  hotel_default:  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=560&q=75&fit=crop&auto=format",
+};
+
+/* Ordered list of city keywords for partial substring matching */
+const CITY_KEYWORD_MAP = [
+  ["hyderabad",      "hyderabad"],
+  ["mumbai",         "mumbai"],
+  ["bombay",         "mumbai"],
+  ["delhi",          "delhi"],
+  ["bengaluru",      "bengaluru"],
+  ["bangalore",      "bengaluru"],
+  ["chennai",        "chennai"],
+  ["madras",         "chennai"],
+  ["kolkata",        "kolkata"],
+  ["calcutta",       "kolkata"],
+  ["pune",           "pune"],
+  ["ahmedabad",      "ahmedabad"],
+  ["jaipur",         "jaipur"],
+  ["goa",            "goa"],
+  ["vijayawada",     "vijayawada"],
+  ["visakhapatnam",  "visakhapatnam"],
+  ["vizag",          "visakhapatnam"],
+  ["agra",           "agra"],
+  ["kochi",          "kochi"],
+  ["cochin",         "kochi"],
+  ["coimbatore",     "coimbatore"],
+  ["patna",          "patna"],
+  ["proddatur",      "proddatur"],
+  ["lucknow",        "lucknow"],
+  ["dubai",          "dubai"],
+  ["new york",       "new york"],
+  ["doha",           "doha"],
+  ["singapore",      "singapore"],
+  ["london",         "london"],
+];
+
+function getCityImage(cityName, fallbackKey = "bus_default") {
+  if (!cityName) return CITY_IMAGES[fallbackKey];
+  const key = String(cityName).toLowerCase().trim();
+
+  /* 1. Exact match (handles full names and IATA codes) */
+  if (CITY_IMAGES[key]) return CITY_IMAGES[key];
+
+  /* 2. Substring match — look for a known keyword inside the input */
+  for (const [keyword, resolved] of CITY_KEYWORD_MAP) {
+    if (key.includes(keyword)) return CITY_IMAGES[resolved];
+  }
+
+  /* 3. Input contains a 3-letter IATA code as a whole word — try it */
+  const iataMatch = key.match(/\b([a-z]{3})\b/);
+  if (iataMatch && CITY_IMAGES[iataMatch[1]]) return CITY_IMAGES[iataMatch[1]];
+
+  return CITY_IMAGES[fallbackKey];
+}
+
+/* ─── 6 distinct hotel-property photos — one per card slot ─────────────── */
+const HOTEL_ROOM_IMAGES = [
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=560&q=80&fit=crop&auto=format", /* pool villa */
+  "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=560&q=80&fit=crop&auto=format", /* luxury bedroom */
+  "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=560&q=80&fit=crop&auto=format", /* hotel lobby */
+  "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=560&q=80&fit=crop&auto=format", /* rooftop pool */
+  "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=560&q=80&fit=crop&auto=format", /* suite room */
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=560&q=80&fit=crop&auto=format", /* resort pool */
+];
+
+/* Map IATA city code → full display name */
+const CITY_CODE_TO_NAME = {
+  hyd: "Hyderabad", bom: "Mumbai", del: "Delhi", blr: "Bengaluru",
+  maa: "Chennai",  ccu: "Kolkata", pnq: "Pune",  amd: "Ahmedabad",
+  jai: "Jaipur",   goi: "Goa",    cok: "Kochi",  lko: "Lucknow",
+  vtz: "Visakhapatnam", vga: "Vijayawada", agr: "Agra",
+  dxb: "Dubai",    doh: "Doha",   sin: "Singapore", lhr: "London",
+};
+
+function normalizeCityName(raw) {
+  if (!raw) return "";
+  const key = String(raw).toLowerCase().trim();
+  return CITY_CODE_TO_NAME[key] || raw.trim();
+}
 
 const AIRLINE_BRANDS = [
   { id: "brand-1", image: indigo, name: "IndiGo", scale: 1.2 },
@@ -1379,6 +1541,18 @@ function resolveFeaturedOfferImageSrc(imageUrl) {
   return toApiUrl(cleanUrl);
 }
 
+function formatExpiryDate(dateStr) {
+  if (!dateStr) return "Limited time offer";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "Limited time offer";
+    const options = { day: "numeric", month: "short", year: "numeric" };
+    return `Valid till ${date.toLocaleDateString("en-US", options)}`;
+  } catch (e) {
+    return "Limited time offer";
+  }
+}
+
 function normalizeFeaturedOffer(offer, index) {
   const id =
     pickOfferValue(offer, ["id", "Id", "offerId", "OfferId", "offerCode", "OfferCode"]) ||
@@ -1467,6 +1641,8 @@ function normalizeFeaturedOffer(offer, index) {
     bookingType,
     isActive: normalizeOfferActiveFlag(isActive),
     couponExpiresAtUtc: pickOfferValue(offer, ["couponExpiresAtUtc", "CouponExpiresAtUtc"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
+    startDateUtc: pickOfferValue(offer, ["startDateUtc", "StartDateUtc"]) || promo?.startDateUtc || promo?.StartDateUtc || null,
+    endDateUtc: pickOfferValue(offer, ["endDateUtc", "EndDateUtc"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
     promotionId,
     promotionCode,
     promotionTitle,
@@ -1569,6 +1745,16 @@ function AutoMarquee({ items, className, duration, renderItem }) {
       return;
     }
 
+    const target = event.target;
+    if (
+      target.tagName === "BUTTON" ||
+      target.tagName === "A" ||
+      target.closest("button") ||
+      target.closest("a")
+    ) {
+      return;
+    }
+
     const node = marqueeRef.current;
     if (!node) {
       return;
@@ -1601,7 +1787,7 @@ function AutoMarquee({ items, className, duration, renderItem }) {
     const now = performance.now();
     const frameElapsed = Math.max(now - state.lastTime, 1);
 
-    if (Math.abs(deltaX) > 4) {
+    if (Math.abs(deltaX) > 15) {
       state.dragged = true;
       draggedClickRef.current = true;
       event.preventDefault();
@@ -1888,7 +2074,7 @@ export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = normalizeHomeTab(searchParams.get("tab"));
 
-  const { setSelectedOffer } = usePromo();
+  const { selectedOffer, setSelectedOffer } = usePromo();
   const aiChatMessagesRef = useRef(null);
   const aiReplyTimerRef = useRef(null);
   const aiChatShellRef = useRef(null);
@@ -1944,15 +2130,51 @@ export default function HomePage() {
   const [featuredOffers, setFeaturedOffers] = useState([]);
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
   const [featuredOffersError, setFeaturedOffersError] = useState("");
+  const [offersFilter, setOffersFilter] = useState("all");
   const [popularRoutes, setPopularRoutes] = useState([]);
   const [popularRoutesLoading, setPopularRoutesLoading] = useState(false);
   const [popularRoutesError, setPopularRoutesError] = useState("");
   const [popularFlights, setPopularFlights] = useState([]);
   const [popularFlightsLoading, setPopularFlightsLoading] = useState(false);
   const [popularFlightsError, setPopularFlightsError] = useState("");
+  const [popularHotels, setPopularHotels] = useState([]);
+  const [popularHotelsLoading, setPopularHotelsLoading] = useState(false);
+  const [popularHotelsError, setPopularHotelsError] = useState("");
   const [isDealsDialogOpen, setIsDealsDialogOpen] = useState(false);
   const [offerForDetailPopup, setOfferForDetailPopup] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  const [dragState, setDragState] = useState({ isDown: false, startX: 0, scrollLeft: 0 });
+  const [clickPrevented, setClickPrevented] = useState(false);
+  const [downCoords, setDownCoords] = useState({ x: 0, y: 0 });
+
+  const handleDragStart = (e) => {
+    const container = e.currentTarget;
+    setDragState({
+      isDown: true,
+      startX: e.pageX - container.offsetLeft,
+      scrollLeft: container.scrollLeft
+    });
+    setDownCoords({ x: e.clientX, y: e.clientY });
+    setClickPrevented(false);
+  };
+
+  const handleDragEnd = () => {
+    setDragState(prev => ({ ...prev, isDown: false }));
+  };
+
+  const handleDragMove = (e) => {
+    if (!dragState.isDown) return;
+    e.preventDefault();
+    const container = e.currentTarget;
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - dragState.startX) * 1.5;
+    container.scrollLeft = dragState.scrollLeft - walk;
+
+    if (Math.abs(e.clientX - downCoords.x) > 5 || Math.abs(e.clientY - downCoords.y) > 5) {
+      setClickPrevented(true);
+    }
+  };
 
   const handleCopyCode = (code) => {
     if (!code) return;
@@ -1977,30 +2199,127 @@ export default function HomePage() {
   };
 
   const renderOfferConditions = (offer) => {
-    if (!offer.conditions || offer.conditions.length === 0) {
-      return <li>Valid on all bookings of this category.</li>;
-    }
-    const mapped = offer.conditions.map((cond, idx) => {
-      if (!cond.isActive) return null;
-      if (cond.conditionType === "SourceCity" && cond.value1) {
-        return <li key={idx}>Only valid for travel originating from <strong>{cond.value1}</strong>.</li>;
-      }
-      if (cond.conditionType === "DestinationCity" && cond.value1) {
-        return <li key={idx}>Only valid for travel to <strong>{cond.value1}</strong>.</li>;
-      }
-      if (cond.conditionType === "TravelDate" && cond.value1) {
-        return <li key={idx}>Valid for travel on or before <strong>{cond.value1}</strong>.</li>;
-      }
-      if (cond.conditionType === "BusType" && cond.value1) {
-        return <li key={idx}>Valid on <strong>{cond.value1}</strong> bus types.</li>;
-      }
-      return null;
-    }).filter(Boolean);
+    const list = [];
+    const formatDate = (dateStr) => {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString();
+    };
 
-    if (mapped.length === 0) {
-      return <li>Valid on all bookings of this category.</li>;
+    // Valid for booking type
+    if (offer.bookingType) {
+      list.push(
+        <li key="booking-type">
+          Valid on <strong>{offer.bookingType.charAt(0).toUpperCase() + offer.bookingType.slice(1)}</strong> bookings.
+        </li>
+      );
     }
-    return mapped;
+
+    // Discount details
+    if (offer.discountValue > 0) {
+      if (offer.discountType === "Percentage" || String(offer.discountType).toLowerCase() === "percentage") {
+        list.push(
+          <li key="discount-val">
+            Get a <strong>{offer.discountValue}%</strong> discount on your booking.
+          </li>
+        );
+      } else {
+        list.push(
+          <li key="discount-val">
+            Get a flat <strong>₹{offer.discountValue}</strong> discount on your booking.
+          </li>
+        );
+      }
+    }
+
+    // Min booking amount
+    if (offer.minBookingAmount > 0) {
+      list.push(
+        <li key="min-booking">
+          Minimum booking amount of <strong>₹{offer.minBookingAmount}</strong> required.
+        </li>
+      );
+    }
+
+    // Max discount amount
+    if (offer.maxDiscountAmount > 0) {
+      list.push(
+        <li key="max-discount">
+          Maximum discount limit is <strong>₹{offer.maxDiscountAmount}</strong>.
+        </li>
+      );
+    }
+
+    // Backend condition rules
+    if (Array.isArray(offer.conditions)) {
+      offer.conditions.forEach((cond, idx) => {
+        if (cond.isActive === false) return;
+        const key = `cond-${idx}`;
+        if (cond.conditionType === "SourceCity" && cond.value1) {
+          if (cond.value2) {
+            list.push(
+              <li key={key}>
+                Valid only for travel originating from <strong>{cond.value1}</strong> or <strong>{cond.value2}</strong>.
+              </li>
+            );
+          } else {
+            list.push(
+              <li key={key}>
+                Valid only for travel originating from <strong>{cond.value1}</strong>.
+              </li>
+            );
+          }
+        } else if (cond.conditionType === "DestinationCity" && cond.value1) {
+          if (cond.value2) {
+            list.push(
+              <li key={key}>
+                Valid only for travel to <strong>{cond.value1}</strong> or <strong>{cond.value2}</strong>.
+              </li>
+            );
+          } else {
+            list.push(
+              <li key={key}>
+                Valid only for travel to <strong>{cond.value1}</strong>.
+              </li>
+            );
+          }
+        } else if (cond.conditionType === "TravelDate" && cond.value1) {
+          if (cond.value2) {
+            list.push(
+              <li key={key}>
+                Valid for travel dates between <strong>{formatDate(cond.value1)}</strong> and <strong>{formatDate(cond.value2)}</strong>.
+              </li>
+            );
+          } else {
+            list.push(
+              <li key={key}>
+                Valid for travel dates on or before <strong>{formatDate(cond.value1)}</strong>.
+              </li>
+            );
+          }
+        } else if (cond.conditionType === "BusType" && cond.value1) {
+          if (cond.value2) {
+            list.push(
+              <li key={key}>
+                Valid on <strong>{cond.value1}</strong> and <strong>{cond.value2}</strong> bus types.
+              </li>
+            );
+          } else {
+            list.push(
+              <li key={key}>
+                Valid only on <strong>{cond.value1}</strong> bus types.
+              </li>
+            );
+          }
+        }
+      });
+    }
+
+    if (list.length === 0) {
+      list.push(<li key="default">Valid on all bookings of this category.</li>);
+    }
+
+    return list;
   };
 
   useEffect(() => {
@@ -2104,54 +2423,32 @@ export default function HomePage() {
                 </button>
               </header>
               <div className="deals-dialog-grid">
-                {featuredOffers.map((offer) => (
+                {featuredOffers.map((offer, index) => (
                   <article
-                    className="offer-card voucher-card"
+                    className={`offer-card bg-${index % 5}`}
                     key={offer.id}
                     onClick={() => {
                       setIsDealsDialogOpen(false);
                       setOfferForDetailPopup(offer);
                     }}
-                    style={{ cursor: "pointer" }}
                   >
-                    <div className="voucher-left">
-                      <div className="voucher-img-container">
-                        <FeaturedOfferImage offer={offer} />
-                      </div>
-                      <div className="voucher-details">
-                        <span className="voucher-category">{offer.bookingType || "Offer"}</span>
-                        <h3>{offer.title}</h3>
-                        <p>{offer.description || offer.subtitle}</p>
-                      </div>
-                    </div>
-                    <div className="voucher-divider">
-                      <span className="voucher-cutout top"></span>
-                      <span className="voucher-dashed-line"></span>
-                      <span className="voucher-cutout bottom"></span>
-                    </div>
-                    <div className="voucher-right">
-                      {offer.couponCode ? (
-                        <div className="voucher-code-badge">
-                          <span className="badge-title">CODE</span>
-                          <span className="badge-value">{offer.couponCode}</span>
-                        </div>
-                      ) : (
-                        <div className="voucher-code-badge promo">
-                          <span className="badge-title">OFFER</span>
-                          <span className="badge-value">ACTIVE</span>
+                    <div className="offer-card-left">
+                      <span className="offer-card-badge">
+                        {offer.bookingType ? `${offer.bookingType} Offer` : "Special Offer"}
+                      </span>
+                      <h3 className="offer-card-title">{offer.title}</h3>
+                      <span className="offer-card-validity">
+                        {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                      </span>
+                      {offer.couponCode && (
+                        <div className="offer-card-coupon">
+                          <Tag size={12} className="coupon-icon" />
+                          <span className="coupon-text">{offer.couponCode}</span>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        className="voucher-details-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsDealsDialogOpen(false);
-                          setOfferForDetailPopup(offer);
-                        }}
-                      >
-                        Details
-                      </button>
+                    </div>
+                    <div className="offer-card-right-img">
+                      <FeaturedOfferImage offer={offer} />
                     </div>
                   </article>
                 ))}
@@ -2273,6 +2570,17 @@ export default function HomePage() {
     [],
   );
 
+  // Sync offersFilter with activeTab when activeTab changes
+  useEffect(() => {
+    if (activeTab === "buses") {
+      setOffersFilter("bus");
+    } else if (activeTab === "hotels") {
+      setOffersFilter("hotel");
+    } else if (activeTab === "flights") {
+      setOffersFilter("flight");
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -2281,13 +2589,7 @@ export default function HomePage() {
       setFeaturedOffersError("");
 
       try {
-        const bookingType =
-          activeTab === "buses"
-            ? "Bus"
-            : activeTab === "hotels"
-              ? "Hotel"
-              : "Flight";
-        const response = await getActiveOffers(bookingType);
+        const response = await getPublicFeaturedOffers();
         const activeOffers = getFeaturedOffersPayload(response)
           .map(normalizeFeaturedOffer)
           .filter((offer) => offer.isActive);
@@ -2310,7 +2612,7 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -2320,18 +2622,31 @@ export default function HomePage() {
       setPopularRoutesError("");
 
       try {
-        const routes = await getPopularBusRoutesFromSearchHistory({ limit: 12 });
+        const routes = await listHotBusRoutes({ metric: "score" });
 
         if (isMounted) {
           if (routes && routes.length > 0) {
-            setPopularRoutes(routes);
+            const mapped = routes.map((route, index) => {
+              const from = normalizeCityName(route.fromCity) || "Hyderabad";
+              const to   = normalizeCityName(route.toCity)   || "Bengaluru";
+              const searches =
+                Number(route.searchCount || route.bookingCount || route.score) ||
+                20 - index;
+              return {
+                id: route.routeId || `bus-hot-${index}`,
+                fromCity: from,
+                toCity: to,
+                searches,
+              };
+            });
+            setPopularRoutes(mapped);
           } else {
-            setPopularRoutes(FALLBACK_BUS_ROUTES);
+            setPopularRoutes([]);
           }
         }
       } catch (error) {
         if (isMounted) {
-          setPopularRoutes(FALLBACK_BUS_ROUTES);
+          setPopularRoutes([]);
         }
       } finally {
         if (isMounted) {
@@ -2358,8 +2673,8 @@ export default function HomePage() {
         if (isMounted) {
           if (routes && routes.length > 0) {
             const mapped = routes.map((route, index) => {
-              const from = route.fromCity || "Hyderabad";
-              const to = route.toCity || "Bengaluru";
+              const from = normalizeCityName(route.fromCity) || "Hyderabad";
+              const to   = normalizeCityName(route.toCity)   || "Bengaluru";
               const searches =
                 Number(route.searchCount || route.bookingCount || route.score) ||
                 620 + index * 115;
@@ -2374,12 +2689,12 @@ export default function HomePage() {
             });
             setPopularFlights(mapped);
           } else {
-            setPopularFlights(POPULAR_FLIGHTS);
+            setPopularFlights([]);
           }
         }
       } catch (error) {
         if (isMounted) {
-          setPopularFlights(POPULAR_FLIGHTS);
+          setPopularFlights([]);
         }
       } finally {
         if (isMounted) {
@@ -2393,6 +2708,79 @@ export default function HomePage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPopularHotels = async () => {
+      setPopularHotelsLoading(true);
+      setPopularHotelsError("");
+
+      /* Fetch from 4 cities in parallel — gives variety across cards */
+      const HOTEL_CITIES = [
+        { code: "HYD", name: "Hyderabad" },
+        { code: "BLR", name: "Bengaluru" },
+        { code: "DEL", name: "Delhi" },
+        { code: "BOM", name: "Mumbai" },
+      ];
+
+      try {
+        const checkIn  = getDateInputValue(0);
+        const checkOut = getDateInputValue(1);
+
+        const results = await Promise.allSettled(
+          HOTEL_CITIES.map(({ code }) =>
+            searchHotels({ city: code, checkInDate: checkIn, checkOutDate: checkOut, adults: 2, rooms: 1 })
+          )
+        );
+
+        if (!isMounted) return;
+
+        /* Take the first result from each city, flatten, cap at 6 */
+        const combined = [];
+        results.forEach((res, cityIndex) => {
+          if (res.status === "fulfilled" && res.value?.length > 0) {
+            const cityName = HOTEL_CITIES[cityIndex].name;
+            /* take up to 2 hotels per city */
+            res.value.slice(0, 2).forEach((hotel) => {
+              const baseOffer = hotel.offers?.[0] || {};
+              const rawCity   = hotel.city || hotel.cityCode || HOTEL_CITIES[cityIndex].code;
+              combined.push({
+                id:         hotel.hotelId || `hotel-${cityIndex}-${combined.length}`,
+                city:       normalizeCityName(rawCity) || cityName,
+                name:       hotel.name,
+                summary:    hotel.roomDescription || hotel.address || "Premium stay with breakfast options.",
+                searches:   1420 - combined.length * 110,
+                price:      baseOffer.price ? baseOffer.price.toLocaleString("en-IN") : "3,499",
+                raw:        hotel,
+              });
+            });
+          }
+        });
+
+        if (combined.length > 0) {
+          /* Assign a unique hotel-property image per card slot */
+          const withImages = combined.slice(0, 6).map((h, i) => ({
+            ...h,
+            hotelImage: HOTEL_ROOM_IMAGES[i % HOTEL_ROOM_IMAGES.length],
+          }));
+          setPopularHotels(withImages);
+        } else {
+          setPopularHotels([]);
+        }
+      } catch (error) {
+        if (isMounted) setPopularHotels([]);
+      } finally {
+        if (isMounted) {
+          setPopularHotelsLoading(false);
+        }
+      }
+    };
+
+    loadPopularHotels();
+    return () => { isMounted = false; };
+  }, []);
+
 
   const handleSwapFlights = () => {
     setFlightFrom(flightTo);
@@ -3104,6 +3492,15 @@ export default function HomePage() {
     </div>
   );
 
+  const filteredOffers = featuredOffers.filter((offer) => {
+    if (offersFilter === "all") return true;
+    const type = (offer.bookingType || "").toLowerCase();
+    if (offersFilter === "flight") return type === "flight" || type === "flights";
+    if (offersFilter === "bus") return type === "bus" || type === "buses";
+    if (offersFilter === "hotel") return type === "hotel" || type === "hotels";
+    return true;
+  });
+
   const homeContent = HOME_MODE_CONTENT[activeTab] || HOME_MODE_CONTENT.flights;
   const ActiveAiIcon =
     activeTab === "buses" ? Bus : activeTab === "hotels" ? BedDouble : Plane;
@@ -3112,31 +3509,177 @@ export default function HomePage() {
   return (
     <div className={`homepage homepage-${homeContent.mode}`}>
       <style>{`
+        /* ─── Global Homepage Spacing Overrides ────────────────── */
+        .homepage .hero-section {
+          padding-bottom: 0 !important;
+        }
+        .homepage .offers-section {
+          margin-top: 0 !important;
+        }
+
+        /* ─── Transparent Search Container with Visible Fields & Labels ─── */
+        .homepage .search-panel {
+          background: rgba(255, 255, 255, 0.12) !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.25) !important;
+          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Inactive Tab bar background overlay adjustment */
+        .homepage .search-panel .tabs {
+          background: rgba(255, 255, 255, 0.15) !important;
+          border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* Inactive main tabs style overrides */
+        .homepage .search-panel .tab {
+          color: #ffffff !important;
+          opacity: 0.8 !important;
+          transition: all 0.2s ease !important;
+        }
+        .homepage .search-panel .tab:hover {
+          opacity: 1 !important;
+          background: rgba(255, 255, 255, 0.1) !important;
+        }
+        .homepage .search-panel .tab.active {
+          opacity: 1 !important;
+          background: #dc1e26 !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
+        }
+
+        /* Visible field labels */
+        .homepage .search-panel .field label,
+        .homepage .search-panel .traveller-field label,
+        .homepage .search-panel .class-field label {
+          color: #dc1e26 !important;
+          font-weight: 800 !important;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7) !important;
+        }
+
+        /* Make fields (inputs) solid white for maximum legibility */
+        .homepage .search-panel .control-wrap,
+        .homepage .search-panel .traveller-trigger,
+        .homepage .search-panel .class-control-wrap {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Inactive trip-type chips contrast boost */
+        .homepage .search-panel .trip-chip {
+          background: rgba(255, 255, 255, 0.85) !important;
+          color: #1f2937 !important;
+          border: 1px solid rgba(255, 255, 255, 0.9) !important;
+          font-weight: 700 !important;
+        }
+        .homepage .search-panel .trip-chip.active {
+          background: #dc1e26 !important;
+          color: #ffffff !important;
+          border-color: #dc1e26 !important;
+        }
+
+        /* ─── Offers Filter Tabs ─────────────────────────── */
+        .offers-filter-tabs {
+          display: inline-flex;
+          align-items: center;
+          background: rgba(233, 241, 252, 0.6);
+          border: 1px solid #c7d9f1;
+          border-radius: 99px;
+          padding: 4px;
+          gap: 4px;
+          margin: 0 0 10px 0;
+          align-self: flex-start;
+        }
+
+        .offers-filter-tab {
+          border: 0;
+          outline: 0;
+          background: transparent;
+          border-radius: 99px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #2c486c;
+          padding: 6px 16px;
+          min-height: 30px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .offers-filter-tab:hover {
+          color: #1e3c64;
+          background: rgba(255, 255, 255, 0.6);
+        }
+
+        .offers-filter-tab.active {
+          background: var(--primary, #dc1e26) !important;
+          color: #ffffff !important;
+          box-shadow: 0 2px 8px rgba(220, 30, 38, 0.2) !important;
+        }
+
         /* Custom Popular Route Card Embedded Styles */
         .pop-route-card {
            box-sizing: border-box;
            background: #ffffff;
            border: 1px solid rgba(225, 230, 235, 0.9);
            border-radius: 16px;
-           padding: 16px;
+           overflow: hidden;
            width: 280px;
            display: flex;
            flex-direction: column;
-           box-shadow: 0 4px 12px rgba(6, 24, 44, 0.04);
-           transition: transform 0.2s, box-shadow 0.2s;
+           box-shadow: 0 4px 12px rgba(6, 24, 44, 0.06);
+           transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s cubic-bezier(0.4,0,0.2,1);
            text-align: left;
+           cursor: pointer;
         }
 
         .pop-route-card:hover {
-           transform: translateY(-2px);
-           box-shadow: 0 6px 18px rgba(6, 24, 44, 0.08);
+           transform: translateY(-4px);
+           box-shadow: 0 12px 28px rgba(6, 24, 44, 0.13);
         }
 
-        .pop-route-top-row {
+        /* Image header — flush, no side gaps */
+        .pop-route-img-wrap {
+           width: 100%;
+           height: 160px;
+           overflow: hidden;
+           flex-shrink: 0;
+           position: relative;
+           margin: 0;
+           padding: 0;
+           display: block;
+        }
+
+        .pop-route-img-wrap img {
+           width: 100%;
+           height: 100%;
+           object-fit: cover;
+           object-position: center;
+           display: block;
+           transition: transform 0.35s ease;
+        }
+
+        .pop-route-card:hover .pop-route-img-wrap img {
+           transform: scale(1.06);
+        }
+
+        /* Badge row overlaid on image bottom */
+        .pop-route-img-overlay {
+           position: absolute;
+           bottom: 0;
+           left: 0;
+           right: 0;
+           padding: 28px 12px 10px;
+           background: linear-gradient(to top, rgba(10,15,25,0.72) 0%, transparent 100%);
            display: flex;
            justify-content: space-between;
-           align-items: center;
-           width: 100%;
+           align-items: flex-end;
+           pointer-events: none;
         }
 
         .pop-route-tag-search {
@@ -3144,26 +3687,34 @@ export default function HomePage() {
            color: #ffffff;
            padding: 3px 10px;
            border-radius: 999px;
-           font-size: 0.65rem;
+           font-size: 0.62rem;
            font-weight: 800;
            letter-spacing: 0.04em;
         }
 
         .pop-route-tag-searches {
-           background: #fdf2e9;
-           color: #b73e21;
-           border: 1px solid #f9dbce;
+           background: rgba(255,255,255,0.15);
+           color: #ffffff;
+           border: 1px solid rgba(255,255,255,0.35);
            padding: 2px 8px;
            border-radius: 999px;
-           font-size: 0.65rem;
+           font-size: 0.62rem;
            font-weight: 700;
+           backdrop-filter: blur(4px);
+        }
+
+        /* Card body */
+        .pop-route-body {
+           padding: 14px 14px 0;
+           display: flex;
+           flex-direction: column;
+           flex: 1;
         }
 
         .pop-route-cities-row {
            display: flex;
            align-items: center;
            justify-content: space-between;
-           margin-top: 16px;
            width: 100%;
            gap: 8px;
         }
@@ -3206,7 +3757,7 @@ export default function HomePage() {
         .pop-route-trending {
            color: #7a8c9e;
            font-size: 0.72rem;
-           margin-top: 10px;
+           margin-top: 8px;
            font-weight: 500;
         }
 
@@ -3214,10 +3765,10 @@ export default function HomePage() {
            display: flex;
            justify-content: space-between;
            align-items: center;
-           margin-top: 16px;
+           margin-top: 12px;
            width: 100%;
            border-top: 1px dashed rgba(225, 230, 235, 0.8);
-           padding-top: 12px;
+           padding-top: 10px;
         }
 
         .pop-route-meta-left {
@@ -3234,9 +3785,9 @@ export default function HomePage() {
            font-size: 0.8rem;
            letter-spacing: 0.06em;
            border: none;
-           border-radius: 8px;
+           border-radius: 0 0 16px 16px;
            width: 100%;
-           padding: 10px 0;
+           padding: 11px 0;
            cursor: pointer;
            text-align: center;
            margin-top: 14px;
@@ -3254,328 +3805,317 @@ export default function HomePage() {
          .popular-routes-marquee .marquee-slide {
             width: 300px;
             padding: 12px 20px 12px 0;
+         }          /* Custom Offers Scrollable Row and Selected Highlighting */
+          .offers-scroll-row {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 12px 4px 20px;
+            scroll-behavior: smooth;
+          }
+          .offers-scroll-row::-webkit-scrollbar {
+            height: 8px;
+          }
+          .offers-scroll-row::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 10px;
+          }
+          .offers-scroll-row::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+          }
+          .offers-scroll-row::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.2);
+          }
+                /* ─── Pastel Offer Card ───────────────────────────── */
+          .homepage .offer-card,
+          .deals-dialog-grid .offer-card {
+            position: relative;
+            min-width: 255px;
+            max-width: 255px;
+            height: auto !important;
+            min-height: auto !important;
+            flex-shrink: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(15, 23, 42, 0.03);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+          }
+          .homepage .offer-card:hover,
+          .deals-dialog-grid .offer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(15, 23, 42, 0.06);
+          }
+
+          /* Pastel backgrounds with !important to override main theme values */
+          .homepage .offer-card.bg-0, .deals-dialog-grid .offer-card.bg-0 { background: #FFF7ED !important; border-color: #FED7AA !important; }
+          .homepage .offer-card.bg-1, .deals-dialog-grid .offer-card.bg-1 { background: #F0FDF4 !important; border-color: #BBF7D0 !important; }
+          .homepage .offer-card.bg-2, .deals-dialog-grid .offer-card.bg-2 { background: #FFF1F2 !important; border-color: #FECDD3 !important; }
+          .homepage .offer-card.bg-3, .deals-dialog-grid .offer-card.bg-3 { background: #ECFEFF !important; border-color: #A5F3FC !important; }
+          .homepage .offer-card.bg-4, .deals-dialog-grid .offer-card.bg-4 { background: #FEFCE8 !important; border-color: #FEF08A !important; }
+
+          .offer-card-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+            margin-right: 8px;
+            height: auto;
+            z-index: 2;
+            pointer-events: none;
+          }
+
+          .offer-card-badge {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #4b5563;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 1px 5px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+
+          .offer-card-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #1f2937 !important;
+            margin: 1px 0 0 0;
+            line-height: 1.15;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-align: left;
+            text-shadow: none !important;
+          }
+
+          .offer-card-validity {
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-top: 1px;
+            margin-bottom: 0;
+          }
+
+          .offer-card-coupon {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            background: #ffffff;
+            border: 1px dashed #d1d5db;
+            padding: 1px 4px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            margin-top: 2px;
+          }
+
+          .coupon-icon {
+            color: #ef4444;
+          }
+
+          .coupon-text {
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: #ef4444;
+            letter-spacing: 0.05em;
+          }
+
+          /* Decorative image positioned adjacent (relative flex column) */
+          .offer-card-right-img {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+          }
+
+         .offer-card-right-img img {
+           width: 100%;
+           height: 100%;
+           object-fit: cover;
          }
 
-         /* Custom Offers Scrollable Row and Selected Highlighting */
-         .offers-scroll-row {
+         .offer-card-right-img .offer-image-placeholder {
+           width: 100%;
+           height: 100%;
            display: flex;
-           gap: 24px;
-           overflow-x: auto;
-           padding: 12px 4px 20px;
-           scroll-behavior: smooth;
+           align-items: center;
+           justify-content: center;
+           font-size: 0.55rem;
+           font-weight: 800;
+           color: #ef4444;
+           background: rgba(255, 255, 255, 0.8);
          }
-         .offers-scroll-row::-webkit-scrollbar {
-           height: 8px;
+
+         /* Deals dialog grid styling overrides */
+         .deals-dialog-grid .offer-card {
+           min-width: 0;
+           max-width: none;
+           height: auto !important;
+           min-height: auto !important;
          }
-         .offers-scroll-row::-webkit-scrollbar-track {
-           background: rgba(0, 0, 0, 0.03);
-           border-radius: 10px;
-         }
-         .offers-scroll-row::-webkit-scrollbar-thumb {
-           background: rgba(0, 0, 0, 0.1);
-           border-radius: 10px;
-         }
-         .offers-scroll-row::-webkit-scrollbar-thumb:hover {
-           background: rgba(0, 0, 0, 0.2);
-         }
-         .offer-card {
-           position: relative;
-           min-width: 320px;
-           max-width: 320px;
-           flex-shrink: 0;
-           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-         }
-         .offer-card-selected {
-           border: 2px solid #10b981 !important;
-           box-shadow: 0 12px 24px rgba(16, 185, 129, 0.15) !important;
-           transform: translateY(-2px);
-         }
-         .offer-badge-applied {
-           position: absolute;
-           top: 12px;
-           right: 12px;
-           background: #10b981;
-           color: #ffffff;
-           font-size: 0.75rem;
-           font-weight: 700;
-           padding: 4px 10px;
-           border-radius: 999px;
-           box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-           z-index: 10;
-         }
-         /* Skeleton loaders style */
+
+         /* ─── Skeleton Loader ──────────────────────────────── */
          .offer-skeleton-card {
-           min-width: 320px;
-           height: 380px;
-           background: #ffffff;
-           border: 1px solid rgba(225, 230, 235, 0.9);
-           border-radius: 16px;
-           padding: 16px;
+           min-width: 340px;
+           max-width: 340px;
+           height: 150px;
+           flex-shrink: 0;
            display: flex;
-           flex-direction: column;
-           gap: 12px;
-           box-shadow: 0 4px 12px rgba(6, 24, 44, 0.04);
+           flex-direction: row;
+           background: #ffffff;
+           border: 1px solid #e8ecf1;
+           border-radius: 14px;
+           overflow: hidden;
+           box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
          }
-         .skeleton-image {
-           height: 160px;
-           background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+         .skeleton-thumb {
+           width: 120px;
+           flex-shrink: 0;
+           background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
            background-size: 400% 100%;
            animation: skeleton-loading 1.4s ease infinite;
-           border-radius: 12px;
+         }
+         .skeleton-body {
+           flex: 1;
+           padding: 14px 16px;
+           display: flex;
+           flex-direction: column;
+           gap: 8px;
+         }
+         .skeleton-badge {
+           height: 14px;
+           width: 50px;
+           background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+           background-size: 400% 100%;
+           animation: skeleton-loading 1.4s ease infinite;
+           border-radius: 4px;
          }
          .skeleton-title {
-           height: 24px;
-           width: 70%;
-           background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+           height: 16px;
+           width: 80%;
+           background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
            background-size: 400% 100%;
            animation: skeleton-loading 1.4s ease infinite;
            border-radius: 4px;
          }
          .skeleton-desc {
-           height: 16px;
-           width: 90%;
-           background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+           height: 12px;
+           width: 60%;
+           background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
            background-size: 400% 100%;
            animation: skeleton-loading 1.4s ease infinite;
            border-radius: 4px;
          }
-         .skeleton-button {
-           height: 40px;
-           width: 100%;
-           background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 37%, #f2f2f2 63%);
+         .skeleton-code {
+           margin-top: auto;
+           height: 22px;
+           width: 90px;
+           background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
            background-size: 400% 100%;
            animation: skeleton-loading 1.4s ease infinite;
-           border-radius: 8px;
-           margin-top: auto;
+           border-radius: 4px;
          }
-          @keyframes skeleton-loading {
-            0% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: 0% 50%;
-            }
-          }
+         @keyframes skeleton-loading {
+           0% {
+             background-position: 100% 50%;
+           }
+           100% {
+             background-position: 0% 50%;
+           }
+         }
 
-          /* Voucher Card Design Styles */
-          .offer-card.voucher-card {
-            min-width: 440px;
-            max-width: 440px;
-            height: 160px;
-            min-height: 160px !important;
-            gap: 0 !important;
-            display: flex;
-            flex-direction: row;
-            align-items: stretch;
-            background: #ffffff !important;
-            border: 1px solid #cedcee !important;
-            border-radius: 16px !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            box-shadow: 0 10px 25px rgba(13, 74, 83, 0.04) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          /* Deals Dialog Backdrop & Modal Styles */
+          .deals-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            animation: fade-in-backdrop 0.25s ease both;
           }
-
-          .offer-card.voucher-card:hover {
-            transform: translateY(-4px) !important;
-            box-shadow: 0 15px 35px rgba(13, 74, 83, 0.08) !important;
-            border-color: #c0d1e5 !important;
-          }
-
-          .deals-dialog-grid .offer-card.voucher-card {
-            min-width: 100%;
-            max-width: 100%;
-          }
-
-          .voucher-left {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 16px;
-            overflow: hidden;
-            text-align: left;
-          }
-
-          .voucher-img-container {
-            width: 84px;
-            height: 84px;
-            border-radius: 10px;
-            overflow: hidden;
-            flex-shrink: 0;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            background: #f3f4f6;
-          }
-
-          .voucher-img-container img {
+          .deals-dialog {
+            background: #ffffff;
+            border-radius: 24px;
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-
-          .voucher-details {
-            flex: 1;
-            min-width: 0;
+            max-width: 780px;
+            max-height: 80vh;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            animation: slide-up-modal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
             display: flex;
             flex-direction: column;
-            gap: 4px;
           }
-
-          .voucher-category {
-            font-size: 0.65rem;
+          .deals-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            position: relative;
+          }
+          .deals-dialog-header h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+          }
+          .deals-dialog-header .section-kicker {
+            font-size: 0.7rem;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             color: var(--primary, #dc1e26);
+            margin-bottom: 2px;
+            display: block;
           }
-
-          .voucher-details h3 {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #1a2b49;
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .voucher-details p {
-            font-size: 0.8rem;
-            color: #597191;
-            margin: 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
-          }
-
-          .voucher-divider {
-            width: 20px;
-            position: relative;
+          .deals-dialog-close {
+            background: #f1f5f9 !important;
+            border: none !important;
+            color: #64748b !important;
+            padding: 8px 16px !important;
+            border-radius: 50px !important;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: visible;
-          }
-
-          .voucher-dashed-line {
-            width: 0;
-            height: calc(100% - 24px);
-            border-left: 1.5px dashed #cddcee;
-          }
-
-          .voucher-cutout {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 1px solid #cedcee;
-            z-index: 5;
-            box-sizing: border-box;
-          }
-
-          /* Cutouts on homepage section need to match page background */
-          .voucher-cutout.top {
-            top: -11px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #f5f8fd; /* matches page gradient */
-            border-top-color: transparent !important;
-          }
-
-          .voucher-cutout.bottom {
-            bottom: -11px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #f5f8fd; /* matches page gradient */
-            border-bottom-color: transparent !important;
-          }
-
-          /* Cutouts in all deals dialog need to match dialog background (white) */
-          .deals-dialog-grid .voucher-cutout.top {
-            background: #ffffff !important;
-            border-top-color: transparent !important;
-          }
-          .deals-dialog-grid .voucher-cutout.bottom {
-            background: #ffffff !important;
-            border-bottom-color: transparent !important;
-          }
-
-          .voucher-right {
-            width: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 16px;
-            flex-shrink: 0;
-            border-top-right-radius: 16px;
-            border-bottom-right-radius: 16px;
-            background: #fafbfe;
-            border-left: 1px solid rgba(205, 220, 238, 0.3);
-          }
-
-          .voucher-code-badge {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #edf3fc;
-            border: 1px dashed #b9cfe8;
-            border-radius: 8px;
-            padding: 6px 10px;
-            width: 100%;
-          }
-
-          .voucher-code-badge.promo {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-          }
-
-          .voucher-code-badge.promo .badge-title {
-            color: #047857;
-          }
-
-          .voucher-code-badge.promo .badge-value {
-            color: #065f46;
-          }
-
-          .badge-title {
-            font-size: 0.55rem;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            color: #597191;
-          }
-
-          .badge-value {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #1a2b49;
-            margin-top: 1px;
-          }
-
-          .voucher-details-btn {
-            width: 100%;
-            background: #edf2f9 !important;
-            border: 1px solid #cedcee !important;
-            color: #2c486c !important;
+            gap: 6px;
+            cursor: pointer;
             font-weight: 700 !important;
             font-size: 0.75rem !important;
-            padding: 6px 0 !important;
-            border-radius: 8px !important;
-            cursor: pointer;
             transition: all 0.2s ease !important;
           }
-
-          .voucher-details-btn:hover {
-            background: var(--primary, #dc1e26) !important;
-            border-color: var(--primary, #dc1e26) !important;
-            color: #ffffff !important;
+          .deals-dialog-close:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
           }
+          .deals-dialog-grid {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            overflow-y: auto;
+            max-height: calc(80vh - 80px);
+          }
+
 
           /* Details Modal Backdrop */
           .offer-detail-backdrop {
@@ -4236,14 +4776,53 @@ export default function HomePage() {
             View all deals
           </button>
         </div>
+
+        <div className="offers-filter-tabs">
+          <button
+            type="button"
+            className={`offers-filter-tab ${offersFilter === "all" ? "active" : ""}`}
+            onClick={() => setOffersFilter("all")}
+          >
+            <Tag size={13} />
+            <span>All Deals</span>
+          </button>
+          <button
+            type="button"
+            className={`offers-filter-tab ${offersFilter === "flight" ? "active" : ""}`}
+            onClick={() => setOffersFilter("flight")}
+          >
+            <Plane size={13} />
+            <span>Flights</span>
+          </button>
+          <button
+            type="button"
+            className={`offers-filter-tab ${offersFilter === "bus" ? "active" : ""}`}
+            onClick={() => setOffersFilter("bus")}
+          >
+            <Bus size={13} />
+            <span>Buses</span>
+          </button>
+          <button
+            type="button"
+            className={`offers-filter-tab ${offersFilter === "hotel" ? "active" : ""}`}
+            onClick={() => setOffersFilter("hotel")}
+          >
+            <Building2 size={13} />
+            <span>Hotels</span>
+          </button>
+        </div>
+
         {featuredOffersLoading ? (
           <div className="offers-scroll-row">
             {[1, 2, 3].map((n) => (
               <div key={n} className="offer-skeleton-card">
-                <div className="skeleton-image"></div>
-                <div className="skeleton-title"></div>
-                <div className="skeleton-desc"></div>
-                <div className="skeleton-button"></div>
+                <div className="skeleton-thumb"></div>
+                <div className="skeleton-body">
+                  <div className="skeleton-badge"></div>
+                  <div className="skeleton-title"></div>
+                  <div className="skeleton-desc"></div>
+                  <div className="skeleton-code"></div>
+                </div>
               </div>
             ))}
           </div>
@@ -4251,54 +4830,35 @@ export default function HomePage() {
           <div className="offers-error">{featuredOffersError}</div>
         ) : featuredOffers.length === 0 ? (
           <div className="offers-empty">No featured offers available.</div>
+        ) : filteredOffers.length === 0 ? (
+          <div className="offers-empty">No featured offers available for this category.</div>
         ) : (
           <div className="offers-scroll-row">
-            {featuredOffers.map((offer) => (
-                  <article
-                    className="offer-card voucher-card"
-                    key={offer.id}
-                    onClick={() => setOfferForDetailPopup(offer)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="voucher-left">
-                      <div className="voucher-img-container">
-                        <FeaturedOfferImage offer={offer} />
-                      </div>
-                      <div className="voucher-details">
-                        <span className="voucher-category">{offer.bookingType || "Offer"}</span>
-                        <h3>{offer.title}</h3>
-                        <p>{offer.description || offer.subtitle}</p>
-                      </div>
+            {filteredOffers.map((offer, index) => (
+              <article
+                className={`offer-card bg-${index % 5}`}
+                key={offer.id}
+                onClick={() => setOfferForDetailPopup(offer)}
+              >
+                <div className="offer-card-left">
+                  <span className="offer-card-badge">
+                    {offer.bookingType ? `${offer.bookingType} Offer` : "Special Offer"}
+                  </span>
+                  <h3 className="offer-card-title">{offer.title}</h3>
+                  <span className="offer-card-validity">
+                    {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                  </span>
+                  {offer.couponCode && (
+                    <div className="offer-card-coupon">
+                      <Tag size={12} className="coupon-icon" />
+                      <span className="coupon-text">{offer.couponCode}</span>
                     </div>
-                    <div className="voucher-divider">
-                      <span className="voucher-cutout top"></span>
-                      <span className="voucher-dashed-line"></span>
-                      <span className="voucher-cutout bottom"></span>
-                    </div>
-                    <div className="voucher-right">
-                      {offer.couponCode ? (
-                        <div className="voucher-code-badge">
-                          <span className="badge-title">CODE</span>
-                          <span className="badge-value">{offer.couponCode}</span>
-                        </div>
-                      ) : (
-                        <div className="voucher-code-badge promo">
-                          <span className="badge-title">OFFER</span>
-                          <span className="badge-value">ACTIVE</span>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        className="voucher-details-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOfferForDetailPopup(offer);
-                        }}
-                      >
-                        Details
-                      </button>
-                    </div>
-                  </article>
+                  )}
+                </div>
+                <div className="offer-card-right-img">
+                  <FeaturedOfferImage offer={offer} />
+                </div>
+              </article>
             ))}
           </div>
         )}
@@ -4359,48 +4919,29 @@ export default function HomePage() {
                 role="button"
                 tabIndex={0}
                 onClick={() => handlePopularRouteBooking(route)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    handlePopularRouteBooking(route);
-                  }
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
               >
-                <div className="pop-route-top-row">
-                  <span className="pop-route-tag-search">SEARCH</span>
-                  <span className="pop-route-tag-searches">{route.searches.toLocaleString()} SEARCHES</span>
-                </div>
-                
-                <div className="pop-route-cities-row">
-                  <span className="pop-route-city from" title={route.fromCity}>
-                    {route.fromCity}
-                  </span>
-                  <div className="pop-route-icon-circle">
-                    <Bus size={13} />
+                <div className="pop-route-img-wrap">
+                  <img
+                    src={getCityImage(route.toCity, "bus_default")}
+                    alt={`${route.fromCity} to ${route.toCity}`}
+                    loading="lazy"
+                    onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.bus_default; }}
+                  />
+                  <div className="pop-route-img-overlay">
+                    <span className="pop-route-tag-search">BUS</span>
                   </div>
-                  <span className="pop-route-city to" title={route.toCity}>
-                    {route.toCity}
-                  </span>
                 </div>
-
-                <div className="pop-route-trending">
-                  Trending from bus search history
+                <div className="pop-route-body">
+                  <div className="pop-route-cities-row">
+                    <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
+                    <div className="pop-route-icon-circle"><Bus size={13} /></div>
+                    <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
+                  </div>
                 </div>
-
-                <div className="pop-route-meta-row">
-                  <span className="pop-route-meta-left">Recently searched</span>
-                </div>
-
-                <button
-                  type="button"
-                  className="pop-route-book-btn"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handlePopularRouteBooking(route);
-                  }}
-                >
-                  BOOK BUS
-                </button>
+                <button type="button" className="pop-route-book-btn"
+                  onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
+                >BOOK BUS</button>
               </article>
             )}
           />
@@ -4477,41 +5018,34 @@ export default function HomePage() {
             className="popular-routes-marquee flight-routes-marquee"
             duration={38}
             renderItem={(flight) => (
-              <article className="pop-route-card pop-flight-card" key={flight.id}>
-                <div className="pop-route-top-row">
-                  <span className="pop-route-tag-search">SEARCH</span>
-                  <span className="pop-route-tag-searches">
-                    {(flight.searches || 0).toLocaleString()} SEARCHES
-                  </span>
-                </div>
-
-                <div className="pop-route-cities-row">
-                  <span className="pop-route-city from" title={flight.fromCity}>
-                    {flight.fromCity}
-                  </span>
-                  <div className="pop-route-icon-circle">
-                    <Plane size={13} />
+              <article
+                className="pop-route-card pop-flight-card"
+                key={flight.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => handlePopularFlightBooking(flight)}
+              >
+                <div className="pop-route-img-wrap">
+                  <img
+                    src={getCityImage(flight.toCity, "flight_default")}
+                    alt={`${flight.fromCity} to ${flight.toCity}`}
+                    loading="lazy"
+                    onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.flight_default; }}
+                  />
+                  <div className="pop-route-img-overlay">
+                    <span className="pop-route-tag-search">FLIGHT</span>
                   </div>
-                  <span className="pop-route-city to" title={flight.toCity}>
-                    {flight.toCity}
-                  </span>
                 </div>
-
-                <div className="pop-route-trending">
-                  Trending from flight search history
+                <div className="pop-route-body">
+                  <div className="pop-route-cities-row">
+                    <span className="pop-route-city from" title={flight.fromCity}>{flight.fromCity}</span>
+                    <div className="pop-route-icon-circle"><Plane size={13} /></div>
+                    <span className="pop-route-city to" title={flight.toCity}>{flight.toCity}</span>
+                  </div>
                 </div>
-
-                <div className="pop-route-meta-row">
-                  <span className="pop-route-meta-left">Recently searched</span>
-                </div>
-
-                <button
-                  type="button"
-                  className="pop-route-book-btn"
-                  onClick={() => handlePopularFlightBooking(flight)}
-                >
-                  BOOK FLIGHT
-                </button>
+                <button type="button" className="pop-route-book-btn"
+                  onClick={(e) => { e.stopPropagation(); handlePopularFlightBooking(flight); }}
+                >BOOK FLIGHT</button>
               </article>
             )}
           />
@@ -4555,45 +5089,49 @@ export default function HomePage() {
           </div>
         </div>
 
-        <AutoMarquee
-          items={POPULAR_HOTELS}
-          className="popular-routes-marquee hotel-routes-marquee"
-          duration={38}
-          renderItem={(hotel) => (
-            <article className="pop-route-card pop-hotel-card" key={hotel.id}>
-              <div className="pop-route-top-row">
-                <span className="pop-route-tag-search">STAY</span>
-                <span className="pop-route-tag-searches">
-                  {hotel.searches.toLocaleString()} SEARCHES
-                </span>
-              </div>
-
-              <div className="hotel-card-city-row">
-                <span className="hotel-card-icon">
-                  <Building2 size={15} />
-                </span>
-                <div>
-                  <strong>{hotel.name}</strong>
-                  <span>{hotel.city}</span>
-                </div>
-              </div>
-
-              <p className="hotel-card-summary">{hotel.summary}</p>
-
-              <div className="pop-route-meta-row">
-                <span className="pop-route-meta-left">From INR {hotel.price}</span>
-              </div>
-
-              <button
-                type="button"
-                className="pop-route-book-btn"
+        {popularHotelsLoading ? (
+          <div className="popular-routes-loading">Loading popular stays...</div>
+        ) : popularHotels.length === 0 ? (
+          <div className="popular-routes-empty">No popular stays available.</div>
+        ) : (
+          <AutoMarquee
+            items={popularHotels}
+            className="popular-routes-marquee hotel-routes-marquee"
+            duration={38}
+            renderItem={(hotel) => (
+              <article
+                className="pop-route-card pop-hotel-card"
+                key={hotel.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => handlePopularHotelBooking(hotel)}
               >
-                BOOK HOTEL
-              </button>
-            </article>
-          )}
-        />
+                <div className="pop-route-img-wrap">
+                  <img
+                    src={hotel.hotelImage || HOTEL_ROOM_IMAGES[0]}
+                    alt={`${hotel.name} – ${hotel.city}`}
+                    loading="lazy"
+                    onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.hotel_default; }}
+                  />
+                  <div className="pop-route-img-overlay">
+                    <span className="pop-route-tag-search">STAY</span>
+                  </div>
+                </div>
+                <div className="pop-route-body">
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#1e2c3a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {hotel.name}
+                  </p>
+                  <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "#5a6a78" }}>
+                    {hotel.city} &nbsp;·&nbsp; From INR {hotel.price}
+                  </p>
+                </div>
+                <button type="button" className="pop-route-book-btn"
+                  onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}
+                >BOOK HOTEL</button>
+              </article>
+            )}
+          />
+        )}
       </section>
       )}
 
@@ -4811,21 +5349,15 @@ export default function HomePage() {
             <h2>Sign Up For Exclusive Offers</h2>
             <p>Exclusive access to coupons, special offers and promotions.</p>
           </div>
- 
-          <form
-            className="signup-form"
-            onSubmit={(event) => event.preventDefault()}
-          >
-            <label className="signup-field signup-email-field">
-              <span>Email Address</span>
-              <input type="email" placeholder="Enter your email address" />
-            </label>
-            <label className="signup-field signup-mobile-field">
-              <span>Mobile Number</span>
-              <input type="tel" placeholder="Enter your mobile no." />
-            </label>
-            <button type="submit">SUBMIT</button>
-          </form>
+          <div className="signup-action">
+            <button
+              type="button"
+              className="signup-login-btn"
+              onClick={() => openAuthModal("login")}
+            >
+              Login / Sign Up
+            </button>
+          </div>
         </div>
       </section>
  
@@ -4923,26 +5455,24 @@ export default function HomePage() {
         className={`home-ai-chat ${activeTab} ${isAiChatOpen ? "open" : "closed"}`}
         ref={aiChatShellRef}
       >
-        <button
-          type="button"
-          className="home-ai-toggle"
-          aria-expanded={isAiChatOpen}
-          aria-controls="home-ai-chat-panel"
-          aria-label={isAiChatOpen ? "Close AI chat" : "Open AI chat"}
-          onClick={() => setIsAiChatOpen((previous) => !previous)}
-        >
-          <span className="home-ai-help-pill">
-            <span className="home-ai-help-spark" aria-hidden="true" />
-            <span>Help</span>
-          </span>
-          <span className="home-ai-plane-orb" aria-hidden="true">
-            <span className="home-ai-plane-rings" />
-            <ActiveAiIcon
-              className={`home-ai-active-icon ${activeTab === "flights" ? "plane" : ""}`}
-              size={30}
-            />
-          </span>
-        </button>
+        {!isAiChatOpen && (
+          <button
+            type="button"
+            className="home-ai-toggle"
+            aria-expanded={false}
+            aria-controls="home-ai-chat-panel"
+            aria-label="Open AI chat"
+            onClick={() => setIsAiChatOpen(true)}
+          >
+            <span className="home-ai-plane-orb" aria-hidden="true">
+              <span className="home-ai-plane-rings" />
+              <ActiveAiIcon
+                className={`home-ai-active-icon ${activeTab === "flights" ? "plane" : ""}`}
+                size={24}
+              />
+            </span>
+          </button>
+        )}
 
         {isAiChatOpen && (
           <aside
@@ -4964,14 +5494,24 @@ export default function HomePage() {
                   Static assistant preview
                 </span>
               </div>
-              <button
-                type="button"
-                className="home-ai-reset-btn"
-                onClick={handleAiChatReset}
-                disabled={!canResetAiChat}
-              >
-                Reset
-              </button>
+              <div className="home-ai-chat-head-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                <button
+                  type="button"
+                  className="home-ai-close-btn"
+                  onClick={() => setIsAiChatOpen(false)}
+                  aria-label="Close AI chat"
+                >
+                  <X size={16} strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  className="home-ai-reset-btn"
+                  onClick={handleAiChatReset}
+                  disabled={!canResetAiChat}
+                >
+                  Reset
+                </button>
+              </div>
             </div>
 
             <div className="home-ai-chat-messages" ref={aiChatMessagesRef}>

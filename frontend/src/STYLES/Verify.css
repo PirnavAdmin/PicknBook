@@ -1,0 +1,49 @@
+.travel-auth-verify {
+  --login-card-width: 438px;
+  --login-card-height: 520px;
+}
+
+.travel-auth-verify .travel-auth-form-panel {
+  padding: 24px 30px 20px;
+}
+
+.travel-auth-verify .travel-auth-heading {
+  font-size: 28px;
+}
+
+.travel-auth-verify .travel-field-line {
+  min-height: 52px;
+}
+
+.travel-auth-verify .travel-otp-line {
+  gap: 8px;
+  padding-right: 7px;
+}
+
+.travel-auth-verify .travel-otp-line input {
+  min-width: 82px;
+}
+
+.travel-inline-otp-btn {
+  flex: 0 0 auto;
+  min-width: 104px;
+  min-height: 38px;
+  border: none;
+  border-radius: 999px;
+  background: #f04423;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.travel-inline-otp-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.travel-auth-verify .travel-auth-status {
+  font-size: 12.8px;
+}

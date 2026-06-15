@@ -1,33 +1,33 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 .bus-flow-page {
-  --flow-bg: var(--theme-page, #fff7f2);
+  --flow-bg: var(--theme-page, #F3F4F6);
   --flow-surface: #ffffff;
   --flow-surface-soft: var(--theme-surface-warm, #fffaf6);
-  --flow-border: var(--theme-border, #f2cbbf);
+  --flow-border: var(--theme-border, #E5E7EB);
   --flow-text: var(--theme-text, #111827);
   --flow-muted: var(--theme-muted, #64748b);
-  --flow-primary: var(--theme-primary, #f05a28);
-  --flow-primary-strong: var(--theme-primary-strong, #df3f1f);
-  --flow-accent: var(--theme-primary, #f05a28);
-  --flow-accent-strong: var(--theme-primary-strong, #df3f1f);
-  --flow-success: var(--theme-primary, #f05a28);
-  --flow-danger: var(--theme-primary, #f05a28);
-  --flow-primary-soft: var(--theme-primary-soft, #fff0e9);
-  --flow-accent-soft: #fff5ef;
-  --flow-focus: rgba(240, 90, 40, 0.18);
-  --flow-shadow-md: var(--theme-shadow, 0 18px 45px rgba(125, 59, 31, 0.12));
-  --flow-shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(125, 59, 31, 0.08));
+  --flow-primary: var(--theme-primary, #dc1e26);
+  --flow-primary-strong: var(--theme-primary-strong, #b8141b);
+  --flow-accent: var(--theme-primary, #dc1e26);
+  --flow-accent-strong: var(--theme-primary-strong, #b8141b);
+  --flow-success: var(--theme-primary, #dc1e26);
+  --flow-danger: var(--theme-primary, #dc1e26);
+  --flow-primary-soft: var(--theme-primary-soft, #fef2f2);
+  --flow-accent-soft: #F9FAFB;
+  --flow-focus: rgba(220, 30, 38, 0.18);
+  --flow-shadow-md: var(--theme-shadow, 0 18px 45px rgba(13, 74, 83, 0.12));
+  --flow-shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(13, 74, 83, 0.08));
   --flow-heading-font: var(--app-font-family);
   --flow-body-font: var(--app-font-family);
 
   min-height: calc(100vh - 76px);
-  padding: 12px 6px 18px;
+  padding: 10px 6px 14px;
   font-family: var(--flow-body-font);
   color: var(--flow-text);
   background:
-    radial-gradient(circle at 3% 8%, rgba(240, 90, 40, 0.1), transparent 30%),
-    radial-gradient(circle at 98% 6%, rgba(255, 169, 124, 0.16), transparent 28%),
+    radial-gradient(circle at 3% 8%, rgba(220, 30, 38, 0.08), transparent 30%),
+    radial-gradient(circle at 98% 6%, rgba(220, 30, 38, 0.12), transparent 28%),
     var(--flow-bg);
 }
 
@@ -41,7 +41,7 @@
   max-width: 1360px;
   margin: 0 auto;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .bus-flow-empty {
@@ -83,18 +83,18 @@
 
 .bus-flow-summary-card {
   border: 1px solid var(--flow-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--flow-surface);
-  box-shadow: var(--flow-shadow-sm);
+  box-shadow: 0 6px 16px rgba(13, 74, 83, 0.06);
   overflow: hidden;
 }
 
 .bus-flow-overview-banner {
   position: relative;
-  min-height: 138px;
+  min-height: 120px;
   border-bottom: 1px solid #e5ecf5;
   overflow: hidden;
-  background: var(--flow-primary-strong, #df3f1f);
+  background: var(--flow-primary-strong, #b8141b);
 }
 
 .bus-flow-overview-bg {
@@ -110,30 +110,30 @@
   inset: 0;
   background: linear-gradient(
     120deg,
-    rgba(223, 63, 31, 0.96) 0%,
-    rgba(240, 68, 35, 0.82) 100%
+    rgba(184, 20, 27, 0.96) 0%,
+    rgba(220, 30, 38, 0.82) 100%
   );
 }
 
 .bus-flow-overview-content {
   position: relative;
   z-index: 1;
-  min-height: 138px;
-  padding: 16px 18px;
+  min-height: 120px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .bus-flow-overview-logo-wrap {
-  width: 72px;
-  height: 72px;
-  border-radius: 14px;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.18);
   display: grid;
   place-items: center;
-  padding: 8px;
+  padding: 6px;
   backdrop-filter: blur(1px);
   flex-shrink: 0;
 }
@@ -148,13 +148,13 @@
 .bus-flow-overview-copy {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 
 .bus-flow-overview-copy p {
   margin: 0;
   color: rgba(232, 241, 255, 0.86);
-  font-size: 0.711rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -163,119 +163,165 @@
 .bus-flow-overview-copy h3 {
   margin: 0;
   color: #ffffff;
-  font-size: 1.215rem;
-  line-height: 1.2;
+  font-size: 1.1rem;
+  line-height: 1.1;
   font-family: var(--flow-heading-font);
 }
 
 .bus-flow-overview-copy span {
   color: rgba(236, 244, 255, 0.94);
-  font-size: 0.783rem;
-  font-weight: 600;
-  line-height: 1.3;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
 .bus-flow-summary-grid {
-  min-height: 92px;
+  min-height: 60px;
   display: grid;
-  grid-template-columns:
-    minmax(0, 1.2fr) repeat(3, minmax(120px, 1fr)) minmax(132px, 1fr)
-    120px;
-  border-bottom: 1px solid #e5ecf5;
+  grid-template-columns: 1fr 1.2fr 1fr 1fr 0.9fr;
+  gap: 0;
+  border-bottom: 1px solid #ede5db;
 }
 
 .bus-flow-summary-grid article {
-  border-right: 1px solid #e5ecf5;
-  padding: 12px 14px;
-  display: grid;
-  align-content: center;
-  gap: 4px;
+  border-right: 1px solid #ede5db;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
 }
 
 .bus-flow-summary-grid article:last-child {
   border-right: 0;
 }
 
-.bus-flow-summary-grid h2 {
-  margin: 0;
+.bus-flow-grid-item-departure strong,
+.bus-flow-grid-item-arrival strong {
+  font-size: 1rem;
+  font-weight: 700;
   color: #1f3a5c;
-  font-size: 1.215rem;
-  font-family: var(--flow-heading-font);
 }
 
-.bus-flow-summary-grid p {
-  margin: 0;
-  color: var(--theme-navy, #1f2a44);
-  font-size: 0.828rem;
+.bus-flow-grid-item-departure span,
+.bus-flow-grid-item-arrival span {
+  font-size: 0.7rem;
+  color: #647a96;
+  font-weight: 500;
+}
+
+.bus-flow-grid-item-duration {
+  background: linear-gradient(135deg, rgba(220, 30, 38, 0.04), rgba(220, 30, 38, 0.04)) !important;
+}
+
+.bus-flow-grid-item-duration span {
+  font-size: 0.85rem;
   font-weight: 600;
+  color: #1f3a5c;
 }
 
-.bus-flow-summary-grid small {
-  color: #597293;
-  font-size: 0.756rem;
+.bus-flow-grid-item-duration small {
+  font-size: 0.7rem;
+  color: #dc1e26;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.bus-flow-summary-grid strong {
-  color: var(--theme-navy, #1f2a44);
-  font-size: 1.17rem;
-  font-family: var(--flow-heading-font);
+.bus-flow-grid-item-price small {
+  font-size: 0.65rem;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
-.bus-flow-duration {
-  justify-items: center;
-  text-align: center;
+.bus-flow-grid-item-price strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #dc1e26;
 }
 
-.bus-flow-duration svg {
-  color: var(--flow-primary, #f04423);
+.bus-flow-grid-item-seats strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f3a5c;
+}
+
+.bus-flow-grid-item-seats small {
+  font-size: 0.7rem;
+  color: #647a96;
+  font-weight: 500;
 }
 
 .bus-flow-summary-actions {
-  padding: 8px;
+  padding: 4px 6px;
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 
 .bus-flow-summary-actions button {
-  border-radius: 8px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--flow-border, #f2cbbf);
+  border-radius: 5px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid #e5ecf5;
   background: #ffffff;
-  color: var(--flow-primary, #f04423);
-  font-size: 0.72rem;
-  font-weight: 700;
+  color: #dc1e26;
+  font-size: 0.68rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bus-flow-summary-actions button:hover:not(.active) {
+  background: #f7f9fc;
+  border-color: #d4dde9;
 }
 
 .bus-flow-summary-actions button.active {
-  border-color: transparent;
-  background: linear-gradient(
-    135deg,
-    var(--flow-accent),
-    var(--flow-accent-strong)
-  );
+  border-color: #dc1e26;
+  background: linear-gradient(135deg, #dc1e26, #b8141b);
   color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.2);
+}
+
+.bus-flow-expand-panel {
+  background: #faf8f6;
+  padding: 6px 12px;
+  border-top: 1px solid #ede5db;
+  font-size: 0.8rem;
+  color: #647a96;
+  line-height: 1.4;
+}
+
+.bus-flow-expand-panel p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #7c6b5d;
+}
+
+.bus-flow-expand-panel strong {
+  color: #1f3a5c;
+  font-weight: 600;
 }
 
 .bus-flow-seat-loader {
-  border: 1px solid var(--flow-border);
-  border-radius: 12px;
-  min-height: 210px;
+  border: 1px solid #ede5db;
+  border-radius: 10px;
+  min-height: 180px;
   background:
     linear-gradient(
       90deg,
-      rgba(240, 68, 35, 0.03) 30%,
-      rgba(240, 68, 35, 0.04) 60%
+      rgba(220, 30, 38, 0.02) 30%,
+      rgba(220, 30, 38, 0.03) 60%
     ),
-    #f7fafc;
-  box-shadow: var(--flow-shadow-sm);
+    #faf8f6;
+  box-shadow: 0 4px 12px rgba(13, 74, 83, 0.04);
   display: grid;
   place-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .bus-flow-seat-error {
@@ -339,13 +385,13 @@
 .bus-flow-seat-loader .loader-bars {
   display: inline-flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .bus-flow-seat-loader .loader-bars span {
-  width: 12px;
-  border-radius: 4px;
-  background: var(--flow-primary, #f04423);
+  width: 10px;
+  border-radius: 3px;
+  background: #dc1e26;
   animation: flow-loader-bars 1s ease-in-out infinite;
 }
 
@@ -379,72 +425,85 @@
 
 .bus-flow-seat-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 10px;
 }
 
 .bus-flow-seat-zone {
   min-width: 0;
   border: 1px solid #eceff4;
-  border-radius: 16px;
+  border-radius: 12px;
   background: #f7f8fa;
-  box-shadow: 0 18px 36px rgba(20, 29, 43, 0.08);
-  padding: 12px;
+  box-shadow: 0 12px 24px rgba(20, 29, 43, 0.06);
+  padding: 10px;
   position: relative;
 }
 
 .bus-flow-seat-top {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .bus-flow-fares {
   border: 1px solid #edf0f5;
   border-radius: 14px;
   background: #ffffff;
-  padding: 10px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.bus-flow-fares-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .bus-flow-fares h3 {
   margin: 0;
   color: #171b22;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-family: var(--flow-heading-font);
+  font-weight: 700;
 }
 
 .bus-flow-info-btn {
   border: none;
-  background: linear-gradient(135deg, var(--flow-primary, #f04423), var(--flow-primary-strong, #df3f1f));
+  background: linear-gradient(135deg, var(--flow-primary, #dc1e26), var(--flow-primary-strong, #b8141b));
   color: #ffffff;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(24, 95, 188, 0.3);
+  box-shadow: 0 1.5px 4px rgba(24, 95, 188, 0.2);
 }
 
 .bus-flow-info-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 10px rgba(24, 95, 188, 0.4);
+  box-shadow: 0 3px 8px rgba(24, 95, 188, 0.3);
 }
 
 .bus-flow-fare-chips {
-  margin-top: 10px;
+  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
 }
 
 .bus-flow-fare-chips button {
   border: 1px solid #eceff4;
-  border-radius: 10px;
-  min-height: 34px;
-  padding: 0 12px;
+  border-radius: 8px;
+  min-height: 28px;
+  padding: 0 10px;
   background: #ffffff;
   color: #383f4c;
   font-size: 0.72rem;
@@ -454,7 +513,7 @@
 
 .bus-flow-fare-chips button.active {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--flow-primary, #f04423), var(--flow-primary-strong, #df3f1f));
+  background: linear-gradient(135deg, var(--flow-primary, #dc1e26), var(--flow-primary-strong, #b8141b));
   color: #ffffff;
 }
 
@@ -462,11 +521,15 @@
   border: 1px solid #edf0f5;
   border-radius: 14px;
   background: #ffffff;
-  padding: 10px;
+  padding: 8px 12px;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px 16px;
   align-items: center;
+  justify-content: center;
+  align-content: center;
+  min-height: 80px;
+  box-sizing: border-box;
 }
 
 .bus-flow-page .legend {
@@ -483,13 +546,13 @@
   width: 14px;
   height: 14px;
   border-radius: 3px;
-  border: 1px solid var(--flow-border, #f2cbbf);
+  border: 1px solid var(--flow-border, #E5E7EB);
   background: #ffffff;
 }
 
 .bus-flow-page .legend.female::before {
-  border-color: var(--flow-border, #f2cbbf);
-  background: linear-gradient(135deg, var(--flow-primary-soft, #fff0e9), var(--flow-primary-soft, #fff0e9));
+  border-color: var(--flow-border, #E5E7EB);
+  background: linear-gradient(135deg, var(--flow-primary-soft, #fef2f2), var(--flow-primary-soft, #fef2f2));
 }
 
 .bus-flow-page .legend.booked::before {
@@ -509,8 +572,8 @@
 }
 
 .bus-flow-page .legend.male::before {
-  border-color: var(--flow-border, #f2cbbf);
-  background: linear-gradient(135deg, var(--flow-primary-soft, #fff0e9), var(--flow-primary-soft, #fff0e9));
+  border-color: var(--flow-border, #E5E7EB);
+  background: linear-gradient(135deg, var(--flow-primary-soft, #fef2f2), var(--flow-primary-soft, #fef2f2));
 }
 
 .bus-flow-page .legend.selected::before {
@@ -519,7 +582,7 @@
 }
 
 .bus-flow-page .legend.selected-male::before {
-  border-color: var(--flow-primary, #f04423);
+  border-color: var(--flow-primary, #dc1e26);
   background: linear-gradient(135deg, #e8f1ff, #d7e8ff);
 }
 
@@ -560,7 +623,7 @@
   bottom: 18px;
   width: 84px;
   border-right: 1px solid #e1e8f2;
-  color: var(--flow-primary, #f04423);
+  color: var(--flow-primary, #dc1e26);
   display: grid;
   place-items: center;
   font-size: 0.74rem;
@@ -650,12 +713,12 @@
   position: absolute;
   top: 16px;
   right: 24px;
-  border: 1px solid var(--flow-border, #f2cbbf);
+  border: 1px solid var(--flow-border, #E5E7EB);
   border-radius: 8px;
   min-height: 34px;
   padding: 0 14px;
-  background: linear-gradient(135deg, var(--flow-primary-soft, #fff0e9), var(--flow-border, #f2cbbf));
-  color: var(--flow-primary, #f04423);
+  background: linear-gradient(135deg, var(--flow-primary-soft, #fef2f2), var(--flow-border, #E5E7EB));
+  color: var(--flow-primary, #dc1e26);
   font-size: 0.7rem;
   font-weight: 800;
   font-family: var(--flow-heading-font);
@@ -879,15 +942,15 @@
 }
 
 .seat-badge.female {
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   color: #5178ab;
-  border: 1px solid var(--flow-border, #f2cbbf);
+  border: 1px solid var(--flow-border, #E5E7EB);
 }
 
 .seat-badge.male {
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   color: #3a669f;
-  border: 1px solid var(--flow-border, #f2cbbf);
+  border: 1px solid var(--flow-border, #E5E7EB);
 }
 
 .seat-label {
@@ -912,14 +975,14 @@
 }
 
 .bus-flow-seat.status-female {
-  border-color: var(--flow-border, #f2cbbf);
-  background: linear-gradient(135deg, var(--flow-primary-soft, #fff0e9), var(--flow-primary-soft, #fff0e9));
+  border-color: var(--flow-border, #E5E7EB);
+  background: linear-gradient(135deg, var(--flow-primary-soft, #fef2f2), var(--flow-primary-soft, #fef2f2));
   color: #5178ab;
 }
 
 .bus-flow-seat.status-male {
-  border-color: var(--flow-border, #f2cbbf);
-  background: linear-gradient(135deg, var(--flow-primary-soft, #fff0e9), var(--flow-primary-soft, #fff0e9));
+  border-color: var(--flow-border, #E5E7EB);
+  background: linear-gradient(135deg, var(--flow-primary-soft, #fef2f2), var(--flow-primary-soft, #fef2f2));
   color: #3a669f;
 }
 
@@ -958,7 +1021,7 @@
 }
 
 .bus-flow-seat.status-selected-male {
-  border-color: var(--flow-primary, #f04423);
+  border-color: var(--flow-primary, #dc1e26);
   background: linear-gradient(135deg, #e8f1ff, #d7e8ff);
   color: #255f9f;
   box-shadow: 0 4px 12px rgba(79, 134, 201, 0.18);
@@ -1058,7 +1121,7 @@
 .bus-flow-page .point-item {
   border: 1px solid #d3deeb;
   border-radius: 10px;
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   min-height: 62px;
   padding: 10px;
   display: grid;
@@ -1101,13 +1164,13 @@
 }
 
 .bus-flow-page .point-item.selected {
-  border-color: var(--flow-primary, #f04423);
-  background: var(--flow-primary-soft, #fff0e9);
+  border-color: var(--flow-primary, #dc1e26);
+  background: var(--flow-primary-soft, #fef2f2);
 }
 
 .bus-flow-page .point-item.selected i {
-  border-color: var(--flow-primary, #f04423);
-  background: var(--flow-primary, #f04423);
+  border-color: var(--flow-primary, #dc1e26);
+  background: var(--flow-primary, #dc1e26);
 }
 
 .selected-seat-summary {
@@ -1161,7 +1224,7 @@
 
 .seat-gender-select {
   width: 100%;
-  border: 1px solid var(--flow-border, #f2cbbf);
+  border: 1px solid var(--flow-border, #E5E7EB);
   border-radius: 8px;
   min-height: 34px;
   padding: 0 8px;
@@ -1177,7 +1240,7 @@
   border-radius: 8px;
   min-height: 35px;
   padding: 0 10px;
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   color: #396cae;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1333,7 +1396,7 @@
 
 .passenger-row h4 span {
   margin-left: 8px;
-  color: var(--flow-primary, #f04423);
+  color: var(--flow-primary, #dc1e26);
   font-size: 0.81rem;
   font-weight: 700;
 }
@@ -1390,7 +1453,6 @@
 }
 
 .contact-input input,
-.coupon-box input,
 .payment-form-grid input,
 .payment-form-grid select {
   width: 100%;
@@ -1423,7 +1485,7 @@
 .passenger-fields input:focus-visible {
   outline: none;
   border-color: var(--flow-primary);
-  box-shadow: 0 0 0 3px rgba(240, 68, 35, 0.16);
+  box-shadow: 0 0 0 3px rgba(220, 30, 38, 0.16);
 }
 
 .passenger-restriction-note {
@@ -1488,7 +1550,7 @@
   width: 17px;
   height: 17px;
   margin-top: 2px;
-  accent-color: var(--flow-primary, #f04423);
+  accent-color: var(--flow-primary, #dc1e26);
 }
 
 .ack-checkbox span {
@@ -1500,7 +1562,7 @@
   border: 1px solid #d0d9e5;
   border-radius: 9px;
   min-height: 40px;
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1551,201 +1613,9 @@
 
 .fare-list .grand-total span,
 .fare-list .grand-total strong {
-  color: var(--flow-primary-strong, #df3f1f);
+  color: var(--flow-primary-strong, #b8141b);
   font-family: var(--flow-heading-font);
   font-size: 1.215rem;
-}
-
-.coupon-box {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0;
-  align-items: stretch;
-}
-
-.coupon-box input {
-  border-radius: 9px 0 0 9px;
-  min-height: 42px;
-  border-color: #d7e3f2;
-  background: #fbfdff;
-}
-
-.coupon-box button {
-  border: 0;
-  border-radius: 0 9px 9px 0;
-  min-height: 42px;
-  padding: 0 16px;
-  background: linear-gradient(
-    135deg,
-    var(--flow-accent),
-    var(--flow-accent-strong)
-  );
-  color: #ffffff;
-  font-size: 0.738rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.coupon-box button:disabled {
-  cursor: not-allowed;
-  opacity: 0.72;
-}
-
-.coupon-offer-list {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.coupon-box .coupon-offer-card {
-  width: 100%;
-  min-height: auto;
-  border: 1px solid #e4edf8;
-  border-radius: 8px;
-  padding: 12px;
-  background: #ffffff;
-  color: #20324d;
-  box-shadow: 0 10px 22px rgba(34, 60, 95, 0.07);
-  cursor: pointer;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 10px;
-  text-align: left;
-}
-
-.coupon-box .coupon-offer-card:hover,
-.coupon-box .coupon-offer-card.selected {
-  border-color: var(--flow-primary);
-  background: #fff8f4;
-  box-shadow: 0 14px 26px rgba(240, 68, 35, 0.13);
-}
-
-.coupon-box .coupon-offer-card:disabled {
-  cursor: not-allowed;
-}
-
-.coupon-offer-state {
-  border: 1px dashed #d4e0ee;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fbfdff;
-  color: #64748b;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-align: center;
-}
-
-.coupon-offer-value {
-  color: var(--flow-primary-strong);
-  font-size: 0.86rem;
-  font-weight: 900;
-}
-
-.coupon-offer-card strong {
-  justify-self: end;
-  border: 1px dashed #f0a58f;
-  border-radius: 7px;
-  padding: 4px 8px;
-  background: #fff4ed;
-  color: #b9381c;
-  font-size: 0.78rem;
-  font-weight: 900;
-}
-
-.coupon-offer-meta,
-.coupon-offer-foot,
-.coupon-offer-note {
-  grid-column: 1 / -1;
-  color: #5c708c;
-  font-size: 0.74rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.coupon-offer-foot {
-  color: #31506f;
-}
-
-.coupon-offer-note {
-  border-top: 1px solid #eef3f8;
-  margin-top: 2px;
-  padding-top: 7px;
-  color: #7a5360;
-}
-
-.coupon-box .coupon-remove-btn {
-  grid-column: 1 / -1;
-  margin-top: 10px;
-  border-radius: 8px;
-  border: 1px solid #f3c8b9;
-  background: #fff8f5;
-  color: var(--flow-primary-strong);
-  box-shadow: none;
-}
-
-.coupon-applied-card {
-  grid-column: 1 / -1;
-  margin-top: 10px;
-  border: 1px solid #b9e7ce;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, #f4fff8, #ffffff);
-  box-shadow: 0 10px 24px rgba(31, 111, 76, 0.08);
-}
-
-.coupon-applied-card div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.coupon-applied-card span {
-  color: #407158;
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.coupon-applied-card strong {
-  border: 1px dashed #7bc79d;
-  border-radius: 7px;
-  padding: 4px 8px;
-  background: #ffffff;
-  color: #137a43;
-  font-size: 0.78rem;
-  font-weight: 900;
-}
-
-.coupon-applied-card p {
-  margin: 8px 0 0;
-  color: #1d5838;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.coupon-message {
-  grid-column: 1 / -1;
-  margin: 8px 0 0;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 0.738rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.coupon-message.success {
-  border: 1px solid #b9e7ce;
-  background: #f0fff6;
-  color: #137a43;
-}
-
-.coupon-message.error {
-  border: 1px solid #ffd0bf;
-  background: #fff4ed;
-  color: #b9381c;
 }
 
 .flow-modal-backdrop {
@@ -1866,7 +1736,7 @@
   border: 1px solid #c9d6e7;
   border-radius: 9px;
   min-height: 44px;
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   color: #233d5f;
   font-size: 0.738rem;
   font-weight: 700;
@@ -2018,7 +1888,7 @@
 .ack-pay-strip,
 .payment-method-grid button {
   border-color: #cedcee;
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
 }
 
 .bus-flow-summary-actions button,
@@ -2043,20 +1913,20 @@
 }
 
 .bus-flow-page .point-item.selected {
-  border-color: var(--flow-primary, #f04423);
-  background: var(--flow-primary-soft, #fff0e9);
+  border-color: var(--flow-primary, #dc1e26);
+  background: var(--flow-primary-soft, #fef2f2);
 }
 
 .bus-flow-page .point-item.selected i {
-  border-color: var(--flow-primary, #f04423);
-  background: var(--flow-primary, #f04423);
+  border-color: var(--flow-primary, #dc1e26);
+  background: var(--flow-primary, #dc1e26);
 }
 
 .selected-seat-summary h4,
 .selected-seat-summary strong,
 .fare-list .grand-total span,
 .fare-list .grand-total strong {
-  color: var(--flow-primary-strong, #df3f1f);
+  color: var(--flow-primary-strong, #b8141b);
 }
 
 .flow-card > header,
@@ -2121,7 +1991,7 @@
   min-width: 132px;
   padding: 0 14px;
   border: 1px solid #c5d6ed;
-  background: var(--flow-primary-soft, #fff0e9);
+  background: var(--flow-primary-soft, #fef2f2);
   color: #274c7c;
   font-size: 0.747rem;
   font-weight: 700;
@@ -2352,7 +2222,7 @@
 .bus-flow-summary-actions button,
 .bus-flow-page .point-tabs button,
 .bus-flow-fare-chips button {
-  border-color: #f2cbbf;
+  border-color: #E5E7EB;
   background: #ffffff;
   color: #1f2a44;
 }
@@ -2368,7 +2238,7 @@
   border-color: transparent;
   background: linear-gradient(135deg, var(--flow-primary), var(--flow-primary-strong));
   color: #ffffff;
-  box-shadow: 0 14px 28px rgba(240, 68, 35, 0.2);
+  box-shadow: 0 14px 28px rgba(220, 30, 38, 0.2);
 }
 
 .bus-flow-page .point-item.selected,
@@ -2383,8 +2253,8 @@
 }
 
 .bus-flow-page .point-tabs button {
-  border-color: rgba(240, 68, 35, 0.38);
-  background: #fffaf7;
+  border-color: rgba(220, 30, 38, 0.38);
+  background: #F9FAFB;
   color: var(--flow-primary-strong);
   box-shadow: none;
 }
@@ -2393,17 +2263,17 @@
   border-color: var(--flow-primary);
   background: linear-gradient(135deg, var(--flow-primary), var(--flow-primary-strong));
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(240, 68, 35, 0.18);
+  box-shadow: 0 10px 20px rgba(220, 30, 38, 0.18);
 }
 
 .bus-flow-seat.status-selected {
   border-color: var(--flow-primary);
-  background: #fff1e9;
+  background: #fef2f2;
   color: #b9381c;
 }
 
 .bus-flow-seat.status-selected-male {
-  border-color: #2f74ed;
+  border-color: #b8141b;
   background: #eef5ff;
   color: #1559c7;
 }
@@ -2431,7 +2301,7 @@
 .bus-flow-driver-cabin,
 .bus-flow-deck-card > aside {
   border-color: #ffd0bf;
-  background: #fff0e9;
+  background: #fef2f2;
   color: var(--flow-primary-strong);
 }
 
@@ -2591,7 +2461,7 @@
 }
 
 .bus-flow-page .bus-flow-seat.status-selected-male {
-  border-color: #2f74ed;
+  border-color: #b8141b;
   background: #eef5ff;
   color: #1559c7;
 }
@@ -2647,19 +2517,19 @@
   }
 }
 
-/* Unified orange booking flow theme */
+/* Unified Atlas booking flow theme */
 .bus-flow-page {
-  --flow-bg: var(--theme-page, #fff7f2);
+  --flow-bg: var(--theme-page, #F3F4F6);
   --flow-surface: var(--theme-surface, #ffffff);
   --flow-surface-soft: var(--theme-surface-warm, #fffaf6);
-  --flow-border: var(--theme-border, #f2cbbf);
+  --flow-border: var(--theme-border, #E5E7EB);
   --flow-text: var(--theme-text, #111827);
   --flow-muted: var(--theme-muted, #64748b);
-  --flow-primary: var(--theme-primary, #f04423);
-  --flow-primary-strong: var(--theme-primary-strong, #df3f1f);
-  --flow-accent: var(--theme-primary, #f04423);
-  --flow-accent-strong: var(--theme-primary-strong, #df3f1f);
-  --flow-focus: rgba(240, 68, 35, 0.18);
+  --flow-primary: var(--theme-primary, #dc1e26);
+  --flow-primary-strong: var(--theme-primary-strong, #b8141b);
+  --flow-accent: var(--theme-primary, #dc1e26);
+  --flow-accent-strong: var(--theme-primary-strong, #b8141b);
+  --flow-focus: rgba(220, 30, 38, 0.18);
 }
 
 .bus-flow-summary-card,
@@ -2669,7 +2539,7 @@
 .flow-modal,
 .flow-payment-success {
   border-color: var(--flow-border);
-  box-shadow: var(--theme-shadow-sm, 0 10px 24px rgba(125, 59, 31, 0.08));
+  box-shadow: var(--theme-shadow-sm, 0 10px 24px rgba(13, 74, 83, 0.08));
 }
 
 .bus-flow-duration svg,
@@ -2695,7 +2565,7 @@
   border-color: transparent;
   background: linear-gradient(135deg, var(--flow-primary), var(--flow-primary-strong));
   color: #ffffff;
-  box-shadow: 0 14px 28px rgba(240, 68, 35, 0.2);
+  box-shadow: 0 14px 28px rgba(220, 30, 38, 0.2);
 }
 
 .bus-flow-page .point-item.selected {
@@ -2709,8 +2579,8 @@
 }
 
 .bus-flow-page .point-tabs button {
-  border-color: rgba(240, 68, 35, 0.38);
-  background: #fffaf7;
+  border-color: rgba(220, 30, 38, 0.38);
+  background: #F9FAFB;
   color: var(--flow-primary-strong);
   box-shadow: none;
 }
@@ -2719,12 +2589,12 @@
   border-color: var(--flow-primary);
   background: linear-gradient(135deg, var(--flow-primary), var(--flow-primary-strong));
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(240, 68, 35, 0.18);
+  box-shadow: 0 10px 20px rgba(220, 30, 38, 0.18);
 }
 
 .bus-flow-seat.status-selected {
   border-color: var(--flow-primary);
-  background: #fff1e9;
+  background: #fef2f2;
   color: #b9381c;
 }
 /* ── Passenger Mode Toggle (Existing Traveler / Add New Traveler) ── */
@@ -2736,11 +2606,11 @@
   margin: 8px 0 14px;
 }
 
-/* Base: inactive = orange text link, no background */
+/* Base: inactive = Atlas text link, no background */
 .pmode-btn {
   border: none;
   background: transparent;
-  color: var(--flow-primary, #f05a28);
+  color: var(--flow-primary, #dc1e26);
   font-size: 0.9rem;
   font-weight: 700;
   font-family: var(--flow-body-font);
@@ -2755,20 +2625,20 @@
   opacity: 0.75;
 }
 
-/* Active: orange filled pill */
+/* Active: Atlas filled pill */
 .pmode-btn--active {
-  background: linear-gradient(135deg, var(--flow-primary, #f05a28), var(--flow-primary-strong, #df3f1f));
+  background: linear-gradient(135deg, var(--flow-primary, #dc1e26), var(--flow-primary-strong, #b8141b));
   color: #ffffff;
   border-radius: 999px;
   padding: 8px 20px;
   font-size: 0.855rem;
-  box-shadow: 0 6px 18px rgba(240, 90, 40, 0.28);
+  box-shadow: 0 6px 18px rgba(220, 30, 38, 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pmode-btn--active:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(240, 90, 40, 0.34);
+  box-shadow: 0 10px 24px rgba(220, 30, 38, 0.34);
 }
 
 /* Existing traveler dropdown */
@@ -2779,7 +2649,7 @@
 
 .passenger-existing-select {
   width: 100%;
-  border: 1px solid #f2cbbf;
+  border: 1px solid #E5E7EB;
   border-radius: 9px;
   min-height: 42px;
   padding: 0 12px;
@@ -2791,76 +2661,8 @@
 }
 
 .passenger-existing-select:focus {
-  outline: 2px solid rgba(240, 90, 40, 0.22);
-  border-color: var(--flow-primary, #f05a28);
-}
-
-/* Readable coupon cards: keep theme accents without flooding the content */
-.coupon-box .coupon-offer-card,
-.coupon-box .coupon-offer-card:disabled {
-  border: 1px solid #f2d4c8;
-  border-radius: 12px;
-  min-height: auto;
-  padding: 14px;
-  background: #fffaf7;
-  color: #111827;
-  box-shadow: 0 12px 24px rgba(125, 59, 31, 0.08);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px 12px;
-  text-align: left;
-}
-
-.coupon-box .coupon-offer-card:hover,
-.coupon-box .coupon-offer-card.selected {
-  border-color: var(--flow-primary);
-  background: #fff4ed;
-  color: #111827;
-  box-shadow: 0 16px 30px rgba(240, 68, 35, 0.14);
-}
-
-.coupon-box .coupon-offer-card .coupon-offer-value {
-  color: #b9381c;
-  font-size: 0.9rem;
-  font-weight: 900;
-}
-
-.coupon-box .coupon-offer-card strong {
-  justify-self: end;
-  align-self: start;
-  border: 1px dashed #ef9d86;
-  border-radius: 8px;
-  padding: 5px 10px;
-  background: #ffffff;
-  color: #b9381c;
-  font-size: 0.82rem;
-  font-weight: 900;
-}
-
-.coupon-box .coupon-offer-card .coupon-offer-meta,
-.coupon-box .coupon-offer-card .coupon-offer-foot,
-.coupon-box .coupon-offer-card .coupon-offer-note {
-  grid-column: 1 / -1;
-  color: #374151;
-  font-size: 0.76rem;
-  font-weight: 800;
-  line-height: 1.45;
-}
-
-.coupon-box .coupon-offer-card .coupon-offer-foot {
-  color: #1f3a5f;
-}
-
-.coupon-box .coupon-offer-card .coupon-offer-note {
-  border-top: 1px solid #f1d8ce;
-  margin-top: 4px;
-  padding-top: 8px;
-  color: #5b6472;
-}
-
-.coupon-box .coupon-offer-card:disabled {
-  cursor: not-allowed;
-  opacity: 0.74;
+  outline: 2px solid rgba(220, 30, 38, 0.22);
+  border-color: var(--flow-primary, #dc1e26);
 }
 
 /* Professional seat-layout page polish */
@@ -2874,23 +2676,23 @@
 }
 
 .bus-flow-summary-card {
-  border: 1px solid rgba(240, 90, 40, 0.2);
+  border: 1px solid rgba(220, 30, 38, 0.2);
   border-radius: 18px;
   background: #ffffff;
-  box-shadow: 0 16px 40px rgba(125, 59, 31, 0.1);
+  box-shadow: 0 16px 40px rgba(13, 74, 83, 0.1);
   overflow: hidden;
 }
 
 .bus-flow-overview-banner {
   min-height: 168px;
   border-bottom: 0;
-  background: var(--flow-primary-strong, #df3f1f);
+  background: var(--flow-primary-strong, #b8141b);
 }
 
 .bus-flow-overview-overlay {
   background:
-    linear-gradient(90deg, rgba(223, 63, 31, 0.96), rgba(240, 68, 35, 0.82)),
-    linear-gradient(135deg, rgba(240, 90, 40, 0.12), transparent 48%);
+    linear-gradient(90deg, rgba(184, 20, 27, 0.96), rgba(220, 30, 38, 0.82)),
+    linear-gradient(135deg, rgba(220, 30, 38, 0.12), transparent 48%);
 }
 
 .bus-flow-overview-content {
@@ -2932,7 +2734,7 @@
   grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(130px, 1fr)) minmax(150px, 0.9fr) minmax(150px, 0.9fr);
   gap: 0;
   border-bottom: 1px solid #f1e2dc;
-  background: #fffaf7;
+  background: #F9FAFB;
 }
 
 .bus-flow-summary-grid article {
@@ -3021,7 +2823,7 @@
   padding: 0 18px;
   font-size: 0.82rem;
   font-weight: 900;
-  box-shadow: 0 8px 18px rgba(125, 59, 31, 0.06);
+  box-shadow: 0 8px 18px rgba(13, 74, 83, 0.06);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease,
@@ -3031,14 +2833,14 @@
 .bus-flow-summary-actions button:hover {
   transform: translateY(-1px);
   border-color: var(--flow-primary);
-  box-shadow: 0 12px 22px rgba(125, 59, 31, 0.12);
+  box-shadow: 0 12px 22px rgba(13, 74, 83, 0.12);
 }
 
 .bus-flow-summary-actions button.active {
   border-color: transparent;
   background: linear-gradient(135deg, var(--flow-primary), var(--flow-primary-strong));
   color: #ffffff;
-  box-shadow: 0 14px 26px rgba(240, 68, 35, 0.22);
+  box-shadow: 0 14px 26px rgba(220, 30, 38, 0.22);
 }
 
 .bus-flow-seat-layout {
@@ -3049,10 +2851,10 @@
 
 .bus-flow-page .bus-flow-seat-zone,
 .bus-flow-page .bus-flow-point-panel {
-  border: 1px solid rgba(240, 90, 40, 0.16);
+  border: 1px solid rgba(220, 30, 38, 0.16);
   border-radius: 18px;
   background: #ffffff;
-  box-shadow: 0 18px 38px rgba(125, 59, 31, 0.08);
+  box-shadow: 0 18px 38px rgba(13, 74, 83, 0.08);
 }
 
 .bus-flow-page .bus-flow-seat-zone {
@@ -3068,7 +2870,7 @@
 .bus-flow-page .bus-flow-seat-legend {
   border-color: #f1e2dc;
   border-radius: 14px;
-  background: #fffaf7;
+  background: #F9FAFB;
 }
 
 .bus-flow-page .bus-flow-fares {
@@ -3119,53 +2921,83 @@
 
 .bus-flow-page .bus-flow-point-panel {
   padding: 16px;
+  gap: 8px !important;
 }
 
 .bus-flow-page .bus-flow-point-panel h3 {
-  margin: 0 0 14px;
+  margin: 0 !important;
   border: 0;
   background: transparent;
   padding: 0;
   font-size: 1.08rem;
+  min-height: 0 !important;
+  line-height: 1.2 !important;
 }
 
 .bus-flow-page .point-tabs {
-  padding: 4px;
-  border-radius: 12px;
-  background: #fff3ed;
-  gap: 4px;
+  display: flex !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  border-radius: 12px !important;
+  background: #fff3ed !important;
+  gap: 4px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .bus-flow-page .point-tabs button {
-  min-height: 40px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: #9a3b25;
-  font-weight: 900;
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  min-height: 36px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #9a3b25 !important;
+  font-weight: 900 !important;
 }
 
 .bus-flow-page .point-tabs button.active {
-  background: #ffffff;
-  color: var(--flow-primary-strong);
-  box-shadow: 0 8px 18px rgba(125, 59, 31, 0.1);
+  background: #ffffff !important;
+  color: var(--flow-primary-strong) !important;
+  box-shadow: 0 8px 18px rgba(13, 74, 83, 0.1) !important;
 }
 
 .bus-flow-page .point-list {
-  margin-top: 14px;
+  margin-top: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  border: 1px solid #f0e2dc !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
 }
 
 .bus-flow-page .point-item {
-  border-color: #f0e2dc;
-  border-radius: 14px;
-  background: #ffffff;
-  padding: 14px;
-  box-shadow: 0 8px 16px rgba(125, 59, 31, 0.04);
+  border: none !important;
+  border-bottom: 1px solid #f0e2dc !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  padding: 8px 12px !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+}
+
+.bus-flow-page .point-item:last-child {
+  border-bottom: none !important;
 }
 
 .bus-flow-page .point-item.selected {
-  border-color: var(--flow-primary);
-  background: #fff5ef;
+  border: none !important;
+  border-bottom: 1px solid #f0e2dc !important;
+  background: #F9FAFB !important;
+}
+
+.bus-flow-page .point-item.selected:last-child {
+  border-bottom: none !important;
 }
 
 @media (max-width: 1180px) {
@@ -3219,428 +3051,6 @@
   .bus-flow-summary-actions button {
     flex: 1 1 100%;
   }
-}
-
-/* Coupon offers panel */
-.bus-flow-page .coupon-offers-card {
-  border: 0;
-  border-radius: 26px;
-  background: #ffffff;
-  overflow: hidden;
-  box-shadow: 0 12px 34px rgba(17, 24, 39, 0.1);
-}
-
-.bus-flow-page .coupon-offers-card .coupon-box {
-  padding: 24px 14px 18px;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  overflow: hidden;
-}
-
-.bus-flow-page .coupon-box-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 4px;
-}
-
-.bus-flow-page .coupon-box-title h3 {
-  margin: 0;
-  color: #111827;
-  font-size: 1.25rem;
-  line-height: 1.1;
-  font-weight: 900;
-  letter-spacing: 0;
-}
-
-.bus-flow-page .coupon-box-icon,
-.bus-flow-page .coupon-entry-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 2px dotted rgba(255, 255, 255, 0.9);
-  background: #2fa66a;
-  color: #ffffff;
-  font-size: 0.86rem;
-  font-weight: 900;
-  box-shadow: 0 3px 8px rgba(47, 166, 106, 0.28);
-}
-
-.bus-flow-page .coupon-entry-icon {
-  width: 25px;
-  height: 25px;
-  background: #ffffff;
-  border-color: #6b7280;
-  color: #6b7280;
-  box-shadow: none;
-}
-
-.bus-flow-page .coupon-entry-row {
-  min-height: 72px;
-  border: 1.4px solid #1f2937;
-  border-radius: 15px;
-  background: #ffffff;
-  padding: 0 16px;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-}
-
-.bus-flow-page .coupon-entry-row.has-code {
-  border-color: #c2535e;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row input {
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
-  color: #4b5563;
-  font-size: 1.05rem;
-  font-weight: 700;
-  outline: 0;
-  box-shadow: none;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row input::placeholder {
-  color: #5f6674;
-  opacity: 1;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row button {
-  min-width: 72px;
-  min-height: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #c2535e;
-  font-size: 1.02rem;
-  font-weight: 700;
-  text-align: right;
-  text-transform: none;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row button:hover {
-  background: transparent;
-  box-shadow: none;
-  color: #a93e4a;
-  transform: none;
-}
-
-.bus-flow-page .coupon-message {
-  margin: -9px 0 2px 22px;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: #b03643;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.bus-flow-page .coupon-message.success {
-  color: #147d4b;
-}
-
-.bus-flow-page .coupon-message.error {
-  color: #b03643;
-}
-
-.bus-flow-page .coupon-offer-list {
-  width: 100%;
-  margin-top: 10px;
-  padding: 0 72px 4px 0;
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  touch-action: pan-x;
-  cursor: grab;
-}
-
-.bus-flow-page .coupon-offer-list:active {
-  cursor: grabbing;
-}
-
-.bus-flow-page .coupon-offer-list::-webkit-scrollbar {
-  display: none;
-}
-
-.bus-flow-page .coupon-box .coupon-offer-card,
-.bus-flow-page .coupon-box .coupon-offer-card:disabled {
-  flex: 0 0 84%;
-  min-height: 138px;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  background: #ffffff;
-  color: #111827;
-  padding: 24px 22px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
-  gap: 16px;
-  align-items: center;
-  text-align: left;
-  box-shadow: none;
-  scroll-snap-align: start;
-}
-
-.bus-flow-page .coupon-box .coupon-offer-card:hover,
-.bus-flow-page .coupon-box .coupon-offer-card.selected {
-  border-color: #d6dbe3;
-  background: #ffffff;
-  color: #111827;
-  box-shadow: none;
-  transform: none;
-}
-
-.bus-flow-page .coupon-card-copy {
-  min-width: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.bus-flow-page .coupon-card-copy strong {
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  justify-self: start;
-  background: transparent;
-  color: #111827;
-  font-size: 1.08rem;
-  line-height: 1.1;
-  font-weight: 900;
-  letter-spacing: 0;
-}
-
-.bus-flow-page .coupon-card-copy span {
-  color: #167445;
-  font-size: 0.98rem;
-  line-height: 1.45;
-  font-weight: 700;
-}
-
-.bus-flow-page .coupon-card-radio {
-  width: 30px;
-  height: 30px;
-  border: 1.5px solid #9ca3af;
-  border-radius: 50%;
-  background: #ffffff;
-  justify-self: end;
-}
-
-.bus-flow-page .coupon-offer-card.selected .coupon-card-radio {
-  border: 8px solid #ffffff;
-  outline: 2px solid #d9565f;
-  background: #d9565f;
-}
-
-.bus-flow-page .coupon-offer-state {
-  flex: 0 0 calc(100% - 110px);
-  min-height: 110px;
-  border: 1px dashed #d1d5db;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  color: #5b6472;
-  font-weight: 800;
-}
-
-.bus-flow-page .coupon-offer-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 2px;
-}
-
-.bus-flow-page .coupon-offer-dots button {
-  width: 8px;
-  height: 8px;
-  min-width: 0;
-  min-height: 0;
-  border: 0;
-  border-radius: 999px;
-  padding: 0;
-  background: #e5e7eb;
-  box-shadow: none;
-  cursor: pointer;
-}
-
-.bus-flow-page .coupon-offer-dots button.active {
-  width: 12px;
-  background: #d9565f;
-}
-
-.bus-flow-page .coupon-applied-card {
-  border: 1px solid #cce9d7;
-  border-radius: 14px;
-  background: #f4fff8;
-  padding: 12px 14px;
-  box-shadow: none;
-}
-
-.bus-flow-page .coupon-applied-card div {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.bus-flow-page .coupon-applied-card span,
-.bus-flow-page .coupon-applied-card p {
-  color: #167445;
-}
-
-.bus-flow-page .coupon-applied-card strong {
-  color: #0f6a3d;
-}
-
-/* Final AbhiBus-style coupon overrides: keep this panel away from the orange theme. */
-.bus-flow-page .coupon-offers-card,
-.bus-flow-page .coupon-offers-card * {
-  letter-spacing: 0;
-}
-
-.bus-flow-page .coupon-offers-card {
-  border: 0 !important;
-  border-radius: 26px !important;
-  background: #ffffff !important;
-  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08) !important;
-}
-
-.bus-flow-page .coupon-offers-card .coupon-box {
-  background: #ffffff !important;
-  padding: 26px 14px 20px !important;
-  gap: 18px !important;
-}
-
-.bus-flow-page .coupon-box-title h3 {
-  color: #050b18 !important;
-  font-size: 1.3rem !important;
-  font-weight: 900 !important;
-}
-
-.bus-flow-page .coupon-box-icon {
-  width: 32px !important;
-  height: 32px !important;
-  background: #239b62 !important;
-  color: #ffffff !important;
-  border: 2px dotted #d7f5e5 !important;
-}
-
-.bus-flow-page .coupon-entry-row {
-  min-height: 72px !important;
-  border: 1.5px solid #1f2937 !important;
-  border-radius: 16px !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .coupon-entry-row.has-code {
-  border-color: #c65662 !important;
-}
-
-.bus-flow-page .coupon-entry-icon {
-  background: #ffffff !important;
-  border: 2px dotted #6f7784 !important;
-  color: #6f7784 !important;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row input {
-  background: transparent !important;
-  color: #515b6b !important;
-  font-size: 1.04rem !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row button {
-  width: auto !important;
-  min-width: 62px !important;
-  height: auto !important;
-  min-height: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: #c65360 !important;
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-  line-height: 1 !important;
-  text-align: right !important;
-  text-transform: none !important;
-}
-
-.bus-flow-page .coupon-box .coupon-entry-row button:hover,
-.bus-flow-page .coupon-box .coupon-entry-row button:focus {
-  background: transparent !important;
-  background-image: none !important;
-  color: #b34752 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.bus-flow-page .coupon-offer-list {
-  width: 100% !important;
-  padding: 0 82px 4px 0 !important;
-  gap: 14px !important;
-  scroll-behavior: smooth;
-}
-
-.bus-flow-page .coupon-box .coupon-offer-card,
-.bus-flow-page .coupon-box .coupon-offer-card:disabled,
-.bus-flow-page .coupon-box .coupon-offer-card:hover,
-.bus-flow-page .coupon-box .coupon-offer-card.selected {
-  flex: 0 0 84% !important;
-  border: 1px solid #e1e5eb !important;
-  border-radius: 16px !important;
-  background: #ffffff !important;
-  background-image: none !important;
-  color: #111827 !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-.bus-flow-page .coupon-card-copy strong {
-  color: #111827 !important;
-  background: transparent !important;
-}
-
-.bus-flow-page .coupon-card-copy span {
-  color: #147846 !important;
-}
-
-.bus-flow-page .coupon-card-radio {
-  background: #ffffff !important;
-  border-color: #9ba3af !important;
-}
-
-.bus-flow-page .coupon-offer-card.selected .coupon-card-radio {
-  background: #cf525d !important;
-  border: 8px solid #ffffff !important;
-  outline: 2px solid #cf525d !important;
-}
-
-.bus-flow-page .coupon-offer-dots button {
-  background: #e5e7eb !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .coupon-offer-dots button.active {
-  background: #db5a62 !important;
 }
 
 /* Top-view deck layout: lower deck first, upper deck second */
@@ -3793,10 +3203,10 @@
 }
 
 .bus-flow-page .bus-flow-horizontal-deck .bus-flow-seat.status-selected {
-  border-color: #f04423 !important;
+  border-color: #dc1e26 !important;
   background: #fff2ec !important;
   color: #c2391e !important;
-  box-shadow: inset 0 0 0 3px rgba(240, 68, 35, 0.16), 0 10px 18px rgba(240, 68, 35, 0.14) !important;
+  box-shadow: inset 0 0 0 3px rgba(220, 30, 38, 0.16), 0 10px 18px rgba(220, 30, 38, 0.14) !important;
 }
 
 .bus-flow-page .bus-flow-horizontal-deck .seat-label {
@@ -3968,10 +3378,10 @@
 }
 
 .bus-flow-page .bus-flow-vertical-layout .bus-flow-seat.status-selected {
-  border-color: #f04423;
+  border-color: #dc1e26;
   background: #fff2ec;
   color: #c2391e;
-  box-shadow: inset 0 0 0 3px rgba(240, 68, 35, 0.14);
+  box-shadow: inset 0 0 0 3px rgba(220, 30, 38, 0.14);
 }
 
 @media (max-width: 760px) {
@@ -4002,5 +3412,2028 @@
   .bus-flow-page .bus-flow-vertical-layout .bus-flow-seat--sleeper {
     width: 52px;
     min-height: 82px;
+  }
+}
+
+/* Checkout coupons panel */
+.bus-flow-page .coupon-sheet-card {
+  border: 1px solid #f1b2a5;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 0 rgba(17, 24, 39, 0.9);
+}
+
+.bus-flow-page .flow-card > .coupon-sheet-header {
+  min-height: 68px;
+  padding: 0 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ef3d21;
+  color: #ffffff;
+  font-size: 2rem;
+  font-family: var(--flow-heading-font);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.bus-flow-page .coupon-sheet-loading {
+  color: rgba(255, 255, 255, 0.86);
+  font-family: var(--flow-body-font);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.bus-flow-page .coupon-sheet-body {
+  min-height: 420px;
+  padding: 38px 20px 26px;
+  background: #ffffff;
+}
+
+.bus-flow-page .coupon-featured-block {
+  margin-bottom: 20px;
+}
+
+.bus-flow-page .coupon-section-label {
+  margin: 0 0 10px;
+  color: #6f7788;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.bus-flow-page .coupon-featured-list {
+  display: grid;
+  gap: 10px;
+}
+
+.bus-flow-page .coupon-featured-offer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 86px;
+  padding: 16px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  transition: border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+}
+
+.bus-flow-page .coupon-featured-offer.is-selected {
+  border: 2px solid #00bd73;
+  background: #f0fff6;
+}
+
+.bus-flow-page .coupon-featured-offer.is-muted {
+  opacity: 0.55;
+}
+
+.bus-flow-page .coupon-featured-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.bus-flow-page .coupon-featured-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.bus-flow-page .coupon-featured-title-row strong {
+  color: #17202f;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.bus-flow-page .coupon-featured-copy p {
+  margin: 4px 0 0;
+  color: #6f7788;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.bus-flow-page .coupon-discount-pill,
+.bus-flow-page .coupon-applied-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bus-flow-page .coupon-discount-pill {
+  background: #fff0b7;
+  color: #9a5b10;
+}
+
+.bus-flow-page .coupon-applied-pill {
+  background: #c8f2d5;
+  color: #216538;
+}
+
+.bus-flow-page .coupon-remove-action,
+.bus-flow-page .coupon-apply-offer-action,
+.bus-flow-page .coupon-action-button {
+  border: 0;
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-shadow: none;
+}
+
+.bus-flow-page .coupon-remove-action {
+  min-width: 96px;
+  min-height: 36px;
+  padding: 8px 14px;
+  background: #f23f43;
+  font-size: 0.96rem;
+}
+
+.bus-flow-page .coupon-apply-offer-action {
+  min-width: 78px;
+  min-height: 36px;
+  padding: 8px 14px;
+  background: #6ed0b5;
+  font-size: 0.92rem;
+}
+
+.bus-flow-page .coupon-remove-action:disabled,
+.bus-flow-page .coupon-apply-offer-action:disabled,
+.bus-flow-page .coupon-action-button:disabled,
+.bus-flow-page .coupon-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.bus-flow-page .coupon-manual-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 106px;
+  gap: 12px;
+  align-items: center;
+}
+
+.bus-flow-page .coupon-manual-row input {
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  border: 1px solid #e2e6ed;
+  border-radius: 9px;
+  padding: 0 18px;
+  background: #ffffff;
+  color: #222b39;
+  font-size: 1.16rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+
+.bus-flow-page .coupon-manual-row input::placeholder {
+  color: #b8b8b8;
+  opacity: 1;
+}
+
+.bus-flow-page .coupon-action-button {
+  min-height: 54px;
+  padding: 0 20px;
+  font-size: 1.16rem;
+}
+
+.bus-flow-page .coupon-action-button.is-apply {
+  background: #6ed0b5;
+}
+
+.bus-flow-page .coupon-action-button.is-remove {
+  background: #f23f43;
+  font-size: 0.95rem;
+}
+
+.bus-flow-page .coupon-featured-note {
+  margin: 10px 0 0;
+  color: #6f7788;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.bus-flow-page .coupon-sheet-message {
+  margin: 14px 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bus-flow-page .coupon-sheet-message.is-success {
+  color: #00bd73;
+}
+
+.bus-flow-page .coupon-sheet-message.is-error {
+  color: #ef3f43;
+}
+
+.bus-flow-page .coupon-chip-block {
+  margin-top: 20px;
+}
+
+.bus-flow-page .coupon-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bus-flow-page .coupon-chip {
+  min-height: 34px;
+  padding: 5px 12px;
+  border: 1px dashed #6dd7bb;
+  border-radius: 6px;
+  background: #f4fffb;
+  color: #76bbae;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bus-flow-page .coupon-chip.is-selected {
+  border-style: solid;
+  border-color: #00bd73;
+  background: #dcfce7;
+  color: #087a4d;
+}
+
+@media (max-width: 640px) {
+  .bus-flow-page .flow-card > .coupon-sheet-header {
+    min-height: 58px;
+    padding: 0 18px;
+    font-size: 1.55rem;
+  }
+
+  .bus-flow-page .coupon-sheet-body {
+    min-height: 360px;
+    padding: 28px 16px 22px;
+  }
+
+  .bus-flow-page .coupon-featured-offer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .bus-flow-page .coupon-remove-action,
+  .bus-flow-page .coupon-apply-offer-action {
+    margin-left: auto;
+  }
+
+  .bus-flow-page .coupon-manual-row {
+    grid-template-columns: minmax(0, 1fr) 92px;
+    gap: 10px;
+  }
+
+  .bus-flow-page .coupon-manual-row input,
+  .bus-flow-page .coupon-action-button {
+    min-height: 50px;
+    font-size: 1rem;
+  }
+}
+
+/* Final Atlas bus-booking theme matching checkout reference */
+.bus-flow-page {
+  --flow-bg: #edf7ff;
+  --flow-surface: #ffffff;
+  --flow-surface-soft: #ffffff;
+  --flow-border: #d8e5ee;
+  --flow-text: #050b18;
+  --flow-muted: #5f6875;
+  --flow-primary: #dc1e26;
+  --flow-primary-strong: #b8141b;
+  --flow-primary-soft: #fef2f2;
+  --flow-shadow-sm: 0 3px 12px rgba(15, 23, 42, 0.14);
+  --flow-heading-font: var(--app-font-family, "Plus Jakarta Sans", Arial, sans-serif);
+  --flow-body-font: var(--app-font-family, "Plus Jakarta Sans", Arial, sans-serif);
+  background: #edf7ff !important;
+  color: #050b18 !important;
+  font-family: var(--flow-body-font) !important;
+  font-size: 14px !important;
+  padding: 38px 24px 42px !important;
+}
+
+.bus-flow-shell {
+  max-width: 1710px !important;
+}
+
+.bus-passenger-layout,
+.flow-payment-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 540px !important;
+  gap: 44px !important;
+  align-items: start !important;
+}
+
+.bus-passenger-main,
+.bus-passenger-side,
+.flow-payment-main,
+.flow-payment-side {
+  display: grid !important;
+  gap: 22px !important;
+}
+
+.flow-card,
+.bus-flow-summary-card,
+.bus-flow-seat-zone,
+.bus-flow-point-panel,
+.flow-modal,
+.flow-payment-success {
+  border: 1px solid #d8e5ee !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.14) !important;
+  overflow: hidden !important;
+}
+
+.flow-card > header,
+.flow-modal-header,
+.bus-flow-page .flow-card > .coupon-sheet-header {
+  min-height: 57px !important;
+  padding: 0 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #dc1e26 !important;
+  color: #ffffff !important;
+  font-size: 1.18rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.15 !important;
+  box-shadow: none !important;
+}
+
+.bus-passenger-main > .flow-card:nth-of-type(1) > header::before,
+.bus-passenger-main > .flow-card:nth-of-type(2) > header::before,
+.bus-passenger-main > .flow-card:nth-of-type(3) > header::before,
+.bus-passenger-side > .flow-card:nth-of-type(1) > header::before,
+.bus-passenger-side > .flow-card:nth-of-type(2) > header::before,
+.flow-payment-main > .flow-card > header::before,
+.flow-payment-side > .flow-card > header::before {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.bus-passenger-main > .flow-card:nth-of-type(1) > header::before { content: "▣"; }
+.bus-passenger-main > .flow-card:nth-of-type(2) > header::before { content: "●"; }
+.bus-passenger-main > .flow-card:nth-of-type(3) > header::before { content: "☎"; }
+.bus-passenger-side > .flow-card:nth-of-type(1) > header::before,
+.flow-payment-side > .flow-card:nth-of-type(2) > header::before { content: "₹"; }
+.bus-passenger-side > .flow-card:nth-of-type(2) > header::before { content: "%"; }
+
+.flow-card-body {
+  padding: 26px 22px 30px !important;
+  background: #ffffff !important;
+}
+
+.bus-journey-grid {
+  grid-template-columns: 1.15fr 0.72fr 1fr 0.72fr 0.62fr !important;
+  gap: 28px 44px !important;
+  align-items: start !important;
+}
+
+.bus-journey-grid > div {
+  min-width: 0 !important;
+}
+
+.bus-journey-grid small,
+.bus-journey-grid p,
+.bus-journey-grid span,
+.bus-journey-grid strong,
+.fare-list span,
+.fare-list strong {
+  font-family: var(--flow-body-font) !important;
+  letter-spacing: 0 !important;
+}
+
+.bus-journey-grid small {
+  display: block !important;
+  margin: 0 0 8px !important;
+  color: #050b18 !important;
+  font-size: 0.94rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
+.bus-journey-grid > div:first-child strong {
+  display: inline-flex !important;
+  min-height: 27px !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  border: 1px solid #8ccbf4 !important;
+  border-radius: 4px !important;
+  background: #d8f0ff !important;
+  color: #050b18 !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+}
+
+.bus-journey-grid > div:not(.journey-point):not(.journey-duration) strong {
+  color: #050b18 !important;
+  font-size: 1.22rem !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+}
+
+.journey-duration {
+  display: grid !important;
+  justify-items: center !important;
+  gap: 8px !important;
+  color: #050b18 !important;
+}
+
+.journey-duration::before,
+.journey-duration::after {
+  content: "";
+  width: 58px;
+  border-top: 2px dashed #d8d8d8;
+}
+
+.journey-duration svg {
+  display: none !important;
+}
+
+.journey-duration strong {
+  color: #050b18 !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+}
+
+.bus-journey-grid .journey-point {
+  grid-column: span 1 !important;
+  display: block !important;
+}
+
+.bus-journey-grid .journey-point span {
+  display: block !important;
+  min-height: 42px !important;
+  padding: 9px 10px !important;
+  border: 1px dashed #42aaf4 !important;
+  border-radius: 4px !important;
+  background: #d6f0ff !important;
+  color: #050b18 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.bus-journey-grid .journey-point strong {
+  display: block !important;
+  margin: 12px 0 3px !important;
+  color: #f6a600 !important;
+  font-size: 0.98rem !important;
+  font-weight: 600 !important;
+}
+
+.bus-journey-grid .journey-point p {
+  margin: 6px 0 4px !important;
+  color: #050b18 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.bus-journey-grid .journey-point small {
+  margin: 0 !important;
+  color: #050b18 !important;
+  font-size: 0.96rem !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+.passenger-row {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.passenger-row + .passenger-row {
+  margin-top: 24px !important;
+}
+
+.passenger-row h4 {
+  position: relative !important;
+  margin: 0 0 30px !important;
+  color: #050b18 !important;
+  font-size: 1.18rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+.passenger-row h4::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -13px;
+  width: 38px;
+  height: 5px;
+  background: #dc1e26;
+}
+
+.passenger-row h4 span {
+  margin-left: 10px !important;
+  color: #5f6875 !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+}
+
+.passenger-mode-toggle {
+  margin: -12px 0 14px !important;
+}
+
+.passenger-fields,
+.contact-grid,
+.payment-form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 24px 44px !important;
+}
+
+.passenger-fields label,
+.contact-grid label,
+.payment-form-grid label {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+.passenger-fields label > span,
+.contact-grid label > span,
+.payment-form-grid label > span {
+  color: #050b18 !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+}
+
+.passenger-fields input,
+.passenger-fields select,
+.passenger-existing-select,
+.contact-input,
+.contact-input input,
+.payment-form-grid input,
+.payment-form-grid select {
+  min-height: 58px !important;
+  border: 1px solid #d1d1d1 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #050b18 !important;
+  font-size: 0.92rem !important;
+  font-weight: 400 !important;
+  box-shadow: none !important;
+}
+
+.passenger-fields input,
+.passenger-fields select,
+.passenger-existing-select,
+.payment-form-grid input,
+.payment-form-grid select {
+  padding: 0 18px !important;
+}
+
+.passenger-fields input::placeholder,
+.contact-input input::placeholder,
+.payment-form-grid input::placeholder {
+  color: #8f97a3 !important;
+  opacity: 1 !important;
+}
+
+.contact-input {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 16px !important;
+}
+
+.contact-input input {
+  min-height: 54px !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.fare-list {
+  gap: 0 !important;
+}
+
+.fare-list > div {
+  min-height: 45px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.fare-list span {
+  color: #050b18 !important;
+  font-size: 0.95rem !important;
+  font-weight: 400 !important;
+}
+
+.fare-list strong {
+  color: #050b18 !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+
+.fare-list .grand-total {
+  min-height: 54px !important;
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+  border-top: 1px dashed #cfd6dd !important;
+}
+
+.fare-list .grand-total span,
+.fare-list .grand-total strong {
+  color: #f6a600 !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.bus-flow-page .coupon-sheet-card {
+  min-height: 226px !important;
+}
+
+.bus-flow-page .coupon-sheet-body {
+  min-height: 170px !important;
+  padding: 54px 27px 30px !important;
+}
+
+.bus-flow-page .coupon-manual-row {
+  grid-template-columns: minmax(0, 1fr) 154px !important;
+  gap: 0 !important;
+}
+
+.bus-flow-page .coupon-manual-row input {
+  min-height: 63px !important;
+  border: 1px solid #d1d1d1 !important;
+  border-right: 0 !important;
+  border-radius: 12px 0 0 12px !important;
+  padding: 0 18px !important;
+  color: #050b18 !important;
+  font-size: 0.92rem !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+}
+
+.bus-flow-page .coupon-action-button {
+  min-height: 63px !important;
+  border-radius: 0 12px 12px 0 !important;
+  background: #dc1e26 !important;
+  color: #ffffff !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+}
+
+.flow-continue-btn,
+.flow-pay-btn,
+.coupon-box button,
+.flow-modal-actions button.proceed,
+.success-actions button {
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: #dc1e26 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.ack-pay-strip,
+.detail-list > div,
+.payment-method-grid button,
+.bus-flow-fares,
+.bus-flow-seat-legend,
+.bus-flow-page .point-item {
+  border-color: #d8e5ee !important;
+  background: #ffffff !important;
+}
+
+.payment-method-grid button.active,
+.bus-flow-summary-actions button.active,
+.bus-flow-fare-chips button.active,
+.bus-flow-page .point-tabs button.active {
+  background: #dc1e26 !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 1240px) {
+  .bus-passenger-layout,
+  .flow-payment-layout {
+    grid-template-columns: 1fr !important;
+    gap: 22px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .bus-flow-page {
+    padding: 18px 12px 28px !important;
+  }
+
+  .bus-journey-grid,
+  .passenger-fields,
+  .contact-grid,
+  .payment-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  .bus-journey-grid .journey-point {
+    grid-column: span 2 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .bus-journey-grid,
+  .passenger-fields,
+  .contact-grid,
+  .payment-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bus-journey-grid .journey-point {
+    grid-column: span 1 !important;
+  }
+
+  .bus-flow-page .coupon-manual-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .bus-flow-page .coupon-manual-row input,
+  .bus-flow-page .coupon-action-button {
+    border: 1px solid #d1d1d1 !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* Final atlas checkout sweep */
+.bus-flow-page {
+  --flow-bg: var(--theme-page, #F3F4F6) !important;
+  --flow-surface: #ffffff !important;
+  --flow-surface-soft: #F9FAFB !important;
+  --flow-border: #E5E7EB !important;
+  --flow-text: var(--theme-navy, #17242d) !important;
+  --flow-muted: var(--theme-muted, #66757b) !important;
+  --flow-primary: var(--theme-primary, #dc1e26) !important;
+  --flow-primary-strong: var(--theme-primary-strong, #b8141b) !important;
+  --flow-accent: var(--theme-coral, #dc1e26) !important;
+  --flow-danger: var(--theme-coral, #dc1e26) !important;
+  --flow-primary-soft: var(--theme-primary-soft, #fef2f2) !important;
+  --flow-focus: rgba(220, 30, 38, 0.16) !important;
+  background:
+    linear-gradient(135deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
+    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 32%),
+    var(--flow-bg) !important;
+}
+
+.bus-flow-summary-card,
+.flow-card,
+.passenger-form-card,
+.fare-summary-card,
+.payment-card,
+.coupon-sheet-card,
+.ack-pay-strip,
+.detail-list > div,
+.payment-method-grid button,
+.bus-flow-fares,
+.bus-flow-seat-legend,
+.bus-flow-page .point-item {
+  border-color: #E5E7EB !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 14px 32px rgba(12, 46, 51, 0.1) !important;
+}
+
+.bus-flow-overview-banner,
+.bus-flow-overview-overlay,
+.bus-flow-page .coupon-action-button,
+.flow-continue-btn,
+.flow-pay-btn,
+.coupon-box button,
+.flow-modal-actions button.proceed,
+.success-actions button,
+.payment-method-grid button.active,
+.bus-flow-summary-actions button.active,
+.bus-flow-fare-chips button.active,
+.bus-flow-page .point-tabs button.active {
+  background: var(--theme-gradient-action, linear-gradient(135deg, #dc1e26, #b8141b)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.22) !important;
+}
+
+.fare-list .grand-total span,
+.fare-list .grand-total strong,
+.bus-flow-page .step-active,
+.bus-flow-page .point-item strong {
+  color: var(--theme-primary-strong, #b8141b) !important;
+}
+
+.bus-flow-page input:focus,
+.bus-flow-page select:focus,
+.bus-flow-page textarea:focus {
+  border-color: var(--theme-primary, #dc1e26) !important;
+  box-shadow: 0 0 0 3px rgba(220, 30, 38, 0.12) !important;
+}
+
+/* Polished passenger details checkout */
+.bus-flow-page .bus-passenger-layout {
+  grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.92fr) !important;
+  gap: 28px !important;
+  align-items: start !important;
+}
+
+.bus-flow-page .bus-passenger-main,
+.bus-flow-page .bus-passenger-side {
+  gap: 22px !important;
+}
+
+.bus-flow-page .bus-passenger-side {
+  position: sticky !important;
+  top: 96px !important;
+}
+
+.bus-flow-page .flow-card,
+.bus-flow-page .coupon-sheet-card {
+  border: 1px solid rgba(220, 30, 38, 0.18) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 18px 44px rgba(12, 46, 51, 0.11) !important;
+  overflow: hidden !important;
+}
+
+.bus-flow-page .flow-card > header,
+.bus-flow-page .flow-card > .coupon-sheet-header {
+  min-height: 64px !important;
+  padding: 0 28px !important;
+  background: var(--theme-gradient-action, linear-gradient(135deg, #dc1e26, #b8141b)) !important;
+  color: #ffffff !important;
+  font-size: 1.18rem !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.bus-flow-page .bus-passenger-main > .flow-card > header::before,
+.bus-flow-page .bus-passenger-side > .flow-card > header::before {
+  display: none !important;
+}
+
+.bus-flow-page .flow-card-body {
+  padding: 24px 28px !important;
+}
+
+.bus-flow-page .bus-journey-grid {
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.bus-flow-page .bus-journey-grid > div {
+  min-width: 0 !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:not(.journey-point):not(.journey-duration) {
+  min-height: 118px !important;
+  padding: 16px !important;
+  border: 1px solid #dceae6 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #F9FAFB 100%) !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:nth-child(1) {
+  grid-column: span 3 !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:nth-child(2) {
+  grid-column: span 2 !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:nth-child(3) {
+  grid-column: span 2 !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:nth-child(4) {
+  grid-column: span 2 !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:nth-child(5) {
+  grid-column: span 3 !important;
+}
+
+.bus-flow-page .bus-journey-grid small,
+.bus-flow-page .bus-journey-grid .journey-point span {
+  margin: 0 0 8px !important;
+  color: var(--theme-primary-strong, #b8141b) !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:first-child small {
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 0.95rem !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+}
+
+.bus-flow-page .bus-journey-grid strong {
+  margin: 0 !important;
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 1.32rem !important;
+  font-weight: 850 !important;
+  line-height: 1.12 !important;
+}
+
+.bus-flow-page .bus-journey-grid > div:first-child strong {
+  display: inline-flex !important;
+  width: fit-content !important;
+  min-height: 0 !important;
+  margin-top: 12px !important;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(220, 30, 38, 0.26) !important;
+  border-radius: 10px !important;
+  background: var(--theme-primary-soft, #fef2f2) !important;
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 1.1rem !important;
+  line-height: 1.15 !important;
+}
+
+.bus-flow-page .journey-duration {
+  min-height: 118px !important;
+  align-content: center !important;
+  justify-items: center !important;
+  padding: 16px !important;
+  border: 1px solid #dceae6 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+}
+
+.bus-flow-page .journey-duration::before,
+.bus-flow-page .journey-duration::after {
+  width: 88px !important;
+  border-top: 2px dashed #cbd7d3 !important;
+}
+
+.bus-flow-page .journey-duration strong {
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 1.18rem !important;
+  font-weight: 800 !important;
+}
+
+.bus-flow-page .bus-journey-grid .journey-point {
+  grid-column: span 4 !important;
+  min-height: 168px !important;
+  padding: 18px !important;
+  border: 1px solid #dceae6 !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(220, 30, 38, 0.03), transparent 34%),
+    #F9FAFB !important;
+}
+
+.bus-flow-page .bus-journey-grid .journey-point span {
+  display: block !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.bus-flow-page .bus-journey-grid .journey-point strong {
+  margin: 10px 0 8px !important;
+  color: var(--theme-primary, #dc1e26) !important;
+  font-size: 1.05rem !important;
+  font-weight: 850 !important;
+}
+
+.bus-flow-page .bus-journey-grid .journey-point p {
+  margin: 0 0 8px !important;
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 1rem !important;
+  font-weight: 850 !important;
+  line-height: 1.32 !important;
+}
+
+.bus-flow-page .bus-journey-grid .journey-point small {
+  margin: 0 !important;
+  color: var(--theme-muted, #66757b) !important;
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.45 !important;
+  text-transform: none !important;
+}
+
+.bus-flow-page .fare-list {
+  gap: 0 !important;
+}
+
+.bus-flow-page .fare-list > div {
+  min-height: 48px !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.bus-flow-page .fare-list > div + div {
+  margin-top: 6px !important;
+}
+
+.bus-flow-page .fare-list span {
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 0.96rem !important;
+  font-weight: 650 !important;
+}
+
+.bus-flow-page .fare-list strong {
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 1rem !important;
+  font-weight: 850 !important;
+}
+
+.bus-flow-page .fare-list .grand-total {
+  min-height: 64px !important;
+  margin-top: 18px !important;
+  padding-top: 18px !important;
+  border-top: 1px dashed #E5E7EB !important;
+}
+
+.bus-flow-page .fare-list .grand-total span,
+.bus-flow-page .fare-list .grand-total strong {
+  color: var(--theme-primary, #dc1e26) !important;
+  font-size: 1.1rem !important;
+  font-weight: 900 !important;
+}
+
+.bus-flow-page .coupon-sheet-card {
+  min-height: 0 !important;
+}
+
+.bus-flow-page .coupon-sheet-body {
+  min-height: 0 !important;
+  padding: 22px 28px 26px !important;
+}
+
+.bus-flow-page .coupon-section-label {
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 0.92rem !important;
+  font-weight: 850 !important;
+}
+
+.bus-flow-page .coupon-featured-offer,
+.bus-flow-page .coupon-chip {
+  border-color: #dceae6 !important;
+  background: #F9FAFB !important;
+}
+
+.bus-flow-page .coupon-featured-offer.is-selected,
+.bus-flow-page .coupon-chip.is-selected {
+  border-color: var(--theme-primary, #dc1e26) !important;
+  background: var(--theme-primary-soft, #fef2f2) !important;
+}
+
+.bus-flow-page .coupon-manual-row {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+}
+
+.bus-flow-page .coupon-manual-row input,
+.bus-flow-page .coupon-action-button {
+  min-height: 48px !important;
+  border-radius: 12px !important;
+}
+
+.bus-flow-page .coupon-manual-row input {
+  border: 1px solid #dceae6 !important;
+}
+
+.bus-flow-page .coupon-action-button {
+  padding: 0 20px !important;
+  background: var(--theme-gradient-action, linear-gradient(135deg, #dc1e26, #b8141b)) !important;
+}
+
+.bus-flow-page .passenger-row h4 {
+  margin-bottom: 22px !important;
+  color: var(--theme-navy, #17242d) !important;
+  font-size: 1.05rem !important;
+  font-weight: 850 !important;
+}
+
+.bus-flow-page .passenger-row h4::after {
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: var(--theme-gradient-action, linear-gradient(135deg, #dc1e26, #b8141b)) !important;
+}
+
+.bus-flow-page .passenger-fields,
+.bus-flow-page .contact-grid,
+.bus-flow-page .payment-form-grid {
+  gap: 18px !important;
+}
+
+.bus-flow-page .passenger-fields input,
+.bus-flow-page .passenger-fields select,
+.bus-flow-page .passenger-existing-select,
+.bus-flow-page .contact-input,
+.bus-flow-page .contact-input input,
+.bus-flow-page .payment-form-grid input,
+.bus-flow-page .payment-form-grid select {
+  min-height: 48px !important;
+  border-color: #dceae6 !important;
+  border-radius: 12px !important;
+}
+
+.bus-flow-page .ack-pay-strip {
+  min-height: 58px !important;
+  border-color: rgba(220, 30, 38, 0.22) !important;
+  border-radius: 14px !important;
+  background: var(--theme-primary-soft, #fef2f2) !important;
+  padding: 0 16px !important;
+}
+
+@media (max-width: 1280px) {
+  .bus-flow-page .bus-passenger-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bus-flow-page .bus-passenger-side {
+    position: static !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .bus-flow-page .bus-journey-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .bus-flow-page .bus-journey-grid > div:nth-child(1),
+  .bus-flow-page .bus-journey-grid > div:nth-child(5),
+  .bus-flow-page .bus-journey-grid .journey-point {
+    grid-column: span 6 !important;
+  }
+
+  .bus-flow-page .bus-journey-grid > div:nth-child(2),
+  .bus-flow-page .bus-journey-grid > div:nth-child(3),
+  .bus-flow-page .bus-journey-grid > div:nth-child(4) {
+    grid-column: span 2 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .bus-flow-page .flow-card-body,
+  .bus-flow-page .coupon-sheet-body {
+    padding: 18px !important;
+  }
+
+  .bus-flow-page .bus-journey-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bus-flow-page .bus-journey-grid > div {
+    grid-column: span 1 !important;
+  }
+}
+
+/* Custom Redesign overrides for BusPassengerDetailsPage to make it tight, premium, and matching the image */
+
+/* 1. Page Shell Layout & Spacing */
+.bus-flow-page {
+  padding-top: 4px !important; /* reduce vertical gap between topbar and content */
+}
+
+.bus-flow-page .bus-passenger-layout {
+  grid-template-columns: minmax(0, 1fr) 420px !important; /* Make sidebar slightly narrower to fit content compactly */
+  gap: 12px !important;
+  margin-top: 10px !important;
+}
+
+.bus-flow-page .bus-passenger-main,
+.bus-flow-page .bus-passenger-side {
+  gap: 12px !important;
+}
+
+/* 2. Card Padding & Border */
+.bus-flow-page .flow-card {
+  border: 1px solid #F3F4F6 !important; /* theme border color */
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.bus-flow-page .flow-card-body {
+  padding: 12px !important; /* tight body padding */
+}
+
+/* 3. Header Styling - Solid colored Teal headers without pseudo-element icons */
+.bus-flow-page .flow-card > header,
+.bus-flow-page .flow-modal-header,
+.bus-flow-page .flow-card > .coupon-sheet-header {
+  min-height: 38px !important; /* tight header height */
+  padding: 0 12px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  border-radius: 0 !important;
+  background: var(--flow-primary, #dc1e26) !important; /* Teal theme background */
+  gap: 6px !important;
+}
+
+/* Disable old unicode content icons */
+.bus-flow-page .flow-card > header::before,
+.bus-flow-page .flow-modal-header::before,
+.bus-flow-page .flow-card > .coupon-sheet-header::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* SVG icon styling in headers */
+.bus-flow-page .flow-card > header svg,
+.bus-flow-page .flow-card > .coupon-sheet-header svg {
+  margin-right: 0 !important;
+  flex-shrink: 0;
+}
+
+/* 4. Bus Details Row & Timeline styling - tight single horizontal row */
+.bus-flow-page .bus-journey-grid {
+  display: grid !important;
+  grid-template-columns: 1.6fr 1fr 1.2fr 1fr 0.8fr !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+/* Use high specificity selector list to neutralize inner card borders, paddings, and background gradients completely */
+.bus-flow-page .bus-journey-grid > div:not(.journey-point):not(.journey-duration),
+.bus-flow-page .bus-journey-grid > div:nth-child(1),
+.bus-flow-page .bus-journey-grid > div:nth-child(2),
+.bus-flow-page .bus-journey-grid > div:nth-child(3),
+.bus-flow-page .bus-journey-grid > div:nth-child(4),
+.bus-flow-page .bus-journey-grid > div:nth-child(5) {
+  grid-column: span 1 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.bus-flow-page .bus-journey-grid small {
+  color: #66757b !important; /* theme muted color */
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  margin-bottom: 2px !important;
+  text-transform: uppercase !important;
+}
+
+.bus-flow-page .bus-journey-grid strong {
+  color: #162126 !important; /* theme text color */
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+}
+
+/* Route display block - flat without blue card styling */
+.bus-flow-page .bus-journey-grid > div:first-child strong {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  margin-top: 0 !important;
+  display: block !important;
+  font-size: 1rem !important;
+}
+
+.bus-flow-page .date-badge {
+  display: inline-block !important;
+  background-color: var(--theme-primary-soft, #fef2f2) !important; /* theme soft primary */
+  color: var(--theme-primary, #dc1e26) !important; /* theme primary */
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  margin-top: 3px !important;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+/* Journey timeline line and dot styling */
+.journey-timeline-center {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.timeline-line-wrap {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  position: relative !important;
+}
+
+.timeline-dot {
+  width: 4px !important;
+  height: 4px !important;
+  background-color: #94a3b8 !important;
+  border-radius: 50% !important;
+}
+
+.timeline-line {
+  flex: 1 !important;
+  height: 0 !important;
+  border-top: 1px dashed #cbd5e1 !important;
+}
+
+.timeline-bus-icon {
+  font-size: 0.95rem !important;
+  margin: 0 4px !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  transform: translateY(-1px) !important;
+}
+
+.timeline-duration {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  color: #66757b !important;
+  margin-top: 2px !important;
+}
+
+/* Points row */
+.bus-flow-page .bus-journey-points-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+.bus-flow-page .journey-point {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  min-width: 0 !important;
+}
+
+.bus-flow-page .journey-point .point-header {
+  display: block !important;
+  width: 100% !important;
+  background: var(--theme-primary-soft, #fef2f2) !important; /* theme soft primary background */
+  border: 1px dashed var(--theme-primary, #dc1e26) !important; /* theme primary dashed border */
+  border-radius: 4px !important;
+  color: var(--theme-primary, #dc1e26) !important; /* theme primary text */
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  padding: 4px 6px !important;
+  margin-bottom: 4px !important;
+  text-align: left !important;
+}
+
+.bus-flow-page .journey-point strong {
+  font-size: 0.85rem !important;
+  color: var(--theme-coral, #dc1e26) !important; /* theme accent color for time */
+  font-weight: 700 !important;
+  margin-top: 2px !important;
+  display: block !important;
+}
+
+.bus-flow-page .journey-point p {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: #162126 !important;
+  margin: 2px 0 !important;
+  line-height: 1.25 !important;
+}
+
+.bus-flow-page .journey-point small {
+  font-size: 0.72rem !important;
+  color: #66757b !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+/* 5. Passenger Rows & Title Underlines */
+.bus-flow-page .passenger-row h4 {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: #162126 !important;
+  margin: 0 0 12px !important;
+  display: inline-block !important;
+  position: relative !important;
+  padding-bottom: 4px !important;
+}
+
+.bus-flow-page .passenger-row h4::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 32px !important;
+  height: 3px !important;
+  background: var(--flow-primary, #dc1e26) !important; /* underline in theme primary color */
+}
+
+.bus-flow-page .passenger-row h4 span {
+  font-size: 0.74rem !important;
+  color: #66757b !important;
+  font-weight: 500 !important;
+  margin-left: 6px !important;
+}
+
+/* Passenger inputs single row layout override */
+.bus-flow-page .passenger-fields {
+  display: grid !important;
+  grid-template-columns: 80px 1.5fr 1.5fr 65px 105px !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+}
+
+.bus-flow-page .passenger-field--contact {
+  grid-column: span 2 !important;
+}
+
+/* Hide input label spans */
+.bus-flow-page .passenger-field span,
+.bus-flow-page .contact-grid label span {
+  display: none !important;
+}
+
+/* Compact inputs / selects */
+.bus-flow-page .passenger-fields input,
+.bus-flow-page .passenger-fields select,
+.bus-flow-page .passenger-existing-select,
+.bus-flow-page .contact-input,
+.bus-flow-page .contact-input input,
+.bus-flow-page .payment-form-grid input,
+.bus-flow-page .payment-form-grid select {
+  min-height: 32px !important; /* extra tight inputs */
+  height: 32px !important;
+  border: 1px solid #E5E7EB !important; /* theme border color */
+  border-radius: 6px !important;
+  padding: 0 8px !important;
+  font-size: 0.8rem !important;
+  color: #162126 !important;
+}
+
+.bus-flow-page .passenger-fields input[readonly] {
+  background: #F9FAFB !important;
+  color: #435462 !important;
+  cursor: default !important;
+}
+
+.bus-flow-page .passenger-existing-select {
+  width: 100% !important;
+  margin-bottom: 8px !important;
+}
+
+/* Mode toggles styling */
+.bus-flow-page .passenger-mode-toggle {
+  margin: 0 0 8px 0 !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.bus-flow-page .pmode-btn {
+  font-size: 0.7rem !important;
+  padding: 3px 8px !important;
+  min-height: 24px !important;
+  border-radius: 4px !important;
+  border: 1px solid #E5E7EB !important;
+  background: #F9FAFB !important;
+  color: #66757b !important;
+  cursor: pointer !important;
+}
+
+.bus-flow-page .pmode-btn--active {
+  background: var(--flow-primary, #dc1e26) !important;
+  color: #ffffff !important;
+  border-color: var(--flow-primary, #dc1e26) !important;
+}
+
+/* Contact Grid */
+.bus-flow-page .contact-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+.bus-flow-page .contact-grid label {
+  display: block !important;
+  margin: 0 !important;
+}
+
+.bus-flow-page .contact-input {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 8px !important;
+}
+
+.bus-flow-page .contact-input svg {
+  color: #66757b !important;
+  flex-shrink: 0;
+}
+
+.bus-flow-page .contact-input input {
+  border: none !important;
+  padding: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  background: transparent !important;
+}
+
+/* 6. Fare Details list spacing */
+.bus-flow-page .fare-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important; /* extra tight gap */
+}
+
+/* Override 48px height and borders of divisions inside fare list */
+.bus-flow-page .fare-list > div {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 0.8rem !important;
+  color: #66757b !important;
+  min-height: 0 !important;
+  padding: 2px 0 !important;
+  border-bottom: none !important;
+}
+
+.bus-flow-page .fare-list > div + div {
+  margin-top: 0 !important;
+}
+
+.bus-flow-page .fare-list > div span {
+  font-weight: 500 !important;
+}
+
+.bus-flow-page .fare-list > div strong {
+  color: #162126 !important;
+  font-weight: 600 !important;
+}
+
+/* Override 64px height and margins of grand total block */
+.bus-flow-page .fare-list .grand-total {
+  min-height: 0 !important;
+  border-top: 1px dashed #E5E7EB !important;
+  padding-top: 6px !important;
+  margin-top: 6px !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--theme-primary, #dc1e26) !important;
+}
+
+.bus-flow-page .fare-list .grand-total span {
+  color: var(--theme-primary, #dc1e26) !important;
+  font-weight: 700 !important;
+}
+
+.bus-flow-page .fare-list .grand-total strong {
+  color: var(--theme-primary, #dc1e26) !important;
+  font-weight: 700 !important;
+}
+
+/* 7. Apply Coupon Box */
+.bus-flow-page .coupon-sheet-body {
+  padding: 8px !important; /* tighter padding */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.bus-flow-page .coupon-section-label {
+  margin: 0 0 2px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+}
+
+.bus-flow-page .coupon-featured-block,
+.bus-flow-page .coupon-chip-block {
+  margin-top: 4px !important;
+}
+
+.bus-flow-page .coupon-manual-row {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  width: 100% !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+
+.bus-flow-page .coupon-manual-row input {
+  border: none !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  font-size: 0.78rem !important;
+  text-transform: uppercase !important;
+}
+
+.bus-flow-page .coupon-action-button {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer !important;
+}
+
+.bus-flow-page .coupon-action-button.is-apply {
+  background: var(--flow-primary, #dc1e26) !important; /* Teal apply button */
+  color: #ffffff !important;
+}
+
+.bus-flow-page .coupon-action-button.is-remove {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* 8. General Cleanup & Gaps */
+.bus-flow-page .acknowledgement {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.bus-flow-page .ack-checkbox {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+}
+
+.bus-flow-page .ack-checkbox input {
+  margin-top: 3px !important;
+}
+
+.bus-flow-page .ack-checkbox span {
+  font-size: 0.74rem !important;
+  color: #66757b !important;
+  line-height: 1.35 !important;
+}
+
+.bus-flow-page .ack-pay-strip {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: #F9FAFB !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  border: 1px solid #E5E7EB !important;
+}
+
+.bus-flow-page .ack-pay-strip span {
+  font-size: 0.7rem !important;
+  color: #66757b !important;
+}
+
+.bus-flow-page .ack-pay-strip small {
+  font-size: 0.68rem !important;
+  color: #94a3b8 !important;
+}
+
+.bus-flow-page .flow-continue-btn {
+  background: var(--flow-primary, #dc1e26) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-size: 0.8rem !important;
+}
+
+.bus-flow-page .flow-continue-btn:hover {
+  background: var(--flow-primary-strong, #b8141b) !important;
+}
+
+/* Inline Validation Styles */
+.bus-flow-page .field-has-error {
+  border-color: #dc2626 !important;
+  background-color: #fffafb !important;
+}
+
+.bus-flow-page .field-error-text {
+  color: #dc2626 !important;
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  margin-top: 2px !important;
+  line-height: 1.25 !important;
+  display: block !important;
+  text-align: left !important;
+}
+
+.bus-flow-page .ack-checkbox.field-has-error-text span {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+}
+
+/* Beautiful form error detailed summary box */
+.bus-flow-page .form-error-summary-box {
+  margin: 10px 0 !important;
+  padding: 12px 14px !important;
+  background-color: #fef2f2 !important;
+  border: 1px solid rgba(220, 38, 38, 0.16) !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+}
+
+.bus-flow-page .error-summary-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: #991b1b !important;
+  font-weight: 700 !important;
+  font-size: 0.82rem !important;
+  margin-bottom: 6px !important;
+}
+
+.bus-flow-page .error-summary-header svg {
+  color: #dc2626 !important;
+  flex-shrink: 0;
+}
+
+.bus-flow-page .error-summary-list li {
+  color: #7f1d1d !important;
+  font-size: 0.78rem !important;
+  font-weight: 550 !important;
+  line-height: 1.4 !important;
+  margin-top: 3px !important;
+}
+
+/* Voucher Card styling overrides */
+.bus-flow-page .coupon-featured-list,
+.bus-flow-page .coupon-chip-list {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  padding: 8px 4px !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.bus-flow-page .coupon-featured-list::-webkit-scrollbar,
+.bus-flow-page .coupon-chip-list::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+.bus-flow-page .coupon-featured-list.is-dragging,
+.bus-flow-page .coupon-chip-list.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+/* Base voucher card style */
+.bus-flow-page .coupon-featured-offer,
+.bus-flow-page .coupon-voucher-card {
+  flex: 0 0 240px !important; /* Fixed compact width */
+  width: 240px !important;
+  scroll-snap-align: start;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important; /* Stretch header/body to full card width */
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  position: relative !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.03) !important;
+  overflow: visible !important; /* Needed for notches */
+  transition: all 0.2s ease !important;
+  padding: 0 !important; /* Reset default padding */
+  min-height: 100px !important;
+  justify-content: flex-start !important;
+  gap: 0 !important; /* Reset default gap to ensure no extra height difference between offer and coupon cards */
+  box-sizing: border-box !important;
+}
+
+/* Voucher Card notches (semi-circle ticket cuts) on left/right borders centered on the dashed separator line */
+.bus-flow-page .coupon-featured-offer::before,
+.bus-flow-page .coupon-featured-offer::after,
+.bus-flow-page .coupon-voucher-card::before,
+.bus-flow-page .coupon-voucher-card::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important; /* Matches wrapper background */
+  border: 1px solid #cbd5e1 !important;
+  top: 27px !important; /* Centered perfectly on the dashed line at 34px */
+  z-index: 2 !important;
+}
+
+.bus-flow-page .coupon-featured-offer::before,
+.bus-flow-page .coupon-voucher-card::before {
+  left: -8px !important;
+  box-shadow: inset -2px 0 2px rgba(0,0,0,0.01) !important;
+}
+
+.bus-flow-page .coupon-featured-offer::after,
+.bus-flow-page .coupon-voucher-card::after {
+  right: -8px !important;
+  box-shadow: inset 2px 0 2px rgba(0,0,0,0.01) !important;
+}
+
+/* Selected state */
+.bus-flow-page .coupon-featured-offer.is-selected,
+.bus-flow-page .coupon-voucher-card.is-selected {
+  border: 1px solid #dc1e26 !important;
+  background: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(220, 30, 38, 0.1) !important;
+}
+.bus-flow-page .coupon-featured-offer.is-selected::before,
+.bus-flow-page .coupon-featured-offer.is-selected::after,
+.bus-flow-page .coupon-voucher-card.is-selected::before,
+.bus-flow-page .coupon-voucher-card.is-selected::after {
+  border-color: #dc1e26 !important;
+}
+
+/* Voucher Top Section (Discount & Code info) */
+.bus-flow-page .voucher-header {
+  padding: 6px 12px !important;
+  background: linear-gradient(135deg, #fef3c7, #fffbeb) !important;
+  border-top-left-radius: 9px !important;
+  border-top-right-radius: 9px !important;
+  border-bottom: 1px dashed #cbd5e1 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  height: 34px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.bus-flow-page .coupon-featured-offer.is-selected .voucher-header,
+.bus-flow-page .coupon-voucher-card.is-selected .voucher-header {
+  background: linear-gradient(135deg, #dcfce7, #f0fdf4) !important;
+}
+
+.bus-flow-page .voucher-discount {
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  color: #b45309 !important;
+}
+.bus-flow-page .coupon-featured-offer.is-selected .voucher-discount,
+.bus-flow-page .coupon-voucher-card.is-selected .voucher-discount {
+  color: #166534 !important;
+}
+
+.bus-flow-page .voucher-code-badge {
+  font-family: monospace !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  border: 1px dashed #cbd5e1 !important;
+  padding: 1px 4px !important;
+  background: #ffffff !important;
+  border-radius: 3px !important;
+  text-transform: uppercase !important;
+}
+
+/* Voucher Bottom Section (Copy & Button) */
+.bus-flow-page .voucher-body {
+  padding: 0px 12px 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex-grow: 1 !important;
+  justify-content: flex-start !important;
+  min-height: 60px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.bus-flow-page .voucher-title {
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+}
+
+.bus-flow-page .voucher-description {
+  font-size: 0.7rem !important;
+  color: #64748b !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.bus-flow-page .voucher-action-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  margin-top: auto !important;
+}
+
+.bus-flow-page .voucher-apply-btn {
+  background: #dc1e26 !important;
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  border: none !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease !important;
+  height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.bus-flow-page .voucher-apply-btn:hover {
+  opacity: 0.9 !important;
+}
+.bus-flow-page .voucher-apply-btn:disabled {
+  background: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+}
+
+.bus-flow-page .voucher-remove-btn {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  border: none !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Ensure no opacity issues with muted state */
+.bus-flow-page .coupon-featured-offer.is-muted,
+.bus-flow-page .coupon-voucher-card.is-muted {
+  opacity: 0.55 !important;
+}
+
+/* Precise Layout overrides for flight and hotel checkouts */
+.bus-flow-page .flight-passenger-fields {
+  display: grid !important;
+  grid-template-columns: 80px 1.5fr 1.5fr 100px 145px 1.2fr !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+}
+
+.bus-flow-page .hotel-guest-fields {
+  display: grid !important;
+  grid-template-columns: 2fr 1.5fr 1.5fr !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+}
+
+@media (max-width: 980px) {
+  .bus-flow-page .flight-passenger-fields,
+  .bus-flow-page .hotel-guest-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .bus-flow-page .flight-passenger-fields,
+  .bus-flow-page .hotel-guest-fields {
+    grid-template-columns: 1fr !important;
   }
 }
