@@ -857,7 +857,7 @@ namespace PickNBook.Api.Controllers
                 x.Adults,
                 x.Children,
                 x.Infants,
-                x.SearchedAtUtc
+                SearchedAtUtc = DateTime.SpecifyKind(x.SearchedAtUtc, DateTimeKind.Utc)
             });
 
             return Ok(response);

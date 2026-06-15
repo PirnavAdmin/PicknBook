@@ -31,7 +31,8 @@ namespace PickNBook.Api.Services
                 return guestId;
             }
 
-            throw new UnauthorizedAccessException("Guest Id missing.");
+            return context?.Connection?.RemoteIpAddress?.ToString()
+                ?? "anonymous";
         }
 
         public bool IsAuthenticated()
