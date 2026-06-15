@@ -13,6 +13,7 @@ import {
   cancelBusBooking,
   getBusBookingById,
   listBusBookings,
+  cancelBusPassengers,
 } from "../../services/busBookingService";
 import "../../STYLES/BusOpsDashboard.css";
 import { formatDateTime } from "../../utils/apiDateFormat";
@@ -84,6 +85,9 @@ export default function BusBookings() {
   const [loadingDetailFor, setLoadingDetailFor] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
+  const [selectedPassengerIds, setSelectedPassengerIds] = useState([]);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -187,6 +191,8 @@ export default function BusBookings() {
     try {
       const detail = await getBusBookingById(bookingId);
       setSelectedBooking(detail);
+      setSelectedPassengerIds([]);
+      setCancelReason("");
     } catch (error) {
       setErrorMessage(error.message || "Unable to fetch booking details.");
     } finally {
@@ -214,6 +220,32 @@ export default function BusBookings() {
       setErrorMessage(error.message || "Unable to cancel booking.");
     } finally {
       setCancellingBookingId(null);
+    }
+  };
+
+  const handleCancelSelectedPassengers = async () => {
+    if (selectedPassengerIds.length === 0) return;
+
+    setIsCancellingPassengers(true);
+    setErrorMessage("");
+    setActionMessage("");
+
+    try {
+      const updatedBooking = await cancelBusPassengers(
+        selectedBooking.bookingId,
+        selectedPassengerIds,
+        cancelReason || undefined
+      );
+
+      setSelectedBooking(updatedBooking);
+      setSelectedPassengerIds([]);
+      setCancelReason("");
+      setActionMessage("Selected passengers cancelled successfully.");
+      await fetchBookings();
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to cancel selected passengers.");
+    } finally {
+      setIsCancellingPassengers(false);
     }
   };
 
@@ -470,11 +502,11 @@ export default function BusBookings() {
       </section>
 
       {selectedBooking && (
-        <div className="ops-modal-backdrop" onClick={() => setSelectedBooking(null)}>
+        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
           <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
             <header>
               <h3>Bus Booking Details</h3>
-              <button type="button" onClick={() => setSelectedBooking(null)}>
+              <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
                 <X size={16} />
               </button>
             </header>
@@ -513,6 +545,18 @@ export default function BusBookings() {
                 <span>Total Price</span>
                 <strong>{formatCurrency(selectedBooking.totalPriceInr)}</strong>
               </div>
+              {selectedBooking.refundAmountInr > 0 && (
+                <div>
+                  <span style={{ color: "#16a34a" }}>Refund Processed</span>
+                  <strong style={{ color: "#16a34a" }}>{formatCurrency(selectedBooking.refundAmountInr)}</strong>
+                </div>
+              )}
+              {selectedBooking.cancellationChargeInr > 0 && (
+                <div>
+                  <span style={{ color: "#dc2626" }}>Cancellation Fee</span>
+                  <strong style={{ color: "#dc2626" }}>{formatCurrency(selectedBooking.cancellationChargeInr)}</strong>
+                </div>
+              )}
               <div>
                 <span>Booked At</span>
                 <strong>{formatDateTime(selectedBooking.bookedAtUtc)}</strong>
@@ -530,6 +574,86 @@ export default function BusBookings() {
                 <strong>{selectedBooking.providerName || "--"}</strong>
               </div>
             </div>
+
+            {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
+              <div style={{ marginTop: 20, borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#1f2a44" }}>
+                  Passengers &amp; Cancellation
+                </h4>
+                <div className="ops-table-scroll" style={{ maxHeight: 200, marginBottom: 12 }}>
+                  <table className="ops-table" style={{ fontSize: 11.5 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 40 }}>Select</th>
+                        <th>Name</th>
+                        <th>Seat</th>
+                        <th>Age / Gender</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedBooking.passengers.map((p) => (
+                        <tr key={p.id} style={{ opacity: p.isCancelled ? 0.6 : 1 }}>
+                          <td>
+                            {!p.isCancelled && (
+                              <input
+                                type="checkbox"
+                                checked={selectedPassengerIds.includes(p.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPassengerIds([...selectedPassengerIds, p.id]);
+                                  } else {
+                                    setSelectedPassengerIds(selectedPassengerIds.filter(id => id !== p.id));
+                                  }
+                                }}
+                              />
+                            )}
+                          </td>
+                          <td style={{ textDecoration: p.isCancelled ? "line-through" : "none" }}>
+                            {p.fullName}
+                          </td>
+                          <td>{p.seatNumber || "--"}</td>
+                          <td>{p.age > 0 ? `${p.age} / ` : ""}{p.gender}</td>
+                          <td>
+                            {p.isCancelled ? (
+                              <span className="status-badge danger" style={{ fontSize: 9, padding: "2px 6px" }}>Cancelled</span>
+                            ) : (
+                              <span className="status-badge success" style={{ fontSize: 9, padding: "2px 6px" }}>Active</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {selectedPassengerIds.length > 0 && (
+                  <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>
+                        Cancellation Reason:
+                        <input
+                          type="text"
+                          value={cancelReason}
+                          onChange={(e) => setCancelReason(e.target.value)}
+                          placeholder="e.g. Change of plans"
+                          style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="ops-icon-btn primary"
+                        style={{ padding: "6px 12px", background: "#dc1e26", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
+                        onClick={handleCancelSelectedPassengers}
+                        disabled={isCancellingPassengers}
+                      >
+                        {isCancellingPassengers ? "Cancelling..." : "Cancel Selected Tickets"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

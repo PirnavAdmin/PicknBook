@@ -477,11 +477,29 @@
 .bus-coach-floor {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  padding: 4px 8px;
+  box-sizing: border-box;
   overflow-x: auto;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.bus-coach-floor::-webkit-scrollbar {
+  height: 6px;
+  background-color: transparent;
+}
+
+.bus-coach-floor::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: #cbd5e1;
+}
+
+.bus-coach-floor::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 .bus-coach-floor .seats-grid-layout {

@@ -803,11 +803,15 @@ export function calculateBusPayableAmount(pricingPreview, fallbackTotal = 0) {
 
 function normalizeBusPassenger(passenger, index = 0) {
   return {
+    id: pickFirst(passenger, ["id", "Id"], null),
     fullName: String(
       pickFirst(passenger, ["fullName", "FullName", "name", "Name"], `Passenger ${index + 1}`)
     ),
     gender: String(pickFirst(passenger, ["gender", "Gender"], "")),
     seatNumber: pickFirst(passenger, ["seatNumber", "SeatNumber"], null),
+    age: Number(pickFirst(passenger, ["age", "Age"], 0)) || 0,
+    isCancelled: Boolean(pickFirst(passenger, ["isCancelled", "IsCancelled"], false)),
+    cancelledAtUtc: pickFirst(passenger, ["cancelledAtUtc", "CancelledAtUtc"], null),
   };
 }
 
@@ -875,6 +879,10 @@ function normalizeBusBookingRecord(record) {
       seatsBookedFallback,
     totalPriceInr:
       Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr"], 0)) || 0,
+    cancellationChargeInr:
+      Number(pickFirst(record, ["cancellationChargeInr", "CancellationChargeInr"], 0)) || 0,
+    refundAmountInr:
+      Number(pickFirst(record, ["refundAmountInr", "RefundAmountInr"], 0)) || 0,
     status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
     bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
@@ -1777,4 +1785,15 @@ export async function getFeaturedBusOffers() {
   } catch {
     return [];
   }
+}
+
+export async function cancelBusPassengers(bookingId, passengerIds, reason) {
+  const url = `${BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
+  const legacyUrl = `${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
+
+  const data = await requestJsonWithFallback([url, legacyUrl], {
+    method: "POST",
+    body: JSON.stringify({ passengerIds, reason }),
+  });
+  return normalizeBusBookingRecord(data);
 }

@@ -3553,9 +3553,9 @@ export default function HomePage() {
         .homepage .search-panel .field label,
         .homepage .search-panel .traveller-field label,
         .homepage .search-panel .class-field label {
-          color: #dc1e26 !important;
+          color: #ffffff !important;
           font-weight: 800 !important;
-          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7) !important;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
         }
 
         /* Make fields (inputs) solid white for maximum legibility */

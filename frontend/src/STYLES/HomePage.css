@@ -6103,7 +6103,7 @@ select.field-control option {
 .homepage-flights .search-panel .field label,
 .homepage-flights .search-panel .traveller-field label,
 .homepage-flights .search-panel .class-field label {
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: #ffffff !important;
   font-size: 9.5px !important;
   line-height: 1 !important;
   font-weight: 600 !important;
@@ -6260,7 +6260,7 @@ select.field-control option {
 .homepage-hotels .search-panel .field label,
 .homepage-hotels .search-panel .traveller-field label,
 .homepage-hotels .search-panel .class-field label {
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: #ffffff !important;
   font-size: 9.5px !important;
   line-height: 1 !important;
   font-weight: 600 !important;

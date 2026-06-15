@@ -548,13 +548,8 @@ export default function FlightPassengerDetailsPage() {
       <label className="passenger-field">
         <span>Date of Birth *</span>
         <input
-          type={passenger.dob ? "date" : "text"}
-          placeholder="Date of Birth *"
+          type="date"
           value={passenger.dob || ""}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
           onChange={(event) => updatePassenger(index, "dob", event.target.value)}
           className={errors[`passenger_${index}_dob`] ? "field-has-error" : ""}
         />
