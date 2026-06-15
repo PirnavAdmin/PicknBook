@@ -1,0 +1,11 @@
+@import "../../B2C BUS MANAGEMENT/Coupon list/BusCouponList.css";
+
+/* Custom hotel coupon styling refinements if any */
+.admin-hotel-coupon-shell {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}

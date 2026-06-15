@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Facebook, LockKeyhole, Mail, Phone, ShieldCheck, X } from "lucide-react";
+import { Facebook, LockKeyhole, Mail, Phone, ShieldCheck, X, Eye, EyeOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import "../../STYLES/AuthModal.css";
 import brandLogo from "../../assets/images/brand/pick-n-book-logo.png";
@@ -92,6 +92,7 @@ export default function AuthModal() {
   const [status, setStatus] = useState({ type: "", message: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const handleOpen = (event) => {
@@ -402,12 +403,20 @@ export default function AuthModal() {
                 <span className="pnb-auth-input">
                   <LockKeyhole size={16} />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter password"
                     value={password}
                     onChange={handlePasswordChange}
                     autoComplete="current-password"
                   />
+                  <button
+                    type="button"
+                    className="pnb-auth-eye-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </span>
                 {errors.password && <small>{errors.password}</small>}
               </label>

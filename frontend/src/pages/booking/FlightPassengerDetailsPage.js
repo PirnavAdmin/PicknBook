@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from "react";
-import { Info } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Info, Ticket, Tag } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
 import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
 } from "./flightBookingFlowStore";
+import { getFlightPricingPreview, getFlightPromotions } from "../../services/flightBookingService";
+import { toApiUrl } from "../../services/apiClient";
 
 function formatCurrency(amount) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -115,16 +117,6 @@ export default function FlightPassengerDetailsPage() {
   const flight = flowState.flight || null;
   const selectedSeats = flowState.selectedSeats || [];
   const searchContext = flowState.searchContext || null;
-  const fareSummary = flowState.fareSummary || {
-    baseFare: 0,
-    seatSurcharge: 0,
-    mealFee: 0,
-    baggageFee: 0,
-    tax: 0,
-    convenienceFee: 0,
-    totalFare: 0,
-  };
-
   const travellers = parseTravellerSummary(searchContext?.travellers);
 
   const [passengers, setPassengers] = useState(() =>
@@ -136,20 +128,124 @@ export default function FlightPassengerDetailsPage() {
     whatsappUpdates: Boolean(flowState.contact?.whatsappUpdates),
     whatsappNumber: flowState.contact?.whatsappNumber || "",
   }));
+
   const [couponCode, setCouponCode] = useState(flowState.couponCode || "");
-  const [couponDiscount, setCouponDiscount] = useState(Number(flowState.couponDiscount) || 0);
+  const [selectedFeaturedOfferId, setSelectedFeaturedOfferId] = useState(flowState.selectedFeaturedOfferId || null);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [featuredOffers, setFeaturedOffers] = useState([]);
+  const [pricingBreakdown, setPricingBreakdown] = useState(null);
+  
+  const [isApplying, setIsApplying] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
+
   const [specialAssistance, setSpecialAssistance] = useState(
     flowState.specialAssistance || ""
   );
   const [agreedToTerms, setAgreedToTerms] = useState(Boolean(flowState.agreedToTerms));
   const [formError, setFormError] = useState("");
 
-  const totalAfterDiscount = Math.max(0, Number(fareSummary.totalFare || 0) - couponDiscount);
+  // Load available coupons and featured offers on mount
+  useEffect(() => {
+    async function loadPromoData() {
+      try {
+        const promos = await getFlightPromotions();
+        setAvailableCoupons(promos.filter(p => !p.isActiveAutoApply && !p.isAutoApply) || []);
+        
+        const response = await fetch(toApiUrl("/api/FeaturedOffers"), {
+          headers: {
+            Accept: "application/json",
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
+        const offersData = await response.json();
+        if (offersData && Array.isArray(offersData.offers)) {
+          setFeaturedOffers(offersData.offers.filter(o => o.bookingType === "Flight" && o.isActive));
+        }
+      } catch (err) {
+        console.error("Failed to load flight coupons and offers", err);
+      }
+    }
+    loadPromoData();
+  }, []);
 
-  const allPassengersValid = useMemo(
-    () => passengers.every((passenger) => isPassengerValid(passenger)),
-    [passengers]
-  );
+  // Sync pricing preview from backend
+  const loadPricing = async (code = "", offerId = null) => {
+    if (!flight) return;
+    setIsApplying(true);
+    setCouponError("");
+    setCouponSuccess("");
+    try {
+      const passengerCount = travellers.adults + travellers.children;
+      const payload = {
+        flightId: flight.id,
+        travelClass: flight.className || searchContext?.cabinClass || "Economy",
+        tripType: searchContext?.tripType || "OneWay",
+        passengerCount,
+        couponCode: code || null,
+        selectedFeaturedOfferId: offerId || null
+      };
+
+      const pricing = await getFlightPricingPreview(payload);
+      setPricingBreakdown(pricing);
+
+      if (code) {
+        if (pricing.couponDiscount > 0) {
+          setCouponSuccess(`Coupon "${code}" applied! Discount: ${formatCurrency(pricing.couponDiscount)}`);
+          setCouponCode(code);
+          setSelectedFeaturedOfferId(null);
+        } else {
+          setCouponError("Coupon is valid but offers no discount for this booking.");
+        }
+      } else if (offerId) {
+        const disc = pricing.couponDiscount > 0 ? pricing.couponDiscount : pricing.promotionDiscount;
+        if (disc > 0) {
+          setCouponSuccess(`Offer applied successfully! Discount: ${formatCurrency(disc)}`);
+          setSelectedFeaturedOfferId(offerId);
+          setCouponCode("");
+        } else {
+          setCouponError("Offer is valid but offers no discount for this booking.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setCouponError(err.message || "Unable to validate coupon / offer.");
+      setCouponCode("");
+      setSelectedFeaturedOfferId(null);
+      // fallback calculation
+      setPricingBreakdown(null);
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  // Run initial pricing preview
+  useEffect(() => {
+    loadPricing(couponCode, selectedFeaturedOfferId);
+  }, [flight]);
+
+  const handleApplyCoupon = () => {
+    if (!couponCode.trim()) return;
+    loadPricing(couponCode.trim().toUpperCase(), null);
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setCouponSuccess("");
+    setCouponError("");
+    loadPricing("", null);
+  };
+
+  const handleSelectOffer = (offerId) => {
+    loadPricing("", offerId);
+  };
+
+  const handleRemoveOffer = () => {
+    setSelectedFeaturedOfferId(null);
+    setCouponSuccess("");
+    setCouponError("");
+    loadPricing("", null);
+  };
 
   if (!flight || selectedSeats.length === 0) {
     return (
@@ -173,21 +269,12 @@ export default function FlightPassengerDetailsPage() {
     );
   };
 
-  const handleApplyCoupon = () => {
-    const normalized = couponCode.trim().toUpperCase();
-
-    if (normalized === "FLY250") {
-      setCouponDiscount(250);
-      return;
-    }
-
-    if (normalized === "JET500") {
-      setCouponDiscount(500);
-      return;
-    }
-
-    setCouponDiscount(0);
-  };
+  const finalPayable = pricingBreakdown ? pricingBreakdown.finalAmount : flowState.fareSummary?.totalFare || 0;
+  const convenienceFee = pricingBreakdown ? pricingBreakdown.convenienceFee : flowState.fareSummary?.convenienceFee || 0;
+  const baseFare = pricingBreakdown ? pricingBreakdown.supplierTotalFare : flowState.fareSummary?.baseFare || 0;
+  const tax = pricingBreakdown ? pricingBreakdown.supplierTaxAmount : flowState.fareSummary?.tax || 0;
+  const markup = pricingBreakdown ? pricingBreakdown.markupAmount : 0;
+  const totalDiscount = pricingBreakdown ? (pricingBreakdown.promotionDiscount + pricingBreakdown.couponDiscount) : 0;
 
   const handleContinue = () => {
     if (!allPassengersValid) {
@@ -227,13 +314,20 @@ export default function FlightPassengerDetailsPage() {
       contact,
       specialAssistance,
       couponCode: couponCode.trim().toUpperCase(),
-      couponDiscount,
+      selectedFeaturedOfferId,
+      couponDiscount: totalDiscount,
       agreedToTerms,
-      payableAmount: totalAfterDiscount,
+      payableAmount: finalPayable,
       fareSummary: {
-        ...fareSummary,
-        discount: couponDiscount,
-        totalFare: totalAfterDiscount,
+        baseFare,
+        seatSurcharge: flowState.fareSummary?.seatSurcharge || 0,
+        mealFee: flowState.fareSummary?.mealFee || 0,
+        baggageFee: flowState.fareSummary?.baggageFee || 0,
+        tax,
+        markup,
+        convenienceFee,
+        discount: totalDiscount,
+        totalFare: finalPayable,
       },
     };
 
@@ -401,29 +495,33 @@ export default function FlightPassengerDetailsPage() {
             <div className="flight-fare-list">
               <div>
                 <span>Base Fare</span>
-                <strong>{formatCurrency(fareSummary.baseFare)}</strong>
+                <strong>{formatCurrency(baseFare)}</strong>
               </div>
-              <div>
-                <span>Seat Charges</span>
-                <strong>{formatCurrency(fareSummary.seatSurcharge)}</strong>
-              </div>
-              <div>
-                <span>Meal + Baggage</span>
-                <strong>{formatCurrency((fareSummary.mealFee || 0) + (fareSummary.baggageFee || 0))}</strong>
-              </div>
-              <div>
-                <span>Tax + Fee</span>
-                <strong>{formatCurrency((fareSummary.tax || 0) + (fareSummary.convenienceFee || 0))}</strong>
-              </div>
-              {couponDiscount > 0 && (
+              {markup > 0 && (
                 <div>
-                  <span>Coupon Discount</span>
-                  <strong>{formatCurrency(couponDiscount)}</strong>
+                  <span>Service Markup</span>
+                  <strong>{formatCurrency(markup)}</strong>
+                </div>
+              )}
+              {tax > 0 && (
+                <div>
+                  <span>Taxes</span>
+                  <strong>{formatCurrency(tax)}</strong>
+                </div>
+              )}
+              <div>
+                <span>Convenience Fee</span>
+                <strong>{formatCurrency(convenienceFee)}</strong>
+              </div>
+              {totalDiscount > 0 && (
+                <div>
+                  <span>Promotion Discount</span>
+                  <strong style={{ color: "#2e7d32" }}>-{formatCurrency(totalDiscount)}</strong>
                 </div>
               )}
               <div className="total">
                 <span>Payable</span>
-                <strong>{formatCurrency(totalAfterDiscount)}</strong>
+                <strong>{formatCurrency(finalPayable)}</strong>
               </div>
             </div>
 
@@ -435,14 +533,115 @@ export default function FlightPassengerDetailsPage() {
                     type="text"
                     value={couponCode}
                     onChange={(event) => setCouponCode(event.target.value)}
-                    placeholder="Use FLY250 or JET500"
+                    placeholder="Enter Coupon code"
+                    disabled={isApplying || selectedFeaturedOfferId !== null}
                   />
-                  <button type="button" onClick={handleApplyCoupon}>Apply</button>
+                  {couponCode && pricingBreakdown?.couponDiscount > 0 ? (
+                    <button type="button" onClick={handleRemoveCoupon} style={{ backgroundColor: "#d32f2f" }}>Remove</button>
+                  ) : (
+                    <button type="button" onClick={handleApplyCoupon} disabled={isApplying || selectedFeaturedOfferId !== null}>
+                      {isApplying ? "Applying..." : "Apply"}
+                    </button>
+                  )}
                 </div>
               </label>
+              
+              {couponError && <p className="flight-flow-error" style={{ marginTop: 5 }}>{couponError}</p>}
+              {couponSuccess && <p className="coupon-success-text" style={{ color: "#2e7d32", fontSize: "0.85rem", marginTop: 5 }}>{couponSuccess}</p>}
             </div>
 
-            <label className="flight-check-row">
+            {/* Available Promotions section */}
+            {availableCoupons.length > 0 && (
+              <div className="promo-chips-section" style={{ marginTop: 15 }}>
+                <p style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 5 }}>Available Coupons:</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {availableCoupons.map((coupon) => (
+                    <button
+                      key={coupon.id}
+                      type="button"
+                      onClick={() => loadPricing(coupon.name, null)}
+                      disabled={isApplying || selectedFeaturedOfferId !== null}
+                      style={{
+                        padding: "4px 8px",
+                        fontSize: "0.8rem",
+                        backgroundColor: "#f5f5f5",
+                        border: "1px dashed #ccc",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        color: "#333"
+                      }}
+                    >
+                      <strong>{coupon.name}</strong> - {coupon.description || `${coupon.discountValue} Off`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {featuredOffers.length > 0 && (
+              <div className="featured-offers-section" style={{ marginTop: 15 }}>
+                <p style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 5 }}>Featured Offers:</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {featuredOffers.map((offer) => {
+                    const isSelected = selectedFeaturedOfferId === offer.id;
+                    return (
+                      <div
+                        key={offer.id}
+                        style={{
+                          padding: 8,
+                          fontSize: "0.8rem",
+                          backgroundColor: isSelected ? "#e8f5e9" : "#fff",
+                          border: isSelected ? "1px solid #2e7d32" : "1px solid #ddd",
+                          borderRadius: 4,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center"
+                        }}
+                      >
+                        <div>
+                          <strong>{offer.title}</strong>
+                          <p style={{ margin: 0, color: "#666", fontSize: "0.75rem" }}>{offer.subtitle}</p>
+                        </div>
+                        {isSelected ? (
+                          <button
+                            type="button"
+                            onClick={handleRemoveOffer}
+                            style={{
+                              padding: "2px 6px",
+                              backgroundColor: "#d32f2f",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 3,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSelectOffer(offer.id)}
+                            disabled={isApplying || couponCode !== ""}
+                            style={{
+                              padding: "2px 6px",
+                              backgroundColor: "#1976d2",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 3,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Apply
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <label className="flight-check-row" style={{ marginTop: 15 }}>
               <input
                 type="checkbox"
                 checked={agreedToTerms}
@@ -458,7 +657,7 @@ export default function FlightPassengerDetailsPage() {
               </p>
             )}
 
-            <button type="button" className="flight-primary-btn" onClick={handleContinue}>
+            <button type="button" className="flight-primary-btn" onClick={handleContinue} style={{ marginTop: 10 }}>
               Continue to Payment
             </button>
           </aside>

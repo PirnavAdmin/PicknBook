@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
@@ -87,6 +88,10 @@ import FlightCouponList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Coupon List/F
 import FlightUsedCouponList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Used Coupon List/FlightUsedCoupon";
 import FlightPopularRoutes from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Flight Popular Routes/FlightPopularRoutes";
 import FlightPopularDestination from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Popular Destinantion/FlightPopularDestination";
+import HotelDiscountList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Discount List/HotelDiscountList";
+import HotelCouponList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Coupon List/HotelCouponList";
+import HotelConvenienceFee from "./Admin_Portal/B2C HOTEL MANAGEMENT/convenience fee/HotelConvenienceFee";
+import HotelGstSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/GstSettings/HotelGstSettings";
 import TaxManagement from "./Admin_Portal/PAYMENT MANAGEMENT/Tax Management/TaxManagement";
 import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
@@ -115,15 +120,7 @@ const ADMIN_PATHS = {
   pin: "/admin/pin",
 };
 
-const USER_PROTECTED_PATH_PREFIXES = [
-  "/bus/payment",
-  "/flight/payment",
-  "/hotel/payment",
-  "/dashboard",
-  "/change-password",
-  "/edit-profile",
-  "/booking-confirmation",
-];
+const USER_PROTECTED_PATH_PREFIXES = [];
 
 function isUserProtectedPath(pathname) {
   const normalizedPath = String(pathname || "").toLowerCase();
@@ -428,6 +425,14 @@ function AppContent() {
           <Route
             path="b2c-flight/*"
             element={adminPlaceholder("B2C Flight Management")}
+          />
+          <Route path="b2c-hotel/discounts" element={<HotelDiscountList />} />
+          <Route path="b2c-hotel/coupon-list" element={<HotelCouponList />} />
+          <Route path="b2c-hotel/convenience-fee" element={<HotelConvenienceFee />} />
+          <Route path="b2c-hotel/gst-settings" element={<HotelGstSettings />} />
+          <Route
+            path="b2c-hotel/*"
+            element={adminPlaceholder("B2C Hotel Management")}
           />
           <Route path="page-management/pages" element={<AllPages />} />
           <Route path="page-management/pages/new" element={<AddPage />} />

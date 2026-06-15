@@ -48,6 +48,9 @@ const API_BASE_URL = resolveApiBaseUrl();
 
 const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
 const ADMIN_FLIGHT_ROOT = "/api/admin/flight";
+const ADMIN_FLIGHT_MARKUPS_ROOT = "/api/admin/flight-markups";
+const ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT =
+  "/api/admin/flight-convenience-fee-rules";
 
 const FALLBACK_FLIGHT_TEMPLATES = [
   {
@@ -495,6 +498,300 @@ function toFlightCouponRequestPayload(coupon) {
   };
 }
 
+function normalizeFlightDiscountRecord(record) {
+  return {
+    ...record,
+    id: pickFirst(record, ["id", "Id"], null),
+    value: Number(pickFirst(record, ["value", "Value"], 0)) || 0,
+    discountType: String(
+      pickFirst(record, ["discountType", "DiscountType"], "Percentage") ||
+        "Percentage"
+    ),
+    name: String(pickFirst(record, ["name", "Name"], "") || ""),
+    entryDate: pickFirst(
+      record,
+      ["entryDate", "EntryDate", "entryDateUtc", "EntryDateUtc", "insertDateUtc", "InsertDateUtc"],
+      null
+    ),
+    updateDate: pickFirst(
+      record,
+      ["updateDate", "UpdateDate", "updateDateUtc", "UpdateDateUtc", "updatedAtUtc", "UpdatedAtUtc"],
+      null
+    ),
+    updatedBy: String(pickFirst(record, ["updatedBy", "UpdatedBy"], "Admin") || "Admin"),
+    remark: String(pickFirst(record, ["remark", "Remark"], "") || ""),
+    status: String(pickFirst(record, ["status", "Status"], "Active") || "Active"),
+  };
+}
+
+function toFlightDiscountRequestPayload(discount) {
+  const discountType = String(
+    pickFirst(discount, ["discountType", "DiscountType", "type"], "Percentage") ||
+      "Percentage"
+  ).trim();
+  const value = Number(pickFirst(discount, ["value", "Value"], 0)) || 0;
+
+  return {
+    value,
+    discountType,
+    name: String(
+      pickFirst(discount, ["name", "Name"], `${discountType || "Flight"} Discount`) ||
+        `${discountType || "Flight"} Discount`
+    ).trim(),
+    status: String(pickFirst(discount, ["status", "Status"], "Active") || "Active").trim(),
+    updatedBy: String(
+      pickFirst(discount, ["updatedBy", "UpdatedBy"], "Admin") || "Admin"
+    ).trim(),
+    remark: String(pickFirst(discount, ["remark", "Remark"], "") || "").trim(),
+  };
+}
+
+function normalizeDiscountConditionRecord(record) {
+  return {
+    ...record,
+    id: pickFirst(record, ["id", "Id"], null),
+    flightDiscountId: pickFirst(
+      record,
+      ["flightDiscountId", "FlightDiscountId", "discountId", "DiscountId"],
+      null
+    ),
+    conditionType: String(
+      pickFirst(record, ["conditionType", "ConditionType"], "") || ""
+    ),
+    conditionOperator: String(
+      pickFirst(
+        record,
+        ["conditionOperator", "ConditionOperator", "operator", "Operator"],
+        ""
+      ) || ""
+    ),
+    value1: String(pickFirst(record, ["value1", "Value1"], "") || ""),
+    value2: pickFirst(record, ["value2", "Value2"], null),
+  };
+}
+
+function normalizeAirlineWebCheckRecord(record) {
+  const airline = String(
+    pickFirst(record, ["airline", "Airline", "airlineName", "AirlineName"], "") || ""
+  );
+  const airlineCode = String(
+    pickFirst(record, ["airlineCode", "AirlineCode", "code", "Code"], "") || ""
+  );
+  const url = String(
+    pickFirst(record, ["url", "Url", "webCheckinUrl", "WebCheckinUrl"], "") || ""
+  );
+
+  return {
+    ...record,
+    id: pickFirst(record, ["id", "Id"], null),
+    airline,
+    airlineName: airline,
+    airlineCode,
+    code: airlineCode,
+    url,
+    webCheckinUrl: url,
+  };
+}
+
+function toAirlineWebCheckRequestPayload(link) {
+  const airline = String(
+    pickFirst(link, ["airline", "Airline", "airlineName", "AirlineName", "name"], "") ||
+      ""
+  ).trim();
+  const airlineCode = String(
+    pickFirst(link, ["airlineCode", "AirlineCode", "code", "Code"], "") ||
+      airline.slice(0, 2)
+  )
+    .trim()
+    .toUpperCase();
+  const url = String(
+    pickFirst(link, ["url", "Url", "webCheckinUrl", "WebCheckinUrl"], "") || ""
+  ).trim();
+
+  return {
+    airline,
+    airlineCode,
+    url,
+  };
+}
+
+function normalizePopularDestinationRecord(record) {
+  return {
+    ...record,
+    id: pickFirst(record, ["id", "Id"], null),
+    title: String(
+      pickFirst(record, ["title", "Title", "destinationName", "DestinationName"], "") ||
+        ""
+    ),
+    subTitle: String(pickFirst(record, ["subTitle", "SubTitle"], "") || ""),
+    category: String(pickFirst(record, ["category", "Category"], "") || ""),
+    placement: String(pickFirst(record, ["placement", "Placement"], "main") || "main"),
+    url: String(pickFirst(record, ["url", "Url"], "") || ""),
+    imageUrl: String(pickFirst(record, ["imageUrl", "ImageUrl"], "") || ""),
+    status: String(pickFirst(record, ["status", "Status"], "Active") || "Active"),
+    entryDate: pickFirst(
+      record,
+      ["entryDate", "EntryDate", "createdAt", "CreatedAt", "createdAtUtc", "CreatedAtUtc"],
+      null
+    ),
+  };
+}
+
+function toPopularDestinationRequestPayload(destination) {
+  return {
+    title: String(
+      pickFirst(destination, ["title", "Title", "destinationName", "DestinationName"], "") ||
+        ""
+    ).trim(),
+    subTitle: String(pickFirst(destination, ["subTitle", "SubTitle"], "") || "").trim(),
+    imageUrl: String(pickFirst(destination, ["imageUrl", "ImageUrl"], "") || "").trim(),
+    category: String(
+      pickFirst(destination, ["category", "Category"], "Domestic") || "Domestic"
+    ).trim(),
+    placement: String(
+      pickFirst(destination, ["placement", "Placement"], "main") || "main"
+    ).trim(),
+    url: String(pickFirst(destination, ["url", "Url"], "") || "").trim(),
+    status: String(pickFirst(destination, ["status", "Status"], "Active") || "Active").trim(),
+  };
+}
+
+function normalizeTripType(value) {
+  const key = String(value || "").trim().toLowerCase();
+  if (key === "roundtrip" || key === "round trip" || key === "int" || key === "international") {
+    return "RoundTrip";
+  }
+
+  return "OneWay";
+}
+
+function normalizeFlatPercentage(value) {
+  const key = String(value || "").trim().toLowerCase();
+  if (key === "percentage" || key === "percent" || key === "%") {
+    return "Percentage";
+  }
+
+  return "Flat";
+}
+
+function normalizeConvenienceFeeRuleRecord(record) {
+  return {
+    ...record,
+    id: pickFirst(record, ["id", "Id"], null),
+    tripType: normalizeTripType(pickFirst(record, ["tripType", "TripType"], "OneWay")),
+    feeType: normalizeFlatPercentage(
+      pickFirst(record, ["feeType", "FeeType", "amountType", "AmountType"], "Flat")
+    ),
+    feeValue: Number(
+      pickFirst(record, ["feeValue", "FeeValue", "value", "Value"], 0)
+    ) || 0,
+    isActive: pickFirst(record, ["isActive", "IsActive"], true) !== false,
+  };
+}
+
+function toConvenienceFeeRuleRequestPayload(rule) {
+  return {
+    tripType: normalizeTripType(pickFirst(rule, ["tripType", "TripType"], "OneWay")),
+    feeType: normalizeFlatPercentage(
+      pickFirst(rule, ["feeType", "FeeType", "amountType", "AmountType"], "Flat")
+    ),
+    feeValue: Number(pickFirst(rule, ["feeValue", "FeeValue", "value", "Value"], 0)) || 0,
+    isActive: pickFirst(rule, ["isActive", "IsActive"], true) !== false,
+  };
+}
+
+function normalizeFlightMarkupRecord(record) {
+  return {
+    ...record,
+    id: pickFirst(record, ["id", "Id"], null),
+    airlineCode: String(pickFirst(record, ["airlineCode", "AirlineCode"], "*") || "*"),
+    tripType: normalizeTripType(pickFirst(record, ["tripType", "TripType"], "OneWay")),
+    markupType: normalizeFlatPercentage(
+      pickFirst(record, ["markupType", "MarkupType"], "Flat")
+    ),
+    markupValue: Number(pickFirst(record, ["markupValue", "MarkupValue"], 0)) || 0,
+    priority: Number(pickFirst(record, ["priority", "Priority"], 5)) || 5,
+    isActive: pickFirst(record, ["isActive", "IsActive"], true) !== false,
+    createdAtUtc: pickFirst(record, ["createdAtUtc", "CreatedAtUtc"], null),
+    updatedAtUtc: pickFirst(record, ["updatedAtUtc", "UpdatedAtUtc"], null),
+  };
+}
+
+function toFlightMarkupRequestPayload(markup) {
+  return {
+    airlineCode: String(pickFirst(markup, ["airlineCode", "AirlineCode", "code"], "*") || "*")
+      .trim()
+      .toUpperCase(),
+    tripType: normalizeTripType(pickFirst(markup, ["tripType", "TripType"], "OneWay")),
+    markupType: normalizeFlatPercentage(
+      pickFirst(markup, ["markupType", "MarkupType"], "Flat")
+    ),
+    markupValue: Number(pickFirst(markup, ["markupValue", "MarkupValue", "value"], 0)) || 0,
+    priority: Number(pickFirst(markup, ["priority", "Priority"], 5)) || 5,
+    isActive: pickFirst(markup, ["isActive", "IsActive"], true) !== false,
+  };
+}
+
+function mergeAdminCancellationPayload(payload) {
+  return {
+    flightReservationId: Number(
+      pickFirst(payload, ["flightReservationId", "FlightReservationId"], 0)
+    ) || 0,
+    cancellationStatus: String(
+      pickFirst(payload, ["cancellationStatus", "CancellationStatus", "status"], "Pending") ||
+        "Pending"
+    ),
+    customerRefundStatus: String(
+      pickFirst(payload, ["customerRefundStatus", "CustomerRefundStatus"], "Pending") ||
+        "Pending"
+    ),
+    adminRefundStatus: String(
+      pickFirst(payload, ["adminRefundStatus", "AdminRefundStatus"], "Pending") ||
+        "Pending"
+    ),
+    customerRefundAmountInr:
+      Number(pickFirst(payload, ["customerRefundAmountInr", "CustomerRefundAmountInr"], 0)) ||
+      0,
+    customerCancellationChargeInr:
+      Number(
+        pickFirst(
+          payload,
+          ["customerCancellationChargeInr", "CustomerCancellationChargeInr"],
+          0
+        )
+      ) || 0,
+    customerServiceChargeInr:
+      Number(pickFirst(payload, ["customerServiceChargeInr", "CustomerServiceChargeInr"], 0)) ||
+      0,
+    adminRefundAmountInr:
+      Number(pickFirst(payload, ["adminRefundAmountInr", "AdminRefundAmountInr"], 0)) || 0,
+    adminCancellationChargeInr:
+      Number(
+        pickFirst(payload, ["adminCancellationChargeInr", "AdminCancellationChargeInr"], 0)
+      ) || 0,
+    adminServiceChargeInr:
+      Number(pickFirst(payload, ["adminServiceChargeInr", "AdminServiceChargeInr"], 0)) || 0,
+    supplierRemark: pickFirst(payload, ["supplierRemark", "SupplierRemark"], null),
+    customerRemark: pickFirst(payload, ["customerRemark", "CustomerRemark"], null),
+    adminRemark: pickFirst(payload, ["adminRemark", "AdminRemark"], null),
+  };
+}
+
+function mergeAdminAmendmentPayload(payload) {
+  return {
+    flightReservationId: Number(
+      pickFirst(payload, ["flightReservationId", "FlightReservationId"], 0)
+    ) || 0,
+    amendmentStatus: String(
+      pickFirst(payload, ["amendmentStatus", "AmendmentStatus", "status"], "Pending") ||
+        "Pending"
+    ),
+    supplierRemark: pickFirst(payload, ["supplierRemark", "SupplierRemark"], null),
+    customerRemark: pickFirst(payload, ["customerRemark", "CustomerRemark"], null),
+    adminRemark: pickFirst(payload, ["adminRemark", "AdminRemark"], null),
+  };
+}
+
 function normalizeFlightActionResponse(response) {
   if (!response || typeof response !== "object") {
     return response;
@@ -553,10 +850,13 @@ function normalizeErrorMessage(payload) {
 }
 
 async function requestJson(urlOrPath, options = {}) {
-  const fetchOptions = { ...options };
-  delete fetchOptions.userId;
-  delete fetchOptions.requireUserId;
-  const resolvedToken = resolveAuthToken();
+  const {
+    skipAuth = false,
+    userId: _userId,
+    requireUserId: _requireUserId,
+    ...fetchOptions
+  } = options || {};
+  const resolvedToken = skipAuth ? "" : resolveAuthToken();
   const headers = {
     Accept: "application/json",
     ...(resolvedToken && !options?.headers?.Authorization
@@ -672,6 +972,222 @@ export async function deleteFlightCoupon(couponId) {
   });
 }
 
+export async function listFlightDiscounts() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/discounts`, { method: "GET" });
+
+  return Array.isArray(data)
+    ? data.map((record) => normalizeFlightDiscountRecord(record))
+    : [];
+}
+
+export async function createFlightDiscount(discount) {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/discounts`, {
+    method: "POST",
+    body: JSON.stringify(toFlightDiscountRequestPayload(discount)),
+  });
+
+  return normalizeFlightDiscountRecord(data);
+}
+
+export async function updateFlightDiscount(discountId, discount) {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/discounts/${discountId}`, {
+    method: "PUT",
+    body: JSON.stringify(toFlightDiscountRequestPayload(discount)),
+  });
+
+  return normalizeFlightDiscountRecord(data);
+}
+
+export async function deleteFlightDiscount(discountId) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/discounts/${discountId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listDiscountConditions(discountId) {
+  const data = await requestJson(
+    `${ADMIN_FLIGHT_ROOT}/discounts/${discountId}/conditions`,
+    { method: "GET" }
+  );
+
+  return Array.isArray(data)
+    ? data.map((record) => normalizeDiscountConditionRecord(record))
+    : [];
+}
+
+export async function addDiscountCondition(discountId, condition) {
+  const data = await requestJson(
+    `${ADMIN_FLIGHT_ROOT}/discounts/${discountId}/conditions`,
+    {
+      method: "POST",
+      body: JSON.stringify(condition),
+    }
+  );
+
+  return normalizeDiscountConditionRecord(data?.condition || data);
+}
+
+export async function deleteDiscountCondition(conditionId) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/discounts/conditions/${conditionId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listAirlineWebChecks() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/airline-webcheck`, {
+    method: "GET",
+  });
+
+  return Array.isArray(data)
+    ? data.map((record) => normalizeAirlineWebCheckRecord(record))
+    : [];
+}
+
+export async function createAirlineWebCheck(link) {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/airline-webcheck`, {
+    method: "POST",
+    body: JSON.stringify(toAirlineWebCheckRequestPayload(link)),
+  });
+
+  return normalizeAirlineWebCheckRecord(data);
+}
+
+export async function deleteAirlineWebCheck(linkId) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/airline-webcheck/${linkId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listPopularDestinations() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/popular-destinations`, {
+    method: "GET",
+  });
+
+  return Array.isArray(data)
+    ? data.map((record) => normalizePopularDestinationRecord(record))
+    : [];
+}
+
+export async function createPopularDestination(destination) {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/popular-destinations`, {
+    method: "POST",
+    body: JSON.stringify(toPopularDestinationRequestPayload(destination)),
+  });
+
+  return normalizePopularDestinationRecord(data);
+}
+
+export async function updatePopularDestination(destinationId, destination) {
+  const data = await requestJson(
+    `${ADMIN_FLIGHT_ROOT}/popular-destinations/${destinationId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(toPopularDestinationRequestPayload(destination)),
+    }
+  );
+
+  return normalizePopularDestinationRecord(data);
+}
+
+export async function deletePopularDestination(destinationId) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/popular-destinations/${destinationId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listConvenienceFeeRules() {
+  const data = await requestJson(ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT, {
+    method: "GET",
+  });
+
+  return Array.isArray(data)
+    ? data.map((record) => normalizeConvenienceFeeRuleRecord(record))
+    : [];
+}
+
+export async function createConvenienceFeeRule(rule) {
+  const data = await requestJson(ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT, {
+    method: "POST",
+    body: JSON.stringify(toConvenienceFeeRuleRequestPayload(rule)),
+  });
+
+  return normalizeConvenienceFeeRuleRecord(data);
+}
+
+export async function updateConvenienceFeeRule(ruleId, rule) {
+  const data = await requestJson(
+    `${ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT}/${ruleId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(toConvenienceFeeRuleRequestPayload(rule)),
+    }
+  );
+
+  return normalizeConvenienceFeeRuleRecord(data);
+}
+
+export async function listFlightMarkups() {
+  const data = await requestJson(ADMIN_FLIGHT_MARKUPS_ROOT, { method: "GET" });
+
+  return Array.isArray(data)
+    ? data.map((record) => normalizeFlightMarkupRecord(record))
+    : [];
+}
+
+export async function createFlightMarkup(markup) {
+  const data = await requestJson(ADMIN_FLIGHT_MARKUPS_ROOT, {
+    method: "POST",
+    body: JSON.stringify(toFlightMarkupRequestPayload(markup)),
+  });
+
+  return normalizeFlightMarkupRecord(data);
+}
+
+export async function updateFlightMarkup(markupId, markup) {
+  const data = await requestJson(`${ADMIN_FLIGHT_MARKUPS_ROOT}/${markupId}`, {
+    method: "PUT",
+    body: JSON.stringify(toFlightMarkupRequestPayload(markup)),
+  });
+
+  return normalizeFlightMarkupRecord(data);
+}
+
+export async function deleteFlightMarkup(markupId) {
+  return requestJson(`${ADMIN_FLIGHT_MARKUPS_ROOT}/${markupId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listAdminCancellations() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/cancellations`, {
+    method: "GET",
+  });
+
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateAdminCancellation(cancellationId, payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/cancellations/${cancellationId}`, {
+    method: "PUT",
+    body: JSON.stringify(mergeAdminCancellationPayload(payload)),
+  });
+}
+
+export async function listAdminAmendments() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/amendments`, {
+    method: "GET",
+  });
+
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateAdminAmendment(amendmentId, payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/amendments/${amendmentId}`, {
+    method: "PUT",
+    body: JSON.stringify(mergeAdminAmendmentPayload(payload)),
+  });
+}
+
 export async function listFlightBookings({ passengerPhone, status, userId } = {}) {
   const url = buildUrl(`${FLIGHT_BOOKINGS_ROOT}/bookings`, {
     passengerPhone,
@@ -712,28 +1228,32 @@ export async function cancelFlightBooking(bookingId, reason, { userId } = {}) {
 }
 
 export async function listHotFlightRoutes({ metric = "score" } = {}) {
-  const url = buildUrl(`${FLIGHT_BOOKINGS_ROOT}/hot-routes`, { metric });
-  const data = await requestJson(url, { method: "GET" });
+  try {
+    const url = buildUrl(`${FLIGHT_BOOKINGS_ROOT}/hot-routes`, { metric });
+    const data = await requestJson(url, { method: "GET", skipAuth: true });
 
-  if (!Array.isArray(data)) {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map((record, index) => ({
+      routeId:
+        pickFirst(record, ["routeId", "RouteId"], null) || `flight-hot-${index + 1}`,
+      fromCity: String(
+        pickFirst(record, ["fromCity", "FromCity", "source", "Source"], "") || ""
+      ),
+      toCity: String(
+        pickFirst(record, ["toCity", "ToCity", "destination", "Destination"], "") || ""
+      ),
+      score: Number(pickFirst(record, ["score", "Score"], 0)) || 0,
+      searchCount: Number(pickFirst(record, ["searchCount", "SearchCount"], 0)) || 0,
+      bookingCount:
+        Number(pickFirst(record, ["bookingCount", "BookingCount"], 0)) || 0,
+      ...record,
+    }));
+  } catch {
     return [];
   }
-
-  return data.map((record, index) => ({
-    routeId:
-      pickFirst(record, ["routeId", "RouteId"], null) || `flight-hot-${index + 1}`,
-    fromCity: String(
-      pickFirst(record, ["fromCity", "FromCity", "source", "Source"], "") || ""
-    ),
-    toCity: String(
-      pickFirst(record, ["toCity", "ToCity", "destination", "Destination"], "") || ""
-    ),
-    score: Number(pickFirst(record, ["score", "Score"], 0)) || 0,
-    searchCount: Number(pickFirst(record, ["searchCount", "SearchCount"], 0)) || 0,
-    bookingCount:
-      Number(pickFirst(record, ["bookingCount", "BookingCount"], 0)) || 0,
-    ...record,
-  }));
 }
 
 export async function getFlightSeatMap(flightId, travelClass, { userId } = {}) {
@@ -742,4 +1262,19 @@ export async function getFlightSeatMap(flightId, travelClass, { userId } = {}) {
   });
 
   return requestJson(url, { method: "GET", userId });
+}
+
+export async function getFlightPricingPreview(payload, { userId } = {}) {
+  return requestJson(`${FLIGHT_BOOKINGS_ROOT}/pricing-preview`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    userId,
+  });
+}
+
+export async function getFlightPromotions() {
+  return requestJson("/api/FlightPromotions", {
+    method: "GET",
+    skipAuth: true,
+  });
 }

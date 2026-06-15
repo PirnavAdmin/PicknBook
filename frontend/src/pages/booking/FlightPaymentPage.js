@@ -73,6 +73,8 @@ function buildFlightBookingPayload(flowState) {
     passengerEmail: String(flowState.contact?.email || "").trim(),
     travelClass: flowState.flight?.className || flowState.searchContext?.cabinClass || "Economy",
     passengers,
+    couponCode: flowState.couponCode || null,
+    selectedFeaturedOfferId: flowState.selectedFeaturedOfferId || null,
   };
 }
 

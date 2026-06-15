@@ -1,0 +1,10 @@
+@import "../Coupon List/HotelCouponList.css";
+
+.admin-hotel-discount-shell {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}

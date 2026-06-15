@@ -168,7 +168,9 @@ export default function HotelPaymentPage() {
         offerId: offer.offerId,
         guestName: flowState.guestName,
         guestEmail: flowState.guestEmail,
-        guestPhone: flowState.guestPhone
+        guestPhone: flowState.guestPhone,
+        couponCode: flowState.couponCode,
+        selectedFeaturedOfferId: flowState.selectedFeaturedOfferId
       });
 
       const ticketPayload = buildTicketPayload(

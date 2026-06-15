@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Star,
   Wifi,
+  Loader2,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate } from "../../utils/apiDateFormat";
@@ -174,7 +175,111 @@ export default function HotelSearchResults() {
   };
 
   return (
-    <main className="hotel-results-page">
+    <main className={`hotel-results-page${loading ? " is-loading" : ""}`}>
+      {loading && (
+        <section className="hotel-loading-screen" aria-live="polite" aria-busy="true">
+          <div className="hotel-sonar-animation">
+              <svg viewBox="0 0 1000 500" className="hotel-sonar-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="hotelSkyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#f0fdf4" />
+                    <stop offset="50%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#e0f2fe" />
+                  </linearGradient>
+                  <linearGradient id="hotelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#dc1e26" />
+                    <stop offset="100%" stopColor="#b8141b" />
+                  </linearGradient>
+                  <radialGradient id="sonarPulse" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#dc1e26" stopOpacity="0.25" />
+                    <stop offset="60%" stopColor="#dc1e26" stopOpacity="0.08" />
+                    <stop offset="100%" stopColor="#dc1e26" stopOpacity="0" />
+                  </radialGradient>
+                  <filter id="hotelGlow"><feGaussianBlur stdDeviation="3.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                </defs>
+
+
+                {/* Sun & Clouds */}
+                <circle cx="850" cy="90" r="40" fill="#fef08a" opacity="0.8" />
+                <circle cx="850" cy="90" r="25" fill="#fde047" opacity="0.9" />
+
+                <g className="hotel-cloud hotel-cloud-1" opacity="0.4">
+                  <ellipse cx="200" cy="90" rx="60" ry="18" fill="#fff" />
+                  <circle cx="180" cy="78" r="22" fill="#fff" />
+                  <circle cx="215" cy="80" r="20" fill="#fff" />
+                </g>
+                <g className="hotel-cloud hotel-cloud-2" opacity="0.3">
+                  <ellipse cx="600" cy="70" rx="50" ry="15" fill="#fff" />
+                  <circle cx="585" cy="60" r="18" fill="#fff" />
+                </g>
+
+                {/* Mountains background */}
+                <polygon points="0,420 180,280 380,380 580,240 760,350 920,260 1000,340 1000,500 0,500" fill="#f1f5f9" opacity="0.5" />
+                <polygon points="0,450 220,320 440,410 680,290 880,380 1000,310 1000,500 0,500" fill="#e2e8f0" opacity="0.4" />
+
+                {/* Ground */}
+                <rect x="0" y="440" width="1000" height="60" fill="#cbd5e1" opacity="0.6" />
+
+                {/* Stylized hotel resort graphic inside the SVG */}
+                <g className="hotel-building-graphic" transform="translate(360, 210)" filter="url(#hotelGlow)">
+                  {/* Left wing */}
+                  <rect x="20" y="70" width="60" height="160" rx="3" fill="#ffffff" stroke="#b8141b" strokeWidth="2.5" />
+                  {/* Main tower */}
+                  <rect x="90" y="30" width="100" height="200" rx="4" fill="#ffffff" stroke="#b8141b" strokeWidth="3" />
+                  {/* Right wing */}
+                  <rect x="200" y="90" width="60" height="140" rx="3" fill="#ffffff" stroke="#b8141b" strokeWidth="2.5" />
+
+                  {/* Windows left wing */}
+                  {Array.from({ length: 4 }).map((_, r) =>
+                    Array.from({ length: 2 }).map((_, c) => (
+                      <rect key={`wl-${r}-${c}`} x={32 + c * 20} y={85 + r * 32} width="8" height="12" rx="1.5" fill="#fde047" className="hotel-window-light" style={{ animationDelay: `${(r * 2 + c) * 0.2}s` }} />
+                    ))
+                  )}
+
+                  {/* Windows main tower */}
+                  {Array.from({ length: 5 }).map((_, r) =>
+                    Array.from({ length: 3 }).map((_, c) => (
+                      <rect key={`wm-${r}-${c}`} x={108 + c * 28} y={48 + r * 32} width="10" height="15" rx="1.5" fill="#fde047" className="hotel-window-light" style={{ animationDelay: `${(r * 3 + c) * 0.15}s` }} />
+                    ))
+                  )}
+
+                  {/* Windows right wing */}
+                  {Array.from({ length: 3 }).map((_, r) =>
+                    Array.from({ length: 2 }).map((_, c) => (
+                      <rect key={`wr-${r}-${c}`} x={212 + c * 20} y={105 + r * 32} width="8" height="12" rx="1.5" fill="#fde047" className="hotel-window-light" style={{ animationDelay: `${(r * 2 + c) * 0.35}s` }} />
+                    ))
+                  )}
+
+                  {/* Entrance canopy */}
+                  <path d="M 82 230 L 100 215 L 180 215 L 198 230 Z" fill="url(#hotelGrad)" />
+                  <rect x="115" y="215" width="50" height="15" fill="#ffffff" opacity="0.9" />
+
+                  {/* Dynamic Sonar scanning pulses centering around the hotel building */}
+                  <circle cx="140" cy="120" r="10" fill="none" stroke="#dc1e26" strokeWidth="2" className="sonar-ring sonar-ring-1" />
+                  <circle cx="140" cy="120" r="10" fill="none" stroke="#dc1e26" strokeWidth="2" className="sonar-ring sonar-ring-2" />
+                  <circle cx="140" cy="120" r="10" fill="none" stroke="#dc1e26" strokeWidth="2" className="sonar-ring sonar-ring-3" />
+                  
+                  {/* Destination Marker over the hotel building */}
+                  <g className="hotel-pin" transform="translate(140, 100)">
+                    <path d="M 0 0 C -12 -12 -12 -32 0 -32 C 12 -32 12 -12 0 0 Z" fill="url(#hotelGrad)" />
+                    <circle cx="0" cy="-20" r="5" fill="#ffffff" />
+                  </g>
+                </g>
+
+                {/* Palm trees next to hotel */}
+                {[[300, 440], [670, 440]].map(([x, y], i) => (
+                  <g key={`palm-${i}`} opacity="0.8">
+                    <path d={`M ${x} ${y} Q ${x - 5} ${y - 40}, ${x - 10} ${y - 80}`} fill="none" stroke="#78350f" strokeWidth="3" strokeLinecap="round" />
+                    <path d={`M ${x - 10} ${y - 80} Q ${x - 35} ${y - 95}, ${x - 45} ${y - 85}`} fill="none" stroke="#15803d" strokeWidth="3.5" strokeLinecap="round" />
+                    <path d={`M ${x - 10} ${y - 80} Q ${x + 15} ${y - 95}, ${x + 25} ${y - 85}`} fill="none" stroke="#16a34a" strokeWidth="3.5" strokeLinecap="round" />
+                    <path d={`M ${x - 10} ${y - 83} Q ${x - 20} ${y - 105}, ${x - 25} ${y - 98}`} fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" />
+                    <path d={`M ${x - 10} ${y - 83} Q ${x + 5} ${y - 105}, ${x + 10} ${y - 98}`} fill="none" stroke="#15803d" strokeWidth="3" strokeLinecap="round" />
+                  </g>
+                ))}
+              </svg>
+            </div>
+        </section>
+      )}
       <div className="hotel-results-shell">
         <section className="hotel-search-summary">
           <div className="hotel-promo-scroller">

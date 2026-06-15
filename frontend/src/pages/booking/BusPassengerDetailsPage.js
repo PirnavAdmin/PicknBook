@@ -1233,7 +1233,6 @@ export default function BusPassengerDetailsPage() {
       isFeaturedOffer: true,
     };
 
-    setSelectedFeaturedOffer(pendingOffer);
     setManualCouponCode("");
     setCouponDiscount(0);
     setAppliedCoupon(null);
@@ -1244,22 +1243,22 @@ export default function BusPassengerDetailsPage() {
         { selectedFeaturedOfferId: featuredOfferId, couponCode: null }
       );
 
-      setSelectedFeaturedOffer(pendingOffer);
-      setManualCouponCode("");
-      setAppliedCoupon(null);
       if (hasBackendConfirmedPromotion(preview)) {
+        setSelectedFeaturedOffer(pendingOffer);
+        setManualCouponCode("");
+        setAppliedCoupon(null);
         setCouponMessage("Offer discount applied successfully.");
         setCouponMessageType("success");
       } else {
-        setCouponMessage("Offer selected. Backend did not return a discount for this seat yet.");
+        setSelectedFeaturedOffer(null);
+        if (snapshotBase) setPricingPreview(snapshotBase);
+        setCouponMessage("Offer could not be applied.");
         setCouponMessageType("error");
       }
     } catch (error) {
-      setSelectedFeaturedOffer(pendingOffer);
-      setManualCouponCode("");
-      setAppliedCoupon(null);
+      setSelectedFeaturedOffer(null);
       if (snapshotBase) setPricingPreview(snapshotBase);
-      setCouponMessage(formatCouponErrorMessage(error.message) || "Offer saved, but pricing preview failed.");
+      setCouponMessage(formatCouponErrorMessage(error.message) || "Unable to apply offer.");
       setCouponMessageType("error");
     } finally {
       setIsApplyingCoupon(false);
@@ -1936,23 +1935,35 @@ export default function BusPassengerDetailsPage() {
                     </div>
                     {Number(pricingPreview.autoDiscountAmount) > 0 && (
                       <div>
-                        <span>Discount</span>
+                        <span>Auto Discount</span>
                         <strong>(-) {formatCurrency(pricingPreview.autoDiscountAmount)}</strong>
                       </div>
                     )}
-                    {/* Discount row — uses appliedPromotionCode / discountSource for featured offers */}
+                    {/* Coupon Discount Row */}
                     {(() => {
-                      const isFeaturedActive = Boolean(selectedFeaturedOffer);
                       const appliedCode = pricingPreview.appliedPromotionCode || appliedCoupon?.couponCode;
-                      const hasAppliedDiscount = isFeaturedActive || Boolean(appliedCoupon || appliedCode);
-                      const displayDiscount = hasAppliedDiscount
+                      const hasCoupon = Boolean(appliedCoupon || appliedCode) && !selectedFeaturedOffer;
+                      const couponAmount = hasCoupon
                         ? getPromotionDiscountAmount(pricingPreview, couponDiscount)
                         : 0;
-                      const label = "Discount";
-                      return hasAppliedDiscount && displayDiscount > 0 ? (
+                      return hasCoupon && couponAmount > 0 ? (
                         <div>
-                          <span>{label}</span>
-                          <strong>(-) {formatCurrency(displayDiscount)}</strong>
+                          <span>Coupon Discount ({appliedCode})</span>
+                          <strong>(-) {formatCurrency(couponAmount)}</strong>
+                        </div>
+                      ) : null;
+                    })()}
+
+                    {/* Offer Discount Row */}
+                    {(() => {
+                      const isFeaturedActive = Boolean(selectedFeaturedOffer);
+                      const offerAmount = isFeaturedActive
+                        ? getPromotionDiscountAmount(pricingPreview, couponDiscount)
+                        : 0;
+                      return isFeaturedActive && offerAmount > 0 ? (
+                        <div>
+                          <span>Offer Discount ({selectedFeaturedOffer?.title || ""})</span>
+                          <strong>(-) {formatCurrency(offerAmount)}</strong>
                         </div>
                       ) : null;
                     })()}
@@ -2223,23 +2234,35 @@ export default function BusPassengerDetailsPage() {
                       </div>
                       {Number(pricingPreview.autoDiscountAmount) > 0 && (
                         <div>
-                          <span>Discount</span>
+                          <span>Auto Discount</span>
                           <strong>(-) {formatCurrency(pricingPreview.autoDiscountAmount)}</strong>
                         </div>
                       )}
-                      {/* Discount row in confirmation modal */}
+                      {/* Coupon Discount Row */}
                       {(() => {
-                        const isFeaturedActive = Boolean(selectedFeaturedOffer);
                         const appliedCode = pricingPreview.appliedPromotionCode || appliedCoupon?.couponCode;
-                        const hasAppliedDiscount = isFeaturedActive || Boolean(appliedCoupon || appliedCode);
-                        const displayDiscount = hasAppliedDiscount
+                        const hasCoupon = Boolean(appliedCoupon || appliedCode) && !selectedFeaturedOffer;
+                        const couponAmount = hasCoupon
                           ? getPromotionDiscountAmount(pricingPreview, couponDiscount)
                           : 0;
-                        const label = "Discount";
-                        return hasAppliedDiscount && displayDiscount > 0 ? (
+                        return hasCoupon && couponAmount > 0 ? (
                           <div>
-                            <span>{label}</span>
-                            <strong>(-) {formatCurrency(displayDiscount)}</strong>
+                            <span>Coupon Discount ({appliedCode})</span>
+                            <strong>(-) {formatCurrency(couponAmount)}</strong>
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Offer Discount Row */}
+                      {(() => {
+                        const isFeaturedActive = Boolean(selectedFeaturedOffer);
+                        const offerAmount = isFeaturedActive
+                          ? getPromotionDiscountAmount(pricingPreview, couponDiscount)
+                          : 0;
+                        return isFeaturedActive && offerAmount > 0 ? (
+                          <div>
+                            <span>Offer Discount ({selectedFeaturedOffer?.title || ""})</span>
+                            <strong>(-) {formatCurrency(offerAmount)}</strong>
                           </div>
                         ) : null;
                       })()}

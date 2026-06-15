@@ -775,10 +775,19 @@ export default function BusSearchResults() {
 
       const startedAt = Date.now();
 
+      const normalizeCity = (city) => {
+        if (!city) return "";
+        const clean = city.trim().toLowerCase();
+        if (clean === "bangalore") return "Bengaluru";
+        if (clean === "new delhi") return "Delhi";
+        if (clean === "cochin") return "Kochi";
+        return city.trim();
+      };
+
       try {
         const result = await searchBuses({
-          from: sourceName,
-          to: destinationName,
+          from: normalizeCity(sourceName),
+          to: normalizeCity(destinationName),
           date: formatDateInput(selectedDate),
         });
 
@@ -1443,17 +1452,10 @@ export default function BusSearchResults() {
               </div>
             </article>
           ))}
-        </section>
-
-        {isLoadingBuses ? (
+        </section>        {isLoadingBuses ? (
           <section className="bus-loading-screen" aria-live="polite" aria-busy="true">
-            <article className="bus-loading-media-card">
-              <div className="bus-loading-status-chip">
-                <Loader2 size={15} className="spin" />
-                <span>Finding buses for your trip</span>
-              </div>
-              <div className="bus-map-animation">
-                <svg viewBox="0 0 1000 500" className="bus-map-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <div className="bus-map-animation">
+              <svg viewBox="0 0 1000 500" className="bus-map-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#fef3eb" />
@@ -1478,7 +1480,6 @@ export default function BusSearchResults() {
                     <filter id="pinShadow"><feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#dc1e26" floodOpacity="0.3" /></filter>
                   </defs>
 
-                  <rect width="1000" height="500" fill="url(#skyGrad)" />
 
                   {/* Sun */}
                   <g className="bus-sun">
@@ -1645,30 +1646,9 @@ export default function BusSearchResults() {
                   <g className="bus-route-label">
                     <rect x="400" y="155" width="140" height="30" rx="15" fill="#fff" stroke="#fcd5c8" strokeWidth="1.5" opacity="0.9" />
                     <text x="470" y="175" textAnchor="middle" fill="#dc1e26" fontSize="10.5" fontWeight="800" fontFamily="inherit">{sourceName} → {destinationName}</text>
-
                   </g>
                 </svg>
               </div>
-            </article>
-            <div className="bus-loading-copy">
-              <h3>Checking top operators and live fares</h3>
-              <p>
-                Pulling real-time route options and seat inventory. Results will appear in
-                a moment.
-              </p>
-              <div className="bus-loading-progress" aria-hidden="true">
-                <span />
-              </div>
-            </div>
-
-            <section className="bus-loading-search-details">
-              {loadingSearchDetails.map((detail) => (
-                <article key={detail.id} className="bus-loading-detail-card">
-                  <span>{detail.label}</span>
-                  <strong>{detail.value}</strong>
-                </article>
-              ))}
-            </section>
           </section>
         ) : (
           <div className="bus-results-layout">

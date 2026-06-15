@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const FALLBACK_PROXY_TARGET =
-  "https://undogmatically-knotlike-evita.ngrok-free.dev";
+  "https://localhost:7179";
 
 function normalizeHttpUrl(value) {
   if (typeof value !== "string") {

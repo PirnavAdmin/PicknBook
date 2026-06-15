@@ -2,8 +2,8 @@ import axios from "axios";
 import { toApiUrl, withNgrokSkipWarningHeader } from "./apiClient";
 
 const PUBLIC_FEATURED_OFFERS_PATHS = [
-  "/api/featured-offers",
   "/api/FeaturedOffers",
+  "/api/featured-offers",
   "/api/FeaturedOffers/active",
 ];
 
@@ -12,10 +12,10 @@ function buildActiveOffersPaths(bookingType) {
   const query = encodedBookingType ? `?bookingType=${encodedBookingType}` : "";
 
   return [
+    "/api/FeaturedOffers",
+    `/api/FeaturedOffers/active${query}`,
     `/api/featured-offers${query}`,
     `/api/offers/active${query}`,
-    `/api/FeaturedOffers/active${query}`,
-    "/api/FeaturedOffers",
   ];
 }
 
@@ -65,7 +65,7 @@ export async function getPublicFeaturedOffers() {
       return response.data;
     } catch (error) {
       if (!shouldTryNextPublicEndpoint(error)) {
-        throw error;
+        return [];
       }
     }
   }
@@ -75,13 +75,17 @@ export async function getPublicFeaturedOffers() {
     return [];
   }
 
-  const response = await offersApi.get("/api/admin/featured-offers", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await offersApi.get("/api/admin/featured-offers", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  return response.data;
+    return response.data;
+  } catch {
+    return [];
+  }
 }
 
 export async function getActiveOffers(bookingType = "Bus") {
@@ -91,7 +95,7 @@ export async function getActiveOffers(bookingType = "Bus") {
       return response.data;
     } catch (error) {
       if (!shouldTryNextPublicEndpoint(error)) {
-        throw error;
+        return [];
       }
     }
   }

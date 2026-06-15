@@ -165,7 +165,7 @@ export function getOfferDetails(offerId) {
   return getHotelOfferDetails(offerId);
 }
 
-export async function bookHotelOffer({ offerId, guestName, guestEmail, guestPhone }) {
+export async function bookHotelOffer({ offerId, guestName, guestEmail, guestPhone, couponCode, selectedFeaturedOfferId }) {
   return requestHotelJson(
     "/api/hotels/book",
     {
@@ -175,9 +175,22 @@ export async function bookHotelOffer({ offerId, guestName, guestEmail, guestPhon
         guestName,
         guestEmail,
         guestPhone,
+        couponCode,
+        selectedFeaturedOfferId,
       }),
     },
     "Hotel booking failed."
+  );
+}
+
+export async function getHotelPricingPreview(payload) {
+  return requestHotelJson(
+    "/api/hotels/pricing-preview",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    "Unable to calculate pricing preview."
   );
 }
 
@@ -202,4 +215,14 @@ export async function cancelHotelBooking(bookingId, reason = "") {
     { method: "POST" },
     "Unable to cancel hotel booking."
   );
+}
+
+export async function getHotelPromotions() {
+  const payload = await requestHotelJson(
+    "/api/hotels/promotions",
+    { method: "GET" },
+    "Unable to load active hotel promotions."
+  );
+
+  return normalizePayload(payload);
 }

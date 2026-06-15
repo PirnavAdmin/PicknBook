@@ -21,10 +21,10 @@
 
 .hologram-floor { display: none; }
 
-/* ===== Bus Shell (Atlas teal interior gradient, deep teal border, curved nose) ===== */
+/* ===== Bus Shell (Warm orange interior gradient, dark orange border, curved nose) ===== */
 .hologram-bus-shell {
   position: relative !important;
-  border: 2.5px solid #b8141b !important; /* Premium atlas teal border outline */
+  border: 2.5px solid #ea580c !important; /* Premium warm orange border outline */
   border-radius: 48px 12px 12px 48px !important; /* Curved nose on left, square on right */
   background: linear-gradient(135deg, #ffffff 0%, #fff5f0 100%) !important; /* Warm interior lighting glow */
   padding: 8px 8px 8px 84px !important; /* Reduced padding for compact layout */
@@ -43,7 +43,7 @@
   position: absolute !important;
   width: 14px !important;
   height: 6px !important;
-  background: #b8141b !important; /* Matching atlas teal mirror arm */
+  background: #ea580c !important; /* Matching orange mirror arm */
   border-radius: 1px !important;
   z-index: 15 !important;
 }
@@ -135,6 +135,10 @@
   z-index: 10 !important;
 }
 
+.bus-flow-front-label {
+  display: none !important; /* Hide FRONT label */
+}
+
 /* Driver / Helper Seat SVG Containers */
 .bus-flow-driver-seat {
   width: 30px !important;
@@ -153,6 +157,27 @@
   height: 100% !important;
   transform: rotate(-90deg) !important; /* Rotated so the driver faces forward (left) */
   transform-origin: center !important;
+}
+
+/* Style the driver cabin SVG elements to have orange/yellow styling */
+.bus-flow-driver-seat .seat-frame {
+  stroke: #d97706 !important;
+  fill: #f59e0b !important; /* Orange base frame */
+}
+.bus-flow-driver-seat .seat-cushion {
+  stroke: none !important;
+  fill: #fbbf24 !important; /* Yellow inner cushion */
+}
+.bus-flow-driver-seat .seat-back {
+  stroke: #d97706 !important;
+  fill: #f59e0b !important;
+}
+.bus-flow-driver-seat .seat-arm {
+  stroke: #d97706 !important;
+  fill: #fbbf24 !important;
+}
+.bus-flow-driver-seat .seat-shadow {
+  display: none !important;
 }
 
 /* Driver Seat (Placed directly behind the steering wheel) */
@@ -176,7 +201,7 @@
   width: 24px !important;
   height: 6px !important;
   background: #fff8f5 !important; /* Matches container background */
-  border: 2.5px solid #b8141b !important;
+  border: 2.5px solid #ea580c !important;
   border-top: none !important;
   border-radius: 0 0 3px 3px !important;
   z-index: 20 !important;
@@ -184,6 +209,14 @@
 
 /* ===== Deck & Row Layout ===== */
 .hologram-bus-container .bus-flow-coach-floor {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-grow: 1 !important;
+  width: auto !important;
+  flex: none !important;
+}
+
+.hologram-bus-container .bus-flow-sleeper-layout {
   display: flex !important;
   flex-direction: row !important;
   flex-grow: 1 !important;
@@ -234,7 +267,7 @@
   font-family: var(--flow-body-font, sans-serif) !important;
   font-size: 0.72rem !important; /* Slightly smaller vertical label text */
   font-weight: 800 !important;
-  color: #b8141b !important; /* Deep teal text color */
+  color: #c2410c !important; /* Dark orange text color */
   text-transform: uppercase !important;
   letter-spacing: 0.08em !important;
   writing-mode: vertical-rl !important;
@@ -289,7 +322,7 @@
   left: -6px !important;
   right: -6px !important;
   top: 50% !important;
-  border-top: 1px dashed #a8e4dc !important; /* Dashed atlas teal line */
+  border-top: 1px dashed #fdba74 !important; /* Dashed warm orange line */
   transform: translateY(-50%) !important;
 }
 
@@ -325,8 +358,14 @@
   inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  transform: none !important;
+  transform: rotate(-90deg) !important;
   transform-origin: center !important;
+}
+
+/* Actual Seater Seat Components visible */
+.bus-flow-page .hologram-bus-container .bus-flow-seat.is-seater .seat-svg .seat-arm,
+.bus-flow-page .hologram-bus-container .bus-flow-seat.is-seater .seat-svg .seat-shadow {
+  display: block !important;
 }
 
 /* Sleeper Dimensions */
@@ -339,16 +378,32 @@
 
 .bus-flow-page .hologram-bus-container .bus-flow-seat.is-sleeper .seat-svg {
   position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  transform: none !important;
+  width: 38px !important;
+  height: 72px !important;
+  left: 17px !important;
+  top: -17px !important;
+  transform: rotate(-90deg) !important;
   transform-origin: center !important;
 }
 
 /* Hide duplicate CSS pillow detail on sleepers */
 .bus-flow-page .hologram-bus-container .bus-flow-seat--sleeper::after {
   display: none !important;
+}
+.bus-flow-page .hologram-bus-container .bus-flow-seat.is-sleeper .seat-svg .seat-shadow {
+  display: none !important;
+}
+
+/* Label text (upright, bold, centered in the cushion area) */
+.hologram-bus-container .seat-details {
+  position: absolute !important;
+  top: 50% !important;
+  left: 58% !important;
+  transform: translate(-50%, -50%) !important;
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
 }
 
 /* Seat gap/placeholder */
@@ -358,364 +413,202 @@
   height: 38px !important;
 }
 
-/* ===== Seat States: five legend colors only ===== */
-.hologram-bus-container .bus-flow-seat {
-  --seat-line: #b8141b;
-  --seat-fill: #ffffff;
-  --seat-text: #17242d;
-  --seat-shadow: rgba(184, 20, 27, 0.18);
-}
+/* =========================================================
+   PREMIUM SEAT STATES & COLOR RULES (Warm Orange theme)
+   ========================================================= */
 
-.hologram-bus-container .bus-flow-seat.status-female-adjacent:not(.status-booked):not(.status-selected) {
-  --seat-line: #ff4da2;
-  --seat-fill: #fff4fa;
-  --seat-text: #be185d;
-  --seat-shadow: rgba(255, 77, 162, 0.12);
+/* --- AVAILABLE SEAT (Warm Orange frame / Peach cushions) --- */
+.hologram-bus-container .bus-flow-seat.status-available .seat-frame {
+  stroke: #fdba74 !important; /* Light warm orange outline */
+  fill: #ffffff !important;
 }
-
-.hologram-bus-container .bus-flow-seat.status-male-adjacent:not(.status-booked):not(.status-selected) {
-  --seat-line: #2f83ff;
-  --seat-fill: #f3f9ff;
-  --seat-text: #1d5fd6;
-  --seat-shadow: rgba(47, 131, 255, 0.12);
+.hologram-bus-container .bus-flow-seat.status-available .seat-cushion {
+  stroke: #fed7aa !important;
+  fill: #fffaf7 !important; /* Soft warm peach tint */
 }
-
-.hologram-bus-container .bus-flow-seat.status-booked,
-.hologram-bus-container .bus-flow-seat.status-booked-female,
-.hologram-bus-container .bus-flow-seat.status-booked-male {
-  --seat-line: #8f98a3;
-  --seat-fill: #d8d8d8;
-  --seat-text: #737b83;
-  --seat-shadow: rgba(17, 24, 39, 0.08);
+.hologram-bus-container .bus-flow-seat.status-available .sleeper-pillow {
+  stroke: #fed7aa !important;
+  fill: #fff3ec !important;
 }
-
-.hologram-bus-container .bus-flow-seat.status-selected {
-  --seat-line: #18c477;
-  --seat-fill: #c9f6df;
-  --seat-text: #087a4d;
-  --seat-shadow: rgba(24, 196, 119, 0.16);
+.hologram-bus-container .bus-flow-seat.status-available .seat-back {
+  stroke: #fdba74 !important;
+  fill: #fffaf7 !important;
 }
-
-.hologram-bus-container .bus-flow-seat .seat-body,
-.hologram-bus-container .bus-flow-seat .seat-headrest,
-.hologram-bus-container .bus-flow-seat .seat-handle,
-.hologram-bus-container .bus-flow-seat .seat-footrest,
-.hologram-bus-container .bus-flow-seat .sleeper-pillow {
-  stroke: var(--seat-line) !important;
-  fill: var(--seat-fill) !important;
-  stroke-width: 2.6 !important;
-  stroke-dasharray: none !important;
-  filter: drop-shadow(0 5px 8px var(--seat-shadow)) !important;
+.hologram-bus-container .bus-flow-seat.status-available .seat-arm {
+  stroke: #fdba74 !important;
+  fill: #ffffff !important;
 }
-
-.hologram-bus-container .bus-flow-seat .seat-label {
-  display: block !important;
-  fill: var(--seat-text) !important;
+.hologram-bus-container .bus-flow-seat.status-available .seat-shadow {
   stroke: none !important;
-  font-size: 10px !important;
-  font-weight: 900 !important;
-  dominant-baseline: middle !important;
-  paint-order: stroke !important;
+  fill: rgba(234, 88, 12, 0.04) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-available .seat-details {
+  color: #c2410c !important; /* Rich amber orange for the number */
 }
 
-.hologram-bus-container .bus-flow-seat:hover .seat-body,
-.hologram-bus-container .bus-flow-seat:hover .seat-headrest,
-.hologram-bus-container .bus-flow-seat:hover .seat-handle,
-.hologram-bus-container .bus-flow-seat:hover .seat-footrest,
-.hologram-bus-container .bus-flow-seat:hover .sleeper-pillow {
-  --seat-line: var(--theme-primary, #dc1e26);
-  --seat-fill: #eefdf9;
+/* --- SELECTED SEAT (Deep Orange-Red) --- */
+.hologram-bus-container .bus-flow-seat.status-selected .seat-frame {
+  stroke: #ea580c !important;
+  fill: #ffedd5 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-selected .seat-cushion,
+.hologram-bus-container .bus-flow-seat.status-selected .sleeper-pillow,
+.hologram-bus-container .bus-flow-seat.status-selected .seat-back {
+  stroke: #f97316 !important;
+  fill: #ffedd5 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-selected .seat-arm {
+  stroke: #f97316 !important;
+  fill: #ffedd5 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-selected .seat-shadow {
+  stroke: none !important;
+  fill: rgba(234, 88, 12, 0.08) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-selected .seat-details {
+  color: #c2410c !important;
+}
+
+/* --- BOOKED SEAT (Muted Warm Grey/X) --- */
+.hologram-bus-container .bus-flow-seat.status-booked .seat-frame {
+  stroke: #cbd5e1 !important;
+  fill: #f1f5f9 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked .seat-cushion,
+.hologram-bus-container .bus-flow-seat.status-booked .sleeper-pillow,
+.hologram-bus-container .bus-flow-seat.status-booked .seat-back {
+  stroke: #e2e8f0 !important;
+  fill: #e2e8f0 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked .seat-arm {
+  stroke: #cbd5e1 !important;
+  fill: #e2e8f0 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked .seat-shadow {
+  stroke: none !important;
+  fill: rgba(0, 0, 0, 0.02) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked .seat-details {
+  color: #94a3b8 !important;
+}
+
+/* --- BOOKED FEMALE SEAT (Pink-Coral/F) --- */
+.hologram-bus-container .bus-flow-seat.status-booked-female .seat-frame {
+  stroke: #ec4899 !important;
+  fill: #fce7f3 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-female .seat-cushion,
+.hologram-bus-container .bus-flow-seat.status-booked-female .sleeper-pillow,
+.hologram-bus-container .bus-flow-seat.status-booked-female .seat-back {
+  stroke: #f472b6 !important;
+  fill: #fbcfe8 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-female .seat-arm {
+  stroke: #f472b6 !important;
+  fill: #fbcfe8 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-female .seat-shadow {
+  stroke: none !important;
+  fill: rgba(236, 72, 153, 0.1) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-female .seat-details {
+  color: #be185d !important;
+}
+
+/* --- FEMALE ADJACENT / FEMALE AVAILABLE SEAT (Dashed Pink-Coral) --- */
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .seat-frame {
+  stroke: #db2777 !important;
+  fill: #fff5f7 !important;
+  stroke-dasharray: 2,2 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .seat-cushion,
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .sleeper-pillow,
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .seat-back {
+  stroke: #f472b6 !important;
+  fill: #ffe4e6 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .seat-arm {
+  stroke: #f472b6 !important;
+  fill: #ffe4e6 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .seat-shadow {
+  stroke: none !important;
+  fill: rgba(219, 39, 119, 0.1) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-female-adjacent .seat-details {
+  color: #db2777 !important;
+}
+
+/* --- BOOKED MALE SEAT (Blue/M) --- */
+.hologram-bus-container .bus-flow-seat.status-booked-male .seat-frame {
+  stroke: #2563eb !important;
+  fill: #dbeafe !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-male .seat-cushion,
+.hologram-bus-container .bus-flow-seat.status-booked-male .sleeper-pillow,
+.hologram-bus-container .bus-flow-seat.status-booked-male .seat-back {
+  stroke: #3b82f6 !important;
+  fill: #bfdbfe !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-male .seat-arm {
+  stroke: #3b82f6 !important;
+  fill: #bfdbfe !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-male .seat-shadow {
+  stroke: none !important;
+  fill: rgba(37, 99, 235, 0.1) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-booked-male .seat-details {
+  color: #1d4ed8 !important;
+}
+
+/* --- MALE ADJACENT / MALE AVAILABLE SEAT (Dashed Blue) --- */
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .seat-frame {
+  stroke: #1d4ed8 !important;
+  fill: #eff6ff !important;
+  stroke-dasharray: 2,2 !important;
+}
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .seat-cushion,
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .sleeper-pillow,
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .seat-back {
+  stroke: #3b82f6 !important;
+  fill: #dbeafe !important;
+}
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .seat-arm {
+  stroke: #3b82f6 !important;
+  fill: #dbeafe !important;
+}
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .seat-shadow {
+  stroke: none !important;
+  fill: rgba(29, 78, 216, 0.1) !important;
+}
+.hologram-bus-container .bus-flow-seat.status-male-adjacent .seat-details {
+  color: #1d4ed8 !important;
 }
 
 /* ===== Expand Panel for summary actions (Boarding & Dropping / Cancellation Policies) ===== */
 .hologram-bus-container .bus-flow-expand-panel {
   border-top: 1px dashed #ffedd5 !important;
-  background: #F9FAFB !important; /* Soft warm peachy background matching theme */
+  background: #fffaf7 !important; /* Soft warm peachy background matching theme */
   padding: 10px 14px !important;
   border-radius: 0 0 12px 12px !important;
 }
 
 .hologram-bus-container .bus-flow-expand-panel p {
   margin: 0 !important;
-  color: #b8141b !important; /* Deep atlas teal text */
+  color: #c2410c !important; /* Deep warm orange/brown text */
   font-size: 0.78rem !important;
   line-height: 1.4 !important;
 }
 
-/* ===== Seat Selection Structure Fix ===== */
-.bus-flow-page.bus-flow-page--embedded {
-  min-height: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
+/* ===== Legend overrides for Male Booked & Beside Male ===== */
+.bus-flow-page .legend.male-booked::before {
+  border-color: #2563eb !important;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important;
 }
-
-.bus-flow-page.bus-flow-page--embedded .bus-flow-shell {
-  max-width: none !important;
-  width: 100% !important;
-  gap: 0 !important;
-}
-
-.bus-flow-page .bus-flow-seat-layout {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px) !important;
-  gap: 16px !important;
-  align-items: start !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  padding: 12px !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .bus-flow-seat-zone {
-  min-width: 0 !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .bus-flow-seat-top {
-  display: grid !important;
-  grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1.28fr) !important;
-  gap: 12px !important;
-  align-items: stretch !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  margin: 0 0 12px !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .bus-flow-fares,
-.bus-flow-page .bus-flow-seat-legend {
-  min-width: 0 !important;
-  min-height: 82px !important;
-  box-sizing: border-box !important;
-  border: 1px solid #f0d9cf !important;
-  border-radius: 12px !important;
-  background: #F9FAFB !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .bus-flow-fares {
-  display: grid !important;
-  align-content: center !important;
-  gap: 9px !important;
-  padding: 12px !important;
-}
-
-.bus-flow-page .bus-flow-fares-head {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-}
-
-.bus-flow-page .bus-flow-fares h3 {
-  margin: 0 !important;
-  color: #10233f !important;
-  font-size: 0.95rem !important;
-  font-weight: 900 !important;
-  line-height: 1.15 !important;
-}
-
-.bus-flow-page .bus-flow-info-btn {
-  flex: 0 0 auto !important;
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 999px !important;
-  border: 0 !important;
-  background: #dc1e26 !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .bus-flow-fare-chips {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 7px !important;
-  margin: 0 !important;
-}
-
-.bus-flow-page .bus-flow-fare-chips button {
-  min-height: 28px !important;
-  border: 1px solid #efd8cf !important;
-  border-radius: 999px !important;
-  padding: 0 11px !important;
+.bus-flow-page .legend.male-adjacent::before {
+  border-color: #2563eb !important;
   background: #ffffff !important;
-  color: #10233f !important;
-  font-size: 0.78rem !important;
-  font-weight: 900 !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .bus-flow-fare-chips button.active {
-  border-color: transparent !important;
-  background: #dc1e26 !important;
-  color: #ffffff !important;
-}
-
-.bus-flow-page .bus-flow-seat-legend {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 6px !important;
-  align-content: center !important;
-  justify-items: center !important;
-  padding: 12px 10px !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .legend {
-  display: grid !important;
-  justify-items: center !important;
-  min-width: 0 !important;
-  width: 100% !important;
-  max-width: 78px !important;
-  min-height: 58px !important;
-  gap: 5px !important;
-  color: #31435e !important;
-  font-size: 0.68rem !important;
-  font-weight: 700 !important;
-  line-height: 1.05 !important;
-  text-align: center !important;
-  align-content: start !important;
-  white-space: normal !important;
-  word-break: normal !important;
-}
-
-.bus-flow-page .legend::before {
-  content: "" !important;
-  flex: 0 0 auto !important;
-  width: 18px !important;
-  height: 18px !important;
-  border-radius: 4px !important;
-  border: 1px solid #ff9b55 !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-}
-
-.bus-flow-page .legend.available::before {
-  border-color: #9a9f9f !important;
-  background: #ffffff !important;
-}
-
-.bus-flow-page .legend.female::before {
-  border-color: #ff4da2 !important;
-  background: #fff4fa !important;
-}
-
-.bus-flow-page .legend.male::before {
-  border-color: #69b8ff !important;
-  background: #f3f9ff !important;
-}
-
-.bus-flow-page .legend.booked::before {
-  border-color: #b8b8b8 !important;
-  background: #d8d8d8 !important;
-}
-
-.bus-flow-page .legend.selected::before {
-  border-color: #18c477 !important;
-  background: #c9f6df !important;
-}
-
-.bus-flow-page .hologram-bus-container {
-  justify-content: flex-start !important;
-  align-items: flex-start !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  padding: 8px !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .hologram-bus-shell {
-  flex: 1 1 100% !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .hologram-bus-container .bus-flow-coach-floor {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .hologram-bus-container .bus-flow-vertical-layout {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .hologram-bus-container .bus-flow-vertical-deck-body,
-.bus-flow-page .hologram-bus-container .bus-flow-vertical-section-grid {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat.is-seater {
-  width: 34px !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  max-height: 34px !important;
-}
-
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat.is-sleeper {
-  width: 66px !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  max-height: 34px !important;
-}
-
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat.is-sleeper .seat-svg {
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat .seat-body,
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat .seat-headrest,
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat .seat-handle,
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat .seat-footrest,
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat .sleeper-pillow {
-  stroke-width: 3 !important;
-}
-
-.bus-flow-page.bus-flow-page--embedded .hologram-bus-container .bus-flow-seat .seat-label {
-  font-size: 11px !important;
-}
-
-.bus-flow-page .bus-flow-point-panel {
-  min-width: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
-
-@media (max-width: 1180px) {
-  .bus-flow-page .bus-flow-seat-layout,
-  .bus-flow-page .bus-flow-seat-top {
-    grid-template-columns: 1fr !important;
-  }
-
-  .bus-flow-page .bus-flow-seat-legend {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  .bus-flow-page .bus-flow-seat-layout {
-    padding: 12px !important;
-  }
-
-  .bus-flow-page .bus-flow-seat-legend {
-    grid-template-columns: 1fr !important;
-  }
+  box-shadow: inset 0 0 0 2px #93c5fd !important;
 }
 

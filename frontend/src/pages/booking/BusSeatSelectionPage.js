@@ -863,10 +863,12 @@ export default function BusSeatSelectionPage({
       }));
     }
 
-    console.warn("⚠️ Backend API has NOT been updated yet with boardingPoints field. Backend needs to return boardingPoints array in the /api/BusBookings/{busId}/seats response.");
+    if (backendSeatMap) {
+      console.warn("⚠️ Backend API has NOT been updated yet with boardingPoints field. Backend needs to return boardingPoints array in the /api/BusBookings/{busId}/seats response.");
+      console.warn("⚠️ Falling back to synthetic data. This should be removed once backend is updated.");
+    }
     
     // Fallback to synthetic generation if API data not available
-    console.warn("⚠️ Falling back to synthetic data. This should be removed once backend is updated.");
     return createPointOptions(
       bus.boardingPoint,
       bus.fromCity,
@@ -894,10 +896,12 @@ export default function BusSeatSelectionPage({
       }));
     }
 
-    console.warn("⚠️ Backend API has NOT been updated yet with droppingPoints field. Backend needs to return droppingPoints array in the /api/BusBookings/{busId}/seats response.");
+    if (backendSeatMap) {
+      console.warn("⚠️ Backend API has NOT been updated yet with droppingPoints field. Backend needs to return droppingPoints array in the /api/BusBookings/{busId}/seats response.");
+      console.warn("⚠️ Falling back to synthetic data. This should be removed once backend is updated.");
+    }
     
     // Fallback to synthetic generation if API data not available
-    console.warn("⚠️ Falling back to synthetic data. This should be removed once backend is updated.");
     return createPointOptions(
       bus.droppingPoint,
       bus.toCity,

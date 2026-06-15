@@ -42,6 +42,11 @@ const icons = {
       <path d="M22 2l-7 20-4-9-9-4 20-7z" />
     </svg>
   ),
+  hotel: (
+    <svg {...iconProps}>
+      <path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 11h2m-2 4h2m4-4h2m-2 4h2" />
+    </svg>
+  ),
   blog: (
     <svg {...iconProps}>
       <path d="M12 20h9" />
@@ -203,6 +208,17 @@ const navItems = [
       { label: 'Airline Brand List', to: adminPath('b2c-flight/airline-brands') },
       { label: 'Popular Routes', to: adminPath('b2c-flight/popular-routes') },
       { label: 'Popular Destinations', to: adminPath('b2c-flight/popular-destinations') }
+    ]
+  },
+  {
+    label: 'B2C Hotel Management',
+    to: adminPath('b2c-hotel'),
+    icon: icons.hotel,
+    submenu: [
+      { label: 'Discount List', to: adminPath('b2c-hotel/discounts') },
+      { label: 'Coupon List', to: adminPath('b2c-hotel/coupon-list') },
+      { label: 'Convenience Fee', to: adminPath('b2c-hotel/convenience-fee') },
+      { label: 'GST Settings', to: adminPath('b2c-hotel/gst-settings') }
     ]
   },
   {

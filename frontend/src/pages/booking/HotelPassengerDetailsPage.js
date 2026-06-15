@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Info, MapPin, Calendar, Bed, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toDisplayDate } from "../../utils/apiDateFormat";
@@ -7,6 +7,8 @@ import {
   readHotelBookingFlowState,
   writeHotelBookingFlowState,
 } from "./hotelBookingFlowStore";
+import { getHotelPricingPreview, getHotelPromotions } from "../../services/hotelBookingService";
+import { toApiUrl } from "../../services/apiClient";
 
 function formatCurrency(amount) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -53,30 +55,127 @@ export default function HotelPassengerDetailsPage() {
   const [guestName, setGuestName] = useState(flowState.guestName || "");
   const [guestEmail, setGuestEmail] = useState(flowState.guestEmail || "");
   const [guestPhone, setGuestPhone] = useState(flowState.guestPhone || "");
+  
   const [couponCode, setCouponCode] = useState(flowState.couponCode || "");
-  const [couponDiscount, setCouponDiscount] = useState(Number(flowState.couponDiscount) || 0);
+  const [selectedFeaturedOfferId, setSelectedFeaturedOfferId] = useState(flowState.selectedFeaturedOfferId || null);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [featuredOffers, setFeaturedOffers] = useState([]);
+  const [pricingBreakdown, setPricingBreakdown] = useState(null);
+  
+  const [isApplying, setIsApplying] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
+
   const [agreedToTerms, setAgreedToTerms] = useState(Boolean(flowState.agreedToTerms));
   const [formError, setFormError] = useState("");
 
-  const basePrice = Number(offer?.price || 0) * nights;
-  const taxes = Math.round(basePrice * 0.12); // 12% GST standard
-  const convenienceFee = 150; // Flat INR 150 booking service fee
-  const subTotal = basePrice + taxes + convenienceFee;
-  const totalPayable = Math.max(0, subTotal - couponDiscount);
+  // Load available coupons and featured offers on mount
+  useEffect(() => {
+    async function loadPromoData() {
+      try {
+        const promos = await getHotelPromotions();
+        setAvailableCoupons(promos.filter(p => !p.isAutoApply) || []);
 
-  const handleApplyCoupon = () => {
-    const normalized = couponCode.trim().toUpperCase();
-    if (normalized === "WELCOME500" || normalized === "PICKNBOOK500") {
-      setCouponDiscount(500);
-      setFormError("");
-    } else if (normalized === "STAY300") {
-      setCouponDiscount(300);
-      setFormError("");
-    } else {
-      setCouponDiscount(0);
-      setFormError("Invalid coupon code.");
+        const response = await fetch(toApiUrl("/api/FeaturedOffers"), {
+          headers: {
+            Accept: "application/json",
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
+        const offersData = await response.json();
+        if (offersData && Array.isArray(offersData.offers)) {
+          setFeaturedOffers(offersData.offers.filter(o => o.bookingType === "Hotel" && o.isActive));
+        }
+      } catch (err) {
+        console.error("Failed to load hotel promotions", err);
+      }
+    }
+    loadPromoData();
+  }, []);
+
+  // Fetch dynamic pricing preview from backend
+  const loadPricing = async (code = "", offerId = null) => {
+    if (!hotel || !offer) return;
+    setIsApplying(true);
+    setCouponError("");
+    setCouponSuccess("");
+    try {
+      const roomPrice = offer.price / (offer.roomQuantity || 1);
+      const payload = {
+        hotelId: hotel.hotelId,
+        hotelName: hotel.name,
+        hotelCity: hotel.cityCode || "",
+        roomPrice: roomPrice,
+        rooms: offer.roomQuantity || 1,
+        nights,
+        couponCode: code || null,
+        selectedFeaturedOfferId: offerId || null
+      };
+
+      const pricing = await getHotelPricingPreview(payload);
+      setPricingBreakdown(pricing);
+
+      if (code) {
+        if (pricing.totalDiscount > 0) {
+          setCouponSuccess(`Coupon "${code}" applied! Discount: ${formatCurrency(pricing.totalDiscount)}`);
+          setCouponCode(code);
+          setSelectedFeaturedOfferId(null);
+        } else {
+          setCouponError("Coupon is valid but offers no discount for this booking.");
+        }
+      } else if (offerId) {
+        if (pricing.totalDiscount > 0) {
+          setCouponSuccess(`Offer applied successfully! Discount: ${formatCurrency(pricing.totalDiscount)}`);
+          setSelectedFeaturedOfferId(offerId);
+          setCouponCode("");
+        } else {
+          setCouponError("Offer is valid but offers no discount for this booking.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setCouponError(err.message || "Unable to validate coupon / offer.");
+      setCouponCode("");
+      setSelectedFeaturedOfferId(null);
+      setPricingBreakdown(null);
+    } finally {
+      setIsApplying(false);
     }
   };
+
+  // Run initial pricing preview
+  useEffect(() => {
+    loadPricing(couponCode, selectedFeaturedOfferId);
+  }, [hotel, offer]);
+
+  const handleApplyCoupon = () => {
+    if (!couponCode.trim()) return;
+    loadPricing(couponCode.trim().toUpperCase(), null);
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setCouponSuccess("");
+    setCouponError("");
+    loadPricing("", null);
+  };
+
+  const handleSelectOffer = (offerId) => {
+    loadPricing("", offerId);
+  };
+
+  const handleRemoveOffer = () => {
+    setSelectedFeaturedOfferId(null);
+    setCouponSuccess("");
+    setCouponError("");
+    loadPricing("", null);
+  };
+
+  const basePrice = pricingBreakdown ? pricingBreakdown.basePrice : Number(offer?.price || 0) * nights;
+  const tax = pricingBreakdown ? pricingBreakdown.gstAmount : Math.round(basePrice * 0.12);
+  const convenienceFee = pricingBreakdown ? pricingBreakdown.convenienceFee : 150;
+  const totalDiscount = pricingBreakdown ? pricingBreakdown.totalDiscount : 0;
+  const finalPayable = pricingBreakdown ? pricingBreakdown.grandTotal : basePrice + tax + convenienceFee;
 
   const handleContinue = () => {
     if (!guestName.trim()) {
@@ -104,15 +203,16 @@ export default function HotelPassengerDetailsPage() {
       guestEmail: guestEmail.trim(),
       guestPhone: guestPhone.trim(),
       couponCode: couponCode.trim().toUpperCase(),
-      couponDiscount,
+      selectedFeaturedOfferId,
+      couponDiscount: totalDiscount,
       agreedToTerms,
-      payableAmount: totalPayable,
+      payableAmount: finalPayable,
       fareSummary: {
-        baseFare: basePrice,
-        tax: taxes,
+        baseFare,
+        tax,
         convenienceFee,
-        discount: couponDiscount,
-        totalFare: totalPayable
+        discount: totalDiscount,
+        totalFare: finalPayable
       }
     };
 
@@ -236,22 +336,22 @@ export default function HotelPassengerDetailsPage() {
                 <strong>{formatCurrency(basePrice)}</strong>
               </div>
               <div>
-                <span>Taxes & GST (12%)</span>
-                <strong>{formatCurrency(taxes)}</strong>
+                <span>Taxes & GST</span>
+                <strong>{formatCurrency(tax)}</strong>
               </div>
               <div>
                 <span>Convenience Fee</span>
                 <strong>{formatCurrency(convenienceFee)}</strong>
               </div>
-              {couponDiscount > 0 && (
+              {totalDiscount > 0 && (
                 <div>
                   <span>Coupon Discount</span>
-                  <strong style={{ color: "#16a34a" }}>-{formatCurrency(couponDiscount)}</strong>
+                  <strong style={{ color: "#16a34a" }}>-{formatCurrency(totalDiscount)}</strong>
                 </div>
               )}
               <div className="total">
                 <span>Payable</span>
-                <strong>{formatCurrency(totalPayable)}</strong>
+                <strong>{formatCurrency(finalPayable)}</strong>
               </div>
             </div>
 
@@ -263,14 +363,115 @@ export default function HotelPassengerDetailsPage() {
                     type="text"
                     value={couponCode}
                     onChange={(event) => setCouponCode(event.target.value)}
-                    placeholder="e.g. WELCOME500"
+                    placeholder="Enter Coupon code"
+                    disabled={isApplying || selectedFeaturedOfferId !== null}
                   />
-                  <button type="button" onClick={handleApplyCoupon}>Apply</button>
+                  {couponCode && pricingBreakdown?.totalDiscount > 0 ? (
+                    <button type="button" onClick={handleRemoveCoupon} style={{ backgroundColor: "#d32f2f" }}>Remove</button>
+                  ) : (
+                    <button type="button" onClick={handleApplyCoupon} disabled={isApplying || selectedFeaturedOfferId !== null}>
+                      {isApplying ? "Applying..." : "Apply"}
+                    </button>
+                  )}
                 </div>
               </label>
+              
+              {couponError && <p className="flight-flow-error" style={{ marginTop: 5 }}>{couponError}</p>}
+              {couponSuccess && <p className="coupon-success-text" style={{ color: "#2e7d32", fontSize: "0.85rem", marginTop: 5 }}>{couponSuccess}</p>}
             </div>
 
-            <label className="flight-check-row">
+            {/* Available Promotions section */}
+            {availableCoupons.length > 0 && (
+              <div className="promo-chips-section" style={{ marginTop: 15 }}>
+                <p style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 5 }}>Available Coupons:</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {availableCoupons.map((coupon) => (
+                    <button
+                      key={coupon.id}
+                      type="button"
+                      onClick={() => loadPricing(coupon.code, null)}
+                      disabled={isApplying || selectedFeaturedOfferId !== null}
+                      style={{
+                        padding: "4px 8px",
+                        fontSize: "0.8rem",
+                        backgroundColor: "#f5f5f5",
+                        border: "1px dashed #ccc",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        color: "#333"
+                      }}
+                    >
+                      <strong>{coupon.code}</strong> - {coupon.description || `${coupon.discountValue} Off`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {featuredOffers.length > 0 && (
+              <div className="featured-offers-section" style={{ marginTop: 15 }}>
+                <p style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 5 }}>Featured Offers:</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {featuredOffers.map((offer) => {
+                    const isSelected = selectedFeaturedOfferId === offer.id;
+                    return (
+                      <div
+                        key={offer.id}
+                        style={{
+                          padding: 8,
+                          fontSize: "0.8rem",
+                          backgroundColor: isSelected ? "#e8f5e9" : "#fff",
+                          border: isSelected ? "1px solid #2e7d32" : "1px solid #ddd",
+                          borderRadius: 4,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center"
+                        }}
+                      >
+                        <div>
+                          <strong>{offer.title}</strong>
+                          <p style={{ margin: 0, color: "#666", fontSize: "0.75rem" }}>{offer.subtitle}</p>
+                        </div>
+                        {isSelected ? (
+                          <button
+                            type="button"
+                            onClick={handleRemoveOffer}
+                            style={{
+                              padding: "2px 6px",
+                              backgroundColor: "#d32f2f",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 3,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSelectOffer(offer.id)}
+                            disabled={isApplying || couponCode !== ""}
+                            style={{
+                              padding: "2px 6px",
+                              backgroundColor: "#1976d2",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 3,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Apply
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <label className="flight-check-row" style={{ marginTop: 15 }}>
               <input
                 type="checkbox"
                 checked={agreedToTerms}
@@ -286,7 +487,7 @@ export default function HotelPassengerDetailsPage() {
               </p>
             )}
 
-            <button type="button" className="flight-primary-btn" onClick={handleContinue}>
+            <button type="button" className="flight-primary-btn" onClick={handleContinue} style={{ marginTop: 10 }}>
               Continue to Payment
             </button>
           </aside>

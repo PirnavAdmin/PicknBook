@@ -44,10 +44,12 @@ function buildBookingPayload(flowState) {
 
     return {
       fullName: `Passenger ${index + 1}`,
+      FullName: `Passenger ${index + 1}`,
       age: 25,
       Age: 25,
       gender: flowState.selectedSeatPassengers?.[seatNumber] || "Male",
-      ...(seatNumber ? { seatNumber } : {}),
+      Gender: flowState.selectedSeatPassengers?.[seatNumber] || "Male",
+      ...(seatNumber ? { seatNumber, SeatNumber: seatNumber } : {}),
     };
   });
 
@@ -71,12 +73,16 @@ function buildBookingPayload(flowState) {
 
           return {
             fullName: fullName || `Passenger ${index + 1}`,
+            FullName: fullName || `Passenger ${index + 1}`,
             age: Number.isFinite(ageNumber) && ageNumber > 0 ? ageNumber : 25,
             Age: Number.isFinite(ageNumber) && ageNumber > 0 ? ageNumber : 25,
             gender:
               passengerGender ||
               (normalizedTitle === "mr" ? "Male" : "Female"),
-            ...(seatNumber ? { seatNumber } : {}),
+            Gender:
+              passengerGender ||
+              (normalizedTitle === "mr" ? "Male" : "Female"),
+            ...(seatNumber ? { seatNumber, SeatNumber: seatNumber } : {}),
           };
         })
       : fallbackPassengers;
@@ -580,6 +586,7 @@ export default function BusPaymentPage() {
                   </div>
                 )}
 
+                {/* Coupon Discount */}
                 {(() => {
                   const appliedCode = flowState.pricingPreview?.appliedPromotionCode || flowState.couponCode;
                   const isPromotion = Boolean(
@@ -588,23 +595,41 @@ export default function BusPaymentPage() {
                       flowState.selectedOffer?.id ||
                       flowState.selectedOffer?.offerId
                   );
-                  const hasAppliedDiscount = Boolean(appliedCode || flowState.appliedCoupon || isPromotion);
-                  const effectiveCouponDiscount = hasAppliedDiscount
+                  const hasCoupon = Boolean(appliedCode || flowState.appliedCoupon) && !isPromotion;
+                  const couponAmount = hasCoupon
                     ? getBusPromotionDiscountAmount(
                         flowState.pricingPreview,
                         flowState.couponDiscount
                       )
                     : 0;
-                  const label = appliedCode
-                    ? `Coupon Discount (${appliedCode})`
-                    : isPromotion
-                    ? `Offer Discount (${flowState.selectedOffer?.title || flowState.selectedFeaturedOfferId || ""})`
-                    : "Coupon Discount";
 
-                  return hasAppliedDiscount && effectiveCouponDiscount > 0 ? (
+                  return hasCoupon && couponAmount > 0 ? (
                     <div>
-                      <span>{label}</span>
-                      <strong>(-) {formatCurrency(effectiveCouponDiscount)}</strong>
+                      <span>Coupon Discount ({appliedCode})</span>
+                      <strong>(-) {formatCurrency(couponAmount)}</strong>
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Offer Discount */}
+                {(() => {
+                  const isPromotion = Boolean(
+                    flowState.selectedFeaturedOfferId ||
+                      flowState.selectedOffer?.selectedFeaturedOfferId ||
+                      flowState.selectedOffer?.id ||
+                      flowState.selectedOffer?.offerId
+                  );
+                  const offerAmount = isPromotion
+                    ? getBusPromotionDiscountAmount(
+                        flowState.pricingPreview,
+                        flowState.couponDiscount
+                      )
+                    : 0;
+
+                  return isPromotion && offerAmount > 0 ? (
+                    <div>
+                      <span>Offer Discount ({flowState.selectedOffer?.title || flowState.selectedFeaturedOfferId || ""})</span>
+                      <strong>(-) {formatCurrency(offerAmount)}</strong>
                     </div>
                   ) : null;
                 })()}
