@@ -5692,7 +5692,7 @@ select.field-control option {
 
 .homepage-flights .hero-section {
   background-color: #F3F4F6 !important;
-  background-image: url("../assets/images/illustrations/flight-hero-theme.jpg.png") !important;
+  background-image: url("../assets/images/illustrations/flight-hero-theme.jpg") !important;
   background-position: center center !important;
   background-size: cover !important;
 }
@@ -5826,7 +5826,7 @@ select.field-control option {
 
 .homepage-flights .hero-section {
   background-color: #F3F4F6 !important;
-  background-image: url("../assets/images/illustrations/flight-hero-theme.jpg.png") !important;
+  background-image: url("../assets/images/illustrations/flight-hero-theme.jpg") !important;
   background-position: center center !important;
   background-size: cover !important;
 }
