@@ -305,7 +305,7 @@ export default function HotelPassengerDetailsPage() {
       agreedToTerms,
       payableAmount: finalPayable,
       fareSummary: {
-        baseFare,
+        baseFare: basePrice,
         tax,
         convenienceFee,
         discount: totalDiscount,
