@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { List } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./PendingAirlinesEditList.css";
+import {
+  getFlightPendingAirlineById,
+  createFlightPendingAirline,
+  updateFlightPendingAirline
+} from "../../../services/flightBookingService";
 
 const FLIGHT_PENDING_AIRLINE_STORAGE_KEY = "admin_flight_pending_airlines_records";
 
@@ -49,13 +54,13 @@ const normalizePendingAirlineRecord = (record, index = 0) => {
       normalizeText(fallback?.updatedBy, "Travel Admin")
     ),
     updatedAtUtc: normalizeText(
-      record?.updatedAtUtc || record?.updatedOn || record?.UpdatedOn,
+      record?.updatedAtUtc || record?.updatedOn || record?.UpdatedOn || record?.updatedOnUtc || record?.UpdatedOnUtc,
       normalizeText(fallback?.updatedAtUtc, "")
     ),
   };
 };
 
-const readPendingAirlines = () => {
+const readPendingAirlinesFallback = () => {
   if (typeof window === "undefined") {
     return DEFAULT_PENDING_AIRLINES;
   }
@@ -73,102 +78,16 @@ const readPendingAirlines = () => {
   }
 };
 
-const writePendingAirlines = (records) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(
-      FLIGHT_PENDING_AIRLINE_STORAGE_KEY,
-      JSON.stringify(records.map((record, index) => normalizePendingAirlineRecord(record, index)))
-    );
-  } catch {
-    // Ignore localStorage write failures.
-  }
-};
-
-const resolveNextPendingAirlineId = (records) => {
-  const numericIds = records
-    .map((record) => Number(record?.id))
-    .filter((value) => Number.isFinite(value));
-
-  if (numericIds.length === 0) {
-    return String(Date.now());
-  }
-
-  return String(Math.max(...numericIds) + 1);
-};
-
-const listFlightPendingAirlines = () => {
-  const records = readPendingAirlines();
-  writePendingAirlines(records);
-  return records;
-};
-
-const getFlightPendingAirlineById = (recordId) => {
+const getFlightPendingAirlineByIdFallback = (recordId) => {
   const normalizedId = normalizeText(recordId, "");
   if (!normalizedId) {
     return null;
   }
 
   return (
-    listFlightPendingAirlines().find((record) => normalizeText(record.id, "") === normalizedId) ||
+    readPendingAirlinesFallback().find((record) => normalizeText(record.id, "") === normalizedId) ||
     null
   );
-};
-
-const createFlightPendingAirline = ({ airlineCode, fareType, remark, updatedBy } = {}) => {
-  const nowIso = new Date().toISOString();
-  const records = listFlightPendingAirlines();
-  const id = resolveNextPendingAirlineId(records);
-
-  const nextRecord = normalizePendingAirlineRecord(
-    {
-      id,
-      airlineCode,
-      fareType,
-      remark,
-      updatedBy,
-      updatedAtUtc: nowIso,
-    },
-    records.length
-  );
-
-  const nextRecords = [nextRecord, ...records];
-  writePendingAirlines(nextRecords);
-  return nextRecord;
-};
-
-const updateFlightPendingAirlineById = (recordId, updates) => {
-  const normalizedId = normalizeText(recordId, "");
-  if (!normalizedId) {
-    return null;
-  }
-
-  const nowIso = new Date().toISOString();
-  const currentRecords = listFlightPendingAirlines();
-  let updatedRecord = null;
-
-  const nextRecords = currentRecords.map((record, index) => {
-    if (normalizeText(record.id, "") !== normalizedId) {
-      return record;
-    }
-
-    updatedRecord = normalizePendingAirlineRecord(
-      {
-        ...record,
-        ...updates,
-        updatedAtUtc: nowIso,
-      },
-      index
-    );
-
-    return updatedRecord;
-  });
-
-  writePendingAirlines(nextRecords);
-  return updatedRecord;
 };
 
 function resolveHeading(isEditing) {
@@ -181,56 +100,118 @@ export default function AdminFlightPendingAirlineEditPage() {
   const refId = normalizeText(searchParams.get("ref_id"), "");
   const isEditing = Boolean(refId);
 
-  const record = useMemo(() => getFlightPendingAirlineById(refId), [refId]);
-
-  const [airlineCode, setAirlineCode] = useState(() => normalizeText(record?.airlineCode, ""));
-  const [fareType, setFareType] = useState(() => normalizeText(record?.fareType, ""));
-  const [remark, setRemark] = useState(() => normalizeText(record?.remark, ""));
+  const [record, setRecord] = useState(null);
+  const [airlineCode, setAirlineCode] = useState("");
+  const [fareType, setFareType] = useState("");
+  const [remark, setRemark] = useState("");
+  const [isLoading, setIsLoading] = useState(isEditing);
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    async function loadRecord() {
+      setIsLoading(true);
+      setErrorMessage("");
+      try {
+        const data = await getFlightPendingAirlineById(refId);
+        if (data) {
+          const norm = normalizePendingAirlineRecord(data);
+          setRecord(norm);
+          setAirlineCode(norm.airlineCode);
+          setFareType(norm.fareType);
+          setRemark(norm.remark);
+        } else {
+          setErrorMessage("Record not found on backend.");
+        }
+      } catch (error) {
+        console.warn("Failed to load pending airline from API, using local fallback", error);
+        const fb = getFlightPendingAirlineByIdFallback(refId);
+        if (fb) {
+          setRecord(fb);
+          setAirlineCode(fb.airlineCode);
+          setFareType(fb.fareType);
+          setRemark(fb.remark);
+        } else {
+          setErrorMessage("Record not found.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadRecord();
+  }, [refId, isEditing]);
+
+  const handleSubmit = async () => {
     setStatusMessage("");
     setErrorMessage("");
 
-    const cleanedAirlineCode = normalizeText(airlineCode, "");
+    const cleanedAirlineCode = normalizeText(airlineCode, "").toUpperCase();
     const cleanedFareType = normalizeText(fareType, "");
 
     if (!cleanedAirlineCode) {
-      setErrorMessage("Select an airline code.");
+      setErrorMessage("Select/Enter an airline code.");
       return;
     }
 
     if (!cleanedFareType) {
-      setErrorMessage("Select a fare type.");
+      setErrorMessage("Select/Enter a fare type.");
       return;
     }
 
     const updatedBy = "Travel Admin";
+    const payload = {
+      airlineCode: cleanedAirlineCode,
+      fareType: cleanedFareType,
+      remark: normalizeText(remark, ""),
+      updatedBy,
+    };
 
-    const saved = isEditing
-      ? updateFlightPendingAirlineById(refId, {
-          airlineCode: cleanedAirlineCode,
-          fareType: cleanedFareType,
-          remark: normalizeText(remark, ""),
-          updatedBy,
-        })
-      : createFlightPendingAirline({
-          airlineCode: cleanedAirlineCode,
-          fareType: cleanedFareType,
-          remark: normalizeText(remark, ""),
-          updatedBy,
-        });
-
-    if (!saved) {
-      setErrorMessage("Unable to save pending airline.");
-      return;
+    try {
+      if (isEditing) {
+        await updateFlightPendingAirline(refId, payload);
+        setStatusMessage("Pending airline updated successfully.");
+      } else {
+        await createFlightPendingAirline(payload);
+        setStatusMessage("Pending airline added.");
+        setAirlineCode("");
+        setFareType("");
+        setRemark("");
+      }
+      setTimeout(() => {
+        navigate("/admin/b2c-flight/pending-airlines");
+      }, 600);
+    } catch (error) {
+      console.error("Failed to save pending airline via API", error);
+      setErrorMessage(error?.message || "Unable to save pending airline.");
     }
-
-    setStatusMessage(isEditing ? "Pending airline updated successfully." : "Pending airline added.");
   };
 
-  if (isEditing && !record) {
+  if (isEditing && isLoading) {
+    return (
+      <section className="admin-b2c-page admin-flight-pending-edit-page">
+        <div className="admin-flight-pending-edit-head-row">
+          <header className="admin-b2c-header admin-flight-pending-edit-header">
+            <h1>{resolveHeading(true)}</h1>
+          </header>
+          <button
+            type="button"
+            className="admin-flight-pending-edit-list-btn"
+            onClick={() => navigate("/admin/b2c-flight/pending-airlines")}
+          >
+            <List size={14} />
+            Pending Airline List
+          </button>
+        </div>
+        <div className="admin-data-info">Loading pending airline details...</div>
+      </section>
+    );
+  }
+
+  if (isEditing && !record && !isLoading) {
     return (
       <section className="admin-b2c-page admin-flight-pending-edit-page">
         <div className="admin-flight-pending-edit-head-row">
@@ -274,32 +255,32 @@ export default function AdminFlightPendingAirlineEditPage() {
         <div className="admin-flight-pending-edit-grid">
           <div className="admin-flight-pending-edit-label">Airline Code</div>
           <div className="admin-flight-pending-edit-field">
-            <input
-              list="pending-airline-codes"
+            <select
               value={airlineCode}
               onChange={(event) => setAirlineCode(event.target.value)}
-              placeholder="Select Some Options"
-            />
-            <datalist id="pending-airline-codes">
+            >
+              <option value="">Select Some Options</option>
               {AIRLINE_CODE_SUGGESTIONS.map((value) => (
-                <option key={value} value={value} />
+                <option key={value} value={value}>
+                  {value}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
 
-          <div className="admin-flight-pending-edit-label">Source Type</div>
+          <div className="admin-flight-pending-edit-label">Fare Type</div>
           <div className="admin-flight-pending-edit-field">
-            <input
-              list="pending-fare-types"
+            <select
               value={fareType}
               onChange={(event) => setFareType(event.target.value)}
-              placeholder="Select Some Options"
-            />
-            <datalist id="pending-fare-types">
+            >
+              <option value="">Select Some Options</option>
               {FARE_TYPE_SUGGESTIONS.map((value) => (
-                <option key={value} value={value} />
+                <option key={value} value={value}>
+                  {value}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           <div className="admin-flight-pending-edit-label">Remark</div>
@@ -325,5 +306,3 @@ export default function AdminFlightPendingAirlineEditPage() {
     </section>
   );
 }
-
-

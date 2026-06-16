@@ -4,7 +4,6 @@ import {
   Loader2,
   RefreshCw,
   Search,
-  ShieldX,
   SlidersHorizontal,
   X,
   XCircle,
@@ -13,7 +12,8 @@ import {
   getMyHotelBookings,
   cancelHotelBooking,
 } from "../../services/hotelBookingService";
-import "../../STYLES/FlightOpsDashboard.css";
+import { getHotelVisuals } from "./hotelPresentation";
+import "../../STYLES/HotelBookings.css";
 import { formatDateTime } from "../../utils/apiDateFormat";
 
 function formatCurrency(value) {
@@ -152,249 +152,242 @@ export default function HotelBookings() {
   };
 
   return (
-    <div className="flight-ops-page">
-      <header className="flight-ops-header">
-        <div>
+    <main className="hotel-bookings-page">
+      <div className="hotel-bookings-shell">
+        <header className="hotel-bookings-header">
           <h1>Hotel Stays & Reservations</h1>
-        </div>
-        <div className="flight-ops-header-actions">
-          <button type="button" onClick={fetchBookings} className="ops-icon-btn">
-            <RefreshCw size={15} />
-            <span>Refresh</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsFilterOpen((previous) => !previous)}
-            className="ops-icon-btn"
-          >
-            <SlidersHorizontal size={15} />
-            <span>{isFilterOpen ? "Hide Filters" : "Show Filters"}</span>
-          </button>
-        </div>
-      </header>
-
-      {errorMessage && (
-        <div className="ops-feedback error">
-          <XCircle size={15} />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {actionMessage && (
-        <div className="ops-feedback success">
-          <span>{actionMessage}</span>
-        </div>
-      )}
-
-      {isFilterOpen && (
-        <section className="flight-ops-filters">
-          <label>
-            <span>Status</span>
-            <select
-              value={filters.status}
-              onChange={(event) =>
-                setFilters((previous) => ({ ...previous, status: event.target.value }))
-              }
+          <div className="hotel-bookings-header-actions">
+            <button type="button" onClick={fetchBookings} className="hotel-bookings-btn">
+              <RefreshCw size={14} />
+              <span>Refresh</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen((previous) => !previous)}
+              className="hotel-bookings-btn"
             >
-              <option value="All">All</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Booking Reference</span>
-            <input
-              type="text"
-              value={filters.bookingReference}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  bookingReference: event.target.value,
-                }))
-              }
-              placeholder="HT-2026..."
-            />
-          </label>
-
-          <label>
-            <span>Hotel Name</span>
-            <input
-              type="text"
-              value={filters.hotelName}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  hotelName: event.target.value,
-                }))
-              }
-              placeholder="Ambassador"
-            />
-          </label>
-
-          <label>
-            <span>Guest Name</span>
-            <input
-              type="text"
-              value={filters.guestName}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  guestName: event.target.value,
-                }))
-              }
-              placeholder="John Doe"
-            />
-          </label>
-
-          <div className="filters-actions">
-            <button type="button" className="primary" onClick={fetchBookings}>
-              <Search size={14} />
-              <span>Search</span>
-            </button>
-            <button type="button" className="secondary" onClick={handleReset}>
-              <X size={14} />
-              <span>Clear</span>
+              <SlidersHorizontal size={14} />
+              <span>{isFilterOpen ? "Hide filters" : "Show filters"}</span>
             </button>
           </div>
-        </section>
-      )}
+        </header>
 
-      <section className="flight-ops-table-wrap">
-        {isLoading ? (
-          <div className="ops-empty">
-            <Loader2 size={18} className="spin" />
-            <p>Loading hotel reservations...</p>
-          </div>
-        ) : filteredBookings.length === 0 ? (
-          <div className="ops-empty">
-            <p>No hotel reservations found.</p>
-          </div>
-        ) : (
-          <div className="ops-table-scroll">
-            <table className="ops-table">
-              <thead>
-                <tr>
-                  <th>Booking Ref</th>
-                  <th>Guest Name</th>
-                  <th>Hotel Property</th>
-                  <th>Dates of Stay</th>
-                  <th>Amount Paid</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBookings.map((booking) => (
-                  <tr key={booking.bookingId}>
-                    <td>
-                      <strong>{booking.bookingReference}</strong>
-                      <small>ID: {booking.bookingId}</small>
-                    </td>
-                    <td>
-                      <strong>{booking.guestName || "Primary Guest"}</strong>
-                    </td>
-                    <td>
-                      <strong>{booking.hotelName}</strong>
-                    </td>
-                    <td>
-                      <strong>{booking.dates || booking.checkInDate}</strong>
-                    </td>
-                    <td>
-                      <strong>{formatCurrency(booking.amount || booking.price)}</strong>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${getStatusClassName(booking.status)}`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          type="button"
-                          title="View details"
-                          onClick={() => handleViewDetails(booking)}
-                        >
-                          <Eye size={15} />
-                        </button>
-
-                        <button
-                          type="button"
-                          title="Cancel booking"
-                          onClick={() => handleCancelBooking(booking.bookingId)}
-                          disabled={
-                            String(booking.status || "").toLowerCase().includes("cancel") ||
-                            cancellingBookingId === booking.bookingId
-                          }
-                        >
-                          {cancellingBookingId === booking.bookingId ? (
-                            <Loader2 size={15} className="spin" />
-                          ) : (
-                            <ShieldX size={15} />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {errorMessage && (
+          <div className="hotel-helper hotel-helper--error">
+            <span>{errorMessage}</span>
           </div>
         )}
-      </section>
 
-      {selectedBooking && (
-        <div className="ops-modal-backdrop" onClick={() => setSelectedBooking(null)}>
-          <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
-            <header>
-              <h3>Hotel Stay Details</h3>
-              <button type="button" onClick={() => setSelectedBooking(null)}>
-                <X size={16} />
+        {actionMessage && (
+          <div className="hotel-helper hotel-helper--success">
+            <span>{actionMessage}</span>
+          </div>
+        )}
+
+        {isFilterOpen && (
+          <section className="hotel-bookings-filters">
+            <label>
+              <span>Status</span>
+              <select
+                value={filters.status}
+                onChange={(event) =>
+                  setFilters((previous) => ({ ...previous, status: event.target.value }))
+                }
+              >
+                <option value="All">All</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Booking reference</span>
+              <input
+                type="text"
+                value={filters.bookingReference}
+                onChange={(event) =>
+                  setFilters((previous) => ({
+                    ...previous,
+                    bookingReference: event.target.value,
+                  }))
+                }
+                placeholder="HT-2026..."
+              />
+            </label>
+
+            <label>
+              <span>Hotel name</span>
+              <input
+                type="text"
+                value={filters.hotelName}
+                onChange={(event) =>
+                  setFilters((previous) => ({
+                    ...previous,
+                    hotelName: event.target.value,
+                  }))
+                }
+                placeholder="Ambassador"
+              />
+            </label>
+
+            <label>
+              <span>Guest name</span>
+              <input
+                type="text"
+                value={filters.guestName}
+                onChange={(event) =>
+                  setFilters((previous) => ({
+                    ...previous,
+                    guestName: event.target.value,
+                  }))
+                }
+                placeholder="John Doe"
+              />
+            </label>
+
+            <div className="hotel-bookings-filters-actions">
+              <button type="button" className="hotel-bookings-btn hotel-bookings-btn--primary" onClick={fetchBookings}>
+                <Search size={14} />
+                <span>Search</span>
               </button>
-            </header>
-            <div className="ops-modal-grid">
-              <div>
-                <span>Booking Reference</span>
-                <strong>{selectedBooking.bookingReference}</strong>
-              </div>
-              <div>
-                <span>Status</span>
-                <strong>{selectedBooking.status}</strong>
-              </div>
-              <div>
-                <span>Guest Name</span>
-                <strong>{selectedBooking.guestName || "Primary Guest"}</strong>
-              </div>
-              <div>
-                <span>Hotel Property</span>
-                <strong>{selectedBooking.hotelName}</strong>
-              </div>
-              <div>
-                <span>Dates of Stay</span>
-                <strong>{selectedBooking.dates || `${selectedBooking.checkInDate} - ${selectedBooking.checkOutDate}`}</strong>
-              </div>
-              <div>
-                <span>Provider booking ID</span>
-                <strong>{selectedBooking.providerBookingId || "--"}</strong>
-              </div>
-              <div>
-                <span>Total Amount Paid</span>
-                <strong>{formatCurrency(selectedBooking.amount || selectedBooking.price)}</strong>
-              </div>
-              <div>
-                <span>Booked At</span>
-                <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : "--"}</strong>
-              </div>
-              {selectedBooking.cancellationReason && (
-                <div>
-                  <span>Cancellation Reason</span>
-                  <strong>{selectedBooking.cancellationReason}</strong>
+              <button type="button" className="hotel-bookings-btn" onClick={handleReset}>
+                <X size={14} />
+                <span>Clear</span>
+              </button>
+            </div>
+          </section>
+        )}
+
+        <section className="hotel-bookings-content-wrap">
+          {isLoading ? (
+            <div className="hotel-bookings-loading">
+              <Loader2 size={24} className="hotel-spin" />
+              <h3>Loading your trips...</h3>
+              <p>Fetching active stay reservations from the API.</p>
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="hotel-bookings-empty">
+              <h3>No stay reservations found</h3>
+              <p>Try clearing filters or search different keywords.</p>
+            </div>
+          ) : (
+            <div className="hotel-bookings-grid">
+              {filteredBookings.map((booking) => {
+                const visuals = getHotelVisuals(booking.hotelId || booking.hotelName || "hotel");
+                const isCancelled = String(booking.status || "").toLowerCase().includes("cancel");
+                return (
+                  <article key={booking.bookingId} className="hotel-booking-card">
+                    <div className="hotel-booking-media">
+                      <img src={visuals.cardImage} alt={booking.hotelName} />
+                      <span className={`hotel-booking-badge hotel-booking-badge--${getStatusClassName(booking.status)}`}>
+                        {booking.status}
+                      </span>
+                      <span className="hotel-booking-ref">
+                        {booking.bookingReference}
+                      </span>
+                    </div>
+
+                    <div className="hotel-booking-info">
+                      <span className="hotel-stay-label">{visuals.propertyLabel}</span>
+                      <h3>{booking.hotelName}</h3>
+                      <p className="hotel-booking-dates">
+                        {booking.dates || `${booking.checkInDate} - ${booking.checkOutDate}`}
+                      </p>
+
+                      <div className="hotel-booking-meta">
+                        <span>Guest: {booking.guestName || "Primary Guest"}</span>
+                      </div>
+
+                      <div className="hotel-booking-price-row">
+                        <div className="hotel-booking-price">
+                          <span>Total Paid</span>
+                          <strong>{formatCurrency(booking.amount || booking.price)}</strong>
+                        </div>
+
+                        <div className="hotel-booking-actions">
+                          <button
+                            type="button"
+                            title="View details"
+                            onClick={() => handleViewDetails(booking)}
+                          >
+                            <Eye size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            title="Cancel booking"
+                            onClick={() => handleCancelBooking(booking.bookingId)}
+                            disabled={isCancelled || cancellingBookingId === booking.bookingId}
+                          >
+                            {cancellingBookingId === booking.bookingId ? (
+                              <Loader2 size={16} className="hotel-spin" />
+                            ) : (
+                              <XCircle size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {selectedBooking && (
+          <div className="hotel-modal-backdrop" onClick={() => setSelectedBooking(null)}>
+            <div className="hotel-modal" onClick={(event) => event.stopPropagation()}>
+              <header className="hotel-modal-header">
+                <h3>Hotel Stay Details</h3>
+                <button type="button" onClick={() => setSelectedBooking(null)}>
+                  <X size={18} />
+                </button>
+              </header>
+              <div className="hotel-modal-body">
+                <div className="hotel-modal-field">
+                  <label>Booking Reference</label>
+                  <strong>{selectedBooking.bookingReference}</strong>
                 </div>
-              )}
+                <div className="hotel-modal-field">
+                  <label>Status</label>
+                  <strong>{selectedBooking.status}</strong>
+                </div>
+                <div className="hotel-modal-field full-width">
+                  <label>Guest Name</label>
+                  <strong>{selectedBooking.guestName || "Primary Guest"}</strong>
+                </div>
+                <div className="hotel-modal-field full-width">
+                  <label>Hotel Property</label>
+                  <strong>{selectedBooking.hotelName}</strong>
+                </div>
+                <div className="hotel-modal-field full-width">
+                  <label>Dates of Stay</label>
+                  <strong>{selectedBooking.dates || `${selectedBooking.checkInDate} - ${selectedBooking.checkOutDate}`}</strong>
+                </div>
+                <div className="hotel-modal-field">
+                  <label>Provider booking ID</label>
+                  <strong>{selectedBooking.providerBookingId || "--"}</strong>
+                </div>
+                <div className="hotel-modal-field">
+                  <label>Total Amount Paid</label>
+                  <strong>{formatCurrency(selectedBooking.amount || selectedBooking.price)}</strong>
+                </div>
+                <div className="hotel-modal-field full-width">
+                  <label>Booked At</label>
+                  <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : "--"}</strong>
+                </div>
+                {selectedBooking.cancellationReason && (
+                  <div className="hotel-modal-field full-width">
+                    <label>Cancellation Reason</label>
+                    <strong>{selectedBooking.cancellationReason}</strong>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </main>
   );
 }

@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 import "./FlightSearchHistory.css";
+import AdminPagination from "../../../components/AdminPagination";
 
 const DEFAULT_FILTERS = {
   query: "",
   customerName: "",
   fromDate: "",
   toDate: "",
+  searchFromDate: "",
+  searchToDate: "",
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 100;
 
 const normalizeText = (value, fallback = "") => {
   const text = String(value ?? "").trim();
@@ -122,7 +125,7 @@ function resolveApiBaseUrl(...explicitBases) {
   const preferProxyInDev =
     isLocalDevelopment() &&
     String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-      "true";
+    "true";
 
   if (preferProxyInDev) {
     return "";
@@ -211,7 +214,7 @@ function resolveCurrentUserId(explicitUserId) {
   try {
     const directStoredUserId = normalizeText(
       window.localStorage.getItem("userId") ||
-        window.localStorage.getItem("UserId"),
+      window.localStorage.getItem("UserId"),
       ""
     );
 
@@ -230,17 +233,17 @@ function resolveCurrentUserId(explicitUserId) {
 
     const resolved = normalizeText(
       parsed.userId ||
-        parsed.UserId ||
-        parsed.id ||
-        parsed.Id ||
-        parsed.uid ||
-        parsed.Uid ||
-        nestedUser.userId ||
-        nestedUser.UserId ||
-        nestedUser.id ||
-        nestedUser.Id ||
-        nestedUser.uid ||
-        nestedUser.Uid,
+      parsed.UserId ||
+      parsed.id ||
+      parsed.Id ||
+      parsed.uid ||
+      parsed.Uid ||
+      nestedUser.userId ||
+      nestedUser.UserId ||
+      nestedUser.id ||
+      nestedUser.Id ||
+      nestedUser.uid ||
+      nestedUser.Uid,
       ""
     );
 
@@ -642,13 +645,24 @@ async function listAdminFlightSearchHistory({
   return [];
 }
 
+const parseUtcDate = (value) => {
+  if (!value) return new Date("");
+  let str = String(value).trim();
+  // If the date string has a time portion (contains ':') but lacks timezone offset information,
+  // we append 'Z' to explicitly parse it as a UTC/GMT timestamp.
+  if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+    str = str.replace(" ", "T") + "Z";
+  }
+  return new Date(str);
+};
+
 const toDateValue = (value) => {
-  const parsed = new Date(value || "");
+  const parsed = parseUtcDate(value);
   return Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
 };
 
 const formatSearchTime = (value) => {
-  const parsed = new Date(value || "");
+  const parsed = parseUtcDate(value);
   if (Number.isNaN(parsed.getTime())) {
     return "--";
   }
@@ -658,11 +672,12 @@ const formatSearchTime = (value) => {
     minute: "2-digit",
     second: "2-digit",
     hour12: true,
+    timeZone: "Asia/Kolkata",
   });
 };
 
 const formatSearchDate = (value) => {
-  const parsed = new Date(value || "");
+  const parsed = parseUtcDate(value);
   if (Number.isNaN(parsed.getTime())) {
     return "--";
   }
@@ -671,6 +686,7 @@ const formatSearchDate = (value) => {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 };
 
@@ -785,9 +801,8 @@ function formatPassengerCounts(record) {
     return "Adult - --, Child - --, Infant - --";
   }
 
-  return `Adult - ${Number.isFinite(adultCount) ? adultCount : 0}, Child - ${
-    Number.isFinite(childCount) ? childCount : 0
-  }, Infant - ${Number.isFinite(infantCount) ? infantCount : 0}`;
+  return `Adult - ${Number.isFinite(adultCount) ? adultCount : 0}, Child - ${Number.isFinite(childCount) ? childCount : 0
+    }, Infant - ${Number.isFinite(infantCount) ? infantCount : 0}`;
 }
 
 export default function AdminFlightSearchHistoryPage() {
@@ -824,8 +839,8 @@ export default function AdminFlightSearchHistoryPage() {
 
     const localRows = apiError
       ? readSearchHistoryEntries({ searchType: "Flight" }).map((record, index) =>
-          mapLocalSearchRecord(record, index)
-        )
+        mapLocalSearchRecord(record, index)
+      )
       : [];
     const mergedRows = mergeSearchHistory(apiRows, localRows);
     setHistoryRows(mergedRows);
@@ -853,6 +868,10 @@ export default function AdminFlightSearchHistoryPage() {
     const fromDateValue = filters.fromDate ? toDateValue(filters.fromDate) : Number.NaN;
     const toDateValueMs = filters.toDate
       ? toDateValue(filters.toDate) + 24 * 60 * 60 * 1000 - 1
+      : Number.NaN;
+    const searchFromDateValue = filters.searchFromDate ? toDateValue(filters.searchFromDate) : Number.NaN;
+    const searchToDateValueMs = filters.searchToDate
+      ? toDateValue(filters.searchToDate) + 24 * 60 * 60 * 1000 - 1
       : Number.NaN;
     const deletedIdSet = new Set(deletedRecordIds);
 
@@ -885,6 +904,21 @@ export default function AdminFlightSearchHistoryPage() {
       if (
         Number.isFinite(toDateValueMs) &&
         (!Number.isFinite(departValue) || departValue > toDateValueMs)
+      ) {
+        return false;
+      }
+
+      const searchDateValue = toDateValue(record.searchDateUtc);
+      if (
+        Number.isFinite(searchFromDateValue) &&
+        (!Number.isFinite(searchDateValue) || searchDateValue < searchFromDateValue)
+      ) {
+        return false;
+      }
+
+      if (
+        Number.isFinite(searchToDateValueMs) &&
+        (!Number.isFinite(searchDateValue) || searchDateValue > searchToDateValueMs)
       ) {
         return false;
       }
@@ -1044,6 +1078,32 @@ export default function AdminFlightSearchHistoryPage() {
               }
             />
           </label>
+          <label>
+            <span>Search Date From</span>
+            <input
+              type="date"
+              value={draftFilters.searchFromDate}
+              onChange={(event) =>
+                setDraftFilters((previous) => ({
+                  ...previous,
+                  searchFromDate: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label>
+            <span>Search Date To</span>
+            <input
+              type="date"
+              value={draftFilters.searchToDate}
+              onChange={(event) =>
+                setDraftFilters((previous) => ({
+                  ...previous,
+                  searchToDate: event.target.value,
+                }))
+              }
+            />
+          </label>
 
           <div className="filters-actions">
             <button type="button" className="primary" onClick={applyFilters}>
@@ -1060,8 +1120,8 @@ export default function AdminFlightSearchHistoryPage() {
         <header className="admin-search-history-table-head">
           <span>ID</span>
           <span>Segment</span>
-          <span>Date</span>
-          <span>Type/Search Date</span>
+          <span>Depart Date</span>
+          <span>Type / Search Date</span>
           <span>Action</span>
         </header>
 
@@ -1088,7 +1148,7 @@ export default function AdminFlightSearchHistoryPage() {
                   </div>
 
                   <div className="admin-search-history-cell admin-cell-centered">
-                    <strong>D: {departParts.dayMonth}</strong>
+                    <strong>{departParts.dayMonth}</strong>
                     <small>{departParts.year}</small>
                   </div>
 
@@ -1107,7 +1167,7 @@ export default function AdminFlightSearchHistoryPage() {
                       aria-label="View flight search"
                       title="View"
                     >
-                      <Search size={16} />
+                      <Eye size={16} />
                     </button>
                   </div>
                 </article>
@@ -1118,46 +1178,13 @@ export default function AdminFlightSearchHistoryPage() {
           <div className="admin-search-history-empty">Result Not Found.</div>
         )}
 
-        <footer className="admin-search-history-pagination">
-          <button type="button" onClick={() => setActivePage(1)} disabled={safeActivePage === 1}>
-            First
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePage((current) => Math.max(1, current - 1))}
-            disabled={safeActivePage === 1}
-          >
-            Prev
-          </button>
-
-          {Array.from({ length: totalPages }, (_, index) => index + 1)
-            .slice(Math.max(0, safeActivePage - 3), safeActivePage + 2)
-            .map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                className={safeActivePage === pageNumber ? "active" : ""}
-                onClick={() => setActivePage(pageNumber)}
-              >
-                {pageNumber}
-              </button>
-            ))}
-
-          <button
-            type="button"
-            onClick={() => setActivePage((current) => Math.min(totalPages, current + 1))}
-            disabled={safeActivePage === totalPages}
-          >
-            Next
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePage(totalPages)}
-            disabled={safeActivePage === totalPages}
-          >
-            Last
-          </button>
-        </footer>
+        <AdminPagination
+          currentPage={safeActivePage}
+          totalItems={filteredRows.length}
+          itemsPerPage={PAGE_SIZE}
+          onPageChange={setActivePage}
+          itemName="flight search history records"
+        />
       </section>
 
       {selectedRecord ? (
@@ -1169,7 +1196,10 @@ export default function AdminFlightSearchHistoryPage() {
             aria-label="Flight search details"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="admin-view-header">
+            <header className="admin-view-header" style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "16px" }}>
+              <button type="button" onClick={() => setSelectedRecord(null)} style={{ order: -1 }}>
+                Close
+              </button>
               <div className="admin-view-header-main">
                 <h2>Flight Search Detail</h2>
                 <p className="admin-view-header-subtitle">
@@ -1177,9 +1207,6 @@ export default function AdminFlightSearchHistoryPage() {
                   {normalizeText(selectedRecord.customerId, "0")}
                 </p>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)}>
-                Close
-              </button>
             </header>
 
             <section className="admin-view-grid">

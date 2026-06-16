@@ -1,6 +1,5 @@
 .admin-shell {
-  --sidebar-width: 78px;
-  --sidebar-expanded-width: 260px;
+  --sidebar-float-size: 44px;
   --admin-primary: #1e75ff;
   --admin-primary-strong: #0052d9;
   --admin-border: #eef2f6;
@@ -37,10 +36,26 @@
   min-height: 100vh;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   background: var(--page-bg);
   color: var(--text);
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   overflow: hidden;
+}
+
+
+/* Dark Theme Overrides */
+.admin-shell.dark-theme {
+  --admin-border: #1e293b;
+  --admin-text: #f8fafc;
+  --admin-muted: #94a3b8;
+  --admin-surface: #0f172a;
+  --admin-soft: #1e293b;
+  --page-bg: #0b0f19;
+  --success-soft: rgba(16, 185, 129, 0.15);
+  --danger-soft: rgba(239, 68, 68, 0.15);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .main-area {
@@ -344,6 +359,10 @@
   color: var(--admin-primary);
 }
 
+.admin-shell.dark-theme .admin-b2c-header h1 {
+  color: #ffffff !important;
+}
+
 .admin-toolbar-row {
   display: flex;
   align-items: center;
@@ -520,8 +539,8 @@
 
 
 .nav-icon-svg {
-  width: 20px;
-  height: 20px;
+  width: 100%;
+  height: 100%;
 }
 
 .admin-shell button,
@@ -537,13 +556,13 @@
 
 /* Hide all scrollbars in admin portal (scroll still works, bar is invisible) */
 .admin-shell,
-.admin-shell * {
+.admin-shell *:not(.ds-nav):not(.ds-nav *) {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
 
 .admin-shell::-webkit-scrollbar,
-.admin-shell *::-webkit-scrollbar {
+.admin-shell *:not(.ds-nav):not(.ds-nav *)::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;
   display: none !important;
@@ -588,4 +607,39 @@
 .admin-markup-used-table-scroll::-webkit-scrollbar-track,
 .flight-markup-table-scroll::-webkit-scrollbar-track {
   background: transparent !important;
+}
+
+/* Global Dark Theme overrides for admin list filter panels and action row buttons */
+.admin-shell.dark-theme .admin-ops-filters,
+.admin-shell.dark-theme .flight-ops-filters {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.admin-shell.dark-theme .admin-ops-filters label,
+.admin-shell.dark-theme .flight-ops-filters label,
+.admin-shell.dark-theme .admin-ops-filters span,
+.admin-shell.dark-theme .flight-ops-filters span {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-ops-filters input,
+.admin-shell.dark-theme .admin-ops-filters select,
+.admin-shell.dark-theme .flight-ops-filters input,
+.admin-shell.dark-theme .flight-ops-filters select {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-actions-row button {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-actions-row button:hover {
+  background: #334155 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
 }

@@ -5,6 +5,11 @@ import {
   Loader2,
   Smartphone,
   Wallet,
+  Check,
+  X,
+  ShieldCheck,
+  User,
+  ArrowRight
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { bookFlight } from "../../services/flightBookingService";
@@ -287,20 +292,141 @@ export default function FlightPaymentPage() {
 
   return (
     <main className="flight-flow-page">
-      <div className="flight-flow-shell">
-        <section className="flight-payment-layout">
-          <div className="flight-section-card">
-            <header className="flight-card-head">
-              <h2>Select Payment Method</h2>
-            </header>
+      {/* ── STEPPER PROGRESS HEADER ── */}
+      <div className="flight-stepper-header">
+        <div className="step-item completed">
+          <span className="step-circle">✓</span>
+          <span>Flight Selection</span>
+        </div>
+        <div className="step-line completed"></div>
+        <div className="step-item completed">
+          <span className="step-circle">✓</span>
+          <span>Review & Traveller Details</span>
+        </div>
+        <div className="step-line completed"></div>
+        <div className="step-item completed">
+          <span className="step-circle">✓</span>
+          <span>Add-ons</span>
+        </div>
+        <div className="step-line completed"></div>
+        <div className="step-item active">
+          <span className="step-circle">4</span>
+          <span>Payment</span>
+        </div>
+      </div>
 
-            <div className="flight-payment-methods">
+      <div className="flight-booking-container">
+        {/* ── LEFT COLUMN SIDEBAR ── */}
+        <aside className="flight-checkout-sidebar">
+          {/* Your Flight Details */}
+          <div className="sidebar-card your-flight-card">
+            <h3 className="sidebar-card-title">Your Flight</h3>
+            <div className="flight-segment">
+              <div className="flight-city-info">
+                <span className="flight-city-code">{flight.sourceCode || "--"}</span>
+                <span className="flight-city-name">{flowState.searchContext?.source || "--"}</span>
+              </div>
+              <div className="flight-stops-indicator">
+                <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
+                <div className="stops-line"></div>
+              </div>
+              <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                <span className="flight-city-code">{flight.destinationCode || "--"}</span>
+                <span className="flight-city-name">{flowState.searchContext?.destination || "--"}</span>
+              </div>
+            </div>
+            <div className="flight-meta-info">
+              <span>{flight.airlineName} ({flight.flightNumber})</span>
+              <span className="flight-date-badge">{flight.departDate || "--"}</span>
+            </div>
+          </div>
+
+          {/* Travellers Details */}
+          {passengers && passengers.length > 0 && (
+            <div className="sidebar-card travellers-card">
+              <h3 className="sidebar-card-title">Travellers</h3>
+              {passengers.map((p, idx) => (
+                <div key={p.id} className="traveller-item">
+                  {idx + 1}. {p.title} {p.firstName} {p.lastName}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Fare Summary */}
+          <div className="sidebar-card fare-summary-card">
+            <h3 className="sidebar-card-title">Fare Summary</h3>
+            <div className="fare-row">
+              <span>Base Fare</span>
+              <span>₹ {(Number(fareSummary.baseFare) || 0).toLocaleString("en-IN")}</span>
+            </div>
+            {Number(fareSummary.seatSurcharge) > 0 && (
+              <div className="fare-row">
+                <span>Seat Surcharge</span>
+                <span>₹ {Number(fareSummary.seatSurcharge).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {(Number(fareSummary.mealFee) + Number(fareSummary.baggageFee)) > 0 && (
+              <div className="fare-row">
+                <span>Meals & Baggage</span>
+                <span>₹ {(Number(fareSummary.mealFee) + Number(fareSummary.baggageFee)).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(fareSummary.tax) > 0 && (
+              <div className="fare-row">
+                <span>Taxes & Fees</span>
+                <span>₹ {Number(fareSummary.tax).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(fareSummary.markup) > 0 && (
+              <div className="fare-row">
+                <span>Service Markup</span>
+                <span>₹ {Number(fareSummary.markup).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(fareSummary.convenienceFee) > 0 && (
+              <div className="fare-row">
+                <span>Convenience Fee</span>
+                <span>₹ {Number(fareSummary.convenienceFee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(fareSummary.assuredFee) > 0 && (
+              <div className="fare-row">
+                <span>PickNBook Fee</span>
+                <span>₹ {Number(fareSummary.assuredFee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(flowState.couponDiscount || fareSummary.discount) > 0 && (
+              <div className="fare-row">
+                <span>Instant Discount</span>
+                <span className="discount-value">-₹ {Number(flowState.couponDiscount || fareSummary.discount).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            <div className="fare-row total-amount-row">
+              <span>Total Amount</span>
+              <span>₹ {payableAmount.toLocaleString("en-IN")}</span>
+            </div>
+          </div>
+        </aside>
+
+        {/* ── RIGHT COLUMN MAIN CONTENT ── */}
+        <section className="flight-checkout-main">
+          {/* Payment Selection Card */}
+          <div className="flight-main-card">
+            <h2 className="flight-main-card-title">Select Payment Method</h2>
+            
+            <div className="flight-payment-methods" style={{ padding: 0, marginBottom: 20 }}>
               {PAYMENT_METHODS.map((method) => (
                 <button
                   type="button"
                   key={method.id}
                   className={selectedMethod === method.id ? "active" : ""}
                   onClick={() => setSelectedMethod(method.id)}
+                  style={{
+                    backgroundColor: selectedMethod === method.id ? "var(--secondary-color)" : "var(--bg-card)",
+                    color: selectedMethod === method.id ? "white" : "var(--text-main)",
+                    borderColor: "var(--border-color)"
+                  }}
                 >
                   <method.icon size={15} />
                   <span>{method.label}</span>
@@ -308,30 +434,29 @@ export default function FlightPaymentPage() {
               ))}
             </div>
 
-            <header className="flight-card-head">
-              <h3>Payment Details</h3>
-            </header>
-
-            <div className="flight-payment-form">
+            <h3 style={{ margin: "0 0 12px 0", fontSize: "1rem" }}>Payment Details</h3>
+            <div className="flight-payment-form" style={{ padding: 0 }}>
               {selectedMethod === "upi" && (
-                <label>
-                  <span>UPI ID</span>
+                <div className="input-group">
+                  <label>UPI ID</label>
                   <input
+                    className="input-control"
                     type="text"
-                    placeholder="name@bank"
+                    placeholder="username@bank"
                     value={formValues.upiId}
                     onChange={(event) =>
                       setFormValues((previous) => ({ ...previous, upiId: event.target.value }))
                     }
                   />
-                </label>
+                </div>
               )}
 
               {selectedMethod === "card" && (
                 <>
-                  <label>
-                    <span>Card Number</span>
+                  <div className="input-group">
+                    <label>Card Number</label>
                     <input
+                      className="input-control"
                       type="text"
                       placeholder="XXXX XXXX XXXX XXXX"
                       value={formValues.cardNumber}
@@ -342,10 +467,11 @@ export default function FlightPaymentPage() {
                         }))
                       }
                     />
-                  </label>
-                  <label>
-                    <span>Name on Card</span>
+                  </div>
+                  <div className="input-group">
+                    <label>Name on Card</label>
                     <input
+                      className="input-control"
                       type="text"
                       placeholder="Card holder name"
                       value={formValues.nameOnCard}
@@ -356,39 +482,44 @@ export default function FlightPaymentPage() {
                         }))
                       }
                     />
-                  </label>
-                  <label>
-                    <span>Expiry (MM/YY)</span>
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      value={formValues.expiry}
-                      onChange={(event) =>
-                        setFormValues((previous) => ({
-                          ...previous,
-                          expiry: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    <span>CVV</span>
-                    <input
-                      type="password"
-                      placeholder="CVV"
-                      value={formValues.cvv}
-                      onChange={(event) =>
-                        setFormValues((previous) => ({ ...previous, cvv: event.target.value }))
-                      }
-                    />
-                  </label>
+                  </div>
+                  <div className="form-grid-2">
+                    <div className="input-group">
+                      <label>Expiry (MM/YY)</label>
+                      <input
+                        className="input-control"
+                        type="text"
+                        placeholder="MM/YY"
+                        value={formValues.expiry}
+                        onChange={(event) =>
+                          setFormValues((previous) => ({
+                            ...previous,
+                            expiry: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="input-group">
+                      <label>CVV</label>
+                      <input
+                        className="input-control"
+                        type="password"
+                        placeholder="CVV"
+                        value={formValues.cvv}
+                        onChange={(event) =>
+                          setFormValues((previous) => ({ ...previous, cvv: event.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
                 </>
               )}
 
               {selectedMethod === "netbanking" && (
-                <label>
-                  <span>Select Bank</span>
+                <div className="input-group">
+                  <label>Select Bank</label>
                   <select
+                    className="input-control"
                     value={formValues.bankName}
                     onChange={(event) =>
                       setFormValues((previous) => ({ ...previous, bankName: event.target.value }))
@@ -400,13 +531,14 @@ export default function FlightPaymentPage() {
                     <option value="sbi">State Bank of India</option>
                     <option value="axis">Axis Bank</option>
                   </select>
-                </label>
+                </div>
               )}
 
               {selectedMethod === "wallet" && (
-                <label>
-                  <span>Select Wallet</span>
+                <div className="input-group">
+                  <label>Select Wallet</label>
                   <select
+                    className="input-control"
                     value={formValues.walletProvider}
                     onChange={(event) =>
                       setFormValues((previous) => ({
@@ -420,65 +552,45 @@ export default function FlightPaymentPage() {
                     <option value="amazonpay">Amazon Pay</option>
                     <option value="phonepe">PhonePe Wallet</option>
                   </select>
-                </label>
-              )}
-            </div>
-          </div>
-
-          <aside className="flight-side-card">
-            <h3>Booking Summary</h3>
-
-            <div className="flight-summary-list">
-              <p><strong>{flight.airlineName}</strong> ({flight.flightNumber})</p>
-              <p>{flowState.searchContext?.source} &rarr; {flowState.searchContext?.destination}</p>
-              <p>Seats: {selectedSeats.map((seat) => seat.label).join(", ")}</p>
-              <p>Passengers: {passengers.length}</p>
-            </div>
-
-            <div className="flight-fare-list">
-              <div>
-                <span>Base Fare</span>
-                <strong>{formatCurrency(fareSummary.baseFare)}</strong>
-              </div>
-              <div>
-                <span>Taxes</span>
-                <strong>{formatCurrency(fareSummary.tax)}</strong>
-              </div>
-              <div>
-                <span>Convenience Fee</span>
-                <strong>{formatCurrency(fareSummary.convenienceFee)}</strong>
-              </div>
-              {Number(flowState.couponDiscount) > 0 && (
-                <div>
-                  <span>Coupon Discount</span>
-                  <strong>{formatCurrency(flowState.couponDiscount)}</strong>
                 </div>
               )}
-              <div className="total">
-                <span>Payable Amount</span>
-                <strong>{formatCurrency(payableAmount)}</strong>
-              </div>
             </div>
 
-            {paymentError && <p className="flight-flow-error">{paymentError}</p>}
-
-            <button
-              type="button"
-              className="flight-pay-btn"
-              onClick={handlePayNow}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={14} className="spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                `Pay ${formatCurrency(payableAmount)}`
-              )}
-            </button>
-          </aside>
+            {paymentError && (
+              <p style={{ color: "var(--danger-color)", fontSize: "0.813rem", fontWeight: 700, margin: "16px 0 0 0" }}>
+                {paymentError}
+              </p>
+            )}
+          </div>
         </section>
+      </div>
+
+      {/* ── BOTTOM STICKY ACTION BAR ── */}
+      <div className="bottom-action-bar">
+        <div className="bottom-price-info">
+          <span className="bottom-price-label">Payable Amount</span>
+          <span className="bottom-price-amount">₹ {payableAmount.toLocaleString("en-IN")}</span>
+        </div>
+
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={handlePayNow}
+          disabled={isSubmitting}
+          style={{ minWidth: 160 }}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 size={14} className="spin" />
+              <span>Processing...</span>
+            </>
+          ) : (
+            <>
+              <span>Pay ₹ {payableAmount.toLocaleString("en-IN")}</span>
+              <ArrowRight size={16} />
+            </>
+          )}
+        </button>
       </div>
     </main>
   );

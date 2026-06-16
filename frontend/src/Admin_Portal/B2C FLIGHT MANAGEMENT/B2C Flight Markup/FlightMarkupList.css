@@ -23,7 +23,11 @@
 }
 
 .flight-markup-title-underline {
-  display: none !important;
+  height: 2px;
+  width: 90px;
+  background: var(--primary);
+  border-radius: 999px;
+  margin-top: 8px;
 }
 
 .flight-markup-actions {
@@ -34,41 +38,43 @@
 }
 
 .flight-markup-action-btn {
-  min-height: 36px;
-  border: 0 !important;
-  border-radius: 10px !important;
-  padding: 0 16px !important;
-  color: #fff !important;
-  font-size: 0.84rem !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04) !important;
-  transition: all 0.2s ease !important;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-
-.flight-markup-action-btn:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.08) !important;
-  filter: brightness(1.05) !important;
-  color: #ffffff !important;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .flight-markup-action-btn.primary {
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
+  border-color: var(--primary);
 }
 
-.flight-markup-action-btn.secondary {
-  background: linear-gradient(135deg, var(--admin-success), var(--admin-success)) !important;
+.flight-markup-action-btn.secondary,
+.flight-markup-action-btn.filter {
+  background: var(--surface-soft);
+}
+
+.flight-markup-action-btn.filter.active,
+.flight-markup-action-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--surface-soft);
 }
 
 .flight-markup-table-wrap {
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -81,87 +87,48 @@
 
 .flight-markup-table {
   width: 100%;
-  border-collapse: separate !important;
-  border-spacing: 0 10px !important;
-  table-layout: fixed !important;
+  border-collapse: collapse;
+  font-size: 12px !important;
+  table-layout: fixed;
   min-width: 100% !important;
-  font-size: 0.82rem !important;
 }
 
-.flight-markup-table thead tr {
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
+.flight-markup-table thead {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
 }
 
 .flight-markup-table th {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  font-size: 0.73rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0px !important;
-  padding: 10px 2px !important;
-  border: none !important;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
   text-align: center !important;
-  white-space: normal !important;
-  line-height: 1.25 !important;
-}
-
-.flight-markup-table th:first-child {
-  border-top-left-radius: 12px !important;
-  border-bottom-left-radius: 12px !important;
-}
-
-.flight-markup-table th:last-child {
-  border-top-right-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
+  vertical-align: middle !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .flight-markup-table td {
-  border-top: 1px solid var(--admin-border) !important;
-  border-bottom: 1px solid var(--admin-border) !important;
-  background: var(--admin-surface) !important;
-  padding: 10px 2px !important;
-  color: var(--admin-text) !important;
-  font-size: 0.75rem !important;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
   text-align: center !important;
   vertical-align: middle !important;
   white-space: normal !important;
   word-break: break-word !important;
-}
-
-.flight-markup-table td:first-child {
-  border-left: 1px solid var(--admin-border) !important;
-  border-top-left-radius: 12px !important;
-  border-bottom-left-radius: 12px !important;
-}
-
-.flight-markup-table td:last-child {
-  border-right: 1px solid var(--admin-border) !important;
-  border-top-right-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
-}
-
-.flight-markup-table tbody tr {
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-.flight-markup-table tbody tr:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
-}
-
-.flight-markup-table tbody tr:hover td {
-  border-color: rgba(30, 117, 255, 0.2) !important;
+  overflow: visible !important;
 }
 
 .flight-markup-th-pill {
-  background: transparent !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .flight-markup-empty-cell {
@@ -218,15 +185,17 @@
   border-radius: 16px;
   border: 1px solid var(--border);
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
-  width: min(720px, 95vw);
-  padding: 16px;
+  width: min(1120px, 96vw);
+  padding: 22px 22px 24px;
   max-height: 85vh !important;
   overflow-y: auto !important;
 }
 
 .flight-markup-modal-header h2 {
-  color: #000000 !important;
+  color: var(--text-primary) !important;
   font-weight: 700 !important;
+  font-size: 1.15rem;
+  margin: 0;
 }
 
 .flight-markup-modal-header {
@@ -248,31 +217,61 @@
 }
 
 .flight-markup-modal-form {
-  margin-top: 14px;
+  margin-top: 20px;
 }
 
 .flight-markup-modal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 18px;
+  row-gap: 18px;
 }
 
 .flight-markup-modal-field {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.82rem;
-  color: #000000 !important;
+  color: var(--text-primary) !important;
   font-weight: 600 !important;
 }
 
-.flight-markup-modal-field input,
-.flight-markup-modal-field select {
+.flight-markup-modal-field input {
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 0.85rem;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
   background: var(--panel);
   color: var(--text-primary);
+  min-height: 42px;
+  box-sizing: border-box;
+}
+
+.flight-markup-modal-field select {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 40px 10px 14px;
+  font-size: 0.9rem;
+  background: var(--panel);
+  color: var(--text-primary);
+  min-height: 42px;
+  box-sizing: border-box;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px !important;
+  cursor: pointer;
+}
+
+.flight-markup-modal-field input::placeholder {
+  color: var(--text-secondary);
+}
+
+.flight-markup-modal-field input:focus,
+.flight-markup-modal-field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(220, 30, 38, 0.12);
 }
 
 .flight-markup-modal-field.wide {
@@ -283,15 +282,17 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 .flight-markup-modal-actions button {
   border: 1px solid var(--border);
-  padding: 8px 14px;
-  border-radius: 10px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .flight-markup-modal-actions .primary {
@@ -347,7 +348,7 @@
 .admin-markup-modal header h2 {
   margin: 0;
   font-size: 1.1rem;
-  color: #000000 !important;
+  color: var(--text-primary) !important;
   font-weight: 700 !important;
 }
 
@@ -392,7 +393,7 @@
   display: grid;
   gap: 6px;
   font-size: 0.82rem;
-  color: #000000 !important;
+  color: var(--text-primary) !important;
   font-weight: 600 !important;
 }
 
@@ -457,6 +458,170 @@
 .admin-markup-delete-copy {
   margin: 16px 0 0;
   color: var(--text-secondary);
+}
+
+.flight-markup-panel .status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 75px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.flight-markup-panel .status-badge.active {
+  background: rgba(34, 197, 94, 0.14);
+  color: #15803d;
+}
+
+.flight-markup-panel .status-badge.inactive {
+  background: rgba(239, 68, 68, 0.14);
+  color: #dc2626;
+}
+
+.admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.primary,
+.admin-shell.light-theme .flight-markup-panel .flight-markup-modal-actions .primary,
+.admin-shell.light-theme .flight-markup-panel .admin-markup-modal-actions .primary {
+  background: linear-gradient(135deg, #dc1e26, #b8141b);
+  border-color: #dc1e26;
+  color: #ffffff;
+}
+
+.admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.secondary,
+.admin-shell.light-theme .flight-markup-panel .flight-markup-modal-actions .secondary,
+.admin-shell.light-theme .flight-markup-panel .admin-markup-modal-actions .secondary {
+  background: #ffffff;
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-action-btn.primary,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-actions .primary,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-actions .primary,
+.admin-shell.dark-theme .flight-markup-modal-actions .primary,
+.admin-shell.dark-theme .flight-markup-action-btn.primary {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .flight-markup-table thead {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+}
+
+.admin-shell.dark-theme .flight-markup-title h1 {
+  color: #3b82f6 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-title-underline {
+  background: #3b82f6 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-action-btn.secondary,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-actions .secondary,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-actions .secondary,
+.admin-shell.dark-theme .flight-markup-modal-actions .secondary {
+  background: #243047 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal {
+  background: #111827;
+  border-color: #243b63;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.42);
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-header,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal header {
+  border-bottom-color: #243b63;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-header h2,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal header h2,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid label,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-grid strong,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-delete-copy {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-grid span {
+  color: #94a3b8 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-close,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal header button {
+  background: #243047;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field input,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field select,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid input,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid select,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid textarea {
+  background-color: #243047;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field input::placeholder,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid input::placeholder,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid textarea::placeholder {
+  color: #94a3b8;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field input:focus,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field select:focus,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid input:focus,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid select:focus,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-form-grid textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.admin-shell.dark-theme .flight-markup-panel .status-badge.active {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .status-badge.inactive {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.flight-markup-modal-field input:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-field input:disabled {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .flight-markup-modal {
+    width: min(96vw, 96vw);
+    padding: 18px;
+  }
+
+  .flight-markup-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 }
 
 @media (max-width: 900px) {

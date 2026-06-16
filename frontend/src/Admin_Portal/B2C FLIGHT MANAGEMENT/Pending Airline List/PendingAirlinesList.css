@@ -12,6 +12,11 @@
 
 .admin-flight-pending-header h1 {
   font-size: 1.85rem;
+  font-weight: 500 !important;
+}
+
+.admin-flight-pending-header h1 span {
+  font-weight: 600 !important;
 }
 
 .admin-flight-pending-actions-row {
@@ -30,13 +35,44 @@
 
 .admin-flight-pending-table-head,
 .admin-flight-pending-table-row {
-  grid-template-columns: 0.35fr 0.4fr 0.85fr 1fr 1.2fr 1.05fr 1.7fr 0.7fr;
+  grid-template-columns: 0.35fr 0.4fr 0.85fr 1fr 1.2fr 1.05fr 1.7fr 1.1fr;
 }
 
-.admin-flight-pending-action-cell {
-  grid-auto-flow: column;
-  justify-content: center;
-  gap: 8px;
+/* Make row a unified, cohesive container */
+.admin-flight-pending-table-row {
+  background: var(--admin-surface) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+/* Reset cell box backgrounds, borders, and rounded corners so they flow horizontally */
+.admin-flight-pending-table-row .admin-cancel-cell {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 12px 8px !important;
+  min-height: 48px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Add light vertical divider lines between columns */
+.admin-flight-pending-table-row .admin-cancel-cell:not(:last-child) {
+  border-right: 1px solid var(--admin-border) !important;
+}
+
+.admin-flight-pending-table-row .admin-flight-pending-action-cell {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
 .admin-flight-pending-icon-btn {
@@ -51,12 +87,152 @@
   cursor: pointer;
 }
 
+.admin-flight-pending-icon-btn.view {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
 .admin-flight-pending-icon-btn.edit {
   background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary));
 }
 
 .admin-flight-pending-icon-btn.delete {
   background: linear-gradient(135deg, var(--admin-danger), var(--admin-primary-strong));
+}
+
+/* Modal Backdrop */
+.admin-flight-pending-page .admin-view-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1200 !important;
+  padding: 16px !important;
+}
+
+/* Modal Card */
+.admin-flight-pending-page .admin-view-card {
+  background: var(--admin-surface) !important;
+  border-radius: 18px !important;
+  width: min(600px, 95vw) !important;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12) !important;
+  border: 1px solid var(--admin-border) !important;
+  padding: 18px !important;
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  box-sizing: border-box !important;
+  animation: modalFadeIn 0.3s ease !important;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Modal Header */
+.admin-flight-pending-page .admin-view-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 16px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+}
+
+.admin-flight-pending-page .admin-view-header button {
+  border: 1px solid var(--admin-border) !important;
+  background: var(--admin-soft) !important;
+  color: var(--admin-primary) !important;
+  border-radius: 10px !important;
+  padding: 6px 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  order: -1 !important;
+}
+
+.admin-flight-pending-page .admin-view-header-main h2 {
+  margin: 0 !important;
+  font-size: 1.25rem !important;
+  color: var(--admin-text) !important;
+}
+
+.admin-flight-pending-page .admin-view-header-subtitle {
+  margin: 4px 0 0 !important;
+  color: var(--admin-muted) !important;
+  font-size: 0.85rem !important;
+}
+
+/* Modal Grid */
+.admin-flight-pending-page .admin-view-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 14px !important;
+  padding-top: 8px !important;
+}
+
+.admin-flight-pending-page .admin-view-grid div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.admin-flight-pending-page .admin-view-grid span {
+  font-size: 0.75rem !important;
+  color: var(--admin-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.admin-flight-pending-page .admin-view-grid strong {
+  font-size: 0.95rem !important;
+  color: var(--admin-text) !important;
+}
+
+/* Dark Theme Overrides */
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-backdrop {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-card {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-header h2 {
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-header-subtitle {
+  color: #94a3b8 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-grid span {
+  color: #94a3b8 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-grid strong {
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-header button {
+  background: #1e293b !important;
+  color: #3b82f6 !important;
+  border: 1px solid #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-pending-page .admin-view-header button:hover {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 980px) {
@@ -72,4 +248,3 @@
     grid-template-columns: 1fr;
   }
 }
-

@@ -1,14 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeftRight,
+  ArrowDown,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  IndianRupee,
   Loader2,
+  MapPin,
+  Moon,
+  Plane,
   PlaneTakeoff,
+  Sun,
+  Sunrise,
+  Sunset,
   X,
   XCircle,
 } from "lucide-react";
-import Lottie from "lottie-react";
+
 import { useLocation, useNavigate } from "react-router-dom";
 import airIndiaExpress from "../../assets/images/airlines/Air-India_express.jpg";
 import airIndia from "../../assets/images/airlines/air-india.png";
@@ -17,10 +28,19 @@ import emirates from "../../assets/images/airlines/Emirates.png";
 import indigo from "../../assets/images/airlines/indigo.png";
 import qatarAirways from "../../assets/images/airlines/qatarairways.png";
 import spiceJet from "../../assets/images/airlines/Spicejet.png";
-import flightLoadingAnimation from "../../assets/images/animations/flightLoadingPaperplane.json";
+
+const LOADING_STATUSES = [
+  "Connecting to major airline databases...",
+  "Scanning seat maps and class options...",
+  "Finding lowest fare guarantees...",
+  "Checking luggage allowances and policy...",
+  "Applying student and corporate deals...",
+  "Securing optimal route options..."
+];
 import { bookFlight, searchFlights } from "../../services/flightBookingService";
 import "../../STYLES/FlightSearchResults.css";
 import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
+import { writeFlightBookingFlowState } from "./flightBookingFlowStore";
 
 const MONTHS = [
   "Jan",
@@ -40,10 +60,20 @@ const MONTHS = [
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const DEPARTURE_WINDOWS = [
-  { key: "morning", label: "6am to 12pm", min: 6, max: 12 },
-  { key: "afternoon", label: "12pm to 6pm", min: 12, max: 18 },
-  { key: "evening", label: "6pm to 12am", min: 18, max: 24 },
-  { key: "night", label: "12am to 6am", min: 0, max: 6 },
+  { key: "morning", label: "6am to 12pm", min: 6, max: 12, Icon: Sunrise },
+  { key: "afternoon", label: "12pm to 6pm", min: 12, max: 18, Icon: Sun },
+  { key: "evening", label: "6pm to 12am", min: 18, max: 24, Icon: Sunset },
+  { key: "night", label: "12am to 6am", min: 0, max: 6, Icon: Moon },
+];
+
+const FARE_TYPE_FILTERS = [
+  { key: "refundable", label: "Refundable" },
+  { key: "nonRefundable", label: "Non Refundable" },
+];
+
+const STOP_FILTERS = [
+  { key: "nonStop", label: "Non Stop" },
+  { key: "oneStop", label: "1 Stop" },
 ];
 
 const TRAVEL_CLASS_ORDER = [
@@ -107,9 +137,10 @@ function formatLongDate(date) {
 }
 
 function formatCardDate(date) {
-  return `${String(date.getDate()).padStart(2, "0")} ${MONTHS[date.getMonth()]} ${
-    date.getFullYear()
-  }`;
+  return `${WEEKDAYS[date.getDay()]}, ${String(date.getDate()).padStart(
+    2,
+    "0"
+  )} ${MONTHS[date.getMonth()]}`;
 }
 
 function formatFlightDate(date) {
@@ -404,15 +435,22 @@ export default function FlightSearchResults() {
   const [expandedFlightId, setExpandedFlightId] = useState(null);
 
   const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(0);
   const [timeMin, setTimeMin] = useState(0);
-  const [timeMax, setTimeMax] = useState(23);
   const [departureWindows, setDepartureWindows] = useState(() => ({
     morning: true,
     afternoon: true,
     evening: true,
     night: true,
   }));
+  const [fareTypeFilters, setFareTypeFilters] = useState(() => ({
+    refundable: true,
+    nonRefundable: true,
+  }));
+  const [stopFilters, setStopFilters] = useState(() => ({
+    nonStop: true,
+    oneStop: true,
+  }));
+  const [sortBy, setSortBy] = useState("departure");
   const [airlineFilters, setAirlineFilters] = useState({});
 
   const [bookingFlightId, setBookingFlightId] = useState(null);
@@ -429,6 +467,17 @@ export default function FlightSearchResults() {
   const [bookingError, setBookingError] = useState("");
   const sourceCode = cityCode(sourceName, "DEL");
   const destinationCode = cityCode(destinationName, "BOM");
+
+  const [loadingStatusIndex, setLoadingStatusIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isLoadingFlights) return;
+    setLoadingStatusIndex(0);
+    const interval = setInterval(() => {
+      setLoadingStatusIndex((prev) => (prev + 1) % LOADING_STATUSES.length);
+    }, 1200);
+    return () => clearInterval(interval);
+  }, [isLoadingFlights]);
 
   useEffect(() => {
     setSourceName(initialSourceName);
@@ -572,7 +621,10 @@ export default function FlightSearchResults() {
           arrivalTime: formatTime(arrivalIst),
           departureHour: departureIst ? departureIst.getHours() : 0,
           duration: durationLabel(durationMinutes),
+          durationMinutes,
           fare: selectedClassOption?.priceInr ?? flight.selectedTravelClassPriceInr ?? 0,
+          isRefundable: Boolean(flight.isRefundable),
+          stops: Number(flight.stops || 0),
           className: travelClass,
           classOptions: resolvedClassOptions,
           supportedTravelClasses:
@@ -619,8 +671,7 @@ export default function FlightSearchResults() {
 
   useEffect(() => {
     setPriceMin(minFare);
-    setPriceMax(maxFare);
-  }, [minFare, maxFare]);
+  }, [minFare]);
 
   useEffect(() => {
     const airlineNames = Array.from(
@@ -641,11 +692,11 @@ export default function FlightSearchResults() {
   const filteredFlights = useMemo(
     () =>
       flights.filter((flight) => {
-        if (flight.fare < priceMin || flight.fare > priceMax) {
+        if (flight.fare < priceMin) {
           return false;
         }
 
-        if (flight.departureHour < timeMin || flight.departureHour > timeMax) {
+        if (flight.departureHour < timeMin) {
           return false;
         }
 
@@ -660,9 +711,27 @@ export default function FlightSearchResults() {
           return false;
         }
 
+        const fareTypeKey = flight.isRefundable ? "refundable" : "nonRefundable";
+        if (!fareTypeFilters[fareTypeKey]) {
+          return false;
+        }
+
+        const stopKey = flight.stops > 0 ? "oneStop" : "nonStop";
+        if (!stopFilters[stopKey]) {
+          return false;
+        }
+
         return airlineFilters[flight.airlineName];
       }),
-    [flights, priceMin, priceMax, timeMin, timeMax, departureWindows, airlineFilters]
+    [
+      flights,
+      priceMin,
+      timeMin,
+      departureWindows,
+      fareTypeFilters,
+      stopFilters,
+      airlineFilters,
+    ]
   );
 
   const dateStrip = useMemo(() => {
@@ -674,6 +743,32 @@ export default function FlightSearchResults() {
     }));
   }, [selectedDate]);
 
+  const sortedFlights = useMemo(() => {
+    const nextFlights = [...filteredFlights];
+
+    nextFlights.sort((a, b) => {
+      if (sortBy === "price") {
+        return a.fare - b.fare;
+      }
+
+      if (sortBy === "fastest") {
+        return a.durationMinutes - b.durationMinutes;
+      }
+
+      if (sortBy === "departure") {
+        return a.departureHour - b.departureHour || a.fare - b.fare;
+      }
+
+      return (
+        a.stops - b.stops ||
+        a.fare - b.fare ||
+        a.durationMinutes - b.durationMinutes
+      );
+    });
+
+    return nextFlights;
+  }, [filteredFlights, sortBy]);
+
   const travellerCounts = getTravellerCounts(travellerText);
   const flightsFoundCount = filteredFlights.length;
   const activeBookingFlight =
@@ -684,38 +779,7 @@ export default function FlightSearchResults() {
       : tripType === "multicity"
         ? "Multi City"
         : "One Way";
-  const loadingSearchDetails = [
-    {
-      id: "from",
-      label: "From",
-      value: `${sourceName} (${sourceCode})`,
-    },
-    {
-      id: "to",
-      label: "To",
-      value: `${destinationName} (${destinationCode})`,
-    },
-    {
-      id: "date",
-      label: "Departure",
-      value: formatLongDate(selectedDate),
-    },
-    {
-      id: "trip",
-      label: "Trip",
-      value: tripLabel,
-    },
-    {
-      id: "travellers",
-      label: "Travellers",
-      value: `${travellerCounts.adults} Adult | ${travellerCounts.children} Child | ${travellerCounts.infants} Infant`,
-    },
-    {
-      id: "cabin",
-      label: "Cabin",
-      value: cabinClass,
-    },
-  ];
+
   const toggleModifySearch = () => {
     setModifyForm({
       source: sourceName,
@@ -789,6 +853,14 @@ export default function FlightSearchResults() {
     setDepartureWindows((previous) => ({ ...previous, [key]: !previous[key] }));
   };
 
+  const toggleFareType = (key) => {
+    setFareTypeFilters((previous) => ({ ...previous, [key]: !previous[key] }));
+  };
+
+  const toggleStopFilter = (key) => {
+    setStopFilters((previous) => ({ ...previous, [key]: !previous[key] }));
+  };
+
   const toggleAirline = (name) => {
     setAirlineFilters((previous) => ({ ...previous, [name]: !previous[name] }));
   };
@@ -804,20 +876,39 @@ export default function FlightSearchResults() {
   const handleStartBookingJourney = (flight) => {
     setBookingError("");
     setBookingSuccess("");
+    const bookingTravellerCounts = getTravellerCounts(travellerText);
+    const seatRequired = Math.max(
+      1,
+      bookingTravellerCounts.adults + bookingTravellerCounts.children
+    );
 
-    navigate("/flight/seats", {
-      state: {
-        flight,
-        searchContext: {
-          source: sourceName,
-          destination: destinationName,
-          tripType,
-          departureDate: formatDateInput(selectedDate),
-          travellers: travellerText,
-          cabinClass: flight.className || cabinClass,
-        },
+    const flowPayload = {
+      flight,
+      searchContext: {
+        source: sourceName,
+        destination: destinationName,
+        tripType,
+        departureDate: formatDateInput(selectedDate),
+        travellers: travellerText,
+        cabinClass: flight.className || cabinClass,
       },
-    });
+      selectedSeatLabels: [],
+      selectedSeats: [],
+      mealPreference: "standard",
+      baggagePlan: "20kg",
+      fareSummary: {
+        baseFare: Number(flight.fare || 0) * seatRequired,
+        seatSurcharge: 0,
+        mealFee: 0,
+        baggageFee: 0,
+        tax: 0,
+        convenienceFee: 0,
+        totalFare: Number(flight.fare || 0) * seatRequired,
+      },
+    };
+
+    writeFlightBookingFlowState(flowPayload);
+    navigate("/flight/passenger-details", { state: flowPayload });
   };
 
   const closeBookingModal = () => {
@@ -921,14 +1012,118 @@ export default function FlightSearchResults() {
     <main className={`flight-results-page${isLoadingFlights ? " is-loading" : ""}`}>
       {isLoadingFlights && (
         <section className="flight-loading-screen" aria-live="polite" aria-busy="true">
-          <div className="flight-loading-lottie" aria-label="Searching flights">
-            <Lottie
-              animationData={flightLoadingAnimation}
-              loop
-              autoplay
-              style={{ width: "100%", height: "100%" }}
-            />
+
+          {/* ── Header text ── */}
+          <div className="fls-header">
+            <h2 className="fls-title">Searching Flights...</h2>
+            <p className="fls-subtitle">Finding the best fares for you</p>
           </div>
+
+          {/* ── Route animation panel ── */}
+          <div className="fls-route-panel">
+
+            {/* Left city skyline */}
+            <div className="fls-skyline fls-skyline--left">
+              <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Big dome building */}
+                <rect x="8" y="42" width="28" height="38" rx="2" fill="#b8c8e8" opacity="0.55"/>
+                <path d="M8 42 Q22 24 36 42Z" fill="#b8c8e8" opacity="0.55"/>
+                <rect x="18" y="34" width="2" height="8" fill="#9aafd0" opacity="0.7"/>
+                {/* Side tower */}
+                <rect x="38" y="50" width="14" height="30" rx="1" fill="#c5d4ea" opacity="0.5"/>
+                <rect x="42" y="44" width="6" height="6" rx="1" fill="#b0c2dc" opacity="0.5"/>
+                {/* Small buildings */}
+                <rect x="54" y="56" width="10" height="24" rx="1" fill="#d0ddef" opacity="0.45"/>
+                <rect x="66" y="60" width="8" height="20" rx="1" fill="#c8d8ec" opacity="0.4"/>
+                <rect x="76" y="54" width="12" height="26" rx="1" fill="#bfcfe8" opacity="0.45"/>
+                <rect x="90" y="62" width="8" height="18" rx="1" fill="#cddaee" opacity="0.38"/>
+                {/* Windows */}
+                <rect x="14" y="50" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="20" y="50" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="14" y="58" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="20" y="58" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+              </svg>
+            </div>
+
+            {/* Route path + plane */}
+            <div className="fls-path-zone">
+              {/* Origin pin */}
+              <div className="fls-pin fls-pin--origin">
+                <svg viewBox="0 0 24 28" width="20" height="24" fill="none">
+                  <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 19 9 19s9-12.25 9-19c0-4.97-4.03-9-9-9z" fill="#5b8def"/>
+                  <circle cx="12" cy="9" r="3.5" fill="white"/>
+                </svg>
+                <span className="fls-city-name">{sourceName}</span>
+              </div>
+
+              {/* Dashed path + animated plane */}
+              <div className="fls-dashed-path">
+                <svg className="fls-path-svg" viewBox="0 0 400 24" fill="none" preserveAspectRatio="none">
+                  <line
+                    x1="0" y1="12" x2="400" y2="12"
+                    stroke="#5b8def"
+                    strokeWidth="2"
+                    strokeDasharray="8 7"
+                    opacity="0.45"
+                  />
+                  {/* Animated dot trail */}
+                  <circle className="fls-dot-pulse fls-dot-1" cx="80" cy="12" r="3" fill="#5b8def" opacity="0.5"/>
+                  <circle className="fls-dot-pulse fls-dot-2" cx="200" cy="12" r="3" fill="#5b8def" opacity="0.5"/>
+                  <circle className="fls-dot-pulse fls-dot-3" cx="320" cy="12" r="3" fill="#5b8def" opacity="0.5"/>
+                </svg>
+                {/* Paper plane icon flying along path */}
+                <div className="fls-plane-wrapper">
+                  <svg viewBox="0 0 40 32" width="40" height="32" fill="none">
+                    {/* Paper plane body */}
+                    <path d="M2 16 L38 4 L28 28 L18 20 Z" fill="#1d4ed8" opacity="0.9"/>
+                    <path d="M18 20 L22 30 L28 28 Z" fill="#3b5fc0" opacity="0.85"/>
+                    <path d="M18 20 L38 4 L22 14 Z" fill="#3d6be8" opacity="0.75"/>
+                    {/* Highlight */}
+                    <path d="M38 4 L22 14 L26 10 Z" fill="white" opacity="0.35"/>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Destination pin */}
+              <div className="fls-pin fls-pin--dest">
+                <svg viewBox="0 0 24 28" width="20" height="24" fill="none">
+                  <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 19 9 19s9-12.25 9-19c0-4.97-4.03-9-9-9z" fill="#5b8def"/>
+                  <circle cx="12" cy="9" r="3.5" fill="white"/>
+                </svg>
+                <span className="fls-city-name">{destinationName}</span>
+              </div>
+            </div>
+
+            {/* Right city skyline */}
+            <div className="fls-skyline fls-skyline--right">
+              <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Tall central tower */}
+                <rect x="50" y="20" width="20" height="60" rx="2" fill="#b8c8e8" opacity="0.55"/>
+                <rect x="56" y="14" width="8" height="8" rx="1" fill="#b0c2dc" opacity="0.6"/>
+                <rect x="59" y="8" width="2" height="8" fill="#9aafd0" opacity="0.6"/>
+                {/* Side buildings */}
+                <rect x="30" y="38" width="18" height="42" rx="1" fill="#c5d4ea" opacity="0.5"/>
+                <rect x="72" y="34" width="16" height="46" rx="1" fill="#c5d4ea" opacity="0.5"/>
+                <rect x="90" y="48" width="12" height="32" rx="1" fill="#d0ddef" opacity="0.45"/>
+                <rect x="14" y="50" width="14" height="30" rx="1" fill="#d0ddef" opacity="0.42"/>
+                <rect x="2" y="58" width="10" height="22" rx="1" fill="#cddaee" opacity="0.38"/>
+                {/* Windows */}
+                <rect x="55" y="28" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="62" y="28" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="55" y="36" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="62" y="36" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="55" y="44" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+                <rect x="62" y="44" width="3" height="3" rx="0.5" fill="white" opacity="0.4"/>
+              </svg>
+            </div>
+          </div>
+
+          {/* ── Footer spinner ── */}
+          <div className="fls-footer">
+            <div className="fls-spinner"></div>
+            <span className="fls-wait-text">Please wait...</span>
+          </div>
+
         </section>
       )}
       <div className="flight-results-shell">
@@ -1045,7 +1240,6 @@ export default function FlightSearchResults() {
                 >
                   <option value="oneway">One Way</option>
                   <option value="twoway">Two Way</option>
-                  <option value="multicity">Multi City</option>
                 </select>
               </label>
 
@@ -1120,10 +1314,13 @@ export default function FlightSearchResults() {
               </header>
 
               <section className="filter-group">
-                <h3>INR Price</h3>
+                <h3>
+                  <IndianRupee size={17} />
+                  <span>Price</span>
+                </h3>
                 <div className="range-head">
                   <span>{formatCurrency(priceMin)}</span>
-                  <span>{formatCurrency(priceMax)}</span>
+                  <span>{formatCurrency(maxFare)}</span>
                 </div>
                 <div className="range-stack">
                   <input
@@ -1132,28 +1329,19 @@ export default function FlightSearchResults() {
                     max={maxFare}
                     value={priceMin}
                     disabled={minFare === maxFare}
-                    onChange={(event) =>
-                      setPriceMin(Math.min(Number(event.target.value), priceMax))
-                    }
-                  />
-                  <input
-                    type="range"
-                    min={minFare}
-                    max={maxFare}
-                    value={priceMax}
-                    disabled={minFare === maxFare}
-                    onChange={(event) =>
-                      setPriceMax(Math.max(Number(event.target.value), priceMin))
-                    }
+                    onChange={(event) => setPriceMin(Number(event.target.value))}
                   />
                 </div>
               </section>
 
               <section className="filter-group">
-                <h3>Departure Time</h3>
+                <h3>
+                  <Clock3 size={17} />
+                  <span>Time</span>
+                </h3>
                 <div className="range-head">
                   <span>{getTimeDisplay(timeMin)}</span>
-                  <span>{getTimeDisplay(timeMax)}</span>
+                  <span>{getTimeDisplay(23)}</span>
                 </div>
                 <div className="range-stack">
                   <input
@@ -1161,42 +1349,72 @@ export default function FlightSearchResults() {
                     min={0}
                     max={23}
                     value={timeMin}
-                    onChange={(event) =>
-                      setTimeMin(Math.min(Number(event.target.value), timeMax))
-                    }
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={23}
-                    value={timeMax}
-                    onChange={(event) =>
-                      setTimeMax(Math.max(Number(event.target.value), timeMin))
-                    }
+                    onChange={(event) => setTimeMin(Number(event.target.value))}
                   />
                 </div>
               </section>
 
               <section className="filter-group">
-                <h3>Time Buckets</h3>
+                <h3>
+                  <Clock3 size={17} />
+                  <span>Departure</span>
+                </h3>
                 <div className="departure-grid">
-                  {DEPARTURE_WINDOWS.map((window) => (
+                  {DEPARTURE_WINDOWS.map(({ key, label, Icon }) => (
                     <button
                       type="button"
-                      key={window.key}
+                      key={key}
                       className={`departure-chip ${
-                        departureWindows[window.key] ? "active" : ""
+                        departureWindows[key] ? "active" : ""
                       }`}
-                      onClick={() => toggleDepartureWindow(window.key)}
+                      onClick={() => toggleDepartureWindow(key)}
                     >
-                      {window.label}
+                      <Icon size={25} strokeWidth={2.3} />
+                      <span>{label}</span>
                     </button>
                   ))}
                 </div>
               </section>
 
               <section className="filter-group">
-                <h3>Airlines</h3>
+                <h3>
+                  <MapPin size={17} />
+                  <span>Fare Type</span>
+                </h3>
+                {FARE_TYPE_FILTERS.map((fareType) => (
+                  <label className="check-row" key={fareType.key}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(fareTypeFilters[fareType.key])}
+                      onChange={() => toggleFareType(fareType.key)}
+                    />
+                    <span>{fareType.label}</span>
+                  </label>
+                ))}
+              </section>
+
+              <section className="filter-group">
+                <h3>
+                  <MapPin size={17} />
+                  <span>Stop</span>
+                </h3>
+                {STOP_FILTERS.map((stop) => (
+                  <label className="check-row" key={stop.key}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(stopFilters[stop.key])}
+                      onChange={() => toggleStopFilter(stop.key)}
+                    />
+                    <span>{stop.label}</span>
+                  </label>
+                ))}
+              </section>
+
+              <section className="filter-group">
+                <h3>
+                  <Plane size={17} />
+                  <span>Airlines</span>
+                </h3>
                 {Object.keys(airlineFilters).length === 0 ? (
                   <p className="empty-filter-state">No airline data yet.</p>
                 ) : (
@@ -1216,6 +1434,14 @@ export default function FlightSearchResults() {
 
             <section className="results-column">
               <div className="fare-date-strip">
+                <button
+                  type="button"
+                  className="fare-date-nav"
+                  aria-label="Previous day"
+                  onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+                >
+                  <ChevronLeft size={24} strokeWidth={2.4} />
+                </button>
                 {dateStrip.map((item) => (
                   <button
                     type="button"
@@ -1225,6 +1451,7 @@ export default function FlightSearchResults() {
                         ? "active"
                         : ""
                     }`}
+                    aria-label={`Search fares for ${formatLongDate(item.date)}`}
                     onClick={() => setSelectedDate(item.date)}
                   >
                     <strong>{formatCardDate(item.date)}</strong>
@@ -1235,38 +1462,62 @@ export default function FlightSearchResults() {
                     </span>
                   </button>
                 ))}
-              </div>
-
-              <div className="day-navigation">
                 <button
                   type="button"
-                  onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-                >
-                  Previous Day
-                </button>
-                <button
-                  type="button"
+                  className="fare-date-nav"
+                  aria-label="Next day"
                   onClick={() => setSelectedDate(addDays(selectedDate, 1))}
                 >
-                  Next Day
+                  <ChevronRight size={24} strokeWidth={2.4} />
                 </button>
+              </div>
+
+              <div className="flight-sort-panel">
+                <div className="sort-meta-row">
+                  <strong>Sort by</strong>
+                  <span>{flightsFoundCount} Flights Available</span>
+                </div>
+                <div className="flight-sort-strip" role="radiogroup" aria-label="Sort flights">
+                  {[
+                    { key: "price", title: "Price", subtitle: "Low to High" },
+                    { key: "fastest", title: "Fastest", subtitle: "Shortest First" },
+                    { key: "departure", title: "Departure", subtitle: "Earliest First" },
+                    { key: "smart", title: "Smart", subtitle: "Recommended" },
+                  ].map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      className={`flight-sort-pill ${sortBy === option.key ? "active" : ""}`}
+                      role="radio"
+                      aria-checked={sortBy === option.key}
+                      onClick={() => setSortBy(option.key)}
+                    >
+                      <span className="sort-title">
+                        {option.title}
+                        {option.key === "departure" && <ArrowDown size={15} />}
+                      </span>
+                      <span className="sort-subtitle">{option.subtitle}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="table-head">
                 <span>Airline</span>
                 <span>Depart</span>
-                <span>Class / Seats</span>
+                <span>Duration</span>
+                <span>Arrive</span>
                 <span>Price</span>
               </div>
 
               <div className="flight-list">
-                {filteredFlights.length === 0 ? (
+                {sortedFlights.length === 0 ? (
                   <div className="no-results">
                     <PlaneTakeoff size={18} />
                     <p>No flights match the selected filters for this date.</p>
                   </div>
                 ) : (
-                  filteredFlights.map((flight) => (
+                  sortedFlights.map((flight) => (
                     <article className="flight-card" key={flight.id}>
                       <div className="airline-cell">
                         <img src={flight.logo} alt={flight.airlineName} />
@@ -1339,35 +1590,34 @@ export default function FlightSearchResults() {
                         <div className="price-line">
                           <strong>{formatCurrency(flight.fare)}</strong>
                         </div>
-                        <p className="price-caption">on selected class</p>
+                        <p className="price-caption">per person</p>
                       </div>
 
                       {expandedFlightId === flight.id && (
                         <div className="class-options-panel">
-                          {flight.classOptions.length === 0 ? (
-                            <p>No class options available for this flight.</p>
-                          ) : (
-                            flight.classOptions.map((option) => (
-                              <button
-                                type="button"
-                                key={`${flight.id}-${option.travelClass}`}
-                                className={`class-option ${
-                                  flight.className === option.travelClass ? "active" : ""
-                                } ${
-                                  option.availableSeats <= 0 ? "out-of-stock" : ""
-                                }`}
-                                onClick={() =>
-                                  handleClassChange(flight.id, option.travelClass)
-                                }
-                              >
-                                <span>{option.travelClass}</span>
-                                <strong>{formatCurrency(option.priceInr)}</strong>
-                                <em>
-                                  {option.availableSeats}/{option.totalSeats} seats
-                                </em>
-                              </button>
-                            ))
-                          )}
+                          <p>Select travel class:</p>
+                          {flight.classOptions.map((option) => (
+                            <button
+                              key={option.travelClass}
+                              type="button"
+                              className={`class-option${
+                                option.travelClass === flight.className
+                                  ? " active"
+                                  : ""
+                              }${option.availableSeats <= 0 ? " out-of-stock" : ""}`}
+                              onClick={() =>
+                                handleClassChange(flight.id, option.travelClass)
+                              }
+                            >
+                              <span>{option.travelClass}</span>
+                              <strong>{formatCurrency(option.priceInr)}</strong>
+                              <em>
+                                {option.availableSeats > 0
+                                  ? `${option.availableSeats} seats left`
+                                  : "Sold out"}
+                              </em>
+                            </button>
+                          ))}
                         </div>
                       )}
                     </article>
@@ -1378,32 +1628,38 @@ export default function FlightSearchResults() {
           </div>
       </div>
 
-      {activeBookingFlight && !isLoadingFlights && (
+      {activeBookingFlight && (
         <div className="booking-modal-backdrop" onClick={closeBookingModal}>
-          <section
+          <div
             className="booking-modal"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="booking-modal-header">
+            <div className="booking-modal-header">
               <div>
-                <h3>Book {activeBookingFlight.airlineName}</h3>
+                <h3>
+                  Book {activeBookingFlight.airlineName} (
+                  {activeBookingFlight.flightNumber})
+                </h3>
                 <p>
-                  {activeBookingFlight.flightNumber} | {activeBookingFlight.sourceCode} to{" "}
-                  {activeBookingFlight.destinationCode}
+                  {activeBookingFlight.sourceCode} →{" "}
+                  {activeBookingFlight.destinationCode} |{" "}
+                  {activeBookingFlight.departDate} at{" "}
+                  {activeBookingFlight.departureTime}
                 </p>
               </div>
               <button
                 type="button"
                 className="close-modal-btn"
                 onClick={closeBookingModal}
+                aria-label="Close booking modal"
               >
-                <X size={16} />
+                <X size={14} />
               </button>
-            </header>
+            </div>
 
             <form className="booking-form" onSubmit={handleBookingSubmit}>
               <div className="booking-form-grid">
-                <label className="booking-form-group">
+                <div className="booking-form-group">
                   <span>Passenger Name</span>
                   <input
                     type="text"
@@ -1414,14 +1670,14 @@ export default function FlightSearchResults() {
                         passengerName: event.target.value,
                       }))
                     }
-                    placeholder="Enter full name"
+                    placeholder="Full name"
                   />
-                </label>
+                </div>
 
-                <label className="booking-form-group">
-                  <span>Passenger Phone</span>
+                <div className="booking-form-group">
+                  <span>Phone</span>
                   <input
-                    type="text"
+                    type="tel"
                     value={bookingForm.passengerPhone}
                     onChange={(event) =>
                       setBookingForm((previous) => ({
@@ -1429,12 +1685,12 @@ export default function FlightSearchResults() {
                         passengerPhone: event.target.value,
                       }))
                     }
-                    placeholder="+91XXXXXXXXXX"
+                    placeholder="Mobile number"
                   />
-                </label>
+                </div>
 
-                <label className="booking-form-group">
-                  <span>Passenger Email</span>
+                <div className="booking-form-group">
+                  <span>Email (optional)</span>
                   <input
                     type="email"
                     value={bookingForm.passengerEmail}
@@ -1444,11 +1700,11 @@ export default function FlightSearchResults() {
                         passengerEmail: event.target.value,
                       }))
                     }
-                    placeholder="name@example.com"
+                    placeholder="Email address"
                   />
-                </label>
+                </div>
 
-                <label className="booking-form-group">
+                <div className="booking-form-group">
                   <span>Travel Class</span>
                   <select
                     value={bookingForm.travelClass}
@@ -1459,63 +1715,67 @@ export default function FlightSearchResults() {
                       }))
                     }
                   >
-                    {activeBookingFlight.classOptions.map((option) => (
-                      <option key={option.travelClass} value={option.travelClass}>
-                        {option.travelClass}
-                      </option>
-                    ))}
+                    {activeBookingFlight.supportedTravelClasses.map(
+                      (travelClass) => (
+                        <option key={travelClass} value={travelClass}>
+                          {travelClass}
+                        </option>
+                      )
+                    )}
                   </select>
-                </label>
+                </div>
 
-                <label className="booking-form-group small">
+                <div className="booking-form-group small">
                   <span>Adults</span>
                   <input
                     type="number"
-                    min="0"
+                    min={0}
+                    max={9}
                     value={bookingForm.adults}
                     onChange={(event) =>
                       setBookingForm((previous) => ({
                         ...previous,
-                        adults: Number(event.target.value),
+                        adults: event.target.value,
                       }))
                     }
                   />
-                </label>
+                </div>
 
-                <label className="booking-form-group small">
+                <div className="booking-form-group small">
                   <span>Children</span>
                   <input
                     type="number"
-                    min="0"
+                    min={0}
+                    max={8}
                     value={bookingForm.children}
                     onChange={(event) =>
                       setBookingForm((previous) => ({
                         ...previous,
-                        children: Number(event.target.value),
+                        children: event.target.value,
                       }))
                     }
                   />
-                </label>
+                </div>
 
-                <label className="booking-form-group small">
+                <div className="booking-form-group small">
                   <span>Infants</span>
                   <input
                     type="number"
-                    min="0"
+                    min={0}
                     value={bookingForm.infants}
                     onChange={(event) =>
                       setBookingForm((previous) => ({
                         ...previous,
-                        infants: Number(event.target.value),
+                        infants: event.target.value,
                       }))
                     }
                   />
-                </label>
+                </div>
               </div>
 
               {bookingError && (
                 <div className="booking-error">
-                  <XCircle size={15} />
+                  <XCircle size={14} />
                   <span>{bookingError}</span>
                 </div>
               )}
@@ -1525,6 +1785,7 @@ export default function FlightSearchResults() {
                   type="button"
                   className="secondary-btn"
                   onClick={closeBookingModal}
+                  disabled={isBookingSubmitting}
                 >
                   Cancel
                 </button>
@@ -1536,7 +1797,7 @@ export default function FlightSearchResults() {
                   {isBookingSubmitting ? (
                     <>
                       <Loader2 size={14} className="spin" />
-                      <span>Booking...</span>
+                      Booking...
                     </>
                   ) : (
                     "Confirm Booking"
@@ -1544,7 +1805,7 @@ export default function FlightSearchResults() {
                 </button>
               </div>
             </form>
-          </section>
+          </div>
         </div>
       )}
     </main>

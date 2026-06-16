@@ -376,7 +376,6 @@ function normalizeFlightSearchRecord(record, index = 0) {
 
 function normalizeFlightPassenger(passenger, index = 0) {
   return {
-    id: pickFirst(passenger, ["id", "Id"], null),
     fullName: String(
       pickFirst(passenger, ["fullName", "FullName", "name", "Name"], `Passenger ${index + 1}`)
     ),
@@ -385,9 +384,6 @@ function normalizeFlightPassenger(passenger, index = 0) {
     ),
     gender: String(pickFirst(passenger, ["gender", "Gender"], "")),
     seatNumber: pickFirst(passenger, ["seatNumber", "SeatNumber"], null),
-    age: Number(pickFirst(passenger, ["age", "Age"], 0)) || 0,
-    isCancelled: Boolean(pickFirst(passenger, ["isCancelled", "IsCancelled"], false)),
-    cancelledAtUtc: pickFirst(passenger, ["cancelledAtUtc", "CancelledAtUtc"], null),
   };
 }
 
@@ -432,10 +428,6 @@ function normalizeFlightBookingRecord(record) {
       seatsBookedFallback,
     totalPriceInr:
       Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr"], 0)) || 0,
-    cancellationChargeInr:
-      Number(pickFirst(record, ["cancellationChargeInr", "CancellationChargeInr"], 0)) || 0,
-    refundAmountInr:
-      Number(pickFirst(record, ["refundAmountInr", "RefundAmountInr"], 0)) || 0,
     status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
     bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
@@ -1235,6 +1227,21 @@ export async function cancelFlightBooking(bookingId, reason, { userId } = {}) {
   return normalizeFlightActionResponse(data);
 }
 
+export async function cancelFlightPassengers(bookingId, passengerIds, reason, { userId } = {}) {
+  const data = await requestJson(
+    `${FLIGHT_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`,
+    {
+      method: "POST",
+      body: JSON.stringify({ passengerIds, reason }),
+      userId,
+      requireUserId: true,
+    }
+  );
+
+  return normalizeFlightBookingRecord(data);
+}
+
+
 export async function listHotFlightRoutes({ metric = "score" } = {}) {
   try {
     const url = buildUrl(`${FLIGHT_BOOKINGS_ROOT}/hot-routes`, { metric });
@@ -1287,13 +1294,152 @@ export async function getFlightPromotions() {
   });
 }
 
-export async function cancelFlightPassengers(bookingId, passengerIds, reason, { userId } = {}) {
-  const url = `${FLIGHT_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
-  const data = await requestJson(url, {
-    method: "POST",
-    body: JSON.stringify({ passengerIds, reason }),
-    userId,
-    requireUserId: true,
-  });
-  return normalizeFlightBookingRecord(data);
+export async function listAirlineWebCheckins() {
+  return listAirlineWebChecks();
 }
+
+export async function createAirlineWebCheckin(link) {
+  return createAirlineWebCheck(link);
+}
+
+export async function deleteAirlineWebCheckin(linkId) {
+  return deleteAirlineWebCheck(linkId);
+}
+
+export async function getConvenienceFee() {
+  return listConvenienceFeeRules();
+}
+
+export async function createConvenienceFee(rule) {
+  return createConvenienceFeeRule(rule);
+}
+
+export async function deleteConvenienceFee(ruleId) {
+  return requestJson(`${ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT}/${ruleId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function updateConvenienceFeeById(ruleId, rule) {
+  return updateConvenienceFeeRule(ruleId, rule);
+}
+
+export async function listFlightPromotions() {
+  return requestJson("/api/FlightPromotions", {
+    method: "GET",
+  });
+}
+
+export async function deleteFlightPromotion(id) {
+  return requestJson(`/api/FlightPromotions/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getFlightPromotionById(id) {
+  return requestJson(`/api/FlightPromotions/${id}`, {
+    method: "GET",
+  });
+}
+
+export async function createFlightPromotion(payload) {
+  return requestJson("/api/FlightPromotions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateFlightPromotion(id, payload) {
+  return requestJson(`/api/FlightPromotions/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getPopularFlightRoutes() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/popular-routes`, {
+    method: "GET",
+  });
+  return data || [];
+}
+
+export async function createPopularFlightRoute(payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/popular-routes`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePopularFlightRoute(id, payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/popular-routes/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePopularFlightRoute(id) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/popular-routes/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getUserRouteSearches() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/search-history`, {
+    method: "GET",
+  });
+  return data || [];
+}
+
+export async function listAdminFlightBookings() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/bookings`, {
+    method: "GET",
+  });
+  return Array.isArray(data)
+    ? data.map((record) => normalizeFlightBookingRecord(record))
+    : [];
+}
+
+export async function listFlightPendingAirlines() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/pending-airlines`, {
+    method: "GET",
+  });
+  return data || [];
+}
+
+export async function deleteFlightPendingAirline(id) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/pending-airlines/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getFlightPendingAirlineById(id) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/pending-airlines/${id}`, {
+    method: "GET",
+  });
+}
+
+export async function createFlightPendingAirline(payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/pending-airlines`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateFlightPendingAirline(id, payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/pending-airlines/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getPopularDestinations() {
+  return listPopularDestinations();
+}
+
+export async function listUsedCoupons() {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/used-coupons`, {
+    method: "GET",
+  });
+  return data || [];
+}
+

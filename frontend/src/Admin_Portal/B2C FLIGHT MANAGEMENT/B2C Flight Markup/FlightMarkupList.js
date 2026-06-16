@@ -1,43 +1,127 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Download, Eye, Pencil, PlaneTakeoff, Plus, Trash2, X } from "lucide-react";
 import "./FlightMarkupList.css";
-import { formatCurrency, formatDateTime } from "../../../utils/adminPortalUtils";
-import {
-  listFlightMarkups,
-  createFlightMarkup,
-  updateFlightMarkup,
-  deleteFlightMarkup,
-} from "../../../services/flightBookingService";
+import { formatDateTime } from "../../../utils/adminPortalUtils";
+import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
+import { listFlightMarkups, createFlightMarkup, updateFlightMarkup, deleteFlightMarkup } from "../../../services/flightBookingService";
 
-const mapFromBackendMarkup = (dbRow) => {
+const INITIAL_FLIGHT_MARKUP_ROWS = [
+  {
+    id: 1,
+    airlineCode: "*",
+    tripType: "OneWay",
+    markupType: "Percentage",
+    markupValue: 10,
+    priority: 1,
+    isActive: true,
+    createdAtUtc: "2026-06-12T04:42:06.854006",
+    updatedAtUtc: "2026-06-12T04:42:06.854165",
+  },
+];
+
+const DEFAULT_MARKUP_FORM = {
+  airlineCode: "",
+  tripType: "OneWay",
+  markupType: "Percentage",
+  markupValue: "",
+  priority: "",
+  isActive: true,
+};
+
+const getNextFlightMarkupId = (rows) => {
+  const numericRows = rows.map((row) => ({
+    id: Number(String(row.id || "").replace(/\D/g, "")) || 0,
+  }));
+  const nextValue = getNextNumericId(numericRows, 100);
+  return `F${nextValue}`;
+};
+
+const isServerMarkupId = (value) => /^\d+$/.test(String(value ?? "").trim());
+
+const sanitizeAirlineCode = (value) => {
+  const text = String(value || "").trim();
+  if (!text || text === "*") {
+    return "*";
+  }
+
+  return text.replace(/^\*+/, "").toUpperCase() || "*";
+};
+
+const toBackendMarkupType = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "fixed" || normalized === "flat" ? "Flat" : "Percentage";
+};
+
+const toDisplayMarkupType = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "fixed" || normalized === "flat" ? "Fixed" : "Percentage";
+};
+
+const normalizeMarkupRow = (markup) => {
   return {
-    id: dbRow.id,
-    domInt: dbRow.tripType === "RoundTrip" ? "INT" : "DOM",
-    markupType: dbRow.markupType === "Percentage" ? "percent" : "fix",
-    value: dbRow.markupValue || 0,
-    airlineType: dbRow.airlineCode === "*" || dbRow.airlineCode === "ALL" ? "ALL" : "SPECIFIC",
-    airlineName: dbRow.airlineCode === "*" ? "All Airlines" : `Airline ${dbRow.airlineCode}`,
-    code: dbRow.airlineCode || "*",
-    fareType: "Regular",
-    updatedBy: "Admin",
-    updatedOn: new Date().toISOString(),
-    priority: dbRow.priority || 5,
-    isActive: dbRow.isActive !== undefined ? dbRow.isActive : true
+    id: markup.id,
+    airlineCode: String(markup.airlineCode ?? "*"),
+    tripType: String(markup.tripType ?? "OneWay"),
+    markupType: toDisplayMarkupType(markup.markupType ?? "Percentage"),
+    markupValue: Number(markup.markupValue ?? 0),
+    priority: Number(markup.priority ?? 1),
+    isActive: Boolean(markup.isActive),
+    createdAtUtc: markup.createdAtUtc || null,
+    updatedAtUtc: markup.updatedAtUtc || null,
+    raw: markup,
   };
 };
 
-const DEFAULT_MARKUP_FORM = {
-  domInt: "Domestic",
-  markupType: "Fix",
-  value: "",
-  airlineType: "ALL",
-  sourceType: "All",
+const normalizeMarkupCollection = (rows) =>
+  Array.isArray(rows) ? rows.map(normalizeMarkupRow) : [];
+
+const mergeMarkupRows = (serverRows, fallbackRows) => {
+  const normalizedServerRows = normalizeMarkupCollection(serverRows);
+  const normalizedFallbackRows = normalizeMarkupCollection(fallbackRows);
+  const serverIds = new Set(normalizedServerRows.map((row) => String(row.id)));
+  const localOnlyRows = normalizedFallbackRows.filter(
+    (row) => !serverIds.has(String(row.id))
+  );
+  return [...localOnlyRows, ...normalizedServerRows];
+};
+
+const toMarkupPayload = (values) => ({
+  airlineCode: sanitizeAirlineCode(values.airlineCode),
+  tripType: String(values.tripType || "OneWay").trim() || "OneWay",
+  markupType: toBackendMarkupType(values.markupType),
+  markupValue: Number(values.markupValue ?? 0),
+  priority: Number(values.priority ?? 1),
+  isActive: Boolean(values.isActive),
+});
+
+const getMarkupValueLabel = (row) => {
+  const markupType = String(row.markupType || "").toLowerCase();
+  const amount = Number(row.markupValue) || 0;
+  return markupType === "percentage" ? `${amount}%` : amount.toFixed(2);
 };
 
 export default function AdminFlightMarkupListPage() {
+  const ITEMS_PER_PAGE = 5;
   const [flightRows, setFlightRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState("");
+  const [localRows, setLocalRows] = useAdminList("flight-markup", INITIAL_FLIGHT_MARKUP_ROWS);
+
+  const loadMarkups = async () => {
+    try {
+      const data = await listFlightMarkups();
+      if (Array.isArray(data)) {
+        setFlightRows(mergeMarkupRows(data, localRows));
+      } else {
+        setFlightRows(normalizeMarkupCollection(localRows));
+      }
+    } catch (error) {
+      console.warn("Failed to load markups from backend, falling back to local storage", error);
+      setFlightRows(normalizeMarkupCollection(localRows));
+    }
+  };
+
+  useEffect(() => {
+    loadMarkups();
+  }, [localRows]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formValues, setFormValues] = useState(DEFAULT_MARKUP_FORM);
   const [addError, setAddError] = useState("");
@@ -45,52 +129,49 @@ export default function AdminFlightMarkupListPage() {
   const [editRow, setEditRow] = useState(null);
   const [deleteRow, setDeleteRow] = useState(null);
   const [editError, setEditError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const colWidths = [
     "4%",
     "6%",
-    "6%",
-    "8%",
+    "9%",
+    "10%",
+    "10%",
+    "10%",
     "7%",
-    "8%",
-    "14%",
-    "6%",
-    "8%",
     "10%",
-    "13%",
-    "10%",
+    "11%",
+    "11%",
+    "12%",
   ];
   const headers = [
     "SN",
     "ID",
-    "Dom/Int",
+    "Airline Code",
+    "Trip Type",
     "Markup Type",
-    "Value",
-    "Airline Type",
-    "Airline Name",
-    "Code",
-    "Fare Type",
-    "Updated By",
-    "Updated On",
+    "Markup Value",
+    "Priority",
+    "Status",
+    "Created At",
+    "Updated At",
     "Action",
   ];
 
-  const loadMarkups = async () => {
-    setIsLoading(true);
-    setLoadError("");
-    try {
-      const data = await listFlightMarkups();
-      const mapped = Array.isArray(data) ? data.map(mapFromBackendMarkup) : [];
-      setFlightRows(mapped);
-    } catch (err) {
-      setLoadError(err.message || "Failed to load flight markups.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const totalItems = flightRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedRows = flightRows.slice(
+    (safeCurrentPage - 1) * ITEMS_PER_PAGE,
+    safeCurrentPage * ITEMS_PER_PAGE
+  );
+  const startItem = totalItems === 0 ? 0 : (safeCurrentPage - 1) * ITEMS_PER_PAGE + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(safeCurrentPage * ITEMS_PER_PAGE, totalItems);
 
   useEffect(() => {
-    loadMarkups();
-  }, []);
+    if (currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [currentPage, safeCurrentPage]);
 
   const handleOpenAdd = () => {
     setAddError("");
@@ -100,41 +181,54 @@ export default function AdminFlightMarkupListPage() {
 
   const handleCloseAdd = () => {
     setIsAddOpen(false);
+    setAddError("");
   };
 
   const handleFormChange = (field) => (event) => {
-    setFormValues((previous) => ({ ...previous, [field]: event.target.value }));
+    const nextValue =
+      field === "isActive" ? event.target.value === "true" : event.target.value;
+    setFormValues((previous) => ({ ...previous, [field]: nextValue }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const amount = Number(formValues.value);
+    const amount = Number(formValues.markupValue);
     if (!Number.isFinite(amount) || amount < 0) {
       setAddError("Enter a valid markup value.");
       return;
     }
 
-    const domIntCode = formValues.domInt === "International" ? "INT" : "DOM";
-    const markupType = String(formValues.markupType || "Fix").toLowerCase();
-    const airlineType = formValues.airlineType || "ALL";
+    const priority = Number(formValues.priority);
+    if (!Number.isInteger(priority) || priority < 1) {
+      setAddError("Priority must be 1 or more.");
+      return;
+    }
 
-    const payload = {
-      airlineCode: airlineType === "ALL" ? "*" : "NA",
-      tripType: domIntCode === "INT" ? "RoundTrip" : "OneWay",
-      markupType: markupType === "percent" ? "Percentage" : "Flat",
+    const newMarkupPayload = toMarkupPayload({
+      ...formValues,
       markupValue: amount,
-      priority: 5,
-      isActive: true
-    };
+      priority,
+    });
 
     try {
-      await createFlightMarkup(payload);
-      await loadMarkups();
-      setIsAddOpen(false);
-      setAddError("");
-    } catch (err) {
-      setAddError(err.message || "Failed to create flight markup.");
+      const created = await createFlightMarkup(newMarkupPayload);
+      setFlightRows((previous) => [normalizeMarkupRow(created), ...previous]);
+    } catch (e) {
+      console.warn("Failed to create markup on backend, saving locally", e);
+      const newRow = {
+        id: getNextFlightMarkupId(flightRows),
+        ...newMarkupPayload,
+        createdAtUtc: new Date().toISOString(),
+        updatedAtUtc: new Date().toISOString(),
+      };
+      setFlightRows((previous) => [newRow, ...previous]);
+      setLocalRows((previous) => [newRow, ...previous]);
     }
+
+    setCurrentPage(1);
+    setIsAddOpen(false);
+    setAddError("");
+    setFormValues(DEFAULT_MARKUP_FORM);
   };
 
   const handleReset = () => {
@@ -146,14 +240,12 @@ export default function AdminFlightMarkupListPage() {
     setEditError("");
     setEditRow({
       ...row,
-      domInt: row.domInt || "DOM",
-      markupType: String(row.markupType || "fix").toLowerCase(),
-      value: String(row.value ?? ""),
-      airlineType: row.airlineType || "ALL",
-      airlineName: row.airlineName || "",
-      code: row.code || "",
-      fareType: row.fareType || "",
-      updatedBy: row.updatedBy || "",
+      airlineCode: String(row.airlineCode ?? "*"),
+      tripType: String(row.tripType ?? "OneWay"),
+      markupType: toDisplayMarkupType(row.markupType ?? "Percentage"),
+      markupValue: String(row.markupValue ?? ""),
+      priority: String(row.priority ?? 1),
+      isActive: Boolean(row.isActive),
     });
   };
 
@@ -162,34 +254,47 @@ export default function AdminFlightMarkupListPage() {
       return;
     }
 
-    const amount = Number(editRow.value);
+    const amount = Number(editRow.markupValue);
     if (!Number.isFinite(amount) || amount < 0) {
       setEditError("Enter a valid markup value.");
       return;
     }
 
-    if (!String(editRow.updatedBy).trim()) {
-      setEditError("Updated by is required.");
+    const priority = Number(editRow.priority);
+    if (!Number.isInteger(priority) || priority < 1) {
+      setEditError("Priority must be 1 or more.");
       return;
     }
 
-    const payload = {
-      airlineCode: editRow.code || "*",
-      tripType: editRow.domInt === "INT" ? "RoundTrip" : "OneWay",
-      markupType: String(editRow.markupType).toLowerCase() === "percent" ? "Percentage" : "Flat",
+    const updatedPayload = toMarkupPayload({
+      ...editRow,
       markupValue: amount,
-      priority: editRow.priority || 5,
-      isActive: editRow.isActive !== undefined ? editRow.isActive : true
+      priority,
+    });
+
+    if (isServerMarkupId(editRow.id)) {
+      try {
+        await updateFlightMarkup(editRow.id, updatedPayload);
+      } catch (e) {
+        console.warn("Failed to update markup on backend", e);
+      }
+    }
+
+    const updatedRow = {
+      ...editRow,
+      ...updatedPayload,
+      updatedAtUtc: new Date().toISOString(),
     };
 
-    try {
-      await updateFlightMarkup(editRow.id, payload);
-      await loadMarkups();
-      setEditRow(null);
-      setEditError("");
-    } catch (err) {
-      setEditError(err.message || "Failed to update flight markup.");
-    }
+    setFlightRows((previous) =>
+      previous.map((row) => (row.id === editRow.id ? updatedRow : row))
+    );
+    setLocalRows((previous) =>
+      previous.map((row) => (row.id === editRow.id ? updatedRow : row))
+    );
+    setCurrentPage(1);
+    setEditRow(null);
+    setEditError("");
   };
 
   const handleDeleteConfirm = async () => {
@@ -197,15 +302,19 @@ export default function AdminFlightMarkupListPage() {
       return;
     }
 
-    try {
-      await deleteFlightMarkup(deleteRow.id);
-      await loadMarkups();
-      setDeleteRow(null);
-      setViewRow((previous) => (previous?.id === deleteRow.id ? null : previous));
-      setEditRow((previous) => (previous?.id === deleteRow.id ? null : previous));
-    } catch (err) {
-      alert(err.message || "Failed to delete flight markup.");
+    if (isServerMarkupId(deleteRow.id)) {
+      try {
+        await deleteFlightMarkup(deleteRow.id);
+      } catch (e) {
+        console.warn("Failed to delete markup on backend", e);
+      }
     }
+
+    setFlightRows((previous) => previous.filter((row) => row.id !== deleteRow.id));
+    setLocalRows((previous) => previous.filter((row) => row.id !== deleteRow.id));
+    setDeleteRow(null);
+    setViewRow((previous) => (previous?.id === deleteRow.id ? null : previous));
+    setEditRow((previous) => (previous?.id === deleteRow.id ? null : previous));
   };
 
   return (
@@ -252,49 +361,72 @@ export default function AdminFlightMarkupListPage() {
             <form className="flight-markup-modal-form" onSubmit={handleSubmit}>
               <div className="flight-markup-modal-grid">
                 <label className="flight-markup-modal-field">
-                  <span>Domestic/International</span>
-                  <select value={formValues.domInt} onChange={handleFormChange("domInt")}>
-                    <option value="Domestic">Domestic</option>
-                    <option value="International">International</option>
+                  <span>Airline Code</span>
+                  <input
+                    type="text"
+                    value={formValues.airlineCode}
+                    onChange={handleFormChange("airlineCode")}
+                    placeholder="Enter airline code or *"
+                  />
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Trip Type</span>
+                  <select value={formValues.tripType} onChange={handleFormChange("tripType")}>
+                    <option value="OneWay">OneWay</option>
+                    <option value="RoundTrip">RoundTrip</option>
+                    <option value="MultiCity">MultiCity</option>
                   </select>
                 </label>
 
                 <label className="flight-markup-modal-field">
                   <span>Markup Type</span>
                   <select value={formValues.markupType} onChange={handleFormChange("markupType")}>
-                    <option value="Fix">Fix</option>
-                    <option value="Percent">Percent</option>
+                    <option value="Percentage">Percentage</option>
+                    <option value="Fixed">Fixed</option>
                   </select>
                 </label>
 
                 <label className="flight-markup-modal-field">
-                  <span>Value</span>
+                  <span>Markup Value</span>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formValues.value}
-                    onChange={handleFormChange("value")}
+                    value={formValues.markupValue}
+                    onChange={handleFormChange("markupValue")}
                     placeholder="Enter value"
                   />
                 </label>
 
                 <label className="flight-markup-modal-field">
-                  <span>Airline Type</span>
-                  <select value={formValues.airlineType} onChange={handleFormChange("airlineType")}>
-                    <option value="ALL">ALL</option>
-                    <option value="LCC">LCC</option>
-                    <option value="GDS">GDS</option>
+                  <span>Priority</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formValues.priority}
+                    onChange={handleFormChange("priority")}
+                    placeholder="Enter priority"
+                  />
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Status</span>
+                  <select value={String(formValues.isActive)} onChange={handleFormChange("isActive")}>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
                   </select>
                 </label>
 
-                <label className="flight-markup-modal-field wide">
-                  <span>Source Type</span>
-                  <select value={formValues.sourceType} onChange={handleFormChange("sourceType")}>
-                    <option value="All">All</option>
-                    <option value="API">API</option>
-                    <option value="Manual">Manual</option>
-                  </select>
+                <label className="flight-markup-modal-field">
+                  <span>Created At</span>
+                  <input type="text" value="Will be set after submit" disabled />
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Updated At</span>
+                  <input type="text" value="Will be set after submit" disabled />
                 </label>
               </div>
 
@@ -340,44 +472,32 @@ export default function AdminFlightMarkupListPage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={headers.length} className="flight-markup-empty-cell">
-                    <span className="flight-markup-empty">Loading flight markups from backend...</span>
-                  </td>
-                </tr>
-              ) : loadError ? (
-                <tr>
-                  <td colSpan={headers.length} className="flight-markup-empty-cell">
-                    <span className="flight-markup-empty danger">{loadError}</span>
-                  </td>
-                </tr>
-              ) : flightRows.length === 0 ? (
+              {flightRows.length === 0 ? (
                 <tr>
                   <td colSpan={headers.length} className="flight-markup-empty-cell">
                     <span className="flight-markup-empty">No Record Found...</span>
                   </td>
                 </tr>
               ) : (
-                flightRows.map((row, index) => {
-                  const valueLabel =
-                    String(row.markupType || "").toLowerCase() === "percent"
-                      ? `${Number(row.value) || 0}%`
-                      : formatCurrency(row.value);
-
+                paginatedRows.map((row, index) => {
                   return (
                     <tr key={row.id}>
-                      <td>{index + 1}</td>
+                      <td>{startItem + index}</td>
                       <td>{row.id}</td>
-                      <td>{row.domInt}</td>
+                      <td>{row.airlineCode}</td>
+                      <td>{row.tripType}</td>
                       <td>{row.markupType}</td>
-                      <td>{valueLabel}</td>
-                      <td>{row.airlineType}</td>
-                      <td>{row.airlineName}</td>
-                      <td>{row.code}</td>
-                      <td>{row.fareType}</td>
-                      <td>{row.updatedBy}</td>
-                      <td>{formatDateTime(row.updatedOn)}</td>
+                      <td>{getMarkupValueLabel(row)}</td>
+                      <td>{row.priority}</td>
+                      <td>
+                        <span
+                          className={`status-badge ${row.isActive ? "active" : "inactive"}`}
+                        >
+                          {row.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>{row.createdAtUtc ? formatDateTime(row.createdAtUtc) : "--"}</td>
+                      <td>{row.updatedAtUtc ? formatDateTime(row.updatedAtUtc) : "--"}</td>
                       <td>
                         <div className="flight-markup-row-actions" aria-label="Row actions">
                           <button
@@ -414,6 +534,35 @@ export default function AdminFlightMarkupListPage() {
             </tbody>
           </table>
         </div>
+
+        {totalItems ? (
+          <div className="admin-pagination-container">
+            <span className="admin-pagination-info">
+              Showing {startItem}-{endItem} of {totalItems} markups
+            </span>
+            <div className="admin-pagination-controls">
+              <button
+                type="button"
+                className="admin-pagination-btn"
+                disabled={safeCurrentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              >
+                &lt; Previous
+              </button>
+              <span className="admin-pagination-page-num">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                className="admin-pagination-btn"
+                disabled={safeCurrentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              >
+                Next &gt;
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {viewRow && (
@@ -438,44 +587,36 @@ export default function AdminFlightMarkupListPage() {
                 <strong>{viewRow.id}</strong>
               </div>
               <div>
-                <span>Domestic/International</span>
-                <strong>{viewRow.domInt}</strong>
+                <span>Airline Code</span>
+                <strong>{viewRow.airlineCode}</strong>
+              </div>
+              <div>
+                <span>Trip Type</span>
+                <strong>{viewRow.tripType}</strong>
               </div>
               <div>
                 <span>Markup Type</span>
                 <strong>{viewRow.markupType}</strong>
               </div>
               <div>
-                <span>Value</span>
-                <strong>
-                  {String(viewRow.markupType || "").toLowerCase() === "percent"
-                    ? `${Number(viewRow.value) || 0}%`
-                    : formatCurrency(viewRow.value)}
-                </strong>
+                <span>Markup Value</span>
+                <strong>{getMarkupValueLabel(viewRow)}</strong>
               </div>
               <div>
-                <span>Airline Type</span>
-                <strong>{viewRow.airlineType}</strong>
+                <span>Priority</span>
+                <strong>{viewRow.priority}</strong>
               </div>
               <div>
-                <span>Airline Name</span>
-                <strong>{viewRow.airlineName}</strong>
+                <span>Status</span>
+                <strong>{viewRow.isActive ? "Active" : "Inactive"}</strong>
               </div>
               <div>
-                <span>Code</span>
-                <strong>{viewRow.code}</strong>
+                <span>Created At</span>
+                <strong>{viewRow.createdAtUtc ? formatDateTime(viewRow.createdAtUtc) : "--"}</strong>
               </div>
               <div>
-                <span>Fare Type</span>
-                <strong>{viewRow.fareType}</strong>
-              </div>
-              <div>
-                <span>Updated By</span>
-                <strong>{viewRow.updatedBy}</strong>
-              </div>
-              <div>
-                <span>Updated On</span>
-                <strong>{formatDateTime(viewRow.updatedOn)}</strong>
+                <span>Updated At</span>
+                <strong>{viewRow.updatedAtUtc ? formatDateTime(viewRow.updatedAtUtc) : "--"}</strong>
               </div>
             </div>
 
@@ -499,127 +640,144 @@ export default function AdminFlightMarkupListPage() {
       )}
 
       {editRow && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setEditRow(null)}>
+        <div className="flight-markup-modal-backdrop" onClick={() => setEditRow(null)}>
           <section
-            className="admin-markup-modal fullscreen"
+            className="flight-markup-modal"
             role="dialog"
             aria-modal="true"
             aria-label="Edit flight markup"
             onClick={(event) => event.stopPropagation()}
           >
-            <header>
+            <header className="flight-markup-modal-header">
               <h2>Edit Flight Markup</h2>
-              <button type="button" onClick={() => setEditRow(null)} aria-label="Close edit dialog">
+              <button
+                type="button"
+                className="flight-markup-modal-close"
+                onClick={() => setEditRow(null)}
+                aria-label="Close"
+              >
                 <X size={16} />
               </button>
             </header>
 
-            <div className="admin-markup-form-grid">
-              <label>
-                <span>ID</span>
-                <input type="text" value={editRow.id} disabled />
-              </label>
-              <label>
-                <span>Domestic/International</span>
-                <select
-                  value={editRow.domInt}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, domInt: event.target.value }))
-                  }
-                >
-                  <option value="DOM">DOM</option>
-                  <option value="INT">INT</option>
-                </select>
-              </label>
-              <label>
-                <span>Markup Type</span>
-                <select
-                  value={editRow.markupType}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, markupType: event.target.value }))
-                  }
-                >
-                  <option value="fix">fix</option>
-                  <option value="percent">percent</option>
-                </select>
-              </label>
-              <label>
-                <span>Value</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editRow.value}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, value: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Airline Type</span>
-                <select
-                  value={editRow.airlineType}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, airlineType: event.target.value }))
-                  }
-                >
-                  <option value="ALL">ALL</option>
-                  <option value="LCC">LCC</option>
-                  <option value="GDS">GDS</option>
-                </select>
-              </label>
-              <label>
-                <span>Airline Name</span>
-                <input
-                  type="text"
-                  value={editRow.airlineName}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, airlineName: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Code</span>
-                <input
-                  type="text"
-                  value={editRow.code}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, code: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Fare Type</span>
-                <input
-                  type="text"
-                  value={editRow.fareType}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, fareType: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="wide">
-                <span>Updated By</span>
-                <input
-                  type="text"
-                  value={editRow.updatedBy}
-                  onChange={(event) =>
-                    setEditRow((previous) => ({ ...previous, updatedBy: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
+            <form
+              className="flight-markup-modal-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleEditSave();
+              }}
+            >
+              <div className="flight-markup-modal-grid">
+                <label className="flight-markup-modal-field">
+                  <span>Airline Code</span>
+                  <input
+                    type="text"
+                    value={editRow.airlineCode}
+                    onChange={(event) =>
+                      setEditRow((previous) => ({ ...previous, airlineCode: event.target.value }))
+                    }
+                    placeholder="Enter airline code or *"
+                  />
+                </label>
 
-            {editError && <p className="admin-markup-form-error">{editError}</p>}
+                <label className="flight-markup-modal-field">
+                  <span>Trip Type</span>
+                  <select
+                    value={editRow.tripType}
+                    onChange={(event) =>
+                      setEditRow((previous) => ({ ...previous, tripType: event.target.value }))
+                    }
+                  >
+                    <option value="OneWay">OneWay</option>
+                    <option value="RoundTrip">RoundTrip</option>
+                    <option value="MultiCity">MultiCity</option>
+                  </select>
+                </label>
 
-            <div className="admin-markup-modal-actions">
-              <button type="button" className="secondary" onClick={() => setEditRow(null)}>
-                Cancel
-              </button>
-              <button type="button" className="primary" onClick={handleEditSave}>
-                Save Changes
-              </button>
-            </div>
+                <label className="flight-markup-modal-field">
+                  <span>Markup Type</span>
+                  <select
+                    value={editRow.markupType}
+                    onChange={(event) =>
+                      setEditRow((previous) => ({ ...previous, markupType: event.target.value }))
+                    }
+                  >
+                    <option value="Percentage">Percentage</option>
+                    <option value="Fixed">Fixed</option>
+                  </select>
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Markup Value</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editRow.markupValue}
+                    onChange={(event) =>
+                      setEditRow((previous) => ({ ...previous, markupValue: event.target.value }))
+                    }
+                    placeholder="Enter value"
+                  />
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Priority</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editRow.priority}
+                    onChange={(event) =>
+                      setEditRow((previous) => ({ ...previous, priority: event.target.value }))
+                    }
+                    placeholder="Enter priority"
+                  />
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Status</span>
+                  <select
+                    value={String(editRow.isActive)}
+                    onChange={(event) =>
+                      setEditRow((previous) => ({ ...previous, isActive: event.target.value === "true" }))
+                    }
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Created At</span>
+                  <input
+                    type="text"
+                    value={editRow.createdAtUtc ? formatDateTime(editRow.createdAtUtc) : "--"}
+                    disabled
+                  />
+                </label>
+
+                <label className="flight-markup-modal-field">
+                  <span>Updated At</span>
+                  <input
+                    type="text"
+                    value={editRow.updatedAtUtc ? formatDateTime(editRow.updatedAtUtc) : "--"}
+                    disabled
+                  />
+                </label>
+              </div>
+
+              {editError && <p className="admin-markup-form-error">{editError}</p>}
+
+              <div className="flight-markup-modal-actions">
+                <button type="submit" className="primary">
+                  Save Changes
+                </button>
+                <button type="button" className="secondary" onClick={() => setEditRow(null)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       )}
@@ -658,5 +816,3 @@ export default function AdminFlightMarkupListPage() {
     </section>
   );
 }
-
-

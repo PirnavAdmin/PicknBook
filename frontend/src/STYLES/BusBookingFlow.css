@@ -443,6 +443,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);
   gap: 8px;
+  align-items: stretch;
+  margin-bottom: 20px;
 }
 
 .bus-flow-fares {
@@ -454,6 +456,7 @@
   flex-direction: column;
   justify-content: center;
   min-height: 80px;
+  height: 100%;
   box-sizing: border-box;
 }
 
@@ -529,6 +532,7 @@
   justify-content: center;
   align-content: center;
   min-height: 80px;
+  height: 100%;
   box-sizing: border-box;
 }
 
@@ -2864,6 +2868,7 @@
 .bus-flow-seat-top {
   gap: 14px;
   align-items: stretch;
+  margin-bottom: 20px;
 }
 
 .bus-flow-page .bus-flow-fares,
@@ -5212,7 +5217,30 @@
 .bus-flow-page .coupon-featured-list.is-dragging,
 .bus-flow-page .coupon-chip-list.is-dragging {
   cursor: grabbing;
-  scroll-behavior: auto;
+  scroll-behavior: auto !important;
+  scroll-snap-type: none !important;
+}
+
+.voucher-code-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.voucher-copy-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  padding: 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: color 0.2s ease !important;
+}
+
+.voucher-copy-btn:hover {
+  color: #1e293b !important;
 }
 
 /* Base voucher card style */
@@ -5436,4 +5464,51 @@
   .bus-flow-page .hotel-guest-fields {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Custom layout fixes for seat selection top cards and spacing */
+.bus-flow-page .bus-flow-seat-top {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+  margin-bottom: 28px !important;
+}
+
+@media (max-width: 980px) {
+  .bus-flow-page .bus-flow-seat-top {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+.bus-flow-page .bus-flow-fares,
+.bus-flow-page .bus-flow-seat-legend {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-self: stretch !important;
+  min-height: 90px !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure children align content nicely since flex-direction was set to column */
+.bus-flow-page .bus-flow-seat-legend {
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  align-content: center !important;
+}
+
+.bus-flow-page .modern-seat-layout-wrapper {
+  margin-top: 10px !important;
+}
+
+/* Style for dimmed/filtered seats */
+.bus-flow-seat.is-dimmed {
+  opacity: 0.18 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
 }

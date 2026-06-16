@@ -19,7 +19,7 @@ const DEFAULT_FORM = {
   remark: '',
 };
 
-function toDatetimeLocal(value) {
+function toInputDate(value) {
   if (!value) {
     return '';
   }
@@ -29,17 +29,18 @@ function toDatetimeLocal(value) {
     return '';
   }
 
-  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return localDate.toISOString().slice(0, 16);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-function toUtcIso(value) {
+function toUtcIso(value, isEndOfDay = false) {
   if (!value) {
     return null;
   }
 
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  return isEndOfDay ? `${value}T23:59:59Z` : `${value}T00:00:00Z`;
 }
 
 function toBoolean(value, fallback = false) {
@@ -70,8 +71,8 @@ function buildInitialForm(row) {
       row.minBookingAmount !== undefined && row.minBookingAmount !== null
         ? String(row.minBookingAmount)
         : '0',
-    startDateUtc: toDatetimeLocal(row.startDateUtc),
-    endDateUtc: toDatetimeLocal(row.endDateUtc),
+    startDateUtc: toInputDate(row.startDateUtc),
+    endDateUtc: toInputDate(row.endDateUtc),
     status: row.status || 'Active',
     remark: row.remark || '',
   };
@@ -150,8 +151,8 @@ function AddB2CBusDiscount() {
         isExclusive: Boolean(formValues.isExclusive),
         priority,
         minBookingAmount,
-        startDateUtc: toUtcIso(formValues.startDateUtc),
-        endDateUtc: toUtcIso(formValues.endDateUtc),
+        startDateUtc: toUtcIso(formValues.startDateUtc, false),
+        endDateUtc: toUtcIso(formValues.endDateUtc, true),
         status: formValues.status,
         updatedBy: 'admin',
         remark: String(formValues.remark || '').trim(),
@@ -292,7 +293,7 @@ function AddB2CBusDiscount() {
           <label className="add-field">
             <span>Start Date</span>
             <input
-              type="datetime-local"
+              type="date"
               value={formValues.startDateUtc}
               onChange={handleChange('startDateUtc')}
               disabled={submitting}
@@ -302,7 +303,7 @@ function AddB2CBusDiscount() {
           <label className="add-field">
             <span>End Date</span>
             <input
-              type="datetime-local"
+              type="date"
               value={formValues.endDateUtc}
               onChange={handleChange('endDateUtc')}
               disabled={submitting}

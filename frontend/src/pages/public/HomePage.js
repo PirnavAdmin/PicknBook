@@ -64,7 +64,6 @@ const CLASS_OPTIONS = [
 const FLIGHT_TRIP_TYPES = [
   { value: "oneway", label: "One Way" },
   { value: "twoway", label: "Two Way" },
-  { value: "multicity", label: "Multi City" },
 ];
 
 const USE_DIRECT_API_IN_DEV =
@@ -2119,8 +2118,8 @@ export default function HomePage() {
 
   const [hotelDestination, setHotelDestination] = useState("");
   const [hotelDestinationError, setHotelDestinationError] = useState("");
-  const [hotelCheckInDate, setHotelCheckInDate] = useState("");
-  const [hotelCheckOutDate, setHotelCheckOutDate] = useState("");
+  const [hotelCheckInDate, setHotelCheckInDate] = useState(() => getDateInputValue(0));
+  const [hotelCheckOutDate, setHotelCheckOutDate] = useState(() => getDateInputValue(1));
   const [hotelRooms, setHotelRooms] = useState(0);
   const [hotelAdults, setHotelAdults] = useState(0);
   const [hotelChildren, setHotelChildren] = useState(0);
@@ -3517,30 +3516,29 @@ export default function HomePage() {
           margin-top: 0 !important;
         }
 
-        /* ─── Transparent Search Container with Visible Fields & Labels ─── */
+        /* ─── Solid Opaque Search Container ─── */
         .homepage .search-panel {
-          background: rgba(255, 255, 255, 0.12) !important;
-          backdrop-filter: blur(20px) !important;
-          -webkit-backdrop-filter: blur(20px) !important;
-          border: 1px solid rgba(255, 255, 255, 0.25) !important;
-          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2) !important;
+          background: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
         }
 
         /* Inactive Tab bar background overlay adjustment */
         .homepage .search-panel .tabs {
-          background: rgba(255, 255, 255, 0.15) !important;
-          border-color: rgba(255, 255, 255, 0.15) !important;
+          background: #f3f4f6 !important;
+          border-color: #e5e7eb !important;
         }
 
         /* Inactive main tabs style overrides */
         .homepage .search-panel .tab {
-          color: #ffffff !important;
-          opacity: 0.8 !important;
+          color: #4b5563 !important;
+          opacity: 1 !important;
           transition: all 0.2s ease !important;
         }
         .homepage .search-panel .tab:hover {
           opacity: 1 !important;
-          background: rgba(255, 255, 255, 0.1) !important;
+          background: #e5e7eb !important;
+          color: #111827 !important;
         }
         .homepage .search-panel .tab.active {
           opacity: 1 !important;
@@ -3553,9 +3551,9 @@ export default function HomePage() {
         .homepage .search-panel .field label,
         .homepage .search-panel .traveller-field label,
         .homepage .search-panel .class-field label {
-          color: #ffffff !important;
-          font-weight: 800 !important;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+          color: #4b5563 !important;
+          font-weight: 700 !important;
+          text-shadow: none !important;
         }
 
         /* Make fields (inputs) solid white for maximum legibility */
@@ -3569,9 +3567,9 @@ export default function HomePage() {
 
         /* Inactive trip-type chips contrast boost */
         .homepage .search-panel .trip-chip {
-          background: rgba(255, 255, 255, 0.85) !important;
-          color: #1f2937 !important;
-          border: 1px solid rgba(255, 255, 255, 0.9) !important;
+          background: #f3f4f6 !important;
+          color: #4b5563 !important;
+          border: 1px solid #e5e7eb !important;
           font-weight: 700 !important;
         }
         .homepage .search-panel .trip-chip.active {

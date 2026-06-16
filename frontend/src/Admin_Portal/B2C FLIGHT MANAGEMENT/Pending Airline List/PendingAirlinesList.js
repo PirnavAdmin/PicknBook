@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
-import { Download, PencilLine, PlusCircle, Trash2 } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Download, PencilLine, PlusCircle, Trash2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./PendingAirlinesList.css";
+import { listFlightPendingAirlines, deleteFlightPendingAirline } from "../../../services/flightBookingService";
 
 const safeValue = (value, fallback = "--") => {
   const text = String(value ?? "").trim();
@@ -45,13 +46,13 @@ const normalizePendingAirlineRecord = (record, index = 0) => {
       normalizeText(fallback?.updatedBy, "Travel Admin")
     ),
     updatedAtUtc: normalizeText(
-      record?.updatedAtUtc || record?.updatedOn || record?.UpdatedOn,
+      record?.updatedAtUtc || record?.updatedOn || record?.UpdatedOn || record?.updatedOnUtc || record?.UpdatedOnUtc,
       normalizeText(fallback?.updatedAtUtc, "")
     ),
   };
 };
 
-const readPendingAirlines = () => {
+const readPendingAirlinesFallback = () => {
   if (typeof window === "undefined") {
     return DEFAULT_PENDING_AIRLINES;
   }
@@ -67,39 +68,6 @@ const readPendingAirlines = () => {
   } catch {
     return DEFAULT_PENDING_AIRLINES;
   }
-};
-
-const writePendingAirlines = (records) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(
-      FLIGHT_PENDING_AIRLINE_STORAGE_KEY,
-      JSON.stringify(records.map((record, index) => normalizePendingAirlineRecord(record, index)))
-    );
-  } catch {
-    // Ignore localStorage write failures.
-  }
-};
-
-const listFlightPendingAirlines = () => {
-  const records = readPendingAirlines();
-  writePendingAirlines(records);
-  return records;
-};
-
-const deleteFlightPendingAirlineById = (recordId) => {
-  const normalizedId = normalizeText(recordId, "");
-  if (!normalizedId) {
-    return false;
-  }
-
-  const current = listFlightPendingAirlines();
-  const next = current.filter((record) => normalizeText(record.id, "") !== normalizedId);
-  writePendingAirlines(next);
-  return next.length !== current.length;
 };
 
 const formatPendingAirlineDateTime = (value) => {
@@ -120,12 +88,31 @@ const formatPendingAirlineDateTime = (value) => {
 
 export default function AdminFlightPendingAirlineListPage() {
   const navigate = useNavigate();
+  const [records, setRecords] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const records = useMemo(() => {
-    // `refreshKey` forces re-read after add/edit/delete
-    void refreshKey;
-    return listFlightPendingAirlines();
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      setErrorMessage("");
+      try {
+        const data = await listFlightPendingAirlines();
+        if (Array.isArray(data)) {
+          setRecords(data.map((record, index) => normalizePendingAirlineRecord(record, index)));
+        } else {
+          setRecords(readPendingAirlinesFallback());
+        }
+      } catch (error) {
+        console.warn("Failed to load pending airlines from backend, using fallback storage", error);
+        setRecords(readPendingAirlinesFallback());
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
   }, [refreshKey]);
 
   const escapeCsv = (value) => {
@@ -173,13 +160,20 @@ export default function AdminFlightPendingAirlineListPage() {
     URL.revokeObjectURL(downloadUrl);
   };
 
-  const handleDelete = (record) => {
+  const handleDelete = async (record) => {
     const ok = window.confirm(`Delete pending airline ${safeValue(record?.airlineCode)}?`);
     if (!ok) {
       return;
     }
 
-    deleteFlightPendingAirlineById(record?.id);
+    try {
+      await deleteFlightPendingAirline(record?.id);
+    } catch (error) {
+      console.error("Failed to delete record from API", error);
+      // Fallback local deletion
+      const remaining = records.filter((r) => r.id !== record.id);
+      window.localStorage.setItem(FLIGHT_PENDING_AIRLINE_STORAGE_KEY, JSON.stringify(remaining));
+    }
     setRefreshKey((value) => value + 1);
   };
 
@@ -188,7 +182,7 @@ export default function AdminFlightPendingAirlineListPage() {
       <div className="admin-flight-pending-toolbar">
         <header className="admin-b2c-header admin-flight-pending-header">
           <h1>
-            <strong>B2C Pending</strong> Airline List
+            <span>B2C Pending</span> Airline List
           </h1>
         </header>
 
@@ -208,6 +202,8 @@ export default function AdminFlightPendingAirlineListPage() {
         </div>
       </div>
 
+      {errorMessage ? <div className="admin-data-error">{errorMessage}</div> : null}
+
       <section className="admin-cancel-table-shell admin-flight-pending-table-shell">
         <header className="admin-cancel-table-head admin-flight-pending-table-head">
           <span>SN</span>
@@ -220,7 +216,9 @@ export default function AdminFlightPendingAirlineListPage() {
           <span>Action</span>
         </header>
 
-        {records.length ? (
+        {isLoading ? (
+          <div className="admin-cancel-empty">Loading pending airlines...</div>
+        ) : records.length ? (
           <div className="admin-cancel-table-body">
             {records.map((record, index) => (
               <article
@@ -258,6 +256,14 @@ export default function AdminFlightPendingAirlineListPage() {
                 <div className="admin-cancel-cell admin-cell-centered admin-flight-pending-action-cell">
                   <button
                     type="button"
+                    className="admin-flight-pending-icon-btn view"
+                    aria-label={`View pending airline ${record.id}`}
+                    onClick={() => setSelectedRecord(record)}
+                  >
+                    <Eye size={15} />
+                  </button>
+                  <button
+                    type="button"
                     className="admin-flight-pending-icon-btn edit"
                     aria-label={`Edit pending airline ${record.id}`}
                     onClick={() =>
@@ -286,8 +292,53 @@ export default function AdminFlightPendingAirlineListPage() {
           <div className="admin-cancel-empty">not found any record.</div>
         )}
       </section>
+
+      {selectedRecord ? (
+        <div className="admin-view-backdrop" onClick={() => setSelectedRecord(null)}>
+          <article
+            className="admin-view-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pending airline details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="admin-view-header">
+              <button type="button" onClick={() => setSelectedRecord(null)}>
+                Close
+              </button>
+              <div className="admin-view-header-main">
+                <h2>Pending Airline Detail</h2>
+                <p className="admin-view-header-subtitle">
+                  ID: {safeValue(selectedRecord.id)}
+                </p>
+              </div>
+            </header>
+
+            <section className="admin-view-grid">
+              <div>
+                <span>Airline Code</span>
+                <strong>{safeValue(selectedRecord.airlineCode)}</strong>
+              </div>
+              <div>
+                <span>Fare Type</span>
+                <strong>{safeValue(selectedRecord.fareType)}</strong>
+              </div>
+              <div>
+                <span>Updated By</span>
+                <strong>{safeValue(selectedRecord.updatedBy)}</strong>
+              </div>
+              <div>
+                <span>Updated On</span>
+                <strong>{formatPendingAirlineDateTime(selectedRecord.updatedAtUtc)}</strong>
+              </div>
+              <div style={{ gridColumn: "span 2" }}>
+                <span>Remark</span>
+                <strong>{safeValue(selectedRecord.remark, "--")}</strong>
+              </div>
+            </section>
+          </article>
+        </div>
+      ) : null}
     </section>
   );
 }
-
-

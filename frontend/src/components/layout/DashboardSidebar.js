@@ -8,6 +8,7 @@ import {
   PlaneTakeoff,
   UserRound,
   Users,
+  Ticket,
 } from "lucide-react";
 
 const MAIN_LINKS = [
@@ -39,7 +40,20 @@ const MAIN_LINKS = [
     description: "All hotel stays",
     icon: BedDouble,
   },
-
+  {
+    id: "nav-6",
+    to: "/web-checkin",
+    label: "Web Check-in",
+    description: "Check-in online",
+    icon: Ticket,
+  },
+  {
+    id: "nav-7",
+    to: "/fetch-ticket",
+    label: "Print Ticket",
+    description: "Retrieve travel ticket",
+    icon: Ticket,
+  },
 ];
 
 

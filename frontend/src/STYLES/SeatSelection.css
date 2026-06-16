@@ -560,3 +560,12 @@
   gap: 8px; /* Subtle vertical gap between Lower and Upper Decks */
   width: 100%;
 }
+
+/* Style for dimmed/filtered seats */
+.bus-coach-container .seat-button-wrapper.opacity-40,
+.bus-coach-container .seat-button-wrapper.is-dimmed {
+  opacity: 0.18 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}

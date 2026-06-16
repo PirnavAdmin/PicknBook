@@ -1,28 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, Eye, Pencil, Plus, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { Check, Eye, Pencil, Plus, SlidersHorizontal, Trash2, X, Loader2 } from "lucide-react";
 import "./FlightPopularDestination.css";
 import { formatCouponDateTime } from "../../../utils/adminPortalUtils";
 import {
-  listPopularDestinations,
+  getPopularDestinations,
   createPopularDestination,
   updatePopularDestination,
   deletePopularDestination,
 } from "../../../services/flightBookingService";
-
-const mapFromBackendDestination = (dbRow) => {
-  return {
-    id: dbRow.id,
-    entryDate: dbRow.createdAt || dbRow.entryDate || new Date().toISOString(),
-    title: dbRow.destinationName || dbRow.title || "",
-    subTitle: dbRow.subTitle || "Popular Destination",
-    category: dbRow.category || "Domestic",
-    placement: dbRow.placement || "main",
-    url: dbRow.url || "",
-    status: String(dbRow.status).toLowerCase() === "active" ? "active" : "inactive",
-    imageName: "",
-    imageUrl: dbRow.imageUrl || "",
-  };
-};
 
 function createDefaultFlightPopularDestinationForm() {
   return {
@@ -60,6 +45,8 @@ function safeExternalUrl(value) {
 export default function AdminFlightPopularDestinationsPage() {
   const [destinations, setDestinations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("entryDate");
@@ -90,26 +77,28 @@ export default function AdminFlightPopularDestinationsPage() {
     "Action",
   ];
 
-  const loadDestinations = async () => {
+  const fetchDestinations = async () => {
     setIsLoading(true);
+    setErrorMessage("");
     try {
-      const data = await listPopularDestinations();
-      const mapped = Array.isArray(data) ? data.map(mapFromBackendDestination) : [];
-      setDestinations(mapped);
+      const data = await getPopularDestinations();
+      setDestinations(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      setErrorMessage(err.message || "Failed to load destinations.");
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDestinations();
+    fetchDestinations();
   }, []);
 
   const availableCategories = useMemo(() => {
     const unique = new Set(
-      destinations.map((item) => String(item.category || "").trim()).filter(Boolean)
+      destinations
+        .filter(item => item.category !== "PopularFlightRoute")
+        .map((item) => String(item.category || "").trim()).filter(Boolean)
     );
 
     return Array.from(unique);
@@ -122,6 +111,9 @@ export default function AdminFlightPopularDestinationsPage() {
     const normalizedPlacementFilter = String(placementFilter || "all").toLowerCase();
 
     const filtered = destinations.filter((destination) => {
+      if (destination.category === "PopularFlightRoute") {
+        return false;
+      }
       const title = String(destination.title || "").toLowerCase();
       const subTitle = String(destination.subTitle || "").toLowerCase();
       const category = String(destination.category || "").toLowerCase();
@@ -219,48 +211,52 @@ export default function AdminFlightPopularDestinationsPage() {
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setAddError("");
-    setAddForm((previous) => {
-      if (previous.imageUrl && String(previous.imageUrl).startsWith("blob:")) {
-        URL.revokeObjectURL(previous.imageUrl);
-      }
-      return createDefaultFlightPopularDestinationForm();
-    });
+    setAddForm(createDefaultFlightPopularDestinationForm());
   };
 
   const handleAddFileChange = (event) => {
     const file = event.target.files?.[0];
-
     if (!file) {
-      setAddForm((previous) => {
-        if (previous.imageUrl && String(previous.imageUrl).startsWith("blob:")) {
-          URL.revokeObjectURL(previous.imageUrl);
-        }
-        return { ...previous, imageName: "", imageUrl: "" };
-      });
+      setAddForm((previous) => ({ ...previous, imageName: "", imageUrl: "" }));
       return;
     }
 
-    const nextUrl = URL.createObjectURL(file);
-
-    setAddForm((previous) => {
-      if (previous.imageUrl && String(previous.imageUrl).startsWith("blob:")) {
-        URL.revokeObjectURL(previous.imageUrl);
-      }
-
-      return {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAddForm((previous) => ({
         ...previous,
         imageName: file.name,
-        imageUrl: nextUrl,
-      };
-    });
+        imageUrl: reader.result,
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddDestination = async () => {
     const title = String(addForm.title || "").trim();
-    const normalizedStatus = String(addForm.status || "active").toLowerCase() === "active" ? "Active" : "Inactive";
+    const subTitle = String(addForm.subTitle || "").trim();
+    const category = String(addForm.category || "").trim();
+    const placement = String(addForm.placement || "").trim().toLowerCase();
+    const normalizedUrl = safeExternalUrl(addForm.url);
+    const status = String(addForm.status || "active").trim().toLowerCase();
 
     if (!title) {
       setAddError("Title is required.");
+      return;
+    }
+
+    if (!category) {
+      setAddError("Category is required.");
+      return;
+    }
+
+    if (placement !== "main" && placement !== "side") {
+      setAddError("Choose Side or Main placement.");
+      return;
+    }
+
+    if (!normalizedUrl) {
+      setAddError("Enter a valid URL.");
       return;
     }
 
@@ -270,16 +266,21 @@ export default function AdminFlightPopularDestinationsPage() {
     }
 
     const payload = {
-      destinationName: title,
+      title,
+      subTitle,
+      category,
+      placement,
+      url: normalizedUrl,
+      status: status === "inactive" ? "inactive" : "active",
+      imageName: addForm.imageName,
       imageUrl: addForm.imageUrl,
-      status: normalizedStatus,
     };
 
+    setAddError("");
     try {
-      await createPopularDestination(payload);
-      await loadDestinations();
+      const newDest = await createPopularDestination(payload);
+      setDestinations((prev) => [newDest, ...prev]);
       setIsAddModalOpen(false);
-      setAddError("");
       setAddForm(createDefaultFlightPopularDestinationForm());
     } catch (err) {
       setAddError(err.message || "Failed to add popular destination.");
@@ -304,44 +305,29 @@ export default function AdminFlightPopularDestinationsPage() {
   const handleCloseEditModal = () => {
     setEditError("");
     setEditDestination(null);
-    setEditForm((previous) => {
-      if (
-        previous.imageUrl &&
-        String(previous.imageUrl).startsWith("blob:") &&
-        previous.imageUrl !== editDestination?.imageUrl
-      ) {
-        URL.revokeObjectURL(previous.imageUrl);
-      }
-      return createDefaultFlightPopularDestinationForm();
-    });
+    setEditForm(createDefaultFlightPopularDestinationForm());
   };
 
   const handleEditFileChange = (event) => {
     const file = event.target.files?.[0];
-
     if (!file) {
-      setEditForm((previous) => {
-        if (previous.imageUrl && String(previous.imageUrl).startsWith("blob:")) {
-          URL.revokeObjectURL(previous.imageUrl);
-        }
-        return { ...previous, imageName: editDestination?.imageName || "", imageUrl: editDestination?.imageUrl || "" };
-      });
+      setEditForm((previous) => ({
+        ...previous,
+        imageName: editDestination?.imageName || "",
+        imageUrl: editDestination?.imageUrl || "",
+      }));
       return;
     }
 
-    const nextUrl = URL.createObjectURL(file);
-
-    setEditForm((previous) => {
-      if (previous.imageUrl && String(previous.imageUrl).startsWith("blob:")) {
-        URL.revokeObjectURL(previous.imageUrl);
-      }
-
-      return {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditForm((previous) => ({
         ...previous,
         imageName: file.name,
-        imageUrl: nextUrl,
-      };
-    });
+        imageUrl: reader.result,
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleEditDestination = async () => {
@@ -350,10 +336,29 @@ export default function AdminFlightPopularDestinationsPage() {
     }
 
     const title = String(editForm.title || "").trim();
-    const normalizedStatus = String(editForm.status || "active").toLowerCase() === "active" ? "Active" : "Inactive";
+    const subTitle = String(editForm.subTitle || "").trim();
+    const category = String(editForm.category || "").trim();
+    const placement = String(editForm.placement || "").trim().toLowerCase();
+    const normalizedUrl = safeExternalUrl(editForm.url);
+    const status = String(editForm.status || "active").trim().toLowerCase();
 
     if (!title) {
       setEditError("Title is required.");
+      return;
+    }
+
+    if (!category) {
+      setEditError("Category is required.");
+      return;
+    }
+
+    if (placement !== "main" && placement !== "side") {
+      setEditError("Choose Side or Main placement.");
+      return;
+    }
+
+    if (!normalizedUrl) {
+      setEditError("Enter a valid URL.");
       return;
     }
 
@@ -363,16 +368,23 @@ export default function AdminFlightPopularDestinationsPage() {
     }
 
     const payload = {
-      destinationName: title,
+      title,
+      subTitle,
+      category,
+      placement,
+      url: normalizedUrl,
+      status: status === "inactive" ? "inactive" : "active",
+      imageName: editForm.imageName,
       imageUrl: editForm.imageUrl,
-      status: normalizedStatus,
     };
 
+    setEditError("");
     try {
-      await updatePopularDestination(editDestination.id, payload);
-      await loadDestinations();
+      const updatedDest = await updatePopularDestination(editDestination.id, payload);
+      setDestinations((prev) =>
+        prev.map((item) => (item.id === editDestination.id ? updatedDest : item))
+      );
       setEditDestination(null);
-      setEditError("");
       setEditForm(createDefaultFlightPopularDestinationForm());
     } catch (err) {
       setEditError(err.message || "Failed to update popular destination.");
@@ -380,19 +392,26 @@ export default function AdminFlightPopularDestinationsPage() {
   };
 
   const handleToggleStatus = async (id) => {
-    const current = destinations.find((item) => item.id === id);
-    if (!current) return;
+    const target = destinations.find((item) => item.id === id);
+    if (!target) return;
 
-    const nextStatus = current.status === "active" ? "Inactive" : "Active";
+    const newStatus = target.status === "active" ? "inactive" : "active";
     const payload = {
-      destinationName: current.title,
-      imageUrl: current.imageUrl,
-      status: nextStatus,
+      title: target.title,
+      subTitle: target.subTitle,
+      category: target.category,
+      placement: target.placement,
+      url: target.url,
+      status: newStatus,
+      imageName: target.imageName,
+      imageUrl: target.imageUrl,
     };
 
     try {
-      await updatePopularDestination(id, payload);
-      await loadDestinations();
+      const updated = await updatePopularDestination(id, payload);
+      setDestinations((prev) =>
+        prev.map((item) => (item.id === id ? updated : item))
+      );
     } catch (err) {
       alert(err.message || "Failed to toggle status.");
     }
@@ -405,11 +424,11 @@ export default function AdminFlightPopularDestinationsPage() {
 
     try {
       await deletePopularDestination(deleteDestination.id);
-      await loadDestinations();
+      setDestinations((prev) => prev.filter((item) => item.id !== deleteDestination.id));
+      setViewDestination((previous) => (previous?.id === deleteDestination.id ? null : previous));
       setDeleteDestination(null);
-      setViewDestination(null);
     } catch (err) {
-      alert(err.message || "Failed to delete popular destination.");
+      alert(err.message || "Failed to delete destination.");
     }
   };
 
@@ -523,108 +542,121 @@ export default function AdminFlightPopularDestinationsPage() {
           </section>
         )}
 
-        <section className="flight-markup-table-wrap">
-          <div className="flight-markup-table-scroll">
-            <table className="flight-markup-table flight-destinations-table">
-              <colgroup>
-                {colWidths.map((width, index) => (
-                  <col key={`${width}-${index}`} style={{ width }} />
-                ))}
-              </colgroup>
-              <thead>
-                <tr>
-                  {headers.map((headerLabel) => (
-                    <th key={headerLabel}>
-                      <div className="flight-markup-th-pill">
-                        <span>{headerLabel}</span>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visibleDestinations.length === 0 ? (
-                  <tr>
-                    <td colSpan={headers.length} className="flight-markup-empty-cell">
-                      <span className="flight-markup-empty">No Record Found...</span>
-                    </td>
-                  </tr>
-                ) : (
-                  visibleDestinations.map((destination, index) => {
-                    const placementLabel =
-                      String(destination.placement || "").toLowerCase() === "side" ? "Side" : "Main";
-                    const url = safeExternalUrl(destination.url);
-
-                    return (
-                      <tr key={destination.id}>
-                        <td>{index + 1}</td>
-                        <td>{formatCouponDateTime(destination.entryDate)}</td>
-                        <td>{destination.title}</td>
-                        <td>{destination.subTitle || "--"}</td>
-                        <td>
-                          <div className="markup-action-group">
-                            <button
-                              type="button"
-                              title="View"
-                              aria-label={`View image for ${destination.title}`}
-                              onClick={() => setViewDestination(destination)}
-                            >
-                              <Eye size={14} />
-                            </button>
-                          </div>
-                        </td>
-                        <td>{destination.category}</td>
-                        <td>{placementLabel}</td>
-                        <td className="flight-destination-url">
-                          {url ? (
-                            <a href={url} target="_blank" rel="noopener noreferrer">
-                              {destination.url}
-                            </a>
-                          ) : (
-                            "--"
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className={`flight-route-status-btn ${destination.status}`}
-                            onClick={() => handleToggleStatus(destination.id)}
-                            aria-label={`Set destination ${destination.id} status to ${
-                              destination.status === "active" ? "inactive" : "active"
-                            }`}
-                          >
-                            {destination.status === "active" ? <Check size={14} /> : <X size={14} />}
-                            <span>{destination.status === "active" ? "Active" : "Inactive"}</span>
-                          </button>
-                        </td>
-                        <td>
-                          <div className="markup-action-group" aria-label="Destination actions">
-                            <button
-                              type="button"
-                              title="Edit"
-                              aria-label={`Edit destination ${destination.id}`}
-                              onClick={() => handleOpenEditModal(destination)}
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              title="Delete"
-                              aria-label={`Delete destination ${destination.id}`}
-                              className="danger"
-                              onClick={() => setDeleteDestination(destination)}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+        {errorMessage && (
+          <div style={{ color: "red", padding: "10px", fontWeight: "bold" }}>
+            {errorMessage}
           </div>
+        )}
+
+        <section className="flight-markup-table-wrap">
+          {isLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "40px", gap: "10px", alignItems: "center" }}>
+              <Loader2 className="spin" size={24} />
+              <span>Loading popular destinations...</span>
+            </div>
+          ) : (
+            <div className="flight-markup-table-scroll">
+              <table className="flight-markup-table flight-destinations-table">
+                <colgroup>
+                  {colWidths.map((width, index) => (
+                    <col key={`${width}-${index}`} style={{ width }} />
+                  ))}
+                </colgroup>
+                <thead>
+                  <tr>
+                    {headers.map((headerLabel) => (
+                      <th key={headerLabel}>
+                        <div className="flight-markup-th-pill">
+                          <span>{headerLabel}</span>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleDestinations.length === 0 ? (
+                    <tr>
+                      <td colSpan={headers.length} className="flight-markup-empty-cell">
+                        <span className="flight-markup-empty">No Record Found...</span>
+                      </td>
+                    </tr>
+                  ) : (
+                    visibleDestinations.map((destination, index) => {
+                      const placementLabel =
+                        String(destination.placement || "").toLowerCase() === "side" ? "Side" : "Main";
+                      const url = safeExternalUrl(destination.url);
+
+                      return (
+                        <tr key={destination.id}>
+                          <td>{index + 1}</td>
+                          <td>{formatCouponDateTime(destination.entryDate)}</td>
+                          <td>{destination.title}</td>
+                          <td>{destination.subTitle || "--"}</td>
+                          <td>
+                            <div className="markup-action-group">
+                              <button
+                                type="button"
+                                title="View"
+                                aria-label={`View image for ${destination.title}`}
+                                onClick={() => setViewDestination(destination)}
+                              >
+                                <Eye size={14} />
+                              </button>
+                            </div>
+                          </td>
+                          <td>{destination.category}</td>
+                          <td>{placementLabel}</td>
+                          <td className="flight-destination-url">
+                            {url ? (
+                              <a href={url} target="_blank" rel="noopener noreferrer">
+                                {destination.url}
+                              </a>
+                            ) : (
+                              "--"
+                            )}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className={`flight-route-status-btn ${destination.status}`}
+                              onClick={() => handleToggleStatus(destination.id)}
+                              aria-label={`Set destination ${destination.id} status to ${
+                                destination.status === "active" ? "inactive" : "active"
+                              }`}
+                            >
+                              {destination.status === "active" ? <Check size={14} /> : <X size={14} />}
+                              <span>{destination.status === "active" ? "Active" : "Inactive"}</span>
+                            </button>
+                          </td>
+                          <td>
+                            <div className="markup-action-group" aria-label="Destination actions">
+                              <button
+                                type="button"
+                                title="Edit"
+                                aria-label={`Edit destination ${destination.id}`}
+                                onClick={() => handleOpenEditModal(destination)}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                title="Delete"
+                                aria-label={`Delete destination ${destination.id}`}
+                                className="danger"
+                                onClick={() => setDeleteDestination(destination)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       </section>
 
@@ -917,5 +949,3 @@ export default function AdminFlightPopularDestinationsPage() {
     </>
   );
 }
-
-

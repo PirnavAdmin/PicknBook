@@ -1,24 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { listFlightPromotions, deleteFlightPromotion } from '../../../services/flightBookingService';
 import './DiscountList.css';
-import {
-  listFlightDiscounts,
-  deleteFlightDiscount,
-  listDiscountConditions,
-} from '../../../services/flightBookingService';
 
-const mapFromBackendDiscount = (dbRow) => {
-  return {
-    id: dbRow.id,
-    value: dbRow.value,
-    type: dbRow.discountType,
-    entryDate: dbRow.entryDate || dbRow.createdAt || new Date().toLocaleString(),
-    updateDate: dbRow.updateDate || dbRow.updatedAt || new Date().toLocaleString(),
-    updatedBy: dbRow.updatedBy || "Admin",
-    remark: dbRow.remark || "",
-    status: dbRow.status || "Active",
-  };
+const initialRows = [
+  {
+    id: 'FLD-1401',
+    value: 1200,
+    type: 'Fixed',
+    entryDate: '12 Mar 2026, 10:20 AM',
+    updateDate: '12 Mar 2026, 10:20 AM',
+    updatedBy: 'Pick N Book',
+    remark: 'Early bird saver fare',
+    status: 'Active',
+  },
+];
+
+const STORAGE_KEY = 'admin_b2c_flight_discounts';
+
+const readStoredRows = () => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    return [];
+  }
+  return [];
 };
 
 const escapeCsvValue = (value) => {
@@ -44,23 +57,99 @@ const renderDateTime = (dateStr) => {
   return dateStr;
 };
 
+const highlightText = (text, search) => {
+  if (!search || !text) return text;
+  const str = String(text);
+  const index = str.toLowerCase().indexOf(search.toLowerCase());
+  if (index === -1) return text;
+
+  const parts = [];
+  let remaining = str;
+  while (remaining) {
+    const idx = remaining.toLowerCase().indexOf(search.toLowerCase());
+    if (idx === -1) {
+      parts.push(remaining);
+      break;
+    }
+    if (idx > 0) {
+      parts.push(remaining.substring(0, idx));
+    }
+    parts.push(
+      <span
+        key={remaining.length + idx}
+        style={{
+          backgroundColor: '#ffeb3b',
+          color: '#000',
+          fontWeight: 'bold',
+          borderRadius: '2px',
+          padding: '0 2px'
+        }}
+      >
+        {remaining.substring(idx, idx + search.length)}
+      </span>
+    );
+    remaining = remaining.substring(idx + search.length);
+  }
+  return parts;
+};
+
+const normalizePromotionRow = (promo) => {
+  const isFlat = promo.discountType === 1 || promo.discountType === "Flat" || promo.discountType === "Fixed";
+  const isActive = promo.isActive === true || promo.isActive === 1 || String(promo.isActive).toLowerCase() === 'true' || String(promo.status).toLowerCase() === 'active';
+  return {
+    id: promo.id,
+    value: promo.discountValue,
+    type: isFlat ? "Fixed" : "Percentage",
+    entryDate: promo.createdAtUtc ? new Date(promo.createdAtUtc).toLocaleString() : "",
+    updateDate: promo.updatedAtUtc ? new Date(promo.updatedAtUtc).toLocaleString() : "",
+    updatedBy: promo.updatedBy || "Admin",
+    remark: promo.remark || promo.remarks || promo.description || promo.name || "",
+    status: isActive ? "Active" : "Inactive",
+    raw: promo
+  };
+};
+
 function DiscountList() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState('');
   const [selectedRow, setSelectedRow] = useState(null);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [selectedConditions, setSelectedConditions] = useState([]);
-  const [isLoadingConditions, setIsLoadingConditions] = useState(false);
+  const loadPromotions = async () => {
+    setRefreshing(true);
+    try {
+      const data = await listFlightPromotions();
+      if (Array.isArray(data)) {
+        setRows(data.map(normalizePromotionRow));
+      } else {
+        const local = readStoredRows();
+        setRows(local.length ? local : initialRows);
+      }
+    } catch (error) {
+      console.warn("Failed to load promotions from backend, falling back to local storage", error);
+      const local = readStoredRows();
+      setRows(local.length ? local : initialRows);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPromotions();
+  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (!event.target.closest('.actions-dropdown-container')) {
         setActiveDropdownId(null);
+      }
+      if (!event.target.closest('.custom-dropdown-container')) {
+        setStatusDropdownOpen(false);
       }
     };
     document.addEventListener('click', handleOutsideClick);
@@ -69,65 +158,40 @@ function DiscountList() {
     };
   }, []);
 
-  const loadDiscounts = async () => {
-    setIsLoading(true);
-    setErrorMessage("");
-    try {
-      const data = await listFlightDiscounts();
-      const mapped = Array.isArray(data) ? data.map(mapFromBackendDiscount) : [];
-      setRows(mapped);
-    } catch (err) {
-      setErrorMessage(err.message || "Failed to load discounts.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDiscounts();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedRow) {
-      setSelectedConditions([]);
-      return;
-    }
-    const loadConditions = async () => {
-      setIsLoadingConditions(true);
-      try {
-        const conditions = await listDiscountConditions(selectedRow.id);
-        setSelectedConditions(Array.isArray(conditions) ? conditions : []);
-      } catch {
-        setSelectedConditions([]);
-      } finally {
-        setIsLoadingConditions(false);
-      }
-    };
-    loadConditions();
-  }, [selectedRow]);
-
   const filteredDiscounts = useMemo(() => {
     const sorted = [...rows].sort((a, b) => {
       const numA = parseInt(String(a.id).replace(/\D/g, '')) || 0;
       const numB = parseInt(String(b.id).replace(/\D/g, '')) || 0;
       if (numA !== numB) {
-        return numB - numA;
+        return numA - numB;
       }
-      return String(b.id).localeCompare(String(a.id));
+      return String(a.id).localeCompare(String(b.id));
     });
 
     return sorted.filter((row) => {
       const matchesSearch =
-        String(row.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(row.type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(row.remark || '').toLowerCase().includes(searchTerm.toLowerCase());
+        String(row.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(row.type).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(row.remark).toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus =
         statusFilter === 'All' || row.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const matchesDate = !dateFilter || (() => {
+        const rowEntry = row.raw?.createdAtUtc || row.raw?.entryDate || row.entryDate;
+        const rowUpdate = row.raw?.updatedAtUtc || row.raw?.updateDate || row.updateDate;
+        const checkMatch = (dStr) => {
+          if (!dStr) return false;
+          const d = new Date(dStr);
+          if (Number.isNaN(d.getTime())) return false;
+          return d.toISOString().slice(0, 10) === dateFilter;
+        };
+        return checkMatch(rowEntry) || checkMatch(rowUpdate);
+      })();
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [rows, searchTerm, statusFilter]);
+  }, [rows, searchTerm, statusFilter, dateFilter]);
 
   const activeCount = rows.filter((row) => row.status === 'Active').length;
   const inactiveCount = rows.filter((row) => row.status === 'Inactive').length;
@@ -182,22 +246,68 @@ function DiscountList() {
   };
 
   const handleDelete = async (rowId) => {
-    if (!window.confirm("Are you sure you want to delete this discount?")) {
-      return;
-    }
     try {
-      await deleteFlightDiscount(rowId);
-      setRows((prev) => prev.filter((row) => row.id !== rowId));
-      if (selectedRow?.id === rowId) {
-        setSelectedRow(null);
-      }
-    } catch (err) {
-      alert(err.message || "Failed to delete discount.");
+      await deleteFlightPromotion(rowId);
+    } catch (e) {
+      console.warn("Failed to delete promotion from server", e);
+    }
+    setRows((prev) => prev.filter((row) => row.id !== rowId));
+    if (selectedRow?.id === rowId) {
+      setSelectedRow(null);
     }
   };
 
   return (
     <div className="discount-list-page-container">
+      <style>{`
+        .discount-list-page-container .field span {
+          color: var(--admin-text) !important;
+        }
+        .discount-list-page-container .custom-dropdown-trigger {
+          background: var(--admin-surface) !important;
+          color: var(--admin-text) !important;
+          border-color: var(--admin-border) !important;
+        }
+        .discount-list-page-container .custom-dropdown-menu {
+          background: var(--admin-surface) !important;
+          border-color: var(--admin-border) !important;
+        }
+        .discount-list-page-container .custom-dropdown-item {
+          color: var(--admin-text) !important;
+        }
+        .discount-list-page-container .custom-dropdown-item:hover,
+        .discount-list-page-container .custom-dropdown-item.active {
+          background: var(--admin-danger-soft, #fef2f2) !important;
+          color: var(--admin-danger, #ef4444) !important;
+        }
+        /* Light Theme (White Mode) - Red buttons */
+        .admin-shell.light-theme .discount-list-page-container .primary-btn,
+        .admin-shell.light-theme .discount-list-page-container .export-btn {
+          background: #dc1e26 !important;
+          border-color: #dc1e26 !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 10px rgba(220, 30, 38, 0.2) !important;
+        }
+        .admin-shell.light-theme .discount-list-page-container .primary-btn:hover,
+        .admin-shell.light-theme .discount-list-page-container .export-btn:hover {
+          background: #b5151b !important;
+          border-color: #b5151b !important;
+        }
+
+        /* Dark Theme (Black/Dark Mode) - Blue buttons */
+        .admin-shell.dark-theme .discount-list-page-container .primary-btn,
+        .admin-shell.dark-theme .discount-list-page-container .export-btn {
+          background: #1e75ff !important;
+          border-color: #1e75ff !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 10px rgba(30, 117, 255, 0.2) !important;
+        }
+        .admin-shell.dark-theme .discount-list-page-container .primary-btn:hover,
+        .admin-shell.dark-theme .discount-list-page-container .export-btn:hover {
+          background: #0052d9 !important;
+          border-color: #0052d9 !important;
+        }
+      `}</style>
       <section className="discount-heading">
         <p className="discount-heading-main">B2C Flight Management</p>
         <p className="discount-heading-sub">Discount List</p>
@@ -256,25 +366,6 @@ function DiscountList() {
               <span className="details-label">Remark</span>
               <span className="details-value">{selectedRow.remark}</span>
             </div>
-            <div className="details-item wide">
-              <span className="details-label">Eligibility Conditions</span>
-              <span className="details-value">
-                {isLoadingConditions ? (
-                  "Loading eligibility conditions..."
-                ) : selectedConditions.length === 0 ? (
-                  "No custom eligibility conditions configured (applies to all)."
-                ) : (
-                  <ul style={{ margin: "5px 0 0 20px", padding: 0 }}>
-                    {selectedConditions.map((cond, idx) => (
-                      <li key={cond.id || idx}>
-                        <strong>{cond.conditionType}</strong> {cond.conditionOperator || "Equals"} <code>{cond.value1}</code>
-                        {cond.value2 ? ` - ${cond.value2}` : ""}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </span>
-            </div>
           </div>
         </section>
       ) : null}
@@ -310,21 +401,45 @@ function DiscountList() {
           </label>
           <label className="field">
             <span>Updated</span>
-            <input type="date" />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value)}
+            />
           </label>
         </div>
         <div className="toolbar-actions">
-          <label className="field">
+          <div className="field custom-dropdown-container">
             <span>Status</span>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+            <button
+              type="button"
+              className="custom-dropdown-trigger"
+              onClick={(e) => {
+                e.stopPropagation();
+                setStatusDropdownOpen(!statusDropdownOpen);
+              }}
             >
-              <option value="All">All</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </label>
+              <span>{statusFilter}</span>
+              <FaChevronDown className={`chevron-icon ${statusDropdownOpen ? 'open' : ''}`} />
+            </button>
+            {statusDropdownOpen && (
+              <div className="custom-dropdown-menu">
+                {['All', 'Active', 'Inactive'].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`custom-dropdown-item ${statusFilter === opt ? 'active' : ''}`}
+                    onClick={() => {
+                      setStatusFilter(opt);
+                      setStatusDropdownOpen(false);
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-flight/discounts/new')}>
             <FaPlus aria-hidden="true" />
             Add B2C Discount
@@ -362,10 +477,10 @@ function DiscountList() {
               filteredDiscounts.map((row) => (
                 <tr key={row.id}>
                   <td>
-                    <div className="id-chip">{row.id}</div>
+                    <div className="id-chip">{highlightText(row.id, searchTerm)}</div>
                   </td>
-                  <td>{row.type}</td>
-                  <td className="amount-cell">INR {row.value}</td>
+                  <td>{highlightText(row.type, searchTerm)}</td>
+                  <td className="amount-cell">INR {highlightText(row.value, searchTerm)}</td>
                   <td className="status-cell">
                     <span className={`discount-status-pill ${row.status.toLowerCase()}`}>
                       <span className="discount-status-dot" />
@@ -374,8 +489,8 @@ function DiscountList() {
                   </td>
                   <td>{renderDateTime(row.entryDate)}</td>
                   <td>{renderDateTime(row.updateDate)}</td>
-                  <td>{row.updatedBy}</td>
-                  <td className="remark-cell">{row.remark}</td>
+                  <td>{highlightText(row.updatedBy, searchTerm)}</td>
+                  <td className="remark-cell" title={row.remark}>{highlightText(row.remark, searchTerm)}</td>
                   <td>
                     <div className="actions-dropdown-container">
                       <button

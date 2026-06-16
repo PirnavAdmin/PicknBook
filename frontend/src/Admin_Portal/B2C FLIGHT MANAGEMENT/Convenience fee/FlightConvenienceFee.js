@@ -1,23 +1,124 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Eye, PencilLine, PlusCircle, Power } from "lucide-react";
+import { CheckCircle2, Eye, PencilLine, PlusCircle, Power, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import "./FlightConvenienceFee.css";
 import {
-  listConvenienceFeeRules,
-  updateConvenienceFeeRule,
+  deleteConvenienceFee,
+  getConvenienceFee,
+  updateConvenienceFeeById,
 } from "../../../services/flightBookingService";
+import "./FlightConvenienceFee.css";
+import AdminPagination from "../../../components/AdminPagination";
 
-const mapFromBackendRule = (dbRow) => {
+const FLIGHT_CONVENIENCE_FEE_STORAGE_KEY = "admin_flight_convenience_fee_records";
+
+const normalizeText = (value, fallback = "") => {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+};
+
+const toSafeNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeAmountType = (value, fallback = "Fixed") => {
+  const text = normalizeText(value, fallback);
+  const key = text.toLowerCase();
+  if (key === "percentage" || key === "percent") {
+    return "Percentage";
+  }
+  return "Fixed";
+};
+
+const normalizeStatus = (value, fallback = "Active") => {
+  const text = normalizeText(value, fallback);
+  const key = text.toLowerCase();
+  if (key.includes("inactive") || key.includes("disabled") || key.includes("deactive")) {
+    return "Inactive";
+  }
+  return "Active";
+};
+
+const normalizeFeeRecord = (record, index = 0) => {
   return {
-    id: dbRow.id,
-    amountType: dbRow.feeType === "Percentage" ? "Percentage" : "Fix",
-    value: dbRow.feeValue || 0,
-    entryDateUtc: dbRow.createdAt || "",
-    updatedAtUtc: dbRow.updatedAt || "",
-    updatedBy: dbRow.updatedBy || "Travel Admin",
-    status: dbRow.isActive ? "Active" : "Inactive",
-    tripType: dbRow.tripType || "OneWay",
+    id: normalizeText(record?.id, `${index + 1}`),
+    amountType: normalizeAmountType(record?.amountType, "Fixed"),
+    value: toSafeNumber(record?.value, 0),
+    entryDateUtc: normalizeText(record?.entryDateUtc, ""),
+    updateDateUtc: normalizeText(record?.updateDateUtc || record?.updatedAtUtc, ""),
+    updatedBy: normalizeText(record?.updatedBy, "system"),
+    status: normalizeStatus(record?.status, "Active"),
   };
+};
+
+const readFeeRecords = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(FLIGHT_CONVENIENCE_FEE_STORAGE_KEY) || "";
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map((record, index) => normalizeFeeRecord(record, index));
+  } catch {
+    return [];
+  }
+};
+
+const writeFeeRecords = (records) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      FLIGHT_CONVENIENCE_FEE_STORAGE_KEY,
+      JSON.stringify(records.map((record, index) => normalizeFeeRecord(record, index)))
+    );
+  } catch {
+    // Ignore localStorage write failures.
+  }
+};
+
+const listFlightConvenienceFees = () => {
+  const records = readFeeRecords();
+  writeFeeRecords(records);
+  return records;
+};
+
+const updateFlightConvenienceFeeById = (feeId, updates) => {
+  const normalizedId = normalizeText(feeId, "");
+  if (!normalizedId) {
+    return null;
+  }
+
+  const nowIso = new Date().toISOString();
+  const currentRecords = listFlightConvenienceFees();
+  let updatedRecord = null;
+
+  const nextRecords = currentRecords.map((record, index) => {
+    if (normalizeText(record.id, "") !== normalizedId) {
+      return record;
+    }
+
+    updatedRecord = normalizeFeeRecord(
+      {
+        ...record,
+        ...updates,
+        updatedAtUtc: nowIso,
+      },
+      index
+    );
+
+    return updatedRecord;
+  });
+
+  writeFeeRecords(nextRecords);
+  return updatedRecord;
 };
 
 const formatConvenienceDateTime = (value) => {
@@ -48,7 +149,7 @@ const inrFormatter = new Intl.NumberFormat("en-IN", {
 });
 
 function formatFeeLabel(record) {
-  const amountType = safeValue(record?.amountType, "Fix").toLowerCase();
+  const amountType = safeValue(record?.amountType, "Fixed").toLowerCase();
   const value = Number(record?.value) || 0;
 
   if (amountType === "percentage") {
@@ -67,18 +168,22 @@ export default function AdminFlightConvenienceFeePage() {
   const navigate = useNavigate();
   const [fees, setFees] = useState([]);
   const [selectedFee, setSelectedFee] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const loadFees = async () => {
-    setIsLoading(true);
     try {
-      const data = await listConvenienceFeeRules();
-      const mapped = Array.isArray(data) ? data.map(mapFromBackendRule) : [];
-      setFees(mapped);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+      const data = await getConvenienceFee();
+      if (Array.isArray(data)) {
+        setFees(data.map((item, index) => normalizeFeeRecord(item, index)));
+      } else if (data && typeof data === "object") {
+        setFees([normalizeFeeRecord(data)]);
+      } else {
+        setFees(listFlightConvenienceFees());
+      }
+    } catch (error) {
+      console.warn("Failed to load convenience fee from backend, falling back to local storage", error);
+      setFees(listFlightConvenienceFees());
     }
   };
 
@@ -87,30 +192,62 @@ export default function AdminFlightConvenienceFeePage() {
   }, []);
 
   const hasRecords = fees.length > 0;
+  const totalItems = fees.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const paginatedFees = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return fees.slice(startIndex, startIndex + itemsPerPage);
+  }, [fees, currentPage]);
 
   const rows = useMemo(() => {
-    return fees.map((item, index) => ({
+    return paginatedFees.map((item, index) => ({
       item,
-      index,
+      index: (currentPage - 1) * itemsPerPage + index,
       statusKey: resolveStatusKey(item?.status),
     }));
-  }, [fees]);
+  }, [paginatedFees, currentPage]);
 
   const handleToggleStatus = async (record) => {
-    const nextStatus = resolveStatusKey(record?.status) === "active" ? false : true;
-    const payload = {
-      tripType: record.tripType || "OneWay",
-      feeType: record.amountType === "Percentage" ? "Percentage" : "Flat",
-      feeValue: record.value,
-      isActive: nextStatus,
+    const nextStatus = resolveStatusKey(record?.status) === "active" ? "Inactive" : "Active";
+    const updatedPayload = {
+      id: record.id,
+      amountType: record.amountType || "Fixed",
+      value: record.value,
+      entryDateUtc: record.entryDateUtc || null,
+      updateDateUtc: new Date().toISOString(),
+      updatedBy: record.updatedBy || "system",
+      status: nextStatus,
     };
 
     try {
-      await updateConvenienceFeeRule(record.id, payload);
-      await loadFees();
-    } catch (err) {
-      alert(err.message || "Failed to toggle rule status.");
+      await updateConvenienceFeeById(record.id, updatedPayload);
+    } catch (e) {
+      console.warn("Failed to update status on server", e);
     }
+
+    updateFlightConvenienceFeeById(record?.id, {
+      status: nextStatus,
+      updatedBy: record?.updatedBy || "system",
+    });
+    loadFees();
+  };
+
+  const handleDeleteFee = async (record) => {
+    try {
+      await deleteConvenienceFee(record.id);
+    } catch (e) {
+      console.warn("Failed to delete convenience fee on server", e);
+    }
+
+    const nextRecords = listFlightConvenienceFees().filter(
+      (item) => normalizeText(item.id, "") !== normalizeText(record.id, "")
+    );
+    writeFeeRecords(nextRecords);
+    setSelectedFee((previous) =>
+      normalizeText(previous?.id, "") === normalizeText(record.id, "") ? null : previous
+    );
+    loadFees();
   };
 
   return (
@@ -137,16 +274,14 @@ export default function AdminFlightConvenienceFeePage() {
           <span>SN.</span>
           <span>Amount Type</span>
           <span>Value</span>
-          <span>Trip Type</span>
           <span>Entry Date</span>
+          <span>Update Date</span>
           <span>Updated By</span>
           <span>Status</span>
           <span>Action</span>
         </header>
 
-        {isLoading ? (
-          <div className="admin-table-empty">Loading records...</div>
-        ) : hasRecords ? (
+        {hasRecords ? (
           <div className="admin-flight-fee-table-body">
             {rows.map(({ item, index, statusKey }) => (
               <article key={item.id} className="admin-flight-fee-table-row">
@@ -155,7 +290,7 @@ export default function AdminFlightConvenienceFeePage() {
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{safeValue(item.amountType, "Fix")}</strong>
+                  <strong>{safeValue(item.amountType, "Fixed")}</strong>
                 </div>
 
                 <div className="admin-flight-fee-cell">
@@ -163,11 +298,11 @@ export default function AdminFlightConvenienceFeePage() {
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{safeValue(item.tripType, "OneWay")}</strong>
+                  <strong>{formatConvenienceDateTime(item.entryDateUtc)}</strong>
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{formatConvenienceDateTime(item.entryDateUtc)}</strong>
+                  <strong>{formatConvenienceDateTime(item.updateDateUtc)}</strong>
                 </div>
 
                 <div className="admin-flight-fee-cell">
@@ -212,6 +347,14 @@ export default function AdminFlightConvenienceFeePage() {
                   >
                     <Power size={15} />
                   </button>
+                  <button
+                    type="button"
+                    className="admin-flight-fee-icon-btn delete"
+                    aria-label={`Delete convenience fee ${item.id}`}
+                    onClick={() => handleDeleteFee(item)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </article>
             ))}
@@ -219,6 +362,14 @@ export default function AdminFlightConvenienceFeePage() {
         ) : (
           <div className="admin-table-empty">not found any record.</div>
         )}
+
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="convenience fees"
+        />
       </section>
 
       {selectedFee ? (
@@ -257,15 +408,11 @@ export default function AdminFlightConvenienceFeePage() {
               </div>
               <div>
                 <span>Amount Type</span>
-                <strong>{safeValue(selectedFee.amountType, "Fix")}</strong>
+                <strong>{safeValue(selectedFee.amountType, "Fixed")}</strong>
               </div>
               <div>
                 <span>Value</span>
                 <strong>{formatFeeLabel(selectedFee)}</strong>
-              </div>
-              <div>
-                <span>Trip Type</span>
-                <strong>{safeValue(selectedFee.tripType, "OneWay")}</strong>
               </div>
               <div>
                 <span>Entry Date</span>
@@ -273,7 +420,7 @@ export default function AdminFlightConvenienceFeePage() {
               </div>
               <div>
                 <span>Update Date</span>
-                <strong>{formatConvenienceDateTime(selectedFee.updatedAtUtc)}</strong>
+                <strong>{formatConvenienceDateTime(selectedFee.updateDateUtc)}</strong>
               </div>
               <div>
                 <span>Updated By</span>
@@ -290,5 +437,4 @@ export default function AdminFlightConvenienceFeePage() {
     </section>
   );
 }
-
 

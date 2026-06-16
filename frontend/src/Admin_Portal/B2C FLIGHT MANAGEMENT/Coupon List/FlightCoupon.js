@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { Check, Download, List, Pencil, Trash2, X } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { Check, Download, Eye, List, Pencil, Trash2, X } from "lucide-react";
 import "./FlightCoupon.css";
 import "../Used Coupon List/FlightUsedCoupon.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { formatCouponDate, formatCouponDateTime } from "../../../utils/adminPortalUtils";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import {
@@ -53,18 +54,26 @@ export default function AdminFlightCouponListPage() {
   const [editCoupon, setEditCoupon] = useState(null);
   const [editError, setEditError] = useState("");
   const [deleteCoupon, setDeleteCoupon] = useState(null);
+  const [viewCoupon, setViewCoupon] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalItems = coupons.length;
+  const paginatedCoupons = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return coupons.slice(startIndex, startIndex + itemsPerPage);
+  }, [coupons, currentPage]);
   const colWidths = [
-    "4%",
-    "4%",
+    "5%",
+    "6%",
     "8%",
-    "7%",
-    "12%",
+    "8%",
+    "11%",
     "9%",
     "9%",
-    "7%",
-    "8%",
-    "12%",
     "10%",
+    "7%",
+    "10%",
+    "7%",
     "10%",
   ];
   const headers = [
@@ -578,6 +587,85 @@ export default function AdminFlightCouponListPage() {
         </div>
       )}
 
+      {viewCoupon && (
+        <div className="admin-markup-coupon-backdrop" onClick={() => setViewCoupon(null)}>
+          <section
+            className="admin-markup-coupon-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="View coupon details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flight-markup-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+              <h2 style={{ margin: 0 }}>View Coupon Details</h2>
+              <button
+                type="button"
+                className="flight-markup-modal-close"
+                onClick={() => setViewCoupon(null)}
+                aria-label="Close view dialog"
+                style={{ border: '1px solid var(--border)', background: 'var(--surface-soft)', color: 'var(--text-primary)', borderRadius: '10px', padding: '4px 8px', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="admin-markup-modal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '14px' }}>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>ID</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.id}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Coupon Code</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.couponCode}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>CPN Value</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{`INR ${viewCoupon.value}`}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>CPN Type</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.cpnType}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Start Date</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCouponDate(viewCoupon.startDate)}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Expiry Date</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCouponDate(viewCoupon.expiryDate)}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Use Limit</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.useLimit}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Status</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.status === "active" ? "Active" : "Inactive"}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Insert Date</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCouponDateTime(viewCoupon.entryDate)}</strong>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Remark</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.remark || "--"}</strong>
+              </div>
+            </div>
+
+            <div className="admin-markup-modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setViewCoupon(null)}
+                style={{ border: '1px solid var(--border)', padding: '8px 14px', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', background: 'var(--surface-soft)', color: 'var(--text-primary)' }}
+              >
+                Close
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       <section className="flight-markup-table-wrap">
         <div className="flight-markup-table-scroll">
           <table className="flight-markup-table">
@@ -604,16 +692,16 @@ export default function AdminFlightCouponListPage() {
                     <span className="flight-markup-empty">Loading coupons from backend...</span>
                   </td>
                 </tr>
-              ) : coupons.length === 0 ? (
+              ) : paginatedCoupons.length === 0 ? (
                 <tr>
                   <td colSpan={headers.length} className="flight-markup-empty-cell">
                     <span className="flight-markup-empty">No Record Found...</span>
                   </td>
                 </tr>
               ) : (
-                coupons.map((coupon, index) => (
+                paginatedCoupons.map((coupon, index) => (
                   <tr key={coupon.id}>
-                    <td>{index + 1}</td>
+                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td>{coupon.id}</td>
                     <td>{`INR ${Number(coupon.value) || 0}`}</td>
                     <td>{coupon.cpnType}</td>
@@ -632,6 +720,14 @@ export default function AdminFlightCouponListPage() {
                     <td>{coupon.remark || "--"}</td>
                     <td>
                       <div className="flight-markup-row-actions" aria-label="Coupon actions">
+                        <button
+                          type="button"
+                          title="View"
+                          aria-label={`View coupon ${coupon.id}`}
+                          onClick={() => setViewCoupon(coupon)}
+                        >
+                          <Eye size={14} />
+                        </button>
                         <button
                           type="button"
                           title="Edit"
@@ -657,6 +753,13 @@ export default function AdminFlightCouponListPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="coupons"
+        />
       </section>
     </section>
   );

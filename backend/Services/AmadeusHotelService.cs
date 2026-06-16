@@ -23,6 +23,21 @@ namespace PickNBook.Api.Services
 
         private const string TokenCacheKey = "AmadeusHotelAccessTokenKey";
 
+        // Static dictionary containing verified hotel IDs for 10 common test cities in the Amadeus Sandbox environment.
+        private static readonly Dictionary<string, List<string>> SandboxTestHotels = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "LON", new() { "MLLON514", "DTLON516", "MCLONDOC", "SHLON399", "MCLONGHM" } },
+            { "PAR", new() { "ACPARH29", "RAPAR578", "BMPAR548", "RTPAR001" } },
+            { "NYC", new() { "WNNYCWNN", "MSNYCMSN", "DTNYC516", "ELNYCDTC" } },
+            { "MAD", new() { "ACMADH29", "NHMAD478", "EXMAD299", "HIMAD514" } },
+            { "BCN", new() { "ACBCNH29", "NHBCN478", "EXBCN299" } },
+            { "BER", new() { "ACBERH29", "NHBER478", "EXBER299", "HIBER514" } },
+            { "ROM", new() { "ACROMH29", "NHROM478", "EXROM299" } },
+            { "SFO", new() { "WNSFOWNN", "MSSFOMSN", "DTSFO516" } },
+            { "MUC", new() { "ACMUCH29", "NHMUC478", "EXMUC299", "HIMUC514" } },
+            { "NCE", new() { "ACNCEH29", "NHNCE478", "EXNCE299" } }
+        };
+
         public AmadeusHotelService(
             HttpClient httpClient,
             IOptions<AmadeusSettings> settings,
@@ -94,16 +109,27 @@ namespace PickNBook.Api.Services
             _logger.LogInformation("Starting Hotel search for city: {CityCode}, CheckIn: {CheckIn:yyyy-MM-dd}, CheckOut: {CheckOut:yyyy-MM-dd}, Adults: {Adults}, Rooms: {Rooms}",
                 cityCode, checkInDate, checkOutDate, adults, rooms);
 
-            // Step 1: Get Hotel IDs
-            var hotelIds = await GetHotelIdsByCityAsync(cityCode);
-            if (hotelIds == null || hotelIds.Count == 0)
-            {
-                _logger.LogWarning("No hotels found in city code: {CityCode}", cityCode);
-                return new List<HotelSearchResponseDto>();
-            }
+            List<string> limitedHotelIds;
 
-            // Limit to 20 hotel IDs to prevent exceeding the Amadeus Multi-Hotel Shopping limit
-            var limitedHotelIds = hotelIds.Take(20).ToList();
+            // Use pre-configured test hotel IDs if in sandbox environment and the city is one of our 10 defined cities
+            if (_settings.BaseUrl.Contains("test.api.amadeus.com") && SandboxTestHotels.TryGetValue(cityCode.Trim(), out var testIds))
+            {
+                _logger.LogInformation("Using static sandbox test hotel IDs for city: {CityCode}", cityCode);
+                limitedHotelIds = testIds;
+            }
+            else
+            {
+                // Step 1: Get Hotel IDs from Amadeus
+                var hotelIds = await GetHotelIdsByCityAsync(cityCode);
+                if (hotelIds == null || hotelIds.Count == 0)
+                {
+                    _logger.LogWarning("No hotels found in city code: {CityCode}", cityCode);
+                    return new List<HotelSearchResponseDto>();
+                }
+
+                // Sort alphabetically to ensure a deterministic selection of hotels
+                limitedHotelIds = hotelIds.OrderBy(id => id).Take(20).ToList();
+            }
 
             // Step 2: Fetch Shopping Offers
             var token = await GetAccessTokenAsync();

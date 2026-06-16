@@ -1,5 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Info, Loader2, Luggage, Plane, Utensils } from "lucide-react";
+import {
+  Armchair,
+  CircleDot,
+  Clock3,
+  Info,
+  Loader2,
+  Luggage,
+  Plane,
+  Utensils,
+  Check,
+  X,
+  ShieldCheck,
+  User,
+  ArrowRight
+} from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
 import { getFlightSeatMap } from "../../services/flightBookingService";
@@ -270,6 +284,18 @@ export default function FlightSeatSelectionPage() {
   const [seatMapError, setSeatMapError] = useState("");
   const [isSeatMapLoading, setIsSeatMapLoading] = useState(false);
 
+  const [activeTab, setActiveTab] = useState("seat");
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+
+  const segments = useMemo(() => {
+    const src = flight?.sourceCode || searchContext?.source || "DEL";
+    const dest = flight?.destinationCode || searchContext?.destination || "BOM";
+    if (flight && Number(flight.stops) > 0) {
+      return [`${src}-DEL`, `DEL-${dest}`];
+    }
+    return [`${src}-${dest}`];
+  }, [flight, searchContext]);
+
   useEffect(() => {
     if (!flight) {
       return;
@@ -393,17 +419,29 @@ export default function FlightSeatSelectionPage() {
     [selectedSeatLabels, seatsByLabel]
   );
 
-  const baseFareTotal = (Number(flight?.fare) || 0) * travellers.seatRequired;
+  const previousFareSummary = flowState.fareSummary || {};
+  const baseFareTotal =
+    Number(previousFareSummary.baseFare || 0) ||
+    (Number(flight?.fare) || 0) * travellers.seatRequired;
   const seatSurcharge = selectedSeats.reduce(
     (sum, seat) => sum + getSeatSurcharge(seat),
     0
   );
   const mealFee = mealPreference === "premium" ? 450 : mealPreference === "lite" ? 180 : 0;
   const baggageFee = baggagePlan === "30kg" ? 950 : baggagePlan === "40kg" ? 1850 : 0;
-  const subtotal = baseFareTotal + seatSurcharge + mealFee + baggageFee;
-  const tax = Math.round(subtotal * 0.12);
-  const convenienceFee = 329;
-  const totalFare = subtotal + tax + convenienceFee;
+  const tax = Number(previousFareSummary.tax || 0);
+  const convenienceFee = Number(previousFareSummary.convenienceFee || 0);
+  const discount = Number(previousFareSummary.discount || flowState.couponDiscount || 0);
+  const assuredFee = Number(previousFareSummary.assuredFee || 0);
+  const totalFare =
+    baseFareTotal +
+    seatSurcharge +
+    mealFee +
+    baggageFee +
+    tax +
+    convenienceFee +
+    assuredFee -
+    discount;
 
   if (!flight) {
     return (
@@ -445,16 +483,25 @@ export default function FlightSeatSelectionPage() {
   const handleContinue = () => {
     if (selectedSeats.length !== travellers.seatRequired) {
       setSelectionError(
-        `Select exactly ${travellers.seatRequired} seat(s) to continue to passenger details.`
+        `Select exactly ${travellers.seatRequired} seat(s) to continue to payment.`
       );
       return;
     }
 
+    const passengersWithSeats = Array.isArray(flowState.passengers)
+      ? flowState.passengers.map((passenger, index) => ({
+          ...passenger,
+          seatLabel: selectedSeats[index]?.label || passenger.seatLabel || "",
+        }))
+      : [];
+
     const flowPayload = {
+      ...flowState,
       flight,
       searchContext,
       selectedSeatLabels,
       selectedSeats,
+      passengers: passengersWithSeats,
       mealPreference,
       baggagePlan,
       fareSummary: {
@@ -464,151 +511,326 @@ export default function FlightSeatSelectionPage() {
         baggageFee,
         tax,
         convenienceFee,
+        assuredFee,
+        discount,
         totalFare,
       },
+      payableAmount: totalFare,
     };
 
     writeFlightBookingFlowState(flowPayload);
-    navigate("/flight/passenger-details", { state: flowPayload });
+    navigate("/flight/payment", { state: flowPayload });
   };
 
   return (
     <main className="flight-flow-page">
-      <div className="flight-flow-shell">
-        <section className="flight-flow-summary">
-          <div className="flight-summary-route">
-            <article>
-              <small>From</small>
-              <strong>{flight.sourceCode || searchContext?.source || "--"}</strong>
-              <span>{searchContext?.source || "--"}</span>
-            </article>
-            <article>
-              <small>To</small>
-              <strong>{flight.destinationCode || searchContext?.destination || "--"}</strong>
-              <span>{searchContext?.destination || "--"}</span>
-            </article>
+      {/* ── STEPPER PROGRESS HEADER ── */}
+      <div className="flight-stepper-header">
+        <div className="step-item completed">
+          <span className="step-circle">✓</span>
+          <span>Flight Selection</span>
+        </div>
+        <div className="step-line completed"></div>
+        <div className="step-item completed">
+          <span className="step-circle">✓</span>
+          <span>Review & Traveller Details</span>
+        </div>
+        <div className="step-line completed"></div>
+        <div className="step-item active">
+          <span className="step-circle">3</span>
+          <span>Add-ons</span>
+        </div>
+        <div className="step-line"></div>
+        <div className="step-item">
+          <span className="step-circle">4</span>
+          <span>Payment</span>
+        </div>
+      </div>
+
+      <div className="flight-booking-container">
+        {/* ── LEFT COLUMN SIDEBAR ── */}
+        <aside className="flight-checkout-sidebar">
+          {/* Your Flight Details */}
+          <div className="sidebar-card your-flight-card">
+            <h3 className="sidebar-card-title">Your Flight</h3>
+            <div className="flight-segment">
+              <div className="flight-city-info">
+                <span className="flight-city-code">{flight.sourceCode || "--"}</span>
+                <span className="flight-city-name">{searchContext?.source || "--"}</span>
+              </div>
+              <div className="flight-stops-indicator">
+                <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
+                <div className="stops-line"></div>
+              </div>
+              <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                <span className="flight-city-code">{flight.destinationCode || "--"}</span>
+                <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+              </div>
+            </div>
+            <div className="flight-meta-info">
+              <span>{flight.airlineName} ({flight.flightNumber})</span>
+              <span className="flight-date-badge">{flight.departDate || "--"}</span>
+            </div>
           </div>
 
-          <div className="flight-summary-meta">
-            <div>
-              <span>Flight</span>
-              <strong>{flight.airlineName} ({flight.flightNumber})</strong>
+          {/* Travellers Details */}
+          {flowState.passengers && flowState.passengers.length > 0 && (
+            <div className="sidebar-card travellers-card">
+              <h3 className="sidebar-card-title">Travellers</h3>
+              {flowState.passengers.map((p, idx) => (
+                <div key={p.id} className="traveller-item">
+                  {idx + 1}. {p.title} {p.firstName} {p.lastName}
+                </div>
+              ))}
             </div>
-            <div>
-              <span>Cabin</span>
-              <strong>{travelClass}</strong>
+          )}
+
+          {/* Fare Summary */}
+          <div className="sidebar-card fare-summary-card">
+            <h3 className="sidebar-card-title">Fare Summary</h3>
+            <div className="fare-row">
+              <span>Base Fare</span>
+              <span>₹ {baseFareTotal.toLocaleString("en-IN")}</span>
             </div>
-            <div>
-              <span>Seats Required</span>
-              <strong>{travellers.seatRequired}</strong>
+            {seatSurcharge > 0 && (
+              <div className="fare-row">
+                <span>Seat Surcharge</span>
+                <span>₹ {seatSurcharge.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {(mealFee + baggageFee) > 0 && (
+              <div className="fare-row">
+                <span>Meals & Baggage</span>
+                <span>₹ {(mealFee + baggageFee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {tax > 0 && (
+              <div className="fare-row">
+                <span>Taxes & Fees</span>
+                <span>₹ {tax.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {convenienceFee > 0 && (
+              <div className="fare-row">
+                <span>Convenience Fee</span>
+                <span>₹ {convenienceFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {assuredFee > 0 && (
+              <div className="fare-row">
+                <span>PickNBook Fee</span>
+                <span>₹ {assuredFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {discount > 0 && (
+              <div className="fare-row">
+                <span>Instant Discount</span>
+                <span className="discount-value">-₹ {discount.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            <div className="fare-row total-amount-row">
+              <span>Total Amount</span>
+              <span>₹ {totalFare.toLocaleString("en-IN")}</span>
             </div>
           </div>
-        </section>
+        </aside>
 
-        <section className="flight-seat-layout">
-          <article className="flight-cabin-card">
-            <header className="flight-card-head">
+        {/* ── RIGHT COLUMN MAIN CONTENT ── */}
+        <section className="flight-checkout-main">
+          {/* Seat Layout Main Card */}
+          <div className="flight-main-card">
+            <div className="seat-tabs-container">
+              <span
+                className={`seat-tab ${activeTab === "seat" ? "active" : ""}`}
+                onClick={() => setActiveTab("seat")}
+              >
+                Seat
+              </span>
+              <span
+                className={`seat-tab ${activeTab === "insurance" ? "active" : ""}`}
+                onClick={() => setActiveTab("insurance")}
+              >
+                Insurance {flowState.assuredSecured && " (Secured)"}
+              </span>
+            </div>
+
+            {activeTab === "seat" ? (
               <div>
-                <h2>{cabinData.zoneName} Seat Map</h2>
-                <span>Choose your preferred seat positions</span>
-              </div>
-              <Plane size={18} />
-            </header>
+                {/* Segment Pills */}
+                <div className="segment-pills">
+                  {segments.map((seg, idx) => (
+                    <button
+                      key={seg}
+                      className={`segment-pill ${activeSegmentIndex === idx ? "active" : ""}`}
+                      onClick={() => setActiveSegmentIndex(idx)}
+                    >
+                      {seg}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="flight-cabin-body">
-              {isSeatMapLoading && (
-                <p className="flight-seat-hint">
-                  <Loader2 size={14} className="spin" /> Loading seat map...
-                </p>
-              )}
+                {/* Seat Category Legends */}
+                <div className="seat-legend-row">
+                  <div className="legend-badge">
+                    <span className="legend-color free"></span>
+                    <span>Free</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-color mid"></span>
+                    <span>₹350 - ₹500</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-color high"></span>
+                    <span>₹1200 - ₹1300</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-color" style={{ backgroundColor: "#d6dee9" }}></span>
+                    <span>Booked</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-color" style={{ backgroundColor: "#f4f8fd", borderColor: "#2f5e9c" }}></span>
+                    <span>Selected</span>
+                  </div>
+                </div>
 
-              {seatMapError && (
-                <p className="flight-flow-error">
-                  <Info size={14} />
-                  {seatMapError}
-                </p>
-              )}
+                {/* Seat Grid Layout */}
+                <div className="flight-cabin-body" style={{ padding: 0 }}>
+                  {isSeatMapLoading && (
+                    <p className="flight-seat-hint">
+                      <Loader2 size={14} className="spin" /> Loading seat map...
+                    </p>
+                  )}
 
-              <div className="flight-seat-legend">
-                <span>Available</span>
-                <span className="booked">Booked</span>
-                <span className="extra">Extra Legroom</span>
-                <span className="selected">Selected</span>
-              </div>
+                  {seatMapError && (
+                    <p className="flight-flow-error">
+                      <Info size={14} />
+                      {seatMapError}
+                    </p>
+                  )}
 
-              <div className="flight-seat-grid">
-                {cabinData.rows.map((rowNumber) => {
-                  const rowLayoutClass =
-                    cabinData.seatLetters.length === 6 ? "layout-6" : "layout-4";
-                  const rowElements = [];
-
-                  rowElements.push(
-                    <span key={`row-${rowNumber}`} className="row-label">
-                      {rowNumber}
-                    </span>
-                  );
-
-                    cabinData.seatLetters.forEach((seatLetter, index) => {
-                      if (index === Math.ceil(cabinData.seatLetters.length / 2)) {
-                        rowElements.push(
-                          <span key={`aisle-${rowNumber}`} className="seat-aisle" />
-                        );
-                      }
-
-                      const seat = seatsByLabel.get(`${rowNumber}${seatLetter}`);
-                      const isDisabled = !seat || seat?.status === "booked";
-                      const isSelected = selectedSeatLabels.includes(seat?.label);
+                  <div className="flight-seat-grid">
+                    {cabinData.rows.map((rowNumber) => {
+                      const rowLayoutClass =
+                        cabinData.seatLetters.length === 6 ? "layout-6" : "layout-4";
+                      const rowElements = [];
 
                       rowElements.push(
-                        <button
-                          key={seat?.id || `${rowNumber}-${seatLetter}`}
-                          type="button"
-                          className={`flight-seat status-${seat?.status || "available"} ${
-                            isSelected ? "status-selected" : ""
-                          }`}
-                          disabled={isDisabled}
-                          onClick={() => toggleSeat(seat)}
-                        >
-                          {seatLetter}
-                        </button>
+                        <span key={`row-${rowNumber}`} className="row-label">
+                          {rowNumber}
+                        </span>
                       );
-                    });
 
-                  return (
-                    <div className={`flight-seat-row ${rowLayoutClass}`} key={`row-wrap-${rowNumber}`}>
-                      {rowElements}
-                    </div>
-                  );
-                })}
+                      cabinData.seatLetters.forEach((seatLetter, index) => {
+                        if (index === Math.ceil(cabinData.seatLetters.length / 2)) {
+                          rowElements.push(
+                            <span key={`aisle-${rowNumber}`} className="seat-aisle" />
+                          );
+                        }
+
+                        const seat = seatsByLabel.get(`${rowNumber}${seatLetter}`);
+                        const isDisabled = !seat || seat?.status === "booked";
+                        const isSelected = selectedSeatLabels.includes(seat?.label);
+
+                        let seatCategoryClass = "status-available";
+                        if (seat?.status === "booked") {
+                          seatCategoryClass = "status-booked";
+                        } else if (seat?.status === "extra") {
+                          seatCategoryClass = "status-extra";
+                        }
+
+                        rowElements.push(
+                          <button
+                            key={seat?.id || `${rowNumber}-${seatLetter}`}
+                            type="button"
+                            className={`flight-seat ${seatCategoryClass} ${
+                              isSelected ? "status-selected" : ""
+                            }`}
+                            disabled={isDisabled}
+                            onClick={() => toggleSeat(seat)}
+                            style={{
+                              backgroundColor: isSelected
+                                ? "#f4f8fd"
+                                : seat?.status === "booked"
+                                ? "#d6dee9"
+                                : seat?.status === "extra"
+                                ? "#fee2e2"
+                                : "#d1fae5",
+                              borderColor: isSelected
+                                ? "#2f5e9c"
+                                : seat?.status === "booked"
+                                ? "#abbdd3"
+                                : seat?.status === "extra"
+                                ? "#fca5a5"
+                                : "#a7f3d0",
+                              color: isSelected ? "#163865" : "#1e293b"
+                            }}
+                          >
+                            {seatLetter}
+                          </button>
+                        );
+                      });
+
+                      return (
+                        <div className={`flight-seat-row ${rowLayoutClass}`} key={`row-wrap-${rowNumber}`}>
+                          {rowElements}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="flight-seat-hint" style={{ marginTop: 12 }}>
+                    Please select {travellers.seatRequired} seat(s). Extra legroom seats have added charges.
+                  </p>
+
+                  {selectionError && (
+                    <p className="flight-flow-error" style={{ color: "var(--danger-color)", margin: "8px 0" }}>
+                      <Info size={14} />
+                      {selectionError}
+                    </p>
+                  )}
+                </div>
               </div>
+            ) : (
+              // Insurance Tab Content
+              <div style={{ padding: "12px 0" }}>
+                <div
+                  style={{
+                    border: "1px solid var(--border-color)",
+                    borderRadius: 12,
+                    padding: 20,
+                    backgroundColor: "#f8fafc",
+                    display: "flex",
+                    gap: 16,
+                    alignItems: "flex-start"
+                  }}
+                >
+                  <ShieldCheck size={36} style={{ color: "var(--secondary-color)", flexShrink: 0 }} />
+                  <div>
+                    <h3 style={{ margin: "0 0 6px 0", fontSize: "1rem" }}>
+                      {flowState.assuredSecured ? "Your booking is protected" : "Add protection to your booking"}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                      {flowState.assuredSecured
+                        ? "You have secured full refunds on cancellations under PickNBook protection."
+                        : "Secure full refunds, instant payouts and 24x7 support by opting in. Go back to traveller details to secure."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-              <p className="flight-seat-hint">
-                Select {travellers.seatRequired} seat(s). Extra-legroom seats have added charges.
-              </p>
-
-              {selectionError && (
-                <p className="flight-flow-error">
-                  <Info size={14} />
-                  {selectionError}
-                </p>
-              )}
-            </div>
-          </article>
-
-          <aside className="flight-side-card">
-            <h3>Seat Selection Summary</h3>
-
-            <div className="flight-selected-seats">
-              <p>Selected Seats</p>
-              <strong>{selectedSeats.length > 0 ? selectedSeats.map((seat) => seat.label).join(", ") : "No seat selected"}</strong>
-            </div>
-
-            <div className="flight-options-group">
-              <label>
-                <span>
-                  <Utensils size={14} /> Meal Preference
-                </span>
+          {/* Meals & Baggage Selection Card */}
+          <div className="flight-main-card">
+            <h2 className="flight-main-card-title">
+              <Utensils size={20} className="header-icon" />
+              Add-on Services
+            </h2>
+            <div className="form-grid-2">
+              <div className="input-group">
+                <label>Meal Preference</label>
                 <select
+                  className="input-control"
                   value={mealPreference}
                   onChange={(event) => setMealPreference(event.target.value)}
                 >
@@ -616,13 +838,12 @@ export default function FlightSeatSelectionPage() {
                   <option value="lite">Lite Meal (+INR 180)</option>
                   <option value="premium">Premium Meal (+INR 450)</option>
                 </select>
-              </label>
+              </div>
 
-              <label>
-                <span>
-                  <Luggage size={14} /> Checked Baggage
-                </span>
+              <div className="input-group">
+                <label>Checked Baggage Allowance</label>
                 <select
+                  className="input-control"
                   value={baggagePlan}
                   onChange={(event) => setBaggagePlan(event.target.value)}
                 >
@@ -630,46 +851,27 @@ export default function FlightSeatSelectionPage() {
                   <option value="30kg">30kg (+INR 950)</option>
                   <option value="40kg">40kg (+INR 1850)</option>
                 </select>
-              </label>
-            </div>
-
-            <div className="flight-fare-list">
-              <div>
-                <span>Base Fare</span>
-                <strong>{formatCurrency(baseFareTotal)}</strong>
-              </div>
-              <div>
-                <span>Seat Charges</span>
-                <strong>{formatCurrency(seatSurcharge)}</strong>
-              </div>
-              <div>
-                <span>Meal + Baggage</span>
-                <strong>{formatCurrency(mealFee + baggageFee)}</strong>
-              </div>
-              <div>
-                <span>Tax</span>
-                <strong>{formatCurrency(tax)}</strong>
-              </div>
-              <div>
-                <span>Convenience Fee</span>
-                <strong>{formatCurrency(convenienceFee)}</strong>
-              </div>
-              <div className="total">
-                <span>Total</span>
-                <strong>{formatCurrency(totalFare)}</strong>
               </div>
             </div>
-
-            <button
-              type="button"
-              className="flight-primary-btn"
-              onClick={handleContinue}
-              disabled={selectedSeats.length !== travellers.seatRequired}
-            >
-              Continue to Passenger Details
-            </button>
-          </aside>
+          </div>
         </section>
+      </div>
+
+      {/* ── BOTTOM STICKY ACTION BAR ── */}
+      <div className="bottom-action-bar">
+        <div className="bottom-price-info">
+          <span className="bottom-price-label">Total Fare</span>
+          <span className="bottom-price-amount">₹ {totalFare.toLocaleString("en-IN")}</span>
+        </div>
+
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={handleContinue}
+          disabled={selectedSeats.length !== travellers.seatRequired}
+        >
+          Continue to Payment <ArrowRight size={16} />
+        </button>
       </div>
     </main>
   );

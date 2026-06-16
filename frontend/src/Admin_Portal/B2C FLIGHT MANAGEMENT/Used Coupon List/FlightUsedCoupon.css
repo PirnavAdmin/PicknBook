@@ -30,7 +30,11 @@
 }
 
 .flight-markup-title-underline {
-  display: none !important;
+  height: 2px;
+  width: 90px;
+  background: var(--primary);
+  border-radius: 999px;
+  margin-top: 8px;
 }
 
 .flight-markup-actions {
@@ -41,41 +45,31 @@
 }
 
 .flight-markup-action-btn {
-  min-height: 36px;
-  border: 0 !important;
-  border-radius: 10px !important;
-  padding: 0 16px !important;
-  color: #fff !important;
-  font-size: 0.84rem !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04) !important;
-  transition: all 0.2s ease !important;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-
-.flight-markup-action-btn:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.08) !important;
-  filter: brightness(1.05) !important;
-  color: #ffffff !important;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .flight-markup-action-btn.primary {
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
-}
-
-.flight-markup-action-btn.secondary {
-  background: linear-gradient(135deg, var(--admin-success), var(--admin-success)) !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
+  border-color: var(--primary);
 }
 
 .flight-markup-table-wrap {
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -88,90 +82,37 @@
 
 .flight-markup-table {
   width: 100%;
-  border-collapse: separate !important;
-  border-spacing: 0 10px !important;
-  table-layout: fixed !important;
+  border-collapse: collapse;
+  font-size: 11px !important;
+  table-layout: fixed;
   min-width: 100% !important;
-  font-size: 0.82rem !important;
 }
 
-.flight-markup-table thead tr {
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
+.flight-markup-table thead {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
 }
 
-.flight-markup-table th {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  font-size: 0.73rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0px !important;
-  padding: 10px 2px !important;
-  border: none !important;
-  text-align: center !important;
-  white-space: normal !important;
-  line-height: 1.25 !important;
-}
-
-.flight-markup-table th:first-child {
-  border-top-left-radius: 12px !important;
-  border-bottom-left-radius: 12px !important;
-}
-
-.flight-markup-table th:last-child {
-  border-top-right-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
-}
-
+.flight-markup-table th,
 .flight-markup-table td {
-  border-top: 1px solid var(--admin-border) !important;
-  border-bottom: 1px solid var(--admin-border) !important;
-  background: var(--admin-surface) !important;
-  padding: 10px 2px !important;
-  color: var(--admin-text) !important;
-  font-size: 0.75rem !important;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
   text-align: center !important;
   vertical-align: middle !important;
-  white-space: normal !important;
-  word-break: break-word !important;
-}
-
-.flight-markup-table td:first-child {
-  border-left: 1px solid var(--admin-border) !important;
-  border-top-left-radius: 12px !important;
-  border-bottom-left-radius: 12px !important;
-}
-
-.flight-markup-table td:last-child {
-  border-right: 1px solid var(--admin-border) !important;
-  border-top-right-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
-}
-
-.flight-markup-table tbody tr {
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-.flight-markup-table tbody tr:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
-}
-
-.flight-markup-table tbody tr:hover td {
-  border-color: rgba(30, 117, 255, 0.2) !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .flight-markup-th-pill {
-  background: transparent !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #ffffff !important;
 }
 
 .flight-markup-empty-cell {
@@ -346,12 +287,30 @@
 .admin-markup-coupon-form input,
 .admin-markup-coupon-form select,
 .admin-markup-coupon-form textarea {
-  border: 1px solid var(--border);
+  border: 1px solid #000000 !important;
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 0.85rem;
   background: var(--panel);
   color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.admin-markup-form-grid input:hover,
+.admin-markup-form-grid select:hover,
+.admin-markup-form-grid textarea:hover,
+.admin-markup-coupon-form input:hover,
+.admin-markup-coupon-form select:hover,
+.admin-markup-coupon-form textarea:hover,
+.admin-markup-form-grid input:focus,
+.admin-markup-form-grid select:focus,
+.admin-markup-form-grid textarea:focus,
+.admin-markup-coupon-form input:focus,
+.admin-markup-coupon-form select:focus,
+.admin-markup-coupon-form textarea:focus {
+  border-color: #d93025 !important;
+  box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+  outline: none !important;
 }
 
 .admin-markup-form-grid textarea,
@@ -406,4 +365,264 @@
 .admin-markup-delete-copy {
   margin: 16px 0 0;
   color: var(--text-secondary);
+}
+
+/* Filter Panel & Grid */
+.flight-used-coupon-filter-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 8px;
+}
+
+.flight-used-coupon-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.flight-used-coupon-filter-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.flight-used-coupon-filter-grid select {
+  border: 1px solid #000000 !important;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  background: var(--panel);
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.flight-used-coupon-filter-grid select:hover {
+  border-color: #d93025 !important;
+}
+
+.flight-used-coupon-filter-grid select:focus {
+  border-color: #d93025 !important;
+  box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15) !important;
+}
+
+/* Clear filter button disabled state styling */
+.flight-markup-action-btn.clear-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  color: #a0aec0;
+}
+
+/* Dark Theme Overrides for Filter Panel and Inputs */
+.admin-shell.dark-theme .flight-used-coupon-filter-panel {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.admin-shell.dark-theme .flight-used-coupon-filter-grid label {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select:hover {
+  border-color: #3b82f6 !important;
+}
+
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Active filter button states in dark theme */
+.admin-shell.dark-theme .flight-markup-action-btn.filter-btn.active {
+  background: linear-gradient(135deg, #1e75ff, #0052d9) !important;
+  color: #ffffff !important;
+  border-color: #1e75ff !important;
+}
+
+.admin-shell.dark-theme .flight-markup-action-btn.filter-btn {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-action-btn.filter-btn:hover:not(.active) {
+  background: #334155 !important;
+  border-color: #3b82f6 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-action-btn.clear-btn {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-action-btn.clear-btn:hover:not(:disabled) {
+  background: #334155 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+.admin-shell.dark-theme .flight-markup-action-btn.clear-btn:disabled {
+  opacity: 0.6 !important;
+  background: #1e293b !important;
+  color: #64748b !important;
+  border-color: #334155 !important;
+}
+
+/* Dropdown arrow visibility adjustment in dark theme */
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 16px !important;
+  padding-right: 32px !important;
+}
+
+/* Table Header Non-Ellipsis Overrides */
+.flight-markup-table th {
+  text-overflow: clip !important;
+  overflow: visible !important;
+}
+
+.flight-markup-th-pill {
+  white-space: nowrap !important;
+}
+
+/* Disabled Inputs Styling in Dark Theme */
+.admin-shell.dark-theme .admin-markup-form-grid input:disabled {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+  cursor: not-allowed !important;
+  opacity: 0.85 !important;
+}
+
+/* Custom styling for options inside select in light theme */
+.flight-used-coupon-filter-grid select {
+  border: 1px solid #000000 !important;
+  accent-color: #d93025 !important;
+}
+
+.flight-used-coupon-filter-grid select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.flight-used-coupon-filter-grid select option:hover,
+.flight-used-coupon-filter-grid select option:focus,
+.flight-used-coupon-filter-grid select option:checked {
+  background-color: #fee2e2 !important;
+  color: #d93025 !important;
+  box-shadow: 0 0 10px 100px #fee2e2 inset !important;
+  -webkit-text-fill-color: #d93025 !important;
+}
+
+/* Custom styling for options inside select in dark theme */
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select {
+  border: 1px solid #475569 !important;
+  accent-color: #3b82f6 !important;
+}
+
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select option {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select option:hover,
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select option:focus,
+.admin-shell.dark-theme .flight-used-coupon-filter-grid select option:checked {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  color: #3b82f6 !important;
+  box-shadow: 0 0 10px 100px rgba(59, 130, 246, 0.2) inset !important;
+  -webkit-text-fill-color: #3b82f6 !important;
+}
+
+/* Dark theme overrides for Used Coupon Edit modal, inputs, labels, and textareas */
+.admin-shell.dark-theme .admin-markup-modal {
+  background-color: #111827 !important;
+  border: 1px solid #243b63 !important;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.42) !important;
+}
+
+.admin-shell.dark-theme .admin-markup-modal header h2 {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-markup-form-grid label,
+.admin-shell.dark-theme .admin-markup-coupon-form label {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-markup-form-grid input,
+.admin-shell.dark-theme .admin-markup-form-grid select,
+.admin-shell.dark-theme .admin-markup-form-grid textarea,
+.admin-shell.dark-theme .admin-markup-coupon-form input,
+.admin-shell.dark-theme .admin-markup-coupon-form select,
+.admin-shell.dark-theme .admin-markup-coupon-form textarea {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important; /* Gray border default in dark theme */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.admin-shell.dark-theme .admin-markup-form-grid input:hover,
+.admin-shell.dark-theme .admin-markup-form-grid select:hover,
+.admin-shell.dark-theme .admin-markup-form-grid textarea:hover,
+.admin-shell.dark-theme .admin-markup-coupon-form input:hover,
+.admin-shell.dark-theme .admin-markup-coupon-form select:hover,
+.admin-shell.dark-theme .admin-markup-coupon-form textarea:hover {
+  border-color: #3b82f6 !important; /* Hover theme color (blue) */
+}
+
+.admin-shell.dark-theme .admin-markup-form-grid input:focus,
+.admin-shell.dark-theme .admin-markup-form-grid select:focus,
+.admin-shell.dark-theme .admin-markup-form-grid textarea:focus,
+.admin-shell.dark-theme .admin-markup-coupon-form input:focus,
+.admin-shell.dark-theme .admin-markup-coupon-form select:focus,
+.admin-shell.dark-theme .admin-markup-coupon-form textarea:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+.admin-shell.dark-theme .admin-markup-form-grid input::placeholder,
+.admin-shell.dark-theme .admin-markup-form-grid textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.admin-shell.dark-theme .admin-markup-modal-actions button.secondary {
+  background-color: #243047 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-markup-modal-actions button.primary {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-markup-modal-actions button.danger {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.admin-shell.dark-theme .admin-markup-form-grid input:disabled {
+  background-color: #1a2333 !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
 }

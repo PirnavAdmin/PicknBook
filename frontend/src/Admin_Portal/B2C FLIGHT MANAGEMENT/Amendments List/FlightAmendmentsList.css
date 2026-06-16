@@ -54,55 +54,24 @@
   }
 }
 
-/* Overrides to establish a premium card list structure rather than inner grid borders */
-.admin-flight-amend-page .admin-table-cell {
+.admin-flight-btn-export {
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
+  color: #ffffff !important;
+  border-color: var(--admin-primary) !important;
+}
+
+.admin-flight-btn-export:hover {
+  box-shadow: 0 4px 12px rgba(30, 117, 255, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-flight-btn-export {
+  background: linear-gradient(135deg, #1e75ff, #0052d9) !important;
+  color: #ffffff !important;
   border: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  padding: 8px 6px !important;
 }
 
-.admin-flight-amend-page .admin-table-row {
-  border: 1px solid var(--admin-border) !important;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
-}
-
-.admin-flight-amend-page .admin-table-row:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
-  border-color: rgba(30, 117, 255, 0.2) !important;
-}
-
-/* Align buttons styling */
-.admin-flight-amend-page .admin-actions-row button {
-  min-height: 36px;
-  border: 0;
-  border-radius: 10px;
-  padding: 0 16px;
-  color: #fff;
-  font-size: 0.84rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
-  transition: all 0.2s ease;
-}
-
-.admin-flight-amend-page .admin-actions-row button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.08);
-  filter: brightness(1.05);
-}
-
-.admin-flight-amend-page .admin-actions-row button:first-child {
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
-}
-
-.admin-flight-amend-page .admin-actions-row button:nth-child(2) {
-  background: var(--admin-muted);
-}
-
-.admin-flight-amend-page .admin-actions-row button:last-child {
-  background: linear-gradient(135deg, var(--admin-success), var(--admin-success));
+.admin-shell.dark-theme .admin-flight-btn-export:hover {
+  box-shadow: 0 4px 12px rgba(30, 117, 255, 0.4) !important;
 }
 

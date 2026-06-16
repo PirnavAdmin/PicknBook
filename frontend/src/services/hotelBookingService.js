@@ -156,12 +156,28 @@ function resolveCityCode(cityInput) {
   return alphaOnly.slice(0, 3).toUpperCase() || "HYD";
 }
 
+function getDefaultDateString(offsetDays = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 10);
+}
+
 export async function searchHotelOffers({ cityCode, checkInDate, checkOutDate, adults = 1, rooms = 1 }) {
   const resolvedCode = resolveCityCode(cityCode);
+
+  const finalCheckInDate = typeof checkInDate === "string" && checkInDate.trim()
+    ? checkInDate.trim()
+    : getDefaultDateString(0);
+
+  const finalCheckOutDate = typeof checkOutDate === "string" && checkOutDate.trim()
+    ? checkOutDate.trim()
+    : getDefaultDateString(1);
+
   const params = new URLSearchParams({
     cityCode: resolvedCode,
-    checkInDate,
-    checkOutDate,
+    checkInDate: finalCheckInDate,
+    checkOutDate: finalCheckOutDate,
     adults: String(Math.max(1, Number(adults) || 1)),
     rooms: String(Math.max(1, Number(rooms) || 1)),
   });
@@ -174,6 +190,7 @@ export async function searchHotelOffers({ cityCode, checkInDate, checkOutDate, a
 
   return normalizePayload(payload);
 }
+
 
 export async function searchHotels({ city, cityCode, destination, checkInDate, checkOutDate, adults = 1, rooms = 1 }) {
   const hotels = await searchHotelOffers({

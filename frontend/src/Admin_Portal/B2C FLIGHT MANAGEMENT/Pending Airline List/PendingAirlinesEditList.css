@@ -12,6 +12,7 @@
 
 .admin-flight-pending-edit-header h1 {
   font-size: 1.86rem;
+  font-weight: 600 !important;
 }
 
 .admin-flight-pending-edit-list-btn {
@@ -45,6 +46,7 @@
 .admin-flight-pending-edit-label {
   min-height: 48px;
   border-right: 1px dashed var(--admin-border);
+  border-bottom: 1px solid var(--admin-border);
   background: var(--admin-soft);
   color: var(--admin-text);
   display: inline-flex;
@@ -57,17 +59,30 @@
 .admin-flight-pending-edit-field {
   min-height: 48px;
   border-right: 1px solid var(--admin-border);
-  display: inline-flex;
+  border-bottom: 1px solid var(--admin-border);
+  display: flex;
   align-items: center;
   padding: 0 8px;
 }
 
+/* Remark field spans all 3 remaining columns */
 .admin-flight-pending-edit-field-wide {
   grid-column: 2 / -1;
   border-right: 0;
 }
 
-.admin-flight-pending-edit-field input {
+/* Remove right border from last field in each row */
+.admin-flight-pending-edit-field:nth-child(4n) {
+  border-right: 0;
+}
+
+/* Remove bottom border on last row cells */
+.admin-flight-pending-edit-grid > *:nth-last-child(-n+2) {
+  border-bottom: 0;
+}
+
+.admin-flight-pending-edit-field input,
+.admin-flight-pending-edit-field select {
   width: 100%;
   min-height: 38px;
   border: 1px solid var(--admin-border);
@@ -76,9 +91,11 @@
   color: var(--admin-text);
   font-size: 1.02rem;
   padding: 0 10px;
+  box-sizing: border-box;
 }
 
-.admin-flight-pending-edit-field input:focus {
+.admin-flight-pending-edit-field input:focus,
+.admin-flight-pending-edit-field select:focus {
   outline: none;
   border-color: var(--admin-primary);
   box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.14);
@@ -132,4 +149,3 @@
     max-width: 280px;
   }
 }
-

@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./FlightCancelRequestList.css";
-import {
-  listAdminCancellations,
-  updateAdminCancellation,
-} from "../../../services/flightBookingService";
+import { useAdminList } from "../../../utils/adminPortalStorage";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -246,7 +243,10 @@ function normalizeFlightBookingRecord(record) {
       pickFirst(record, ["passengerName", "PassengerName"], "") || ""
     ),
     passengerPhone: String(
-      pickFirst(record, ["passengerPhone", "PassengerPhone"], "") || ""
+      pickFirst(record, ["passengerPhone", "PassengerPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo", "contactNumber", "ContactNumber"], "") ||
+      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "") ||
+      pickFirst(record?.raw, ["passengerPhone", "PassengerPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "") ||
+      ""
     ),
     passengerEmail: String(
       pickFirst(record, ["passengerEmail", "PassengerEmail"], "") || ""
@@ -341,11 +341,29 @@ function normalizeErrorMessage(payload) {
   return "";
 }
 
+function resolveAuthToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  try {
+    const adminToken = String(window.localStorage.getItem("adminToken") || "").trim();
+    if (adminToken && adminToken !== "undefined" && adminToken !== "null") {
+      return adminToken;
+    }
+    return normalizeText(window.localStorage.getItem("token"), "");
+  } catch {
+    return "";
+  }
+}
+
 async function requestJson(urlOrPath, options = {}) {
   const resolvedUserId = resolveCurrentUserId(options.userId);
+  const resolvedToken = resolveAuthToken();
   const headers = {
     Accept: "application/json",
     "X-User-Id": resolvedUserId,
+    ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
     ...(options.headers || {}),
   };
 
@@ -378,10 +396,9 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
-async function listAdminFlightBookings({ passengerPhone, status } = {}) {
-  const url = buildUrl(`${FLIGHT_BOOKINGS_ROOT}/admin/bookings`, {
+async function listAdminCancellations({ passengerPhone } = {}) {
+  const url = buildUrl("/api/admin/flight/cancellations", {
     passengerPhone,
-    status,
   });
 
   try {
@@ -408,12 +425,26 @@ const toDateKey = (value) => {
     return "";
   }
 
-  const parsed = new Date(value);
+  const raw = String(value).trim();
+
+  // 1. Try to match YYYY-MM-DD directly
+  const isoDateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoDateMatch) {
+    return isoDateMatch[1];
+  }
+
+  // 2. Try to parse with standard Date but don't convert to ISO if it shifts
+  const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) {
+    // Fallback: slice first 10 chars
     return normalizeText(value, "").slice(0, 10);
   }
 
-  return parsed.toISOString().slice(0, 10);
+  // To avoid timezone shifting, format in local timezone parts
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const toTimeKey = (value) => {
@@ -421,17 +452,29 @@ const toTimeKey = (value) => {
     return "";
   }
 
-  const parsed = new Date(value);
+  const raw = String(value).trim();
+
+  // 1. Try regex match for HH:MM (e.g. 15:30)
+  const timeMatch = raw.match(/(?:T|\s|^)(\d{1,2}:\d{2})/);
+  if (timeMatch?.[1]) {
+    // Pad single-digit hours if any, like "5:30" -> "05:30"
+    const [h, m] = timeMatch[1].split(":");
+    return `${h.padStart(2, "0")}:${m}`;
+  }
+
+  const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) {
     const text = normalizeText(value, "");
     if (text.includes("T")) {
       return text.split("T")[1]?.slice(0, 5) || "";
     }
-
     return text.slice(11, 16);
   }
 
-  return parsed.toISOString().slice(11, 16);
+  // Format local parts to avoid timezone shifting
+  const hours = String(parsed.getHours()).padStart(2, "0");
+  const minutes = String(parsed.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 };
 
 const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed"]);
@@ -568,101 +611,57 @@ const formatRequestDate = (value) => {
   });
 };
 
-const mapFromBackendCancellation = (dbRow) => {
-  const booking = dbRow.booking || {};
-  const fare = Number(booking.totalPriceInr) || Number(dbRow.totalPriceInr) || 0;
-  const refundAmount = dbRow.refundAmount || Math.round(fare * 0.82);
-  const cancellationCharge = dbRow.cancellationCharge || Math.round(fare * 0.18);
-
-  return {
-    id: dbRow.id,
-    bookingId: dbRow.bookingId || booking.bookingId || dbRow.id,
-    bookingReference: dbRow.bookingReference || booking.bookingReference || "",
-    pnr: dbRow.bookingReference || booking.bookingReference || dbRow.pnr || "--",
-    createdAt: toDateKey(dbRow.createdAt),
-    createdAtValue: dbRow.createdAt,
-    passengerName: dbRow.passengerName || booking.passengerName || "--",
-    passengerPhone: dbRow.passengerPhone || booking.passengerPhone || "--",
-    passengerEmail: dbRow.passengerEmail || booking.passengerEmail || "",
-    from: dbRow.fromCity || booking.fromCity || "--",
-    to: dbRow.toCity || booking.toCity || "--",
-    journeyDate: toDateKey(booking.departureTimeUtc || dbRow.departureTimeUtc),
-    journeyTime: toTimeKey(booking.departureTimeUtc || dbRow.departureTimeUtc),
-    status: dbRow.cancellationStatus || dbRow.status || "Pending",
-    fare,
-    refundAmount,
-    cancellationCharge,
-    cancellationReason: dbRow.customerRemark || booking.cancellationReason || dbRow.cancellationReason || "--",
-    supplierRemark: dbRow.supplierRemark || "",
-    customerRemark: dbRow.customerRemark || "",
-    adminRemark: dbRow.adminRemark || "",
-    cancelledAtValue: dbRow.updatedAt || dbRow.createdAt || null,
-  };
-};
-
 export default function AdminFlightCancellationRequestListPage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [selectedCancellation, setSelectedCancellation] = useState(null);
-  const [cancellationRequests, setCancellationRequests] = useState([]);
+  const [cancellationRequests, setCancellationRequests] = useAdminList(
+    "flight-cancellation-requests",
+    []
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Update states
-  const [updating, setUpdating] = useState(false);
-  const [editStatus, setEditStatus] = useState("Pending");
-  const [editSupplierRemark, setEditSupplierRemark] = useState("");
-  const [editCustomerRemark, setEditCustomerRemark] = useState("");
-  const [editAdminRemark, setEditAdminRemark] = useState("");
 
   const loadCancellationRequests = useCallback(async (activeFilters) => {
     setIsLoading(true);
     setErrorMessage("");
 
+    const passengerPhone = String(activeFilters.passengerPhone || "").trim() || undefined;
+
     try {
-      const data = await listAdminCancellations();
-      const mapped = Array.isArray(data) ? data.map(mapFromBackendCancellation) : [];
-      setCancellationRequests(mapped);
+      const flightResults = await listAdminCancellations({
+        passengerPhone,
+      });
+
+      const mapped = flightResults
+        .map((record) => toUnifiedAdminBooking(record, "Flight"))
+        .filter((record) => mapAdminStatusClass(record.status) === "cancelled")
+        .map((record) => toCancellationRecord(record))
+        .sort((first, second) => {
+          const firstTime = toNumberDate(
+            first.cancelledAtValue || first.createdAtValue || first.createdAt
+          );
+          const secondTime = toNumberDate(
+            second.cancelledAtValue || second.createdAtValue || second.createdAt
+          );
+          return secondTime - firstTime;
+        });
+
+      if (mapped.length > 0) {
+        setCancellationRequests(mapped);
+      }
     } catch (error) {
-      setErrorMessage(error?.message || "Unable to load flight cancellation requests.");
+      console.warn("Backend fetch failed, falling back to dynamic local storage data", error);
+      // Suppress the error to allow local storage (dynamic) data to display seamlessly
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setCancellationRequests]);
 
   useEffect(() => {
     loadCancellationRequests(filters);
   }, [filters, loadCancellationRequests]);
-
-  useEffect(() => {
-    if (selectedCancellation) {
-      setEditStatus(selectedCancellation.status || "Pending");
-      setEditSupplierRemark(selectedCancellation.supplierRemark || "");
-      setEditCustomerRemark(selectedCancellation.customerRemark || "");
-      setEditAdminRemark(selectedCancellation.adminRemark || "");
-    }
-  }, [selectedCancellation]);
-
-  const handleUpdateCancellation = async () => {
-    setUpdating(true);
-    try {
-      const payload = {
-        cancellationStatus: editStatus,
-        supplierRemark: editSupplierRemark,
-        customerRemark: editCustomerRemark,
-        adminRemark: editAdminRemark,
-      };
-      await updateAdminCancellation(selectedCancellation.id, payload);
-      alert("Cancellation request updated successfully!");
-      setSelectedCancellation(null);
-      loadCancellationRequests(filters);
-    } catch (err) {
-      alert(err.message || "Failed to update cancellation request.");
-    } finally {
-      setUpdating(false);
-    }
-  };
 
   const filteredRequests = useMemo(() => {
     return cancellationRequests.filter((booking) => {
@@ -960,7 +959,6 @@ export default function AdminFlightCancellationRequestListPage() {
             aria-modal="true"
             aria-label="Cancellation details"
             onClick={(event) => event.stopPropagation()}
-            style={{ maxWidth: '800px' }}
           >
             <header className="admin-view-header">
               <div className="admin-view-header-main">
@@ -970,7 +968,7 @@ export default function AdminFlightCancellationRequestListPage() {
                   {safeValue(selectedCancellation.passengerName)}
                 </p>
                 <div className="admin-view-meta-row">
-                  <span className={`admin-view-meta-chip ${editStatus.toLowerCase()}`}>{editStatus}</span>
+                  <span className="admin-view-meta-chip cancelled">Cancelled</span>
                   <span className="admin-view-meta-chip">
                     CRA{" "}
                     {adminCurrencyFormatter.format(
@@ -1041,75 +1039,6 @@ export default function AdminFlightCancellationRequestListPage() {
               <div>
                 <span>Remark</span>
                 <strong>{safeValue(selectedCancellation.cancellationReason, "--")}</strong>
-              </div>
-            </section>
-
-            <section className="admin-view-edit-section" style={{ borderTop: '1px solid var(--border)', marginTop: '20px', paddingTop: '20px' }}>
-              <h3 style={{ margin: '0 0 16px', color: 'var(--admin-primary)' }}>Manage Request</h3>
-              <div className="admin-view-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '11px', textTransform: 'uppercase' }}>cancellation status</span>
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
-                </label>
-
-                <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '11px', textTransform: 'uppercase' }}>supplier remark</span>
-                  <input
-                    type="text"
-                    value={editSupplierRemark}
-                    onChange={(e) => setEditSupplierRemark(e.target.value)}
-                    placeholder="Processed at AI desk"
-                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  />
-                </label>
-
-                <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '11px', textTransform: 'uppercase' }}>customer remark</span>
-                  <input
-                    type="text"
-                    value={editCustomerRemark}
-                    onChange={(e) => setEditCustomerRemark(e.target.value)}
-                    placeholder="Refund credited"
-                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  />
-                </label>
-
-                <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontWeight: '700', fontSize: '11px', textTransform: 'uppercase' }}>admin remark</span>
-                  <input
-                    type="text"
-                    value={editAdminRemark}
-                    onChange={(e) => setEditAdminRemark(e.target.value)}
-                    placeholder="Verified status via PNR desk"
-                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  />
-                </label>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCancellation(null)}
-                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={updating}
-                  onClick={handleUpdateCancellation}
-                  style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--admin-primary)', color: '#fff', cursor: 'pointer' }}
-                >
-                  {updating ? "Saving..." : "Update Request"}
-                </button>
               </div>
             </section>
           </article>

@@ -29,7 +29,8 @@ const BOOKING_COLORS = {
 
 const QUICK_LINKS = [
   { id: "quick-1", label: "Bus Bookings", to: "/dashboard/bus-bookings" },
-  { id: "quick-2", label: "Print Ticket", to: "/print-ticket" },
+  { id: "quick-2", label: "Print Ticket", to: "/fetch-ticket" },
+  { id: "quick-3", label: "Web Check-in", to: "/web-checkin" },
 ];
 
 const OFFER_MESSAGES = [

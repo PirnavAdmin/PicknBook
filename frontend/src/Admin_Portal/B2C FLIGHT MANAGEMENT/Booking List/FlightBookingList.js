@@ -44,7 +44,7 @@ function resolveApiBaseUrl(...explicitBases) {
   const preferProxyInDev =
     isLocalDevelopment() &&
     String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-      "true";
+    "true";
 
   if (preferProxyInDev) {
     return "";
@@ -133,7 +133,7 @@ function resolveCurrentUserId(explicitUserId) {
   try {
     const directStoredUserId = normalizeText(
       window.localStorage.getItem("userId") ||
-        window.localStorage.getItem("UserId"),
+      window.localStorage.getItem("UserId"),
       ""
     );
 
@@ -152,17 +152,17 @@ function resolveCurrentUserId(explicitUserId) {
 
     const resolved = normalizeText(
       parsed.userId ||
-        parsed.UserId ||
-        parsed.id ||
-        parsed.Id ||
-        parsed.uid ||
-        parsed.Uid ||
-        nestedUser.userId ||
-        nestedUser.UserId ||
-        nestedUser.id ||
-        nestedUser.Id ||
-        nestedUser.uid ||
-        nestedUser.Uid,
+      parsed.UserId ||
+      parsed.id ||
+      parsed.Id ||
+      parsed.uid ||
+      parsed.Uid ||
+      nestedUser.userId ||
+      nestedUser.UserId ||
+      nestedUser.id ||
+      nestedUser.Id ||
+      nestedUser.uid ||
+      nestedUser.Uid,
       ""
     );
 
@@ -223,37 +223,53 @@ function normalizeFlightBookingRecord(record) {
   const passengersRaw = pickFirst(record, ["passengers", "Passengers"], []);
   const passengers = Array.isArray(passengersRaw)
     ? passengersRaw.map((passenger, index) =>
-        normalizeFlightPassenger(passenger, index)
-      )
+      normalizeFlightPassenger(passenger, index)
+    )
     : [];
   const seatsBookedFallback = passengers.filter(
     (passenger) =>
       String(passenger.passengerType || "").toLowerCase() !== "infant"
   ).length;
 
+  let fromCity = pickFirst(record, ["fromCity", "FromCity"], "");
+  let toCity = pickFirst(record, ["toCity", "ToCity"], "");
+  if (!fromCity && !toCity && record?.segment) {
+    const parts = String(record.segment).split("-");
+    if (parts.length >= 2) {
+      fromCity = parts[0].trim();
+      toCity = parts[1].trim();
+    } else {
+      fromCity = record.segment;
+    }
+  }
+
   return {
-    bookingId: pickFirst(record, ["bookingId", "BookingId"], null),
+    bookingId: pickFirst(record, ["bookingId", "BookingId", "id", "Id"], null),
     bookingReference: String(
-      pickFirst(record, ["bookingReference", "BookingReference"], "") || ""
+      pickFirst(record, ["bookingReference", "BookingReference", "pnr", "Pnr"], "") || ""
     ),
     tripType: String(
       pickFirst(record, ["tripType", "TripType"], "Flight") || "Flight"
     ),
     tripId: pickFirst(record, ["tripId", "TripId"], null),
     passengerName: String(
-      pickFirst(record, ["passengerName", "PassengerName"], "") || ""
+      pickFirst(record, ["passengerName", "PassengerName", "passenger", "Passenger"], "") || ""
     ),
     passengerPhone: String(
-      pickFirst(record, ["passengerPhone", "PassengerPhone"], "") || ""
+      pickFirst(record, ["passengerPhone", "PassengerPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo", "contactNumber", "ContactNumber"], "") ||
+      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "") ||
+      pickFirst(record?.raw, ["passengerPhone", "PassengerPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "") ||
+      ""
     ),
     passengerEmail: String(
       pickFirst(record, ["passengerEmail", "PassengerEmail"], "") || ""
     ),
-    fromCity: String(pickFirst(record, ["fromCity", "FromCity"], "") || ""),
-    toCity: String(pickFirst(record, ["toCity", "ToCity"], "") || ""),
+    fromCity,
+    toCity,
     providerName: String(
       pickFirst(record, ["providerName", "ProviderName", "airline", "Airline"], "") ||
-        ""
+      pickFirst(record?.raw, ["airline", "Airline", "airlineName", "AirlineName", "providerName", "ProviderName"], "") ||
+      ""
     ),
     departureTimeUtc: pickFirst(
       record,
@@ -262,6 +278,43 @@ function normalizeFlightBookingRecord(record) {
         "DepartureTimeUtc",
         "departureDateTimeUtc",
         "DepartureDateTimeUtc",
+        "departureTimeIst",
+        "DepartureTimeIst",
+        "departureTime",
+        "DepartureTime",
+        "departureDateTime",
+        "DepartureDateTime",
+        "journeyDateTime",
+        "JourneyDateTime",
+        "journeyDateIst",
+        "JourneyDateIst",
+        "journeyDate",
+        "JourneyDate",
+        "departDate",
+        "DepartDate",
+      ],
+      null
+    ) || pickFirst(
+      record?.raw,
+      [
+        "departureTimeUtc",
+        "DepartureTimeUtc",
+        "departureDateTimeUtc",
+        "DepartureDateTimeUtc",
+        "departureTimeIst",
+        "DepartureTimeIst",
+        "departureTime",
+        "DepartureTime",
+        "departureDateTime",
+        "DepartureDateTime",
+        "journeyDateTime",
+        "JourneyDateTime",
+        "journeyDateIst",
+        "JourneyDateIst",
+        "journeyDate",
+        "JourneyDate",
+        "departDate",
+        "DepartDate",
       ],
       null
     ),
@@ -272,6 +325,27 @@ function normalizeFlightBookingRecord(record) {
         "ArrivalTimeUtc",
         "arrivalDateTimeUtc",
         "ArrivalDateTimeUtc",
+        "arrivalTimeIst",
+        "ArrivalTimeIst",
+        "arrivalTime",
+        "ArrivalTime",
+        "arrivalDateTime",
+        "ArrivalDateTime",
+      ],
+      null
+    ) || pickFirst(
+      record?.raw,
+      [
+        "arrivalTimeUtc",
+        "ArrivalTimeUtc",
+        "arrivalDateTimeUtc",
+        "ArrivalDateTimeUtc",
+        "arrivalTimeIst",
+        "ArrivalTimeIst",
+        "arrivalTime",
+        "ArrivalTime",
+        "arrivalDateTime",
+        "ArrivalDateTime",
       ],
       null
     ),
@@ -283,21 +357,21 @@ function normalizeFlightBookingRecord(record) {
       Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], null)) ||
       seatsBookedFallback,
     totalPriceInr:
-      Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr"], 0)) || 0,
+      Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr", "customerFareInr", "CustomerFareInr"], 0)) || 0,
     status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
-    bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc"], null),
+    bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc", "bookingDateUtc", "BookingDateUtc"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
     cancellationReason: String(
       pickFirst(record, ["cancellationReason", "CancellationReason"], "") || ""
     ),
     tripNumber: String(
-      pickFirst(
-        record,
-        ["tripNumber", "TripNumber", "flightNumber", "FlightNumber"],
-        ""
-      ) || ""
+      pickFirst(record, ["tripNumber", "TripNumber", "flightNumber", "FlightNumber"], "") ||
+      pickFirst(record?.raw, ["flightNumber", "FlightNumber", "tripNumber", "TripNumber"], "") ||
+      pickFirst(record, ["pnr", "Pnr"], "") ||
+      ""
     ),
     passengers,
+    profit: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], null)),
   };
 }
 
@@ -339,13 +413,29 @@ function normalizeErrorMessage(payload) {
   return "";
 }
 
+function resolveAdminAuthToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  try {
+    const adminToken = String(window.localStorage.getItem("adminToken") || "").trim();
+    if (adminToken && adminToken !== "undefined" && adminToken !== "null") {
+      return adminToken;
+    }
+    const userToken = String(window.localStorage.getItem("token") || "").trim();
+    return userToken !== "undefined" && userToken !== "null" ? userToken : "";
+  } catch {
+    return "";
+  }
+}
+
 async function requestJson(urlOrPath, options = {}) {
   const resolvedUserId = resolveCurrentUserId(options.userId);
-  const token = typeof window !== "undefined" ? (window.localStorage.getItem("adminToken") || window.localStorage.getItem("authToken") || window.localStorage.getItem("token")) : "";
+  const resolvedToken = resolveAdminAuthToken();
   const headers = {
     Accept: "application/json",
     "X-User-Id": resolvedUserId,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
     ...(options.headers || {}),
   };
 
@@ -379,7 +469,7 @@ async function requestJson(urlOrPath, options = {}) {
 }
 
 async function listAdminFlightBookings({ passengerPhone, status } = {}) {
-  const url = buildUrl(`${FLIGHT_BOOKINGS_ROOT}/admin/bookings`, {
+  const url = buildUrl("/api/admin/flight/bookings", {
     passengerPhone,
     status,
   });
@@ -408,12 +498,26 @@ const toDateKey = (value) => {
     return "";
   }
 
-  const parsed = new Date(value);
+  const raw = String(value).trim();
+
+  // 1. Try to match YYYY-MM-DD directly
+  const isoDateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoDateMatch) {
+    return isoDateMatch[1];
+  }
+
+  // 2. Try to parse with standard Date but don't convert to ISO if it shifts
+  const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) {
+    // Fallback: slice first 10 chars
     return normalizeText(value, "").slice(0, 10);
   }
 
-  return parsed.toISOString().slice(0, 10);
+  // To avoid timezone shifting, format in local timezone parts
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const toTimeKey = (value) => {
@@ -421,17 +525,32 @@ const toTimeKey = (value) => {
     return "";
   }
 
-  const parsed = new Date(value);
+  const raw = String(value).trim();
+  if (!raw.includes(":")) {
+    return "";
+  }
+
+  // 1. Try regex match for HH:MM (e.g. 15:30)
+  const timeMatch = raw.match(/(?:T|\s|^)(\d{1,2}:\d{2})/);
+  if (timeMatch?.[1]) {
+    // Pad single-digit hours if any, like "5:30" -> "05:30"
+    const [h, m] = timeMatch[1].split(":");
+    return `${h.padStart(2, "0")}:${m}`;
+  }
+
+  const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) {
     const text = normalizeText(value, "");
     if (text.includes("T")) {
       return text.split("T")[1]?.slice(0, 5) || "";
     }
-
     return text.slice(11, 16);
   }
 
-  return parsed.toISOString().slice(11, 16);
+  // Format local parts to avoid timezone shifting
+  const hours = String(parsed.getHours()).padStart(2, "0");
+  const minutes = String(parsed.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 };
 
 const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed"]);
@@ -510,6 +629,9 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const inferredProfit = Math.round(fare * 0.04);
   const profit = parseNumber(record?.profit, inferredProfit);
 
+  const rawJourneyTime = toTimeKey(departureValue);
+  const journeyTime = rawJourneyTime && rawJourneyTime !== "--" ? rawJourneyTime : (toTimeKey(bookedAtValue) || "00:00");
+
   return {
     id: bookingReference || bookingId || "--",
     bookingId,
@@ -522,7 +644,7 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     from: normalizeText(record?.fromCity, "--"),
     to: normalizeText(record?.toCity, "--"),
     journeyDate: toDateKey(departureValue),
-    journeyTime: toTimeKey(departureValue),
+    journeyTime,
     pnr: bookingReference || tripNumber || bookingId || "--",
     status,
     operator: normalizeText(record?.providerName, "--"),
@@ -580,6 +702,12 @@ export default function AdminFlightBookingListPage() {
   const [bookings, setBookings] = useAdminList("flight-bookings", []);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, bookings]);
 
   const todayDate = new Date().toISOString().slice(0, 10);
 
@@ -611,7 +739,7 @@ export default function AdminFlightBookingListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [setBookings]);
+  }, []);
 
   useEffect(() => {
     loadAdminBookings(filters);
@@ -670,6 +798,11 @@ export default function AdminFlightBookingListPage() {
     });
   }, [bookings, filters]);
 
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredBookings, currentPage, itemsPerPage]);
+
   const todaySuccessCount = bookings.filter(
     (item) => isBookingOnDate(item, todayDate) && resolveFlightStatusClass(item.status) === "success"
   ).length;
@@ -697,6 +830,11 @@ export default function AdminFlightBookingListPage() {
         String(item.createdAt || "").startsWith(currentMonth)
     )
     .reduce((sum, item) => sum + (Number(item.profit) || 0), 0);
+
+  const totalItems = filteredBookings.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   const handleDraftChange = (field, value) => {
     setDraftFilters((previous) => ({
@@ -923,94 +1061,118 @@ export default function AdminFlightBookingListPage() {
           <span>Passenger</span>
           <span>Fare</span>
           <span>+ / P</span>
-          <span>Action / B. By</span>
+          <span>Action</span>
         </header>
-
-        <div className="admin-flight-legend">
-          D :- Depart, R :- Return, B. By :- Booked By, CF :- Customer Fare, NF :- Net
-          Fare
-        </div>
 
         {isLoading ? (
           <div className="admin-table-empty">Loading flight bookings...</div>
         ) : filteredBookings.length ? (
-          <div className="admin-table-body">
-            {filteredBookings.map((booking) => {
-              const statusClass = resolveFlightStatusClass(booking.status);
-              const flightNumber = safeValue(booking.raw?.tripNumber, "--");
-              const fare = Number(booking.fare) || 0;
-              const profit = Number(booking.profit) || 0;
-              const netFare = resolveNetFare(booking);
+          <>
+            <div className="admin-table-body">
+              {paginatedBookings.map((booking, idx) => {
+                const statusClass = resolveFlightStatusClass(booking.status);
+                const flightNumber = safeValue(booking.raw?.tripNumber, "--");
+                const fare = Number(booking.fare) || 0;
+                const profit = Number(booking.profit) || 0;
+                const netFare = resolveNetFare(booking);
 
-              return (
-                <article
-                  key={`flight-${booking.id}-${booking.createdAt}`}
-                  className="admin-table-row"
+                return (
+                  <article
+                    key={`flight-${booking.id || idx}-${booking.createdAt || idx}-${idx}`}
+                    className="admin-table-row"
+                  >
+                    <div className="admin-table-cell" title={`Booking ID: ${safeValue(booking.id)}`}>
+                      <strong title={safeValue(booking.id)}>{safeValue(booking.id)}</strong>
+                      <small title={safeValue(booking.createdAt)}>{safeValue(booking.createdAt)}</small>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered" title={`Journey: ${safeValue(booking.journeyDate)} ${safeValue(booking.journeyTime)}`}>
+                      <strong title={safeValue(booking.journeyDate)}>{safeValue(booking.journeyDate)}</strong>
+                      <small title={safeValue(booking.journeyTime)}>{safeValue(booking.journeyTime)}</small>
+                    </div>
+
+                    <div className="admin-table-cell" title={`Segment: ${safeValue(booking.from)} to ${safeValue(booking.to)} | ${booking.operator} | ${flightNumber}`}>
+                      <strong title={`${safeValue(booking.from)} to ${safeValue(booking.to)}`}>
+                        {safeValue(booking.from)} to {safeValue(booking.to)}
+                      </strong>
+                      <small title={`${booking.operator && booking.operator !== "--" ? `${booking.operator} | ` : ""}${flightNumber} | ${safeValue(booking.vehicleType)}`}>
+                        {booking.operator && booking.operator !== "--" ? `${booking.operator} | ` : ""}
+                        {flightNumber} | {safeValue(booking.vehicleType)}
+                      </small>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered" title={`Status: ${safeValue(booking.status)}`}>
+                      <span className={`admin-status-pill ${statusClass}`}>
+                        {safeValue(booking.status)}
+                      </span>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered" title={`PNR: ${safeValue(booking.pnr)}`}>
+                      <strong title={safeValue(booking.pnr)}>{safeValue(booking.pnr)}</strong>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered" title={`Passenger: ${safeValue(booking.passengerName)} (${safeValue(booking.passengerPhone)})`}>
+                      <strong title={safeValue(booking.passengerName)}>{safeValue(booking.passengerName)}</strong>
+                      <small title={safeValue(booking.passengerPhone)}>{safeValue(booking.passengerPhone)}</small>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered" title={`Fare: CF ${adminCurrencyFormatter.format(fare)} | NF ${adminCurrencyFormatter.format(netFare)}`}>
+                      <strong title={`Customer Fare: ${adminCurrencyFormatter.format(fare)}`}>CF {adminCurrencyFormatter.format(fare)}</strong>
+                      <small title={`Net Fare: ${adminCurrencyFormatter.format(netFare)}`}>NF {adminCurrencyFormatter.format(netFare)}</small>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered" title={`Profit: ${adminCurrencyFormatter.format(profit)}`}>
+                      <strong title={`Profit: ${adminCurrencyFormatter.format(profit)}`}>+ {adminCurrencyFormatter.format(profit)}</strong>
+                    </div>
+
+                    <div className="admin-table-cell admin-cell-centered">
+                      <button
+                        type="button"
+                        className="admin-action-btn"
+                        onClick={() => setSelectedBooking(booking)}
+                        title="View details"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="admin-pagination-container">
+              <span className="admin-pagination-info">
+                Showing {startItem}-{endItem} of {totalItems} bookings
+              </span>
+              <div className="admin-pagination-controls">
+                <button
+                  type="button"
+                  className="admin-pagination-btn"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 >
-                  <div className="admin-table-cell">
-                    <strong>{safeValue(booking.id)}</strong>
-                    <small>{safeValue(booking.createdAt)}</small>
-                  </div>
-
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong>{safeValue(booking.journeyDate)}</strong>
-                    <small>{safeValue(booking.journeyTime)}</small>
-                  </div>
-
-                  <div className="admin-table-cell">
-                    <strong>
-                      {safeValue(booking.from)} to {safeValue(booking.to)}
-                    </strong>
-                    <small>
-                      {safeValue(booking.operator)} | {flightNumber} |{" "}
-                      {safeValue(booking.vehicleType)}
-                    </small>
-                  </div>
-
-                  <div className="admin-table-cell admin-cell-centered">
-                    <span className={`admin-status-pill ${statusClass}`}>
-                      {safeValue(booking.status)}
-                    </span>
-                  </div>
-
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong>{safeValue(booking.pnr)}</strong>
-                  </div>
-
-                  <div className="admin-table-cell">
-                    <strong>{safeValue(booking.passengerName)}</strong>
-                    <small>{safeValue(booking.passengerPhone)}</small>
-                  </div>
-
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong>CF {adminCurrencyFormatter.format(fare)}</strong>
-                    <small>NF {adminCurrencyFormatter.format(netFare)}</small>
-                  </div>
-
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong>+ {adminCurrencyFormatter.format(profit)}</strong>
-                  </div>
-
-                  <div className="admin-table-cell admin-cell-centered">
-                    <button
-                      type="button"
-                      className="admin-action-btn"
-                      onClick={() => setSelectedBooking(booking)}
-                    >
-                      View
-                    </button>
-                    <small className="admin-flight-booked-by">B. By: --</small>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  &lt; Previous
+                </button>
+                <span className="admin-pagination-page-num">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="admin-pagination-btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                >
+                  Next &gt;
+                </button>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="admin-table-empty">No flight bookings available.</div>
         )}
 
-        <footer className="admin-table-footnote">
-          CF: Customer Fare, NF: Net Fare, +/P: Profit.
+        <footer className="admin-flight-legend" style={{ borderTop: "1px solid var(--admin-border)", display: "flex", width: "100%", boxSizing: "border-box" }}>
+          D :- Depart, R :- Return, B. By :- Booked By, CF :- Customer Fare, NF :- Net Fare, +/P :- Profit
         </footer>
       </section>
 
@@ -1022,55 +1184,70 @@ export default function AdminFlightBookingListPage() {
             aria-modal="true"
             aria-label="Flight booking details"
             onClick={(event) => event.stopPropagation()}
+            style={{ width: "min(950px, 95vw)", padding: "24px" }}
           >
-            <header className="admin-view-header">
+            <header className="admin-view-header" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "16px", marginBottom: "16px" }}>
               <div className="admin-view-header-main">
-                <h2>Flight Booking Detail</h2>
-                <p className="admin-view-header-subtitle">
-                  {safeValue(selectedBooking.id)} | {safeValue(selectedBooking.passengerName)}
+                <h2 style={{ fontSize: "1.4rem", margin: "0 0 6px" }}>Flight Booking Detail</h2>
+                <p className="admin-view-header-subtitle" style={{ fontSize: "0.88rem", margin: 0 }}>
+                  Booking ID: <strong>{safeValue(selectedBooking.id)}</strong> | Lead Passenger: <strong>{safeValue(selectedBooking.passengerName)}</strong>
                 </p>
-                <div className="admin-view-meta-row">
+                <div className="admin-view-meta-row" style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
                   <span
                     className={`admin-view-meta-chip ${resolveFlightStatusClass(
                       selectedBooking.status
                     )}`}
                   >
-                    {safeValue(selectedBooking.status)}
+                    Status: {safeValue(selectedBooking.status)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    Fare{" "}
-                    {adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}
+                    Customer Fare: {adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    Profit{" "}
-                    {adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}
+                    Profit: {adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}
                   </span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelectedBooking(null)}>
+              <button
+                type="button"
+                onClick={() => setSelectedBooking(null)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--admin-border)",
+                  background: "var(--admin-soft)",
+                  color: "var(--admin-primary)",
+                  fontWeight: "700",
+                  cursor: "pointer"
+                }}
+              >
                 Close
               </button>
             </header>
 
-            <section className="admin-view-grid">
+            {/* Section 1: Flight & Route Information */}
+            <div className="admin-view-section-title">
+              Flight & Route Information
+            </div>
+            <section className="admin-view-grid" style={{ padding: "0 0 16px", borderBottom: "1px solid var(--admin-border)" }}>
               <div>
                 <span>Trip Type</span>
                 <strong>{safeValue(selectedBooking.tripType)}</strong>
-              </div>
-              <div>
-                <span>Passenger Phone</span>
-                <strong>{safeValue(selectedBooking.passengerPhone)}</strong>
               </div>
               <div>
                 <span>Booking ID</span>
                 <strong>{safeValue(selectedBooking.id)}</strong>
               </div>
               <div>
+                <span>PNR / Reference</span>
+                <strong>{safeValue(selectedBooking.pnr)}</strong>
+              </div>
+              <div>
                 <span>Booking Date</span>
                 <strong>{safeValue(selectedBooking.createdAt)}</strong>
               </div>
               <div>
-                <span>Segment</span>
+                <span>Segment (Route)</span>
                 <strong>
                   {safeValue(selectedBooking.from)} to {safeValue(selectedBooking.to)}
                 </strong>
@@ -1078,34 +1255,102 @@ export default function AdminFlightBookingListPage() {
               <div>
                 <span>Journey Date & Time</span>
                 <strong>
-                  {safeValue(selectedBooking.journeyDate)} |{" "}
-                  {safeValue(selectedBooking.journeyTime)}
+                  {safeValue(selectedBooking.journeyDate)} | {safeValue(selectedBooking.journeyTime)}
                 </strong>
               </div>
               <div>
-                <span>PNR / Status</span>
-                <strong>{safeValue(selectedBooking.pnr)}</strong>
-                <span
-                  className={`admin-status-pill ${resolveFlightStatusClass(
-                    selectedBooking.status
-                  )}`}
-                >
-                  {safeValue(selectedBooking.status)}
-                </span>
+                <span>Airline / Carrier</span>
+                <strong>{safeValue(selectedBooking.operator)}</strong>
               </div>
               <div>
-                <span>Airline / Class</span>
-                <strong>{safeValue(selectedBooking.operator)}</strong>
-                <small>{safeValue(selectedBooking.vehicleType)}</small>
+                <span>Travel Class</span>
+                <strong>{safeValue(selectedBooking.vehicleType)}</strong>
               </div>
+            </section>
+
+            {/* Section 2: Contact Information */}
+            <div className="admin-view-section-title" style={{ marginTop: "16px" }}>
+              Contact Information
+            </div>
+            <section className="admin-view-grid" style={{ padding: "0 0 16px", borderBottom: "1px solid var(--admin-border)" }}>
+              <div>
+                <span>Lead Passenger</span>
+                <strong>{safeValue(selectedBooking.passengerName)}</strong>
+              </div>
+              <div>
+                <span>Passenger Phone</span>
+                <strong>{safeValue(selectedBooking.passengerPhone)}</strong>
+              </div>
+              <div>
+                <span>Passenger Email</span>
+                <strong>{safeValue(selectedBooking.passengerEmail, "Not Provided")}</strong>
+              </div>
+            </section>
+
+            {/* Section 3: Passenger Details List */}
+            {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
+              <div className="admin-view-passengers-section" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "20px" }}>
+                <div className="admin-view-section-title" style={{ marginTop: "16px" }}>
+                  Passenger List ({selectedBooking.passengers.length})
+                </div>
+                <div className="admin-view-passengers-list">
+                  {selectedBooking.passengers.map((p, pIdx) => (
+                    <div key={`p-${pIdx}`} className="admin-view-passenger-row">
+                      <div className="p-info">
+                        <span className="p-num">{pIdx + 1}.</span>
+                        <strong>{p.fullName || "Name Not Available"}</strong>
+                        <span className="p-type-chip">{p.passengerType || "Adult"}</span>
+                      </div>
+                      <div className="p-meta">
+                        {p.gender && <span>Gender: <strong>{p.gender}</strong></span>}
+                        {p.seatNumber && <span className="p-seat">Seat: {p.seatNumber}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Section 4: Cancellation Request Details */}
+            {selectedBooking.status === "Cancelled" && (
+              <div className="admin-view-cancellation-section" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "20px" }}>
+                <div className="admin-view-section-title" style={{ marginTop: "16px", color: "var(--admin-danger)" }}>
+                  Cancellation Information
+                </div>
+                <div className="admin-view-cancellation-card">
+                  <div>
+                    <span>Reason</span>
+                    <strong>{selectedBooking.cancellationReason || "No reason specified"}</strong>
+                  </div>
+                  {selectedBooking.cancelledAtValue && (
+                    <div>
+                      <span>Cancellation Date</span>
+                      <strong>{toDateKey(selectedBooking.cancelledAtValue)}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Section 5: Financial Summary Breakdown */}
+            <div className="admin-view-section-title" style={{ marginTop: "16px" }}>
+              Financial Summary Breakdown
+            </div>
+            <section className="admin-view-highlight-grid" style={{ marginTop: "8px" }}>
               <div className="admin-view-highlight-card">
-                <span>Customer Fare</span>
+                <span>Customer Fare (CF)</span>
                 <strong>
                   {adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}
                 </strong>
               </div>
-              <div className="admin-view-highlight-card">
-                <span>Profit</span>
+              <div className="admin-view-highlight-card net-fare">
+                <span>Net Fare (NF)</span>
+                <strong>
+                  {adminCurrencyFormatter.format(resolveNetFare(selectedBooking))}
+                </strong>
+              </div>
+              <div className="admin-view-highlight-card profit">
+                <span>Calculated Profit</span>
                 <strong>
                   {adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}
                 </strong>

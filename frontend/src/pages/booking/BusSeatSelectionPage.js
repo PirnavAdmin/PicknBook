@@ -8,6 +8,8 @@ import {
   writeBusBookingFlowState,
 } from "./busBookingFlowStore";
 import { getBusPricingPreview, getBusSeatMap } from "../../services/busBookingService";
+import { isTokenExpired } from "../../services/authSession";
+import { openAuthModal } from "../../utils/authModalEvents";
 
 const BOARDING_LABELS = [
   "Main Circle",
@@ -1102,6 +1104,12 @@ export default function BusSeatSelectionPage({
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token || isTokenExpired(token)) {
+      openAuthModal("login");
+      return;
+    }
+
     const seatCodes = selectedSeats.map((seat) => seat.label).filter(Boolean);
     let pricingPreview = null;
 
@@ -1238,7 +1246,7 @@ export default function BusSeatSelectionPage({
           )
         }
         onMouseLeave={() => setHoveredSeat(null)}
-        disabled={seat.status === "booked"}
+        disabled={seat.status === "booked" || isDimmed}
         title={`Seat No: ${seat.displayLabel || seat.label} | Fare: ${formatCurrency(
           seat.fare
         )}`}

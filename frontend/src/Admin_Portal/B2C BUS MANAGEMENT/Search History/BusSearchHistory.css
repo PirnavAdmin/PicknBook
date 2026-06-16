@@ -61,22 +61,16 @@
   display: grid;
   grid-template-columns: 0.42fr 0.88fr 0.78fr 1.8fr 0.9fr;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 8px;
   border-top: 1px solid var(--admin-border);
-  background: var(--admin-surface);
-  transition: background 0.2s ease;
-}
-
-.admin-search-history-row:hover {
-  background: var(--admin-soft);
 }
 
 .admin-search-history-cell {
-  min-height: 48px;
-  border: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  padding: 6px 8px;
+  min-height: 56px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-surface);
+  padding: 8px;
   display: grid;
   align-content: center;
   gap: 3px;

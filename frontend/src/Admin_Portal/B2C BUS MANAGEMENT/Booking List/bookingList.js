@@ -311,7 +311,21 @@ function normalizeBusBookingRecord(record) {
       getFieldValue(["passengerName", "PassengerName"], "")
     ),
     passengerPhone: String(
-      getFieldValue(["passengerPhone", "PassengerPhone"], "")
+      getFieldValue([
+        "passengerPhone",
+        "PassengerPhone",
+        "phone",
+        "Phone",
+        "mobile",
+        "Mobile",
+        "phoneNumber",
+        "PhoneNumber",
+        "phoneNo",
+        "PhoneNo",
+        "contactNumber",
+        "ContactNumber"
+      ], "") ||
+      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "")
     ),
     passengerEmail: String(
       getFieldValue(["passengerEmail", "PassengerEmail"], "")

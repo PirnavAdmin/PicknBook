@@ -5,20 +5,36 @@ import AdminTopbar from './TOPBAR ADMIN/Topbar';
 import './adminlayout.css';
 
 function AdminLayout() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // hidden by default
   const [searchQuery, setSearchQuery] = useState('');
+  const [theme, setTheme] = useState('light');
+
+  const toggleTheme = () => {};
 
   return (
-    <div className="admin-shell">
-      <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <main className="main-area">
-        <AdminTopbar 
-          onToggleSidebar={() => setIsCollapsed(!isCollapsed)} 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
-        <Outlet context={{ searchQuery, setSearchQuery }} />
+    <div className={`admin-shell ${theme}-theme`} style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
+
+      {/* Topbar — full width, PickNBook toggles sidebar */}
+      <AdminTopbar
+        onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+
+      {/* Main content — always full width */}
+      <main className="main-area" style={{ height: 'calc(100vh - 62px)', overflowY: 'auto' }}>
+        <Outlet context={{ searchQuery, setSearchQuery, theme }} />
       </main>
+
+      {/* Sidebar overlay — slides in from left on top of content */}
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
     </div>
   );
 }

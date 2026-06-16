@@ -176,7 +176,7 @@ export default function SeatSelection({
           )
         }
         onMouseLeave={onSeatMouseLeave}
-        disabled={isBooked}
+        disabled={isBooked || isDimmed}
         title={`Seat: ${seat.displayLabel || seat.label} | Fare: ₹${seat.fare}`}
       >
         {seat.kind === "sleeper" ? (

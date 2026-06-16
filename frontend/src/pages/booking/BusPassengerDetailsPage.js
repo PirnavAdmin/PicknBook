@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Mail, Phone, User, X } from "lucide-react";
+import { Check, Copy, Mail, Phone, User, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
 import {
@@ -613,6 +613,7 @@ export default function BusPassengerDetailsPage() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formErrorList, setFormErrorList] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
   const featuredOffersScrollerRef = useRef(null);
   const couponScrollerRef = useRef(null);
 
@@ -1005,23 +1006,7 @@ export default function BusPassengerDetailsPage() {
         errorDetails.push(`${seatLabel}: Gender selection is required.`);
       }
 
-      const passengerEmail = String(passenger.email || "").trim();
-      if (!passengerEmail) {
-        newErrors[`${prefix}email`] = "Required";
-        errorDetails.push(`${seatLabel}: Email address is required for this traveler.`);
-      } else if (!isValidEmail(passengerEmail)) {
-        newErrors[`${prefix}email`] = "Invalid";
-        errorDetails.push(`${seatLabel}: Enter a valid traveler email address.`);
-      }
 
-      const passengerMobile = String(passenger.mobile || passenger.phone || "").trim();
-      if (!passengerMobile) {
-        newErrors[`${prefix}mobile`] = "Required";
-        errorDetails.push(`${seatLabel}: Mobile number is required for this traveler.`);
-      } else if (!isValidMobile(passengerMobile)) {
-        newErrors[`${prefix}mobile`] = "Invalid";
-        errorDetails.push(`${seatLabel}: Mobile number must be 10 to 13 digits.`);
-      }
     });
 
     // Gender Seat Adjacent restriction checks
@@ -1574,36 +1559,7 @@ export default function BusPassengerDetailsPage() {
           )}
         </label>
 
-        <label className="passenger-field passenger-field--contact">
-          <span>Email *</span>
-          <input
-            type="email"
-            placeholder="Email *"
-            value={passenger.email || ""}
-            onChange={(e) => updatePassenger(index, "email", e.target.value)}
-            readOnly={Boolean(passenger.selectedTravelerId && passenger.email)}
-            className={errors[`passenger_${index}_email`] ? "field-has-error" : ""}
-          />
-          {errors[`passenger_${index}_email`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_email`]}</span>
-          )}
-        </label>
 
-        <label className="passenger-field passenger-field--contact">
-          <span>Mobile *</span>
-          <input
-            type="tel"
-            inputMode="numeric"
-            placeholder="Mobile *"
-            value={passenger.mobile || passenger.phone || ""}
-            onChange={(e) => updatePassenger(index, "mobile", e.target.value)}
-            readOnly={Boolean(passenger.selectedTravelerId && (passenger.mobile || passenger.phone))}
-            className={errors[`passenger_${index}_mobile`] ? "field-has-error" : ""}
-          />
-          {errors[`passenger_${index}_mobile`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_mobile`]}</span>
-          )}
-        </label>
       </div>
     );
   };
@@ -2065,6 +2021,8 @@ export default function BusPassengerDetailsPage() {
                           ? pricingPreview.appliedPromotionTitle
                           : offer.title;
 
+                        const code = offer.couponCode || "OFFER";
+
                         return (
                           <div
                             key={offer.offerId || offer.id || offer.couponCode}
@@ -2074,7 +2032,22 @@ export default function BusPassengerDetailsPage() {
                           >
                             <div className="voucher-header">
                               <span className="voucher-discount">{discountLabel}</span>
-                              <span className="voucher-code-badge">{offer.couponCode || "OFFER"}</span>
+                              <div className="voucher-code-wrapper">
+                                <span className="voucher-code-badge">{code}</span>
+                                <button
+                                  type="button"
+                                  className="voucher-copy-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(code);
+                                    setCopiedCode(code);
+                                    setTimeout(() => setCopiedCode(null), 2000);
+                                  }}
+                                  title="Copy Coupon Code"
+                                >
+                                  {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                </button>
+                              </div>
                             </div>
                             <div className="voucher-body">
                               <div className="voucher-title">{appliedTitle}</div>
@@ -2135,7 +2108,22 @@ export default function BusPassengerDetailsPage() {
                           >
                             <div className="voucher-header">
                               <span className="voucher-discount">{discountLabel}</span>
-                              <span className="voucher-code-badge">{code}</span>
+                              <div className="voucher-code-wrapper">
+                                <span className="voucher-code-badge">{code}</span>
+                                <button
+                                  type="button"
+                                  className="voucher-copy-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(code);
+                                    setCopiedCode(code);
+                                    setTimeout(() => setCopiedCode(null), 2000);
+                                  }}
+                                  title="Copy Coupon Code"
+                                >
+                                  {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                </button>
+                              </div>
                             </div>
                             <div className="voucher-body">
                               <div className="voucher-title">{code}</div>

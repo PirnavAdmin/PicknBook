@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { clearAuthSession } from './services/authSession';
+import { clearAuthSession, isTokenExpired } from './services/authSession';
 import { openAuthModal } from './utils/authModalEvents';
 
 const USER_PROTECTED_PATH_PREFIXES = [
@@ -66,10 +66,61 @@ window.fetch = async function (input, init) {
   }
 
   // Check if authenticated (via Authorization header or localStorage token)
-  const authHeader = headers["Authorization"] || headers["authorization"];
-  const token = authHeader || (typeof window !== "undefined" ? window.localStorage.getItem("token") : null);
+  let authHeader = headers["Authorization"] || headers["authorization"] || null;
+  let token = null;
 
-  if (!token) {
+  // Normalize and clean authHeader if it represents a null/undefined value
+  if (authHeader) {
+    const headerStr = String(authHeader).trim();
+    if (
+      headerStr === "Bearer null" ||
+      headerStr === "Bearer undefined" ||
+      headerStr.toLowerCase() === "null" ||
+      headerStr.toLowerCase() === "undefined"
+    ) {
+      authHeader = null;
+      delete headers["Authorization"];
+      delete headers["authorization"];
+    }
+  }
+
+  // Extract clean token (removing Bearer prefix if present)
+  if (authHeader) {
+    const parts = authHeader.split(" ");
+    if (parts.length > 1 && parts[0].toLowerCase() === "bearer") {
+      token = parts[1];
+    } else {
+      token = authHeader;
+    }
+  } else if (typeof window !== "undefined") {
+    token = window.localStorage.getItem("token");
+  }
+
+  // Normalize token: if it's the string "null" or "undefined", treat it as null
+  if (token === "null" || token === "undefined" || !token) {
+    token = null;
+  }
+
+  // If token is expired or invalid, clean it up and treat as unauthenticated
+  if (token && isTokenExpired(token)) {
+    token = null;
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("token");
+      window.localStorage.removeItem("user");
+    }
+  }
+
+  // Automatically inject Bearer token for our API requests if logged in
+  if (token && !authHeader && typeof window !== "undefined") {
+    const isApiRequest = String(input).startsWith("/api/") || String(input?.url).startsWith("/api/") ||
+                         String(input).includes("/api/") || String(input?.url).includes("/api/");
+    if (isApiRequest) {
+      headers["Authorization"] = `Bearer ${token}`;
+      authHeader = `Bearer ${token}`;
+    }
+  }
+
+  if (!token && !authHeader) {
     if (typeof window !== "undefined") {
       let guestId = window.localStorage.getItem("guest_id");
       if (!guestId) {

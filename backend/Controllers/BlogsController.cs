@@ -433,9 +433,16 @@ public class BlogsController : BaseApiController
         var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         var physicalPath = Path.Combine(webRootPath, normalized.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
 
-        if (System.IO.File.Exists(physicalPath))
+        try
         {
-            System.IO.File.Delete(physicalPath);
+            if (System.IO.File.Exists(physicalPath))
+            {
+                System.IO.File.Delete(physicalPath);
+            }
+        }
+        catch
+        {
+            // Swallow exception to prevent I/O errors from breaking DB deletion or updates
         }
     }
 

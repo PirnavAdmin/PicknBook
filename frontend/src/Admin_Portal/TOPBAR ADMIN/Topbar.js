@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAdminDashboardSummary, deriveAdminMetrics } from '../../services/adminDashboardService';
 import { clearAuthSession } from '../../services/authSession';
+import pickNBookLogo from '../../assets/images/brand/pick-n-book-logo.png';
 
 
 function getInitials(name) {
@@ -21,18 +22,192 @@ function getInitials(name) {
         .toUpperCase();
 }
 
+function md5(string) {
+    function rotateLeft(lValue, iShiftBits) {
+        return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
+    }
+    function addUnsigned(lX, lY) {
+        var lX4, lY4, lX8, lY8, lResult;
+        lX8 = (lX & 0x80000000);
+        lY8 = (lY & 0x80000000);
+        lX4 = (lX & 0x40000000);
+        lY4 = (lY & 0x40000000);
+        lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
+        if (lX4 & lY4) {
+            return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
+        }
+        if (lX4 | lY4) {
+            if (lResult & 0x40000000) {
+                return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
+            } else {
+                return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+            }
+        } else {
+            return (lResult ^ lX8 ^ lY8);
+        }
+    }
+    function F(x, y, z) { return (x & y) | ((~x) & z); }
+    function G(x, y, z) { return (x & z) | (y & (~z)); }
+    function H(x, y, z) { return (x ^ y ^ z); }
+    function I(x, y, z) { return (y ^ (x | (~z))); }
+    function FF(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    };
+    function GG(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    };
+    function HH(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    };
+    function II(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    };
+    function convertToWordArray(string) {
+        var lWordCount;
+        var lMessageLength = string.length;
+        var lNumberOfWords_temp1 = lMessageLength + 8;
+        var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
+        var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
+        var lWordArray = Array(lNumberOfWords);
+        var lBytePosition = 0;
+        var lByteCount = 0;
+        while (lByteCount < lMessageLength) {
+            lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+            lBytePosition = (lByteCount % 4) * 8;
+            lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount) << lBytePosition));
+            lByteCount++;
+        }
+        lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+        lBytePosition = (lByteCount % 4) * 8;
+        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
+        lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
+        lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
+        return lWordArray;
+    };
+    function wordToHex(lValue) {
+        var WordToHexValue = "", WordToHexValue_temp = "", lByte, lCount;
+        for (lCount = 0; lCount <= 3; lCount++) {
+            lByte = (lValue >>> (lCount * 8)) & 255;
+            WordToHexValue_temp = "0" + lByte.toString(16);
+            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
+        }
+        return WordToHexValue;
+    };
+    function utf8Encode(string) {
+        string = string.replace(/\r\n/g, "\n");
+        var utftext = "";
+        for (var n = 0; n < string.length; n++) {
+            var c = string.charCodeAt(n);
+            if (c < 128) {
+                utftext += String.fromCharCode(c);
+            } else if ((c > 127) && (c < 2048)) {
+                utftext += String.fromCharCode((c >> 6) | 192);
+                utftext += String.fromCharCode((c & 63) | 128);
+            } else {
+                utftext += String.fromCharCode((c >> 12) | 224);
+                utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+        }
+        return utftext;
+    };
+    var x = Array();
+    var k, AA, BB, CC, DD, a, b, c, d;
+    var S11 = 7, S12 = 12, S13 = 17, S14 = 22;
+    var S21 = 5, S22 = 9, S23 = 14, S24 = 20;
+    var S31 = 4, S32 = 11, S33 = 16, S34 = 23;
+    var S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+    string = utf8Encode(string);
+    x = convertToWordArray(string);
+    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
+    for (k = 0; k < x.length; k += 16) {
+        AA = a; BB = b; CC = c; DD = d;
+        a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478); d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756); c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB); b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
+        a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF); d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A); c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613); b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
+        a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8); d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF); c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1); b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
+        a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122); d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193); c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E); b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
+        a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562); d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340); c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51); b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
+        a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D); d = GG(d, a, b, c, x[k + 10], S22, 0x2441453); c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681); b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
+        a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6); d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6); c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87); b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
+        a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905); d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8); c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9); b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
+        a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942); d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681); c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122); b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
+        a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44); d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9); c = HH(c, d, a, b, x[k + 7], S33, 0xF6bb4B60); b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
+        a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6); d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA); c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085); b = HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
+        a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039); d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5); c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8); b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
+        a = II(a, b, c, d, x[k + 0], S41, 0xF4292244); d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97); c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7); b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
+        a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3); d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92); c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D); b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
+        a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F); d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0); c = II(c, d, a, b, x[k + 6], S43, 0xA3014314); b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
+        a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82); d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235); c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB); b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
+        a = addUnsigned(a, AA); b = addUnsigned(b, BB); c = addUnsigned(c, CC); d = addUnsigned(d, DD);
+    }
+    var temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
+    return temp.toLowerCase();
+}
+
+function getEmailInitials(email) {
+    if (!email) return '';
+    const parts = email.split('@')[0];
+    if (parts.length >= 2) {
+        return parts.slice(0, 2).toUpperCase();
+    }
+    return parts.toUpperCase();
+}
+
 function getAdminProfile() {
     const name =
         localStorage.getItem('adminName') ||
         localStorage.getItem('adminEmail') ||
         'Admin';
+    const email = localStorage.getItem('adminEmail') || '';
+
+    // Check various common keys where an admin image URL might be stored
+    const imageKeys = [
+        'adminPhoto',
+        'adminImage',
+        'adminAvatar',
+        'avatarUrl',
+        'photoUrl',
+        'profileImage',
+        'photo',
+        'avatar'
+    ];
+    let photoUrl = '';
+    for (const key of imageKeys) {
+        const val = localStorage.getItem(key);
+        if (val && (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('data:') || val.startsWith('/'))) {
+            photoUrl = val;
+            break;
+        }
+    }
+
+    if (!photoUrl) {
+        try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                const imgVal = userObj?.profileImage || userObj?.avatarUrl || userObj?.imageUrl || userObj?.photoUrl || userObj?.photo;
+                if (imgVal) {
+                    photoUrl = imgVal;
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (!photoUrl && email) {
+        photoUrl = `https://www.gravatar.com/avatar/${md5(email.trim().toLowerCase())}?d=404`;
+    }
 
     return {
         adminId: localStorage.getItem('adminId') || '--',
         adminName: name,
-        adminEmail: localStorage.getItem('adminEmail') || '',
-        avatarInitials: getInitials(name),
+        adminEmail: email,
+        avatarInitials: getEmailInitials(email) || getInitials(name),
         avatarBg: 'linear-gradient(135deg, #1e75ff, #0052d9)',
+        photoUrl: photoUrl
     };
 }
 
@@ -103,7 +278,7 @@ const SEARCHABLE_PAGES = [
     { label: 'Add Testimonial', category: 'Testimonial Management', path: '/admin/testimonial-management/add-testimonial' }
 ];
 
-function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
+function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleTheme }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -131,6 +306,57 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
     };
 
     const [adminData] = useState(() => getAdminProfile());
+    const [isFullscreen, setIsFullscreen] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('admin-fullscreen') === 'true';
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isCurrentlyFull = !!document.fullscreenElement;
+            setIsFullscreen(isCurrentlyFull);
+            localStorage.setItem('admin-fullscreen', isCurrentlyFull ? 'true' : 'false');
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
+    useEffect(() => {
+        const shouldBeFullscreen = localStorage.getItem('admin-fullscreen') === 'true';
+        if (shouldBeFullscreen && !document.fullscreenElement) {
+            const requestFs = () => {
+                document.documentElement.requestFullscreen()
+                    .then(() => {
+                        localStorage.setItem('admin-fullscreen', 'true');
+                    })
+                    .catch(err => console.log("Init fullscreen blocked/failed:", err));
+                document.removeEventListener('click', requestFs);
+            };
+            document.addEventListener('click', requestFs);
+            return () => document.removeEventListener('click', requestFs);
+        }
+    }, []);
+
+
+ 
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(() => {
+                setIsFullscreen(true);
+                localStorage.setItem('admin-fullscreen', 'true');
+            }).catch(err => {
+                console.error("Error enabling fullscreen:", err);
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                setIsFullscreen(false);
+                localStorage.setItem('admin-fullscreen', 'false');
+            });
+        }
+    };
+
 
     const handleExportCSV = () => {
         const csvRows = [
@@ -357,8 +583,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             alignItems: 'center',
             gap: '16px',
             padding: '10px 28px',
-            borderBottom: '1px solid #e8edf5',
-            background: '#f1f5fa',
+            borderBottom: '1px solid var(--admin-border)',
+            background: 'var(--panel)',
             position: 'relative',
             flexShrink: 0,
         },
@@ -371,7 +597,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
         menuToggle: {
             background: 'none',
             border: 'none',
-            color: 'var(--text-secondary)',
+            color: 'var(--admin-muted)',
             cursor: 'pointer',
             padding: '4px',
             display: 'flex',
@@ -386,11 +612,11 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
         searchBarInput: {
             width: '100%',
             height: '42px',
-            padding: '0 16px 0 42px',
+            padding: '0 75px 0 42px',
             borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            background: '#ffffff',
-            color: 'var(--text-primary)',
+            border: '1px solid var(--admin-border)',
+            background: 'var(--admin-soft)',
+            color: 'var(--admin-text)',
             outline: 'none',
             fontSize: '0.88rem',
             fontFamily: 'inherit',
@@ -403,7 +629,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             left: '16px',
             top: '50%',
             transform: 'translateY(-50%)',
-            color: '#94a3b8',
+            color: 'var(--admin-muted)',
             fontSize: '16px',
             pointerEvents: 'none',
             display: 'flex',
@@ -415,8 +641,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             left: 0,
             width: '100%',
             marginTop: '8px',
-            background: '#ffffff',
-            border: '1px solid #eef2f6',
+            background: 'var(--panel)',
+            border: '1px solid var(--admin-border)',
             borderRadius: '12px',
             boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
             maxHeight: '300px',
@@ -440,17 +666,17 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
         searchDropdownLabel: {
             fontSize: '0.85rem',
             fontWeight: 600,
-            color: 'var(--text-primary)',
+            color: 'var(--admin-text)',
         },
         searchDropdownCategory: {
             fontSize: '0.72rem',
-            color: '#94a3b8',
+            color: 'var(--admin-muted)',
             fontWeight: 500,
         },
         noSearchResults: {
             padding: '12px 16px',
             fontSize: '0.8rem',
-            color: '#94a3b8',
+            color: 'var(--admin-muted)',
             textAlign: 'center',
         },
         topbarActions: {
@@ -466,9 +692,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             height: '42px',
             padding: '0 16px',
             borderRadius: '12px',
-            background: '#ffffff',
-            border: '1px solid #eef2f6',
-            color: 'var(--text-primary)',
+            background: 'var(--admin-soft)',
+            border: '1px solid var(--admin-border)',
+            color: 'var(--admin-text)',
             boxShadow: '0 4px 12px rgba(15, 23, 42, 0.02)',
             transition: 'all 0.2s ease',
             boxSizing: 'border-box',
@@ -477,10 +703,10 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             width: '32px',
             height: '32px',
             borderRadius: '8px',
-            background: '#eef4ff',
+            background: 'var(--panel)',
             display: 'grid',
             placeItems: 'center',
-            color: '#1e75ff',
+            color: 'var(--admin-primary)',
             flexShrink: 0,
         },
         balanceText: {
@@ -488,20 +714,20 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             flexDirection: 'column',
             gap: '1px',
             fontSize: '0.72rem',
-            color: '#64748b',
+            color: 'var(--admin-muted)',
             fontWeight: 500,
             lineHeight: '1.2',
             justifyContent: 'center',
         },
         balanceValue: {
             fontSize: '0.9rem',
-            color: '#1e75ff',
+            color: 'var(--admin-primary)',
             fontWeight: 700,
         },
         eyeToggle: {
             background: 'none',
             border: 'none',
-            color: '#94a3b8',
+            color: 'var(--admin-muted)',
             cursor: 'pointer',
             padding: '2px',
             display: 'flex',
@@ -517,9 +743,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             height: '42px',
             padding: '0 16px',
             borderRadius: '12px',
-            background: '#ffffff',
-            border: '1px solid #eef2f6',
-            color: '#0f172a',
+            background: 'var(--admin-soft)',
+            border: '1px solid var(--admin-border)',
+            color: 'var(--admin-text)',
             fontSize: '0.85rem',
             fontWeight: 600,
             boxShadow: '0 4px 12px rgba(15, 23, 42, 0.02)',
@@ -533,7 +759,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             height: '42px',
             padding: '0 18px',
             borderRadius: '10px',
-            background: '#1e75ff',
+            background: 'var(--admin-primary)',
             color: '#ffffff',
             border: 'none',
             fontSize: '0.85rem',
@@ -548,9 +774,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             height: '42px',
             width: '42px',
             borderRadius: '50%',
-            border: '1px solid #eef2f6',
-            background: '#ffffff',
-            color: '#1e75ff',
+            border: '1px solid var(--admin-border)',
+            background: 'var(--admin-soft)',
+            color: 'var(--admin-primary)',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
@@ -565,9 +791,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             height: '42px',
             width: '42px',
             borderRadius: '50%',
-            border: '1px solid #eef2f6',
-            background: '#ffffff',
-            color: '#64748b',
+            border: '1px solid var(--admin-border)',
+            background: 'var(--admin-soft)',
+            color: 'var(--admin-muted)',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
@@ -591,7 +817,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             justifyContent: 'center',
             fontSize: '0.65rem',
             fontWeight: 700,
-            border: '2px solid #ffffff',
+            border: '2px solid var(--panel)',
         },
         profileDropdownWrapper: {
             position: 'relative',
@@ -600,7 +826,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             height: '42px',
             width: '42px',
             borderRadius: '50%',
-            border: '2px solid #ffffff',
+            border: '2px solid var(--panel)',
             display: 'grid',
             placeItems: 'center',
             fontWeight: 800,
@@ -609,8 +835,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             transition: 'all 0.3s ease',
             fontSize: '0.75rem',
             padding: 0,
-            background: 'linear-gradient(135deg, #1e75ff, #0052d9)',
-            boxShadow: '0 4px 12px rgba(30, 117, 255, 0.15)',
+            background: theme === 'light' ? 'linear-gradient(135deg, #dc1e26, #ef4444)' : 'linear-gradient(135deg, #1e75ff, #0052d9)',
+            boxShadow: theme === 'light' ? '0 4px 12px rgba(220, 30, 38, 0.15)' : '0 4px 12px rgba(30, 117, 255, 0.15)',
             boxSizing: 'border-box',
         },
         profileDropdownMenu: {
@@ -632,7 +858,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             alignItems: 'center',
             gap: '12px',
             padding: '16px',
-            background: '#f8fafc',
+            background: 'var(--admin-soft)',
             borderBottom: '1px solid var(--border)',
         },
         dsaAvatar: {
@@ -645,8 +871,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
             color: 'white',
             fontSize: '0.75rem',
             flexShrink: 0,
-            background: 'linear-gradient(135deg, #1e75ff, #0052d9)',
-            boxShadow: '0 4px 12px rgba(30, 117, 255, 0.2)',
+            background: theme === 'light' ? 'linear-gradient(135deg, #dc1e26, #ef4444)' : 'linear-gradient(135deg, #1e75ff, #0052d9)',
+            boxShadow: theme === 'light' ? '0 4px 12px rgba(220, 30, 38, 0.2)' : '0 4px 12px rgba(30, 117, 255, 0.2)',
         },
         dsaInfo: {
             display: 'flex',
@@ -791,19 +1017,61 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
     return (
         <>
             <header style={styles.topbar}>
-                {/* Left Section: List icon & Search Pill */}
+                {/* Left Section: Brand Logo & Search Box */}
                 <div style={styles.topbarLeft}>
-                    <button 
-                        style={styles.menuToggle} 
-                        aria-label="Toggle Sidebar"
-                        onClick={onToggleSidebar}
+                    {/* Hamburger Button for Sidebar Toggle */}
+                    <button
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--admin-muted)',
+                            cursor: 'pointer',
+                            padding: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '8px',
+                            transition: 'background 0.2s ease, color 0.2s ease',
+                        }}
+                        onClick={() => {
+                            if (onToggleSidebar) onToggleSidebar();
+                        }}
+                        title="Toggle Navigation"
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--admin-soft)';
+                            e.currentTarget.style.color = 'var(--admin-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.color = 'var(--admin-muted)';
+                        }}
                     >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="3" y1="12" x2="21" y2="12"></line>
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <line x1="3" y1="18" x2="21" y2="18"></line>
                         </svg>
                     </button>
+
+                    {/* Brand logo — click to navigate to admin dashboard */}
+                    <div 
+                        style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginRight: '8px',
+                            userSelect: 'none',
+                            transition: 'opacity 0.2s ease',
+                        }}
+                        onClick={() => {
+                            navigate('/admin');
+                        }}
+                        title="Go to Dashboard"
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.75'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                        <img src={pickNBookLogo} alt="Pick N Book" style={{ height: '46px', width: 'auto', display: 'block' }} />
+                    </div>
 
                     <div style={styles.searchWrapper} data-search-wrapper>
                         <span style={styles.searchBarIcon}>
@@ -823,11 +1091,11 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                             onFocus={() => setShowSearchDropdown(true)}
                             style={styles.searchBarInput}
                             onFocusCapture={(e) => {
-                                e.target.style.borderColor = '#1e75ff';
+                                e.target.style.borderColor = 'var(--admin-primary)';
                                 e.target.style.boxShadow = '0 4px 16px rgba(30, 117, 255, 0.08)';
                             }}
                             onBlurCapture={(e) => {
-                                e.target.style.borderColor = '#e2e8f0';
+                                e.target.style.borderColor = 'var(--admin-border)';
                                 e.target.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.01)';
                             }}
                             onKeyDown={(e) => {
@@ -839,9 +1107,42 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                 }
                             }}
                         />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowSearchDropdown(prev => !prev);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                right: '6px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'var(--admin-primary)',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.78rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 2px 6px rgba(30, 117, 255, 0.2)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'var(--admin-primary-hover, #0052d9)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'var(--admin-primary)';
+                            }}
+                        >
+                            Search
+                        </button>
                         {showSearchDropdown && (
                             <div style={styles.searchDropdown}>
-                                <div style={{ padding: '8px 16px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #f1f5fa', marginBottom: '4px' }}>
+                                <div style={{ padding: '8px 16px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--admin-muted)', fontWeight: 700, borderBottom: '1px solid var(--admin-border)', marginBottom: '4px' }}>
                                     {searchQuery ? 'Search Results' : 'Suggested Pages'}
                                 </div>
                                 {filteredSearchPages.length > 0 ? (
@@ -855,7 +1156,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                                 setSearchQuery('');
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = '#f8fafc';
+                                                e.currentTarget.style.background = 'var(--admin-soft)';
                                             }}
                                             onMouseLeave={(e) => {
                                                 e.currentTarget.style.background = 'none';
@@ -875,129 +1176,25 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                     </div>
                 </div>
 
-                {/* Right Actions */}
+                {/* Right Section: Fullscreen, Notifications, Profile Dropdown */}
                 <div style={styles.topbarActions}>
-                    {/* Cash Balance Pill (Mockup match) */}
-                    <div style={styles.balancePill}>
-                        <div style={styles.balanceIconWrapper}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-                                <line x1="12" y1="4" x2="12" y2="20"></line>
-                            </svg>
-                        </div>
-                        <div style={styles.balanceText}>
-                            <span>Cash Balance</span>
-                            <strong style={styles.balanceValue}>
-                                {isBalanceVisible ? `₹ ${Number(balanceData.amount).toLocaleString('en-IN')}` : '₹ ••••••'}
-                            </strong>
-                        </div>
-                        <button
-                            style={styles.eyeToggle}
-                            onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-                            title={isBalanceVisible ? 'Hide balance' : 'Show balance'}
-                            aria-label={isBalanceVisible ? 'Hide balance' : 'Show balance'}
-                        >
-                            {isBalanceVisible ? (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            ) : (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                                </svg>
-                            )}
-                        </button>
-                    </div>
 
-                    {/* Request Top Up Action button (Plus) */}
+                    {/* Fullscreen Toggle Button */}
                     <button
                         style={styles.topupButton}
-                        onClick={handleTopupClick}
-                        title="Request Top Up"
-                        aria-label="Request Top Up"
+                        onClick={toggleFullscreen}
+                        title="Toggle Fullscreen"
+                        aria-label="Toggle Fullscreen"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-
-                    {/* Date Selector Dropdown (Mockup match) */}
-                    <div style={{ position: 'relative' }}>
-                        <div 
-                            style={styles.dateSelector}
-                            onClick={() => {
-                                setShowDatePicker(!showDatePicker);
-                                setShowNotifications(false);
-                            }}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                        {isFullscreen ? (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7" />
                             </svg>
-                            <span>{todayDate}</span>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="6 9 12 15 18 9"></polyline>
+                        ) : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                             </svg>
-                        </div>
-                        {showDatePicker && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '10px',
-                                background: '#ffffff',
-                                border: '1px solid #eef2f6',
-                                borderRadius: '12px',
-                                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
-                                padding: '14px',
-                                zIndex: 1100,
-                                width: '220px',
-                            }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '8px', color: '#0f172a' }}>Select Date</div>
-                                <input 
-                                    type="date" 
-                                    onChange={(e) => {
-                                        const d = new Date(e.target.value);
-                                        if (!isNaN(d.getTime())) {
-                                            setTodayDate(d.toLocaleDateString('en-IN', {
-                                                day: '2-digit',
-                                                month: 'short',
-                                                year: 'numeric',
-                                            }));
-                                        }
-                                        setShowDatePicker(false);
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '6px 10px',
-                                        border: '1px solid #e2e8f0',
-                                        borderRadius: '8px',
-                                        fontSize: '0.8rem',
-                                        outline: 'none',
-                                        fontFamily: 'inherit',
-                                    }}
-                                />
-                            </div>
                         )}
-                    </div>
-
-                    {/* Export Report Pill Button */}
-                    <button 
-                        style={styles.exportBtn}
-                        onClick={handleExportCSV}
-                        title="Export Summary Report"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        <span>Export Report</span>
                     </button>
 
                     {/* Notification Bell Button */}
@@ -1031,8 +1228,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                 top: '100%',
                                 right: 0,
                                 marginTop: '10px',
-                                background: '#ffffff',
-                                border: '1px solid #eef2f6',
+                                background: 'var(--panel)',
+                                border: '1px solid var(--admin-border)',
                                 borderRadius: '12px',
                                 boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
                                 width: '280px',
@@ -1044,10 +1241,10 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     padding: '12px 14px',
-                                    background: '#f8fafc',
-                                    borderBottom: '1px solid #e8edf5',
+                                    background: 'var(--admin-soft)',
+                                    borderBottom: '1px solid var(--admin-border)',
                                 }}>
-                                    <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>System Notifications</strong>
+                                    <strong style={{ fontSize: '0.85rem', color: 'var(--admin-text)' }}>System Notifications</strong>
                                     <span style={{ fontSize: '0.62rem', background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold' }}>Active</span>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '200px', overflowY: 'auto' }}>
@@ -1090,33 +1287,92 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                         )}
                     </div>
 
-                    {/* Profile Avatar Dropdown */}
-                    <div style={styles.profileDropdownWrapper}>
+                    {/* Profile & User Information Dropdown */}
+                    <div 
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            cursor: 'pointer',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            transition: 'background 0.2s ease',
+                            ...styles.profileDropdownWrapper
+                        }}
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-soft)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
                         <button
-                            style={styles.avatarBtn}
+                            style={{
+                                ...styles.avatarBtn,
+                                overflow: 'hidden',
+                                display: 'grid',
+                                placeItems: 'center',
+                                padding: 0
+                            }}
                             type="button"
                             aria-label="Profile Menu"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
-                            {adminData.avatarInitials}
+                            {adminData.photoUrl ? (
+                                <img 
+                                    src={adminData.photoUrl} 
+                                    alt="" 
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.parentElement.innerHTML = theme === 'light' ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; color: #ffffff;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>` : adminData.avatarInitials;
+                                    }}
+                                />
+                            ) : (
+                                theme === 'light' ? (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', color: '#ffffff' }}>
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                        <polyline points="22,6 12,13 2,6"></polyline>
+                                    </svg>
+                                ) : (
+                                    adminData.avatarInitials
+                                )
+                            )}
                         </button>
-                        <span style={{
-                            position: 'absolute',
-                            bottom: '0px',
-                            right: '0px',
-                            width: '10px',
-                            height: '10px',
-                            borderRadius: '50%',
-                            background: '#10b981',
-                            border: '2px solid #ffffff'
-                        }}></span>
-
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'left', pointerEvents: 'none' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--admin-text)', lineHeight: '1.2' }}>Admin User</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--admin-muted)', fontWeight: '500' }}>Super Admin</span>
+                        </div>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--admin-muted)', pointerEvents: 'none' }}>
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+ 
                         {/* Dropdown Menu */}
                         {isDropdownOpen && (
-                            <div style={styles.profileDropdownMenu}>
+                            <div style={{ ...styles.profileDropdownMenu, right: '0px', top: '100%', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                                 <div style={styles.dropdownHeader}>
-                                    <div style={styles.dsaAvatar}>
-                                        {adminData.avatarInitials}
+                                    <div style={{
+                                        ...styles.dsaAvatar,
+                                        overflow: 'hidden',
+                                        display: 'grid',
+                                        placeItems: 'center'
+                                    }}>
+                                        {adminData.photoUrl ? (
+                                            <img 
+                                                src={adminData.photoUrl} 
+                                                alt="" 
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.parentElement.innerHTML = theme === 'light' ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; color: #ffffff;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>` : adminData.avatarInitials;
+                                                }}
+                                            />
+                                        ) : (
+                                            theme === 'light' ? (
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', color: '#ffffff' }}>
+                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                                </svg>
+                                            ) : (
+                                                adminData.avatarInitials
+                                            )
+                                        )}
                                     </div>
                                     <div style={styles.dsaInfo}>
                                         <div style={styles.dsaName}>{adminData.adminName}</div>
@@ -1126,21 +1382,29 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                         )}
                                     </div>
                                 </div>
-
+ 
                                 <div style={styles.dropdownDivider}></div>
-
+ 
                                 <div style={styles.dropdownMenuItems}>
                                     <button
-                                        style={styles.dropdownMenuItem}
+                                        style={{
+                                            ...styles.dropdownMenuItem,
+                                            color: theme === 'light' ? '#000000' : 'var(--text-primary)'
+                                        }}
                                         onClick={handleClearCache}
                                         type="button"
                                         onMouseEnter={(e) => {
-                                            e.target.style.background = '#f1f5fa';
-                                            e.target.style.color = '#1e75ff';
+                                            if (theme === 'light') {
+                                                e.currentTarget.style.background = '#fef2f2';
+                                                e.currentTarget.style.color = '#ef4444';
+                                            } else {
+                                                e.currentTarget.style.background = '#f1f5fa';
+                                                e.currentTarget.style.color = '#1e75ff';
+                                            }
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.background = 'none';
-                                            e.target.style.color = 'var(--text-primary)';
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = theme === 'light' ? '#000000' : 'var(--text-primary)';
                                         }}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>
@@ -1151,18 +1415,26 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                         </svg>
                                         <span style={styles.span}>Clear Cache & Cookies</span>
                                     </button>
-
+ 
                                     <button
-                                        style={styles.dropdownMenuItem}
+                                        style={{
+                                            ...styles.dropdownMenuItem,
+                                            color: theme === 'light' ? '#000000' : 'var(--text-primary)'
+                                        }}
                                         onClick={handleChangePassword}
                                         type="button"
                                         onMouseEnter={(e) => {
-                                            e.target.style.background = '#f1f5fa';
-                                            e.target.style.color = '#1e75ff';
+                                            if (theme === 'light') {
+                                                e.currentTarget.style.background = '#fef2f2';
+                                                e.currentTarget.style.color = '#ef4444';
+                                            } else {
+                                                e.currentTarget.style.background = '#f1f5fa';
+                                                e.currentTarget.style.color = '#1e75ff';
+                                            }
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.background = 'none';
-                                            e.target.style.color = 'var(--text-primary)';
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = theme === 'light' ? '#000000' : 'var(--text-primary)';
                                         }}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>
@@ -1171,18 +1443,26 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery }) {
                                         </svg>
                                         <span style={styles.span}>Change Password</span>
                                     </button>
-
+ 
                                     <button
-                                        style={styles.dropdownMenuItem}
+                                        style={{
+                                            ...styles.dropdownMenuItem,
+                                            color: theme === 'light' ? '#000000' : 'var(--text-primary)'
+                                        }}
                                         onClick={handleChangePin}
                                         type="button"
                                         onMouseEnter={(e) => {
-                                            e.target.style.background = '#f1f5fa';
-                                            e.target.style.color = '#1e75ff';
+                                            if (theme === 'light') {
+                                                e.currentTarget.style.background = '#fef2f2';
+                                                e.currentTarget.style.color = '#ef4444';
+                                            } else {
+                                                e.currentTarget.style.background = '#f1f5fa';
+                                                e.currentTarget.style.color = '#1e75ff';
+                                            }
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.target.style.background = 'none';
-                                            e.target.style.color = 'var(--text-primary)';
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = theme === 'light' ? '#000000' : 'var(--text-primary)';
                                         }}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>

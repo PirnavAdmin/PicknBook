@@ -1359,6 +1359,31 @@
 .bus-seat-cell {
   padding: 12px 10px;
 }
+
+.bus-operator-cell {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.bus-operator-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+}
+
+.bus-operator-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bus-operator-info {
+  min-width: 0;
+}
  
 .bus-operator-cell h4 {
   margin: 0;

@@ -201,7 +201,7 @@ export default function Topbar() {
   return (
     <>
       <header className="topbar">
-        {/* Left Side: Logo & Main Nav Menu */}
+        {/* Left Side: Logo */}
         <div className="left-group">
           {/* Hamburger Menu Toggle Button */}
           <button 
@@ -217,8 +217,11 @@ export default function Topbar() {
           <button type="button" className="brand" onClick={handleLogoClick}>
             <img className="brand-logo" src={pickNBookLogo} alt="Pick N Book" />
           </button>
+        </div>
 
-          {/* Navigation Links next to Logo (scrolling-dependent on Home) */}
+        {/* Right Side: Navigation Links & Account Authentication */}
+        <div className="right-section">
+          {/* Navigation Links next to Login/Signup (scrolling-dependent on Home) */}
           <div className={`nav-menu-links ${isHome ? (scrolled ? "visible" : "hidden") : "visible"}`}>
             <button
               type="button"
@@ -244,27 +247,6 @@ export default function Topbar() {
               <Building2 size={16} />
               <span>Hotels</span>
             </button>
-          </div>
-        </div>
-
-        {/* Right Side: Utility Pages & Account Authentication */}
-        <div className="right-section">
-          {/* Desktop Secondary Utility Links */}
-          <div className="utility-links">
-            <NavLink
-              to="/web-checkin"
-              className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}
-            >
-              <Ticket size={16} />
-              <span>Web Check-in</span>
-            </NavLink>
-            <NavLink
-              to="/fetch-ticket"
-              className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}
-            >
-              <Ticket size={16} />
-              <span>Print Ticket</span>
-            </NavLink>
           </div>
 
           {/* Authentication State section */}
@@ -369,22 +351,6 @@ export default function Topbar() {
                 <Building2 size={18} />
                 <span>Hotels</span>
               </button>
-              <NavLink 
-                to="/web-checkin" 
-                className={({ isActive }) => `drawer-item ${isActive ? "active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Ticket size={18} />
-                <span>Web Check-in</span>
-              </NavLink>
-              <NavLink 
-                to="/fetch-ticket" 
-                className={({ isActive }) => `drawer-item ${isActive ? "active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Ticket size={18} />
-                <span>Print Ticket</span>
-              </NavLink>
             </div>
           </div>
         </div>
@@ -392,4 +358,3 @@ export default function Topbar() {
     </>
   );
 }
-

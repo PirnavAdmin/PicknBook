@@ -84,3 +84,11 @@ export function toInputDate(value) {
   if (!match) return value;
   return `${match[3]}-${match[2]}-${match[1]}`;
 }
+
+// Generates YYYY-MM-DD date string with day offset in local time
+export function getDefaultDateString(offsetDays = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 10);
+}

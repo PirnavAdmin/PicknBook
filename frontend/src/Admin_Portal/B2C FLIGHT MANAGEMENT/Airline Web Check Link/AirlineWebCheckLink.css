@@ -16,9 +16,8 @@
 .header h2 {
   margin: 0;
   font-size: 20px;
-  color: var(--admin-primary);
-  border-bottom: none !important;
-  padding-bottom: 0 !important;
+  color: var(--admin-text) !important;
+  font-weight: 700 !important;
 }
 
 .actions {
@@ -59,95 +58,69 @@
 
 .table {
   width: 100%;
-  border-collapse: separate !important;
-  border-spacing: 0 10px !important;
-  table-layout: auto !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  overflow: visible !important;
-}
-
-.table thead tr {
-  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary)) !important;
+  border-collapse: collapse;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .table th {
-  color: #ffffff !important;
-  padding: 12px 16px !important;
-  font-size: 12px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary));
+  color: #ffffff;
+  padding: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   text-align: center !important;
-  border: none !important;
-}
-
-.table th:first-child {
-  border-top-left-radius: 12px !important;
-  border-bottom-left-radius: 12px !important;
-}
-
-.table th:last-child {
-  border-top-right-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
 }
 
 .table td {
-  border-top: 1px solid var(--admin-border) !important;
-  border-bottom: 1px solid var(--admin-border) !important;
-  background: var(--admin-surface) !important;
-  padding: 12px 16px !important;
-  color: var(--admin-text) !important;
-  font-size: 13px !important;
+  padding: 10px;
+  border-top: 1px solid var(--admin-border);
+  font-size: 13px;
+  color: var(--admin-text);
   text-align: center !important;
   vertical-align: middle !important;
 }
 
-.table td:first-child {
-  border-left: 1px solid var(--admin-border) !important;
-  border-top-left-radius: 12px !important;
-  border-bottom-left-radius: 12px !important;
-}
-
-.table td:last-child {
-  border-right: 1px solid var(--admin-border) !important;
-  border-top-right-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
-}
-
-.table tbody tr {
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-.table tbody tr:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
-}
-
-.table tbody tr:hover td {
-  border-color: rgba(30, 117, 255, 0.2) !important;
-}
-
-.delete {
-  background: var(--admin-danger);
-  color: #ffffff;
-  border: 1px solid var(--admin-danger);
-  padding: 6px 10px;
+.icon-btn {
+  border: 1px solid var(--admin-border);
+  padding: 6px 8px;
   cursor: pointer;
   border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  transition: all 0.2s ease-in-out;
 }
 
-.note {
-  margin-top: 4px;
-  border: 1px solid var(--admin-border);
-  background: var(--admin-success-soft);
-  padding: 10px;
-  color: var(--admin-success);
-  font-size: 13px;
-  border-radius: 10px;
+.icon-btn.view {
+  border-color: var(--admin-border);
+  color: var(--admin-primary);
+}
+
+.icon-btn.edit {
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.icon-btn.delete {
+  border-color: var(--admin-danger);
+  color: var(--admin-danger);
+}
+
+.icon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.btn, .submit-btn, .icon-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn:hover, .submit-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
 }
 
 .form-box {
@@ -159,18 +132,21 @@
 }
 
 .form-title {
-  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary));
-  color: #ffffff;
-  padding: 8px 12px;
-  border-radius: 10px;
-  margin-bottom: 15px;
+  color: var(--admin-text);
+  font-size: 1.15rem;
   font-weight: 700;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--admin-border);
+  padding-bottom: 6px;
 }
 
 .form-row {
-  display: flex;
-  gap: 14px;
+  display: flex !important;
+  gap: 20px !important;
   flex-wrap: wrap;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
 }
 
 .input-group {
@@ -182,24 +158,28 @@
 }
 
 .input-group label {
-  font-size: 12px;
-  color: var(--admin-muted);
+  font-size: 13px;
+  color: var(--admin-text);
+  font-weight: 700 !important;
 }
 
 .input-group input {
   padding: 10px 12px;
-  border: 1px solid var(--admin-border);
-  border-radius: 10px;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: 10px !important;
   font-size: 13px;
   color: var(--admin-text);
+  background: var(--admin-surface) !important;
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
 .submit-btn {
   margin-top: 20px;
   padding: 10px 20px;
-  border: 2px solid var(--admin-primary);
-  background: var(--admin-surface);
-  color: var(--admin-primary);
+  border: 2px solid var(--admin-primary) !important;
+  background: var(--admin-surface) !important;
+  color: var(--admin-primary) !important;
   cursor: pointer;
   border-radius: 10px;
   font-weight: 700;
@@ -208,6 +188,107 @@
 }
 
 .submit-btn:hover {
-  background: var(--admin-primary);
+  background: var(--admin-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Default White Theme Color rules (Red theme) */
+.table th {
+  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary)) !important;
   color: #ffffff;
+}
+
+.btn.filter {
+  background: var(--admin-primary-strong) !important;
+  border-color: var(--admin-primary-strong) !important;
+  color: #ffffff !important;
+}
+
+.btn.add,
+.btn.back {
+  background: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Dark Theme Overrides - Fix Visibility and switch to Blue Theme */
+.admin-shell.dark-theme .header h2 {
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .table th {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+}
+
+.admin-shell.dark-theme .btn.filter {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+.admin-shell.dark-theme .btn.add,
+.admin-shell.dark-theme .btn.back {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.admin-shell.dark-theme .submit-btn {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+
+.admin-shell.dark-theme .submit-btn:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .form-box {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+.admin-shell.dark-theme .form-title {
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .input-group label {
+  color: #cbd5e1 !important;
+}
+
+.admin-shell.dark-theme .input-group input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .table {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .table td {
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+.admin-shell.dark-theme .icon-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+.admin-shell.dark-theme .icon-btn.view {
+  color: #3b82f6 !important;
+  border-color: #2563eb !important;
+}
+
+.admin-shell.dark-theme .icon-btn.edit {
+  color: #3b82f6 !important;
+  border-color: #2563eb !important;
+}
+
+.admin-shell.dark-theme .icon-btn.delete {
+  color: #ef4444 !important;
+  border-color: #dc2626 !important;
 }

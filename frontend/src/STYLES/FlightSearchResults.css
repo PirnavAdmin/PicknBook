@@ -62,8 +62,7 @@
 .flight-book-btn,
 .flight-action-btn,
 .fare-select-btn,
-.flight-filter-apply,
-.flight-sort-pill.active {
+.flight-filter-apply {
   background: var(--theme-gradient-action, linear-gradient(135deg, #dc1e26, #b8141b)) !important;
   color: #ffffff !important;
   border-color: transparent !important;
@@ -287,6 +286,10 @@
   display: none;
 }
 
+/* ============================================================
+   FLIGHT SEARCH LOADING SCREEN  (city-to-city plane animation)
+   ============================================================ */
+
 .flight-loading-screen {
   position: fixed;
   inset: 0;
@@ -295,98 +298,269 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 32px;
   padding: 24px;
-  overflow-y: auto;
-  background:
-    radial-gradient(circle at 10% 16%, rgba(220, 30, 38, 0.06), transparent 33%),
-    radial-gradient(circle at 88% 8%, rgba(88, 208, 255, 0.08), transparent 34%),
-    linear-gradient(150deg, #ffffff 0%, #f6faff 45%, #eef5ff 100%);
+  overflow: hidden;
+  background: linear-gradient(160deg, #e8eef8 0%, #f0f5fc 40%, #dce6f5 100%);
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
 
-.flight-loading-lottie {
-  width: min(100%, 420px);
-  height: auto;
-  aspect-ratio: 1.2;
+/* Subtle floating cloud blobs in background */
+.flight-loading-screen::before,
+.flight-loading-screen::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.18;
+  animation: flsCloudDrift 20s infinite ease-in-out;
+}
+.flight-loading-screen::before {
+  width: 360px;
+  height: 200px;
+  background: radial-gradient(ellipse, #c5d8f5 0%, transparent 70%);
+  top: 8%;
+  left: -8%;
+}
+.flight-loading-screen::after {
+  width: 280px;
+  height: 160px;
+  background: radial-gradient(ellipse, #b8d0f0 0%, transparent 70%);
+  bottom: 12%;
+  right: -5%;
+  animation-delay: -10s;
+  animation-direction: reverse;
+}
+
+/* ── Header ── */
+.fls-header {
+  text-align: center;
+  z-index: 10;
+  position: relative;
+}
+
+.fls-title {
+  margin: 0 0 6px;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 800;
+  color: #1a2f52;
+  letter-spacing: -0.025em;
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+}
+
+.fls-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #5a7ba8;
+}
+
+/* ── Route panel: skyline | path | skyline ── */
+.fls-route-panel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  width: min(100%, 700px);
+  z-index: 10;
+  position: relative;
+}
+
+/* City skylines */
+.fls-skyline {
+  flex-shrink: 0;
+  width: 110px;
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.fls-skyline svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fls-skyline--left {
+  justify-content: flex-end;
+}
+
+.fls-skyline--right {
+  justify-content: flex-start;
+}
+
+/* Path zone: pins + dashed line + plane */
+.fls-path-zone {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto;
+  justify-content: space-between;
+  gap: 0;
+  position: relative;
+  padding-bottom: 18px; /* leave room for city names below pins */
 }
 
-.flight-loading-lottie > div,
-.flight-loading-lottie svg,
-.flight-loading-lottie canvas {
-  width: 100% !important;
-  height: 100% !important;
-  transform: none !important;
-}
-
-.flight-loading-details {
-  width: min(100%, 820px);
-  margin-top: 15px;
-  text-align: center;
-}
-
-.flight-loading-details-header {
-  margin-bottom: 20px;
-}
-
-.flight-loading-details-header span {
-  display: block;
-  font-size: 0.76rem;
-  color: var(--fr-muted);
-  text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-}
-
-.flight-loading-details-header strong {
-  display: block;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(1.25rem, 2vw, 1.85rem);
-  color: var(--fr-text);
-  margin-top: 4px;
-}
-
-.flight-loading-details-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.flight-loading-detail-card {
-  background: #ffffff;
-  border: 1px solid var(--fr-border);
-  border-radius: 14px;
-  padding: 14px;
+/* Pins */
+.fls-pin {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
-  text-align: left;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.02);
+  flex-shrink: 0;
+  z-index: 2;
 }
 
-.flight-loading-detail-card span {
-  font-size: 0.68rem;
-  color: var(--fr-muted);
-  text-transform: uppercase;
-  font-weight: 750;
-  letter-spacing: 0.05em;
-}
-
-.flight-loading-detail-card strong {
-  font-size: 0.88rem;
-  color: var(--fr-text);
+.fls-city-name {
+  font-size: 0.78rem;
   font-weight: 700;
+  color: #2d4a7a;
+  white-space: nowrap;
+  text-align: center;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-@media (max-width: 768px) {
-  .flight-loading-details-grid {
-    grid-template-columns: 1fr;
+/* Dashed path container */
+.fls-dashed-path {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  margin: 0 -2px;
+}
+
+.fls-path-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.fls-path-svg line {
+  animation: flsDashMove 1.2s linear infinite;
+}
+
+/* Dot pulses on the path */
+.fls-dot-pulse {
+  animation: flsDotPulse 1.8s infinite ease-in-out;
+}
+.fls-dot-1 { animation-delay: 0s; }
+.fls-dot-2 { animation-delay: 0.6s; }
+.fls-dot-3 { animation-delay: 1.2s; }
+
+/* Paper plane flying along the path */
+.fls-plane-wrapper {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 40px;
+  height: 32px;
+  transform: translate(-90%, -50%) rotate(-7deg);
+  animation: flsPlaneFly 2.6s infinite linear;
+  will-change: left, transform, opacity;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 3px 8px rgba(29, 78, 216, 0.35));
+}
+
+/* ── Footer spinner ── */
+.fls-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+  position: relative;
+}
+
+.fls-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(91, 141, 239, 0.22);
+  border-top-color: #5b8def;
+  border-radius: 50%;
+  animation: flsSpin 0.85s linear infinite;
+}
+
+.fls-wait-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #7a98c0;
+  letter-spacing: 0.02em;
+  animation: flsTextPulse 2s infinite ease-in-out;
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+
+@keyframes flsPlaneFly {
+  0% {
+    left: 0%;
+    opacity: 0;
+    transform: translate(-95%, -50%) rotate(-7deg) scale(0.88);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-70%, -54%) rotate(-7deg) scale(1);
+  }
+  50% {
+    left: 50%;
+    opacity: 1;
+    transform: translate(-50%, -62%) rotate(-7deg) scale(1.04);
+  }
+  90% {
+    opacity: 1;
+    transform: translate(-25%, -54%) rotate(-7deg) scale(1);
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+    transform: translate(0%, -50%) rotate(-7deg) scale(0.88);
   }
 }
 
+@keyframes flsDashMove {
+  to {
+    stroke-dashoffset: -15;
+  }
+}
 
+@keyframes flsDotPulse {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.75; }
+}
+
+
+@keyframes flsSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flsTextPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+@keyframes flsCloudDrift {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  33%       { transform: translateX(30px) translateY(-10px); }
+  66%       { transform: translateX(-15px) translateY(8px); }
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .fls-skyline { width: 70px; height: 60px; }
+  .fls-title { font-size: 1.35rem; }
+}
+
+
+
+/* ============================================================
+   RESULTS LAYOUT
+   ============================================================ */
 
 .results-layout {
   margin-top: 10px;
@@ -402,11 +576,12 @@
   height: calc(100vh - 96px);
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid #ced8e6;
-  border-radius: 10px;
-  background: #f9fafb;
+  border: 0;
+  border-top: 4px solid #f2a900;
+  border-radius: 0;
+  background: #ffffff;
   scrollbar-width: thin;
-  scrollbar-color: #ced8e6 transparent;
+  scrollbar-color: #d6d6d6 transparent;
 }
 
 .filters-rail::-webkit-scrollbar {
@@ -421,99 +596,118 @@
 }
 
 .flights-count {
-  background: linear-gradient(
-    135deg,
-    var(--fr-primary),
-    var(--fr-primary-strong)
-  );
-  color: #ffffff;
-  min-height: 52px;
+  background: #ffffff;
+  color: #1f2937;
+  min-height: 42px;
   display: flex;
   align-items: center;
   padding: 0 12px;
-  font-size: 0.918rem;
+  font-size: 0.81rem;
   font-weight: 800;
+  border-bottom: 1px solid #d6d6d6;
 }
 
 .filter-group {
-  padding: 14px 12px;
-  border-bottom: 1px solid #d1dae5;
+  padding: 10px 12px 14px;
+  border-bottom: 1px solid #cfcfcf;
 }
 
 .filter-group h3 {
-  margin: 0 0 10px;
-  font-size: 0.963rem;
-  color: var(--fr-primary);
+  margin: 0 0 12px;
+  color: #d9680f;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  font-size: 1.08rem;
+  line-height: 1.1;
+  font-weight: 500;
   font-family: var(--fr-heading-font);
+}
+
+.filter-group h3::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 28px;
+  height: 3px;
+  background: #d9680f;
 }
 
 .range-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #1c3352;
-  font-size: 0.747rem;
-  font-weight: 700;
+  color: #111111;
+  font-size: 0.918rem;
+  font-weight: 500;
 }
 
 .range-stack {
-  margin-top: 10px;
-  display: grid;
-  gap: 8px;
+  margin-top: 12px;
 }
 
 .range-stack input[type="range"] {
   width: 100%;
-  accent-color: var(--fr-accent);
+  accent-color: #f2a900;
   cursor: pointer;
+  margin: 0;
 }
 
 .departure-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid #d7d7d7;
 }
 
 .departure-chip {
-  border: 1px solid #c4d1e3;
-  border-radius: 8px;
-  min-height: 42px;
-  font-size: 0.684rem;
+  border: 0;
+  border-right: 1px solid #d7d7d7;
+  border-radius: 0;
+  min-height: 80px;
+  padding: 8px 4px;
+  font-size: 0.585rem;
   font-weight: 700;
-  color: #3f587a;
+  color: #111111;
   cursor: pointer;
-  background: #f7fafd;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+}
+
+.departure-chip:last-child {
+  border-right: 0;
 }
 
 .departure-chip.active {
-  border-color: transparent;
-  color: #ffffff;
-  background: linear-gradient(
-    135deg,
-    var(--fr-primary),
-    var(--fr-primary-strong)
-  );
-  box-shadow: 0 8px 16px rgba(19, 61, 117, 0.28);
+  color: #111111;
+  background: #fff7de;
+  box-shadow: inset 0 -3px 0 #f2a900;
 }
 
 .check-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
   cursor: pointer;
 }
 
 .check-row input {
-  width: 15px;
-  height: 15px;
-  accent-color: #1a5bb1;
+  width: 17px;
+  height: 17px;
+  accent-color: #d9680f;
 }
 
 .check-row span,
 .empty-filter-state {
-  color: #1e3655;
-  font-size: 0.81rem;
+  color: #111111;
+  font-size: 0.945rem;
+  font-weight: 400;
 }
 
 .results-column {
@@ -522,84 +716,199 @@
 
 .fare-date-strip {
   display: grid;
-  grid-template-columns: repeat(6, minmax(130px, 1fr));
-  border: 1px solid #d1dbe8;
-  border-radius: 10px;
+  grid-template-columns: 60px repeat(6, minmax(118px, 1fr)) 60px;
+  border: 1px solid #e4e8ee;
+  border-radius: 14px;
   background: #ffffff;
   overflow: hidden;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
 }
 
 .fare-date-card {
   border: 0;
   border-right: 1px solid #d7dfeb;
-  padding: 10px 8px;
-  min-height: 84px;
-  background: #f6f9fe;
+  padding: 9px 10px;
+  min-height: 74px;
+  background: #ffffff;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
+  position: relative;
+  text-align: center;
 }
 
-.fare-date-card:last-child {
+.fare-date-card:nth-last-child(2) {
   border-right: 0;
 }
 
 .fare-date-card strong {
-  color: var(--fr-primary);
+  color: #5f6675;
   font-size: 0.855rem;
+  font-weight: 600;
 }
 
 .fare-date-card span {
-  color: #3e5068;
-  font-size: 0.702rem;
+  color: #17242d;
+  font-size: 0.963rem;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .fare-date-card.active {
-  background: linear-gradient(180deg, #f4f8fd, #edf4fd);
+  background: #ffffff;
 }
 
-.day-navigation {
+.fare-date-card.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: #0b7cff;
+}
+
+.fare-date-card.active strong,
+.fare-date-card.active span {
+  color: #0b7cff;
+}
+
+.fare-date-nav {
+  border: 0;
+  border-right: 1px solid #d7dfeb;
+  min-height: 74px;
+  background: #ffffff;
+  color: #101828;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fare-date-nav:last-child {
+  border-right: 0;
+  border-left: 1px solid #d7dfeb;
+}
+
+.fare-date-nav:hover,
+.fare-date-card:hover {
+  background: #f8fafc;
+}
+
+.flight-sort-panel {
   margin-top: 10px;
+}
+
+.sort-meta-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #111827;
 }
 
-.day-navigation button {
-  border: 1px solid #c2d1e5;
-  border-radius: 6px;
-  min-height: 34px;
-  padding: 0 14px;
-  background: #f6f9fe;
-  color: #234066;
-  font-size: 0.837rem;
-  font-weight: 600;
+.sort-meta-row strong {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.sort-meta-row span {
+  color: #4c5870;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.flight-sort-strip {
+  border: 1px solid #e3e7ee;
+  border-radius: 12px;
+  background: #ffffff;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+}
+
+.flight-sort-pill {
+  border: 0;
+  border-right: 1px solid #e2e6ee;
+  background: #ffffff;
+  min-width: 0;
+  min-height: 76px;
+  padding: 10px 14px;
+  color: #101828;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  font: inherit;
+}
+
+.flight-sort-pill:last-child {
+  border-right: 0;
+}
+
+.flight-sort-pill:hover {
+  background: #f8fbff;
+}
+
+.flight-sort-pill.active {
+  color: #0b73ff;
+  background: #ffffff !important;
+  border-color: #e2e6ee !important;
+  box-shadow: none !important;
+}
+
+.sort-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.918rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.sort-subtitle {
+  color: #4d5870;
+  font-size: 0.765rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.flight-sort-pill.active .sort-subtitle {
+  color: #0b73ff;
 }
 
 .table-head {
-  margin-top: 10px;
+  margin-top: 8px;
   border: 1px solid #cfdae8;
   border-radius: 10px;
-  min-height: 54px;
+  min-height: 46px;
   padding: 0 14px;
   display: grid;
-  grid-template-columns: 170px 1fr 220px 190px;
+  grid-template-columns: 190px 160px minmax(150px, 1fr) 160px 200px;
+  gap: 0;
   align-items: center;
   background: #ffffff;
   color: #2d4462;
+  font-size: 0.846rem;
   font-weight: 700;
   box-shadow: var(--fr-shadow);
 }
 
+.table-head span {
+  padding: 0 14px;
+}
+
 .flight-list {
-  margin-top: 10px;
+  margin-top: 8px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .flight-card {
@@ -608,78 +917,82 @@
   background: #ffffff;
   box-shadow: var(--fr-shadow);
   display: grid;
-  grid-template-columns: 170px 1fr 220px 190px;
+  grid-template-columns: 190px 160px minmax(150px, 1fr) 160px 200px;
+  gap: 0;
   overflow: hidden;
 }
 
 .airline-cell,
-.timeline-cell,
 .service-cell,
 .price-cell {
-  padding: 12px 10px;
+  padding: 10px 14px;
 }
 
 .airline-cell img {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   object-fit: cover;
   border: 1px solid #d3dce9;
 }
 
 .airline-cell h4 {
-  margin: 9px 0 0;
-  font-size: 0.945rem;
+  margin: 7px 0 0;
+  font-size: 0.846rem;
   color: #1b314f;
   font-family: var(--fr-heading-font);
 }
 
 .airline-cell p {
-  margin: 2px 0 8px;
+  margin: 2px 0 7px;
   color: #5c7391;
-  font-size: 0.756rem;
+  font-size: 0.711rem;
   font-weight: 600;
 }
 
 .good {
   display: inline-flex;
   width: fit-content;
-  min-height: 22px;
-  padding: 0 8px;
+  min-height: 20px;
+  padding: 0 7px;
   border-radius: 999px;
-  font-size: 0.684rem;
+  font-size: 0.639rem;
   font-weight: 700;
   color: #143f77;
   background: #f4f8fd;
 }
 
 .timeline-cell {
-  display: grid;
-  grid-template-columns: 110px minmax(100px, 1fr) 110px;
-  align-items: center;
-  gap: 10px;
+  display: contents;
+}
+
+.city-time,
+.duration-line {
+  min-width: 0;
+  padding: 10px 14px;
+  align-self: center;
 }
 
 .city-time strong {
   display: block;
   color: #19304d;
-  font-size: 1.35rem;
+  font-size: 1.17rem;
   font-family: var(--fr-heading-font);
 }
 
 .city-time span {
   display: block;
-  margin-top: 6px;
+  margin-top: 5px;
   color: #6f86a3;
-  font-size: 0.72rem;
+  font-size: 0.666rem;
   font-weight: 600;
 }
 
 .city-time em {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   color: #1d3351;
-  font-size: 0.945rem;
+  font-size: 0.846rem;
   font-weight: 800;
   font-style: normal;
 }
@@ -687,34 +1000,40 @@
 .duration-line {
   text-align: center;
   color: #5b7290;
-  font-size: 0.765rem;
+  font-size: 0.702rem;
   font-weight: 700;
 }
 
-.service-cell,
 .price-cell {
+  grid-column: 5;
+  grid-row: 1;
   border-left: 1px solid #f1f5f9;
 }
 
 .service-cell {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  border-top: 1px solid #f1f5f9;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #fbfdff;
 }
 
 .service-cell p {
   margin: 0;
   color: #2c4565;
-  font-size: 0.747rem;
+  font-size: 0.702rem;
 }
 
 .fare-tag {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 10px;
+  min-height: 22px;
+  padding: 0 9px;
   border-radius: 999px;
-  font-size: 0.675rem;
+  font-size: 0.63rem;
   font-weight: 700;
 }
 
@@ -734,19 +1053,20 @@
 }
 
 .flight-action-row {
-  margin-top: 4px;
+  margin-top: 0;
   display: flex;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .class-toggle-btn,
 .book-btn {
   border: 1px solid #c4d4e8;
-  min-height: 32px;
+  min-height: 30px;
   border-radius: 8px;
-  padding: 0 10px;
-  font-size: 0.675rem;
+  padding: 0 9px;
+  font-size: 0.639rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -773,15 +1093,15 @@
 
 .price-line strong {
   color: #141c28;
-  font-size: 1.665rem;
+  font-size: 1.35rem;
   line-height: 1;
   font-family: var(--fr-heading-font);
 }
 
 .price-caption {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: #577397;
-  font-size: 0.702rem;
+  font-size: 0.666rem;
 }
 
 .class-options-panel {
@@ -1003,6 +1323,10 @@
   gap: 6px;
 }
 
+/* ============================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================ */
+
 @media (max-width: 1250px) {
   .summary-strip,
   .results-layout,
@@ -1023,6 +1347,8 @@
 
   .service-cell,
   .price-cell {
+    grid-column: 1;
+    grid-row: auto;
     border-left: 0;
     border-top: 1px solid #f1f5f9;
   }
@@ -1030,7 +1356,8 @@
 
 @media (max-width: 980px) {
   .fare-date-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 52px repeat(6, minmax(112px, 1fr)) 52px;
+    overflow-x: auto;
   }
 
   .route-summary {
@@ -1060,15 +1387,10 @@
   }
 
   .fare-date-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 48px repeat(6, minmax(104px, 1fr)) 48px;
+    border-radius: 12px;
   }
 
-  .day-navigation {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .day-navigation button,
   .booking-submit-row button {
     width: 100%;
   }
@@ -1128,8 +1450,7 @@
 .flight-book-btn,
 .flight-action-btn,
 .fare-select-btn,
-.flight-filter-apply,
-.flight-sort-pill.active {
+.flight-filter-apply {
   background: var(--theme-gradient-action, linear-gradient(135deg, #dc1e26, #b8141b)) !important;
   color: #ffffff !important;
   border-color: transparent !important;
@@ -1141,7 +1462,7 @@
   color: var(--theme-primary-strong, #b8141b) !important;
 }
 
-/* Neutralize focus outlines on modify search and booking form fields on flight search results */
+/* Neutralize focus outlines on modify search and booking form fields */
 .modify-field input:focus,
 .modify-field select:focus,
 .booking-form-group input:focus,

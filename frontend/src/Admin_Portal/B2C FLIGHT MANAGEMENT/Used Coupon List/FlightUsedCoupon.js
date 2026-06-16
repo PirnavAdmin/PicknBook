@@ -1,11 +1,50 @@
-import React, { useState } from "react";
-import { Download, Pencil, Plus, Trash2, X } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Download, Pencil, Plus, Trash2, X, Filter, Eye } from "lucide-react";
 import "./FlightUsedCoupon.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { csvCell, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
 import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
+import { listUsedCoupons } from "../../../services/flightBookingService";
 
 export default function AdminFlightUsedCouponListPage() {
   const [usedCoupons, setUsedCoupons] = useAdminList("flight-used-coupons", []);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [viewRecord, setViewRecord] = useState(null);
+  const [filters, setFilters] = useState({
+    sortBy: "usedDate",
+    order: "desc",
+    bookingStatus: "All",
+    cpnType: "All",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const data = await listUsedCoupons();
+        if (isMounted && Array.isArray(data)) {
+          setUsedCoupons(data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || "Failed to load used coupons.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [setUsedCoupons]);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({
     bookingId: "",
@@ -20,7 +59,7 @@ export default function AdminFlightUsedCouponListPage() {
   const [editRecord, setEditRecord] = useState(null);
   const [deleteRecord, setDeleteRecord] = useState(null);
   const [formError, setFormError] = useState("");
-  const colWidths = ["4%", "12%", "13%", "12%", "10%", "9%", "10%", "10%", "10%", "10%"];
+  const colWidths = ["5%", "10%", "11%", "11%", "9%", "9%", "9%", "9%", "11%", "16%"];
   const headers = [
     "SN",
     "Booking ID",
@@ -33,6 +72,44 @@ export default function AdminFlightUsedCouponListPage() {
     "Booking Status",
     "Action",
   ];
+
+  const filteredUsedCoupons = usedCoupons.filter((record) => {
+    if (filters.bookingStatus !== "All" && record.bookingStatus !== filters.bookingStatus) {
+      return false;
+    }
+    if (filters.cpnType !== "All" && record.cpnType !== filters.cpnType) {
+      return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    let valA = a[filters.sortBy];
+    let valB = b[filters.sortBy];
+
+    if (filters.sortBy === "usedDate") {
+      valA = new Date(valA).getTime() || 0;
+      valB = new Date(valB).getTime() || 0;
+    } else if (typeof valA === "string") {
+      return filters.order === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else {
+      valA = Number(valA) || 0;
+      valB = Number(valB) || 0;
+    }
+
+    return filters.order === "asc" ? valA - valB : valB - valA;
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const totalItems = filteredUsedCoupons.length;
+  const paginatedUsedCoupons = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsedCoupons.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsedCoupons, currentPage]);
 
   const handleExport = () => {
     if (usedCoupons.length === 0) {
@@ -216,9 +293,32 @@ export default function AdminFlightUsedCouponListPage() {
         </div>
 
         <div className="flight-markup-actions">
-          <button type="button" className="flight-markup-action-btn primary" onClick={openAddModal}>
-            <Plus size={16} />
-            <span>Add Used Coupon</span>
+          <button
+            type="button"
+            className={`flight-markup-action-btn filter-btn ${isFilterOpen ? "active" : ""}`}
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+          >
+            <Filter size={16} />
+            <span>Filter</span>
+          </button>
+          <button
+            type="button"
+            className="flight-markup-action-btn clear-btn"
+            onClick={() => setFilters({
+              sortBy: "usedDate",
+              order: "desc",
+              bookingStatus: "All",
+              cpnType: "All"
+            })}
+            disabled={
+              filters.sortBy === "usedDate" &&
+              filters.order === "desc" &&
+              filters.bookingStatus === "All" &&
+              filters.cpnType === "All"
+            }
+          >
+            <X size={16} />
+            <span>Clear Filter</span>
           </button>
           <button type="button" className="flight-markup-action-btn primary" onClick={handleExport}>
             <Download size={16} />
@@ -226,6 +326,64 @@ export default function AdminFlightUsedCouponListPage() {
           </button>
         </div>
       </header>
+
+      {isFilterOpen && (
+        <section className="flight-used-coupon-filter-panel">
+          <div className="flight-used-coupon-filter-grid">
+            <label>
+              <span>Sort By</span>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => setFilters((prev) => ({ ...prev, sortBy: e.target.value }))}
+              >
+                <option value="usedDate">Used Date</option>
+                <option value="bookingId">Booking ID</option>
+                <option value="couponCode">Coupon Code</option>
+                <option value="totalFare">Total Fare</option>
+                <option value="cpnType">CPN Type</option>
+                <option value="cpnAmount">CPN Amount</option>
+                <option value="bookingStatus">Booking Status</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Order</span>
+              <select
+                value={filters.order}
+                onChange={(e) => setFilters((prev) => ({ ...prev, order: e.target.value }))}
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Booking Status</span>
+              <select
+                value={filters.bookingStatus}
+                onChange={(e) => setFilters((prev) => ({ ...prev, bookingStatus: e.target.value }))}
+              >
+                <option value="All">All</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Processed">Processed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </label>
+
+            <label>
+              <span>CPN Type</span>
+              <select
+                value={filters.cpnType}
+                onChange={(e) => setFilters((prev) => ({ ...prev, cpnType: e.target.value }))}
+              >
+                <option value="All">All</option>
+                <option value="Fix">Fix</option>
+                <option value="Percent">Percent</option>
+              </select>
+            </label>
+          </div>
+        </section>
+      )}
 
       <section className="flight-markup-table-wrap">
         <div className="flight-markup-table-scroll">
@@ -247,14 +405,14 @@ export default function AdminFlightUsedCouponListPage() {
               </tr>
             </thead>
             <tbody>
-              {usedCoupons.length === 0 ? (
+              {paginatedUsedCoupons.length === 0 ? (
                 <tr>
                   <td colSpan={headers.length} className="flight-markup-empty-cell">
                     <span className="flight-markup-empty">No Record Found...</span>
                   </td>
                 </tr>
               ) : (
-                usedCoupons.map((record, index) => {
+                paginatedUsedCoupons.map((record, index) => {
                   const isPercent = String(record.cpnType || "").toLowerCase().includes("percent");
                   const cpnValueLabel = isPercent
                     ? `${Number(record.cpnValue) || 0}%`
@@ -262,7 +420,7 @@ export default function AdminFlightUsedCouponListPage() {
 
                   return (
                     <tr key={`${record.bookingId}-${record.usedDate}`}>
-                      <td>{index + 1}</td>
+                      <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td>{record.bookingId}</td>
                       <td>
                         <span className="flight-coupon-code">{record.couponCode}</span>
@@ -277,6 +435,14 @@ export default function AdminFlightUsedCouponListPage() {
                       </td>
                       <td className="action-col">
                         <div className="markup-action-group">
+                          <button
+                            type="button"
+                            title="View"
+                            aria-label={`View used coupon ${record.bookingId}`}
+                            onClick={() => setViewRecord(record)}
+                          >
+                            <Eye size={14} />
+                          </button>
                           <button
                             type="button"
                             title="Edit"
@@ -303,6 +469,13 @@ export default function AdminFlightUsedCouponListPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="used coupons"
+        />
       </section>
     </section>
 
@@ -578,6 +751,90 @@ export default function AdminFlightUsedCouponListPage() {
               </button>
               <button type="button" className="danger" onClick={handleDelete}>
                 Delete
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {viewRecord && (
+        <div className="admin-markup-modal-backdrop" onClick={() => setViewRecord(null)}>
+          <section
+            className="admin-markup-modal fullscreen"
+            role="dialog"
+            aria-modal="true"
+            aria-label="View used coupon details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header>
+              <h2>Used Coupon Details</h2>
+              <button type="button" onClick={() => setViewRecord(null)} aria-label="Close details">
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="admin-markup-form-grid">
+              <label>
+                <span>ID</span>
+                <input type="text" value={viewRecord.id} disabled />
+              </label>
+              <label>
+                <span>Booking ID</span>
+                <input type="text" value={viewRecord.bookingId} disabled />
+              </label>
+              <label>
+                <span>Coupon Code</span>
+                <input type="text" value={viewRecord.couponCode} disabled />
+              </label>
+              <label>
+                <span>Used Date</span>
+                <input
+                  type="text"
+                  value={formatCouponDateTime(viewRecord.usedDate)}
+                  disabled
+                />
+              </label>
+              <label>
+                <span>Total Fare</span>
+                <input
+                  type="text"
+                  value={formatCurrency(viewRecord.totalFare)}
+                  disabled
+                />
+              </label>
+              <label>
+                <span>CPN Type</span>
+                <input type="text" value={viewRecord.cpnType} disabled />
+              </label>
+              <label>
+                <span>CPN Value</span>
+                <input
+                  type="text"
+                  value={
+                    String(viewRecord.cpnType || "").toLowerCase().includes("percent")
+                      ? `${viewRecord.cpnValue}%`
+                      : formatCurrency(viewRecord.cpnValue)
+                  }
+                  disabled
+                />
+              </label>
+              <label>
+                <span>CPN Amount</span>
+                <input
+                  type="text"
+                  value={formatCurrency(viewRecord.cpnAmount)}
+                  disabled
+                />
+              </label>
+              <label>
+                <span>Booking Status</span>
+                <input type="text" value={viewRecord.bookingStatus} disabled />
+              </label>
+            </div>
+
+            <div className="admin-markup-modal-actions">
+              <button type="button" className="secondary" onClick={() => setViewRecord(null)}>
+                Close
               </button>
             </div>
           </section>

@@ -316,12 +316,18 @@ export function clearExpiredUserCredentials() {
 }
 
 export function isTokenExpired(token) {
-  if (!token) {
-    return false;
+  if (!token || token === "null" || token === "undefined") {
+    return true;
   }
-  const payload = decodeJwtPayload(token);
+  
+  let cleanToken = token;
+  if (cleanToken.startsWith("Bearer ")) {
+    cleanToken = cleanToken.substring(7);
+  }
+  
+  const payload = decodeJwtPayload(cleanToken);
   if (!payload || !payload.exp) {
-    return false;
+    return true;
   }
   // exp is in seconds, Date.now() in milliseconds
   return payload.exp * 1000 < Date.now();
