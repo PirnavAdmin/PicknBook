@@ -138,6 +138,10 @@ export default function FlightPassengerDetailsPage() {
   const [passengers, setPassengers] = useState(() =>
     buildPassengerSeed(selectedSeats, travellers, flowState.passengers)
   );
+
+  const filledPassengers = useMemo(() => {
+    return passengers.filter(p => p.firstName.trim() || p.lastName.trim());
+  }, [passengers]);
   const [contact, setContact] = useState(() => ({
     email: flowState.contact?.email || "",
     mobile: flowState.contact?.mobile || "",
@@ -597,9 +601,6 @@ export default function FlightPassengerDetailsPage() {
       </label>
     </div>
   );  // Sidebar helpers
-  const filledPassengers = useMemo(() => {
-    return passengers.filter(p => p.firstName.trim() || p.lastName.trim());
-  }, [passengers]);
 
   return (
     <main className="flight-flow-page">

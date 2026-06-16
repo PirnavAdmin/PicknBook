@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
+import { bookFlight, searchFlights } from "../../services/flightBookingService";
+import "../../STYLES/FlightSearchResults.css";
+import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
+import { writeFlightBookingFlowState } from "./flightBookingFlowStore";
 import airIndiaExpress from "../../assets/images/airlines/Air-India_express.jpg";
 import airIndia from "../../assets/images/airlines/air-india.png";
 import akasaAir from "../../assets/images/airlines/AkasaAir.png";
@@ -37,10 +41,6 @@ const LOADING_STATUSES = [
   "Applying student and corporate deals...",
   "Securing optimal route options..."
 ];
-import { bookFlight, searchFlights } from "../../services/flightBookingService";
-import "../../STYLES/FlightSearchResults.css";
-import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
-import { writeFlightBookingFlowState } from "./flightBookingFlowStore";
 
 const MONTHS = [
   "Jan",
