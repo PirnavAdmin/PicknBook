@@ -39,6 +39,169 @@ public static class DbSeeder
     {
         //await EnsureTablesAsync(dbContext, cancellationToken);
 
+        var hasCmsPages = await dbContext.CmsPages.AnyAsync(cancellationToken);
+        if (!hasCmsPages)
+        {
+            dbContext.CmsPages.AddRange(
+                new CmsPage
+                {
+                    Title = "Terms & Conditions",
+                    Slug = "terms-conditions",
+                    Module = "All",
+                    Status = "Active",
+                    MetaTitle = "Terms & Conditions | Pick N Book",
+                    MetaKeyword = "Pick N Book terms, booking terms, travel terms",
+                    MetaDescription = "Read the Pick N Book Terms & Conditions for using our travel booking services.",
+                    Description = """
+Welcome to Pick N Book! By accessing and using our website, services, and mobile app (collectively referred to as "Services"), you agree to comply with and be bound by the following terms and conditions ("Terms"). Please read them carefully before using our Services.
+
+1. Acceptance of Terms
+By accessing or using the Pick N Book website or services, you agree to be bound by these Terms and our Privacy Policy, which is incorporated by reference. If you do not agree to these Terms, you should not use our website or services.
+
+2. Modifications to Terms
+We reserve the right to update, modify, or revise these Terms at any time. When we do, we will update the effective date at the top of this page. Your continued use of the website or Services after such changes constitutes your acceptance of the revised Terms.
+
+3. Use of the Services
+You agree to use our Services solely for lawful purposes and in accordance with these Terms. You shall not:
+- Engage in any activity that disrupts, damages, or interferes with the functioning of the website or Services.
+- Use the Services to transmit any malicious content, including but not limited to viruses, malware, or spyware.
+- Use the website to engage in fraudulent activities or illegal actions.
+- Violate any applicable local, state, national, or international law.
+
+4. Account Registration
+To access certain features of our Services, you may need to create an account. You agree to provide accurate, current, and complete information when registering, and to update your information as necessary. You are solely responsible for the confidentiality of your account information, including your username and password. You agree to notify us immediately if you suspect unauthorized access to your account.
+
+5. Booking and Payment
+When booking flights, buses, or other services via Pick N Book, you agree to:
+- Provide accurate and truthful information during the booking process.
+- Pay the applicable fees, including taxes, service charges, and other costs associated with your booking.
+- Acknowledge that all transactions made on the website are subject to availability, and that your booking is not confirmed until payment is processed and confirmed by us.
+- Abide by the terms and conditions of airlines, bus operators, and other service providers, including cancellation, modification, and refund policies.
+
+6. Cancellation and Refunds
+Refunds, cancellations, or modifications to bookings are subject to the specific policies of the service provider (e.g., airlines, bus operators). For any cancellations or modifications, you must contact us directly through our customer service channels. Refunds are processed in 7-14 business days and are credited back to the original payment method or can be provided as a wallet credit.
+
+7. Privacy Policy
+Your use of our website and Services is also governed by our Privacy Policy, which describes how we collect, use, and protect your personal information. By using our Services, you consent to the practices described in the Privacy Policy.
+
+8. Intellectual Property
+All content available on the Pick N Book website, including but not limited to text, graphics, logos, images, software, and trademarks, is the property of Pick N Book or its licensors and is protected by copyright and intellectual property laws. You may not reproduce, modify, distribute, or otherwise use the content without our prior written consent.
+
+9. Third-Party Links
+Our website may contain links to third-party websites that are not operated or controlled by Pick N Book. We are not responsible for the content, privacy policies, or practices of third-party websites. We encourage you to review the terms and privacy policies of any third-party websites before using them.
+
+10. Disclaimers
+Pick N Book provides the website and Services "as is" and makes no representations or warranties of any kind, express or implied, regarding the accuracy, completeness, reliability, or availability of the Services.
+- We do not guarantee that the Services will be free from errors, viruses, or other harmful components.
+- We do not assume liability for any issues arising from the use of our Services, including but not limited to booking errors, cancellations, delays, or other travel-related issues.
+
+11. Limitation of Liability
+To the maximum extent permitted by law, Pick N Book and its affiliates, officers, employees, or agents shall not be liable for any indirect, incidental, special, punitive, or consequential damages arising out of or in connection with your use of the website or Services, even if we have been advised of the possibility of such damages.
+
+12. Indemnification
+You agree to indemnify, defend, and hold harmless Pick N Book and its affiliates, officers, employees, and agents from any claims, losses, damages, liabilities, and expenses (including legal fees) arising out of your use of the website or Services, your violation of these Terms, or your violation of any rights of another.
+
+13. Governing Law and Dispute Resolution
+These Terms shall be governed by and construed in accordance with the laws of India. Any dispute arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts located in India.
+
+14. Termination
+We reserve the right to suspend or terminate your access to the Services at any time, without notice, for any reason, including if you violate these Terms. Upon termination, all rights and obligations under these Terms will cease, except for provisions that by their nature should survive termination.
+
+15. Severability
+If any provision of these Terms is found to be invalid, illegal, or unenforceable by a court of competent jurisdiction, the remaining provisions will continue in full force and effect.
+""",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                },
+                new CmsPage
+                {
+                    Title = "Privacy Policy",
+                    Slug = "privacy-policy",
+                    Module = "All",
+                    Status = "Active",
+                    MetaTitle = "Privacy Policy | Pick N Book",
+                    MetaKeyword = "Pick N Book privacy, travel booking privacy, data protection",
+                    MetaDescription = "Read how Pick N Book collects, uses, and safeguards your personal information.",
+                    Description = """
+At Pick N Book, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website, use our services, or make a booking for flights and bus services. By using our website, you agree to the terms and conditions outlined in this Privacy Policy.
+
+1. Information We Collect
+We collect various types of information to provide and improve our services to you, including:
+- Personal Information: When you book flights or bus services or interact with our website, we may collect personal information such as: Full name, Email address, Phone number, Payment details, Passport details, and Travel preferences.
+- Usage Data: We may collect information about how you access and use our website, including: IP address, Browser type, Pages visited, Time spent, and Referring URLs.
+- Cookies: Our website uses cookies to enhance your browsing experience.
+
+2. How We Use Your Information
+We use the collected information to:
+- Process and confirm bookings.
+- Communicate with you.
+- Improve our website and services.
+- Prevent fraud.
+- Comply with legal obligations.
+
+3. Sharing Your Information
+We may share your information with:
+- Third-party service providers.
+- Public authorities if required by law.
+- Entities involved in a business transfer.
+
+4. Data Security
+We use industry-standard encryption techniques to safeguard sensitive data during transmission, though no method is 100% secure.
+
+5. Retention of Information
+We retain personal info as long as necessary to fulfill target purposes.
+
+6. Your Rights and Choices
+You have the right to access, correct, delete, or opt-out of marketing communications.
+
+7. Third-Party Links
+We are not responsible for privacy practices of linked third-party websites.
+
+8. Changes to This Privacy Policy
+We may update this Privacy Policy from time to time.
+""",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                },
+                new CmsPage
+                {
+                    Title = "Refund & Cancellation Policy",
+                    Slug = "refund-cancellation-policy",
+                    Module = "All",
+                    Status = "Active",
+                    MetaTitle = "Refund & Cancellation Policy | Pick N Book",
+                    MetaKeyword = "PickNBook refunds, cancellation policy, flight refund, bus refund",
+                    MetaDescription = "Read the PickNBook refund and cancellation terms for flight and bus bookings.",
+                    Description = """
+1. Introduction
+Welcome to PickNBook. This Refund and Cancellation Policy outlines the terms and conditions applicable to all flight and bus bookings made through our platform.
+
+2. Flight Bookings
+- Cancellation by Customer: Governed by respective airline's rules. Service fees are non-refundable.
+- Cancellation by Airline: Passengers entitled to refund/rebooking per airline policy.
+- Refund Timelines: Processed within 7-15 business days after airline confirmation.
+
+3. Bus Bookings
+- Cancellation by Customer: Subject to operator's timing restrictions and charges.
+- Cancellation by Operator: Passengers receive full refund or rescheduled journey.
+- Refund Timelines: Generally processed within 5-10 business days.
+
+4. No-Show Policy
+Failure to board or check in at the scheduled time results in no refund.
+
+5. Modification and Rebooking
+Subject to airline/operator modification policies and extra charges.
+
+6. Refund Mode
+Refunds are issued to the original payment method.
+""",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                }
+            );
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         var hasConvenienceFee = await dbContext.BusConvenienceFees.AnyAsync(cancellationToken);
         if (!hasConvenienceFee)
         {

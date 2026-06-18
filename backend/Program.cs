@@ -54,6 +54,7 @@ builder.Services.AddScoped<IFlightPricingService, FlightPricingService>();
 builder.Services.AddScoped<IUserBookingHistoryService, UserBookingHistoryService>();
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IAboutUsService, AboutUsService>();
 
 // Database
 
@@ -187,7 +188,10 @@ if (shouldSeed)
     }
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // 🔥 VERY IMPORTANT (Added this line only)
 app.UseStaticFiles();

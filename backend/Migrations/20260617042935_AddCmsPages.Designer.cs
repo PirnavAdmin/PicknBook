@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PickNBook.Api.Data;
 
@@ -11,9 +12,11 @@ using PickNBook.Api.Data;
 namespace PickNBook.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617042935_AddCmsPages")]
+    partial class AddCmsPages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,191 +24,6 @@ namespace PickNBook.Api.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
-
-            modelBuilder.Entity("PickNBook.Api.Models.AboutUs", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AboutDescription")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Module")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("WhoWeAreDescription")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("WhoWeAreHeading")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<string>("WhoWeAreImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Module")
-                        .IsUnique();
-
-                    b.ToTable("about_us", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            AboutDescription = "<p>Pick N Book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>",
-                            CreatedAtUtc = new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Module = "B2C",
-                            Status = "active",
-                            UpdatedAtUtc = new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc),
-                            WhoWeAreDescription = "<p>We are a dedicated team of travel enthusiasts and product engineers building seamless transport bookings.</p>",
-                            WhoWeAreHeading = "Who We Are",
-                            WhoWeAreImageUrl = "/uploads/about/who.png"
-                        });
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.AboutUsCount", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AboutUsId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CountTitle")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("CountValue")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AboutUsId");
-
-                    b.ToTable("about_us_counts", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            AboutUsId = 1,
-                            CountTitle = "Years",
-                            CountValue = "6+",
-                            DisplayOrder = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            AboutUsId = 1,
-                            CountTitle = "Travel Partners",
-                            CountValue = "100+",
-                            DisplayOrder = 2
-                        },
-                        new
-                        {
-                            Id = 3,
-                            AboutUsId = 1,
-                            CountTitle = "Product Managers",
-                            CountValue = "16+",
-                            DisplayOrder = 3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            AboutUsId = 1,
-                            CountTitle = "Customer Support",
-                            CountValue = "24/7",
-                            DisplayOrder = 4
-                        });
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.AboutUsTeamMember", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AboutUsId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Designation")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AboutUsId");
-
-                    b.ToTable("about_us_team_members", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            AboutUsId = 1,
-                            Designation = "Lead Developer",
-                            DisplayOrder = 1,
-                            ImageUrl = "/uploads/team/naveen.png",
-                            Name = "Naveen"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            AboutUsId = 1,
-                            Designation = "Project Manager",
-                            DisplayOrder = 2,
-                            ImageUrl = "/uploads/team/default.png",
-                            Name = "Rajesh"
-                        });
-                });
 
             modelBuilder.Entity("PickNBook.Api.Models.Airline", b =>
                 {
@@ -1454,52 +1272,6 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("OfferCode", "CouponCode", "RedeemedAtUtc");
 
                     b.ToTable("couponredemptions", (string)null);
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.DepositRequest", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("AdminRemark")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("EntryDateUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserRemark")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("deposit_requests", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FeaturedOffer", b =>
@@ -2756,128 +2528,6 @@ namespace PickNBook.Api.Migrations
                     b.ToTable("hotel_reservations", (string)null);
                 });
 
-            modelBuilder.Entity("PickNBook.Api.Models.MenuItem", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("DisplayTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Module")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Module", "Location", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("menu_items", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1L,
-                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayTitle = "Support",
-                            Location = "header",
-                            Module = "B2C",
-                            Name = "Support",
-                            Order = 2,
-                            Slug = "support",
-                            Status = "active",
-                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 2L,
-                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayTitle = "Home",
-                            Location = "header",
-                            Module = "B2C",
-                            Name = "Home",
-                            Order = 1,
-                            Slug = "home",
-                            Status = "active",
-                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 3L,
-                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayTitle = "Policies",
-                            Location = "footer",
-                            Module = "B2C",
-                            Name = "Policies",
-                            Order = 3,
-                            Slug = "policies",
-                            Status = "active",
-                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 4L,
-                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayTitle = "Quick Links",
-                            Location = "footer",
-                            Module = "B2C",
-                            Name = "Quick Links",
-                            Order = 2,
-                            Slug = "quick-links",
-                            Status = "active",
-                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 5L,
-                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DisplayTitle = "Services",
-                            Location = "footer",
-                            Module = "B2C",
-                            Name = "Services",
-                            Order = 1,
-                            Slug = "services",
-                            Status = "active",
-                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        });
-                });
-
             modelBuilder.Entity("PickNBook.Api.Models.OTP", b =>
                 {
                     b.Property<int>("Id")
@@ -3133,30 +2783,8 @@ namespace PickNBook.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AadharNumber")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Address")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("AltMobile")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("City")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Country")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasDefaultValue("INR");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -3166,25 +2794,8 @@ namespace PickNBook.Api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasDefaultValue("Male");
-
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("LoginId")
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<string>("PanName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PanNumber")
                         .HasColumnType("longtext");
 
                     b.Property<string>("PasswordHash")
@@ -3195,16 +2806,7 @@ namespace PickNBook.Api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Pincode")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("ProfileImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("RefferedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Remark")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Role")
@@ -3214,27 +2816,6 @@ namespace PickNBook.Api.Migrations
                         .HasColumnType("varchar(20)")
                         .HasDefaultValue("User");
 
-                    b.Property<string>("State")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
-
-                    b.Property<decimal>("WalletBalance")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("WalletStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -3243,28 +2824,6 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("Role");
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.AboutUsCount", b =>
-                {
-                    b.HasOne("PickNBook.Api.Models.AboutUs", "AboutUs")
-                        .WithMany("Counts")
-                        .HasForeignKey("AboutUsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AboutUs");
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.AboutUsTeamMember", b =>
-                {
-                    b.HasOne("PickNBook.Api.Models.AboutUs", "AboutUs")
-                        .WithMany("TeamMembers")
-                        .HasForeignKey("AboutUsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AboutUs");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.BusCouponUsage", b =>
@@ -3350,17 +2909,6 @@ namespace PickNBook.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("FeaturedOffer");
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.DepositRequest", b =>
-                {
-                    b.HasOne("User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FeaturedOfferCondition", b =>
@@ -3508,13 +3056,6 @@ namespace PickNBook.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.AboutUs", b =>
-                {
-                    b.Navigation("Counts");
-
-                    b.Navigation("TeamMembers");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.BusDiscount", b =>

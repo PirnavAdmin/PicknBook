@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PickNBook.Api.Data;
 
@@ -11,9 +12,11 @@ using PickNBook.Api.Data;
 namespace PickNBook.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617053356_AddMenuItemsTable")]
+    partial class AddMenuItemsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1454,52 +1457,6 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("OfferCode", "CouponCode", "RedeemedAtUtc");
 
                     b.ToTable("couponredemptions", (string)null);
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.DepositRequest", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("AdminRemark")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("EntryDateUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserRemark")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("deposit_requests", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FeaturedOffer", b =>
@@ -3133,30 +3090,8 @@ namespace PickNBook.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AadharNumber")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Address")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("AltMobile")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("City")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Country")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasDefaultValue("INR");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -3166,25 +3101,8 @@ namespace PickNBook.Api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasDefaultValue("Male");
-
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("LoginId")
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<string>("PanName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PanNumber")
                         .HasColumnType("longtext");
 
                     b.Property<string>("PasswordHash")
@@ -3195,16 +3113,7 @@ namespace PickNBook.Api.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Pincode")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("ProfileImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("RefferedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Remark")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Role")
@@ -3213,27 +3122,6 @@ namespace PickNBook.Api.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasDefaultValue("User");
-
-                    b.Property<string>("State")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
-
-                    b.Property<decimal>("WalletBalance")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("WalletStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
 
                     b.HasKey("Id");
 
@@ -3350,17 +3238,6 @@ namespace PickNBook.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("FeaturedOffer");
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.DepositRequest", b =>
-                {
-                    b.HasOne("User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FeaturedOfferCondition", b =>

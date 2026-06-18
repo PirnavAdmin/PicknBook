@@ -20,6 +20,12 @@ namespace PickNBook.Api.Data
         public DbSet<CouponRedemption> CouponRedemptions { get; set; }
         public DbSet<OfferSubscriber> OfferSubscribers { get; set; }
         public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<CmsPage> CmsPages { get; set; }
+        public DbSet<AboutUs> AboutUs { get; set; }
+        public DbSet<AboutUsCount> AboutUsCounts { get; set; }
+        public DbSet<AboutUsTeamMember> AboutUsTeamMembers { get; set; }
+        public DbSet<MenuItem> MenuItems { get; set; }
+        public DbSet<DepositRequest> DepositRequests { get; set; }
         public DbSet<FlightBooking> FlightBookings => Set<FlightBooking>();
         public DbSet<FlightClassInventory> FlightClassInventories => Set<FlightClassInventory>();
         public DbSet<BusBooking> BusBookings => Set<BusBooking>();
@@ -101,6 +107,10 @@ namespace PickNBook.Api.Data
             modelBuilder.Entity<CouponRedemption>().ToTable("couponredemptions");
             modelBuilder.Entity<OfferSubscriber>().ToTable("offersubscribers");
             modelBuilder.Entity<BlogPost>().ToTable("blogposts");
+            modelBuilder.Entity<CmsPage>().ToTable("cmspages");
+            modelBuilder.Entity<AboutUs>().ToTable("about_us");
+            modelBuilder.Entity<AboutUsCount>().ToTable("about_us_counts");
+            modelBuilder.Entity<AboutUsTeamMember>().ToTable("about_us_team_members");
 
             // =============================
             // User Configuration
@@ -116,6 +126,34 @@ namespace PickNBook.Api.Data
 
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Role);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.WalletBalance)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.WalletStatus)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Gender)
+                .HasMaxLength(10)
+                .HasDefaultValue("Male");
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Currency)
+                .HasMaxLength(10)
+                .HasDefaultValue("INR");
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.LoginId)
+                .HasMaxLength(150);
 
             // =============================
             // OTP Configuration
@@ -322,6 +360,85 @@ namespace PickNBook.Api.Data
             modelBuilder.Entity<BlogPost>().Property(x => x.CreatedAtUtc);
             modelBuilder.Entity<BlogPost>().Property(x => x.UpdatedAtUtc);
             modelBuilder.Entity<BlogPost>().Property(x => x.PublishedAtUtc);
+
+            // =============================
+            // CmsPage Configuration
+            // =============================
+            modelBuilder.Entity<CmsPage>(entity =>
+            {
+                entity.HasIndex(x => x.Slug).IsUnique();
+                entity.Property(x => x.Title).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Slug).HasMaxLength(220).IsRequired();
+                entity.Property(x => x.Module).HasMaxLength(80).HasDefaultValue("All");
+                entity.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Active");
+                entity.Property(x => x.MetaTitle).HasMaxLength(200);
+                entity.Property(x => x.MetaKeyword).HasMaxLength(300);
+                entity.Property(x => x.MetaDescription).HasMaxLength(600);
+                entity.Property(x => x.ImageUrl).HasMaxLength(300);
+                entity.Property(x => x.BannerUrl).HasMaxLength(300);
+                entity.Property(x => x.CreatedAtUtc).IsRequired();
+                entity.Property(x => x.UpdatedAtUtc).IsRequired();
+            });
+
+            // =============================
+            // AboutUs Configuration & Seeding
+            // =============================
+            modelBuilder.Entity<AboutUs>(entity =>
+            {
+                entity.HasIndex(x => x.Module).IsUnique();
+                entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.Module).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.WhoWeAreHeading).HasMaxLength(500).IsRequired();
+                entity.Property(x => x.WhoWeAreImageUrl).HasMaxLength(1000);
+
+                entity.HasData(new AboutUs
+                {
+                    Id = 1,
+                    AboutDescription = "<p>Pick N Book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>",
+                    Status = "active",
+                    Module = "B2C",
+                    WhoWeAreHeading = "Who We Are",
+                    WhoWeAreDescription = "<p>We are a dedicated team of travel enthusiasts and product engineers building seamless transport bookings.</p>",
+                    WhoWeAreImageUrl = "/uploads/about/who.png",
+                    CreatedAtUtc = new DateTime(2026, 6, 17, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAtUtc = new DateTime(2026, 6, 17, 0, 0, 0, DateTimeKind.Utc)
+                });
+            });
+
+            modelBuilder.Entity<AboutUsCount>(entity =>
+            {
+                entity.Property(x => x.CountValue).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.CountTitle).HasMaxLength(100).IsRequired();
+
+                entity.HasOne(x => x.AboutUs)
+                    .WithMany(x => x.Counts)
+                    .HasForeignKey(x => x.AboutUsId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasData(
+                    new AboutUsCount { Id = 1, AboutUsId = 1, CountValue = "6+", CountTitle = "Years", DisplayOrder = 1 },
+                    new AboutUsCount { Id = 2, AboutUsId = 1, CountValue = "100+", CountTitle = "Travel Partners", DisplayOrder = 2 },
+                    new AboutUsCount { Id = 3, AboutUsId = 1, CountValue = "16+", CountTitle = "Product Managers", DisplayOrder = 3 },
+                    new AboutUsCount { Id = 4, AboutUsId = 1, CountValue = "24/7", CountTitle = "Customer Support", DisplayOrder = 4 }
+                );
+            });
+
+            modelBuilder.Entity<AboutUsTeamMember>(entity =>
+            {
+                entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Designation).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.ImageUrl).HasMaxLength(1000);
+
+                entity.HasOne(x => x.AboutUs)
+                    .WithMany(x => x.TeamMembers)
+                    .HasForeignKey(x => x.AboutUsId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasData(
+                    new AboutUsTeamMember { Id = 1, AboutUsId = 1, Name = "Naveen", Designation = "Lead Developer", ImageUrl = "/uploads/team/naveen.png", DisplayOrder = 1 },
+                    new AboutUsTeamMember { Id = 2, AboutUsId = 1, Name = "Rajesh", Designation = "Project Manager", ImageUrl = "/uploads/team/default.png", DisplayOrder = 2 }
+                );
+            });
 
             modelBuilder.Entity<FlightBooking>(entity =>
             {
@@ -842,6 +959,43 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.TripType).HasConversion<string>().HasMaxLength(20).IsRequired();
                 entity.Property(x => x.FeeType).HasMaxLength(20).IsRequired();
                 entity.Property(x => x.FeeValue).HasPrecision(10, 2);
+            });
+
+            modelBuilder.Entity<MenuItem>(entity =>
+            {
+                entity.ToTable("menu_items");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Slug).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.DisplayTitle).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Module).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.Location).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                entity.HasIndex(x => new { x.Module, x.Location, x.Slug }).IsUnique();
+
+                // Initial Seeding matching frontend specifications
+                entity.HasData(
+                    new MenuItem { Id = 1, Name = "Support", Slug = "support", DisplayTitle = "Support", Order = 2, Module = "B2C", Location = "header", Status = "active", CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                    new MenuItem { Id = 2, Name = "Home", Slug = "home", DisplayTitle = "Home", Order = 1, Module = "B2C", Location = "header", Status = "active", CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                    new MenuItem { Id = 3, Name = "Policies", Slug = "policies", DisplayTitle = "Policies", Order = 3, Module = "B2C", Location = "footer", Status = "active", CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                    new MenuItem { Id = 4, Name = "Quick Links", Slug = "quick-links", DisplayTitle = "Quick Links", Order = 2, Module = "B2C", Location = "footer", Status = "active", CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                    new MenuItem { Id = 5, Name = "Services", Slug = "services", DisplayTitle = "Services", Order = 1, Module = "B2C", Location = "footer", Status = "active", CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+                );
+            });
+
+            modelBuilder.Entity<DepositRequest>(entity =>
+            {
+                entity.ToTable("deposit_requests");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Amount).HasPrecision(18, 2);
+                entity.Property(x => x.Type).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.UserRemark).HasMaxLength(500);
+                entity.Property(x => x.AdminRemark).HasMaxLength(500);
+                entity.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

@@ -719,17 +719,16 @@ export default function FlightPassengerDetailsPage() {
             {passengers.map((passenger, index) => {
               const isExisting = passengerModes[index];
               return (
-                <div key={passenger.id} className="flight-passenger-row" style={{ marginBottom: 20 }}>
-                  <header>
-                    <h4 style={{ margin: 0, fontWeight: 700 }}>
+                <div key={passenger.id} className="flight-passenger-row">
+                  <header className="flight-passenger-row-header">
+                    <h4 className="flight-passenger-row-title">
                       Passenger {index + 1} ({passenger.passengerType})
                     </h4>
                     
-                    <div className="passenger-mode-toggle" style={{ display: "flex", gap: 8 }}>
+                    <div className="passenger-mode-toggle">
                       <button
                         type="button"
                         className={`btn-action-outline ${isExisting ? "active" : ""}`}
-                        style={{ padding: "4px 8px", fontSize: "0.75rem", height: "auto" }}
                         onClick={() => setPassengerMode(index, true)}
                       >
                         Existing Traveler
@@ -737,7 +736,6 @@ export default function FlightPassengerDetailsPage() {
                       <button
                         type="button"
                         className={`btn-action-outline ${!isExisting ? "active" : ""}`}
-                        style={{ padding: "4px 8px", fontSize: "0.75rem", height: "auto" }}
                         onClick={() => setPassengerMode(index, false)}
                       >
                         Add New
@@ -745,11 +743,11 @@ export default function FlightPassengerDetailsPage() {
                     </div>
                   </header>
 
-                  <div style={{ marginTop: 12 }}>
+                  <div className="flight-passenger-row-body">
                     {isExisting ? (
-                      <div className="passenger-existing-wrap" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div className="passenger-existing-wrap">
                         {travelerLoadError && (
-                          <p className="pmode-warn" style={{ color: "orange", margin: 0, fontSize: "0.75rem" }}>{travelerLoadError}</p>
+                          <p className="pmode-warn">{travelerLoadError}</p>
                         )}
                         <select
                           className="input-control"
@@ -807,29 +805,15 @@ export default function FlightPassengerDetailsPage() {
 
               <div className="input-group">
                 <label>Mobile Number *</label>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <div className="contact-phone-row">
                   <select
-                    style={{
-                      width: "80px",
-                      minWidth: "80px",
-                      flexShrink: 0,
-                      height: "42px",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "8px",
-                      padding: "8px 12px",
-                      fontFamily: "inherit",
-                      fontSize: "0.875rem",
-                      color: "var(--text-main)",
-                      backgroundColor: "var(--bg-card)",
-                      cursor: "not-allowed"
-                    }}
+                    className="phone-code-select"
                     disabled
                   >
                     <option>+91</option>
                   </select>
                   <input
-                    className={`input-control ${errors.contact_mobile ? "error-state" : ""}`}
-                    style={{ flexGrow: 1, minWidth: 0 }}
+                    className={`input-control contact-phone-input ${errors.contact_mobile ? "error-state" : ""}`}
                     type="text"
                     placeholder="Mobile Number"
                     value={contact.mobile}
@@ -877,9 +861,9 @@ export default function FlightPassengerDetailsPage() {
           </div>
 
           {/* Special Requests & Terms */}
-          <div className="flight-main-card">
+          <div className="flight-main-card additional-details-card">
             <h2 className="flight-main-card-title">Additional Details</h2>
-            <div className="input-group">
+            <div className="input-group additional-request-field">
               <label>Special Requests / Assistance (Optional)</label>
               <input
                 className="input-control"
@@ -890,8 +874,8 @@ export default function FlightPassengerDetailsPage() {
               />
             </div>
 
-            <div className="input-group" style={{ marginTop: 16 }}>
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+            <div className="terms-consent-field">
+              <label className="terms-consent-label">
                 <input
                   type="checkbox"
                   checked={agreedToTerms}
@@ -899,17 +883,16 @@ export default function FlightPassengerDetailsPage() {
                     setAgreedToTerms(e.target.checked);
                     setErrors(prev => { const c = { ...prev }; delete c.agreedToTerms; return c; });
                   }}
-                  style={{ width: 16, height: 16, marginTop: 3 }}
                 />
-                <span style={{ fontSize: "0.813rem", color: "var(--text-muted)", lineBreak: "auto" }}>
-                  I agree to the flight cancellation rules, booking terms & policies. <span style={{ color: "red" }}>*</span>
+                <span>
+                  I agree to the flight cancellation rules, booking terms & policies. <strong>*</strong>
                 </span>
               </label>
               {errors.agreedToTerms && <span className="input-error-msg">{errors.agreedToTerms}</span>}
             </div>
 
             {formError && (
-              <p style={{ color: "var(--danger-color)", fontSize: "0.813rem", fontWeight: 700, margin: "12px 0 0 0" }}>
+              <p className="form-error-message">
                 {formError}
               </p>
             )}

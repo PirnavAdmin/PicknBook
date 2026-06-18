@@ -290,13 +290,25 @@ export default function HotelSearchResults() {
     <main className="hotel-discover-page">
       <div className="hotel-discover-shell">
         <section className="hotel-discover-hero">
+          <div className="hotel-hero-wallpaper">
+            <video
+              className="hotel-hero-wallpaper-video"
+              autoPlay
+              loop
+              muted
+              playsInline
+              poster="/hotel_poster.png"
+            >
+              <source src="/hotel_bg.mp4" type="video/mp4" />
+            </video>
+            <div className="hotel-hero-wallpaper-overlay" />
+          </div>
+
           <div className="hotel-discover-copy">
             <span className="hotel-discover-kicker">Hotel booking, reimagined</span>
-            <h1>Discover city stays that feel easier to compare.</h1>
-            <p>
-              We are still using your live hotel APIs for search, offer details, pricing, and booking.
-              The upgrade here is the hotel-only browsing and checkout experience.
-            </p>
+            <h1>
+              <span className="hotel-hero-highlight">Discover city</span> stays that feel easier to compare.
+            </h1>
           </div>
 
           <div className="hotel-discover-searchbar">

@@ -288,6 +288,140 @@
   gap: 8px;
 }
 
+/* Passenger details */
+.flight-passenger-row {
+  padding-top: 4px;
+}
+
+.flight-passenger-row + .flight-passenger-row {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.flight-passenger-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.flight-passenger-row-title {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.passenger-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.passenger-mode-toggle .btn-action-outline {
+  min-height: 32px;
+  padding: 6px 14px;
+  font-size: 0.813rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn-action-outline.active {
+  border-color: var(--secondary-color);
+  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--secondary-color);
+}
+
+.flight-passenger-row-body {
+  margin-top: 0;
+}
+
+.flight-flow-page .flight-passenger-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px 32px;
+  align-items: start;
+}
+
+.flight-passenger-fields .passenger-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.flight-passenger-fields .passenger-field > span:first-child {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.flight-passenger-fields input,
+.flight-passenger-fields select,
+.passenger-existing-wrap .input-control {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.flight-passenger-fields input::placeholder {
+  color: #94a3b8;
+}
+
+.flight-passenger-fields input:hover,
+.flight-passenger-fields select:hover,
+.passenger-existing-wrap .input-control:hover {
+  border-color: #94a3b8;
+}
+
+.flight-passenger-fields input:focus,
+.flight-passenger-fields select:focus,
+.passenger-existing-wrap .input-control:focus {
+  outline: none !important;
+  border-color: var(--secondary-color) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.flight-passenger-fields .field-has-error {
+  border-color: var(--danger-color) !important;
+}
+
+.field-error-text {
+  color: var(--danger-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.passenger-existing-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.passenger-existing-wrap .input-control {
+  max-width: 420px;
+}
+
+.pmode-warn {
+  margin: 0;
+  color: #b45309;
+  font-size: 0.813rem;
+  font-weight: 600;
+}
+
 /* Form Styling */
 .form-section-divider {
   border-top: 1px solid var(--border-color);
@@ -321,10 +455,10 @@
 
 .input-control {
   width: 100%;
-  height: 42px;
-  border: 1px solid var(--border-color);
+  height: 38px;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   font-family: inherit;
   font-size: 0.875rem;
   color: var(--text-main);
@@ -332,14 +466,18 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.input-control:hover {
+  border-color: #94a3b8 !important;
+}
+
 .input-control:focus {
-  outline: none;
-  border-color: var(--secondary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none !important;
+  border-color: var(--secondary-color) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
 .input-control.error-state {
-  border-color: var(--danger-color);
+  border-color: var(--danger-color) !important;
 }
 
 .input-error-msg {
@@ -347,6 +485,111 @@
   color: var(--danger-color);
   font-weight: 500;
   margin-top: 4px;
+}
+
+.additional-details-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.additional-request-field {
+  margin-bottom: 18px;
+}
+
+.additional-request-field .input-control {
+  max-width: 640px;
+}
+
+.terms-consent-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.terms-consent-label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 680px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.terms-consent-label input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex: 0 0 18px;
+  cursor: pointer;
+  accent-color: var(--secondary-color);
+}
+
+.terms-consent-label span {
+  display: block;
+}
+
+.terms-consent-label strong {
+  color: var(--danger-color);
+  font-weight: 800;
+}
+
+.form-error-message {
+  margin: 14px 0 0;
+  color: var(--danger-color);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.contact-phone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.contact-phone-row .phone-code-select {
+  width: 76px !important;
+  min-width: 76px !important;
+  max-width: 76px !important;
+  flex: 0 0 76px !important;
+  height: 38px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  color: var(--text-main) !important;
+  background-color: var(--bg-card) !important;
+  cursor: not-allowed !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.contact-phone-row .contact-phone-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.contact-phone-row .phone-code-select:hover {
+  border-color: #94a3b8 !important;
+}
+
+.contact-phone-row .phone-code-select:focus {
+  outline: none !important;
+  border-color: var(--secondary-color) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.contact-phone-row .phone-code-select:disabled {
+  background-color: #f1f5f9 !important;
+  color: var(--text-muted) !important;
+  border-color: #cbd5e1 !important;
+  opacity: 1 !important;
 }
 
 /* ── MOCK MODAL / DIALOG POPUPS ── */
@@ -643,4 +886,1680 @@
   .flight-checkout-sidebar {
     position: static;
   }
+
+  .flight-flow-page .flight-passenger-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px;
+  }
 }
+
+@media (max-width: 640px) {
+  .flight-main-card {
+    padding: 18px;
+  }
+
+  .flight-passenger-row-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .passenger-mode-toggle {
+    width: 100%;
+  }
+
+  .passenger-mode-toggle .btn-action-outline {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .flight-flow-page .flight-passenger-fields {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ==========================================================================
+   ✈️ AIRPLANE FUSELAGE & CABIN SEATING REDESIGN STYLES
+   ========================================================================== */
+
+/* Outer Fuselage Container */
+.airplane-fuselage-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 32px auto;
+  background-color: transparent;
+}
+
+.airplane-fuselage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-left: 6px solid #cbd5e1;
+  border-right: 6px solid #cbd5e1;
+  background-color: #f8fafc;
+  padding-bottom: 24px;
+  box-shadow: inset 0 0 30px rgba(148, 163, 184, 0.08), 0 10px 25px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* Nose Cone & Cockpit */
+.airplane-nose {
+  width: calc(100% + 12px);
+  height: 160px;
+  border: 6px solid #cbd5e1;
+  border-bottom: none;
+  border-radius: 200px 200px 0 0;
+  background: linear-gradient(to bottom, #cbd5e1 5%, #f1f5f9 40%, #f8fafc 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 24px;
+  position: relative;
+  margin-top: -6px;
+  box-shadow: inset 0 8px 16px rgba(255, 255, 255, 0.5);
+}
+
+.cockpit-windows {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.cockpit-window {
+  width: 38px;
+  height: 18px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border: 2px solid #64748b;
+  border-radius: 3px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.cockpit-window.left {
+  transform: skewY(-14deg);
+  border-top-left-radius: 12px;
+}
+
+.cockpit-window.right {
+  transform: skewY(14deg);
+  border-top-right-radius: 12px;
+}
+
+.cockpit-window.center {
+  width: 46px;
+  height: 20px;
+}
+
+.flight-crew-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* Galley & Restrooms */
+.cabin-amenities {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  padding: 14px 20px;
+  border-bottom: 2px dashed #cbd5e1;
+  background-color: #f1f5f9;
+}
+
+.cabin-amenities.aft {
+  border-top: 2px dashed #cbd5e1;
+  border-bottom: none;
+  margin-top: 16px;
+}
+
+.amenity-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 12px;
+  min-width: 84px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.amenity-icon {
+  font-size: 1.25rem;
+}
+
+.amenity-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Emergency Exit Rows */
+.exit-doors-row {
+  display: flex;
+  justify-content: space-between;
+  width: calc(100% + 12px);
+  padding: 6px 16px;
+  background-color: #fee2e2;
+  border-top: 1px dashed #ef4444;
+  border-bottom: 1px dashed #ef4444;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 800;
+  user-select: none;
+}
+
+.exit-doors-row.forward {
+  margin-top: -1px;
+}
+
+.exit-doors-row.aft {
+  margin-bottom: 0;
+}
+
+.exit-door {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 1.5px;
+}
+
+.exit-door-spacer {
+  flex-grow: 1;
+}
+
+/* Airplane Side Walls and Passenger Windows */
+.airplane-cabin {
+  width: 100%;
+  position: relative;
+  padding: 24px 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.cabin-side-wall {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 48px 0 16px; /* Offset label header space */
+}
+
+.cabin-side-wall.left-wall {
+  left: -6px;
+}
+
+.cabin-side-wall.right-wall {
+  right: -6px;
+}
+
+.wall-window-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px; /* Sync with cabin-row height */
+}
+
+.wall-window {
+  width: 6px;
+  height: 14px;
+  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+  border: 1px solid #4f46e5;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), 0 0 2px rgba(79, 70, 229, 0.3);
+}
+
+/* Airplane Wings Styling */
+.airplane-wings {
+  position: absolute;
+  width: 100%;
+  top: 48%; /* Wings level with mid-back rows */
+  left: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.airplane-wing {
+  position: absolute;
+  width: 220px;
+  height: 80px;
+  background: linear-gradient(to bottom, #cbd5e1 0%, #cbd5e1 30%, #94a3b8 100%);
+  border: 3px solid #94a3b8;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.airplane-wing.left {
+  right: 100%;
+  transform: skewY(-22deg) rotate(-8deg);
+  border-top-left-radius: 120px 60px;
+  border-bottom-left-radius: 14px;
+  border-right: none;
+  margin-right: -2px;
+}
+
+.airplane-wing.right {
+  left: 100%;
+  transform: skewY(22deg) rotate(8deg);
+  border-top-right-radius: 120px 60px;
+  border-bottom-right-radius: 14px;
+  border-left: none;
+  margin-left: -2px;
+}
+
+.wing-engine {
+  position: absolute;
+  width: 38px;
+  height: 70px;
+  background: linear-gradient(to right, #475569, #1e293b);
+  border: 2px solid #0f172a;
+  border-radius: 18px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.wing-engine.left-engine {
+  left: 54px;
+  top: 14px;
+  transform: rotate(8deg);
+}
+
+.wing-engine.right-engine {
+  right: 54px;
+  top: 14px;
+  transform: rotate(-8deg);
+}
+
+/* Seating Grid and Aisle */
+.seating-grid {
+  flex-grow: 1;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.column-labels-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #cbd5e1;
+  margin-bottom: 8px;
+  height: 32px;
+}
+
+.col-letter-label {
+  width: 32px;
+  text-align: center;
+  font-size: 0.813rem;
+  font-weight: 800;
+  color: #64748b;
+  user-select: none;
+}
+
+.row-label-placeholder,
+.aisle-label-placeholder {
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.row-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exit-row-marker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #b91c1c;
+  margin: 2px 0;
+  padding: 3px 8px;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  border: 1px dashed #fca5a5;
+  user-select: none;
+}
+
+.marker-line {
+  flex-grow: 1;
+  height: 1px;
+  background-color: #fca5a5;
+}
+
+.cabin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 4px;
+}
+
+.cabin-row.exit-row {
+  background-color: rgba(254, 242, 242, 0.4);
+  border-radius: 6px;
+}
+
+.row-number-badge {
+  width: 28px;
+  font-size: 0.813rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-align: center;
+  user-select: none;
+}
+
+.cabin-aisle {
+  width: 28px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e2e8f0;
+  border-left: 1px dashed #cbd5e1;
+  border-right: 1px dashed #cbd5e1;
+  color: #94a3b8;
+  font-size: 0.5rem;
+  font-weight: 800;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  cursor: default;
+  user-select: none;
+}
+
+/* SVG Seats Styling */
+.seat-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seat-item {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.seat-item:hover:not(:disabled) {
+  transform: scale(1.18);
+  z-index: 10;
+}
+
+.seat-item:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.seat-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.seat-svg .seat-body {
+  fill: #ffffff;
+  stroke: #94a3b8;
+  stroke-width: 4.5px;
+  transition: fill 0.2s, stroke 0.2s;
+}
+
+.seat-svg .seat-headrest {
+  fill: #cbd5e1;
+  stroke: #94a3b8;
+  stroke-width: 4px;
+  transition: fill 0.2s, stroke 0.2s;
+}
+
+.seat-svg .seat-cushion {
+  fill: #ffffff;
+  stroke: #e2e8f0;
+  stroke-width: 3.5px;
+  transition: fill 0.2s, stroke 0.2s;
+}
+
+.seat-svg .seat-armrest {
+  fill: #e2e8f0;
+  stroke: #cbd5e1;
+  stroke-width: 4px;
+  transition: fill 0.2s, stroke 0.2s;
+}
+
+.seat-item .seat-letter-label {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  font-size: 0.688rem;
+  font-weight: 800;
+  color: #475569;
+  pointer-events: none;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+/* Category Specific Seat Color Schemes */
+
+/* 1. Booked (Disabled) */
+.seat-item.booked {
+  cursor: not-allowed;
+}
+
+.seat-item.booked .seat-svg .seat-body {
+  fill: #cbd5e1;
+  stroke: #94a3b8;
+}
+
+.seat-item.booked .seat-svg .seat-headrest {
+  fill: #94a3b8;
+  stroke: #64748b;
+}
+
+.seat-item.booked .seat-svg .seat-cushion {
+  fill: #cbd5e1;
+  stroke: #94a3b8;
+}
+
+.seat-item.booked .seat-svg .seat-armrest {
+  fill: #94a3b8;
+  stroke: #cbd5e1;
+}
+
+.seat-item.booked .seat-letter-label {
+  color: #64748b;
+  opacity: 0.5;
+}
+
+/* 2. Selected (Active) */
+.seat-item.selected .seat-svg .seat-body {
+  fill: #10b981;
+  stroke: #047857;
+}
+
+.seat-item.selected .seat-svg .seat-headrest {
+  fill: #047857;
+  stroke: #065f46;
+}
+
+.seat-item.selected .seat-svg .seat-cushion {
+  fill: #34d399;
+  stroke: #10b981;
+}
+
+.seat-item.selected .seat-svg .seat-armrest {
+  fill: #047857;
+  stroke: #065f46;
+}
+
+.seat-item.selected .seat-letter-label {
+  color: #ffffff;
+}
+
+/* 3. Extra Legroom (Exit row/Front row) */
+.seat-item.extra-legroom .seat-svg .seat-body {
+  fill: #eff6ff;
+  stroke: #2563eb;
+}
+
+.seat-item.extra-legroom .seat-svg .seat-headrest {
+  fill: #dbeafe;
+  stroke: #2563eb;
+}
+
+.seat-item.extra-legroom .seat-svg .seat-cushion {
+  fill: #bfdbfe;
+  stroke: #3b82f6;
+}
+
+.seat-item.extra-legroom .seat-svg .seat-armrest {
+  fill: #dbeafe;
+  stroke: #2563eb;
+}
+
+.seat-item.extra-legroom .seat-letter-label {
+  color: #1d4ed8;
+}
+
+/* 4. Preferred Rows */
+.seat-item.preferred .seat-svg .seat-body {
+  fill: #faf5ff;
+  stroke: #7c3aed;
+}
+
+.seat-item.preferred .seat-svg .seat-headrest {
+  fill: #f3e8ff;
+  stroke: #7c3aed;
+}
+
+.seat-item.preferred .seat-svg .seat-cushion {
+  fill: #e9d5ff;
+  stroke: #8b5cf6;
+}
+
+.seat-item.preferred .seat-svg .seat-armrest {
+  fill: #f3e8ff;
+  stroke: #7c3aed;
+}
+
+.seat-item.preferred .seat-letter-label {
+  color: #6d28d9;
+}
+
+/* 5. Standard Window Seats */
+.seat-item.standard.seat-window .seat-svg .seat-body {
+  fill: #fdf2f8;
+  stroke: #db2777;
+}
+
+.seat-item.standard.seat-window .seat-svg .seat-headrest {
+  fill: #fce7f3;
+  stroke: #db2777;
+}
+
+.seat-item.standard.seat-window .seat-svg .seat-cushion {
+  fill: #fbcfe8;
+  stroke: #ec4899;
+}
+
+.seat-item.standard.seat-window .seat-svg .seat-armrest {
+  fill: #fce7f3;
+  stroke: #db2777;
+}
+
+.seat-item.standard.seat-window .seat-letter-label {
+  color: #be185d;
+}
+
+/* 6. Standard Aisle Seats */
+.seat-item.standard.seat-aisle-side .seat-svg .seat-body {
+  fill: #f0fdf4;
+  stroke: #16a34a;
+}
+
+.seat-item.standard.seat-aisle-side .seat-svg .seat-headrest {
+  fill: #dcfce7;
+  stroke: #16a34a;
+}
+
+.seat-item.standard.seat-aisle-side .seat-svg .seat-cushion {
+  fill: #bbf7d0;
+  stroke: #22c55e;
+}
+
+.seat-item.standard.seat-aisle-side .seat-svg .seat-armrest {
+  fill: #dcfce7;
+  stroke: #16a34a;
+}
+
+.seat-item.standard.seat-aisle-side .seat-letter-label {
+  color: #15803d;
+}
+
+/* 7. Standard Middle Seats (Free) */
+.seat-item.standard.seat-middle-side .seat-svg .seat-body {
+  fill: #f8fafc;
+  stroke: #64748b;
+}
+
+.seat-item.standard.seat-middle-side .seat-svg .seat-headrest {
+  fill: #f1f5f9;
+  stroke: #64748b;
+}
+
+.seat-item.standard.seat-middle-side .seat-svg .seat-cushion {
+  fill: #e2e8f0;
+  stroke: #94a3b8;
+}
+
+.seat-item.standard.seat-middle-side .seat-svg .seat-armrest {
+  fill: #f1f5f9;
+  stroke: #64748b;
+}
+
+.seat-item.standard.seat-middle-side .seat-letter-label {
+  color: #475569;
+}
+
+/* Loading Overlay inside fuselage */
+.flight-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 100;
+  border-radius: 12px;
+}
+
+.flight-loading-overlay p {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+/* Tail Structure at Aft */
+.airplane-tail {
+  width: calc(100% + 12px);
+  height: 80px;
+  border-left: 6px solid #cbd5e1;
+  border-right: 6px solid #cbd5e1;
+  background-color: #cbd5e1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  border-bottom: 6px solid #94a3b8;
+  border-radius: 0 0 50px 50px;
+}
+
+.stabilizer {
+  position: absolute;
+  width: 64px;
+  height: 16px;
+  background-color: #cbd5e1;
+  border: 3px solid #94a3b8;
+  bottom: 16px;
+}
+
+.stabilizer.left {
+  right: 100%;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-right: none;
+  transform: rotate(-6deg);
+  margin-right: -3px;
+}
+
+.stabilizer.right {
+  left: 100%;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-left: none;
+  transform: rotate(6deg);
+  margin-left: -3px;
+}
+
+.vertical-fin {
+  position: absolute;
+  width: 12px;
+  height: 48px;
+  background-color: #94a3b8;
+  border: 3px solid #64748b;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border-bottom: none;
+  bottom: 100%;
+}
+
+/* Airplane Seat Category Legends */
+.airplane-legend-container {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.airplane-legend-container .legend-title {
+  margin: 0 0 14px 0;
+  font-size: 0.938rem;
+  font-weight: 800;
+  color: #1e293b;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.airplane-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.airplane-legend-grid .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.legend-seat {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1.5px solid #94a3b8;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #475569;
+  user-select: none;
+}
+
+.legend-seat.selected {
+  background-color: #10b981;
+  border-color: #047857;
+  color: #ffffff;
+}
+
+.legend-seat.booked {
+  background-color: #cbd5e1;
+  border-color: #94a3b8;
+  color: #64748b;
+  opacity: 0.6;
+}
+
+.legend-seat.extra {
+  background-color: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.legend-seat.preferred {
+  background-color: #faf5ff;
+  border-color: #7c3aed;
+  color: #6d28d9;
+}
+
+.legend-seat.standard.window {
+  background-color: #fdf2f8;
+  border-color: #db2777;
+  color: #be185d;
+}
+
+.legend-seat.standard.aisle {
+  background-color: #f0fdf4;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.legend-seat.standard.free {
+  background-color: #f8fafc;
+  border-color: #64748b;
+  color: #475569;
+}
+
+.airplane-legend-grid .legend-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.airplane-legend-grid .legend-label {
+  font-size: 0.688rem;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.airplane-legend-grid .legend-price {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #059669;
+  margin-top: 1px;
+}
+
+/* Custom Interactive Hover Tooltip */
+.seat-hover-tooltip {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+  color: #ffffff;
+  min-width: 180px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  font-family: inherit;
+  transition: opacity 0.12s ease-out;
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tooltip-seat-label {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.tooltip-class-badge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-class-badge.extra {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.tooltip-class-badge.preferred {
+  background-color: #7c3aed;
+  color: #ffffff;
+}
+
+.tooltip-class-badge.standard {
+  background-color: #64748b;
+  color: #ffffff;
+}
+
+.tooltip-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.12);
+  margin: 8px 0;
+}
+
+.tooltip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tooltip-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tooltip-detail .detail-label {
+  color: #94a3b8;
+}
+
+.tooltip-detail .detail-value.highlight {
+  color: #34d399;
+  font-weight: 800;
+}
+
+.tooltip-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tooltip-features .feature-pill {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.tooltip-features .feature-pill.highlight-pill {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tooltip-features .feature-pill.exit-row-pill {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ==========================================================================
+   ── STYLES FOR THE PAYMENT METHOD INTERFACE ──
+   ========================================================================== */
+
+/* Main Card */
+.flight-main-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.flight-main-card-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* Payment Method Tabs Grid */
+.flight-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.payment-method-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  background-color: var(--bg-main);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 0.813rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.payment-method-tab-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: var(--text-main);
+  transform: translateY(-2px);
+}
+
+.payment-method-tab-btn.active {
+  background-color: #eff6ff;
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.payment-method-tab-btn svg {
+  stroke-width: 2.2px;
+}
+
+/* Input Fields & Forms */
+.flight-payment-form {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  font-size: 0.813rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.input-control {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: #f8fafc;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-control:focus {
+  background-color: #ffffff;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* 1. UPI Payment Styles */
+.upi-payment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.upi-sub-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1.5px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.upi-sub-tab-btn {
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 12px;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.upi-sub-tab-btn.active {
+  color: var(--secondary-color);
+}
+
+.upi-sub-tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -13.5px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--secondary-color);
+  border-radius: 99px;
+}
+
+/* UPI Instant QR Scanner */
+.upi-qr-scanner-box {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background-color: #f8fafc;
+  border: 1.5px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.qr-code-placeholder {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  background-color: #ffffff;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mock-qr-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.qr-scanner-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--secondary-color), transparent);
+  box-shadow: 0 0 8px var(--secondary-color);
+  animation: qrScan 2.5s infinite linear;
+}
+
+@keyframes qrScan {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+.qr-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qr-main-text {
+  font-size: 0.938rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.qr-sub-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.qr-timer {
+  margin-top: 10px;
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.timer-countdown {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--danger-color);
+  background-color: #fee2e2;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* UPI VPA Styles */
+.upi-vpa-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upi-input-wrapper {
+  position: relative;
+}
+
+.upi-suffixes-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.upi-suffix-pill {
+  background-color: #f1f5f9;
+  border: 1px solid var(--border-color);
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.upi-suffix-pill:hover {
+  background-color: #e2e8f0;
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+/* UPI App Badges */
+.upi-apps-row {
+  display: flex;
+  justify-content: space-around;
+  background-color: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.upi-app-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.813rem;
+  font-weight: 900;
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.app-logo.gpay { background-color: #4285f4; }
+.app-logo.phonepe { background-color: #5f259f; }
+.app-logo.paytm { background-color: #00b9f5; }
+.app-logo.bhim { background: linear-gradient(135deg, #f05a28 0%, #2b3990 100%); }
+
+.app-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* 2. Credit/Debit Card Styles */
+.card-payment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 3D Visual Card */
+.visual-card-wrapper {
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+}
+
+.visual-card-preview {
+  position: relative;
+  width: 340px;
+  height: 200px;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+.visual-card-preview.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #ffffff;
+  overflow: hidden;
+  user-select: none;
+}
+
+.card-face.front {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-face.back {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transform: rotateY(180deg);
+  padding: 20px 0;
+}
+
+.card-glare {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 36px;
+}
+
+/* Chip Design */
+.card-chip {
+  width: 44px;
+  height: 32px;
+  background: linear-gradient(135deg, #ffe066 0%, #f5b041 100%);
+  border-radius: 6px;
+  position: relative;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.chip-line {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
+
+.card-network-logo {
+  font-weight: 800;
+  font-size: 1.125rem;
+  letter-spacing: 1.5px;
+}
+
+.network-logo.visa {
+  color: #f5b041;
+  font-style: italic;
+  text-shadow: 0 0 1px #ffffff;
+}
+
+.network-logo.mastercard {
+  color: #eb5757;
+  text-shadow: 10px 0 0 #f2c94c;
+  margin-right: 12px;
+}
+
+.network-logo.rupay {
+  background: linear-gradient(90deg, #0070b8 0%, #ec1c24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.8));
+}
+
+.network-logo.generic {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.card-number-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.375rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-align: center;
+  margin: 16px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  word-spacing: 4px;
+}
+
+.card-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.card-holder-display, .card-expiry-display {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.card-value {
+  font-size: 0.813rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+/* Card Back Styles */
+.card-magnetic-stripe {
+  background-color: #000000;
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+}
+
+.card-signature-area {
+  background-color: rgba(255, 255, 255, 0.95);
+  height: 38px;
+  margin: 20px 20px 0 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.signature-lines {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0, 0, 0, 0.05) 4px, rgba(0, 0, 0, 0.05) 8px);
+}
+
+.card-cvv-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 800;
+  font-size: 0.938rem;
+  color: #0f172a;
+  letter-spacing: 1.5px;
+  font-style: italic;
+  position: relative;
+  z-index: 2;
+}
+
+.card-back-info {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* Card Form Layout */
+.card-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 3. Net Banking Styles */
+.netbanking-payment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-subtitle-label {
+  font-size: 0.813rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popular-banks-grid, .popular-wallets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.bank-card-btn, .wallet-card-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background-color: #f8fafc;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.bank-card-btn:hover, .wallet-card-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.bank-card-btn.active, .wallet-card-btn.active {
+  background-color: #eff6ff;
+  border-color: var(--secondary-color);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08);
+}
+
+.bank-logo-icon, .wallet-logo-icon {
+  font-size: 1.25rem;
+}
+
+.bank-label-text, .wallet-label-text {
+  font-size: 0.813rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.bank-card-btn.active .bank-label-text,
+.wallet-card-btn.active .wallet-label-text {
+  color: var(--secondary-color);
+}
+
+/* 4. Security Badges */
+.payment-security-badges {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 24px;
+  border-top: 1.5px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.688rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.security-badge svg {
+  color: var(--success-color);
+}
+
+/* Sticky Action Bar */
+.bottom-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--bg-card);
+  border-top: 1.5px solid var(--border-color);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+  z-index: 100;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.bottom-price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bottom-price-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bottom-price-amount {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* Stepper adjustments and spacing */
+.flight-flow-page {
+  padding-bottom: 96px; /* Offset the bottom action bar so elements are not covered */
+}
+
+/* Sidebar and general styles */
+.sidebar-card-title {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fare-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.813rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.fare-row span:nth-child(2) {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.total-amount-row {
+  border-top: 1.5px dashed var(--border-color);
+  padding-top: 12px;
+  margin-top: 12px;
+  font-size: 0.938rem;
+  font-weight: 800;
+}
+
+.total-amount-row span:nth-child(1) {
+  color: var(--text-main);
+}
+
+.total-amount-row span:nth-child(2) {
+  color: var(--secondary-color);
+  font-size: 1.125rem;
+}
+
+.discount-value {
+  color: var(--success-color) !important;
+}
+
+.flight-stepper-header {
+  margin-bottom: 24px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+

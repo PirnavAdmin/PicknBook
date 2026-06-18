@@ -38,5 +38,23 @@ public class User
 
     public string? ProfileImageUrl { get; set; }
 
+    public string Status { get; set; } = "Active"; // Active, Inactive
+    public string WalletStatus { get; set; } = "Active"; // Active, Inactive
+    public decimal WalletBalance { get; set; } = 0.00m;
+    public string? AltMobile { get; set; }
+    public string Gender { get; set; } = "Male";
+    public string Currency { get; set; } = "INR";
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? Country { get; set; }
+    public string? Pincode { get; set; }
+    public string? Remark { get; set; }
+    public string? AadharNumber { get; set; }
+    public string? PanNumber { get; set; }
+    public string? PanName { get; set; }
+    public string? RefferedBy { get; set; }
+    public string? LoginId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
