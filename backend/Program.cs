@@ -55,6 +55,7 @@ builder.Services.AddScoped<IUserBookingHistoryService, UserBookingHistoryService
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAboutUsService, AboutUsService>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<User>, Microsoft.AspNetCore.Identity.PasswordHasher<User>>();
 
 // Database
 

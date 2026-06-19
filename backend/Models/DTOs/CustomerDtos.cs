@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace PickNBook.Api.Models.DTOs;
 
@@ -40,6 +41,7 @@ public class CreateCustomerRequest
     [MinLength(6, ErrorMessage = "Password must be at least 6 characters.")]
     public string Password { get; set; } = string.Empty;
 
+    [JsonPropertyName("referredBy")]
     public string? RefferedBy { get; set; }
     public string? Address { get; set; }
     public string? City { get; set; }
@@ -71,6 +73,7 @@ public class CustomerResponseDto
     public string Gender { get; set; } = string.Empty;
     public string Currency { get; set; } = string.Empty;
     public string? LoginId { get; set; }
+    [JsonPropertyName("referredBy")]
     public string? RefferedBy { get; set; }
     public string? Address { get; set; }
     public string? City { get; set; }
