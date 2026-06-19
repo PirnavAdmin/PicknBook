@@ -20,6 +20,8 @@ namespace PickNBook.Api.Data
         public DbSet<CouponRedemption> CouponRedemptions { get; set; }
         public DbSet<OfferSubscriber> OfferSubscribers { get; set; }
         public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<BlogCategory> BlogCategories { get; set; }
+        public DbSet<BlogSubCategory> BlogSubCategories { get; set; }
         public DbSet<CmsPage> CmsPages { get; set; }
         public DbSet<AboutUs> AboutUs { get; set; }
         public DbSet<AboutUsCount> AboutUsCounts { get; set; }
@@ -107,6 +109,8 @@ namespace PickNBook.Api.Data
             modelBuilder.Entity<CouponRedemption>().ToTable("couponredemptions");
             modelBuilder.Entity<OfferSubscriber>().ToTable("offersubscribers");
             modelBuilder.Entity<BlogPost>().ToTable("blogposts");
+            modelBuilder.Entity<BlogCategory>().ToTable("blogcategories");
+            modelBuilder.Entity<BlogSubCategory>().ToTable("blogsubcategories");
             modelBuilder.Entity<CmsPage>().ToTable("cmspages");
             modelBuilder.Entity<AboutUs>().ToTable("about_us");
             modelBuilder.Entity<AboutUsCount>().ToTable("about_us_counts");
@@ -360,6 +364,41 @@ namespace PickNBook.Api.Data
             modelBuilder.Entity<BlogPost>().Property(x => x.CreatedAtUtc);
             modelBuilder.Entity<BlogPost>().Property(x => x.UpdatedAtUtc);
             modelBuilder.Entity<BlogPost>().Property(x => x.PublishedAtUtc);
+
+            // =============================
+            // BlogCategory Configuration
+            // =============================
+            modelBuilder.Entity<BlogCategory>(entity =>
+            {
+                entity.HasIndex(x => x.Slug).IsUnique();
+                entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Slug).HasMaxLength(160).IsRequired();
+                entity.Property(x => x.ImageUrl).HasMaxLength(300);
+                entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.MetaTitle).HasMaxLength(200);
+                entity.Property(x => x.MetaKeyword).HasMaxLength(300);
+                entity.Property(x => x.MetaDescription).HasMaxLength(600);
+                entity.Property(x => x.CreatedAtUtc).IsRequired();
+                entity.Property(x => x.UpdatedAtUtc).IsRequired();
+            });
+
+            // =============================
+            // BlogSubCategory Configuration
+            // =============================
+            modelBuilder.Entity<BlogSubCategory>(entity =>
+            {
+                entity.HasIndex(x => x.Slug).IsUnique();
+                entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Category).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Slug).HasMaxLength(160).IsRequired();
+                entity.Property(x => x.ImageUrl).HasMaxLength(300);
+                entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.MetaTitle).HasMaxLength(200);
+                entity.Property(x => x.MetaKeyword).HasMaxLength(300);
+                entity.Property(x => x.MetaDescription).HasMaxLength(600);
+                entity.Property(x => x.CreatedAtUtc).IsRequired();
+                entity.Property(x => x.UpdatedAtUtc).IsRequired();
+            });
 
             // =============================
             // CmsPage Configuration
