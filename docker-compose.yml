@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -10,13 +8,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: ${BACKEND_CONNECTION_STRING}
-      Jwt__Secret: ${JWT_SECRET}
+      ConnectionStrings__DefaultConnection: ${BACKEND_CONNECTION_STRING:?Set BACKEND_CONNECTION_STRING in .env}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
       Jwt__Issuer: ${JWT_ISSUER:-PickNBookApi}
       Jwt__Audience: ${JWT_AUDIENCE:-PickNBookUsers}
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
-      Cors__AllowedOrigins__0: ${FRONTEND_PUBLIC_URL:-http://3.111.182.53:3000}
-      Cors__AllowedOrigins__1: ${FRONTEND_PUBLIC_URL_ALT:-http://3.111.182.53:3000}
+      Cors__AllowedOrigins__0: ${FRONTEND_PUBLIC_URL:-http://localhost:3000}
+      Cors__AllowedOrigins__1: ${FRONTEND_PUBLIC_URL_ALT:-http://127.0.0.1:3000}
       Amadeus__BaseUrl: ${AMADEUS_BASE_URL:-https://test.api.amadeus.com}
       Amadeus__ClientId: ${AMADEUS_CLIENT_ID:-}
       Amadeus__ClientSecret: ${AMADEUS_CLIENT_SECRET:-}
@@ -33,36 +31,41 @@ services:
       Notifications__TicketEmailUrl: ${TICKET_EMAIL_URL:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - backend_wwwroot:/app/wwwroot
     restart: unless-stopped
-    networks:
-      - appnet
-
+ 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_AUTH_API_BASE_URL: ${REACT_APP_AUTH_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_BUS_API_BASE_URL: ${REACT_APP_BUS_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_ADMIN_API_BASE_URL: ${REACT_APP_ADMIN_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_DASHBOARD_API_BASE_URL: ${REACT_APP_DASHBOARD_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_BANK_API_BASE_URL: ${REACT_APP_BANK_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_NOTIFICATIONS_API_BASE_URL: ${REACT_APP_NOTIFICATIONS_API_BASE_URL:-http://3.111.182.53:8080}
-        REACT_APP_PLACES_API_URL: ${REACT_APP_PLACES_API_URL:-http://3.111.182.53:8080/api/Places}
+        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-/}
+        REACT_APP_AUTH_API_BASE_URL: ${REACT_APP_AUTH_API_BASE_URL:-/}
+        REACT_APP_BUS_API_BASE_URL: ${REACT_APP_BUS_API_BASE_URL:-/}
+        REACT_APP_ADMIN_API_BASE_URL: ${REACT_APP_ADMIN_API_BASE_URL:-/}
+        REACT_APP_DASHBOARD_API_BASE_URL: ${REACT_APP_DASHBOARD_API_BASE_URL:-/}
+        REACT_APP_BANK_API_BASE_URL: ${REACT_APP_BANK_API_BASE_URL:-/}
+        REACT_APP_NOTIFICATIONS_API_BASE_URL: ${REACT_APP_NOTIFICATIONS_API_BASE_URL:-/}
+        REACT_APP_PLACES_API_URL: ${REACT_APP_PLACES_API_URL:-/api/Places}
         REACT_APP_USE_DIRECT_API_IN_DEV: ${REACT_APP_USE_DIRECT_API_IN_DEV:-false}
         REACT_APP_DEFAULT_USER_ID: ${REACT_APP_DEFAULT_USER_ID:-user_123}
     env_file:
       - ./.env
-    depends_on:
-      - backend
     ports:
       - "${FRONTEND_PORT:-3000}:8080"
+    depends_on:
+      - backend
     restart: unless-stopped
-    networks:
-      - appnet
+ 
+volumes:
+  backend_wwwroot:
 
-networks:
-  appnet:
-    driver: bridge
+Facebook
+See posts, photos and more on Facebook.
+ 
+Facebook
+See posts, photos and more on Facebook.
  
