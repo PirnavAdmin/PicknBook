@@ -272,57 +272,6 @@ namespace PickNBook.Api.Migrations
                     b.ToTable("airline_webcheck_links", (string)null);
                 });
 
-            modelBuilder.Entity("PickNBook.Api.Models.BlogCategory", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MetaDescription")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MetaKeyword")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MetaTitle")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("varchar(180)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.ToTable("blogcategories", (string)null);
-                });
-
             modelBuilder.Entity("PickNBook.Api.Models.BlogPost", b =>
                 {
                     b.Property<long>("Id")
@@ -416,62 +365,6 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("IsPublished", "PublishedAtUtc");
 
                     b.ToTable("blogposts", (string)null);
-                });
-
-            modelBuilder.Entity("PickNBook.Api.Models.BlogSubCategory", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MetaDescription")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MetaKeyword")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MetaTitle")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(180)
-                        .HasColumnType("varchar(180)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.ToTable("blogsubcategories", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.BusBooking", b =>

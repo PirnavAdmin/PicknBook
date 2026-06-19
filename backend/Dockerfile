@@ -8,11 +8,6 @@ COPY . .
 RUN dotnet publish "PickNBook.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
  
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
- 
-RUN apk add --no-cache \
-    fontconfig \
-    ttf-dejavu
- 
 RUN adduser -D appuser
  
 WORKDIR /app

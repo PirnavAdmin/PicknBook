@@ -20,8 +20,6 @@ namespace PickNBook.Api.Data
         public DbSet<CouponRedemption> CouponRedemptions { get; set; }
         public DbSet<OfferSubscriber> OfferSubscribers { get; set; }
         public DbSet<BlogPost> BlogPosts { get; set; }
-        public DbSet<BlogCategory> BlogCategories { get; set; }
-        public DbSet<BlogSubCategory> BlogSubCategories { get; set; }
         public DbSet<CmsPage> CmsPages { get; set; }
         public DbSet<AboutUs> AboutUs { get; set; }
         public DbSet<AboutUsCount> AboutUsCounts { get; set; }
@@ -109,8 +107,6 @@ namespace PickNBook.Api.Data
             modelBuilder.Entity<CouponRedemption>().ToTable("couponredemptions");
             modelBuilder.Entity<OfferSubscriber>().ToTable("offersubscribers");
             modelBuilder.Entity<BlogPost>().ToTable("blogposts");
-            modelBuilder.Entity<BlogCategory>().ToTable("blogcategories");
-            modelBuilder.Entity<BlogSubCategory>().ToTable("blogsubcategories");
             modelBuilder.Entity<CmsPage>().ToTable("cmspages");
             modelBuilder.Entity<AboutUs>().ToTable("about_us");
             modelBuilder.Entity<AboutUsCount>().ToTable("about_us_counts");
@@ -316,55 +312,6 @@ namespace PickNBook.Api.Data
 
             modelBuilder.Entity<BlogPost>()
                 .HasIndex(x => x.Category);
-
-            // =============================
-            // BlogCategory Configuration
-            // =============================
-            modelBuilder.Entity<BlogCategory>()
-                .HasIndex(x => x.Slug)
-                .IsUnique();
-
-            modelBuilder.Entity<BlogCategory>()
-                .Property(x => x.Name)
-                .HasMaxLength(150)
-                .IsRequired();
-
-            modelBuilder.Entity<BlogCategory>()
-                .Property(x => x.Slug)
-                .HasMaxLength(180)
-                .IsRequired();
-
-            modelBuilder.Entity<BlogCategory>()
-                .Property(x => x.Status)
-                .HasMaxLength(20)
-                .HasDefaultValue("Active");
-
-            // =============================
-            // BlogSubCategory Configuration
-            // =============================
-            modelBuilder.Entity<BlogSubCategory>()
-                .HasIndex(x => x.Slug)
-                .IsUnique();
-
-            modelBuilder.Entity<BlogSubCategory>()
-                .Property(x => x.Name)
-                .HasMaxLength(150)
-                .IsRequired();
-
-            modelBuilder.Entity<BlogSubCategory>()
-                .Property(x => x.Category)
-                .HasMaxLength(150)
-                .IsRequired();
-
-            modelBuilder.Entity<BlogSubCategory>()
-                .Property(x => x.Slug)
-                .HasMaxLength(180)
-                .IsRequired();
-
-            modelBuilder.Entity<BlogSubCategory>()
-                .Property(x => x.Status)
-                .HasMaxLength(20)
-                .HasDefaultValue("Active");
 
             modelBuilder.Entity<BlogPost>()
                 .Property(x => x.Title)
