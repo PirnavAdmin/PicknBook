@@ -4686,7 +4686,7 @@ export default function HomePage() {
                       label="Destination"
                       value={hotelDestination}
                       onChange={handleHotelDestinationChange}
-                      tripType="hotel"
+                      tripType="all"
                       field="destination"
                       placeholder="City or hotel area"
                       error={hotelDestinationError}
