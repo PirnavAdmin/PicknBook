@@ -1,23 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
-
-const formatEntryDate = (date = new Date()) =>
-    date
-        .toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true,
-        })
-        .replace(',', '');
+import { createBlogCategory } from '../../../services/blogService';
 
 function AddBlogCategory() {
     const navigate = useNavigate();
     const toastTimerRef = useRef(null);
-    const [categories, setCategories] = useAdminList('blog-categories', []);
     const [formData, setFormData] = useState({
         categoryName: '',
         categorySlug: '',
@@ -51,28 +38,33 @@ function AddBlogCategory() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.categoryName.trim()) {
             showToast('Category name is required.', 'error');
             return;
         }
-        const entryDate = formatEntryDate(new Date());
-        const newCategory = {
-            id: getNextNumericId(categories, 1),
-            entryDate,
-            image: formData.categoryImage?.name || '-',
-            name: formData.categoryName.trim(),
-            status: 'Active',
-            slug: formData.categorySlug || '',
-            metaTitle: formData.metaTitle || '',
-            metaKeyword: formData.metaKeyword || '',
-            metaDescription: formData.metaDescription || '',
-        };
+        try {
+            const dataToSend = new FormData();
+            dataToSend.append("Name", formData.categoryName.trim());
+            dataToSend.append("Slug", formData.categorySlug || '');
+            dataToSend.append("Status", "Active");
+            dataToSend.append("MetaTitle", formData.metaTitle || '');
+            dataToSend.append("MetaKeyword", formData.metaKeyword || '');
+            dataToSend.append("MetaDescription", formData.metaDescription || '');
+            if (formData.categoryImage) {
+                dataToSend.append("Image", formData.categoryImage);
+            }
 
-        setCategories((previous) => [newCategory, ...previous]);
-        showToast('Category saved locally.', 'success');
-        navigate('/admin/blog-management/blog-category-list');
+            await createBlogCategory(dataToSend);
+            showToast('Category saved successfully.', 'success');
+            setTimeout(() => {
+                navigate('/admin/blog-management/blog-category-list');
+            }, 1000);
+        } catch (error) {
+            console.error("Failed to save category", error);
+            showToast("Failed to save category.", "error");
+        }
     };
 
     const handleReset = () => {
@@ -89,7 +81,7 @@ function AddBlogCategory() {
 
     const styles = {
         container: {
-            padding: '24px 32px',
+            padding: '12px 24px',
             background: 'var(--page-bg)',
             minHeight: '100vh',
         },
@@ -105,26 +97,26 @@ function AddBlogCategory() {
             display: 'flex',
             alignItems: 'baseline',
             gap: '8px',
-            borderBottom: '3px solid var(--primary)',
-            paddingBottom: '8px',
+            borderBottom: 'none',
+            paddingBottom: '0px',
         },
         titleMain: {
-            fontSize: '2rem',
-            fontWeight: 800,
-            color: 'var(--text-primary)',
+            fontSize: '2.2rem',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.5rem',
-            fontWeight: 400,
+            fontSize: '1.8rem',
+            fontWeight: 500,
             color: 'var(--text-secondary)',
             margin: 0,
         },
         backBtn: {
             padding: '10px 16px',
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
+            background: 'var(--primary)',
+            color: '#ffffff',
+            border: '1px solid var(--primary)',
             borderRadius: '8px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -141,30 +133,28 @@ function AddBlogCategory() {
             boxShadow: 'var(--shadow-sm)',
             border: '1px solid var(--border)',
         },
-        formGrid: {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-            marginBottom: '20px',
-            alignItems: 'flex-start',
+        tableForm: {
+            width: '100%',
+            borderCollapse: 'collapse',
+            marginBottom: '24px',
+            border: '1.5px solid var(--border)',
         },
-        formGridTwoCol: {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '20px',
-            marginBottom: '20px',
+        tableLabelCell: {
+            background: 'rgba(74, 15, 26, 0.05)',
+            border: '1px solid var(--border)',
+            padding: '12px 14px',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            color: 'var(--text-primary)',
+            textAlign: 'left',
+            width: '12%',
+            whiteSpace: 'nowrap',
         },
-        formGroupSmall: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            flex: 1,
-        },
-        formGroup: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            flex: 1,
+        tableInputCell: {
+            border: '1px solid var(--border)',
+            padding: '8px 12px',
+            background: 'var(--panel)',
+            width: '21%',
         },
         label: {
             fontSize: '0.9rem',
@@ -176,6 +166,8 @@ function AddBlogCategory() {
             marginLeft: '4px',
         },
         input: {
+            width: '100%',
+            boxSizing: 'border-box',
             padding: '10px 12px',
             border: '1px solid var(--border)',
             borderRadius: '6px',
@@ -187,6 +179,8 @@ function AddBlogCategory() {
             color: 'var(--text-primary)',
         },
         textarea: {
+            width: '100%',
+            boxSizing: 'border-box',
             padding: '10px 12px',
             border: '1px solid var(--border)',
             borderRadius: '6px',
@@ -224,15 +218,10 @@ function AddBlogCategory() {
             color: 'var(--text-secondary)',
             fontSize: '0.85rem',
         },
-        fileSection: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-        },
         buttonGroup: {
             display: 'flex',
             gap: '12px',
-            justifyContent: 'center',
+            justifyContent: 'flex-end',
             marginTop: '32px',
             paddingTop: '24px',
             borderTop: '1px solid var(--border)',
@@ -314,16 +303,15 @@ function AddBlogCategory() {
                         type="button"
                         style={styles.backBtn}
                         onMouseEnter={(e) => {
-                            e.target.style.background = 'var(--primary)';
-                            e.target.style.color = '#ffffff';
-                            e.target.style.borderColor = 'var(--primary)';
+                            e.target.style.background = 'var(--primary-strong)';
+                            e.target.style.borderColor = 'var(--primary-strong)';
                             e.target.style.transform = 'translateY(-2px)';
                             e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
                         }}
                         onMouseLeave={(e) => {
-                            e.target.style.background = 'var(--panel)';
-                            e.target.style.color = 'var(--text-primary)';
-                            e.target.style.borderColor = 'var(--border)';
+                            e.target.style.background = 'var(--primary)';
+                            e.target.style.color = '#ffffff';
+                            e.target.style.borderColor = 'var(--primary)';
                             e.target.style.transform = 'translateY(0)';
                             e.target.style.boxShadow = 'none';
                         }}
@@ -335,132 +323,140 @@ function AddBlogCategory() {
 
                 <div style={styles.formContainer}>
                     <form onSubmit={handleSubmit}>
-                        <div style={styles.formGrid}>
-                            <div style={styles.formGroupSmall}>
-                                <label style={styles.label}>
-                                    Category Name
-                                    <span style={styles.requiredMark}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="categoryName"
-                                    placeholder="Enter category name"
-                                    value={formData.categoryName}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.formGroupSmall}>
-                                <label style={styles.label}>Category Slug</label>
-                                <input
-                                    type="text"
-                                    name="categorySlug"
-                                    placeholder="category-slug"
-                                    value={formData.categorySlug}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-
-                            <div style={styles.fileSection}>
-                                <label style={styles.label}>
-                                    Category Image
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '4px' }}>[max: 4MB]</span>
-                                </label>
-                                <div style={styles.fileInputWrapper}>
-                                    <label style={styles.fileLabel}>
-                                        Choose File
+                        <table style={styles.tableForm}>
+                            <tbody>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Category Name<span style={styles.requiredMark}>*</span>
+                                    </td>
+                                    <td style={styles.tableInputCell}>
                                         <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                            style={styles.fileInputHidden}
+                                            type="text"
+                                            name="categoryName"
+                                            placeholder="Enter category name"
+                                            value={formData.categoryName}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                            required
                                         />
-                                    </label>
-                                    <span style={styles.fileName}>
-                                        {formData.categoryImage ? formData.categoryImage.name : 'No file chosen'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={styles.formGridTwoCol}>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>Meta Title</label>
-                                <input
-                                    type="text"
-                                    name="metaTitle"
-                                    placeholder="Enter meta title"
-                                    value={formData.metaTitle}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>Meta Keyword</label>
-                                <textarea
-                                    name="metaKeyword"
-                                    placeholder="Enter meta keyword"
-                                    value={formData.metaKeyword}
-                                    onChange={handleChange}
-                                    style={{ ...styles.textarea, minHeight: '46px' }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        <div style={styles.formGroup}>
-                            <label style={styles.label}>Meta Description</label>
-                            <textarea
-                                name="metaDescription"
-                                placeholder="Enter meta description"
-                                value={formData.metaDescription}
-                                onChange={handleChange}
-                                style={styles.textarea}
-                                onFocus={(e) => {
-                                    e.target.style.borderColor = 'var(--primary)';
-                                    e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.borderColor = 'var(--border)';
-                                    e.target.style.boxShadow = 'none';
-                                }}
-                            />
-                        </div>
+                                    </td>
+                                    <td style={styles.tableLabelCell}>
+                                        Category Slug
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <input
+                                            type="text"
+                                            name="categorySlug"
+                                            placeholder="category-slug"
+                                            value={formData.categorySlug}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                    <td style={styles.tableLabelCell}>
+                                        Category Image <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>[max: 4MB]</span>
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <div style={styles.fileInputWrapper}>
+                                            <label style={styles.fileLabel}>
+                                                Choose File
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    style={styles.fileInputHidden}
+                                                />
+                                            </label>
+                                            <span style={styles.fileName}>
+                                                {formData.categoryImage ? formData.categoryImage.name : 'No file chosen'}
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Meta Title
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <input
+                                            type="text"
+                                            name="metaTitle"
+                                            placeholder="Enter meta title"
+                                            value={formData.metaTitle}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                    <td style={styles.tableLabelCell}>
+                                        Meta Keyword
+                                    </td>
+                                    <td style={styles.tableInputCell} colSpan={3}>
+                                        <input
+                                            type="text"
+                                            name="metaKeyword"
+                                            placeholder="Enter meta keyword"
+                                            value={formData.metaKeyword}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Meta Description
+                                    </td>
+                                    <td style={styles.tableInputCell} colSpan={5}>
+                                        <textarea
+                                            name="metaDescription"
+                                            placeholder="Enter meta description"
+                                            value={formData.metaDescription}
+                                            onChange={handleChange}
+                                            style={{ ...styles.input, minHeight: '80px', height: '80px', resize: 'vertical' }}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <div style={styles.buttonGroup}>
                             <button

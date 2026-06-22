@@ -194,7 +194,7 @@ function getAdminProfile() {
                     photoUrl = imgVal;
                 }
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     if (!photoUrl && email) {
@@ -227,7 +227,7 @@ const SEARCHABLE_PAGES = [
     { label: 'Bus Search History', category: 'Bus Management', path: '/admin/b2c-bus/search-history' },
     { label: 'Bus Voucher Settings', category: 'Bus Management', path: '/admin/b2c-bus/voucher-settings' },
     { label: 'Popular Bus Routes', category: 'Bus Management', path: '/admin/b2c-bus/popular-routes' },
-    
+
     { label: 'Flight Booking List', category: 'Flight Management', path: '/admin/b2c-flight/booking-list' },
     { label: 'Flight Discount List', category: 'Flight Management', path: '/admin/b2c-flight/discounts' },
     { label: 'Add Flight Discount', category: 'Flight Management', path: '/admin/b2c-flight/discounts/new' },
@@ -251,29 +251,29 @@ const SEARCHABLE_PAGES = [
     { label: 'Flight Airline Brand List', category: 'Flight Management', path: '/admin/b2c-flight/airline-brands' },
     { label: 'Popular Flight Routes', category: 'Flight Management', path: '/admin/b2c-flight/popular-routes' },
     { label: 'Popular Flight Destinations', category: 'Flight Management', path: '/admin/b2c-flight/popular-destinations' },
-    
+
     { label: 'Blog List', category: 'Blog Management', path: '/admin/blog-management/blog-list' },
     { label: 'Add Blog', category: 'Blog Management', path: '/admin/blog-management/add-blog' },
     { label: 'Blog Sub Category List', category: 'Blog Management', path: '/admin/blog-management/blog-sub-category-list' },
     { label: 'Add Blog Sub Category', category: 'Blog Management', path: '/admin/blog-management/add-blog-sub-category' },
     { label: 'Blog Category List', category: 'Blog Management', path: '/admin/blog-management/blog-category-list' },
     { label: 'Add Blog Category', category: 'Blog Management', path: '/admin/blog-management/add-blog-category' },
-    
+
     { label: 'Customer List', category: 'Customer Management', path: '/admin/customer-management/customer-list' },
     { label: 'Add New Customer', category: 'Customer Management', path: '/admin/customer-management/add-new-customer' },
     { label: 'Deposit Request List', category: 'Customer Management', path: '/admin/customer-management/deposit-request-list' },
-    
+
     { label: 'All Page List', category: 'Page Management', path: '/admin/page-management/pages' },
     { label: 'Add New Page', category: 'Page Management', path: '/admin/page-management/pages/new' },
-    
+
     { label: 'Menu List', category: 'Menu Management', path: '/admin/menu-management/menus' },
     { label: 'Add Menu', category: 'Menu Management', path: '/admin/menu-management/menus/new' },
-    
+
     { label: 'Offer List', category: 'Offer Management', path: '/admin/offer-management/offers' },
     { label: 'Add New Offer', category: 'Offer Management', path: '/admin/offer-management/offers/new' },
-    
+
     { label: 'Query List', category: 'Query Management', path: '/admin/query-management/query-list' },
-    
+
     { label: 'Testimonial List', category: 'Testimonial Management', path: '/admin/testimonial-management/testimonial-list' },
     { label: 'Add Testimonial', category: 'Testimonial Management', path: '/admin/testimonial-management/add-testimonial' }
 ];
@@ -339,8 +339,20 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
         }
     }, []);
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('[data-search-wrapper] input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
- 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().then(() => {
@@ -479,9 +491,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                 }
 
                 setNotifications(prev => {
-                    const isDifferent = prev.length !== list.length || 
+                    const isDifferent = prev.length !== list.length ||
                         list.some((item, i) => !prev[i] || prev[i].id !== item.id || prev[i].message !== item.message);
-                    
+
                     if (isDifferent && list.length > 0) {
                         setHasUnread(true);
                     }
@@ -581,8 +593,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '16px',
-            padding: '10px 28px',
+            gap: '14px',
+            padding: '6px 15px',
             borderBottom: '1px solid var(--admin-border)',
             background: 'var(--panel)',
             position: 'relative',
@@ -612,9 +624,11 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
         searchBarInput: {
             width: '100%',
             height: '42px',
-            padding: '0 75px 0 42px',
+            padding: '0 16px 0 42px',
             borderRadius: '12px',
-            border: '1px solid var(--admin-border)',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: 'var(--admin-border)',
             background: 'var(--admin-soft)',
             color: 'var(--admin-text)',
             outline: 'none',
@@ -1011,7 +1025,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
         ? SEARCHABLE_PAGES.filter(page =>
             page.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
             page.category.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+        )
         : SEARCHABLE_PAGES.slice(0, 5);
 
     return (
@@ -1019,42 +1033,35 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             <header style={styles.topbar}>
                 {/* Left Section: Brand Logo & Search Box */}
                 <div style={styles.topbarLeft}>
-                    {/* Hamburger Button for Sidebar Toggle */}
-                    <button
+                    {/* Hamburger Menu - click to toggle sidebar */}
+                    <div
                         style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--admin-muted)',
                             cursor: 'pointer',
-                            padding: '8px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: '8px',
-                            transition: 'background 0.2s ease, color 0.2s ease',
+                            marginRight: '16px',
+                            padding: '6px',
+                            borderRadius: '6px',
+                            transition: 'background 0.2s ease',
+                            color: 'var(--admin-text)',
                         }}
                         onClick={() => {
                             if (onToggleSidebar) onToggleSidebar();
                         }}
-                        title="Toggle Navigation"
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'var(--admin-soft)';
-                            e.currentTarget.style.color = 'var(--admin-primary)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'none';
-                            e.currentTarget.style.color = 'var(--admin-muted)';
-                        }}
+                        title="Toggle Navigation Sidebar"
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-soft)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="3" y1="12" x2="21" y2="12"></line>
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <line x1="3" y1="18" x2="21" y2="18"></line>
                         </svg>
-                    </button>
+                    </div>
 
-                    {/* Brand logo — click to navigate to admin dashboard */}
-                    <div 
+                    {/* Brand logo — click to open dashboard */}
+                    <div
                         style={{
                             cursor: 'pointer',
                             display: 'flex',
@@ -1070,7 +1077,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.75'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
-                        <img src={pickNBookLogo} alt="Pick N Book" style={{ height: '46px', width: 'auto', display: 'block' }} />
+                        <img src={pickNBookLogo} alt="PickNBook Logo" style={{ height: '36px', width: 'auto' }} />
                     </div>
 
                     <div style={styles.searchWrapper} data-search-wrapper>
@@ -1107,39 +1114,22 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                 }
                             }}
                         />
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowSearchDropdown(prev => !prev);
-                            }}
-                            style={{
-                                position: 'absolute',
-                                right: '6px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'var(--admin-primary)',
-                                color: '#ffffff',
-                                border: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '8px',
-                                fontSize: '0.78rem',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                boxShadow: '0 2px 6px rgba(30, 117, 255, 0.2)',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'var(--admin-primary-hover, #0052d9)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'var(--admin-primary)';
-                            }}
-                        >
-                            Search
-                        </button>
+                        <span style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'var(--admin-soft)',
+                            border: '1px solid var(--admin-border)',
+                            color: 'var(--admin-muted)',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            pointerEvents: 'none',
+                        }}>
+                            Ctrl + K
+                        </span>
                         {showSearchDropdown && (
                             <div style={styles.searchDropdown}>
                                 <div style={{ padding: '8px 16px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--admin-muted)', fontWeight: 700, borderBottom: '1px solid var(--admin-border)', marginBottom: '4px' }}>
@@ -1176,8 +1166,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     </div>
                 </div>
 
-                {/* Right Section: Fullscreen, Notifications, Profile Dropdown */}
+                {/* Right Section: Toggle Theme, Fullscreen, Notifications, Profile Dropdown */}
                 <div style={styles.topbarActions}>
+                    {/* Theme Switch Toggle Button Removed */}
 
                     {/* Fullscreen Toggle Button */}
                     <button
@@ -1250,12 +1241,12 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                 <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '200px', overflowY: 'auto' }}>
                                     {notifications.length > 0 ? (
                                         notifications.map((notif, idx) => (
-                                            <div 
-                                                key={notif.id || idx} 
-                                                style={{ 
-                                                    padding: '10px 14px', 
-                                                    borderBottom: idx === notifications.length - 1 ? 'none' : '1px solid #f1f5f9', 
-                                                    fontSize: '0.74rem', 
+                                            <div
+                                                key={notif.id || idx}
+                                                style={{
+                                                    padding: '10px 14px',
+                                                    borderBottom: idx === notifications.length - 1 ? 'none' : '1px solid #f1f5f9',
+                                                    fontSize: '0.74rem',
                                                     color: '#334155',
                                                     cursor: notif.path ? 'pointer' : 'default',
                                                     transition: 'background 0.2s ease',
@@ -1288,7 +1279,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     </div>
 
                     {/* Profile & User Information Dropdown */}
-                    <div 
+                    <div
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1303,46 +1294,13 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-soft)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                        <button
-                            style={{
-                                ...styles.avatarBtn,
-                                overflow: 'hidden',
-                                display: 'grid',
-                                placeItems: 'center',
-                                padding: 0
-                            }}
-                            type="button"
-                            aria-label="Profile Menu"
-                        >
-                            {adminData.photoUrl ? (
-                                <img 
-                                    src={adminData.photoUrl} 
-                                    alt="" 
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.parentElement.innerHTML = theme === 'light' ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block; color: #ffffff;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>` : adminData.avatarInitials;
-                                    }}
-                                />
-                            ) : (
-                                theme === 'light' ? (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', color: '#ffffff' }}>
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                        <polyline points="22,6 12,13 2,6"></polyline>
-                                    </svg>
-                                ) : (
-                                    adminData.avatarInitials
-                                )
-                            )}
-                        </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'left', pointerEvents: 'none' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--admin-text)', lineHeight: '1.2' }}>Admin User</span>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--admin-muted)', fontWeight: '500' }}>Super Admin</span>
+                            <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--admin-text)', lineHeight: '1.3' }}>{adminData.adminEmail || 'admin@picknbook.in'}</span>
                         </div>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--admin-muted)', pointerEvents: 'none' }}>
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
- 
+
                         {/* Dropdown Menu */}
                         {isDropdownOpen && (
                             <div style={{ ...styles.profileDropdownMenu, right: '0px', top: '100%', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
@@ -1354,9 +1312,9 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                         placeItems: 'center'
                                     }}>
                                         {adminData.photoUrl ? (
-                                            <img 
-                                                src={adminData.photoUrl} 
-                                                alt="" 
+                                            <img
+                                                src={adminData.photoUrl}
+                                                alt=""
                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 onError={(e) => {
                                                     e.currentTarget.style.display = 'none';
@@ -1375,16 +1333,13 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                         )}
                                     </div>
                                     <div style={styles.dsaInfo}>
-                                        <div style={styles.dsaName}>{adminData.adminName}</div>
+                                        <div style={styles.dsaName}>{adminData.adminEmail || 'admin@picknbook.in'}</div>
                                         <div style={styles.dsaId}>Admin ID: {adminData.adminId}</div>
-                                        {adminData.adminEmail && (
-                                            <div style={styles.dsaId}>{adminData.adminEmail}</div>
-                                        )}
                                     </div>
                                 </div>
- 
+
                                 <div style={styles.dropdownDivider}></div>
- 
+
                                 <div style={styles.dropdownMenuItems}>
                                     <button
                                         style={{
@@ -1415,7 +1370,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                         </svg>
                                         <span style={styles.span}>Clear Cache & Cookies</span>
                                     </button>
- 
+
                                     <button
                                         style={{
                                             ...styles.dropdownMenuItem,
@@ -1443,7 +1398,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                         </svg>
                                         <span style={styles.span}>Change Password</span>
                                     </button>
- 
+
                                     <button
                                         style={{
                                             ...styles.dropdownMenuItem,

@@ -1,60 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import "./MenuList.css";
-import { useAdminList } from "../../../utils/adminPortalStorage";
-
-const INITIAL_MENU_ITEMS = [
-  {
-    id: 1,
-    name: "Support",
-    slug: "support",
-    displayTitle: "Support",
-    order: 2,
-    module: "B2C",
-    location: "header",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Home",
-    slug: "home",
-    displayTitle: "Home",
-    order: 1,
-    module: "B2C",
-    location: "header",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Policies",
-    slug: "policies",
-    displayTitle: "Policies",
-    order: 3,
-    module: "B2C",
-    location: "footer",
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Quick Links",
-    slug: "quick-links",
-    displayTitle: "Quick Links",
-    order: 2,
-    module: "B2C",
-    location: "footer",
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "Services",
-    slug: "services",
-    displayTitle: "Services",
-    order: 1,
-    module: "B2C",
-    location: "footer",
-    status: "active",
-  },
-];
+import { getAdminMenuItems, updateMenuItem, deleteMenuItem } from "../../../services/menuService";
 
 const DEFAULT_EDIT_FORM = {
   name: "",
@@ -79,22 +26,48 @@ const headers = [
   "Action",
 ];
 
-export default function AdminMenuListPage({ onAddMenu }) {
-  const [menuItems, setMenuItems] = useAdminList("menu-items", INITIAL_MENU_ITEMS);
+export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [viewItem, setViewItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [editForm, setEditForm] = useState(DEFAULT_EDIT_FORM);
   const [editError, setEditError] = useState("");
   const [deleteItem, setDeleteItem] = useState(null);
 
-  const handleToggleStatus = (id) => {
-    setMenuItems((previous) =>
-      previous.map((item) =>
-        item.id === id
-          ? { ...item, status: item.status === "active" ? "inactive" : "active" }
-          : item
-      )
-    );
+  const fetchMenus = async () => {
+    setLoading(true);
+    try {
+      const data = await getAdminMenuItems();
+      setMenuItems(data || []);
+    } catch (error) {
+      console.error("Error fetching menu items:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenus();
+  }, []);
+
+  const handleToggleStatus = async (itemToToggle) => {
+    try {
+      const updatedItem = {
+        name: itemToToggle.name,
+        slug: itemToToggle.slug,
+        displayTitle: itemToToggle.displayTitle,
+        order: itemToToggle.order,
+        module: itemToToggle.module,
+        location: itemToToggle.location,
+        status: itemToToggle.status === "active" ? "inactive" : "active",
+      };
+      await updateMenuItem(itemToToggle.id, updatedItem);
+      fetchMenus();
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      alert(error.response?.data?.message || "Failed to toggle status.");
+    }
   };
 
   const openEditModal = (item) => {
@@ -111,7 +84,7 @@ export default function AdminMenuListPage({ onAddMenu }) {
     });
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!editItem) {
       return;
     }
@@ -144,34 +117,39 @@ export default function AdminMenuListPage({ onAddMenu }) {
       return;
     }
 
-    setMenuItems((previous) =>
-      previous.map((item) =>
-        item.id === editItem.id
-          ? {
-              ...item,
-              name,
-              slug,
-              displayTitle,
-              order: orderValue,
-              module,
-              location,
-              status: status === "inactive" ? "inactive" : "active",
-            }
-          : item
-      )
-    );
-    setEditItem(null);
-    setEditError("");
+    try {
+      await updateMenuItem(editItem.id, {
+        name,
+        slug,
+        displayTitle,
+        order: orderValue,
+        module,
+        location,
+        status,
+      });
+      setEditItem(null);
+      setEditError("");
+      fetchMenus();
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      setEditError(error.response?.data?.message || "Failed to save menu changes. Ensure composite unique constraint is not violated.");
+    }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!deleteItem) {
       return;
     }
 
-    setMenuItems((previous) => previous.filter((item) => item.id !== deleteItem.id));
-    setDeleteItem(null);
-    setViewItem((previous) => (previous?.id === deleteItem.id ? null : previous));
+    try {
+      await deleteMenuItem(deleteItem.id);
+      setDeleteItem(null);
+      setViewItem((previous) => (previous?.id === deleteItem.id ? null : previous));
+      fetchMenus();
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      alert("Failed to delete menu item.");
+    }
   };
 
   return (
@@ -180,7 +158,6 @@ export default function AdminMenuListPage({ onAddMenu }) {
         <header className="flight-markup-toolbar">
           <div className="flight-markup-title">
             <h1>Menu List</h1>
-            <div className="flight-markup-title-underline" aria-hidden="true" />
           </div>
 
           <div className="flight-markup-actions">
@@ -196,85 +173,89 @@ export default function AdminMenuListPage({ onAddMenu }) {
         </header>
 
         <section className="admin-markup-table-wrap">
-          <table className="admin-markup-table menu-list-table">
-            <colgroup>
-              {colWidths.map((width, index) => (
-                <col key={`${width}-${index}`} style={{ width }} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr>
-                {headers.map((header) => (
-                  <th key={header} className={header === "Action" ? "action-col" : undefined}>
-                    {header}
-                  </th>
+          {loading ? (
+            <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading menus...</p>
+          ) : (
+            <table className="admin-markup-table menu-list-table">
+              <colgroup>
+                {colWidths.map((width, index) => (
+                  <col key={`${width}-${index}`} style={{ width }} />
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {menuItems.length === 0 ? (
+              </colgroup>
+              <thead>
                 <tr>
-                  <td colSpan={headers.length}>
-                    <p className="admin-markup-empty">No menu records found.</p>
-                  </td>
+                  {headers.map((header) => (
+                    <th key={header} className={header === "Action" ? "action-col" : undefined}>
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                menuItems.map((item, index) => (
-                  <tr key={item.id}>
-                    <td>{index + 1}</td>
-                    <td>{item.name}</td>
-                    <td>{item.slug}</td>
-                    <td>{item.displayTitle}</td>
-                    <td>{item.order}</td>
-                    <td>{item.module}</td>
-                    <td>{item.location}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className={`markup-status-toggle ${item.status}`}
-                        onClick={() => handleToggleStatus(item.id)}
-                        aria-label={`Set menu ${item.id} status to ${
-                          item.status === "active" ? "inactive" : "active"
-                        }`}
-                      >
-                        {item.status === "active" ? <Check size={14} /> : <X size={14} />}
-                        <span>{item.status === "active" ? "Active" : "Inactive"}</span>
-                      </button>
-                    </td>
-                    <td className="action-col">
-                      <div className="markup-action-group" aria-label="Menu actions">
-                        <button
-                          type="button"
-                          title="View"
-                          aria-label={`View menu ${item.name}`}
-                          onClick={() => setViewItem(item)}
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          title="Edit"
-                          aria-label={`Edit menu ${item.name}`}
-                          onClick={() => openEditModal(item)}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          title="Delete"
-                          aria-label={`Delete menu ${item.name}`}
-                          className="danger"
-                          onClick={() => setDeleteItem(item)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {menuItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={headers.length}>
+                      <p className="admin-markup-empty">No menu records found.</p>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  menuItems.map((item, index) => (
+                    <tr key={item.id}>
+                      <td>{index + 1}</td>
+                      <td>{item.name}</td>
+                      <td>{item.slug}</td>
+                      <td>{item.displayTitle}</td>
+                      <td>{item.order}</td>
+                      <td>{item.module}</td>
+                      <td>{item.location}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`markup-status-toggle ${item.status}`}
+                          onClick={() => handleToggleStatus(item)}
+                          aria-label={`Set menu ${item.id} status to ${
+                            item.status === "active" ? "inactive" : "active"
+                          }`}
+                        >
+                          {item.status === "active" ? <Check size={14} /> : <X size={14} />}
+                          <span>{item.status === "active" ? "Active" : "Inactive"}</span>
+                        </button>
+                      </td>
+                      <td className="action-col">
+                        <div className="markup-action-group" aria-label="Menu actions">
+                          <button
+                            type="button"
+                            title="View"
+                            aria-label={`View menu ${item.name}`}
+                            onClick={() => setViewItem(item)}
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            title="Edit"
+                            aria-label={`Edit menu ${item.name}`}
+                            onClick={() => onEditMenu ? onEditMenu(item) : openEditModal(item)}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            title="Delete"
+                            aria-label={`Delete menu ${item.name}`}
+                            className="danger"
+                            onClick={() => setDeleteItem(item)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </section>
       </section>
 
@@ -333,7 +314,11 @@ export default function AdminMenuListPage({ onAddMenu }) {
                 type="button"
                 className="primary"
                 onClick={() => {
-                  openEditModal(viewItem);
+                  if (onEditMenu) {
+                    onEditMenu(viewItem);
+                  } else {
+                    openEditModal(viewItem);
+                  }
                   setViewItem(null);
                 }}
               >

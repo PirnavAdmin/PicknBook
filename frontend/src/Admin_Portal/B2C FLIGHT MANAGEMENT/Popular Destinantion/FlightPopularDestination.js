@@ -96,9 +96,7 @@ export default function AdminFlightPopularDestinationsPage() {
 
   const availableCategories = useMemo(() => {
     const unique = new Set(
-      destinations
-        .filter(item => item.category !== "PopularFlightRoute")
-        .map((item) => String(item.category || "").trim()).filter(Boolean)
+      destinations.map((item) => String(item.category || "").trim()).filter(Boolean)
     );
 
     return Array.from(unique);
@@ -111,9 +109,6 @@ export default function AdminFlightPopularDestinationsPage() {
     const normalizedPlacementFilter = String(placementFilter || "all").toLowerCase();
 
     const filtered = destinations.filter((destination) => {
-      if (destination.category === "PopularFlightRoute") {
-        return false;
-      }
       const title = String(destination.title || "").toLowerCase();
       const subTitle = String(destination.subTitle || "").toLowerCase();
       const category = String(destination.category || "").toLowerCase();

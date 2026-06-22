@@ -191,17 +191,20 @@
 }
 
 .showcase-card.rank-1 {
-  border-left: 5px solid #f59f00; /* Gold */
+  border-left: 5px solid #f59f00;
+  /* Gold */
   background: linear-gradient(to bottom right, var(--panel), rgba(245, 159, 0, 0.02));
 }
 
 .showcase-card.rank-2 {
-  border-left: 5px solid #ced4da; /* Silver */
+  border-left: 5px solid #ced4da;
+  /* Silver */
   background: linear-gradient(to bottom right, var(--panel), rgba(108, 117, 125, 0.02));
 }
 
 .showcase-card.rank-3 {
-  border-left: 5px solid #e8590c; /* Bronze */
+  border-left: 5px solid #e8590c;
+  /* Bronze */
   background: linear-gradient(to bottom right, var(--panel), rgba(232, 89, 12, 0.02));
 }
 
@@ -214,9 +217,20 @@
   opacity: 0.2;
 }
 
-.showcase-card.rank-1 .card-badge { color: #f59f00; opacity: 0.35; }
-.showcase-card.rank-2 .card-badge { color: #868e96; opacity: 0.35; }
-.showcase-card.rank-3 .card-badge { color: #e8590c; opacity: 0.35; }
+.showcase-card.rank-1 .card-badge {
+  color: #f59f00;
+  opacity: 0.35;
+}
+
+.showcase-card.rank-2 .card-badge {
+  color: #868e96;
+  opacity: 0.35;
+}
+
+.showcase-card.rank-3 .card-badge {
+  color: #e8590c;
+  opacity: 0.35;
+}
 
 .card-cities {
   display: flex;
@@ -521,8 +535,15 @@
 }
 
 @keyframes modalEnter {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .admin-markup-coupon-modal.generate {
@@ -722,6 +743,11 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

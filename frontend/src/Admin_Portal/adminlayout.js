@@ -7,9 +7,7 @@ import './adminlayout.css';
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // hidden by default
   const [searchQuery, setSearchQuery] = useState('');
-  const [theme, setTheme] = useState('light');
-
-  const toggleTheme = () => {};
+  const theme = 'light';
 
   return (
     <div className={`admin-shell ${theme}-theme`} style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -20,7 +18,6 @@ function AdminLayout() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         theme={theme}
-        onToggleTheme={toggleTheme}
       />
 
       {/* Main content — always full width */}

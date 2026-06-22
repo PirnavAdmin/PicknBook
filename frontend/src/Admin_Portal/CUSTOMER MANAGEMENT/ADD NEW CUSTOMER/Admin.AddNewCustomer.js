@@ -1,11 +1,13 @@
-import React, { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { createCustomer, getCustomerById, updateCustomer } from "../../../services/customerService";
 
 function AddNewCustomer() {
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditMode = !!id;
     const toastTimerRef = useRef(null);
-    const [customers, setCustomers] = useAdminList('customers', []);
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -31,6 +33,46 @@ function AddNewCustomer() {
         panName: '',
     });
 
+    useEffect(() => {
+        if (isEditMode) {
+            const fetchCustomer = async () => {
+                try {
+                    const data = await getCustomerById(id);
+                    if (data) {
+                        setFormData({
+                            firstName: data.firstName || '',
+                            lastName: data.lastName || '',
+                            email: data.email || data.emailId || '',
+                            mobile: data.mobile || '',
+                            altMobile: data.altMobile || '',
+                            gender: data.gender || 'Male',
+                            currency: 'INR',
+                            status: data.status || 'Active',
+                            walletStatus: data.walletStatus || 'Active',
+                            loginId: data.loginId || '',
+                            password: '', // Keep empty/hidden unless they edit it
+                            confirmPassword: '',
+                            refferedBy: data.referredBy || data.refferedBy || '',
+                            address: data.address || '',
+                            city: data.city || '',
+                            state: data.state || '',
+                            country: data.country || '',
+                            pincode: data.pincode || '',
+                            remark: data.remark || '',
+                            aadharNumber: data.aadharNumber || '',
+                            panNumber: data.panNumber || '',
+                            panName: data.panName || '',
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error loading customer data:", error);
+                    showToast("Failed to load customer details.", "error");
+                }
+            };
+            fetchCustomer();
+        }
+    }, [id, isEditMode]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -39,7 +81,22 @@ function AddNewCustomer() {
         }));
     };
 
+    const handleLoginIdClick = () => {
+        if (!formData.loginId) {
+            const emailVal = formData.email ? formData.email.trim() : '';
+            const generatedId = emailVal || (formData.mobile ? `cust_${formData.mobile}` : `cust_${Math.floor(Math.random() * 90000) + 10000}`);
+            setFormData(prev => ({
+                ...prev,
+                loginId: generatedId,
+                password: prev.password || 'Pass@1234',
+                confirmPassword: prev.confirmPassword || 'Pass@1234'
+            }));
+            showToast("Credentials automatically filled.", "info");
+        }
+    };
+
     const [toast, setToast] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const showToast = (message, tone = 'info') => {
         if (toastTimerRef.current) {
@@ -49,40 +106,54 @@ function AddNewCustomer() {
         toastTimerRef.current = setTimeout(() => setToast(null), 2400);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
             showToast('Password and confirm password do not match.', 'error');
             return;
         }
-        const fullName = `${formData.firstName} ${formData.lastName}`.trim() || 'New Customer';
-        const newCustomer = {
-            id: getNextNumericId(customers, 1),
-            status: formData.status || 'Active',
-            customerName: fullName,
-            emailId: formData.email || '',
-            mobile: formData.mobile || '',
-            walletStatus: formData.walletStatus || 'Active',
-            walletBalance: 0,
-            altMobile: formData.altMobile || '',
-            gender: formData.gender || '',
-            currency: formData.currency || 'INR',
-            loginId: formData.loginId || '',
-            address: formData.address || '',
-            city: formData.city || '',
-            state: formData.state || '',
-            country: formData.country || '',
-            pincode: formData.pincode || '',
-            remark: formData.remark || '',
-            aadharNumber: formData.aadharNumber || '',
-            panNumber: formData.panNumber || '',
-            panName: formData.panName || '',
-            refferedBy: formData.refferedBy || '',
-        };
 
-        setCustomers((previous) => [newCustomer, ...previous]);
-        showToast('Customer saved locally.', 'success');
-        navigate('/admin/customer-management/customer-list');
+        setIsSubmitting(true);
+        try {
+            const payload = {
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
+                email: formData.email.trim(),
+                mobile: formData.mobile.trim(),
+                altMobile: formData.altMobile.trim(),
+                gender: formData.gender,
+                status: formData.status,
+                walletStatus: formData.walletStatus,
+                loginId: formData.loginId.trim() || formData.email.trim(),
+                password: formData.password,
+                referredBy: formData.refferedBy.trim(),
+                address: formData.address.trim(),
+                city: formData.city.trim(),
+                state: formData.state.trim(),
+                country: formData.country.trim(),
+                pincode: formData.pincode.trim(),
+                remark: formData.remark.trim(),
+                aadharNumber: formData.aadharNumber.trim(),
+                panNumber: formData.panNumber.trim(),
+                panName: formData.panName.trim(),
+            };
+
+            if (isEditMode) {
+                await updateCustomer(id, payload);
+                showToast('Customer updated successfully.', 'success');
+            } else {
+                await createCustomer(payload);
+                showToast('Customer saved successfully.', 'success');
+            }
+            setTimeout(() => {
+                navigate('/admin/customer-management/customer-list');
+            }, 1000);
+        } catch (error) {
+            console.error("Error saving customer:", error);
+            showToast(error.response?.data?.message || "Failed to save customer.", "error");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleReset = () => {
@@ -130,7 +201,6 @@ function AddNewCustomer() {
             display: 'flex',
             alignItems: 'baseline',
             gap: '8px',
-            borderBottom: '3px solid var(--primary)',
             paddingBottom: '8px',
             width: 'fit-content',
         },
@@ -141,16 +211,16 @@ function AddNewCustomer() {
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.5rem',
-            fontWeight: 400,
+            fontSize: '2rem',
+            fontWeight: 800,
             color: 'var(--text-secondary)',
             margin: 0,
         },
         backBtn: {
             padding: '10px 16px',
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
+            background: 'var(--primary)',
+            color: '#ffffff',
+            border: '1px solid var(--primary)',
             borderRadius: '8px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -317,23 +387,22 @@ function AddNewCustomer() {
                 {/* Header */}
                 <div style={styles.header}>
                     <div style={styles.titleWrapper}>
-                        <h1 style={styles.titleMain}>Add New</h1>
+                        <h1 style={styles.titleMain}>{isEditMode ? "Edit" : "Add New"}</h1>
                         <h2 style={styles.titleSub}>Customer</h2>
                     </div>
                     <button
                         style={styles.backBtn}
                         onClick={() => navigate('/admin/customer-management/customer-list')}
                         onMouseEnter={(e) => {
-                            e.target.style.background = 'var(--primary)';
-                            e.target.style.color = '#ffffff';
-                            e.target.style.borderColor = 'var(--primary)';
+                            e.target.style.background = 'var(--primary-strong)';
+                            e.target.style.borderColor = 'var(--primary-strong)';
                             e.target.style.transform = 'translateY(-2px)';
                             e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
                         }}
                         onMouseLeave={(e) => {
-                            e.target.style.background = 'var(--panel)';
-                            e.target.style.color = 'var(--text-primary)';
-                            e.target.style.borderColor = 'var(--border)';
+                            e.target.style.background = 'var(--primary)';
+                            e.target.style.color = '#ffffff';
+                            e.target.style.borderColor = 'var(--primary)';
                             e.target.style.transform = 'translateY(0)';
                             e.target.style.boxShadow = 'none';
                         }}
@@ -344,7 +413,7 @@ function AddNewCustomer() {
 
                 {/* Form Container */}
                 <div style={styles.formContainer}>
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} autoComplete="off">
                         {/* ===== CUSTOMER BASIC INFORMATION ===== */}
                         <div style={{ ...styles.sectionHeader, ...styles.firstSection }}>
                             Customer Basic Information
@@ -362,14 +431,7 @@ function AddNewCustomer() {
                                         value={formData.firstName}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                         required
                                     />
                                 </div>
@@ -383,14 +445,7 @@ function AddNewCustomer() {
                                         value={formData.lastName}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -405,14 +460,7 @@ function AddNewCustomer() {
                                         value={formData.email}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                         required
                                     />
                                 </div>
@@ -430,14 +478,7 @@ function AddNewCustomer() {
                                         value={formData.mobile}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                         required
                                     />
                                 </div>
@@ -467,14 +508,7 @@ function AddNewCustomer() {
                                         value={formData.altMobile}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                         required
                                     />
                                 </div>
@@ -521,28 +555,24 @@ function AddNewCustomer() {
 
                             <div style={styles.formGrid}>
                                 <div style={styles.formGroup}>
-                                    <label style={styles.label}>Login ID</label>
+                                    <label style={styles.label}>
+                                        Login ID <span style={{ fontSize: '0.75rem', color: 'var(--primary)', cursor: 'pointer' }} onClick={handleLoginIdClick}>(Click to Auto Fill)</span>
+                                    </label>
                                     <input
                                         type="text"
                                         name="loginId"
-                                        placeholder=""
+                                        placeholder="Login ID (Optional)"
                                         value={formData.loginId}
                                         onChange={handleChange}
+                                        onClick={handleLoginIdClick}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Password<span style={styles.requiredMark}>*</span>
+                                        Password{!isEditMode && <span style={styles.requiredMark}>*</span>}
                                     </label>
                                     <input
                                         type="password"
@@ -551,21 +581,14 @@ function AddNewCustomer() {
                                         value={formData.password}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
-                                        required
+                                        autoComplete="new-password"
+                                        required={!isEditMode}
                                     />
                                 </div>
 
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Confirm Password<span style={styles.requiredMark}>*</span>
+                                        Confirm Password{!isEditMode && <span style={styles.requiredMark}>*</span>}
                                     </label>
                                     <input
                                         type="password"
@@ -574,15 +597,8 @@ function AddNewCustomer() {
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
-                                        required
+                                        autoComplete="new-password"
+                                        required={!isEditMode}
                                     />
                                 </div>
                             </div>
@@ -597,14 +613,7 @@ function AddNewCustomer() {
                                         value={formData.refferedBy}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
                             </div>
@@ -625,14 +634,7 @@ function AddNewCustomer() {
                                         value={formData.address}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -645,14 +647,7 @@ function AddNewCustomer() {
                                         value={formData.city}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -665,14 +660,7 @@ function AddNewCustomer() {
                                         value={formData.state}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
                             </div>
@@ -687,14 +675,7 @@ function AddNewCustomer() {
                                         value={formData.country}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -707,14 +688,7 @@ function AddNewCustomer() {
                                         value={formData.pincode}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -727,14 +701,7 @@ function AddNewCustomer() {
                                         value={formData.remark}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
                             </div>
@@ -751,18 +718,11 @@ function AddNewCustomer() {
                                     <input
                                         type="text"
                                         name="aadharNumber"
-                                        placeholder=""
+                                        placeholder="Aadhar Number"
                                         value={formData.aadharNumber}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -771,18 +731,11 @@ function AddNewCustomer() {
                                     <input
                                         type="text"
                                         name="panNumber"
-                                        placeholder=""
+                                        placeholder="PAN Number"
                                         value={formData.panNumber}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
 
@@ -791,57 +744,22 @@ function AddNewCustomer() {
                                     <input
                                         type="text"
                                         name="panName"
-                                        placeholder=""
+                                        placeholder="PAN Name"
                                         value={formData.panName}
                                         onChange={handleChange}
                                         style={styles.input}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'var(--primary)';
-                                            e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'var(--border)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
+                                        autoComplete="new-username"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Submit Button Group */}
                         <div style={styles.buttonGroup}>
-                            <button
-                                type="submit"
-                                style={styles.submitBtn}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--primary-strong)';
-                                    e.target.style.borderColor = 'var(--primary-strong)';
-                                    e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--primary)';
-                                    e.target.style.borderColor = 'var(--primary)';
-                                    e.target.style.transform = 'translateY(0)';
-                                    e.target.style.boxShadow = 'none';
-                                }}
-                            >
-                                REGISTER
+                            <button type="button" style={styles.resetBtn} onClick={handleReset}>
+                                Reset
                             </button>
-                            <button
-                                type="button"
-                                style={styles.resetBtn}
-                                onClick={handleReset}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--surface-soft)';
-                                    e.target.style.borderColor = 'var(--primary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--panel)';
-                                    e.target.style.borderColor = 'var(--border)';
-                                }}
-                            >
-                                RESET
+                            <button type="submit" style={styles.submitBtn} disabled={isSubmitting}>
+                                {isSubmitting ? "Saving..." : (isEditMode ? "Update Customer" : "Save Customer")}
                             </button>
                         </div>
                     </form>
@@ -852,4 +770,3 @@ function AddNewCustomer() {
 }
 
 export default AddNewCustomer;
-

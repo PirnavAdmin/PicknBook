@@ -60,7 +60,7 @@ const useCountUp = (endValue, duration = 500, isFloat = false) => {
   useEffect(() => {
     let startTimestamp = null;
     let animationFrameId = null;
-
+    
     if (endValue === 0) {
       setCount(0);
       return;
@@ -69,20 +69,20 @@ const useCountUp = (endValue, duration = 500, isFloat = false) => {
     const step = (timestamp) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-
+      
       const easeOut = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       const currentVal = easeOut * endValue;
       setCount(isFloat ? Number(currentVal.toFixed(1)) : Math.floor(currentVal));
-
+      
       if (progress < 1) {
         animationFrameId = window.requestAnimationFrame(step);
       } else {
         setCount(endValue);
       }
     };
-
+    
     animationFrameId = window.requestAnimationFrame(step);
-
+    
     return () => {
       if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
     };
@@ -134,7 +134,7 @@ const AdminDashboard = () => {
 
   const [recentActivities, setRecentActivities] = useState([]);
   const [activityPage, setActivityPage] = useState(0);
-
+  
   const todayStr = new Date().toISOString().split('T')[0];
   const [liveBookingsDate, setLiveBookingsDate] = useState(todayStr);
   const [revenueDate, setRevenueDate] = useState(todayStr);
@@ -168,9 +168,9 @@ const AdminDashboard = () => {
     if (!searchQuery) return {};
     const query = searchQuery.toLowerCase();
     const matches = title.toLowerCase().includes(query) || contentText.toLowerCase().includes(query);
-    return matches
-      ? { border: '2px solid #1e75ff', transform: 'scale(1.02)', transition: 'all 0.2s ease', boxShadow: '0 4px 20px rgba(30, 117, 255, 0.15)' }
-      : { opacity: 0.4, transition: 'all 0.2s ease' };
+    return matches 
+        ? { border: '2px solid #1e75ff', transform: 'scale(1.02)', transition: 'all 0.2s ease', boxShadow: '0 4px 20px rgba(30, 117, 255, 0.15)' } 
+        : { opacity: 0.4, transition: 'all 0.2s ease' };
   };
 
   useEffect(() => {
@@ -179,20 +179,20 @@ const AdminDashboard = () => {
       try {
         const summaryResult = await getAdminDashboardSummary();
         const metricsResult = deriveAdminMetrics(summaryResult);
-
+        
         if (metricsResult) {
           const storedCustomers = getStoredValue('customers', []);
           const uniqueUserIds = new Set();
           if (Array.isArray(storedCustomers)) {
             storedCustomers.forEach(c => {
-              if (c.id) uniqueUserIds.add(c.id);
+               if (c.id) uniqueUserIds.add(c.id);
             });
           }
           const totalUsersCount = uniqueUserIds.size;
-
+          
           const flightCancellations = getStoredValue('flight-cancellation-requests', []);
           const busCancellations = getStoredValue('bus-cancellation-requests', []);
-
+          
           const pendingFlightRefunds = Array.isArray(flightCancellations) ? flightCancellations.length : 0;
           const pendingBusRefunds = Array.isArray(busCancellations) ? busCancellations.length : 0;
           const totalRefundRequests = pendingFlightRefunds + pendingBusRefunds;
@@ -293,10 +293,10 @@ const AdminDashboard = () => {
     const isUp = val >= 0;
     const arrow = isUp ? '↑' : '↓';
     const className = isUp ? 'trend-up-green' : 'trend-down-red';
-
+    
     return (
       <span className={`metric-trend-row ${className}`}>
-        {arrow} {Math.abs(val).toFixed(1)}% <span style={{ color: 'var(--admin-muted)' }}>{comparisonText}</span>
+        {arrow} {Math.abs(val).toFixed(1)}% <span style={{color: 'var(--admin-muted)'}}>{comparisonText}</span>
       </span>
     );
   };
@@ -305,59 +305,59 @@ const AdminDashboard = () => {
   const maxRoutes = 3 + Math.floor(liveBookingsSeed * 4); // 3 to 6 routes dynamically
   const allRoutesRaw = [...topFlights, ...topBuses];
   // Shuffle based on date
-  const allRoutes = [...allRoutesRaw].sort((a, b) => getSeededRandom(liveBookingsDate, a.fromCity.length) - 0.5).slice(0, maxRoutes);
-
+  const allRoutes = [...allRoutesRaw].sort((a,b) => getSeededRandom(liveBookingsDate, a.fromCity.length) - 0.5).slice(0, maxRoutes);
+  
   const uniqueCitiesMap = new Map();
   allRoutes.forEach(route => {
     if (route.fromCity && !uniqueCitiesMap.has(route.fromCity)) {
-      uniqueCitiesMap.set(route.fromCity, route.bookingCount || 0);
+       uniqueCitiesMap.set(route.fromCity, route.bookingCount || 0);
     }
     if (route.toCity && !uniqueCitiesMap.has(route.toCity)) {
-      uniqueCitiesMap.set(route.toCity, route.bookingCount || 0);
+       uniqueCitiesMap.set(route.toCity, route.bookingCount || 0);
     }
   });
 
   const cityNodes = Array.from(uniqueCitiesMap.entries()).map(([cityName, bookings], i) => {
-    const coords = getCityCoords(cityName);
-    const colors = ['#1e75ff', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6', '#14b8a6'];
-    const color = colors[i % colors.length];
-    return (
-      <div className="map-point-pulse" style={{ left: `${coords.left}%`, top: `${coords.top}%` }} key={cityName}>
-        <div className="pulse-dot" style={{ backgroundColor: color, width: '12px', height: '12px', borderRadius: '50%', boxShadow: '0 0 0 3px rgba(255,255,255,0.4)' }}></div>
-        <div className="map-point-label" style={{
-          fontSize: '0.75rem',
-          fontWeight: '600',
-          color: 'var(--admin-text)',
-          backgroundColor: 'var(--admin-surface)',
-          border: '1px solid var(--admin-border)',
-          borderRadius: '4px',
-          padding: '2px 6px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          whiteSpace: 'nowrap',
-          transform: 'translateX(-50%) translateY(8px)',
-          position: 'absolute'
-        }}>
-          {cityName} {bookings > 0 ? `(${formatNumber(bookings)})` : ''}
-        </div>
-      </div>
-    );
+     const coords = getCityCoords(cityName);
+     const colors = ['#1e75ff', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6', '#14b8a6'];
+     const color = colors[i % colors.length];
+     return (
+       <div className="map-point-pulse" style={{ left: `${coords.left}%`, top: `${coords.top}%` }} key={cityName}>
+         <div className="pulse-dot" style={{ backgroundColor: color, width: '12px', height: '12px', borderRadius: '50%', boxShadow: '0 0 0 3px rgba(255,255,255,0.4)' }}></div>
+         <div className="map-point-label" style={{ 
+            fontSize: '0.75rem', 
+            fontWeight: '600', 
+            color: 'var(--admin-text)', 
+            backgroundColor: 'var(--admin-surface)',
+            border: '1px solid var(--admin-border)',
+            borderRadius: '4px',
+            padding: '2px 6px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            whiteSpace: 'nowrap',
+            transform: 'translateX(-50%) translateY(8px)',
+            position: 'absolute'
+          }}>
+           {cityName} {bookings > 0 ? `(${formatNumber(bookings)})` : ''}
+         </div>
+       </div>
+     );
   });
 
   const svgPaths = allRoutes.map((route, i) => {
-    const fromC = getCityCoords(route.fromCity);
-    const toC = getCityCoords(route.toCity);
-    const x1 = (fromC.left / 100) * 400;
-    const y1 = (fromC.top / 100) * 220;
-    const x2 = (toC.left / 100) * 400;
-    const y2 = (toC.top / 100) * 220;
-    const colors = ['#1e75ff', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b'];
-    const color = colors[i % colors.length];
+     const fromC = getCityCoords(route.fromCity);
+     const toC = getCityCoords(route.toCity);
+     const x1 = (fromC.left / 100) * 400;
+     const y1 = (fromC.top / 100) * 220;
+     const x2 = (toC.left / 100) * 400;
+     const y2 = (toC.top / 100) * 220;
+     const colors = ['#1e75ff', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b'];
+     const color = colors[i % colors.length];
+     
+     // curve higher
+     const cx = (x1 + x2) / 2;
+     const cy = Math.min(y1, y2) - 40; 
 
-    // curve higher
-    const cx = (x1 + x2) / 2;
-    const cy = Math.min(y1, y2) - 40;
-
-    return <path key={i} d={`M${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} fill="none" stroke={color} strokeWidth="5.5" strokeDasharray="12,6" opacity="0.9" strokeLinecap="round" />;
+     return <path key={i} d={`M${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} fill="none" stroke={color} strokeWidth="5.5" strokeDasharray="12,6" opacity="0.9" strokeLinecap="round" />;
   });
 
   const formatRevCompact = (val) => {
@@ -369,7 +369,7 @@ const AdminDashboard = () => {
   // Dynamic Revenue Data based on selected date and total revenue
   const selectedDateObj = new Date(revenueDate);
   const selectedDateNum = selectedDateObj.getDate() || 1;
-  const selectedWeekIndex = Math.min(4, Math.floor((selectedDateNum - 1) / 7));
+  const selectedWeekIndex = Math.min(4, Math.floor((selectedDateNum - 1) / 7)); 
   const formattedSelectedDate = selectedDateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const revMonthSeed = revenueDate.substring(0, 7) || '2026-06';
 
@@ -380,12 +380,12 @@ const AdminDashboard = () => {
   const currentRevData = rawWeights.map((w, i) => {
     const weekRev = (w / sumWeights) * baseTotalRev;
     const isHighlighted = i === selectedWeekIndex;
-
+    
     // Revenue for the specific day is approx weekRev / 7
     const dayRev = weekRev / 7;
 
-    const labelText = isHighlighted
-      ? `${formattedSelectedDate} (${formatRevCompact(dayRev)})`
+    const labelText = isHighlighted 
+      ? `${formattedSelectedDate} (${formatRevCompact(dayRev)})` 
       : formatRevCompact(weekRev);
 
     return {
@@ -400,7 +400,7 @@ const AdminDashboard = () => {
   const revPointsAll = currentRevData.map((d, i) => {
     const x = i * (330 / 4) + 10; // add margin
     // Scale y from 160 (bottom) to 60 (top)
-    const y = 160 - (d.value / maxRev) * 100;
+    const y = 160 - (d.value / maxRev) * 100; 
     return { ...d, x, y, originalIndex: i };
   });
 
@@ -412,7 +412,7 @@ const AdminDashboard = () => {
     let d = `M${points[0].x},${points[0].y} `;
     for (let i = 0; i < points.length - 1; i++) {
       const p1 = points[i];
-      const p2 = points[i + 1];
+      const p2 = points[i+1];
       const cx = (p1.x + p2.x) / 2;
       d += `C${cx},${p1.y} ${cx},${p2.y} ${p2.x},${p2.y} `;
     }
@@ -556,9 +556,9 @@ const AdminDashboard = () => {
         <div className="dashboard-card-shell">
           <div className="card-title-bar">
             <h3>Live Bookings Overview</h3>
-            <input
-              type="date"
-              className="card-title-select"
+            <input 
+              type="date" 
+              className="card-title-select" 
               style={{ width: '120px', padding: '4px 8px', fontSize: '0.8rem', fontFamily: 'inherit' }}
               value={liveBookingsDate}
               onChange={(e) => setLiveBookingsDate(e.target.value)}
@@ -581,9 +581,9 @@ const AdminDashboard = () => {
         <div className="dashboard-card-shell">
           <div className="card-title-bar">
             <h3>Revenue Overview</h3>
-            <input
-              type="date"
-              className="card-title-select"
+            <input 
+              type="date" 
+              className="card-title-select" 
               style={{ width: '120px', padding: '4px 8px', fontSize: '0.8rem', fontFamily: 'inherit' }}
               value={revenueDate}
               onChange={(e) => setRevenueDate(e.target.value)}
@@ -631,9 +631,9 @@ const AdminDashboard = () => {
               {/* Points and labels */}
               {revPointsAll.map((p, i) => {
                 if (i > selectedWeekIndex) {
-                  return (
-                    <text key={i} x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
-                  );
+                   return (
+                     <text key={i} x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
+                   );
                 }
                 return (
                   <g key={i} className="fade-anim">
@@ -651,9 +651,9 @@ const AdminDashboard = () => {
         <div className="dashboard-card-shell funnel-box">
           <div className="card-title-bar">
             <h3>Booking Funnel</h3>
-            <input
-              type="date"
-              className="card-title-select"
+            <input 
+              type="date" 
+              className="card-title-select" 
               style={{ width: '120px', padding: '4px 8px', fontSize: '0.8rem', fontFamily: 'inherit' }}
               value={funnelDate}
               onChange={(e) => setFunnelDate(e.target.value)}
@@ -692,15 +692,15 @@ const AdminDashboard = () => {
             <h3>Top Selling Routes (Flights)</h3>
             {topFlights.length > 5 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => setFlightsPage(p => Math.max(0, p - 1))}
+                <button 
+                  onClick={() => setFlightsPage(p => Math.max(0, p - 1))} 
                   disabled={flightsPage === 0}
                   style={{ background: 'none', border: 'none', cursor: flightsPage === 0 ? 'default' : 'pointer', color: flightsPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <button
-                  onClick={() => setFlightsPage(p => Math.min(Math.ceil(topFlights.length / 5) - 1, p + 1))}
+                <button 
+                  onClick={() => setFlightsPage(p => Math.min(Math.ceil(topFlights.length / 5) - 1, p + 1))} 
                   disabled={flightsPage >= Math.ceil(topFlights.length / 5) - 1}
                   style={{ background: 'none', border: 'none', cursor: flightsPage >= Math.ceil(topFlights.length / 5) - 1 ? 'default' : 'pointer', color: flightsPage >= Math.ceil(topFlights.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
                 >
@@ -735,15 +735,15 @@ const AdminDashboard = () => {
             <h3>Top Selling Routes (Buses)</h3>
             {topBuses.length > 5 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => setBusesPage(p => Math.max(0, p - 1))}
+                <button 
+                  onClick={() => setBusesPage(p => Math.max(0, p - 1))} 
                   disabled={busesPage === 0}
                   style={{ background: 'none', border: 'none', cursor: busesPage === 0 ? 'default' : 'pointer', color: busesPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <button
-                  onClick={() => setBusesPage(p => Math.min(Math.ceil(topBuses.length / 5) - 1, p + 1))}
+                <button 
+                  onClick={() => setBusesPage(p => Math.min(Math.ceil(topBuses.length / 5) - 1, p + 1))} 
                   disabled={busesPage >= Math.ceil(topBuses.length / 5) - 1}
                   style={{ background: 'none', border: 'none', cursor: busesPage >= Math.ceil(topBuses.length / 5) - 1 ? 'default' : 'pointer', color: busesPage >= Math.ceil(topBuses.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
                 >
@@ -778,15 +778,15 @@ const AdminDashboard = () => {
             <h3>Top Hotels by Bookings</h3>
             {topHotels.length > 5 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => setHotelsPage(p => Math.max(0, p - 1))}
+                <button 
+                  onClick={() => setHotelsPage(p => Math.max(0, p - 1))} 
                   disabled={hotelsPage === 0}
                   style={{ background: 'none', border: 'none', cursor: hotelsPage === 0 ? 'default' : 'pointer', color: hotelsPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <button
-                  onClick={() => setHotelsPage(p => Math.min(Math.ceil(topHotels.length / 5) - 1, p + 1))}
+                <button 
+                  onClick={() => setHotelsPage(p => Math.min(Math.ceil(topHotels.length / 5) - 1, p + 1))} 
                   disabled={hotelsPage >= Math.ceil(topHotels.length / 5) - 1}
                   style={{ background: 'none', border: 'none', cursor: hotelsPage >= Math.ceil(topHotels.length / 5) - 1 ? 'default' : 'pointer', color: hotelsPage >= Math.ceil(topHotels.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
                 >
@@ -839,15 +839,15 @@ const AdminDashboard = () => {
           </div>
           {recentActivities.length > 5 && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-              <button
-                onClick={() => setActivityPage(p => Math.max(0, p - 1))}
+              <button 
+                onClick={() => setActivityPage(p => Math.max(0, p - 1))} 
                 disabled={activityPage === 0}
                 style={{ background: 'none', border: 'none', cursor: activityPage === 0 ? 'default' : 'pointer', color: activityPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: '4px' }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
-              <button
-                onClick={() => setActivityPage(p => Math.min(Math.ceil(recentActivities.length / 5) - 1, p + 1))}
+              <button 
+                onClick={() => setActivityPage(p => Math.min(Math.ceil(recentActivities.length / 5) - 1, p + 1))} 
                 disabled={activityPage >= Math.ceil(recentActivities.length / 5) - 1}
                 style={{ background: 'none', border: 'none', cursor: activityPage >= Math.ceil(recentActivities.length / 5) - 1 ? 'default' : 'pointer', color: activityPage >= Math.ceil(recentActivities.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: '4px' }}
               >

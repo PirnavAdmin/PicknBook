@@ -1,43 +1,10 @@
-import React, { useRef, useState } from 'react';
-import { useAdminList } from "../../../utils/adminPortalStorage";
+import React, { useEffect, useRef, useState } from 'react';
+import { getDepositRequests, cycleDepositStatus, updateAdminRemark } from "../../../services/depositService";
 
 function DepositRequestList() {
     const toastTimerRef = useRef(null);
-    const [depositRequests, setDepositRequests] = useAdminList('customer-deposits', [
-        {
-            id: 1,
-            user: 'CHARAN REDDY (4866)',
-            amount: 4000,
-            type: 'NEFT',
-            status: 'Rejected',
-            userRemark: 'traction done',
-            adminRemark: 'test',
-            entryDate: '12:24 PM , 16 Mar 2026',
-            transactionDate: '16 Mar 2026'
-        },
-        {
-            id: 2,
-            user: 'Amrutha Reddy (4869)',
-            amount: 2500,
-            type: 'Cash',
-            status: 'Pending',
-            userRemark: '-',
-            adminRemark: '',
-            entryDate: '04:16 PM , 13 Mar 2026',
-            transactionDate: '13 Mar 2026'
-        },
-        {
-            id: 3,
-            user: 'Madhu Sharma (4693)',
-            amount: 2000,
-            type: 'Cash',
-            status: 'Pending',
-            userRemark: 'From Kurnool to Vizag',
-            adminRemark: '',
-            entryDate: '03:21 PM , 16 Feb 2026',
-            transactionDate: '16 Feb 2026'
-        }
-    ]);
+    const [depositRequests, setDepositRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -56,13 +23,30 @@ function DepositRequestList() {
         toastTimerRef.current = setTimeout(() => setToast(null), 2400);
     };
 
+    const fetchDepositRequests = async () => {
+        setLoading(true);
+        try {
+            const data = await getDepositRequests({
+                status: statusFilter,
+                type: typeFilter,
+                search: searchQuery,
+            });
+            setDepositRequests(data || []);
+        } catch (error) {
+            console.error("Error fetching deposit requests:", error);
+            showToast("Failed to fetch deposit requests.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDepositRequests();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [statusFilter, typeFilter, searchQuery]);
+
+    // Apply min/max amount filters on the returned list
     const filteredRequests = depositRequests
-        .filter(request =>
-            request.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            request.userRemark.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .filter(request => (statusFilter === 'All' ? true : request.status === statusFilter))
-        .filter(request => (typeFilter === 'All' ? true : request.type === typeFilter))
         .filter(request => (minAmount === '' ? true : request.amount >= Number(minAmount)))
         .filter(request => (maxAmount === '' ? true : request.amount <= Number(maxAmount)));
 
@@ -112,37 +96,30 @@ function DepositRequestList() {
         showToast('Export completed.', 'success');
     };
 
-    const handleEditRemark = (request) => {
+    const handleEditRemark = async (request) => {
         const nextRemark = window.prompt('Update admin remark', request.adminRemark || '');
         if (nextRemark === null) {
             return;
         }
-        setDepositRequests(prev =>
-            prev.map(item =>
-                item.id === request.id ? { ...item, adminRemark: nextRemark } : item
-            )
-        );
-        showToast('Admin remark updated.', 'success');
+        try {
+            await updateAdminRemark(request.id, nextRemark);
+            showToast('Admin remark updated.', 'success');
+            fetchDepositRequests();
+        } catch (error) {
+            console.error("Error updating admin remark:", error);
+            showToast("Failed to update admin remark.", "error");
+        }
     };
 
-    const getNextStatus = (status) => {
-        if (status === 'Pending') {
-            return 'Approved';
+    const handleCycleStatus = async (request) => {
+        try {
+            const response = await cycleDepositStatus(request.id);
+            showToast(response.message || `Status updated.`, 'success');
+            fetchDepositRequests();
+        } catch (error) {
+            console.error("Error cycling status:", error);
+            showToast("Failed to update deposit status.", "error");
         }
-        if (status === 'Approved') {
-            return 'Rejected';
-        }
-        return 'Pending';
-    };
-
-    const handleCycleStatus = (request) => {
-        const nextStatus = getNextStatus(request.status);
-        setDepositRequests(prev =>
-            prev.map(item =>
-                item.id === request.id ? { ...item, status: nextStatus } : item
-            )
-        );
-        showToast(`Status set to ${nextStatus}.`, 'success');
     };
 
     const getStatusStyle = (status) => {
@@ -626,7 +603,9 @@ function DepositRequestList() {
 
                 {/* Table */}
                 <div style={styles.tableWrapper}>
-                    {filteredRequests.length > 0 ? (
+                    {loading ? (
+                        <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading requests...</p>
+                    ) : filteredRequests.length > 0 ? (
                         <table style={styles.table}>
                             <thead style={styles.thead}>
                                 <tr>
@@ -727,6 +706,3 @@ function DepositRequestList() {
 }
 
 export default DepositRequestList;
-
-
-

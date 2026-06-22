@@ -54,29 +54,12 @@
     color: #ffffff;
 }
 
-.metric-icon-circle.revenue {
-    background: #ef4444;
-}
-
-.metric-icon-circle.bookings {
-    background: #3b82f6;
-}
-
-.metric-icon-circle.users {
-    background: #8b5cf6;
-}
-
-.metric-icon-circle.active {
-    background: #10b981;
-}
-
-.metric-icon-circle.cancelled {
-    background: #f97316;
-}
-
-.metric-icon-circle.refund {
-    background: #ec4899;
-}
+.metric-icon-circle.revenue { background: #ef4444; }
+.metric-icon-circle.bookings { background: #3b82f6; }
+.metric-icon-circle.users { background: #8b5cf6; }
+.metric-icon-circle.active { background: #10b981; }
+.metric-icon-circle.cancelled { background: #f97316; }
+.metric-icon-circle.refund { background: #ec4899; }
 
 .metric-title-text {
     font-size: 0.8rem;
@@ -111,13 +94,8 @@
     font-weight: 600;
 }
 
-.trend-up-green {
-    color: #10b981;
-}
-
-.trend-down-red {
-    color: #ef4444;
-}
+.trend-up-green { color: #10b981; }
+.trend-down-red { color: #ef4444; }
 
 /* Dashboard Columns Layout */
 .dashboard-row-layout {
@@ -205,20 +183,9 @@
 }
 
 @keyframes pulse {
-    0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(30, 117, 255, 0.7);
-    }
-
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 8px rgba(30, 117, 255, 0);
-    }
-
-    100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(30, 117, 255, 0);
-    }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 117, 255, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(30, 117, 255, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 117, 255, 0); }
 }
 
 /* Booking Funnel */
@@ -241,35 +208,11 @@
     font-weight: 600;
 }
 
-.funnel-stage.s1 {
-    background: #3b82f6;
-    width: 95%;
-    margin: 0 auto;
-}
-
-.funnel-stage.s2 {
-    background: #10b981;
-    width: 90%;
-    margin: 0 auto;
-}
-
-.funnel-stage.s3 {
-    background: #8b5cf6;
-    width: 80%;
-    margin: 0 auto;
-}
-
-.funnel-stage.s4 {
-    background: #f59e0b;
-    width: 70%;
-    margin: 0 auto;
-}
-
-.funnel-stage.s5 {
-    background: #ec4899;
-    width: 60%;
-    margin: 0 auto;
-}
+.funnel-stage.s1 { background: #3b82f6; width: 95%; margin: 0 auto; }
+.funnel-stage.s2 { background: #10b981; width: 90%; margin: 0 auto; }
+.funnel-stage.s3 { background: #8b5cf6; width: 80%; margin: 0 auto; }
+.funnel-stage.s4 { background: #f59e0b; width: 70%; margin: 0 auto; }
+.funnel-stage.s5 { background: #ec4899; width: 60%; margin: 0 auto; }
 
 /* 4 Columns row layout */
 .dashboard-four-cols {
@@ -446,22 +389,17 @@
 
 @media (max-width: 1000px) {
     .dashboard-metrics-grid {
-        grid-template-columns: repeat(3, 1fr);
-        /* At very small screens, fallback to 3 */
+        grid-template-columns: repeat(3, 1fr); /* At very small screens, fallback to 3 */
     }
-
     .dashboard-row-layout {
         grid-template-columns: 1fr;
     }
-
     .dashboard-card-shell.funnel-box {
         grid-column: span 1;
     }
-
     .dashboard-four-cols {
         grid-template-columns: repeat(2, 1fr);
     }
-
     .dashboard-three-cols {
         grid-template-columns: 1fr;
     }
@@ -471,7 +409,6 @@
     .dashboard-metrics-grid {
         grid-template-columns: 1fr;
     }
-
     .dashboard-four-cols {
         grid-template-columns: 1fr;
     }

@@ -1,0 +1,357 @@
+* {
+  box-sizing: border-box;
+}
+
+.about-container {
+  padding: 8px 24px;
+  background: #f4f6f9;
+  min-height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+  color: #333;
+}
+
+.about-container .top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.about-container h2 {
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.about-container h2 span {
+  color: #777;
+}
+
+.about-container .module-selector select {
+  padding: 8px 14px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.about-container .module-selector select:hover {
+  background: var(--primary-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+}
+
+.about-container .loading-state {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* ── Section card ─────────────────────────────── */
+.about-container .form-section {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+
+/* ── Section header ribbon (matches AddPage) ──── */
+.about-container .form-section > h3,
+.about-container .section-header h3 {
+  background: rgba(74, 15, 26, 0.05);
+  border-bottom: 2.5px solid var(--primary);
+  color: #ffffff;
+  padding: 0;
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  overflow: hidden;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+}
+
+.about-container .form-section > h3::before,
+.about-container .section-header h3::before {
+  content: "";
+  position: absolute;
+  right: 35px;
+  top: 0;
+  bottom: 0;
+  width: 45px;
+  background: rgba(74, 15, 26, 0.12);
+  transform: skewX(-35deg);
+  pointer-events: none;
+}
+
+.about-container .form-section > h3::after,
+.about-container .section-header h3::after {
+  content: "";
+  position: absolute;
+  right: -15px;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  background: rgba(74, 15, 26, 0.2);
+  transform: skewX(-35deg);
+  pointer-events: none;
+}
+
+.about-container .form-section > h3 span.title-tab,
+.about-container .section-header h3 span.title-tab {
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  padding: 8px 28px 8px 16px;
+  display: inline-block;
+  clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+  color: #ffffff !important;
+}
+
+/* ── Section header row (for sections with +Add button) ─── */
+.about-container .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+  border: none;
+  padding: 0;
+}
+
+.about-container .section-header h3 {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* ── Form grid ────────────────────────────────── */
+.about-container .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 10px;
+}
+
+.about-container .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.about-container .form-group.wide {
+  grid-column: span 2;
+}
+
+.about-container .form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.about-container .form-group input,
+.about-container .form-group select,
+.about-container .form-group textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 100%;
+  background: var(--panel);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.about-container .form-group input:focus,
+.about-container .form-group select:focus,
+.about-container .form-group textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
+}
+
+.about-container .form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ── Count section 2‑column card grid ─────────── */
+.about-container .count-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 10px;
+}
+
+.about-container .count-grid .count-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.about-container .count-grid .count-pair label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.about-container .count-grid .count-pair input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 100%;
+  background: var(--panel);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.about-container .count-grid .count-pair input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
+}
+
+.about-container .count-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 10px 10px;
+}
+
+/* ── Sub table (team members) ─────────────────── */
+.about-container .about-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.about-container .about-sub-table th {
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  color: #fff;
+  font-size: 13px;
+  padding: 10px;
+  border: 1px solid var(--primary);
+  text-align: center;
+}
+
+.about-container .about-sub-table td {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.about-container .about-sub-table td.empty-row {
+  text-align: center;
+  color: #888;
+  padding: 20px;
+}
+
+.about-container .about-sub-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  background: var(--panel);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.about-container .about-sub-table input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
+}
+
+/* ── Buttons ──────────────────────────────────── */
+.about-container .add-row-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.about-container .add-row-btn:hover {
+  background: var(--primary-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+}
+
+.about-container .delete-row-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.about-container .delete-row-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.about-container .action-td {
+  text-align: center;
+}
+
+/* ── Messages ─────────────────────────────────── */
+.about-container .error-msg {
+  color: #e53935;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.about-container .success-msg {
+  color: #2e7d32;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* ── Submit ───────────────────────────────────── */
+.about-container .submit-area {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.about-container .submit-btn {
+  background: var(--primary);
+  color: white;
+  border: 1.5px solid var(--primary);
+  padding: 10px 30px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 15px;
+}
+
+.about-container .submit-btn:hover {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+}
+
+.about-container .submit-btn:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

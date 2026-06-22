@@ -103,6 +103,7 @@ const navGroups = [
         label: 'Page Management', to: p('page-management'), icon: icons.page, submenu: [
           { label: 'All Page List', to: p('page-management/pages') },
           { label: 'Add New Page',  to: p('page-management/pages/new') },
+          { label: 'About Us',      to: p('page-management/about-us') },
         ],
       },
       {

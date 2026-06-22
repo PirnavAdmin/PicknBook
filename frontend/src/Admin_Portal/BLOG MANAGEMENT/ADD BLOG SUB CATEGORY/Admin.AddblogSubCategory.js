@@ -1,23 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
-
-const formatEntryDate = (date = new Date()) =>
-    date
-        .toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true,
-        })
-        .replace(',', '');
+import { getBlogCategories, createBlogSubCategory } from '../../../services/blogService';
 
 function AddBlogSubCategory() {
     const navigate = useNavigate();
     const toastTimerRef = useRef(null);
-    const [subCategories, setSubCategories] = useAdminList('blog-subcategories', []);
     const [formData, setFormData] = useState({
         subCategoryName: '',
         subCategorySlug: '',
@@ -28,8 +15,19 @@ function AddBlogSubCategory() {
         metaDescription: '',
     });
     const [toast, setToast] = useState(null);
+    const [categories, setCategories] = useState([]);
 
-    const categories = ['Technology', 'Travel', 'Business', 'Lifestyle', 'Health'];
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const data = await getBlogCategories();
+                setCategories(data.filter(cat => cat.status === 'Active'));
+            } catch (error) {
+                console.error("Failed to load categories", error);
+            }
+        };
+        loadCategories();
+    }, []);
 
     const showToast = (message, tone = 'info') => {
         if (toastTimerRef.current) {
@@ -54,7 +52,7 @@ function AddBlogSubCategory() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.subCategoryName.trim()) {
             showToast('Sub category name is required.', 'error');
@@ -64,23 +62,28 @@ function AddBlogSubCategory() {
             showToast('Please select a category.', 'error');
             return;
         }
-        const entryDate = formatEntryDate(new Date());
-        const newSubCategory = {
-            id: getNextNumericId(subCategories, 1),
-            entryDate,
-            image: formData.subCategoryImage?.name || '-',
-            name: formData.subCategoryName.trim(),
-            category: formData.category,
-            status: 'Active',
-            slug: formData.subCategorySlug || '',
-            metaTitle: formData.metaTitle || '',
-            metaKeyword: formData.metaKeyword || '',
-            metaDescription: formData.metaDescription || '',
-        };
+        try {
+            const dataToSend = new FormData();
+            dataToSend.append("Name", formData.subCategoryName.trim());
+            dataToSend.append("Category", formData.category);
+            dataToSend.append("Slug", formData.subCategorySlug || '');
+            dataToSend.append("Status", "Active");
+            dataToSend.append("MetaTitle", formData.metaTitle || '');
+            dataToSend.append("MetaKeyword", formData.metaKeyword || '');
+            dataToSend.append("MetaDescription", formData.metaDescription || '');
+            if (formData.subCategoryImage) {
+                dataToSend.append("Image", formData.subCategoryImage);
+            }
 
-        setSubCategories((previous) => [newSubCategory, ...previous]);
-        showToast('Sub category saved locally.', 'success');
-        navigate('/admin/blog-management/blog-sub-category-list');
+            await createBlogSubCategory(dataToSend);
+            showToast('Sub category saved successfully.', 'success');
+            setTimeout(() => {
+                navigate('/admin/blog-management/blog-sub-category-list');
+            }, 1000);
+        } catch (error) {
+            console.error("Failed to save sub category", error);
+            showToast("Failed to save sub category.", "error");
+        }
     };
 
     const handleReset = () => {
@@ -98,7 +101,7 @@ function AddBlogSubCategory() {
 
     const styles = {
         container: {
-            padding: '24px 32px',
+            padding: '12px 24px',
             background: 'var(--page-bg)',
             minHeight: '100vh',
         },
@@ -114,26 +117,26 @@ function AddBlogSubCategory() {
             display: 'flex',
             alignItems: 'baseline',
             gap: '8px',
-            borderBottom: '3px solid var(--primary)',
-            paddingBottom: '8px',
+            borderBottom: 'none',
+            paddingBottom: '0px',
         },
         titleMain: {
-            fontSize: '2rem',
-            fontWeight: 800,
-            color: 'var(--text-primary)',
+            fontSize: '2.2rem',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.5rem',
-            fontWeight: 400,
+            fontSize: '1.8rem',
+            fontWeight: 500,
             color: 'var(--text-secondary)',
             margin: 0,
         },
         backBtn: {
             padding: '10px 16px',
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
+            background: 'var(--primary)',
+            color: '#ffffff',
+            border: '1px solid var(--primary)',
             borderRadius: '8px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -150,22 +153,28 @@ function AddBlogSubCategory() {
             boxShadow: 'var(--shadow-sm)',
             border: '1px solid var(--border)',
         },
-        formGrid: {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '24px',
+        tableForm: {
+            width: '100%',
+            borderCollapse: 'collapse',
             marginBottom: '24px',
+            border: '1.5px solid var(--border)',
         },
-        formGridFull: {
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: '24px',
-            marginBottom: '24px',
+        tableLabelCell: {
+            background: 'rgba(74, 15, 26, 0.05)',
+            border: '1px solid var(--border)',
+            padding: '12px 14px',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            color: 'var(--text-primary)',
+            textAlign: 'left',
+            width: '12%',
+            whiteSpace: 'nowrap',
         },
-        formGroup: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
+        tableInputCell: {
+            border: '1px solid var(--border)',
+            padding: '8px 12px',
+            background: 'var(--panel)',
+            width: '21%',
         },
         label: {
             fontSize: '0.95rem',
@@ -177,7 +186,9 @@ function AddBlogSubCategory() {
             marginLeft: '4px',
         },
         input: {
-            padding: '12px 14px',
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '10px 12px',
             border: '1px solid var(--border)',
             borderRadius: '6px',
             fontSize: '0.9rem',
@@ -188,7 +199,9 @@ function AddBlogSubCategory() {
             color: 'var(--text-primary)',
         },
         select: {
-            padding: '12px 14px',
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '10px 12px',
             border: '1px solid var(--border)',
             borderRadius: '6px',
             fontSize: '0.9rem',
@@ -200,33 +213,36 @@ function AddBlogSubCategory() {
             cursor: 'pointer',
         },
         textarea: {
-            padding: '12px 14px',
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '10px 12px',
             border: '1px solid var(--border)',
             borderRadius: '6px',
             fontSize: '0.9rem',
             outline: 'none',
             transition: 'all 0.2s ease',
             fontFamily: 'inherit',
-            minHeight: '100px',
+            minHeight: '90px',
             resize: 'vertical',
             background: 'var(--panel)',
             color: 'var(--text-primary)',
         },
         fileInputWrapper: {
             display: 'flex',
-            gap: '12px',
+            gap: '8px',
             alignItems: 'center',
         },
         fileLabel: {
-            padding: '10px 14px',
+            padding: '8px 12px',
             background: 'var(--panel)',
             border: '1px solid var(--border)',
             borderRadius: '6px',
             cursor: 'pointer',
             fontWeight: 600,
-            fontSize: '0.9rem',
+            fontSize: '0.85rem',
             transition: 'all 0.2s ease',
             display: 'inline-block',
+            whiteSpace: 'nowrap',
             color: 'var(--text-primary)',
         },
         fileInputHidden: {
@@ -239,7 +255,7 @@ function AddBlogSubCategory() {
         buttonGroup: {
             display: 'flex',
             gap: '12px',
-            justifyContent: 'center',
+            justifyContent: 'flex-end',
             marginTop: '32px',
             paddingTop: '24px',
             borderTop: '1px solid var(--border)',
@@ -266,20 +282,6 @@ function AddBlogSubCategory() {
             fontSize: '0.95rem',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-        },
-        sectionHeader: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: '20px',
-            paddingBottom: '12px',
-            borderBottom: '2px solid var(--border)',
-        },
-        sectionTitle: {
-            fontSize: '1.1rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            margin: 0,
         },
         toast: {
             padding: '10px 14px',
@@ -335,16 +337,15 @@ function AddBlogSubCategory() {
                         type="button"
                         style={styles.backBtn}
                         onMouseEnter={(e) => {
-                            e.target.style.background = 'var(--primary)';
-                            e.target.style.color = '#ffffff';
-                            e.target.style.borderColor = 'var(--primary)';
+                            e.target.style.background = 'var(--primary-strong)';
+                            e.target.style.borderColor = 'var(--primary-strong)';
                             e.target.style.transform = 'translateY(-2px)';
                             e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
                         }}
                         onMouseLeave={(e) => {
-                            e.target.style.background = 'var(--panel)';
-                            e.target.style.color = 'var(--text-primary)';
-                            e.target.style.borderColor = 'var(--border)';
+                            e.target.style.background = 'var(--primary)';
+                            e.target.style.color = '#ffffff';
+                            e.target.style.borderColor = 'var(--primary)';
                             e.target.style.transform = 'translateY(0)';
                             e.target.style.boxShadow = 'none';
                         }}
@@ -356,163 +357,162 @@ function AddBlogSubCategory() {
 
                 <div style={styles.formContainer}>
                     <form onSubmit={handleSubmit}>
-                        <div style={styles.sectionHeader}>
-                            <h2 style={styles.sectionTitle}>Sub Category Information</h2>
-                        </div>
-
-                        <div style={styles.formGrid}>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>
-                                    Sub Category Name
-                                    <span style={styles.requiredMark}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="subCategoryName"
-                                    placeholder="Enter sub category name"
-                                    value={formData.subCategoryName}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>Sub Category Slug</label>
-                                <input
-                                    type="text"
-                                    name="subCategorySlug"
-                                    placeholder="sub-category-slug"
-                                    value={formData.subCategorySlug}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        <div style={styles.formGrid}>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>
-                                    Sub Category Image
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '4px' }}>[max_size: 4MB]</span>
-                                </label>
-                                <div style={styles.fileInputWrapper}>
-                                    <label style={styles.fileLabel}>
-                                        Choose File
+                        <table style={styles.tableForm}>
+                            <tbody>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Sub Category Name<span style={styles.requiredMark}>*</span>
+                                    </td>
+                                    <td style={styles.tableInputCell}>
                                         <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                            style={styles.fileInputHidden}
+                                            type="text"
+                                            name="subCategoryName"
+                                            placeholder="Enter sub category name"
+                                            value={formData.subCategoryName}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                            required
                                         />
-                                    </label>
-                                    <span style={styles.fileName}>
-                                        {formData.subCategoryImage ? formData.subCategoryImage.name : 'No file chosen'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>
-                                    Category
-                                    <span style={styles.requiredMark}>*</span>
-                                </label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    style={styles.select}
-                                    required
-                                >
-                                    <option value="">Select Some Options</option>
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style={{ ...styles.sectionHeader, marginTop: '28px' }}>
-                            <h2 style={styles.sectionTitle}>Meta And SEO Information</h2>
-                        </div>
-
-                        <div style={styles.formGridFull}>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>Meta Title</label>
-                                <input
-                                    type="text"
-                                    name="metaTitle"
-                                    placeholder="Enter meta title"
-                                    value={formData.metaTitle}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        <div style={styles.formGrid}>
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>Meta Keyword</label>
-                                <textarea
-                                    name="metaKeyword"
-                                    placeholder="Enter meta keyword"
-                                    value={formData.metaKeyword}
-                                    onChange={handleChange}
-                                    style={styles.textarea}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-
-                            <div style={styles.formGroup}>
-                                <label style={styles.label}>Meta Description</label>
-                                <textarea
-                                    name="metaDescription"
-                                    placeholder="Enter meta description"
-                                    value={formData.metaDescription}
-                                    onChange={handleChange}
-                                    style={styles.textarea}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--primary)';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-                        </div>
+                                    </td>
+                                    <td style={styles.tableLabelCell}>
+                                        Sub Category Slug
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <input
+                                            type="text"
+                                            name="subCategorySlug"
+                                            placeholder="sub-category-slug"
+                                            value={formData.subCategorySlug}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Sub Category Image <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>[max: 4MB]</span>
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <div style={styles.fileInputWrapper}>
+                                            <label style={styles.fileLabel}>
+                                                Choose File
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    style={styles.fileInputHidden}
+                                                />
+                                            </label>
+                                            <span style={styles.fileName}>
+                                                {formData.subCategoryImage ? formData.subCategoryImage.name : 'No file chosen'}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td style={styles.tableLabelCell}>
+                                        Category<span style={styles.requiredMark}>*</span>
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <select
+                                            name="category"
+                                            value={formData.category}
+                                            onChange={handleChange}
+                                            style={styles.select}
+                                            required
+                                        >
+                                            <option value="">Select Some Options</option>
+                                            {categories
+                                                .filter(cat => cat.status === 'Active')
+                                                .map(cat => (
+                                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                                ))
+                                            }
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Meta Title
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <input
+                                            type="text"
+                                            name="metaTitle"
+                                            placeholder="Enter meta title"
+                                            value={formData.metaTitle}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                    <td style={styles.tableLabelCell}>
+                                        Meta Keyword
+                                    </td>
+                                    <td style={styles.tableInputCell}>
+                                        <input
+                                            type="text"
+                                            name="metaKeyword"
+                                            placeholder="Enter meta keyword"
+                                            value={formData.metaKeyword}
+                                            onChange={handleChange}
+                                            style={styles.input}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={styles.tableLabelCell}>
+                                        Meta Description
+                                    </td>
+                                    <td style={styles.tableInputCell} colSpan={3}>
+                                        <textarea
+                                            name="metaDescription"
+                                            placeholder="Enter meta description"
+                                            value={formData.metaDescription}
+                                            onChange={handleChange}
+                                            style={{ ...styles.input, minHeight: '80px', height: '80px', resize: 'vertical' }}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'var(--primary)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(74, 15, 26, 0.15)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'var(--border)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <div style={styles.buttonGroup}>
                             <button

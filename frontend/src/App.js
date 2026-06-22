@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
@@ -35,20 +34,20 @@ import EditProfile from "./pages/account/EditProfile";
 import FlightSearchResults from "./pages/booking/FlightSearchResults";
 import BusSearchResults from "./pages/booking/BusSearchResults";
 import HotelSearchResults from "./pages/booking/HotelSearchResults";
-import HotelPassengerDetailsPage from "./pages/booking/HotelPassengerDetailsPage";
-import HotelPaymentPage from "./pages/booking/HotelPaymentPage";
 import BusSeatSelectionPage from "./pages/booking/BusSeatSelectionPage";
 import BusPassengerDetailsPage from "./pages/booking/BusPassengerDetailsPage";
 import BusPaymentPage from "./pages/booking/BusPaymentPage";
 import FlightSeatSelectionPage from "./pages/booking/FlightSeatSelectionPage";
 import FlightPassengerDetailsPage from "./pages/booking/FlightPassengerDetailsPage";
 import FlightPaymentPage from "./pages/booking/FlightPaymentPage";
-import HotelBookings from "./pages/booking/HotelBookings";
 import TicketConfirmationPage from "./pages/public/TicketConfirmationPage";
 import MyAccount from "./pages/account/MyAccount";
 import OffersPage from "./pages/public/OffersPage";
 import WebCheckinPage from "./pages/public/WebCheckinPage";
 import LegalPage from "./pages/public/LegalPage";
+import BlogListPage from "./pages/public/BlogListPage";
+import BlogDetailPage from "./pages/public/BlogDetailPage";
+import ContactUsPage from "./pages/public/ContactUsPage";
 
 import AdminLogin from "./Admin_Portal/AUTHENTICATIONS/login admin/login admin";
 import AdminPin from "./Admin_Portal/AUTHENTICATIONS/verifing/adminpin";
@@ -70,6 +69,7 @@ import BusCouponList from "./Admin_Portal/B2C BUS MANAGEMENT/Coupon list/BusCoup
 import BusUsedCouponsList from "./Admin_Portal/B2C BUS MANAGEMENT/Used coupon list/BusUsedCouponsList";
 import BusPopularRoutes from "./Admin_Portal/B2C BUS MANAGEMENT/Popular Bus Routes/PopularBusRoutes";
 import FlightDiscountList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Discount List/DiscountList";
+import AddB2CFlightDiscount from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Discount List/AddB2CFlightDiscount";
 import FlightBookingList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Booking List/FlightBookingList";
 import FlightCancelRequestList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Cancellation Request List/FlightCancelRequestList";
 import FlightConvenienceFee from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Convenience fee/FlightConvenienceFee";
@@ -88,13 +88,10 @@ import FlightCouponList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Coupon List/F
 import FlightUsedCouponList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Used Coupon List/FlightUsedCoupon";
 import FlightPopularRoutes from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Flight Popular Routes/FlightPopularRoutes";
 import FlightPopularDestination from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Popular Destinantion/FlightPopularDestination";
-import HotelDiscountList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Discount List/HotelDiscountList";
-import HotelCouponList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Coupon List/HotelCouponList";
-import HotelConvenienceFee from "./Admin_Portal/B2C HOTEL MANAGEMENT/convenience fee/HotelConvenienceFee";
-import HotelGstSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/GstSettings/HotelGstSettings";
 import TaxManagement from "./Admin_Portal/PAYMENT MANAGEMENT/Tax Management/TaxManagement";
 import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
+import AdminAboutUsPage from "./Admin_Portal/PAGE MANAGEMENT/AboutUs/aboutus";
 import AdminMenuListPage from "./Admin_Portal/MENU MANAGEMENT/MENU LIST/MenuList";
 import AdminMenuAddPage from "./Admin_Portal/MENU MANAGEMENT/ADD MENU/addmenu";
 import AdminOfferListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER LIST/OfferList";
@@ -112,6 +109,9 @@ import AdminAddBlogCategory from "./Admin_Portal/BLOG MANAGEMENT/ADD BLOG CATEGO
 import AdminCustomerList from "./Admin_Portal/CUSTOMER MANAGEMENT/CUSTOMER LIST/Admin.Customerlist";
 import AdminAddNewCustomer from "./Admin_Portal/CUSTOMER MANAGEMENT/ADD NEW CUSTOMER/Admin.AddNewCustomer";
 import AdminDepositRequestList from "./Admin_Portal/CUSTOMER MANAGEMENT/DEPOSITE REQUEST LIST/Admin.Depositelist";
+import AdminQueryList from "./Admin_Portal/QUERY MANAGEMENT/QUERY LIST/Admin.QueryList";
+import AdminTestimonialList from "./Admin_Portal/TESTIMONIAL MANAGEMENT/TESTIMONIAL LIST/Admin.TestimonialList";
+import AdminAddTestimonial from "./Admin_Portal/TESTIMONIAL MANAGEMENT/ADD TESTIMONIAL/Admin.AddTestimonial";
 import "./STYLES/AtlasTheme.css";
 
 const ADMIN_PATHS = {
@@ -123,10 +123,10 @@ const ADMIN_PATHS = {
 const USER_PROTECTED_PATH_PREFIXES = [
   "/bus/payment",
   "/flight/payment",
-  "/hotel/payment",
   "/dashboard",
-  "/edit-profile",
   "/change-password",
+  "/edit-profile",
+  "/booking-confirmation",
 ];
 
 function isUserProtectedPath(pathname) {
@@ -241,7 +241,12 @@ function RequireAdmin({ children }) {
 function AdminMenuListRoute() {
   const navigate = useNavigate();
 
-  return <AdminMenuListPage onAddMenu={() => navigate(ADMIN_MENU_PATHS.add)} />;
+  return (
+    <AdminMenuListPage
+      onAddMenu={() => navigate(ADMIN_MENU_PATHS.add)}
+      onEditMenu={(item) => navigate(ADMIN_MENU_PATHS.add, { state: { editItem: item } })}
+    />
+  );
 }
 
 function AdminMenuAddRoute() {
@@ -355,6 +360,9 @@ function AppContent() {
         <Route path="/forgot-password" element={<AuthPopupRedirect mode="login" />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/online/:slug" element={<LegalPage />} />
+        <Route path="/blogs" element={<BlogListPage />} />
+        <Route path="/blogs/:slug" element={<BlogDetailPage />} />
+        <Route path="/contact-us" element={<ContactUsPage />} />
 
         <Route path="/web-checkin" element={<WebCheckinPage />} />
         <Route path="/fetch-ticket" element={<FetchTicket />} />
@@ -368,8 +376,6 @@ function AppContent() {
         <Route path="/flight/seats" element={<FlightSeatSelectionPage />} />
         <Route path="/flight/passenger-details" element={<FlightPassengerDetailsPage />} />
         <Route path="/flight/payment" element={<FlightPaymentPage />} />
-        <Route path="/hotel/passenger-details" element={<HotelPassengerDetailsPage />} />
-        <Route path="/hotel/payment" element={<HotelPaymentPage />} />
         <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
         <Route path="/ticket/confirmation" element={<TicketConfirmationPage />} />
         <Route path="/edit-profile" element={<EditProfile />} />
@@ -404,10 +410,7 @@ function AppContent() {
           <Route path="b2c-bus/used-coupon-list" element={<BusUsedCouponsList />} />
           <Route path="b2c-bus/popular-routes" element={<BusPopularRoutes />} />
           <Route path="b2c-flight/discounts" element={<FlightDiscountList />} />
-          <Route
-            path="b2c-flight/discounts/new"
-            element={adminPlaceholder("Add B2C Flight Discount")}
-          />
+          <Route path="b2c-flight/discounts/new" element={<AddB2CFlightDiscount />} />
           <Route path="b2c-flight/booking-list" element={<FlightBookingList />} />
           <Route path="b2c-flight/cancellation-requests" element={<FlightCancelRequestList />} />
           <Route path="b2c-flight/convenience-fee" element={<FlightConvenienceFee />} />
@@ -433,16 +436,9 @@ function AppContent() {
             path="b2c-flight/*"
             element={adminPlaceholder("B2C Flight Management")}
           />
-          <Route path="b2c-hotel/discounts" element={<HotelDiscountList />} />
-          <Route path="b2c-hotel/coupon-list" element={<HotelCouponList />} />
-          <Route path="b2c-hotel/convenience-fee" element={<HotelConvenienceFee />} />
-          <Route path="b2c-hotel/gst-settings" element={<HotelGstSettings />} />
-          <Route
-            path="b2c-hotel/*"
-            element={adminPlaceholder("B2C Hotel Management")}
-          />
           <Route path="page-management/pages" element={<AllPages />} />
           <Route path="page-management/pages/new" element={<AddPage />} />
+          <Route path="page-management/about-us" element={<AdminAboutUsPage />} />
           <Route path={ADMIN_MENU_ROUTES.list} element={<AdminMenuListRoute />} />
           <Route path={ADMIN_MENU_ROUTES.add} element={<AdminMenuAddRoute />} />
           <Route path={ADMIN_OFFER_ROUTES.list} element={<AdminOfferListRoute />} />
@@ -474,9 +470,10 @@ function AppContent() {
           {/* Customer Management */}
           <Route path="customer-management/customer-list" element={<AdminCustomerList />} />
           <Route path="customer-management/add-new-customer" element={<AdminAddNewCustomer />} />
+          <Route path="customer-management/edit-customer/:id" element={<AdminAddNewCustomer />} />
           <Route path="customer-management/deposit-request-list" element={<AdminDepositRequestList />} />
           {/* Query Management */}
-          <Route path="query-management/query-list" element={adminPlaceholder("Query List")} />
+          <Route path="query-management/query-list" element={<AdminQueryList />} />
           {/* Security Management */}
           <Route path="security-management/black-list-ip" element={adminPlaceholder("Black List IP")} />
           <Route path="security-management/white-list-ip" element={adminPlaceholder("White List IP")} />
@@ -491,8 +488,8 @@ function AppContent() {
           <Route path="site-management/meta-data-list" element={adminPlaceholder("Meta Data List")} />
           <Route path="site-management/seo-link-list" element={adminPlaceholder("SEO Link List")} />
           {/* Testimonial Management */}
-          <Route path="testimonial-management/testimonial-list" element={adminPlaceholder("Testimonial List")} />
-          <Route path="testimonial-management/add-testimonial" element={adminPlaceholder("Add Testimonial")} />
+          <Route path="testimonial-management/testimonial-list" element={<AdminTestimonialList />} />
+          <Route path="testimonial-management/add-testimonial" element={<AdminAddTestimonial />} />
           {/* Theme Management */}
           <Route path="theme-management/b2c-header-theme" element={adminPlaceholder("B2C Header Theme")} />
           <Route path="theme-management/b2c-home-theme" element={adminPlaceholder("B2C Home Theme")} />
@@ -519,7 +516,6 @@ function AppContent() {
           <Route path="flight-cancel" element={<FlightCancel />} />
           <Route path="bus-bookings" element={<BusBookings />} />
           <Route path="bus-cancel" element={<BusCancel />} />
-          <Route path="hotel-bookings" element={<HotelBookings />} />
           <Route path="account-statement" element={<AccountStatement />} />
           <Route path="my-account" element={<MyAccount />} />
           <Route path="edit-profile" element={<Navigate to="/edit-profile" replace />} />

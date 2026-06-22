@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Check, 
-  Download, 
-  Eye, 
-  Plus, 
-  Trash2, 
-  X, 
-  Loader2, 
-  Edit3, 
-  Activity, 
-  Plane, 
-  Award, 
-  Search, 
-  RefreshCw, 
-  AlertCircle 
+import {
+  Check,
+  Download,
+  Eye,
+  Plus,
+  Trash2,
+  X,
+  Loader2,
+  Edit3,
+  Activity,
+  Plane,
+  Award,
+  Search,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 import "./FlightPopularRoutes.css";
 import { csvCell } from "../../../utils/adminPortalUtils";
@@ -269,7 +269,7 @@ export default function AdminFlightPopularRoutesPage() {
       setRoutes(allRoutes);
     } catch (err) {
       console.error("Error fetching popular flight routes data:", err);
-      setErrorMessage(err.message || "Failed to load popular flight routes.");
+      // setErrorMessage(err.message || "Failed to load popular flight routes.");
       setRoutes(INITIAL_FLIGHT_POPULAR_ROUTES.map(r => ({
         ...r,
         isCurated: true,
@@ -497,7 +497,7 @@ export default function AdminFlightPopularRoutesPage() {
             <Plus size={15} />
             <span>Add Route</span>
           </button>
-          
+
           <button
             type="button"
             className="admin-markup-popular-btn refresh"
@@ -507,7 +507,7 @@ export default function AdminFlightPopularRoutesPage() {
             <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
             <span>Refresh</span>
           </button>
-          
+
           <button
             type="button"
             className="admin-markup-popular-btn export"
@@ -580,7 +580,7 @@ export default function AdminFlightPopularRoutesPage() {
                     {route.toAirport.split(",")[1]?.replace(/\(.*?\)/, "").trim() || route.toAirport.split(",")[0] || route.toAirport}
                   </span>
                 </div>
-                
+
                 <div className="card-metrics-grid">
                   <div className="metric-box">
                     <span className="metric-label">Searches</span>

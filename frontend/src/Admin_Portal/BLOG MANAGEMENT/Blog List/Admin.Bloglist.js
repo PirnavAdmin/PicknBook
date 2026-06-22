@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -16,43 +16,37 @@ import {
     Check,
     AlertCircle,
 } from 'lucide-react';
-import { useAdminList } from "../../../utils/adminPortalStorage";
+import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
+import { toApiAssetUrl } from '../../../services/apiClient';
+
+const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        }).replace(',', '');
+    } catch {
+        return dateString;
+    }
+};
 
 function BlogList() {
     const navigate = useNavigate();
     const toastTimerRef = useRef(null);
-    const [blogs, setBlogs] = useAdminList("blogs", [
-        {
-            id: 1,
-            title: 'Why Bus Travel Is Still the Smartest Way To Travel - Book Easily With Pick N Book',
-            entryDate: '13 Sep 2025 03:43',
-            image: 'bus-travel.jpg',
-            category: 'Travel',
-            subCategory: 'Tips',
-            status: 'Active',
-            author: 'Admin',
-        },
-        {
-            id: 2,
-            title: 'Comfortable Overnight Bus Trips: A Practical Booking Guide',
-            entryDate: '13 Sep 2025 03:35',
-            image: 'bus-guide.jpg',
-            category: 'Travel',
-            subCategory: 'Guides',
-            status: 'Active',
-            author: 'Editor',
-        },
-        {
-            id: 3,
-            title: 'Five Budget Travel Hacks For First Time Bus Travelers',
-            entryDate: '12 Sep 2025 10:10',
-            image: 'budget-hacks.jpg',
-            category: 'Travel',
-            subCategory: 'Budget',
-            status: 'Inactive',
-            author: 'Admin',
-        },
-    ]);
+    const [blogs, setBlogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
+    const [totalBlogs, setTotalBlogs] = useState(0);
+
+    const [categories, setCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
 
     const [filterOpen, setFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -61,6 +55,7 @@ function BlogList() {
     const [subCategoryFilter, setSubCategoryFilter] = useState('All');
     const [selectedBlog, setSelectedBlog] = useState(null);
     const [toast, setToast] = useState(null);
+    const [activePopupImage, setActivePopupImage] = useState(null);
 
     const showToast = (message, tone = 'info') => {
         if (toastTimerRef.current) {
@@ -69,6 +64,56 @@ function BlogList() {
         setToast({ message, tone });
         toastTimerRef.current = setTimeout(() => setToast(null), 2400);
     };
+
+    const fetchBlogs = async () => {
+        setLoading(true);
+        try {
+            let isPublishedParam = undefined;
+            if (statusFilter === 'Active') {
+                isPublishedParam = true;
+            } else if (statusFilter === 'Inactive') {
+                isPublishedParam = false;
+            }
+            const data = await getAdminBlogs({
+                page,
+                pageSize,
+                isPublished: isPublishedParam
+            });
+            const mapped = (data.blogs || []).map(blog => ({
+                ...blog,
+                entryDate: blog.createdAtUtc ? formatDate(blog.createdAtUtc) : 'Draft',
+                image: blog.imageUrl || blog.image || '',
+                status: blog.isPublished ? 'Active' : 'Inactive',
+                author: blog.addedByName || 'Admin'
+            }));
+            setBlogs(mapped);
+            setTotalBlogs(data.total || 0);
+        } catch (error) {
+            console.error("Error fetching blogs from API:", error);
+            showToast("Failed to load blogs from API.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBlogs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, pageSize, statusFilter]);
+
+    useEffect(() => {
+        const loadMetadata = async () => {
+            try {
+                const cats = await getBlogCategories();
+                const subs = await getBlogSubCategories();
+                setCategories(cats || []);
+                setSubCategories(subs || []);
+            } catch (error) {
+                console.error("Failed to load category/subcategory metadata:", error);
+            }
+        };
+        loadMetadata();
+    }, []);
 
     const categoryOptions = ['All', ...new Set(blogs.map((blog) => blog.category))];
     const subCategoryOptions = ['All', ...new Set(blogs.map((blog) => blog.subCategory))];
@@ -80,7 +125,6 @@ function BlogList() {
                 blog.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 blog.subCategory.toLowerCase().includes(searchQuery.toLowerCase())
         )
-        .filter((blog) => (statusFilter === 'All' ? true : blog.status === statusFilter))
         .filter((blog) => (categoryFilter === 'All' ? true : blog.category === categoryFilter))
         .filter((blog) =>
             subCategoryFilter === 'All' ? true : blog.subCategory === subCategoryFilter
@@ -93,6 +137,16 @@ function BlogList() {
         setSubCategoryFilter('All');
         setFilterOpen(false);
         showToast('Filters cleared.', 'info');
+    };
+
+    const totalPages = Math.ceil(totalBlogs / pageSize) || 1;
+
+    const handlePrevPage = () => {
+        if (page > 1) setPage(page - 1);
+    };
+
+    const handleNextPage = () => {
+        if (page < totalPages) setPage(page + 1);
     };
 
     const handleExport = () => {
@@ -118,28 +172,46 @@ function BlogList() {
         showToast('Export completed.', 'success');
     };
 
-    const handleToggleStatus = (id) => {
-        setBlogs((prev) =>
-            prev.map((blog) =>
-                blog.id === id
-                    ? { ...blog, status: blog.status === 'Active' ? 'Inactive' : 'Active' }
-                    : blog
-            )
-        );
-        showToast('Blog status updated.', 'success');
+    const handleToggleStatus = async (id) => {
+        const blogToToggle = blogs.find(b => b.id === id);
+        if (!blogToToggle) return;
+
+        try {
+            const formData = new FormData();
+            formData.append("Title", blogToToggle.title);
+            formData.append("Category", blogToToggle.category);
+            formData.append("SubCategory", blogToToggle.subCategory);
+            formData.append("ShortDescription", blogToToggle.shortDescription || "No short description");
+            formData.append("LongDescription", blogToToggle.longDescription || "No long description");
+            formData.append("IsPublished", blogToToggle.status !== 'Active'); // Toggle publication state
+            formData.append("IsFeatured", blogToToggle.isFeatured || false);
+
+            await updateAdminBlog(id, formData);
+            showToast('Blog status updated.', 'success');
+            fetchBlogs();
+        } catch (error) {
+            console.error("Error toggling blog status:", error);
+            showToast("Failed to toggle blog status.", "error");
+        }
     };
 
     const handleEditBlogNavigate = (blog) => {
         navigate(`/admin/blog-management/edit-blog/${blog.id}`, { state: { blog } });
     };
 
-    const handleDeleteBlog = (blog) => {
+    const handleDeleteBlog = async (blog) => {
         const confirmed = window.confirm(`Delete "${blog.title}"?`);
         if (!confirmed) {
             return;
         }
-        setBlogs((prev) => prev.filter((item) => item.id !== blog.id));
-        showToast('Blog deleted.', 'info');
+        try {
+            await deleteAdminBlog(blog.id);
+            showToast('Blog deleted.', 'info');
+            fetchBlogs();
+        } catch (error) {
+            console.error("Error deleting blog:", error);
+            showToast("Failed to delete blog.", "error");
+        }
     };
 
     const handleViewDetails = (blog) => {
@@ -157,7 +229,7 @@ function BlogList() {
 
     const styles = {
         container: {
-            padding: '28px 32px',
+            padding: '12px 24px',
             background: 'var(--page-bg)',
             minHeight: '100vh',
         },
@@ -165,7 +237,7 @@ function BlogList() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '32px',
+            marginBottom: '16px',
             gap: '16px',
             flexWrap: 'wrap',
         },
@@ -173,12 +245,11 @@ function BlogList() {
             display: 'flex',
             alignItems: 'baseline',
             gap: '12px',
-            borderBottom: '3px solid var(--primary)',
             paddingBottom: '10px',
         },
         titleMain: {
             fontSize: '2.2rem',
-            fontWeight: 900,
+            fontWeight: 500,
             color: 'var(--text-primary)',
             margin: 0,
             letterSpacing: '-0.5px',
@@ -196,17 +267,17 @@ function BlogList() {
             flexWrap: 'wrap',
         },
         button: {
-            padding: '11px 18px',
+            padding: '8px 14px',
             borderRadius: '10px',
             border: '1px solid transparent',
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            fontSize: '0.9rem',
+            fontSize: '0.85rem',
         },
         filterBtn: {
             background: 'var(--primary)',
@@ -230,10 +301,10 @@ function BlogList() {
             boxShadow: '0 4px 14px rgba(30, 142, 62, 0.25)',
         },
         searchBox: {
-            padding: '11px 16px',
+            padding: '8px 12px',
             border: '1.5px solid var(--border)',
             borderRadius: '10px',
-            fontSize: '0.9rem',
+            fontSize: '0.85rem',
             width: '220px',
             outline: 'none',
             transition: 'all 0.3s ease',
@@ -355,22 +426,23 @@ function BlogList() {
             borderBottom: '2px solid var(--primary)',
         },
         th: {
-            padding: '16px 18px',
-            textAlign: 'left',
+            padding: '6px 10px',
+            textAlign: 'center',
             whiteSpace: 'nowrap',
-            fontSize: '0.8rem',
+            fontSize: '0.85rem',
             textTransform: 'uppercase',
             letterSpacing: '0.6px',
-            fontWeight: 900,
+            fontWeight: 600,
             verticalAlign: 'middle',
-            height: '56px',
+            height: '34px',
         },
         td: {
-            padding: '16px 18px',
-            borderBottom: '1px solid var(--border)',
+            padding: '10px 12px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             color: 'var(--text-primary)',
             verticalAlign: 'middle',
-            height: '70px',
+            textAlign: 'center',
+            height: '48px',
         },
         tbody: {
             fontSize: '0.9rem',
@@ -378,27 +450,27 @@ function BlogList() {
         tr: {
             transition: 'background-color 0.2s ease',
             borderBottom: '1px solid var(--border)',
-            height: '70px',
+            height: '48px',
         },
         sn: {
-            fontWeight: 900,
+            fontWeight: 600,
             color: 'var(--primary)',
-            minWidth: '35px',
+            minWidth: '26px',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '32px',
-            height: '32px',
+            width: '26px',
+            height: '26px',
             background: 'rgba(74, 15, 26, 0.08)',
             borderRadius: '8px',
-            fontSize: '0.85rem',
+            fontSize: '0.8rem',
         },
         blogTitle: {
             maxWidth: '300px',
-            fontWeight: 700,
+            fontWeight: 500,
             color: 'var(--text-primary)',
             lineHeight: '1.5',
-            fontSize: '0.9rem',
+            fontSize: '0.85rem',
         },
         viewBtn: {
             display: 'inline-flex',
@@ -446,15 +518,15 @@ function BlogList() {
         },
         actionButtons: {
             display: 'flex',
-            gap: '10px',
+            gap: '8px',
             flexWrap: 'nowrap',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: '160px',
+            minWidth: '120px',
             width: '100%',
         },
         actionColumn: {
-            minWidth: '180px',
+            minWidth: '130px',
             textAlign: 'center',
         },
         actionCell: {
@@ -462,9 +534,9 @@ function BlogList() {
             textAlign: 'center',
         },
         actionBtn: {
-            width: '44px',
-            height: '44px',
-            borderRadius: '10px',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
             border: '1.5px solid var(--border)',
             fontWeight: 700,
             fontSize: '0.8rem',
@@ -523,6 +595,39 @@ function BlogList() {
             background: 'rgba(74, 15, 26, 0.1)',
             color: 'var(--primary)',
         },
+        paginationContainer: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '20px',
+            padding: '12px 18px',
+            background: 'var(--panel)',
+            borderRadius: '12px',
+            border: '1.5px solid var(--border)',
+            gap: '16px',
+            flexWrap: 'wrap',
+        },
+        paginationInfo: {
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+        },
+        paginationButtons: {
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+        },
+        pageBtn: {
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--text-primary)',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+        },
     };
 
     const getStatusStyle = (status) => ({
@@ -573,6 +678,11 @@ function BlogList() {
           box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.1) !important;
         }
         
+        select:hover {
+          background-color: rgba(74, 15, 26, 0.05) !important;
+          border-color: var(--primary) !important;
+        }
+        
         button:disabled {
           opacity: 0.6;
           cursor: not-allowed;
@@ -609,64 +719,27 @@ function BlogList() {
                         <h2 style={styles.titleSub}>Management</h2>
                     </div>
                     <div style={styles.actions}>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <Search
-                                size={18}
-                                style={{
-                                    position: 'absolute',
-                                    left: '12px',
-                                    color: 'var(--text-secondary)',
-                                    pointerEvents: 'none',
-                                }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Search blogs..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{
-                                    ...styles.searchBox,
-                                    paddingLeft: '38px',
-                                }}
-                            />
-                        </div>
-
-                        <button
-                            type="button"
-                            style={{ ...styles.button, ...styles.filterBtn }}
-                            onMouseEnter={(e) => {
-                                e.target.style.background = 'var(--primary-strong)';
-                                e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 6px 20px rgba(74, 15, 26, 0.3)';
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{
+                                padding: '8px 14px',
+                                borderRadius: '10px',
+                                border: '1.5px solid var(--border)',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                background: 'var(--panel)',
+                                color: 'var(--text-primary)',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                width: '130px',
                             }}
-                            onMouseLeave={(e) => {
-                                e.target.style.background = 'var(--primary)';
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = 'none';
-                            }}
-                            onClick={() => setFilterOpen(!filterOpen)}
                         >
-                            <Filter size={18} />
-                            Filter
-                        </button>
-
-                        <button
-                            type="button"
-                            style={{ ...styles.button, ...styles.clearBtn }}
-                            onMouseEnter={(e) => {
-                                e.target.style.background = 'rgba(74, 15, 26, 0.1)';
-                                e.target.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.background = 'var(--panel)';
-                                e.target.style.transform = 'translateY(0)';
-                            }}
-                            onClick={handleClearFilters}
-                        >
-                            <X size={18} />
-                            Clear
-                        </button>
-
+                            <option value="All">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
                         <button
                             type="button"
                             style={{ ...styles.button, ...styles.exportBtn }}
@@ -685,7 +758,6 @@ function BlogList() {
                             <Download size={18} />
                             Export
                         </button>
-
                         <button
                             type="button"
                             style={{ ...styles.button, ...styles.addBtn }}
@@ -704,53 +776,6 @@ function BlogList() {
                         </button>
                     </div>
                 </div>
-
-                {filterOpen && (
-                    <div style={styles.filterPanel}>
-                        <div style={styles.filterRow}>
-                            <div style={styles.filterGroup}>
-                                <label style={styles.filterLabel}>Status</label>
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    style={styles.filterSelect}
-                                >
-                                    <option value="All">All</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                            <div style={styles.filterGroup}>
-                                <label style={styles.filterLabel}>Category</label>
-                                <select
-                                    value={categoryFilter}
-                                    onChange={(e) => setCategoryFilter(e.target.value)}
-                                    style={styles.filterSelect}
-                                >
-                                    {categoryOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div style={styles.filterGroup}>
-                                <label style={styles.filterLabel}>Sub Category</label>
-                                <select
-                                    value={subCategoryFilter}
-                                    onChange={(e) => setSubCategoryFilter(e.target.value)}
-                                    style={styles.filterSelect}
-                                >
-                                    {subCategoryOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {selectedBlog && (
                     <div style={styles.detailCard}>
@@ -846,63 +871,75 @@ function BlogList() {
                                         <td style={styles.td}>
                                             <span style={styles.sn}>{index + 1}</span>
                                         </td>
-                                        <td style={{ ...styles.td, ...styles.blogTitle }}>{blog.title}</td>
-                                        <td style={styles.td}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                {/* < size={14} style={{ opacity: 0.7, flexShrink: 0 }} /> */}
-                                                <span>{blog.entryDate}</span>
-                                            </div>
+                                        <td style={{ ...styles.td, ...styles.blogTitle, textAlign: 'center' }}>
+                                            {blog.title}
                                         </td>
                                         <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={styles.viewBtn}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'var(--surface-soft)';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                }}
-                                                onClick={() => handleViewAsset('Image', blog.image)}
-                                            >
-                                                View
-                                            </button>
+                                            {blog.entryDate}
                                         </td>
                                         <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={styles.viewBtn}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'var(--surface-soft)';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                }}
-                                                onClick={() => handleViewAsset('Category', blog.category)}
-                                            >
-                                                View
-                                            </button>
+                                            {blog.image ? (
+                                                <img
+                                                    src={toApiAssetUrl(blog.image)}
+                                                    alt={blog.title}
+                                                    title={blog.title}
+                                                    style={{
+                                                        width: '45px',
+                                                        height: '45px',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid rgba(0, 0, 0, 0.1)',
+                                                        display: 'block',
+                                                        margin: '0 auto',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                    onClick={() => setActivePopupImage(toApiAssetUrl(blog.image))}
+                                                />
+                                            ) : (
+                                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>-</span>
+                                            )}
                                         </td>
                                         <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={styles.viewBtn}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'var(--surface-soft)';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                }}
-                                                onClick={() => handleViewAsset('Sub Category', blog.subCategory)}
-                                            >
-                                                View
-                                            </button>
+                                            {(() => {
+                                                const catObj = categories.find(c => c.name === blog.category);
+                                                const catImg = catObj?.imageUrl || catObj?.image;
+                                                return (
+                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                                        {catImg && catImg !== '-' ? (
+                                                            <img
+                                                                src={toApiAssetUrl(catImg)}
+                                                                alt={blog.category}
+                                                                title={blog.category}
+                                                                style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
+                                                                onClick={() => setActivePopupImage(toApiAssetUrl(catImg))}
+                                                            />
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </td>
+                                        <td style={styles.td}>
+                                            {(() => {
+                                                const subObj = subCategories.find(s => s.name === blog.subCategory);
+                                                const subImg = subObj?.imageUrl || subObj?.image;
+                                                return (
+                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                                        {subImg && subImg !== '-' ? (
+                                                            <img
+                                                                src={toApiAssetUrl(subImg)}
+                                                                alt={blog.subCategory}
+                                                                title={blog.subCategory}
+                                                                style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
+                                                                onClick={() => setActivePopupImage(toApiAssetUrl(subImg))}
+                                                            />
+                                                        ) : (
+                                                            <span>-</span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
                                         <td style={styles.td}>
                                             <button
@@ -948,7 +985,7 @@ function BlogList() {
                                                     }}
                                                     onClick={() => handleViewDetails(blog)}
                                                 >
-                                                    <Eye size={20} strokeWidth={2} />
+                                                    <Eye size={16} strokeWidth={2} />
                                                 </button>
                                                 <button
                                                     type="button"
@@ -966,7 +1003,7 @@ function BlogList() {
                                                     }}
                                                     onClick={() => handleEditBlogNavigate(blog)}
                                                 >
-                                                    <Edit2 size={20} strokeWidth={2} />
+                                                    <Edit2 size={16} strokeWidth={2} />
                                                 </button>
                                                 <button
                                                     type="button"
@@ -984,7 +1021,7 @@ function BlogList() {
                                                     }}
                                                     onClick={() => handleDeleteBlog(blog)}
                                                 >
-                                                    <Trash2 size={20} strokeWidth={2} />
+                                                    <Trash2 size={16} strokeWidth={2} />
                                                 </button>
                                             </div>
                                         </td>
@@ -1008,9 +1045,89 @@ function BlogList() {
                         </div>
                     )}
                 </div>
+
+                {totalPages > 1 && (
+                    <div style={styles.paginationContainer}>
+                        <div style={styles.paginationInfo}>
+                            Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalBlogs)} of {totalBlogs} blogs
+                        </div>
+                        <div style={styles.paginationButtons}>
+                            <button
+                                type="button"
+                                style={{
+                                    ...styles.pageBtn,
+                                    opacity: page === 1 ? 0.5 : 1,
+                                    cursor: page === 1 ? 'not-allowed' : 'pointer'
+                                }}
+                                disabled={page === 1}
+                                onClick={handlePrevPage}
+                            >
+                                Previous
+                            </button>
+                            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(p => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    style={{
+                                        ...styles.pageBtn,
+                                        background: page === p ? 'var(--primary)' : 'var(--panel)',
+                                        color: page === p ? '#ffffff' : 'var(--text-primary)',
+                                        borderColor: page === p ? 'var(--primary)' : 'var(--border)'
+                                    }}
+                                    onClick={() => setPage(p)}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                style={{
+                                    ...styles.pageBtn,
+                                    opacity: page === totalPages ? 0.5 : 1,
+                                    cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                                }}
+                                disabled={page === totalPages}
+                                onClick={handleNextPage}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {activePopupImage && (
+                <div 
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 2000,
+                        cursor: 'zoom-out'
+                    }}
+                    onClick={() => setActivePopupImage(null)}
+                >
+                    <img 
+                        src={activePopupImage} 
+                        alt="Popup View" 
+                        style={{
+                            maxWidth: '90%',
+                            maxHeight: '90%',
+                            objectFit: 'contain',
+                            borderRadius: '8px',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+                        }}
+                    />
+                </div>
+            )}
         </>
     );
 }
 
-export default BlogList
+export default BlogList;

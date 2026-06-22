@@ -1,55 +1,12 @@
-import React, { useRef, useState } from 'react';
-import { useAdminList } from "../../../utils/adminPortalStorage";
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getCustomers, toggleCustomerStatus, toggleWalletStatus, addWalletBalance, resetWalletBalance, deleteCustomer } from "../../../services/customerService";
 
 function CustomerList() {
+    const navigate = useNavigate();
     const toastTimerRef = useRef(null);
-    const [customers, setCustomers] = useAdminList('customers', [
-        {
-            id: 4893,
-            status: 'Active',
-            customerName: 'Abcde fght',
-            emailId: 'accdd2649@gmail.com',
-            mobile: '8688752431',
-            walletStatus: 'Active',
-            walletBalance: 0
-        },
-        {
-            id: 4884,
-            status: 'Active',
-            customerName: 'tata birla',
-            emailId: 'jagadeeshwar.gadeela111@gmail.com',
-            mobile: '9573869554',
-            walletStatus: 'Active',
-            walletBalance: 0
-        },
-        {
-            id: 4883,
-            status: 'Active',
-            customerName: 'Reddy Reddy',
-            emailId: 'accdd2649@gmail.com',
-            mobile: '9441325635',
-            walletStatus: 'Active',
-            walletBalance: 0
-        },
-        {
-            id: 4874,
-            status: 'Active',
-            customerName: 'AAB CDD',
-            emailId: 'accdd264@gmail.com',
-            mobile: '8143858229',
-            walletStatus: 'Active',
-            walletBalance: 0
-        },
-        {
-            id: 4873,
-            status: 'Active',
-            customerName: 'Amrutha Reddy',
-            emailId: 'amruthareddy@gmail.com',
-            mobile: '9441325635',
-            walletStatus: 'Active',
-            walletBalance: 0
-        },
-    ]);
+    const [customers, setCustomers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -69,16 +26,34 @@ function CustomerList() {
         toastTimerRef.current = setTimeout(() => setToast(null), 2400);
     };
 
-    const filteredCustomers = customers
-        .filter(customer =>
-            customer.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            customer.emailId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            customer.mobile.includes(searchQuery)
-        )
-        .filter(customer => (statusFilter === 'All' ? true : customer.status === statusFilter))
-        .filter(customer => (walletFilter === 'All' ? true : customer.walletStatus === walletFilter))
-        .filter(customer => (minBalance === '' ? true : customer.walletBalance >= Number(minBalance)))
-        .filter(customer => (maxBalance === '' ? true : customer.walletBalance <= Number(maxBalance)));
+    const fetchCustomers = async () => {
+        setLoading(true);
+        try {
+            const data = await getCustomers({
+                status: statusFilter,
+                walletStatus: walletFilter,
+                search: searchQuery,
+                minBalance: minBalance === '' ? "" : Number(minBalance),
+                maxBalance: maxBalance === '' ? "" : Number(maxBalance),
+            });
+            setCustomers(data || []);
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+            const detailedError = error.response?.data 
+                ? (typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data))
+                : "Failed to load customers from API.";
+            showToast(detailedError.slice(0, 150), "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCustomers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [statusFilter, walletFilter, minBalance, maxBalance, searchQuery]);
+
+    const filteredCustomers = customers;
 
     const activeCount = customers.filter(c => c.status === 'Active').length;
     const inactiveCount = customers.filter(c => c.status !== 'Active').length;
@@ -141,29 +116,31 @@ function CustomerList() {
 
     const closeMenu = () => setOpenMenu({ id: null, type: null });
 
-    const handleToggleStatus = (id) => {
-        setCustomers(prev =>
-            prev.map(c =>
-                c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } : c
-            )
-        );
-        showToast('Customer status updated.', 'success');
+    const handleToggleStatus = async (id) => {
+        try {
+            await toggleCustomerStatus(id);
+            showToast('Customer status updated.', 'success');
+            fetchCustomers();
+        } catch (error) {
+            console.error("Error toggling customer status:", error);
+            showToast("Failed to toggle customer status.", "error");
+        }
         closeMenu();
     };
 
-    const handleToggleWalletStatus = (id) => {
-        setCustomers(prev =>
-            prev.map(c =>
-                c.id === id
-                    ? { ...c, walletStatus: c.walletStatus === 'Active' ? 'Inactive' : 'Active' }
-                    : c
-            )
-        );
-        showToast('Wallet status updated.', 'success');
+    const handleToggleWalletStatus = async (id) => {
+        try {
+            await toggleWalletStatus(id);
+            showToast('Wallet status updated.', 'success');
+            fetchCustomers();
+        } catch (error) {
+            console.error("Error toggling wallet status:", error);
+            showToast("Failed to toggle wallet status.", "error");
+        }
         closeMenu();
     };
 
-    const handleAddBalance = (id) => {
+    const handleAddBalance = async (id) => {
         const rawAmount = window.prompt('Enter amount to add');
         if (rawAmount === null) {
             return;
@@ -173,30 +150,30 @@ function CustomerList() {
             showToast('Please enter a valid amount.', 'error');
             return;
         }
-        setCustomers(prev =>
-            prev.map(c =>
-                c.id === id
-                    ? {
-                        ...c,
-                        walletBalance: Number(c.walletBalance || 0) + amount,
-                        walletStatus: 'Active'
-                    }
-                    : c
-            )
-        );
-        showToast('Wallet balance updated.', 'success');
+        try {
+            await addWalletBalance(id, amount);
+            showToast('Wallet balance updated.', 'success');
+            fetchCustomers();
+        } catch (error) {
+            console.error("Error adding balance:", error);
+            showToast("Failed to add balance.", "error");
+        }
         closeMenu();
     };
 
-    const handleResetBalance = (id) => {
-        setCustomers(prev =>
-            prev.map(c => (c.id === id ? { ...c, walletBalance: 0 } : c))
-        );
-        showToast('Wallet balance reset.', 'info');
+    const handleResetBalance = async (id) => {
+        try {
+            await resetWalletBalance(id);
+            showToast('Wallet balance reset.', 'info');
+            fetchCustomers();
+        } catch (error) {
+            console.error("Error resetting balance:", error);
+            showToast("Failed to reset balance.", "error");
+        }
         closeMenu();
     };
 
-    const handleRemoveCustomer = (id) => {
+    const handleRemoveCustomer = async (id) => {
         const customer = customers.find(c => c.id === id);
         if (!customer) {
             return;
@@ -205,9 +182,19 @@ function CustomerList() {
         if (!confirmed) {
             return;
         }
-        setCustomers(prev => prev.filter(c => c.id !== id));
-        showToast('Customer removed.', 'info');
+        try {
+            await deleteCustomer(id);
+            showToast('Customer removed.', 'info');
+            fetchCustomers();
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+            showToast("Failed to delete customer.", "error");
+        }
         closeMenu();
+    };
+
+    const handleEditCustomer = (id) => {
+        navigate(`/admin/customer-management/edit-customer/${id}`);
     };
 
     const handleViewDetails = (customer) => {
@@ -871,7 +858,9 @@ function CustomerList() {
 
                 {/* Table */}
                 <div style={styles.tableWrapper}>
-                    {filteredCustomers.length > 0 ? (
+                    {loading ? (
+                        <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading customers...</p>
+                    ) : filteredCustomers.length > 0 ? (
                         <table style={styles.table}>
                             <thead style={styles.thead}>
                                 <tr>
@@ -883,7 +872,8 @@ function CustomerList() {
                                     <th style={styles.th}>Wallet Status</th>
                                     <th style={styles.th}>Wallet Bal.</th>
                                     <th style={styles.th}>Action</th>
-                                    <th style={styles.th}>Login</th>
+                                    <th style={styles.th}>Finance</th>
+                                    <th style={styles.th}>Search</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -933,7 +923,7 @@ function CustomerList() {
                                             </button>
                                         </td>
                                         <td style={styles.td}>Rs. {customer.walletBalance}</td>
-                                        <td style={{ ...styles.td, ...styles.actionButtons }}>
+                                        <td style={styles.td}>
                                             <div style={styles.menuWrapper}>
                                                 <button
                                                     type="button"
@@ -953,27 +943,37 @@ function CustomerList() {
                                                         <button
                                                             type="button"
                                                             style={styles.menuItem}
-                                                            onClick={() => handleToggleStatus(customer.id)}
+                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
+                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
+                                                            onClick={() => handleEditCustomer(customer.id)}
                                                         >
-                                                            {customer.status === 'Active' ? 'Deactivate' : 'Activate'}
+                                                            Edit
                                                         </button>
                                                         <button
                                                             type="button"
                                                             style={styles.menuItem}
+                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
+                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
                                                             onClick={() => handleViewDetails(customer)}
                                                         >
-                                                            View Details
+                                                            View
                                                         </button>
                                                         <button
                                                             type="button"
                                                             style={{ ...styles.menuItem, ...styles.menuItemDanger }}
+                                                            onMouseEnter={(e) => {
+                                                                e.target.style.background = 'rgba(217, 48, 37, 0.08)';
+                                                            }}
+                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
                                                             onClick={() => handleRemoveCustomer(customer.id)}
                                                         >
-                                                            Remove
+                                                            Delete
                                                         </button>
                                                     </div>
                                                 )}
                                             </div>
+                                        </td>
+                                        <td style={styles.td}>
                                             <div style={styles.menuWrapper}>
                                                 <button
                                                     type="button"
@@ -993,6 +993,8 @@ function CustomerList() {
                                                         <button
                                                             type="button"
                                                             style={styles.menuItem}
+                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
+                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
                                                             onClick={() => handleAddBalance(customer.id)}
                                                         >
                                                             Add Balance
@@ -1000,6 +1002,8 @@ function CustomerList() {
                                                         <button
                                                             type="button"
                                                             style={styles.menuItem}
+                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
+                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
                                                             onClick={() => handleResetBalance(customer.id)}
                                                         >
                                                             Reset Balance
@@ -1007,6 +1011,8 @@ function CustomerList() {
                                                         <button
                                                             type="button"
                                                             style={styles.menuItem}
+                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
+                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
                                                             onClick={() => handleToggleWalletStatus(customer.id)}
                                                         >
                                                             Toggle Wallet Status
@@ -1014,6 +1020,8 @@ function CustomerList() {
                                                     </div>
                                                 )}
                                             </div>
+                                        </td>
+                                        <td style={styles.td}>
                                             <button
                                                 type="button"
                                                 style={{ ...styles.actionBtn, ...styles.detailsBtn }}
@@ -1023,25 +1031,9 @@ function CustomerList() {
                                                 onMouseLeave={(e) => {
                                                     e.target.style.background = 'var(--surface-soft)';
                                                 }}
-                                                onClick={() => handleViewDetails(customer)}
-                                            >
-                                                Details
-                                            </button>
-                                        </td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={{ ...styles.actionBtn, ...styles.loginBtn }}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(74, 15, 26, 0.12)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.background = 'var(--surface-soft)';
-                                                }}
-                                                title="Login as customer"
                                                 onClick={() => handleLogin(customer)}
                                             >
-                                                Login
+                                                Search
                                             </button>
                                         </td>
                                     </tr>
@@ -1061,14 +1053,3 @@ function CustomerList() {
 }
 
 export default CustomerList;
-
-
-
-
-
-
-
-
-
-
-

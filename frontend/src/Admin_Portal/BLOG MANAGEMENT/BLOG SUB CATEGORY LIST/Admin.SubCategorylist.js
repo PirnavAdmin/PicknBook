@@ -1,43 +1,86 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdminList } from "../../../utils/adminPortalStorage";
+import { Eye, Edit2, Trash2 } from 'lucide-react';
+import { deleteBlogSubCategory, getBlogSubCategories, toggleBlogSubCategoryStatus, updateBlogSubCategory, getBlogCategories } from '../../../services/blogService';
+import { toApiAssetUrl } from '../../../services/apiClient';
+
+const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        }).replace(',', '');
+    } catch {
+        return dateString;
+    }
+};
 
 function BlogSubCategoryList() {
     const navigate = useNavigate();
     const toastTimerRef = useRef(null);
-    const [subCategories, setSubCategories] = useAdminList('blog-subcategories', [
-        {
-            id: 1,
-            entryDate: '13 Sep 2025 03:34',
-            image: 'honeymoon.jpg',
-            name: 'Honeymoon',
-            category: 'Travel',
-            status: 'Active'
-        },
-        {
-            id: 2,
-            entryDate: '13 Sep 2025 03:34',
-            image: '-',
-            name: 'Family Holidays',
-            category: 'Travel',
-            status: 'Active'
-        },
-        {
-            id: 3,
-            entryDate: '12 Sep 2025 09:05',
-            image: '-',
-            name: 'Seasonal Offers',
-            category: 'Offers',
-            status: 'Inactive'
-        }
-    ]);
+    const [subCategories, setSubCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
 
+    const loadSubCategories = async () => {
+        try {
+            setLoading(true);
+            const data = await getBlogSubCategories();
+            setSubCategories(data);
+        } catch (error) {
+            console.error("Failed to load subcategories", error);
+            showToast("Failed to load subcategories.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const [selectedSubCategory, setSelectedSubCategory] = useState(null);
+    const [toast, setToast] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingSubCategory, setEditingSubCategory] = useState(null);
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        category: '',
+        slug: '',
+        status: 'Active',
+        metaTitle: '',
+        metaKeyword: '',
+        metaDescription: '',
+        image: null,
+    });
+    const [activePopupImage, setActivePopupImage] = useState(null);
+
+    const loadCategories = async () => {
+        try {
+            const data = await getBlogCategories();
+            setCategories(data.filter(cat => cat.status === 'Active'));
+        } catch (error) {
+            console.error("Failed to load categories", error);
+        }
+    };
+
+    useEffect(() => {
+        loadSubCategories();
+        loadCategories();
+    }, []);
+
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
     const [filterOpen, setFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [categoryFilter, setCategoryFilter] = useState('All');
-    const [selectedSubCategory, setSelectedSubCategory] = useState(null);
-    const [toast, setToast] = useState(null);
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, statusFilter, categoryFilter]);
 
     const showToast = (message, tone = 'info') => {
         if (toastTimerRef.current) {
@@ -70,7 +113,7 @@ function BlogSubCategoryList() {
         const rows = filteredSubCategories.map(item => [
             item.id,
             item.name,
-            item.entryDate,
+            formatDate(item.createdAtUtc || item.createdAt || item.entryDate),
             item.category,
             item.status
         ]);
@@ -87,37 +130,85 @@ function BlogSubCategoryList() {
         showToast('Export completed.', 'success');
     };
 
-    const handleToggleStatus = (id) => {
-        setSubCategories(prev =>
-            prev.map(item =>
-                item.id === id
-                    ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' }
-                    : item
-            )
-        );
-        showToast('Sub category status updated.', 'success');
+    const handleToggleStatus = async (id) => {
+        try {
+            await toggleBlogSubCategoryStatus(id);
+            setSubCategories(prev =>
+                prev.map(item =>
+                    item.id === id
+                        ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' }
+                        : item
+                )
+            );
+            showToast('Sub category status updated.', 'success');
+        } catch (error) {
+            console.error("Failed to toggle subcategory status", error);
+            showToast("Failed to update status.", "error");
+        }
     };
 
     const handleEditSubCategory = (item) => {
-        const nextName = window.prompt('Update sub category name', item.name);
-        if (nextName === null) {
-            return;
-        }
-        if (!nextName.trim()) {
+        setEditingSubCategory(item);
+        setEditFormData({
+            name: item.name || '',
+            category: item.category || '',
+            slug: item.slug || '',
+            status: item.status || 'Active',
+            metaTitle: item.metaTitle || '',
+            metaKeyword: item.metaKeyword || '',
+            metaDescription: item.metaDescription || '',
+            image: null,
+        });
+        setEditModalOpen(true);
+    };
+
+    const handleSaveEditSubCategory = async (e) => {
+        e.preventDefault();
+        if (!editFormData.name.trim()) {
             showToast('Sub category name cannot be empty.', 'error');
             return;
         }
-        setSubCategories(prev => prev.map(row => (row.id === item.id ? { ...row, name: nextName } : row)));
-        showToast('Sub category updated.', 'success');
+        if (!editFormData.category) {
+            showToast('Category is required.', 'error');
+            return;
+        }
+        try {
+            const formData = new FormData();
+            formData.append("Name", editFormData.name.trim());
+            formData.append("Category", editFormData.category);
+            formData.append("Slug", editFormData.slug || '');
+            formData.append("Status", editFormData.status);
+            formData.append("MetaTitle", editFormData.metaTitle || '');
+            formData.append("MetaKeyword", editFormData.metaKeyword || '');
+            formData.append("MetaDescription", editFormData.metaDescription || '');
+            if (editFormData.image) {
+                formData.append("Image", editFormData.image);
+            }
+
+            const updated = await updateBlogSubCategory(editingSubCategory.id, formData);
+            setSubCategories(prev => prev.map(row => (row.id === editingSubCategory.id ? updated : row)));
+            showToast('Sub category updated.', 'success');
+            setEditModalOpen(false);
+            setEditingSubCategory(null);
+        } catch (error) {
+            console.error("Failed to update subcategory", error);
+            showToast("Failed to update subcategory.", "error");
+        }
     };
 
-    const handleDeleteSubCategory = (item) => {
+    const handleDeleteSubCategory = async (item) => {
         const confirmed = window.confirm(`Delete "${item.name}"?`);
         if (!confirmed) {
             return;
         }
-        setSubCategories(prev => prev.filter(row => row.id !== item.id));
-        showToast('Sub category deleted.', 'info');
+        try {
+            await deleteBlogSubCategory(item.id);
+            setSubCategories(prev => prev.filter(row => row.id !== item.id));
+            showToast('Sub category deleted.', 'info');
+        } catch (error) {
+            console.error("Failed to delete subcategory", error);
+            showToast("Failed to delete subcategory.", "error");
+        }
     };
 
     const handleViewDetails = (item) => {
@@ -131,7 +222,7 @@ function BlogSubCategoryList() {
 
     const styles = {
         container: {
-            padding: '24px 32px',
+            padding: '12px 24px',
             background: 'var(--page-bg)',
             minHeight: '100vh',
         },
@@ -139,7 +230,7 @@ function BlogSubCategoryList() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '20px',
+            marginBottom: '16px',
             gap: '16px',
             flexWrap: 'wrap',
         },
@@ -147,18 +238,18 @@ function BlogSubCategoryList() {
             display: 'flex',
             alignItems: 'baseline',
             gap: '8px',
-            borderBottom: '3px solid var(--primary)',
-            paddingBottom: '8px',
+            borderBottom: 'none',
+            paddingBottom: '0px',
         },
         titleMain: {
-            fontSize: '2rem',
-            fontWeight: 800,
+            fontSize: '1.8rem',
+            fontWeight: 500,
             color: 'var(--text-primary)',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.5rem',
-            fontWeight: 400,
+            fontSize: '1.8rem',
+            fontWeight: 500,
             color: 'var(--text-secondary)',
             margin: 0,
         },
@@ -169,8 +260,8 @@ function BlogSubCategoryList() {
             flexWrap: 'wrap',
         },
         button: {
-            padding: '10px 16px',
-            borderRadius: '8px',
+            padding: '8px 14px',
+            borderRadius: '10px',
             border: '1px solid transparent',
             fontWeight: 600,
             cursor: 'pointer',
@@ -200,9 +291,9 @@ function BlogSubCategoryList() {
             borderColor: 'var(--success)',
         },
         searchBox: {
-            padding: '10px 14px',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
+            padding: '8px 12px',
+            border: '1.5px solid var(--border)',
+            borderRadius: '10px',
             fontSize: '0.85rem',
             width: '200px',
             outline: 'none',
@@ -289,7 +380,7 @@ function BlogSubCategoryList() {
         tableWrapper: {
             background: 'var(--panel)',
             borderRadius: '14px',
-            border: '1px solid var(--border)',
+            border: '1.5px solid var(--border)',
             boxShadow: 'var(--shadow-sm)',
             overflow: 'hidden',
             overflowX: 'auto',
@@ -302,26 +393,42 @@ function BlogSubCategoryList() {
         thead: {
             background: 'linear-gradient(90deg, var(--primary), var(--primary-strong))',
             color: '#ffffff',
-            fontWeight: 700,
+            fontWeight: 600,
         },
         th: {
-            padding: '12px 14px',
-            textAlign: 'left',
+            padding: '6px 10px',
+            textAlign: 'center',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)',
             whiteSpace: 'nowrap',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            height: '34px',
+            verticalAlign: 'middle',
         },
         td: {
-            padding: '12px 14px',
-            borderBottom: '1px solid var(--border)',
+            padding: '10px 12px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             color: 'var(--text-primary)',
+            textAlign: 'center',
+            height: '48px',
+            verticalAlign: 'middle',
         },
         tr: {
             transition: 'background-color 0.2s ease',
+            height: '48px',
         },
         sn: {
-            fontWeight: 700,
+            fontWeight: 600,
             color: 'var(--primary)',
-            minWidth: '40px',
+            minWidth: '26px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '26px',
+            height: '26px',
+            background: 'rgba(74, 15, 26, 0.08)',
+            borderRadius: '8px',
+            fontSize: '0.8rem',
         },
         badge: {
             display: 'inline-flex',
@@ -361,22 +468,29 @@ function BlogSubCategoryList() {
             display: 'flex',
             gap: '8px',
             flexWrap: 'wrap',
+            justifyContent: 'center',
         },
         actionBtn: {
-            padding: '6px 10px',
-            borderRadius: '6px',
-            border: '1px solid transparent',
-            fontWeight: 600,
-            fontSize: '0.75rem',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            border: '1.5px solid var(--border)',
+            fontWeight: 700,
+            fontSize: '0.8rem',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.3s ease',
             background: 'var(--surface-soft)',
             color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            padding: '0',
         },
         deleteBtn: {
-            background: 'rgba(217, 48, 37, 0.12)',
+            background: 'rgba(217, 48, 37, 0.15)',
             color: 'var(--danger)',
-            borderColor: 'rgba(217, 48, 37, 0.3)',
+            borderColor: 'rgba(217, 48, 37, 0.35)',
         },
         emptyState: {
             textAlign: 'center',
@@ -409,6 +523,39 @@ function BlogSubCategoryList() {
             background: 'rgba(74, 15, 26, 0.08)',
             color: 'var(--primary)',
         },
+        paginationContainer: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '20px',
+            padding: '12px 18px',
+            background: 'var(--panel)',
+            borderRadius: '12px',
+            border: '1.5px solid var(--border)',
+            gap: '16px',
+            flexWrap: 'wrap',
+        },
+        paginationInfo: {
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+        },
+        paginationButtons: {
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+        },
+        pageBtn: {
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--text-primary)',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+        },
     };
 
     const getStatusStyle = (status) => ({
@@ -418,6 +565,16 @@ function BlogSubCategoryList() {
 
     return (
         <>
+            <style>{`
+                select:hover {
+                    background-color: rgba(74, 15, 26, 0.05) !important;
+                    border-color: var(--primary) !important;
+                }
+                select:focus {
+                    border-color: var(--primary) !important;
+                    box-shadow: 0 0 0 2px rgba(74, 15, 26, 0.15) !important;
+                }
+            `}</style>
             <div style={styles.container}>
                 {toast && (
                     <div
@@ -439,55 +596,27 @@ function BlogSubCategoryList() {
                         <h2 style={styles.titleSub}>List</h2>
                     </div>
                     <div style={styles.actions}>
-                        <input
-                            type="text"
-                            placeholder="Search sub categories..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={styles.searchBox}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = 'var(--primary)';
-                                e.target.style.boxShadow = '0 0 0 2px rgba(74, 15, 26, 0.15)';
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{
+                                padding: '8px 14px',
+                                borderRadius: '10px',
+                                border: '1.5px solid var(--border)',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                background: 'var(--panel)',
+                                color: 'var(--text-primary)',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                width: '130px',
                             }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = 'var(--border)';
-                                e.target.style.boxShadow = 'none';
-                            }}
-                        />
-                        <button
-                            type="button"
-                            style={{ ...styles.button, ...styles.filterBtn }}
-                            onMouseEnter={(e) => {
-                                e.target.style.background = 'var(--primary-strong)';
-                                e.target.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.background = 'var(--primary)';
-                                e.target.style.transform = 'translateY(0)';
-                            }}
-                            onClick={() => setFilterOpen(!filterOpen)}
                         >
-                            Filter
-                        </button>
-                        <button
-                            type="button"
-                            style={{ ...styles.button, ...styles.clearBtn }}
-                            onMouseEnter={(e) => {
-                                e.target.style.background = 'var(--primary)';
-                                e.target.style.color = '#ffffff';
-                                e.target.style.borderColor = 'var(--primary)';
-                                e.target.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.background = 'var(--panel)';
-                                e.target.style.color = 'var(--text-primary)';
-                                e.target.style.borderColor = 'var(--border)';
-                                e.target.style.transform = 'translateY(0)';
-                            }}
-                            onClick={handleClearFilters}
-                        >
-                            Clear Filter
-                        </button>
+                            <option value="All">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
                         <button
                             type="button"
                             style={{ ...styles.button, ...styles.exportBtn }}
@@ -521,37 +650,6 @@ function BlogSubCategoryList() {
                     </div>
                 </div>
 
-                {filterOpen && (
-                    <div style={styles.filterPanel}>
-                        <div style={styles.filterRow}>
-                            <div style={styles.filterGroup}>
-                                <label style={styles.filterLabel}>Status</label>
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    style={styles.filterSelect}
-                                >
-                                    <option value="All">All</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                            <div style={styles.filterGroup}>
-                                <label style={styles.filterLabel}>Category</label>
-                                <select
-                                    value={categoryFilter}
-                                    onChange={(e) => setCategoryFilter(e.target.value)}
-                                    style={styles.filterSelect}
-                                >
-                                    {categoryOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {selectedSubCategory && (
                     <div style={styles.detailCard}>
                         <div style={styles.detailHeader}>
@@ -575,7 +673,7 @@ function BlogSubCategoryList() {
                             </div>
                             <div>
                                 <div style={styles.detailLabel}>Entry Date</div>
-                                <div style={styles.detailValue}>{selectedSubCategory.entryDate}</div>
+                                <div style={styles.detailValue}>{formatDate(selectedSubCategory.createdAtUtc || selectedSubCategory.createdAt || selectedSubCategory.entryDate)}</div>
                             </div>
                             <div>
                                 <div style={styles.detailLabel}>Status</div>
@@ -600,7 +698,7 @@ function BlogSubCategoryList() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredSubCategories.map((item, index) => (
+                                {filteredSubCategories.slice((page - 1) * pageSize, page * pageSize).map((item, index) => (
                                     <tr
                                         key={item.id}
                                         style={styles.tr}
@@ -611,16 +709,19 @@ function BlogSubCategoryList() {
                                             e.currentTarget.style.background = 'transparent';
                                         }}
                                     >
-                                        <td style={styles.td}><span style={styles.sn}>{index + 1}</span></td>
-                                        <td style={styles.td}>{item.entryDate}</td>
+                                        <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
+                                        <td style={styles.td}>{formatDate(item.createdAtUtc || item.createdAt || item.entryDate)}</td>
                                         <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={styles.badge}
-                                                onClick={() => handleViewDetails(item)}
-                                            >
-                                                {item.image}
-                                            </button>
+                                            {(item.imageUrl || item.image) && (item.imageUrl || item.image) !== '-' ? (
+                                                <img 
+                                                    src={toApiAssetUrl(item.imageUrl || item.image)} 
+                                                    alt={item.name} 
+                                                    style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
+                                                    onClick={() => setActivePopupImage(toApiAssetUrl(item.imageUrl || item.image))}
+                                                />
+                                            ) : (
+                                                '-'
+                                            )}
                                         </td>
                                         <td style={styles.td}>{item.name}</td>
                                         <td style={styles.td}>
@@ -651,41 +752,56 @@ function BlogSubCategoryList() {
                                             <button
                                                 type="button"
                                                 style={styles.actionBtn}
+                                                title="View Details"
                                                 onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(74, 15, 26, 0.12)';
+                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                    e.currentTarget.style.borderColor = 'var(--primary)';
+                                                    e.currentTarget.style.transform = 'scale(1.08)';
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    e.target.style.background = 'var(--surface-soft)';
+                                                    e.currentTarget.style.background = 'var(--surface-soft)';
+                                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                                    e.currentTarget.style.transform = 'scale(1)';
                                                 }}
                                                 onClick={() => handleViewDetails(item)}
                                             >
-                                                Details
+                                                <Eye size={16} strokeWidth={2} />
                                             </button>
                                             <button
                                                 type="button"
                                                 style={styles.actionBtn}
+                                                title="Edit Sub Category"
                                                 onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(74, 15, 26, 0.12)';
+                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                    e.currentTarget.style.borderColor = 'var(--primary)';
+                                                    e.currentTarget.style.transform = 'scale(1.08)';
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    e.target.style.background = 'var(--surface-soft)';
+                                                    e.currentTarget.style.background = 'var(--surface-soft)';
+                                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                                    e.currentTarget.style.transform = 'scale(1)';
                                                 }}
                                                 onClick={() => handleEditSubCategory(item)}
                                             >
-                                                Edit
+                                                <Edit2 size={16} strokeWidth={2} />
                                             </button>
                                             <button
                                                 type="button"
                                                 style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                                                title="Delete Sub Category"
                                                 onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(217, 48, 37, 0.2)';
+                                                    e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
+                                                    e.currentTarget.style.borderColor = 'var(--danger)';
+                                                    e.currentTarget.style.transform = 'scale(1.08)';
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    e.target.style.background = 'rgba(217, 48, 37, 0.12)';
+                                                    e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
+                                                    e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
+                                                    e.currentTarget.style.transform = 'scale(1)';
                                                 }}
                                                 onClick={() => handleDeleteSubCategory(item)}
                                             >
-                                                Delete
+                                                <Trash2 size={16} strokeWidth={2} />
                                             </button>
                                         </td>
                                     </tr>
@@ -699,7 +815,224 @@ function BlogSubCategoryList() {
                         </div>
                     )}
                 </div>
+
+                {(() => {
+                    const totalPages = Math.ceil(filteredSubCategories.length / pageSize) || 1;
+                    return totalPages > 1 && (
+                        <div style={styles.paginationContainer}>
+                            <div style={styles.paginationInfo}>
+                                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredSubCategories.length)} of {filteredSubCategories.length} sub categories
+                            </div>
+                            <div style={styles.paginationButtons}>
+                                <button
+                                    type="button"
+                                    disabled={page === 1}
+                                    onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                                    style={styles.pageBtn}
+                                    onMouseEnter={(e) => {
+                                        if (page !== 1) e.target.style.background = 'var(--surface-soft)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = 'var(--panel)';
+                                    }}
+                                >
+                                    Previous
+                                </button>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    Page {page} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={page === totalPages}
+                                    onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+                                    style={styles.pageBtn}
+                                    onMouseEnter={(e) => {
+                                        if (page !== totalPages) e.target.style.background = 'var(--surface-soft)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = 'var(--panel)';
+                                    }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
+
+            {editModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 1000,
+                    padding: '20px',
+                }}>
+                    <div style={{
+                        background: 'var(--panel)',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        width: '100%',
+                        maxWidth: '500px',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}>
+                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                            Edit Sub Category
+                        </h3>
+                        <form onSubmit={handleSaveEditSubCategory} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Sub Category Name *</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.name} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                    required
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Category *</label>
+                                <select 
+                                    value={editFormData.category} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                    required
+                                >
+                                    <option value="">Select a Category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Slug</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.slug} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, slug: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Status</label>
+                                <select 
+                                    value={editFormData.status} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                >
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Meta Title</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.metaTitle} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Meta Keyword</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.metaKeyword} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, metaKeyword: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Meta Description</label>
+                                <textarea 
+                                    value={editFormData.metaDescription} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)', minHeight: '60px', resize: 'vertical' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Sub Category Image</label>
+                                {(editingSubCategory?.imageUrl || editingSubCategory?.image) && (
+                                    <div style={{ marginBottom: '8px' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Current Image:</div>
+                                        <img 
+                                            src={toApiAssetUrl(editingSubCategory.imageUrl || editingSubCategory.image)} 
+                                            alt="Current Sub Category" 
+                                            style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                        />
+                                    </div>
+                                )}
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, image: e.target.files[0] }))}
+                                    style={{ fontSize: '0.85rem' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setEditModalOpen(false)}
+                                    style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: '#ffffff', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {activePopupImage && (
+                <div 
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 2000,
+                        cursor: 'zoom-out'
+                    }}
+                    onClick={() => setActivePopupImage(null)}
+                >
+                    <img 
+                        src={activePopupImage} 
+                        alt="Popup View" 
+                        style={{
+                            maxWidth: '90%',
+                            maxHeight: '90%',
+                            objectFit: 'contain',
+                            borderRadius: '8px',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+                        }}
+                    />
+                </div>
+            )}
         </>
     );
 }
