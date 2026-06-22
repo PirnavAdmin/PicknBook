@@ -16,14 +16,14 @@ services:
       Cors__AllowedOrigins__0: ${FRONTEND_PUBLIC_URL:-http://localhost:3000}
       Cors__AllowedOrigins__1: ${FRONTEND_PUBLIC_URL_ALT:-http://127.0.0.1:3000}
       Amadeus__BaseUrl: ${AMADEUS_BASE_URL:-https://test.api.amadeus.com}
-      Amadeus__ClientId: ${AMADEUS_CLIENT_ID:-}
-      Amadeus__ClientSecret: ${AMADEUS_CLIENT_SECRET:-}
+      Amadeus__ClientId: ${AMADEUS_CLIENT_ID:-OyZ3je6eRLoxKkWnRlJdmfFvGNhxcfAQ}
+      Amadeus__ClientSecret: ${AMADEUS_CLIENT_SECRET:-IUmmOTXycK7A16CB}
       EmailSettings__SmtpServer: ${SMTP_SERVER:-smtp.gmail.com}
       EmailSettings__Port: ${SMTP_PORT:-587}
       EmailSettings__SenderName: ${SMTP_SENDER_NAME:-PickNBook}
-      EmailSettings__SenderEmail: ${SMTP_SENDER_EMAIL:-}
-      EmailSettings__Username: ${SMTP_USERNAME:-}
-      EmailSettings__Password: ${SMTP_PASSWORD:-}
+      EmailSettings__SenderEmail: ${SMTP_SENDER_EMAIL:-picknbook123@gmail.com}
+      EmailSettings__Username: ${SMTP_USERNAME:-picknbook123@gmail.com}
+      EmailSettings__Password: ${SMTP_PASSWORD:-vwxw ytjl piwu guur}
       WhatsAppSettings__Enabled: ${WHATSAPP_ENABLED:-false}
       WhatsAppSettings__ApiBaseUrl: ${WHATSAPP_API_BASE_URL:-https://graph.facebook.com/v20.0}
       WhatsAppSettings__PhoneNumberId: ${WHATSAPP_PHONE_NUMBER_ID:-}
