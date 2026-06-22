@@ -19,7 +19,7 @@ const DEFAULT_FORM = {
   remark: '',
 };
 
-function toInputDate(value) {
+function toInputDateTimeLocal(value) {
   if (!value) {
     return '';
   }
@@ -32,15 +32,21 @@ function toInputDate(value) {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
-function toUtcIso(value, isEndOfDay = false) {
+function toUtcIso(value) {
   if (!value) {
     return null;
   }
 
-  return isEndOfDay ? `${value}T23:59:59Z` : `${value}T00:00:00Z`;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
 }
 
 function toBoolean(value, fallback = false) {
@@ -71,8 +77,8 @@ function buildInitialForm(row) {
       row.minBookingAmount !== undefined && row.minBookingAmount !== null
         ? String(row.minBookingAmount)
         : '0',
-    startDateUtc: toInputDate(row.startDateUtc),
-    endDateUtc: toInputDate(row.endDateUtc),
+    startDateUtc: toInputDateTimeLocal(row.startDateUtc),
+    endDateUtc: toInputDateTimeLocal(row.endDateUtc),
     status: row.status || 'Active',
     remark: row.remark || '',
   };
@@ -151,8 +157,8 @@ function AddB2CBusDiscount() {
         isExclusive: Boolean(formValues.isExclusive),
         priority,
         minBookingAmount,
-        startDateUtc: toUtcIso(formValues.startDateUtc, false),
-        endDateUtc: toUtcIso(formValues.endDateUtc, true),
+        startDateUtc: toUtcIso(formValues.startDateUtc),
+        endDateUtc: toUtcIso(formValues.endDateUtc),
         status: formValues.status,
         updatedBy: 'admin',
         remark: String(formValues.remark || '').trim(),
@@ -291,23 +297,29 @@ function AddB2CBusDiscount() {
           </label>
 
           <label className="add-field">
-            <span>Start Date</span>
+            <span>Start Date & Time</span>
             <input
-              type="date"
+              type="datetime-local"
               value={formValues.startDateUtc}
               onChange={handleChange('startDateUtc')}
               disabled={submitting}
             />
+            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+              Format: DD/MM/YYYY HH:MM AM/PM
+            </small>
           </label>
 
           <label className="add-field">
-            <span>End Date</span>
+            <span>End Date & Time</span>
             <input
-              type="date"
+              type="datetime-local"
               value={formValues.endDateUtc}
               onChange={handleChange('endDateUtc')}
               disabled={submitting}
             />
+            <small style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+              Format: DD/MM/YYYY HH:MM AM/PM
+            </small>
           </label>
 
           <label className="add-field">
