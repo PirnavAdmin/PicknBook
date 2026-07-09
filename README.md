@@ -1,2 +1,0 @@
-# PicknBook
-Travel Booking Site
