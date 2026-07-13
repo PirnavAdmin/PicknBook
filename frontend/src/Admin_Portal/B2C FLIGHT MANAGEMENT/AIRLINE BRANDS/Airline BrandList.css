@@ -50,20 +50,35 @@
 }
 
 .btn.add,
-.btn.export,
 .btn.back {
-  background: var(--admin-primary);
-  border-color: var(--admin-primary);
-  color: #ffffff;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(165, 28, 73, 0.15) !important;
+  transition: all 0.2s ease-in-out !important;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  border-radius: 12px;
-  overflow: hidden;
+.btn.add:hover,
+.btn.back:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn.export {
+  background: #1e75ff !important;
+  border-color: #1e75ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(30, 117, 255, 0.15) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn.export:hover {
+  background: #1e75ff !important;
+  border-color: #1e75ff !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 14px rgba(30, 117, 255, 0.25) !important;
 }
 
 .table th {
@@ -73,7 +88,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  text-align: left;
+  text-align: center !important;
 }
 
 .table td {
@@ -81,67 +96,50 @@
   border-top: 1px solid var(--admin-border);
   font-size: 13px;
   color: var(--admin-text);
-}
-
-.view-btn {
-  background: var(--admin-soft);
-  border: 1px solid var(--admin-border);
-  color: var(--admin-primary);
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid var(--admin-border);
-}
-
-.status.active {
-  background: #f0fdf4 !important;
-  color: #16a34a !important;
-  border: 1px solid #bbf7d0 !important;
-}
-
-.status.inactive {
-  background: #fef2f2 !important;
-  color: #ef4444 !important;
-  border: 1px solid #fecaca !important;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 6px;
+  text-align: center !important;
 }
 
 .icon-btn {
-  border: 1px solid var(--admin-border);
-  padding: 6px 8px;
+  border: 0;
+  padding: 8px 12px;
   cursor: pointer;
   border-radius: 8px;
   background: var(--admin-surface);
-  color: var(--admin-text);
+  color: #ffffff !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease-in-out;
 }
 
 .icon-btn.view {
-  border-color: var(--admin-border);
-  color: var(--admin-primary);
+  background: #A51C49 !important;
+  box-shadow: 0 4px 8px rgba(165, 28, 73, 0.15);
+}
+
+.icon-btn.view:hover {
+  background: #851237 !important;
+  transform: translateY(-2px);
 }
 
 .icon-btn.edit {
-  border-color: var(--admin-primary);
-  color: var(--admin-primary);
+  background: #A51C49 !important;
+  box-shadow: 0 4px 8px rgba(165, 28, 73, 0.15);
+}
+
+.icon-btn.edit:hover {
+  background: #851237 !important;
+  transform: translateY(-2px);
 }
 
 .icon-btn.delete {
-  border-color: var(--admin-danger);
-  color: var(--admin-danger);
+  background: linear-gradient(135deg, var(--admin-danger), var(--admin-primary-strong)) !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15);
+}
+
+.icon-btn.delete:hover {
+  transform: translateY(-2px);
 }
 
 .icon-btn:hover {
@@ -212,9 +210,9 @@
 .submit-btn {
   margin-top: 20px;
   padding: 10px 20px;
-  border: 2px solid var(--admin-primary) !important;
+  border: 2px solid #A51C49 !important;
   background: var(--admin-surface) !important;
-  color: var(--admin-primary) !important;
+  color: #A51C49 !important;
   cursor: pointer;
   border-radius: 10px;
   font-weight: 700;
@@ -223,27 +221,27 @@
 }
 
 .submit-btn:hover {
-  background: var(--admin-primary) !important;
+  background: #A51C49 !important;
   color: #ffffff !important;
 }
 
 /* Default White Theme Color rules (Red theme) */
 .table th {
-  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary)) !important;
+  background: linear-gradient(135deg, #851237, #A51C49) !important;
   color: #ffffff;
 }
 
 .btn.filter {
-  background: var(--admin-primary-strong) !important;
-  border-color: var(--admin-primary-strong) !important;
+  background: #851237 !important;
+  border-color: #851237 !important;
   color: #ffffff !important;
 }
 
 .btn.add,
 .btn.export,
 .btn.back {
-  background: var(--admin-primary) !important;
-  border-color: var(--admin-primary) !important;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
   color: #ffffff !important;
 }
 

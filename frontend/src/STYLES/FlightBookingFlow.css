@@ -277,6 +277,23 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Compact-only styles applied to the Enter Traveller Details card */
+.flight-main-card--compact .flight-passenger-fields input,
+.flight-main-card--compact .flight-passenger-fields select,
+.flight-main-card--compact .passenger-existing-wrap .input-control,
+.flight-main-card--compact .passenger-field select,
+.flight-main-card--compact .passenger-field input {
+  height: 28px !important;
+  padding: 3px 10px !important;
+  font-size: 0.8125rem !important;
+  border-radius: 6px !important;
+  line-height: 1.1 !important;
+}
+
+.flight-main-card--compact .flight-passenger-fields .passenger-field > span:first-child {
+  font-size: 0.88rem;
+}
+
 .flight-main-card-title {
   font-size: 1.25rem;
   font-weight: 800;
@@ -366,14 +383,14 @@
 .passenger-existing-wrap .input-control {
   width: 100%;
   min-width: 0;
-  height: 34px;
+  height: 28px; /* reduced height for compact placeholders */
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 4px 10px;
+  border-radius: 6px;
+  padding: 2px 8px; /* tighter padding */
   background-color: var(--bg-card);
   color: var(--text-main);
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 0.8125rem; /* slightly smaller text */
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -464,6 +481,17 @@
   color: var(--text-main);
   background-color: var(--bg-card);
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-control::placeholder {
+  color: #94a3b8; /* ensure placeholder is visible */
+  opacity: 1;
+}
+
+.flight-passenger-fields input,
+.flight-passenger-fields select,
+.passenger-existing-wrap .input-control {
+  line-height: 1.1; /* help vertical alignment in smaller inputs */
 }
 
 .input-control:hover {
@@ -573,6 +601,18 @@
 .contact-phone-row .contact-phone-input {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Ensure contact inputs display a visible box similar to other inputs */
+.contact-phone-row .contact-phone-input,
+.input-group .input-control {
+  height: 38px;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  box-shadow: none;
 }
 
 .contact-phone-row .phone-code-select:hover {
@@ -1289,6 +1329,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.25s ease, filter 0.25s ease, transform 0.2s ease;
+}
+
+.seat-container.dimmed {
+  opacity: 0.18;
+  filter: grayscale(0.8) contrast(0.7);
+  pointer-events: none;
 }
 
 .seat-item {
@@ -1656,6 +1703,27 @@
   border-radius: 8px;
   padding: 8px 10px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.airplane-legend-grid .legend-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--secondary-color);
+  box-shadow: var(--shadow-md);
+  background-color: #f8fafc;
+}
+
+.airplane-legend-grid .legend-item.active {
+  border-color: var(--secondary-color);
+  background-color: rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.airplane-legend-grid .legend-item.active .legend-label {
+  color: var(--secondary-color);
+  font-weight: 800;
 }
 
 .legend-seat {
@@ -1951,6 +2019,42 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+.flight-main-card--compact {
+  padding: 18px 20px;
+}
+
+.flight-main-card--compact .flight-main-card-title {
+  margin-bottom: 14px;
+}
+
+.flight-main-card--compact .flight-passenger-row-header {
+  margin-bottom: 10px;
+}
+
+.flight-main-card--compact .flight-passenger-fields {
+  gap: 10px 32px;
+}
+
+.flight-main-card--compact .flight-passenger-fields .passenger-field {
+  gap: 5px;
+}
+
+.flight-main-card--compact .flight-passenger-fields .passenger-field > span:first-child {
+  font-size: 0.875rem;
+}
+
+.flight-main-card--compact .flight-passenger-fields input,
+.flight-main-card--compact .flight-passenger-fields select,
+.flight-main-card--compact .passenger-existing-wrap .input-control,
+.flight-main-card--compact .passenger-field select,
+.flight-main-card--compact .passenger-field input {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.2 !important;
+}
+
 .form-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -2064,7 +2168,7 @@
 }
 
 .qr-timer {
-  margin-top: 10px;
+  margin-bottom: 10px;
   font-size: 0.813rem;
   font-weight: 600;
   color: #475569;
@@ -2562,4 +2666,802 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ── SPECIAL ASSISTANCE STYLES ── */
+.special-assistance-grid-row {
+  grid-column: span 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.special-assistance-grid-row > span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.special-assistance-trigger-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.special-assistance-trigger-box:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.special-assistance-trigger-text {
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: var(--secondary-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.special-assistance-trigger-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--secondary-color);
+  color: var(--secondary-color);
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.special-assistance-trigger-icon .plus-icon-symbol {
+  margin-top: -2px;
+}
+
+.special-assistance-trigger-icon .icon-check {
+  color: var(--secondary-color);
+}
+
+/* Sliding Drawer Styles */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-content {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawer-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.drawer-close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.drawer-close-btn:hover {
+  background-color: #f1f5f9;
+  color: var(--text-main);
+}
+
+.drawer-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.drawer-subtitle {
+  font-size: 1rem;
+  color: var(--text-main);
+  margin: 8px 0 0 0;
+  font-weight: 500;
+}
+
+.drawer-subtitle span {
+  color: #16a34a; /* green color for 'seamless journey' */
+  font-weight: 700;
+}
+
+.drawer-body {
+  padding: 24px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.drawer-instruction {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.assistance-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assistance-option-card {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  user-select: none;
+}
+
+.assistance-option-card:hover {
+  border-color: #cbd5e1;
+  background-color: #f8fafc;
+}
+
+.assistance-option-card.selected {
+  border-color: var(--secondary-color);
+  background-color: #f0f6ff;
+}
+
+.assistance-option-card input[type="checkbox"] {
+  display: none; /* hide standard checkbox */
+}
+
+.option-checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.assistance-option-card.selected .option-checkbox-custom {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
+}
+
+.option-label-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.35;
+}
+
+.assistance-option-card.selected .option-label-text {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.drawer-footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: #f8fafc;
+}
+
+.drawer-done-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 0.95rem;
+}
+
+/* Insurance Toggles & Card Add-ons */
+.insurance-section-container {
+  padding: 16px 0;
+}
+
+.insurance-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .insurance-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insurance-addon-card {
+  background-color: #ffffff;
+  border: 1.5px solid var(--border-color);
+  border-radius: 16px;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.insurance-addon-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.insurance-addon-card.recommended {
+  border-color: #1e3a8a;
+}
+
+.insurance-recommended-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #00008b;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 16px 6px 20px;
+  border-bottom-left-radius: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.insurance-addon-card-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.insurance-card-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.insurance-addon-card.recommended .insurance-card-title {
+  padding-right: 100px;
+}
+
+.highlight-green {
+  color: #16a34a;
+}
+
+.insurance-card-subtitle {
+  font-size: 0.875rem;
+  color: #475569;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.insurance-benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.insurance-benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.938rem;
+  color: #334155;
+}
+
+.benefit-check-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #16a34a;
+}
+
+.insurance-read-more {
+  background: none;
+  border: none;
+  color: #00008b;
+  text-decoration: underline;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+  align-self: flex-start;
+}
+
+.insurance-read-more:hover {
+  color: #1e3a8a;
+}
+
+.insurance-divider {
+  border: 0;
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 0 0 20px 0;
+}
+
+.insurance-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.insurance-price-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.insurance-tax-label {
+  font-size: 0.813rem;
+  color: #64748b;
+}
+
+.insurance-price-val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+.insurance-action-btn {
+  border: none;
+  border-radius: 99px;
+  padding: 10px 28px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.insurance-action-btn.add {
+  background-color: #00008b;
+  color: #ffffff;
+}
+
+.insurance-action-btn.add:hover {
+  background-color: #1e3a8a;
+}
+
+.insurance-action-btn.added {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1.5px solid #cbd5e1;
+}
+
+.insurance-action-btn.added:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.insurance-terms-text {
+  font-size: 0.725rem;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Insurance Modal */
+.insurance-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+}
+
+.insurance-modal-content {
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.2s ease;
+}
+
+.insurance-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.insurance-modal-close:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.insurance-modal-body h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.insurance-modal-body p {
+  font-size: 0.938rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.insurance-modal-body ul {
+  margin: 0 0 20px 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insurance-modal-body li {
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.insurance-modal-disclaimer {
+  font-size: 0.813rem !important;
+  color: #94a3b8 !important;
+  font-style: italic;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+  margin-top: 16px !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Important Information Section styling */
+.important-info-card {
+  border-left: 4px solid var(--secondary-color) !important;
+}
+
+.important-info-content {
+  margin-top: 16px;
+}
+
+.important-info-content .info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .important-info-content .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.important-info-content .info-section {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.important-info-content .info-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.important-info-content .info-section-title {
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.important-info-content .info-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.important-info-content .info-list li {
+  margin-bottom: 8px;
+}
+
+.important-info-content .info-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Trip Secure Benefits Section Styling */
+.trip-secure-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.trip-secure-card .flight-main-card-title {
+  margin-bottom: 8px !important;
+}
+
+.trip-secure-tagline {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: -8px;
+  margin-bottom: 20px;
+}
+
+.trip-secure-benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .trip-secure-benefits-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.trip-secure-benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+}
+
+.trip-secure-benefit-item:hover {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.trip-secure-benefit-icon {
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  background-color: #f0fdf4;
+  padding: 6px;
+  border-radius: 50%;
+  border: 1px solid #bbf7d0;
+}
+
+.trip-secure-benefit-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.trip-secure-benefit-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.trip-secure-benefit-desc {
+  font-size: 0.775rem;
+  color: #64748b;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.trip-secure-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.trip-secure-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  user-select: none;
+}
+
+.trip-secure-option:hover {
+  border-color: var(--secondary-color);
+  background-color: rgba(37, 99, 235, 0.02);
+}
+
+.trip-secure-option.selected {
+  border-color: #16a34a;
+  background-color: rgba(22, 163, 74, 0.03);
+}
+
+.trip-secure-option.selected.recommended {
+  border-color: var(--secondary-color);
+  background-color: rgba(37, 99, 235, 0.04);
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.05);
+}
+
+.trip-secure-option-input-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trip-secure-radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.trip-secure-option.selected .trip-secure-radio-circle {
+  border-color: #16a34a;
+}
+
+.trip-secure-option.selected.recommended .trip-secure-radio-circle {
+  border-color: var(--secondary-color);
+}
+
+.trip-secure-radio-inner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.trip-secure-option.selected .trip-secure-radio-inner {
+  background-color: #16a34a;
+}
+
+.trip-secure-option.selected.recommended .trip-secure-radio-inner {
+  background-color: var(--secondary-color);
+}
+
+.trip-secure-option-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.trip-secure-option-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trip-secure-badge-rec {
+  background-color: #2563eb;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.trip-secure-option-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.trip-secure-option-price {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #0f172a;
+  text-align: right;
+  min-width: 90px;
+}
+
+.trip-secure-option.selected .trip-secure-option-price {
+  color: #16a34a;
+}
+
+.trip-secure-option.selected.recommended .trip-secure-option-price {
+  color: var(--secondary-color);
+}
+
 

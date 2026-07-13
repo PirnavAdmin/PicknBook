@@ -18,6 +18,7 @@
 
 .admin-search-history-delete {
   background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
+  color: #ffffff !important;
 }
 
 .admin-search-filters {
@@ -37,13 +38,12 @@
   grid-template-columns: 0.42fr 0.88fr 0.78fr 1.8fr 0.9fr;
   gap: 8px;
   padding: 8px;
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  background: #be185d !important;
 }
 
 .admin-search-history-table-head span {
   min-height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.16);
+  background: transparent !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -71,8 +71,10 @@
   border-radius: 10px;
   background: var(--admin-surface);
   padding: 8px;
-  display: grid;
-  align-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 3px;
   color: var(--admin-text);
   font-size: 0.81rem;
@@ -80,7 +82,8 @@
 
 .admin-search-history-cell strong {
   color: var(--admin-text);
-  font-size: 0.94rem;
+  font-size: 0.81rem;
+  font-weight: normal;
 }
 
 .admin-search-history-empty {
@@ -149,4 +152,47 @@
   .admin-search-history-row {
     grid-template-columns: 1fr;
   }
+}
+
+.admin-search-history-chip {
+  background: rgba(190, 24, 93, 0.05) !important;
+  border-color: #be185d !important;
+  color: #be185d !important;
+  padding: 6px 14px !important;
+  border-radius: 100px !important;
+  font-weight: 600 !important;
+}
+
+.admin-search-history-toolbar .admin-actions-row button {
+  background: #ffffff !important;
+  color: #be185d !important;
+  border: 1.5px solid #be185d !important;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-search-history-toolbar .admin-actions-row button:hover {
+  background: #be185d !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
+}
+
+.admin-search-history-delete {
+  background: #be185d !important;
+  color: #ffffff !important;
+  border: 1.5px solid #be185d !important;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-search-history-delete:hover {
+  background: #9d124d !important;
+  border-color: #9d124d !important;
+  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
 }

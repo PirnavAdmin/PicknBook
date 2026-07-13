@@ -17,7 +17,10 @@ function pickFirst(source, keys, fallback = null) {
 
 function getAuthHeaders() {
   if (typeof window === "undefined") return {};
-  const token = window.localStorage.getItem("token");
+  const activePortal = window.sessionStorage.getItem("active_portal") || "b2c";
+  const token = activePortal === "b2b"
+    ? (window.localStorage.getItem("b2b_token") || window.localStorage.getItem("token"))
+    : (window.localStorage.getItem("token") || window.localStorage.getItem("b2b_token"));
   return {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
@@ -155,32 +158,37 @@ export async function fetchTicketByContact({ mobile, email, bookingType, activeO
     body: JSON.stringify(request),
   });
 
-  const payload = await readResponsePayload(response);
-
   if (!response.ok) {
-    throw new Error(normalizeResponseMessage(payload, "Unable to fetch booking."));
+    const errorText = await response.text().catch(() => "");
+    const status = response.status;
+    if (status === 401 || status === 403) {
+      throw new Error("Please log in to retrieve your ticket.");
+    }
+    throw new Error(errorText || `Unable to fetch ticket (HTTP ${status}).`);
   }
+
+  const payload = await readResponsePayload(response);
 
   const hasSuccessField =
     payload && typeof payload === "object" && ("success" in payload || "Success" in payload);
   const successValue = pickFirst(payload, ["success", "Success"], false);
 
-  if (hasSuccessField && !normalizeSuccess(successValue)) {
-    throw new Error(normalizeResponseMessage(payload, "No active booking found"));
+  if (!hasSuccessField || normalizeSuccess(successValue)) {
+    const ticketsArray = pickFirst(payload, ["tickets", "Tickets"], null);
+    const singleTicket = pickFirst(payload, ["ticket", "Ticket", "data", "Data"], null);
+
+    let result = [];
+    if (Array.isArray(ticketsArray) && ticketsArray.length > 0) {
+      result = ticketsArray.map((t) => normalizeFetchedTicket(t, request));
+    } else if (singleTicket && typeof singleTicket === "object") {
+      result = [normalizeFetchedTicket(singleTicket, request)];
+    }
+
+    if (result.length > 0) {
+      return result;
+    }
   }
 
-  // Handle array response (your backend returns "tickets": [...])
-  const ticketsArray = pickFirst(payload, ["tickets", "Tickets"], null);
-  const singleTicket = pickFirst(payload, ["ticket", "Ticket", "data", "Data"], null);
-
-  if (Array.isArray(ticketsArray) && ticketsArray.length > 0) {
-    // Return ALL tickets normalized
-    return ticketsArray.map((t) => normalizeFetchedTicket(t, request));
-  }
-
-  if (singleTicket && typeof singleTicket === "object") {
-    return [normalizeFetchedTicket(singleTicket, request)];
-  }
-
-  throw new Error("No active booking found");
+  throw new Error("No active booking found for the provided contact details.");
 }
+

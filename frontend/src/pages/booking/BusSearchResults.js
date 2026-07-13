@@ -1,5 +1,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
   Armchair,
@@ -26,8 +27,10 @@ import {
   Square,
   XCircle,
 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { searchBuses } from "../../services/busBookingService";
+import busExteriorImg from "../../assets/images/buses/luxury_bus_exterior.png";
+import busSleeperImg from "../../assets/images/buses/luxury_bus_interior_sleeper.png";
+import busSeatsImg from "../../assets/images/buses/luxury_bus_interior_seats.png";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import "../../STYLES/BusSearchResults.css";
 
@@ -648,6 +651,8 @@ export default function BusSearchResults() {
   const [expandedOperatorGroups, setExpandedOperatorGroups] = useState(() => cachedFilters?.expandedOperatorGroups ?? {});
   const [seatLoadingBusId, setSeatLoadingBusId] = useState(null);
 
+  const [activeDetailTab, setActiveDetailTab] = useState("boarding");
+
   const didRestoreFiltersRef = useRef(false);
   useEffect(() => {
     if (cachedFilters) {
@@ -1194,6 +1199,7 @@ export default function BusSearchResults() {
   };
 
   const openDetailCard = (busId, panel) => {
+    setActiveDetailTab("boarding");
     setExpandedCard((previous) => {
       if (previous && previous.busId === busId && previous.panel === panel) {
         return null;
@@ -1240,18 +1246,418 @@ export default function BusSearchResults() {
         panel: "seats",
         searchContext,
       });
-
       setSeatLoadingBusId(null);
       seatLoadingTimerRef.current = null;
     }, 1100);
   };
 
+  const subtractMinutes = (timeStr, mins) => {
+    try {
+      const parts = timeStr.split(" ");
+      const time = parts[0];
+      const modifier = parts[1] || "";
+      let [hours, minutes] = time.split(":").map(Number);
+      if (modifier.toUpperCase() === "PM" && hours < 12) hours += 12;
+      if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
+      
+      let date = new Date();
+      date.setHours(hours, minutes - mins, 0, 0);
+      
+      let newHours = date.getHours();
+      let newMinutes = date.getMinutes();
+      let newModifier = newHours >= 12 ? "PM" : "AM";
+      newHours = newHours % 12;
+      if (newHours === 0) newHours = 12;
+      
+      return `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(2, "0")} ${newModifier}`;
+    } catch (max) {
+      return timeStr;
+    }
+  };
+
+  const resolveOperatorLogo = (operatorName) => {
+    const name = String(operatorName || "").toLowerCase();
+    let bgColor = "#e0f2fe"; // default blue
+    let textColor = "#0284c7";
+    let letter = name.charAt(0).toUpperCase();
+
+    if (name.includes("morning")) {
+      bgColor = "#fff7ed"; // orange
+      textColor = "#ea580c";
+    } else if (name.includes("atlas")) {
+      bgColor = "#f0fdf4"; // green
+      textColor = "#16a34a";
+    } else if (name.includes("metro")) {
+      bgColor = "#faf5ff"; // purple
+      textColor = "#9333ea";
+    } else if (name.includes("picknbook")) {
+      bgColor = "#fef2f2"; // red
+      textColor = "#dc1e26";
+    }
+
+    return (
+      <div className="operator-logo-img" style={{
+        width: "40px",
+        height: "40px",
+        borderRadius: "8px",
+        background: bgColor,
+        color: textColor,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: "850",
+        fontSize: "18px",
+        border: "1px solid rgba(0,0,0,0.06)",
+        flexShrink: 0
+      }}>
+        {letter}
+      </div>
+    );
+  };
+
+  const renderPromotionalBanner = () => (
+    <div className="bus-promo-banner" style={{
+      background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+      borderRadius: "16px",
+      padding: "20px",
+      color: "#ffffff",
+      marginBottom: "20px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      boxShadow: "0 10px 25px rgba(59, 130, 246, 0.15)",
+      position: "relative",
+      overflow: "hidden"
+    }}>
+      <div style={{ zIndex: 2 }}>
+        <span style={{
+          background: "rgba(255, 255, 255, 0.2)",
+          padding: "4px 8px",
+          borderRadius: "999px",
+          fontSize: "11px",
+          fontWeight: "800",
+          textTransform: "uppercase",
+          letterSpacing: "1px"
+        }}>Limited Offer</span>
+        <h2 style={{ fontSize: "20px", margin: "10px 0 4px", fontWeight: "800", color: "#ffffff" }}>Save Flat 20% on Your First Bus Ride!</h2>
+        <p style={{ margin: 0, fontSize: "13px", opacity: 0.9 }}>Use Coupon Code <strong style={{ color: "#fcd34d", fontSize: "14px" }}>FIRSTBUS</strong> at checkout.</p>
+      </div>
+      <div className="banner-art" style={{
+        fontSize: "72px",
+        opacity: 0.15,
+        position: "absolute",
+        right: "10px",
+        bottom: "-10px",
+        userSelect: "none"
+      }}>
+        🚌
+      </div>
+    </div>
+  );
+
+  const DETAIL_TABS = [
+    { key: "boarding", label: "Boarding & Dropping" },
+    { key: "policy", label: "Cancellation Policy" },
+    { key: "amenities", label: "Amenities" },
+    { key: "travel", label: "Travel Policies" },
+    { key: "reviews", label: "Insights & Reviews" },
+    { key: "photos", label: "Bus Photos" },
+    { key: "offers", label: "Available Offers" }
+  ];
+
+  const renderBusDetailsPanel = (bus) => {
+    const tab = activeDetailTab || "boarding";
+
+    return (
+      <div className="bus-details-expanded-card" style={{
+        background: "var(--admin-surface, #ffffff)",
+        border: "1px solid var(--admin-border, #e2e8f0)",
+        borderRadius: "12px",
+        padding: "20px",
+        marginTop: "12px",
+        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)",
+        textAlign: "left"
+      }}>
+        <div className="bus-details-tabs-header" style={{
+          display: "flex",
+          borderBottom: "2px solid #e2e8f0",
+          gap: "18px",
+          marginBottom: "16px",
+          flexWrap: "wrap"
+        }}>
+          {DETAIL_TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setActiveDetailTab(t.key)}
+              style={{
+                background: "transparent",
+                border: "none",
+                borderBottom: tab === t.key ? "3px solid #dc1e26" : "3px solid transparent",
+                padding: "8px 4px",
+                fontWeight: "700",
+                fontSize: "13.5px",
+                color: tab === t.key ? "#dc1e26" : "#475569",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                marginBottom: "-2.5px"
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="bus-details-tabs-body" style={{ minHeight: "120px" }}>
+          {tab === "boarding" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+              <div>
+                <h4 style={{ color: "#1f2a44", fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Boarding Points</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ borderLeft: "2px solid #3b82f6", paddingLeft: "12px" }}>
+                    <strong style={{ display: "block", fontSize: "13px" }}>{bus.departureTime}</strong>
+                    <span style={{ display: "block", fontWeight: "700", fontSize: "13.5px" }}>{bus.boardingPoint}</span>
+                    <small style={{ color: "#64748b" }}>Main Bus Stand, Platform 4</small>
+                  </div>
+                  <div style={{ borderLeft: "2px solid #e2e8f0", paddingLeft: "12px", opacity: 0.7 }}>
+                    <strong style={{ display: "block", fontSize: "12px" }}>{subtractMinutes(bus.departureTime, 30)}</strong>
+                    <span style={{ display: "block", fontWeight: "600", fontSize: "13px" }}>City Center Plaza Pick-up</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 style={{ color: "#1f2a44", fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Dropping Points</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ borderLeft: "2px solid #ef4444", paddingLeft: "12px" }}>
+                    <strong style={{ display: "block", fontSize: "13px" }}>{bus.arrivalTime}</strong>
+                    <span style={{ display: "block", fontWeight: "700", fontSize: "13.5px" }}>{bus.droppingPoint}</span>
+                    <small style={{ color: "#64748b" }}>Drop-off Point Main Road</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "policy" && (
+            <div>
+              <h4 style={{ fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Cancellation Charges & Timeline</h4>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                    <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Time</th>
+                    <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0" }}>Refund Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>More than 24 hours before departure</td>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", color: "#16a34a", fontWeight: "700" }}>90% Refund</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>12 to 24 hours before departure</td>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", color: "#eab308", fontWeight: "700" }}>75% Refund</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>6 to 12 hours before departure</td>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", color: "#ea580c", fontWeight: "700" }}>50% Refund</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9" }}>Less than 6 hours before departure</td>
+                    <td style={{ padding: "8px 12px", borderBottom: "1px solid #f1f5f9", color: "#dc2626", fontWeight: "700" }}>No Refund</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {tab === "amenities" && (
+            <div>
+              <h4 style={{ fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Available Amenities</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                  <span>⚡</span> Charging Point
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                  <span>📶</span> WiFi Internet
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                  <span>💧</span> Mineral Water Bottle
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                  <span>🛌</span> Blankets & Pillow
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                  <span>💡</span> Individual Reading Lights
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+                  <span>⚠️</span> First Aid Kit
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "travel" && (
+            <div>
+              <h4 style={{ fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Operator Travel Policies</h4>
+              <ul style={{ fontSize: "13px", paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                <li><strong>Luggage:</strong> Each passenger is allowed up to 2 items of personal luggage (max total weight 20 kg). Excess baggage may be charged.</li>
+                <li><strong>ID Verification:</strong> Passengers must show a valid government-issued photo ID (Aadhaar, PAN, Passport) during boarding.</li>
+                <li><strong>Onboarding Policy:</strong> Boarding closes exactly 10 minutes prior to scheduled departure. Passengers arriving late will be treated as no-show.</li>
+                <li><strong>Safety Policy:</strong> Smoking, consumption of alcohol, or carry of hazardous materials is strictly prohibited inside the coach.</li>
+              </ul>
+            </div>
+          )}
+
+          {tab === "reviews" && (
+            <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: "24px" }}>
+              <div style={{ textAlign: "center", borderRight: "1px solid #e2e8f0", paddingRight: "16px" }}>
+                <div style={{ fontSize: "36px", fontWeight: "900", color: "#16a34a" }}>4.2</div>
+                <div style={{ fontSize: "14px", fontWeight: "700" }}>out of 5 stars</div>
+                <div style={{ color: "#fbbf24", margin: "6px 0", fontSize: "18px" }}>★★★★☆</div>
+                <small style={{ color: "#64748b" }}>Based on 124 customer reviews</small>
+                
+                <div style={{ marginTop: "12px", textAlign: "left", fontSize: "12.5px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span>Punctuality</span>
+                    <strong style={{ color: "#16a34a" }}>88%</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span>Cleanliness</span>
+                    <strong style={{ color: "#16a34a" }}>91%</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Staff Behavior</span>
+                    <strong style={{ color: "#eab308" }}>82%</strong>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Recent Reviews</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                      <strong>Ramesh K.</strong>
+                      <span style={{ color: "#16a34a" }}>★★★★★</span>
+                    </div>
+                    <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>"The bus was on-time and the seats were exceptionally clean. Best sleeper coach experience."</p>
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                      <strong>Sruthi M.</strong>
+                      <span style={{ color: "#fbbf24" }}>★★★★☆</span>
+                    </div>
+                    <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>"Comfortable journey. Charging point was functioning properly. Staff was helpful."</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "photos" && (
+            <div>
+              <h4 style={{ fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Bus Gallery</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                  <img
+                    src={busExteriorImg}
+                    alt="Luxury Bus Exterior"
+                    style={{ width: "100%", height: "150px", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>
+                    Coach Exterior
+                  </div>
+                </div>
+                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                  <img
+                    src={busSleeperImg}
+                    alt="Luxury Sleeper Berths"
+                    style={{ width: "100%", height: "150px", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>
+                    Sleeper Berths
+                  </div>
+                </div>
+                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                  <img
+                    src={busSeatsImg}
+                    alt="Reclining Seats"
+                    style={{ width: "100%", height: "150px", objectFit: "cover", display: "block" }}
+                  />
+                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>
+                    Comfortable Seating
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "offers" && (
+            <div>
+              <h4 style={{ fontSize: "14px", marginTop: 0, marginBottom: "12px", fontWeight: "750" }}>Available Offers & Coupons</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div style={{
+                  border: "1.5px dashed #16a34a",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  background: "#f0fdf4",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px"
+                }}>
+                  <strong style={{ color: "#15803d", fontSize: "13px" }}>Flat Rs. 50 Discount</strong>
+                  <span style={{ fontSize: "12px" }}>Get flat Rs. 50 off on this booking. Valid on all seats.</span>
+                  <div style={{
+                    background: "#16a34a",
+                    color: "#fff",
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    fontWeight: "800",
+                    fontSize: "11px",
+                    width: "fit-content",
+                    letterSpacing: "1px",
+                    marginTop: "4px"
+                  }}>CODE: PNB50</div>
+                </div>
+                <div style={{
+                  border: "1.5px dashed #3b82f6",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  background: "#eff6ff",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px"
+                }}>
+                  <strong style={{ color: "#1d4ed8", fontSize: "13px" }}>First Bus Booking Offer</strong>
+                  <span style={{ fontSize: "12px" }}>Save up to 20% on your first booking with PickNBook.</span>
+                  <div style={{
+                    background: "#3b82f6",
+                    color: "#fff",
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    fontWeight: "800",
+                    fontSize: "11px",
+                    width: "fit-content",
+                    letterSpacing: "1px",
+                    marginTop: "4px"
+                  }}>CODE: FIRSTBUS</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderBusCard = (bus, className = "") => (
     <article className={`bus-result-card ${className}`.trim()} key={bus.id}>
-      <div className="bus-operator-cell">
-        <h4>{bus.operatorName}</h4>
-        <p>{bus.busType}</p>
-        <small>Bus No: {bus.busNumber}</small>
+      <div className="bus-operator-cell" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        {resolveOperatorLogo(bus.operatorName)}
+        <div>
+          <h4 style={{ margin: 0, fontSize: "14.5px" }}>{bus.operatorName}</h4>
+          <p style={{ margin: "2px 0 0", fontSize: "12px" }}>{bus.busType}</p>
+          <small style={{ display: "block", marginTop: "2px" }}>Bus No: {bus.busNumber}</small>
+        </div>
       </div>
 
       <div className="bus-depart-cell">
@@ -1287,16 +1693,9 @@ export default function BusSearchResults() {
         <button
           type="button"
           className="subtle"
-          onClick={() => openDetailCard(bus.id, "boarding")}
+          onClick={() => openDetailCard(bus.id, "details")}
         >
-          Boarding & Dropping Points
-        </button>
-        <button
-          type="button"
-          className="subtle"
-          onClick={() => openDetailCard(bus.id, "policy")}
-        >
-          Cancellation Policies
+          {expandedCard?.busId === bus.id && expandedCard?.panel === "details" ? "Hide Details" : "Bus Details"}
         </button>
         <button
           type="button"
@@ -1319,7 +1718,9 @@ export default function BusSearchResults() {
 
       {expandedCard?.busId === bus.id && (
         <div className={`bus-expand-panel${expandedCard.panel === "seats" ? " bus-seat-dropdown-panel" : ""}`}>
-          {expandedCard.panel === "boarding" ? (
+          {expandedCard.panel === "details" ? (
+            renderBusDetailsPanel(bus)
+          ) : expandedCard.panel === "boarding" ? (
             <p>
               Boarding: <strong>{bus.boardingPoint}</strong> | Dropping:{" "}
               <strong>{bus.droppingPoint}</strong>
@@ -1908,6 +2309,7 @@ export default function BusSearchResults() {
             </aside>
 
             <section className="bus-results-column">
+              {renderPromotionalBanner()}
               <header className="bus-sort-strip">
                 <div className="bus-found-count">
                   <strong>{filteredBuses.length} Buses</strong> found

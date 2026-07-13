@@ -9,3 +9,33 @@
   min-width: 0;
   box-sizing: border-box;
 }
+
+/* Color overrides for B2C Hotel Coupon List and Form headings */
+.admin-hotel-coupon-shell .admin-markup-coupon-title-wrap h1,
+.admin-hotel-coupon-shell .form-title {
+  color: #be185d !important;
+  font-weight: 700 !important;
+}
+
+.admin-hotel-coupon-shell .admin-markup-coupon-title-wrap h1 .black-text {
+  color: #000000 !important;
+}
+
+/* Color and border adjustments for form inputs */
+.admin-markup-coupon-form input,
+.admin-markup-coupon-form select,
+.admin-markup-coupon-form textarea {
+  border: 1px solid #e2e8f0 !important;
+  color: #000000 !important;
+}
+
+.admin-markup-coupon-form textarea {
+  resize: vertical;
+}
+
+/* Validation red color border style for required/compulsory fields */
+.admin-markup-coupon-form input.validation-error,
+.admin-markup-coupon-form select.validation-error,
+.admin-markup-coupon-form textarea.validation-error {
+  border: 1px solid red !important;
+}

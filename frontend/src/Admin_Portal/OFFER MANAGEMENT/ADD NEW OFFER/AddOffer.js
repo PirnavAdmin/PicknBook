@@ -105,6 +105,13 @@ export default function AdminAddOfferPage({ onBack }) {
     setFormValues((previous) => ({ ...previous, [field]: value }));
   };
 
+  const handleReset = () => {
+    setFormValues(DEFAULT_FORM);
+    setSelectedFile(null);
+    setFormError("");
+    setSaved(false);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaved(false);
@@ -144,202 +151,221 @@ export default function AdminAddOfferPage({ onBack }) {
   };
 
   return (
-    <section className="flight-markup-panel offer-add-page" style={{ padding: "28px 32px" }}>
-      <header className="flight-markup-toolbar offer-add-page-toolbar">
-        <div className="flight-markup-title">
-          <h1>
-            <strong>Add Offer</strong>
-          </h1>
-        </div>
-
-        {onBack && (
-          <div className="flight-markup-actions">
+    <section className="flight-markup-panel offer-add-page">
+      <section className="menu-form-shell offer-add-shell">
+        {/* ── Header inside container ── */}
+        <div className="offer-add-header">
+          <h1 className="offer-add-heading">Add Offer</h1>
+          {onBack && (
             <button
               type="button"
-              className="flight-markup-action-btn primary offer-add-list-btn"
+              className="offer-add-list-btn"
               onClick={onBack}
             >
               <List size={16} />
-              <span>Offer List</span>
+              Offer List
             </button>
-          </div>
-        )}
-      </header>
+          )}
+        </div>
 
-      <section className="menu-form-shell offer-add-shell">
         <form className="offer-add-form" onSubmit={handleSubmit}>
           <div className="offer-add-grid">
-            <label className="offer-add-label" htmlFor="offer-name">
-              Offer Name (Title) <span aria-hidden="true">*</span>
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="offer-name"
-                type="text"
-                placeholder="Enter offer name"
-                value={formValues.title}
-                onChange={handleChange("title")}
-                required
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="offer-name">
+                Offer Name (Title) <span aria-hidden="true">*</span>
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="offer-name"
+                  type="text"
+                  placeholder="Enter offer name"
+                  value={formValues.title}
+                  onChange={handleChange("title")}
+                  required
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="booking-type">
-              Booking Type <span aria-hidden="true">*</span>
-            </label>
-            <div className="offer-add-control">
-              <select
-                id="booking-type"
-                value={formValues.bookingType}
-                onChange={handleChange("bookingType")}
-                required
-              >
-                {BOOKING_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="booking-type">
+                Booking Type <span aria-hidden="true">*</span>
+              </label>
+              <div className="offer-add-control">
+                <select
+                  id="booking-type"
+                  value={formValues.bookingType}
+                  onChange={handleChange("bookingType")}
+                  required
+                >
+                  {BOOKING_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="offer-status">
-              Status
-            </label>
-            <div className="offer-add-control">
-              <select
-                id="offer-status"
-                value={formValues.isActive ? "active" : "inactive"}
-                onChange={handleChange("isActive")}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="offer-status">
+                Status
+              </label>
+              <div className="offer-add-control">
+                <select
+                  id="offer-status"
+                  value={formValues.isActive ? "active" : "inactive"}
+                  onChange={handleChange("isActive")}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="display-order">
-              Display Order
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="display-order"
-                type="number"
-                min="0"
-                placeholder="e.g. 1"
-                value={formValues.displayOrder}
-                onChange={handleChange("displayOrder")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="display-order">
+                Display Order
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="display-order"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 1"
+                  value={formValues.displayOrder}
+                  onChange={handleChange("displayOrder")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="offer-start">
-              Offer Starts
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="offer-start"
-                type="datetime-local"
-                value={formValues.startDateUtc}
-                onChange={handleChange("startDateUtc")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="offer-start">
+                Offer Starts
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="offer-start"
+                  type="datetime-local"
+                  value={formValues.startDateUtc}
+                  onChange={handleChange("startDateUtc")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="offer-end">
-              Offer Ends
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="offer-end"
-                type="datetime-local"
-                value={formValues.endDateUtc}
-                onChange={handleChange("endDateUtc")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="offer-end">
+                Offer Ends
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="offer-end"
+                  type="datetime-local"
+                  value={formValues.endDateUtc}
+                  onChange={handleChange("endDateUtc")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="discount-type">
-              Discount Type
-            </label>
-            <div className="offer-add-control">
-              <select
-                id="discount-type"
-                value={formValues.discountType}
-                onChange={(event) => {
-                  const val = event.target.value;
-                  setFormValues((previous) => ({
-                    ...previous,
-                    discountType: val,
-                    isPercentageDiscount: val === "Percentage",
-                  }));
-                }}
-              >
-                <option value="Flat">Flat Discount</option>
-                <option value="Percentage">Percentage Discount</option>
-              </select>
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="discount-type">
+                Discount Type
+              </label>
+              <div className="offer-add-control">
+                <select
+                  id="discount-type"
+                  value={formValues.discountType}
+                  onChange={(event) => {
+                    const val = event.target.value;
+                    setFormValues((previous) => ({
+                      ...previous,
+                      discountType: val,
+                      isPercentageDiscount: val === "Percentage",
+                    }));
+                  }}
+                >
+                  <option value="Flat">Flat Discount</option>
+                  <option value="Percentage">Percentage Discount</option>
+                </select>
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="discount-value">
-              Discount Value
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="discount-value"
-                type="number"
-                placeholder="e.g. 50 or 500"
-                value={formValues.discountValue}
-                onChange={handleChange("discountValue")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="discount-value">
+                Discount Value
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="discount-value"
+                  type="number"
+                  placeholder="e.g. 50 or 500"
+                  value={formValues.discountValue}
+                  onChange={handleChange("discountValue")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="min-booking-amount">
-              Min Booking Amount (INR)
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="min-booking-amount"
-                type="number"
-                placeholder="e.g. 500"
-                value={formValues.minBookingAmount}
-                onChange={handleChange("minBookingAmount")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="min-booking-amount">
+                Min Booking Amount (INR)
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="min-booking-amount"
+                  type="number"
+                  placeholder="e.g. 500"
+                  value={formValues.minBookingAmount}
+                  onChange={handleChange("minBookingAmount")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="max-discount-amount">
-              Max Discount Amount (INR)
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="max-discount-amount"
-                type="number"
-                placeholder="e.g. 150"
-                value={formValues.maxDiscountAmount}
-                onChange={handleChange("maxDiscountAmount")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="max-discount-amount">
+                Max Discount Amount (INR)
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="max-discount-amount"
+                  type="number"
+                  placeholder="e.g. 150"
+                  value={formValues.maxDiscountAmount}
+                  onChange={handleChange("maxDiscountAmount")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="max-coupon-usage">
-              Max Usage
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="max-coupon-usage"
-                type="number"
-                placeholder="e.g. 500"
-                value={formValues.maxUsage}
-                onChange={handleChange("maxUsage")}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="max-coupon-usage">
+                Max Usage
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="max-coupon-usage"
+                  type="number"
+                  placeholder="e.g. 500"
+                  value={formValues.maxUsage}
+                  onChange={handleChange("maxUsage")}
+                />
+              </div>
             </div>
 
-            <label className="offer-add-label" htmlFor="offer-image-file">
-              Image Upload
-            </label>
-            <div className="offer-add-control">
-              <input
-                id="offer-image-file"
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  if (event.target.files && event.target.files[0]) {
-                    setSelectedFile(event.target.files[0]);
-                  }
-                }}
-              />
+            <div className="offer-add-field">
+              <label className="offer-add-label" htmlFor="offer-image-file">
+                Image Upload
+              </label>
+              <div className="offer-add-control">
+                <input
+                  id="offer-image-file"
+                  type="file"
+                  accept="image/*"
+                  key={selectedFile ? selectedFile.name : "empty"}
+                  onChange={(event) => {
+                    if (event.target.files && event.target.files[0]) {
+                      setSelectedFile(event.target.files[0]);
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
 
@@ -368,6 +394,9 @@ export default function AdminAddOfferPage({ onBack }) {
           {saved && <p className="menu-form-success">Offer saved to backend.</p>}
 
           <div className="admin-markup-modal-actions menu-form-actions offer-add-actions">
+            <button type="button" className="secondary" onClick={handleReset}>
+              Reset
+            </button>
             <button type="submit" className="primary" disabled={submitting}>
               {submitting ? "Saving..." : "Submit"}
             </button>

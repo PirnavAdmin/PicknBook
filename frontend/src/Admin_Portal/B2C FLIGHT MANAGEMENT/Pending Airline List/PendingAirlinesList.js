@@ -3,6 +3,7 @@ import { Download, PencilLine, PlusCircle, Trash2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./PendingAirlinesList.css";
 import { listFlightPendingAirlines, deleteFlightPendingAirline } from "../../../services/flightBookingService";
+import AdminPagination from "../../../components/AdminPagination";
 
 const safeValue = (value, fallback = "--") => {
   const text = String(value ?? "").trim();
@@ -93,6 +94,14 @@ export default function AdminFlightPendingAirlineListPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const totalItems = records.length;
+  const paginatedRecords = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return records.slice(startIndex, startIndex + itemsPerPage);
+  }, [records, currentPage]);
 
   useEffect(() => {
     async function loadData() {
@@ -182,7 +191,7 @@ export default function AdminFlightPendingAirlineListPage() {
       <div className="admin-flight-pending-toolbar">
         <header className="admin-b2c-header admin-flight-pending-header">
           <h1>
-            <span>B2C Pending</span> Airline List
+            <span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Pending Airline List
           </h1>
         </header>
 
@@ -190,7 +199,7 @@ export default function AdminFlightPendingAirlineListPage() {
           <button
             type="button"
             className="admin-flight-pending-btn"
-            onClick={() => navigate("/admin/b2c-flight/pending-airlines/add")}
+            onClick={() => navigate("/admin/b2c-flight/pending-airline-edit-list")}
           >
             <PlusCircle size={15} />
             Add Pending Airline
@@ -218,39 +227,41 @@ export default function AdminFlightPendingAirlineListPage() {
 
         {isLoading ? (
           <div className="admin-cancel-empty">Loading pending airlines...</div>
-        ) : records.length ? (
+        ) : paginatedRecords.length ? (
           <div className="admin-cancel-table-body">
-            {records.map((record, index) => (
-              <article
-                key={`pending-airline-${record.id}-${record.updatedAtUtc}`}
-                className="admin-cancel-table-row admin-flight-pending-table-row"
-              >
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{index + 1}</strong>
-                </div>
+            {paginatedRecords.map((record, index) => {
+              const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
+              return (
+                <article
+                  key={`pending-airline-${record.id}-${record.updatedAtUtc}`}
+                  className="admin-cancel-table-row admin-flight-pending-table-row"
+                >
+                  <div className="admin-cancel-cell admin-cell-centered">
+                    <span>{globalIndex}</span>
+                  </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{safeValue(record.id)}</strong>
+                  <span>{safeValue(record.id)}</span>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.airlineCode)}</strong>
+                  <span>{safeValue(record.airlineCode)}</span>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.fareType)}</strong>
+                  <span>{safeValue(record.fareType)}</span>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.updatedBy)}</strong>
+                  <span>{safeValue(record.updatedBy)}</span>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{formatPendingAirlineDateTime(record.updatedAtUtc)}</strong>
+                  <span>{formatPendingAirlineDateTime(record.updatedAtUtc)}</span>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.remark, "--")}</strong>
+                  <span>{safeValue(record.remark, "--")}</span>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered admin-flight-pending-action-cell">
@@ -268,7 +279,7 @@ export default function AdminFlightPendingAirlineListPage() {
                     aria-label={`Edit pending airline ${record.id}`}
                     onClick={() =>
                       navigate(
-                        `/admin/b2c-flight/pending-airlines/edit?ref_id=${encodeURIComponent(
+                        `/admin/b2c-flight/pending-airline-edit-list?ref_id=${encodeURIComponent(
                           String(record.id)
                         )}`
                       )
@@ -286,11 +297,20 @@ export default function AdminFlightPendingAirlineListPage() {
                   </button>
                 </div>
               </article>
-            ))}
+            );
+          })}
           </div>
         ) : (
           <div className="admin-cancel-empty">not found any record.</div>
         )}
+
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="pending airlines"
+        />
       </section>
 
       {selectedRecord ? (
@@ -303,15 +323,15 @@ export default function AdminFlightPendingAirlineListPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <header className="admin-view-header">
-              <button type="button" onClick={() => setSelectedRecord(null)}>
-                Close
-              </button>
               <div className="admin-view-header-main">
                 <h2>Pending Airline Detail</h2>
                 <p className="admin-view-header-subtitle">
-                  ID: {safeValue(selectedRecord.id)}
+                  ID {safeValue(selectedRecord.id)} | {safeValue(selectedRecord.updatedBy)}
                 </p>
               </div>
+              <button type="button" onClick={() => setSelectedRecord(null)}>
+                Close
+              </button>
             </header>
 
             <section className="admin-view-grid">
@@ -342,3 +362,4 @@ export default function AdminFlightPendingAirlineListPage() {
     </section>
   );
 }
+

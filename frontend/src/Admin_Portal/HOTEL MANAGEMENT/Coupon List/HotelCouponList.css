@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.hcl-page { padding: 28px 32px; font-family: 'Inter', sans-serif; background: #f8fafc; min-height: 100%; }
+
+.hcl-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.hcl-title  { font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: -0.4px; margin: 0 0 4px; }
+.hcl-subtitle { font-size: 13px; color: #64748b; margin: 0; }
+
+.hcl-add-btn { padding: 10px 20px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border: none; border-radius: 9px; font-size: 13.5px; font-weight: 600; font-family: inherit; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.25); transition: all 0.2s; }
+.hcl-add-btn:hover { transform: translateY(-1px); }
+
+.hcl-table-wrap { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 0 0 1px rgba(15,23,42,0.05); overflow-x: auto; }
+
+.hcl-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.hcl-table thead tr { background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; }
+.hcl-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #64748b; white-space: nowrap; }
+.hcl-table td { padding: 13px 16px; border-bottom: 1px solid #f1f5f9; color: #1e293b; white-space: nowrap; }
+.hcl-table tbody tr:last-child td { border-bottom: none; }
+.hcl-table tbody tr:hover { background: #fafbff; }
+
+.hcl-code { font-family: 'Courier New', monospace; font-weight: 700; background: #eff6ff; color: #1d4ed8; padding: 3px 10px; border-radius: 6px; font-size: 12.5px; letter-spacing: 1px; }
+.hcl-discount { font-weight: 700; color: #15803d !important; }
+
+.hcl-badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11.5px; font-weight: 600; }
+.hcl-badge-active   { background: #dcfce7; color: #15803d; }
+.hcl-badge-inactive { background: #f1f5f9; color: #64748b; }
+.hcl-badge-expired  { background: #fee2e2; color: #b91c1c; }
+
+.hcl-actions { display: flex; gap: 6px; }
+.hcl-btn { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-family: inherit; font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1.5px solid transparent; }
+.hcl-edit   { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
+.hcl-edit:hover { background: #dbeafe; }
+.hcl-toggle { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+.hcl-toggle:hover { background: #f1f5f9; }
+
+@media (max-width: 900px) { .hcl-page { padding: 20px 16px; } }

@@ -18,7 +18,7 @@ function resolveApiBaseUrl() {
   const preferProxyInDev =
     isLocalDevelopment() &&
     String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-      "true";
+    "true";
 
   if (preferProxyInDev) {
     return "";
@@ -108,11 +108,11 @@ export function readApiMessage(payload, fallback = "") {
   if (payload && typeof payload === "object") {
     return normalizeText(
       payload.message ||
-        payload.Message ||
-        payload.error ||
-        payload.Error ||
-        payload.title ||
-        payload.Title,
+      payload.Message ||
+      payload.error ||
+      payload.Error ||
+      payload.title ||
+      payload.Title,
       fallback
     );
   }
@@ -151,4 +151,77 @@ export async function requestAuth(
   }
 
   return payload;
+}
+
+// ---------------------------------------------------------
+// B2C (Customer) Authentication API Methods
+// ---------------------------------------------------------
+
+export async function sendRegistrationOtp(payload) {
+  return requestAuth("/api/auth/send-registration-otp", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function verifyRegistrationOtp(payload) {
+  return requestAuth("/api/auth/verify-registration-otp", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function registerCustomer(payload, guestId = null) {
+  const headers = {};
+  if (guestId) {
+    headers["X-Guest-Id"] = guestId;
+  }
+  return requestAuth("/api/auth/register", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function loginUser(payload, guestId = null) {
+  const headers = {};
+  if (guestId) {
+    headers["X-Guest-Id"] = guestId;
+  }
+  return requestAuth("/api/auth/login", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function forgotPasswordSendOtp(payload) {
+  return requestAuth("/api/auth/forgot-password/send-otp", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function forgotPasswordVerifyOtp(payload) {
+  return requestAuth("/api/auth/forgot-password/verify-otp", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function resetPassword(payload) {
+  return requestAuth("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function changePassword(payload, token) {
+  return requestAuth("/api/auth/change-password", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
 }

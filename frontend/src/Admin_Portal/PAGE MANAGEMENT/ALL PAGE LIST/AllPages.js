@@ -3,25 +3,76 @@ import "./AllPages.css";
 import { useNavigate } from "react-router-dom";
 import { getAdminPages, deleteAdminPage } from "../../../services/cmsPageService";
 import { Eye, Edit2, Trash2, X } from 'lucide-react';
+import {
+  TERMS_CONDITIONS_TEXT,
+  PRIVACY_POLICY_TEXT,
+  REFUND_CANCELLATION_POLICY_TEXT,
+} from "../../../data/legalPages";
+
+const DEFAULT_PAGES = [
+  {
+    id: "default-privacy",
+    title: "Privacy Policy",
+    slug: "privacy-policy",
+    description: PRIVACY_POLICY_TEXT,
+    module: "B2C",
+    status: "Active",
+    entryDate: new Date().toISOString(),
+    updateDate: new Date().toISOString(),
+  },
+  {
+    id: "default-refund",
+    title: "Refund & Cancellation Policy",
+    slug: "refund-cancellation-policy",
+    description: REFUND_CANCELLATION_POLICY_TEXT,
+    module: "B2C",
+    status: "Active",
+    entryDate: new Date().toISOString(),
+    updateDate: new Date().toISOString(),
+  },
+  {
+    id: "default-terms",
+    title: "Terms & Conditions",
+    slug: "terms-conditions",
+    description: TERMS_CONDITIONS_TEXT,
+    module: "B2C",
+    status: "Active",
+    entryDate: new Date().toISOString(),
+    updateDate: new Date().toISOString(),
+  }
+];
 
 const AllPages = () => {
   const navigate = useNavigate();
-  const pageCreatePath = "/admin/page-management/pages/new";
+  const pageCreatePath = "/admin/page-management/add-page";
 
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
 
   const loadPages = async () => {
     try {
       setLoading(true);
       const data = await getAdminPages();
-      setPages(data);
+
+      const merged = [...(data || [])];
+      DEFAULT_PAGES.forEach(defPage => {
+        const alreadyExists = merged.some(p => p.slug === defPage.slug);
+        if (!alreadyExists) {
+          merged.push(defPage);
+        }
+      });
+
+      setPages(merged);
       setError(null);
     } catch (err) {
-      console.error("Error fetching admin pages:", err);
-      setError("Failed to fetch pages from the server.");
+      console.warn("Error fetching admin pages, using static default pages list:", err);
+      setPages(DEFAULT_PAGES);
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -29,7 +80,15 @@ const AllPages = () => {
 
   useEffect(() => {
     loadPages();
+    setCurrentPage(1);
   }, []);
+
+  const totalItems = pages.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = pages.slice(indexOfFirstItem, indexOfLastItem);
+
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this page?")) {
@@ -72,7 +131,7 @@ const AllPages = () => {
   return (
     <div className="page-container">
       <div className="header">
-        <h2>All Page <span>List</span></h2>
+        <h2>All Page List</h2>
         <button className="add-btn" onClick={() => navigate(pageCreatePath)}>
           + Add New Page
         </button>
@@ -153,14 +212,14 @@ const AllPages = () => {
           </thead>
 
           <tbody>
-            {pages.length === 0 ? (
+            {currentItems.length === 0 ? (
               <tr>
                 <td colSpan="9" style={{ textAlign: "center" }}>No pages found.</td>
               </tr>
             ) : (
-              pages.map((page, index) => (
+              currentItems.map((page, index) => (
                 <tr key={page.id}>
-                  <td>{index + 1}</td>
+                  <td>{indexOfFirstItem + index + 1}</td>
                   <td>{page.title}</td>
                   <td>{page.slug}</td>
                   <td>
@@ -203,6 +262,44 @@ const AllPages = () => {
           </tbody>
         </table>
       )}
+
+      {/* Pagination */}
+      {totalPages >= 1 && (
+        <div className="pagination">
+          <div className="pagination-info">
+            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} entries
+          </div>
+          <div className="page-numbers">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className="page-btn"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => setCurrentPage(pageNum)}
+                className={`page-no-btn ${currentPage === pageNum ? "active" : ""}`}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className="page-btn"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

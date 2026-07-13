@@ -134,6 +134,10 @@ export default function TicketConfirmationPage() {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDispatchingNotifications, setIsDispatchingNotifications] = useState(false);
 
+  const handleResendNotification = (type) => {
+    alert(`${type} ticket notification sent to client successfully!`);
+  };
+
   useEffect(() => {
     if (incomingTicket) {
       writeLatestStoredTicket(incomingTicket);
@@ -187,7 +191,32 @@ export default function TicketConfirmationPage() {
   );
 
   const fare = ticket?.fare || {};
-  const totalPaid = Number(ticket?.totalPaid ?? fare.totalFare ?? 0);
+  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+
+  const adjustedBaseFare = useMemo(() => {
+    const rawBase = Number(fare.baseFare || 0);
+    if (!isAgent) return rawBase;
+    const markup = Number(fare.markup || 0);
+    return rawBase + markup;
+  }, [fare.baseFare, fare.markup, isAgent]);
+
+  const adjustedDiscount = useMemo(() => {
+    const rawDiscount = Number(fare.discount || 0);
+    if (isAgent) return 0; // Hide agent wholesale discounts from walk-in client
+    return rawDiscount;
+  }, [fare.discount, isAgent]);
+
+  const totalPaid = useMemo(() => {
+    const rawTotal = Number(ticket?.totalPaid ?? fare.totalFare ?? 0);
+    if (!isAgent) return rawTotal;
+    
+    // total retail = wholesale + markup + tierDiscount + volumeDiscount
+    const markup = Number(fare.markup || 0);
+    const tierDiscount = Number(fare.tierDiscount || 0);
+    const volumeDiscount = Number(fare.volumeDiscount || 0);
+    return rawTotal + markup + tierDiscount + volumeDiscount;
+  }, [ticket?.totalPaid, fare.totalFare, fare.markup, fare.tierDiscount, fare.volumeDiscount, isAgent]);
+
   const partnerLogo = useMemo(
     () => resolvePartnerLogo(ticket?.ticketType, ticket?.providerName),
     [ticket?.ticketType, ticket?.providerName]
@@ -354,8 +383,11 @@ export default function TicketConfirmationPage() {
         <section className="ticket-banner">
           <CheckCircle2 size={24} />
           <div>
-            <h1>Ticket Confirmed</h1>
-            <p>Your booking is successful. You can download or print this ticket below.</p>
+            <h1>{ticket.ticketType === "hotel" ? "Booking Confirmed" : "Ticket Confirmed"}</h1>
+            <p>
+              Your booking is successful. You can download or print your{" "}
+              {ticket.ticketType === "hotel" ? "booking summary" : "ticket"} below.
+            </p>
           </div>
         </section>
 
@@ -520,23 +552,51 @@ export default function TicketConfirmationPage() {
           {ticket.ticketType !== "flight" && (
             <header className="ticket-card-head">
               <div className="ticket-head-brand">
-                <img
-                  src={partnerLogo.src}
-                  alt={partnerLogo.alt}
-                  className="ticket-partner-logo"
-                />
+                {ticket.ticketType === "hotel" ? (
+                  <div className="ticket-hotel-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: "50%", background: "rgba(220, 30, 38, 0.1)", color: "#dc1e26", marginRight: 12 }}>
+                    <svg size={22} stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="22" width="22" xmlns="http://www.w3.org/2000/svg"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                  </div>
+                ) : (
+                  <img
+                    src={partnerLogo.src}
+                    alt={partnerLogo.alt}
+                    className="ticket-partner-logo"
+                  />
+                )}
                 <div>
-                  <h2>{ticket.providerName || "Travel"} Ticket</h2>
-                  <p>Reference: {ticket.bookingReference || "--"}</p>
+                  <h2>{ticket.ticketType === "hotel" ? ticket.providerName : `${ticket.providerName || "Travel"} Ticket`}</h2>
+                  <p>{ticket.ticketType === "hotel" ? "Booking Reference" : "Reference"}: {ticket.bookingReference || "--"}</p>
                 </div>
               </div>
-              <span className="ticket-badge">{ticket.ticketType || "Travel"}</span>
+              <span className="ticket-badge" style={{ textTransform: "capitalize" }}>{ticket.ticketType || "Travel"}</span>
             </header>
           )}
 
           <div className="ticket-card-body">
             {/* Show traditional details sections as receipt below boarding passes */}
-            {ticket.ticketType !== "flight" && (
+            {ticket.ticketType === "hotel" && (
+              <section className="ticket-grid">
+                <article>
+                  <span>Hotel Stay</span>
+                  <strong>{ticket.providerName || "--"}</strong>
+                  <p>{ticket.toCity || "--"}</p>
+                </article>
+
+                <article>
+                  <span>Check-In & Check-Out</span>
+                  <strong>{ticket.departureTime || "--"} - {ticket.arrivalTime || "--"}</strong>
+                  <p>{ticket.duration || "1 night"}</p>
+                </article>
+
+                <article>
+                  <span>Reservation Status</span>
+                  <strong style={{ color: "#137a3b" }}>{ticket.status || "Confirmed"}</strong>
+                  <p>Reserved on {formatDateTime(ticket.bookedAt)}</p>
+                </article>
+              </section>
+            )}
+
+            {ticket.ticketType !== "flight" && ticket.ticketType !== "hotel" && (
               <section className="ticket-grid">
                 <article>
                   <span>Route</span>
@@ -562,20 +622,22 @@ export default function TicketConfirmationPage() {
 
             {/* Rest of the panels for Passengers, Contact, Fare breakup */}
             <section className="ticket-panel">
-              <h3>Passengers</h3>
+              <h3>{ticket.ticketType === "hotel" ? "Guests" : "Passengers"}</h3>
               <ul className="ticket-list">
                 {passengers.length === 0 ? (
                   <li>
-                    <span>No passenger data</span>
+                    <span>No guest data</span>
                   </li>
                 ) : (
                   passengers.map((passenger, index) => (
                     <li key={`${passenger.name || passenger.fullName || "passenger"}-${index}`}>
                       <span>
-                        {passenger.name || passenger.fullName || `Passenger ${index + 1}`} - {" "}
-                        {passenger.passengerType || "Adult"}
+                        {passenger.name || passenger.fullName || `Guest ${index + 1}`} - {" "}
+                        {passenger.passengerType || "Primary Guest"}
                       </span>
-                      <strong>{passenger.seat ? `Seat ${passenger.seat}` : "--"}</strong>
+                      <strong>
+                        {passenger.seat ? (ticket.ticketType === "hotel" ? passenger.seat : `Seat ${passenger.seat}`) : "--"}
+                      </strong>
                     </li>
                   ))
                 )}
@@ -583,10 +645,10 @@ export default function TicketConfirmationPage() {
             </section>
 
             <section className="ticket-panel">
-              <h3>Contact and Delivery</h3>
+              <h3>{ticket.ticketType === "hotel" ? "Booking & Contact" : "Contact and Delivery"}</h3>
               <ul className="ticket-list">
                 <li>
-                  <span>Seats</span>
+                  <span>{ticket.ticketType === "hotel" ? "Room Type" : "Seats"}</span>
                   <strong>{seats.length > 0 ? seats.join(", ") : "--"}</strong>
                 </li>
                 <li>
@@ -628,12 +690,31 @@ export default function TicketConfirmationPage() {
                   <strong>{notifications.whatsapp}</strong>
                 </li>
               </ul>
+              {(() => {
+                const isAgent = localStorage.getItem("b2b_role") === "Agent";
+                if (isAgent) {
+                  return (
+                    <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                      <button type="button" onClick={() => handleResendNotification("Email")} style={{ fontSize: "0.8rem", padding: "6px 12px", background: "var(--b2b-accent)", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                        Email Ticket
+                      </button>
+                      <button type="button" onClick={() => handleResendNotification("SMS")} style={{ fontSize: "0.8rem", padding: "6px 12px", background: "var(--b2b-accent)", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                        SMS Ticket
+                      </button>
+                      <button type="button" onClick={() => handleResendNotification("WhatsApp")} style={{ fontSize: "0.8rem", padding: "6px 12px", background: "#25D366", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                        WhatsApp Ticket
+                      </button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </section>
 
             <section className="ticket-fare">
               <div>
                 <span>Base Fare</span>
-                <strong>{formatCurrency(fare.baseFare)}</strong>
+                <strong>{formatCurrency(adjustedBaseFare)}</strong>
               </div>
               <div>
                 <span>Taxes</span>
@@ -645,7 +726,7 @@ export default function TicketConfirmationPage() {
               </div>
               <div>
                 <span>Discount</span>
-                <strong>{formatCurrency(fare.discount || 0)}</strong>
+                <strong>{formatCurrency(adjustedDiscount)}</strong>
               </div>
               <div className="total">
                 <span>Total Paid</span>

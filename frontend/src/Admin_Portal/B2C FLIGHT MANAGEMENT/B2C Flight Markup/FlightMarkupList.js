@@ -108,14 +108,28 @@ export default function AdminFlightMarkupListPage() {
   const loadMarkups = async () => {
     try {
       const data = await listFlightMarkups();
+      let merged = [];
       if (Array.isArray(data)) {
-        setFlightRows(mergeMarkupRows(data, localRows));
+        merged = mergeMarkupRows(data, localRows);
       } else {
-        setFlightRows(normalizeMarkupCollection(localRows));
+        merged = normalizeMarkupCollection(localRows);
       }
+      // Sort by ID low to high (ascending)
+      merged.sort((a, b) => {
+        const numA = parseInt(String(a.id).replace(/\D/g, "")) || 0;
+        const numB = parseInt(String(b.id).replace(/\D/g, "")) || 0;
+        return numA - numB;
+      });
+      setFlightRows(merged);
     } catch (error) {
       console.warn("Failed to load markups from backend, falling back to local storage", error);
-      setFlightRows(normalizeMarkupCollection(localRows));
+      const fallback = normalizeMarkupCollection(localRows);
+      fallback.sort((a, b) => {
+        const numA = parseInt(String(a.id).replace(/\D/g, "")) || 0;
+        const numB = parseInt(String(b.id).replace(/\D/g, "")) || 0;
+        return numA - numB;
+      });
+      setFlightRows(fallback);
     }
   };
 
@@ -131,20 +145,18 @@ export default function AdminFlightMarkupListPage() {
   const [editError, setEditError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const colWidths = [
-    "4%",
-    "6%",
-    "9%",
-    "10%",
-    "10%",
-    "10%",
-    "7%",
-    "10%",
-    "11%",
+    "8%",
     "11%",
     "12%",
+    "12%",
+    "12%",
+    "8%",
+    "12%",
+    "12%",
+    "12%",
+    "10%",
   ];
   const headers = [
-    "SN",
     "ID",
     "Airline Code",
     "Trip Type",
@@ -321,7 +333,7 @@ export default function AdminFlightMarkupListPage() {
     <section className="admin-b2c-page flight-markup-panel">
       <header className="flight-markup-toolbar">
         <div className="flight-markup-title">
-          <h1>B2C Flight Markup List</h1>
+          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Markup List</h1>
           <div className="flight-markup-title-underline" aria-hidden="true" />
         </div>
 
@@ -482,7 +494,6 @@ export default function AdminFlightMarkupListPage() {
                 paginatedRows.map((row, index) => {
                   return (
                     <tr key={row.id}>
-                      <td>{startItem + index}</td>
                       <td>{row.id}</td>
                       <td>{row.airlineCode}</td>
                       <td>{row.tripType}</td>
@@ -816,3 +827,4 @@ export default function AdminFlightMarkupListPage() {
     </section>
   );
 }
+

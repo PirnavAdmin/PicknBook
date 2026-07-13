@@ -64,7 +64,7 @@ function getStoredUser() {
     return null;
   }
 
-  const rawUser = getStoredValue("user");
+  const rawUser = getStoredValue("user") || getStoredValue("b2b_user");
   if (!rawUser) {
     return null;
   }
@@ -78,7 +78,7 @@ function getStoredUser() {
 }
 
 function getCurrentAuthToken() {
-  return normalizeText(session.token || getStoredValue("token"));
+  return normalizeText(session.token || getStoredValue("token") || getStoredValue("b2b_token"));
 }
 
 function getCurrentAuthUser() {

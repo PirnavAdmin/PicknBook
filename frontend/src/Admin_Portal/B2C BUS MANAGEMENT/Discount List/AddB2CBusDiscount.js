@@ -170,7 +170,7 @@ function AddB2CBusDiscount() {
         await createDiscount(payload);
       }
 
-      navigate('/admin/b2c-bus/discounts');
+      navigate('/admin/b2c-bus/discount-list');
     } catch (err) {
       setError(err.message || 'Failed to save discount.');
     } finally {
@@ -191,7 +191,7 @@ function AddB2CBusDiscount() {
             <p className="add-discount-title">{editingRow ? 'Edit B2C Bus Discount' : 'Add B2C Bus Discount'}</p>
             <p className="add-discount-subtitle">Configure auto-apply discounts, validity, and pricing rules.</p>
           </div>
-          <button type="button" className="ghost-btn" onClick={() => navigate('/admin/b2c-bus/discounts')}>
+          <button type="button" className="ghost-btn" onClick={() => navigate('/admin/b2c-bus/discount-list')}>
             B2C Bus Discount List
           </button>
         </header>

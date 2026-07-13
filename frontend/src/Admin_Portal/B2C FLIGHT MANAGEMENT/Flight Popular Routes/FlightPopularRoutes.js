@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import "./FlightPopularRoutes.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { csvCell } from "../../../utils/adminPortalUtils";
 import {
   getPopularFlightRoutes,
@@ -82,6 +83,9 @@ export default function AdminFlightPopularRoutesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilterOption, setDateFilterOption] = useState("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Modals state
@@ -103,8 +107,49 @@ export default function AdminFlightPopularRoutesPage() {
       ]);
 
       const cleanDbRoutes = Array.isArray(dbRoutes) ? dbRoutes : [];
-      const cleanSearches = Array.isArray(rawSearches) ? rawSearches : [];
-      const cleanBookings = Array.isArray(rawBookings) ? rawBookings : [];
+      let cleanSearches = Array.isArray(rawSearches) ? rawSearches : [];
+      let cleanBookings = Array.isArray(rawBookings) ? rawBookings : [];
+
+      let startDate = null;
+      let endDate = null;
+      const now = new Date();
+      if (dateFilterOption === "today") {
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        endDate = new Date(now.setHours(23, 59, 59, 999));
+      } else if (dateFilterOption === "week") {
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        startDate = new Date(startOfWeek.setHours(0, 0, 0, 0));
+        endDate = new Date();
+      } else if (dateFilterOption === "month") {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = new Date(startOfMonth.setHours(0, 0, 0, 0));
+        endDate = new Date();
+      } else if (dateFilterOption === "custom") {
+        if (customStartDate) {
+          startDate = new Date(new Date(customStartDate).setHours(0, 0, 0, 0));
+        }
+        if (customEndDate) {
+          endDate = new Date(new Date(customEndDate).setHours(23, 59, 59, 999));
+        }
+      }
+
+      if (startDate || endDate) {
+        cleanSearches = cleanSearches.filter(s => {
+          const d = new Date(s.searchDateUtc || s.createdDateUtc || s.searchDate || s.createdDate);
+          if (isNaN(d.getTime())) return true;
+          if (startDate && d < startDate) return false;
+          if (endDate && d > endDate) return false;
+          return true;
+        });
+
+        cleanBookings = cleanBookings.filter(b => {
+          const d = new Date(b.bookingDate || b.createdDate || b.bookingDateUtc || b.createdDateUtc);
+          if (isNaN(d.getTime())) return true;
+          if (startDate && d < startDate) return false;
+          if (endDate && d > endDate) return false;
+          return true;
+        });
+      }
 
       // Helper to get IATA code or city name for comparison
       const getCode = (str) => {
@@ -284,7 +329,7 @@ export default function AdminFlightPopularRoutesPage() {
 
   useEffect(() => {
     fetchRoutes();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, dateFilterOption, customStartDate, customEndDate]);
 
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
@@ -454,6 +499,21 @@ export default function AdminFlightPopularRoutesPage() {
     );
   });
 
+  // Pagination Configuration (10 popular routes per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Reset pagination on query search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.ceil(filteredRoutes.length / itemsPerPage) || 1;
+  const paginatedRoutes = filteredRoutes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const topThree = routes.slice(0, 3);
 
   // Key stats calculations
@@ -491,6 +551,7 @@ export default function AdminFlightPopularRoutesPage() {
           <button
             type="button"
             className="admin-markup-popular-btn primary"
+            style={{ background: "#A51C49", borderColor: "#A51C49", color: "#ffffff" }}
             onClick={handleOpenAddModal}
             title="Add popular route manually"
           >
@@ -602,8 +663,8 @@ export default function AdminFlightPopularRoutesPage() {
       )}
 
       {/* Search and Filters */}
-      <div className="admin-popular-filter-bar">
-        <div className="search-input-wrapper">
+      <div className="admin-popular-filter-bar" style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap", marginBottom: "20px" }}>
+        <div className="search-input-wrapper" style={{ flex: "1", minWidth: "260px" }}>
           <Search size={16} className="search-icon" />
           <input
             type="text"
@@ -612,109 +673,197 @@ export default function AdminFlightPopularRoutesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
+        <div className="date-filter-wrapper" style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>Date Interval</span>
+            <select
+              value={dateFilterOption}
+              onChange={(e) => setDateFilterOption(e.target.value)}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "12px",
+                border: "1.5px solid var(--border)",
+                backgroundColor: "var(--panel)",
+                color: "var(--text-primary)",
+                fontSize: "0.9rem",
+                outline: "none",
+                cursor: "pointer",
+                height: "42px"
+              }}
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </label>
+
+          {dateFilterOption === "custom" && (
+            <>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>Start Date</span>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid var(--border)",
+                    backgroundColor: "var(--panel)",
+                    color: "var(--text-primary)",
+                    fontSize: "0.9rem",
+                    outline: "none",
+                    height: "42px"
+                  }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>End Date</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid var(--border)",
+                    backgroundColor: "var(--panel)",
+                    color: "var(--text-primary)",
+                    fontSize: "0.9rem",
+                    outline: "none",
+                    height: "42px"
+                  }}
+                />
+              </label>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Detailed Routes Table */}
-      <section className="admin-markup-popular-table-wrap">
-        {isLoading && routes.length === 0 ? (
-          <div className="admin-popular-loading-state">
-            <RefreshCw size={24} className="animate-spin" />
-            <p>Fetching popular route metrics from backend...</p>
-          </div>
-        ) : errorMessage ? (
-          <div className="admin-popular-error-state">
-            <AlertCircle size={24} />
-            <p>{errorMessage}</p>
-            <button type="button" onClick={handleRefresh}>Retry</button>
-          </div>
-        ) : filteredRoutes.length === 0 ? (
-          <div className="admin-popular-empty-state">
-            <p>No popular flight routes found matching your criteria.</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="admin-markup-popular-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>From Airport</th>
-                  <th>To Airport</th>
-                  <th>Searches</th>
-                  <th>Bookings</th>
-                  <th>Score</th>
-                  <th>Image</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRoutes.map((route, index) => {
-                  const rank = index + 1;
-                  return (
-                    <tr key={route.id || `route-row-${index}`} className="admin-popular-row-hover">
-                      <td className="rank-cell">#{rank}</td>
-                      <td className="city-cell" title={route.fromAirport}>{route.fromAirport}</td>
-                      <td className="city-cell" title={route.toAirport}>{route.toAirport}</td>
-                      <td>{route.searches.toLocaleString()}</td>
-                      <td>{route.bookings.toLocaleString()}</td>
-                      <td className="score-cell">{route.score}</td>
-                      <td>
-                        {route.isCurated ? (
+      <div style={{ border: '1px solid var(--admin-border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--admin-surface)' }}>
+        {/* Detailed Routes Table */}
+        <section className="admin-markup-popular-table-wrap" style={{ border: 'none', borderRadius: '0', boxShadow: 'none' }}>
+          {isLoading && routes.length === 0 ? (
+            <div className="admin-popular-loading-state">
+              <RefreshCw size={24} className="animate-spin" />
+              <p>Fetching popular route metrics from backend...</p>
+            </div>
+          ) : errorMessage ? (
+            <div className="admin-popular-error-state">
+              <AlertCircle size={24} />
+              <p>{errorMessage}</p>
+              <button type="button" onClick={handleRefresh}>Retry</button>
+            </div>
+          ) : filteredRoutes.length === 0 ? (
+            <div className="admin-popular-empty-state">
+              <p>No popular flight routes found matching your criteria.</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="admin-markup-popular-table" style={{ borderBottom: 'none' }}>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>From Airport</th>
+                    <th>To Airport</th>
+                    <th>Searches</th>
+                    <th>Bookings</th>
+                    <th>Score</th>
+                    <th>Image</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedRoutes.map((route, index) => {
+                    const rank = (currentPage - 1) * itemsPerPage + index + 1;
+                    return (
+                      <tr key={route.id} className="admin-popular-row-hover">
+                        <td className="rank-cell">#{rank}</td>
+                        <td>
+                          <div className="city-cell">{route.fromCityName || route.fromAirportCode}</div>
+                          <div className="airport-subtext">{route.fromAirportName || "Unknown Airport"} ({route.fromAirportCode})</div>
+                        </td>
+                        <td>
+                          <div className="city-cell">{route.toCityName || route.toAirportCode}</div>
+                          <div className="airport-subtext">{route.toAirportName || "Unknown Airport"} ({route.toAirportCode})</div>
+                        </td>
+                        <td>{route.searches?.toLocaleString() || 0}</td>
+                        <td>{route.bookings?.toLocaleString() || 0}</td>
+                        <td className="score-cell">{route.score || 0}</td>
+                        <td>
+                          {route.isCurated ? (
+                            <div className="markup-action-group">
+                              <button
+                                type="button"
+                                title="View Image"
+                                onClick={() => setViewRoute(route)}
+                              >
+                                <Eye size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="unpromoted-txt">No Image</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`flight-route-status-btn ${getPopularityBadgeClass(route)}`}
+                            onClick={() => handleToggleStatus(route.id)}
+                            disabled={!route.isCurated || isLoading}
+                            title={route.isCurated ? "Toggle active status" : "Cannot toggle unpromoted route"}
+                          >
+                            {route.isCurated && route.status === "active" ? <Check size={14} /> : <X size={14} />}
+                            <span>{getPopularityLabel(route)}</span>
+                          </button>
+                        </td>
+                        <td>
                           <div className="markup-action-group">
                             <button
                               type="button"
-                              title="View Image"
-                              onClick={() => setViewRoute(route)}
-                            >
-                              <Eye size={14} />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="unpromoted-txt">No Image</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`markup-status-toggle ${route.isCurated ? route.status : "unpromoted"}`}
-                          onClick={() => handleToggleStatus(route)}
-                          disabled={isLoading}
-                        >
-                          {route.isCurated && route.status === "active" ? <Check size={14} /> : <X size={14} />}
-                          <span>{getPopularityLabel(route)}</span>
-                        </button>
-                      </td>
-                      <td>
-                        <div className="markup-action-group">
-                          <button
-                            type="button"
-                            title={route.isCurated ? "Edit Route" : "Promote to Popular Route"}
-                            onClick={() => handleOpenEditModal(route)}
-                            disabled={isLoading}
-                          >
-                            <Edit3 size={14} />
-                          </button>
-                          {route.isCurated && (
-                            <button
-                              type="button"
-                              title="Delete Route"
-                              className="danger"
-                              onClick={() => setDeleteRoute(route)}
+                              title={route.isCurated ? "Edit Route" : "Promote to Popular Route"}
+                              onClick={() => handleOpenEditModal(route)}
                               disabled={isLoading}
                             >
-                              <Trash2 size={14} />
+                              <Edit3 size={14} />
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                            {route.isCurated && (
+                              <button
+                                type="button"
+                                title="Delete Route"
+                                className="danger"
+                                onClick={() => setDeleteRoute(route)}
+                                disabled={isLoading}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Pagination Controls */}
+        <div style={{ borderTop: '1px solid var(--admin-border)' }}>
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={filteredRoutes.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            itemName="popular routes"
+          />
+        </div>
+      </div>
 
       {/* Edit / Promotion Modal */}
       {isEditModalOpen && (
@@ -877,3 +1026,4 @@ export default function AdminFlightPopularRoutesPage() {
     </section>
   );
 }
+

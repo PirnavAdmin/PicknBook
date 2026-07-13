@@ -1,0 +1,158 @@
+.booking-timer-banner {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(220, 30, 38, 0.15);
+  padding: 10px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.booking-timer-banner.is-urgent {
+  background: rgba(254, 242, 242, 0.95);
+  border-bottom: 1px solid rgba(220, 38, 38, 0.3);
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.08);
+}
+
+.booking-timer-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #1f2a44;
+  font-weight: 500;
+}
+
+.booking-timer-banner.is-urgent .booking-timer-content {
+  color: #b91c1c;
+}
+
+.booking-timer-clock {
+  color: #dc1e26;
+}
+
+.booking-timer-banner.is-urgent .booking-timer-clock {
+  color: #b91c1c;
+}
+
+.booking-timer-val {
+  font-family: monospace;
+  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.booking-timer-banner.is-urgent .booking-timer-val {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* Animations */
+.animate-pulse {
+  animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: .5;
+    transform: scale(1.1);
+  }
+}
+
+/* Fullscreen Expiry Overlay */
+.booking-expiry-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: expiryFadeIn 0.3s ease;
+}
+
+.booking-expiry-card {
+  width: min(440px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 28px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.2);
+  animation: expiryScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.booking-expiry-icon-wrapper {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: rgba(220, 38, 38, 0.08);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 20px;
+  color: #dc1e26;
+}
+
+.booking-expiry-card h2 {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2a44;
+  margin: 0 0 12px;
+}
+
+.booking-expiry-card p {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: #64748b;
+  margin: 0 0 28px;
+}
+
+.booking-expiry-restart-btn {
+  min-height: 48px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dc1e26, #b8141b);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(220, 30, 38, 0.2);
+  transition: all 0.2s ease;
+}
+
+.booking-expiry-restart-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(220, 30, 38, 0.3);
+}
+
+@keyframes expiryFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes expiryScaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

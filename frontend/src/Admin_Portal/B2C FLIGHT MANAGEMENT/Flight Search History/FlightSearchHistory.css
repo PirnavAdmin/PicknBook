@@ -3,6 +3,11 @@
   grid-template-columns: 0.9fr 1.8fr 0.9fr 1.2fr 0.6fr !important;
 }
 
+.admin-search-history-delete {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+}
+
 .admin-flight-search-history-page .admin-search-history-cell {
   display: flex !important;
   flex-direction: column !important;
@@ -84,7 +89,7 @@
 .admin-flight-search-history-page .admin-view-header {
   display: flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
+  justify-content: space-between !important;
   gap: 16px !important;
   padding-bottom: 12px !important;
   border-bottom: 1px solid var(--admin-border) !important;
@@ -98,7 +103,6 @@
   padding: 6px 12px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
-  order: -1 !important;
 }
 
 .admin-flight-search-history-page .admin-view-header-main h2 {
@@ -129,14 +133,16 @@
 
 .admin-flight-search-history-page .admin-view-grid span {
   font-size: 0.75rem !important;
-  color: var(--admin-muted) !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
 }
 
 .admin-flight-search-history-page .admin-view-grid strong {
   font-size: 0.95rem !important;
-  color: var(--admin-text) !important;
+  color: #64748b !important;
+  font-weight: 400 !important;
 }
 
 /* Dark Theme Overrides */
@@ -175,3 +181,9 @@
   background: #3b82f6 !important;
   color: #ffffff !important;
 }
+
+.admin-flight-search-history-page .admin-search-history-cell strong {
+  font-size: 0.81rem !important;
+  font-weight: normal !important;
+}
+

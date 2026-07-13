@@ -228,14 +228,16 @@ export default function AdminFlightEditConvenienceFeePage() {
             <h1>{resolveHeading(true)}</h1>
           </header>
 
-          <button
-            type="button"
-            className="admin-flight-fee-list-btn"
-            onClick={() => navigate("/admin/b2c-flight/convenience-fee")}
-          >
-            <List size={14} />
-            B2C Flight Convenience Fee
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="button"
+              className="admin-flight-fee-list-btn"
+              onClick={() => navigate("/admin/b2c-flight/convenience-fee")}
+            >
+              <List size={14} />
+              B2C Flight Convenience Fee
+            </button>
+          </div>
         </div>
 
         <div className="admin-data-error">Convenience fee record not found.</div>
@@ -250,14 +252,16 @@ export default function AdminFlightEditConvenienceFeePage() {
           <h1>{resolveHeading(isEditing)}</h1>
         </header>
 
-        <button
-          type="button"
-          className="admin-flight-fee-list-btn"
-          onClick={() => navigate("/admin/b2c-flight/convenience-fee")}
-        >
-          <List size={14} />
-          B2C Flight Convenience Fee
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            type="button"
+            className="admin-flight-fee-list-btn"
+            onClick={() => navigate("/admin/b2c-flight/convenience-fee")}
+          >
+            <List size={14} />
+            B2C Flight Convenience Fee
+          </button>
+        </div>
       </div>
 
       <section className="admin-flight-fee-edit-shell">

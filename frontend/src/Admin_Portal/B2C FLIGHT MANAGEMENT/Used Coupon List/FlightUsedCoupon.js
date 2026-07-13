@@ -13,8 +13,8 @@ export default function AdminFlightUsedCouponListPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewRecord, setViewRecord] = useState(null);
   const [filters, setFilters] = useState({
-    sortBy: "usedDate",
-    order: "desc",
+    sortBy: "bookingId",
+    order: "asc",
     bookingStatus: "All",
     cpnType: "All",
   });
@@ -59,9 +59,9 @@ export default function AdminFlightUsedCouponListPage() {
   const [editRecord, setEditRecord] = useState(null);
   const [deleteRecord, setDeleteRecord] = useState(null);
   const [formError, setFormError] = useState("");
-  const colWidths = ["5%", "10%", "11%", "11%", "9%", "9%", "9%", "9%", "11%", "16%"];
+  const colWidths = ["8%", "10%", "11%", "11%", "9%", "9%", "9%", "9%", "11%", "13%"];
   const headers = [
-    "SN",
+    "ID",
     "Booking ID",
     "Coupon Code",
     "Used Date",
@@ -88,6 +88,10 @@ export default function AdminFlightUsedCouponListPage() {
     if (filters.sortBy === "usedDate") {
       valA = new Date(valA).getTime() || 0;
       valB = new Date(valB).getTime() || 0;
+    } else if (filters.sortBy === "bookingId") {
+      const numA = parseInt(String(valA).replace(/\D/g, "")) || 0;
+      const numB = parseInt(String(valB).replace(/\D/g, "")) || 0;
+      return filters.order === "asc" ? numA - numB : numB - numA;
     } else if (typeof valA === "string") {
       return filters.order === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
     } else {
@@ -99,7 +103,7 @@ export default function AdminFlightUsedCouponListPage() {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -288,7 +292,7 @@ export default function AdminFlightUsedCouponListPage() {
       <section className="admin-b2c-page flight-markup-panel">
       <header className="flight-markup-toolbar">
         <div className="flight-markup-title">
-          <h1>B2C Flight Used Coupon List</h1>
+          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Used Coupon List</h1>
           <div className="flight-markup-title-underline" aria-hidden="true" />
         </div>
 
@@ -397,9 +401,7 @@ export default function AdminFlightUsedCouponListPage() {
               <tr>
                 {headers.map((headerLabel) => (
                   <th key={headerLabel}>
-                    <div className="flight-markup-th-pill">
-                      <span>{headerLabel}</span>
-                    </div>
+                    <span>{headerLabel}</span>
                   </th>
                 ))}
               </tr>
@@ -420,7 +422,7 @@ export default function AdminFlightUsedCouponListPage() {
 
                   return (
                     <tr key={`${record.bookingId}-${record.usedDate}`}>
-                      <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td>{record.id ?? "--"}</td>
                       <td>{record.bookingId}</td>
                       <td>
                         <span className="flight-coupon-code">{record.couponCode}</span>
@@ -443,14 +445,7 @@ export default function AdminFlightUsedCouponListPage() {
                           >
                             <Eye size={14} />
                           </button>
-                          <button
-                            type="button"
-                            title="Edit"
-                            aria-label={`Edit used coupon ${record.bookingId}`}
-                            onClick={() => openEditModal(record)}
-                          >
-                            <Pencil size={14} />
-                          </button>
+
                           <button
                             type="button"
                             title="Delete"
@@ -474,6 +469,7 @@ export default function AdminFlightUsedCouponListPage() {
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
           itemName="used coupons"
         />
       </section>
@@ -843,5 +839,6 @@ export default function AdminFlightUsedCouponListPage() {
     </>
   );
 }
+
 
 

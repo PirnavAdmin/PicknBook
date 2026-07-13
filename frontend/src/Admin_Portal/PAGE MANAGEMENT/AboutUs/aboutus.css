@@ -3,8 +3,8 @@
 }
 
 .about-container {
-  padding: 8px 24px;
-  background: #f4f6f9;
+  padding: 10px 24px 24px 24px;
+  background: transparent !important;
   min-height: 100vh;
   font-family: "Segoe UI", sans-serif;
   color: #333;
@@ -14,26 +14,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .about-container h2 {
   font-size: 1.8rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #1e293b;
   margin: 0;
 }
 
 .about-container h2 span {
-  color: #777;
+  color: #64748b;
 }
 
 .about-container .module-selector select {
   padding: 8px 14px;
   font-size: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid #A51C49;
   border-radius: 8px;
-  background: var(--primary);
+  background: #A51C49;
   color: white;
   font-weight: 600;
   cursor: pointer;
@@ -41,9 +41,9 @@
 }
 
 .about-container .module-selector select:hover {
-  background: var(--primary-strong);
+  background: #851237;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2);
 }
 
 .about-container .loading-state {
@@ -56,60 +56,42 @@
 /* ── Section card ─────────────────────────────── */
 .about-container .form-section {
   background: white;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(22, 65, 128, 0.04), 0 1px 3px rgba(22, 65, 128, 0.02);
 }
 
-/* ── Section header ribbon (matches AddPage) ──── */
+/* ── Section header ribbon (Solid Cerise Pink) ─── */
 .about-container .form-section > h3,
 .about-container .section-header h3 {
-  background: rgba(74, 15, 26, 0.05);
-  border-bottom: 2.5px solid var(--primary);
-  color: #ffffff;
-  padding: 0;
-  margin: 0 0 15px 0;
+  background: #A51C49 !important;
+  border-bottom: none !important;
+  color: #ffffff !important;
+  padding: 8px 16px !important;
+  margin: 0 0 20px 0;
   font-size: 14px;
   font-weight: 700;
   display: flex;
+  align-items: center;
   overflow: hidden;
-  border-radius: 6px 6px 0 0;
+  border-radius: 6px !important;
   position: relative;
 }
 
 .about-container .form-section > h3::before,
-.about-container .section-header h3::before {
-  content: "";
-  position: absolute;
-  right: 35px;
-  top: 0;
-  bottom: 0;
-  width: 45px;
-  background: rgba(74, 15, 26, 0.12);
-  transform: skewX(-35deg);
-  pointer-events: none;
-}
-
 .about-container .form-section > h3::after,
+.about-container .section-header h3::before,
 .about-container .section-header h3::after {
-  content: "";
-  position: absolute;
-  right: -15px;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  background: rgba(74, 15, 26, 0.2);
-  transform: skewX(-35deg);
-  pointer-events: none;
+  display: none !important;
 }
 
 .about-container .form-section > h3 span.title-tab,
 .about-container .section-header h3 span.title-tab {
-  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
-  padding: 8px 28px 8px 16px;
-  display: inline-block;
-  clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+  background: transparent !important;
+  padding: 0 !important;
+  clip-path: none !important;
   color: #ffffff !important;
 }
 
@@ -148,19 +130,23 @@
 
 .about-container .form-group label {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: #000000 !important;
+  text-transform: uppercase;
 }
 
+/* All input fields background white (empty of color) */
 .about-container .form-group input,
 .about-container .form-group select,
-.about-container .form-group textarea {
+.about-container .form-group textarea,
+.about-container .count-grid .count-pair input,
+.about-container .about-sub-table input {
   padding: 8px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid #cbd5e1 !important;
   border-radius: 6px;
   width: 100%;
-  background: var(--panel);
-  color: var(--text-primary);
+  background: #ffffff !important;
+  color: #1e293b !important;
   outline: none;
   font-family: inherit;
   font-size: 14px;
@@ -169,9 +155,11 @@
 
 .about-container .form-group input:focus,
 .about-container .form-group select:focus,
-.about-container .form-group textarea:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
+.about-container .form-group textarea:focus,
+.about-container .count-grid .count-pair input:focus,
+.about-container .about-sub-table input:focus {
+  border-color: #A51C49 !important;
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.15) !important;
 }
 
 .about-container .form-group textarea {
@@ -195,26 +183,9 @@
 
 .about-container .count-grid .count-pair label {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.about-container .count-grid .count-pair input {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  width: 100%;
-  background: var(--panel);
-  color: var(--text-primary);
-  outline: none;
-  font-family: inherit;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.about-container .count-grid .count-pair input:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
+  font-weight: 700;
+  color: #000000 !important;
+  text-transform: uppercase;
 }
 
 .about-container .count-row-actions {
@@ -230,11 +201,11 @@
 }
 
 .about-container .about-sub-table th {
-  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  background: #A51C49 !important;
   color: #fff;
   font-size: 13px;
   padding: 10px;
-  border: 1px solid var(--primary);
+  border: 1px solid #A51C49;
   text-align: center;
 }
 
@@ -250,28 +221,9 @@
   padding: 20px;
 }
 
-.about-container .about-sub-table input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 13px;
-  background: var(--panel);
-  color: var(--text-primary);
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.about-container .about-sub-table input:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
-}
-
 /* ── Buttons ──────────────────────────────────── */
 .about-container .add-row-btn {
-  background: var(--primary);
+  background: #A51C49 !important;
   color: white;
   border: none;
   padding: 8px 14px;
@@ -285,9 +237,9 @@
 }
 
 .about-container .add-row-btn:hover {
-  background: var(--primary-strong);
+  background: #851237 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2);
 }
 
 .about-container .delete-row-btn {
@@ -326,13 +278,16 @@
 .about-container .submit-area {
   display: flex;
   justify-content: flex-end;
-  margin-top: 15px;
+  margin-top: 10px;
+  padding-top: 0px;
+  border-top: none;
+  margin-bottom: 30px;
 }
 
 .about-container .submit-btn {
-  background: var(--primary);
-  color: white;
-  border: 1.5px solid var(--primary);
+  background: #10b981 !important;
+  color: white !important;
+  border: 1.5px solid #10b981 !important;
   padding: 10px 30px;
   border-radius: 8px;
   font-weight: 700;
@@ -342,16 +297,17 @@
 }
 
 .about-container .submit-btn:hover {
-  background: var(--primary-strong);
-  border-color: var(--primary-strong);
+  background: #059669 !important;
+  border-color: #059669 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .about-container .submit-btn:disabled {
-  background: #ccc;
-  border-color: #ccc;
+  background: #ccc !important;
+  border-color: #ccc !important;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
+

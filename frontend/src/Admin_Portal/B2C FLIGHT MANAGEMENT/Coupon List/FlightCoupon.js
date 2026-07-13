@@ -59,25 +59,28 @@ export default function AdminFlightCouponListPage() {
   const itemsPerPage = 10;
   const totalItems = coupons.length;
   const paginatedCoupons = useMemo(() => {
+    const sortedCoupons = [...coupons].sort((a, b) => {
+      const numA = parseInt(String(a.id).replace(/\D/g, "")) || 0;
+      const numB = parseInt(String(b.id).replace(/\D/g, "")) || 0;
+      return numA - numB;
+    });
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return coupons.slice(startIndex, startIndex + itemsPerPage);
+    return sortedCoupons.slice(startIndex, startIndex + itemsPerPage);
   }, [coupons, currentPage]);
   const colWidths = [
-    "5%",
-    "6%",
     "8%",
+    "10%",
+    "10%",
+    "13%",
+    "10%",
+    "10%",
+    "11%",
     "8%",
     "11%",
     "9%",
-    "9%",
-    "10%",
-    "7%",
-    "10%",
-    "7%",
     "10%",
   ];
   const headers = [
-    "SN",
     "ID",
     "CPN Value",
     "CPN Type",
@@ -286,7 +289,7 @@ export default function AdminFlightCouponListPage() {
     <section className="admin-b2c-page flight-markup-panel">
       <header className="flight-markup-toolbar">
         <div className="flight-markup-title">
-          <h1>B2C Flight Coupon List</h1>
+          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Coupon List</h1>
           <div className="flight-markup-title-underline" aria-hidden="true" />
         </div>
 
@@ -701,7 +704,6 @@ export default function AdminFlightCouponListPage() {
               ) : (
                 paginatedCoupons.map((coupon, index) => (
                   <tr key={coupon.id}>
-                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td>{coupon.id}</td>
                     <td>{`INR ${Number(coupon.value) || 0}`}</td>
                     <td>{coupon.cpnType}</td>
@@ -764,5 +766,6 @@ export default function AdminFlightCouponListPage() {
     </section>
   );
 }
+
 
 

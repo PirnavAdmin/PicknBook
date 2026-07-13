@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Eye, PencilLine, PlusCircle, Power, Trash2 } from "lucide-react";
+import { CheckCircle2, Eye, PencilLine, PlusCircle, Power, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
+  createConvenienceFee,
   deleteConvenienceFee,
   getConvenienceFee,
   updateConvenienceFeeById,
@@ -44,8 +45,8 @@ const normalizeFeeRecord = (record, index = 0) => {
     id: normalizeText(record?.id, `${index + 1}`),
     amountType: normalizeAmountType(record?.amountType, "Fixed"),
     value: toSafeNumber(record?.value, 0),
-    entryDateUtc: normalizeText(record?.entryDateUtc, ""),
-    updateDateUtc: normalizeText(record?.updateDateUtc || record?.updatedAtUtc, ""),
+    entryDateUtc: normalizeText(record?.entryDateUtc ?? record?.createdAt ?? record?.CreatedAt ?? record?.createdDate ?? record?.createdOn ?? record?.CreatedOn ?? null, ""),
+    updateDateUtc: normalizeText(record?.updateDateUtc ?? record?.updateDate ?? record?.UpdateDate ?? record?.updatedAtUtc ?? record?.updatedAt ?? record?.UpdatedAt ?? record?.updatedDate ?? record?.UpdatedDate ?? record?.modifiedDate ?? record?.ModifiedDate ?? record?.updatedOn ?? record?.UpdatedOn ?? record?.entryDateUtc ?? record?.createdAt ?? record?.CreatedAt ?? record?.createdDate ?? record?.createdOn ?? record?.CreatedOn ?? null, ""),
     updatedBy: normalizeText(record?.updatedBy, "system"),
     status: normalizeStatus(record?.status, "Active"),
   };
@@ -168,8 +169,51 @@ export default function AdminFlightConvenienceFeePage() {
   const navigate = useNavigate();
   const [fees, setFees] = useState([]);
   const [selectedFee, setSelectedFee] = useState(null);
+  const [editRecord, setEditRecord] = useState(null);
+  const [editFeeValue, setEditFeeValue] = useState("");
+  const [editAmountType, setEditAmountType] = useState("Fixed");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const handleOpenEdit = (record) => {
+    setEditRecord(record);
+    setEditFeeValue(String(record.value));
+    setEditAmountType(record.amountType || "Fixed");
+    setEditIsActive(resolveStatusKey(record.status) === "active");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editRecord) return;
+    setIsSaving(true);
+    const nextStatus = editIsActive ? "Active" : "Inactive";
+    const updatedPayload = {
+      id: editRecord.id,
+      amountType: editAmountType,
+      value: Number(editFeeValue) || 0,
+      entryDateUtc: editRecord.entryDateUtc || null,
+      updateDateUtc: new Date().toISOString(),
+      updatedBy: editRecord.updatedBy || "system",
+      status: nextStatus,
+    };
+
+    try {
+      await updateConvenienceFeeById(editRecord.id, updatedPayload);
+    } catch (e) {
+      console.warn("Failed to update status on server", e);
+    }
+
+    updateFlightConvenienceFeeById(editRecord.id, {
+      amountType: editAmountType,
+      value: Number(editFeeValue) || 0,
+      status: nextStatus,
+      updatedBy: editRecord.updatedBy || "system",
+    });
+    setEditRecord(null);
+    setIsSaving(false);
+    loadFees();
+  };
 
   const loadFees = async () => {
     try {
@@ -254,18 +298,18 @@ export default function AdminFlightConvenienceFeePage() {
     <section className="admin-b2c-page admin-flight-fee-page">
       <div className="admin-flight-fee-toolbar">
         <header className="admin-b2c-header admin-flight-fee-header">
-          <h1>B2C Flight Convenience Fee</h1>
+          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Convenience Fee</h1>
         </header>
 
-        <div className="admin-actions-row">
-          <button
-            type="button"
-            className="admin-flight-fee-add-btn"
-            onClick={() => navigate("/admin/b2c-flight/convenience-fee/add")}
-          >
-            <PlusCircle size={15} />
-            Add Convenience Fee
-          </button>
+        <div className="admin-flight-fee-head-right">
+            <button
+              type="button"
+              className="admin-flight-fee-add-btn"
+              onClick={() => navigate("/admin/b2c-flight/add-convenience-fee")}
+            >
+              <PlusCircle size={14} />
+              Add Convenience Fee
+            </button>
         </div>
       </div>
 
@@ -286,27 +330,27 @@ export default function AdminFlightConvenienceFeePage() {
             {rows.map(({ item, index, statusKey }) => (
               <article key={item.id} className="admin-flight-fee-table-row">
                 <div className="admin-flight-fee-cell admin-flight-fee-cell-center">
-                  <strong>{index + 1}</strong>
+                  <span>{index + 1}</span>
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{safeValue(item.amountType, "Fixed")}</strong>
+                  <span>{safeValue(item.amountType, "Fixed")}</span>
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{formatFeeLabel(item)}</strong>
+                  <span>{formatFeeLabel(item)}</span>
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{formatConvenienceDateTime(item.entryDateUtc)}</strong>
+                  <span>{formatConvenienceDateTime(item.entryDateUtc)}</span>
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{formatConvenienceDateTime(item.updateDateUtc)}</strong>
+                  <span>{formatConvenienceDateTime(item.updateDateUtc)}</span>
                 </div>
 
                 <div className="admin-flight-fee-cell">
-                  <strong>{safeValue(item.updatedBy)}</strong>
+                  <span>{safeValue(item.updatedBy)}</span>
                 </div>
 
                 <div className="admin-flight-fee-cell admin-flight-fee-cell-center">
@@ -329,13 +373,7 @@ export default function AdminFlightConvenienceFeePage() {
                     type="button"
                     className="admin-flight-fee-icon-btn edit"
                     aria-label={`Edit convenience fee ${item.id}`}
-                    onClick={() =>
-                      navigate(
-                        `/admin/b2c-flight/convenience-fee/edit?ref_id=${encodeURIComponent(
-                          String(item.id)
-                        )}`
-                      )
-                    }
+                    onClick={() => handleOpenEdit(item)}
                   >
                     <PencilLine size={15} />
                   </button>
@@ -372,69 +410,118 @@ export default function AdminFlightConvenienceFeePage() {
         />
       </section>
 
-      {selectedFee ? (
-        <div className="admin-view-backdrop" onClick={() => setSelectedFee(null)}>
-          <article
-            className="admin-view-card"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Flight convenience fee details"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="admin-view-header">
-              <div className="admin-view-header-main">
-                <h2>Convenience Fee Detail</h2>
-                <p className="admin-view-header-subtitle">
-                  ID {safeValue(selectedFee.id)} | {safeValue(selectedFee.updatedBy)}
-                </p>
-                <div className="admin-view-meta-row">
-                  <span className="admin-view-meta-chip success">
-                    {safeValue(selectedFee.status)}
-                  </span>
-                  <span className="admin-view-meta-chip">
-                    Fee {formatFeeLabel(selectedFee)}
-                  </span>
-                </div>
-              </div>
-              <button type="button" onClick={() => setSelectedFee(null)}>
-                Close
-              </button>
+      {selectedFee && (
+        <div className="admin-convenience-modal-backdrop" onClick={() => setSelectedFee(null)}>
+          <div className="admin-convenience-modal" onClick={e => e.stopPropagation()}>
+            <header>
+              <h2>View Convenience Fee</h2>
+              <button onClick={() => setSelectedFee(null)}><X size={20} /></button>
             </header>
-
-            <section className="admin-view-grid">
-              <div>
-                <span>ID</span>
-                <strong>{safeValue(selectedFee.id)}</strong>
+            <div className="admin-convenience-modal-body">
+              <div className="admin-convenience-detail-row">
+                <strong>ID:</strong>
+                <span>{safeValue(selectedFee.id)}</span>
               </div>
-              <div>
-                <span>Amount Type</span>
-                <strong>{safeValue(selectedFee.amountType, "Fixed")}</strong>
+              <div className="admin-convenience-detail-row">
+                <strong>Amount Type:</strong>
+                <span>{safeValue(selectedFee.amountType, "Fixed")}</span>
               </div>
-              <div>
-                <span>Value</span>
-                <strong>{formatFeeLabel(selectedFee)}</strong>
+              <div className="admin-convenience-detail-row">
+                <strong>Value:</strong>
+                <span>{formatFeeLabel(selectedFee)}</span>
               </div>
-              <div>
-                <span>Entry Date</span>
-                <strong>{formatConvenienceDateTime(selectedFee.entryDateUtc)}</strong>
+              <div className="admin-convenience-detail-row">
+                <strong>Status:</strong>
+                <span style={{ color: resolveStatusKey(selectedFee.status) === 'active' ? '#28a745' : '#be185d', fontWeight: 600 }}>
+                  {safeValue(selectedFee.status, "Active")}
+                </span>
               </div>
-              <div>
-                <span>Update Date</span>
-                <strong>{formatConvenienceDateTime(selectedFee.updateDateUtc)}</strong>
+              <div className="admin-convenience-detail-row">
+                <strong>Entry Date:</strong>
+                <span>{formatConvenienceDateTime(selectedFee.entryDateUtc)}</span>
               </div>
-              <div>
-                <span>Updated By</span>
-                <strong>{safeValue(selectedFee.updatedBy)}</strong>
+              <div className="admin-convenience-detail-row">
+                <strong>Update Date:</strong>
+                <span>{formatConvenienceDateTime(selectedFee.updateDateUtc)}</span>
               </div>
-              <div className="admin-view-highlight-card">
-                <span>Status</span>
-                <strong>{safeValue(selectedFee.status)}</strong>
+              <div className="admin-convenience-detail-row">
+                <strong>Updated By:</strong>
+                <span>{safeValue(selectedFee.updatedBy)}</span>
               </div>
-            </section>
-          </article>
+            </div>
+          </div>
         </div>
-      ) : null}
+      )}
+
+      {editRecord && (
+        <div className="admin-convenience-modal-backdrop" onClick={() => !isSaving && setEditRecord(null)}>
+          <div className="admin-convenience-modal" onClick={e => e.stopPropagation()}>
+            <header>
+              <h2>Edit Convenience Fee</h2>
+              <button onClick={() => !isSaving && setEditRecord(null)}><X size={20} /></button>
+            </header>
+            <div className="admin-convenience-modal-body form-body">
+              
+              <div style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0 }}>
+                <label className="admin-convenience-edit-label" style={{ margin: '0 0 4px 0', padding: 0, lineHeight: 1.2 }}>Amount Type</label>
+                <select
+                  className="admin-convenience-input"
+                  style={{ height: '44px', padding: '0 14px', margin: 0 }}
+                  value={editAmountType}
+                  onChange={(e) => setEditAmountType(e.target.value)}
+                >
+                  <option value="Fixed">Fixed</option>
+                  <option value="Percentage">Percentage</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0 }}>
+                <label className="admin-convenience-edit-label" style={{ margin: '0 0 4px 0', padding: 0, lineHeight: 1.2 }}>Fee Value</label>
+                <input 
+                  type="number" 
+                  className="admin-convenience-input"
+                  style={{ height: '44px', margin: 0 }}
+                  value={editFeeValue} 
+                  onChange={(e) => setEditFeeValue(e.target.value)}
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              
+              <div style={{ marginTop: '10px' }}>
+                <label className="admin-convenience-toggle-label">
+                  <input 
+                    type="checkbox" 
+                    checked={editIsActive} 
+                    onChange={(e) => setEditIsActive(e.target.checked)} 
+                  />
+                  <span>Is Active</span>
+                </label>
+              </div>
+
+              <div className="admin-convenience-modal-actions">
+                <button 
+                  className="secondary" 
+                  onClick={() => setEditRecord(null)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="primary" 
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
 

@@ -925,7 +925,7 @@ export default function AdminFlightBookingListPage() {
       <header className="admin-b2c-header admin-flight-booking-header">
         <div className="admin-toolbar-row">
           <h1 className="admin-flight-booking-title">
-            <strong>B2C Flight</strong> Booking List
+            <span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Booking List
           </h1>
 
           <div className="admin-actions-row admin-flight-actions">
@@ -1362,4 +1362,5 @@ export default function AdminFlightBookingListPage() {
     </section>
   );
 }
+
 

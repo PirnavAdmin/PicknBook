@@ -1,9 +1,13 @@
-/* ═══════════════════════════════════
-   PAGE HEADING  — same as Discount List
-   ═══════════════════════════════════ */
+.bus-gst-settings-page-container {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  padding-top: 24px !important;
+}
+
 .markup-heading {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
   gap: 4px;
 }
 
@@ -16,10 +20,10 @@
 }
 
 .bus-gst-settings-page-container .markup-heading-sub {
-  margin: 0;
-  font-size: 18px;
+  font-size: 22px !important;
   font-weight: 700 !important;
   color: #000000 !important;
+  margin-left: 8px !important;
 }
 
 /* ═══════════════════════════════════
@@ -122,9 +126,9 @@
 
 /* Primary "Add New" button */
 .markup-primary-btn {
-  border: 1px solid var(--admin-primary);
-  background: var(--admin-primary);
-  color: #fff;
+  border: 1.5px solid #A51C49 !important;
+  background: #A51C49 !important;
+  color: #fff !important;
   padding: 10px 16px;
   border-radius: 10px;
   font-weight: 600;
@@ -134,19 +138,22 @@
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(30, 117, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+  transition: all 0.25s ease !important;
 }
 
 .markup-primary-btn:hover {
-  background: var(--admin-primary-strong);
-  border-color: var(--admin-primary-strong);
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
 }
 
 /* Export button */
 .markup-export-btn {
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #fff;
+  border: 1.5px solid #A51C49 !important;
+  background: #A51C49 !important;
+  color: #fff !important;
   padding: 10px 16px;
   border-radius: 10px;
   font-weight: 600;
@@ -156,12 +163,15 @@
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+  transition: all 0.25s ease !important;
 }
 
 .markup-export-btn:hover:not(:disabled) {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
 }
 
 .markup-export-btn:disabled {
@@ -191,6 +201,18 @@
   cursor: pointer !important;
 }
 
+.bus-gst-settings-page-container .stat-card.total {
+  border-left: 4px solid #2563eb !important;
+}
+
+.bus-gst-settings-page-container .stat-card.active {
+  border-left: 4px solid #10b981 !important;
+}
+
+.bus-gst-settings-page-container .stat-card.inactive {
+  border-left: 4px solid #ef4444 !important;
+}
+
 .bus-gst-settings-page-container .stat-card:hover {
   transform: translateY(-4px) !important;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12) !important;
@@ -203,8 +225,8 @@
   font-weight: 600 !important;
 }
 
-.bus-gst-settings-page-container .stat-card.total .stat-label { color: var(--admin-primary) !important; }
-.bus-gst-settings-page-container .stat-card.active .stat-label { color: var(--admin-success) !important; }
+.bus-gst-settings-page-container .stat-card.total .stat-label { color: #2563eb !important; }
+.bus-gst-settings-page-container .stat-card.active .stat-label { color: #10b981 !important; }
 .bus-gst-settings-page-container .stat-card.inactive .stat-label { color: #ef4444 !important; }
 
 .bus-gst-settings-page-container .stat-value {
@@ -411,11 +433,13 @@
 }
 
 .admin-markup-table td {
-  padding: 10px 8px;
+  padding: 8px 8px;
   border-bottom: 1px solid var(--border);
   text-align: center;
   vertical-align: middle;
   overflow: visible;
+  font-weight: 600 !important;
+  font-size: 11px !important;
 }
 
 .admin-markup-table tbody tr:hover {
@@ -882,21 +906,29 @@
 
 .admin-markup-modal-actions button {
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 10px 20px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.25s ease !important;
 }
 
 .admin-markup-modal-actions button.primary {
-  background: var(--admin-primary) !important;
+  background: #A51C49 !important;
   color: white !important;
-  border-color: var(--admin-primary) !important;
+  border-color: #A51C49 !important;
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.15) !important;
 }
 
 .admin-markup-modal-actions button.primary:hover {
-  background: var(--admin-primary-strong) !important;
-  border-color: var(--admin-primary-strong) !important;
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
+}
+
+.admin-markup-modal-actions .secondary:hover {
+  transform: translateY(-3px) !important;
 }
 
 .admin-markup-modal-actions .secondary {
@@ -932,3 +964,4 @@
     border-bottom: 0;
   }
 }
+

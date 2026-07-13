@@ -1,0 +1,522 @@
+.admin-hotel-fee-page {
+  gap: 12px;
+}
+
+.admin-hotel-fee-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-hotel-fee-header h1 {
+  font-size: 1.86rem;
+}
+
+.admin-hotel-fee-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--admin-primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-hotel-fee-add-btn:hover {
+  background: var(--admin-primary-strong);
+  transform: translateY(-1px);
+}
+
+.admin-hotel-fee-table-shell {
+  border: 1px solid var(--admin-border);
+  border-radius: 13px;
+  overflow: hidden;
+  background: var(--admin-surface);
+  box-shadow: 0 10px 20px rgba(31, 31, 31, 0.08);
+}
+
+.admin-hotel-fee-table-head,
+.admin-hotel-fee-table-row {
+  display: grid;
+  grid-template-columns: 0.34fr 0.8fr 0.65fr 1fr 1fr 1fr 0.65fr 0.78fr;
+  gap: 8px;
+  padding: 8px;
+}
+
+.admin-hotel-fee-table-head {
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+}
+
+.admin-hotel-fee-table-head span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.admin-hotel-fee-table-body {
+  display: grid;
+}
+
+.admin-hotel-fee-table-row {
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-hotel-fee-cell {
+  min-height: 56px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-surface);
+  padding: 8px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 3px;
+  color: var(--admin-text);
+  font-size: 0.81rem;
+}
+
+.admin-hotel-fee-cell strong,
+.admin-hotel-fee-cell span {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.admin-hotel-fee-cell-center {
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.admin-hotel-fee-status {
+  min-height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-success);
+  background: var(--admin-success-soft);
+  color: var(--admin-success);
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-hotel-fee-status.inactive {
+  border-color: var(--admin-danger);
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
+.admin-hotel-fee-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.admin-hotel-fee-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.admin-hotel-fee-icon-btn.view {
+  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary));
+}
+
+.admin-hotel-fee-icon-btn.edit {
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+}
+
+.admin-hotel-fee-icon-btn.toggle.active {
+  background: linear-gradient(135deg, var(--admin-success), var(--admin-primary-strong));
+}
+
+.admin-hotel-fee-icon-btn.toggle.inactive {
+  background: linear-gradient(135deg, var(--admin-danger), var(--admin-primary-strong));
+}
+
+@media (max-width: 920px) {
+  .admin-hotel-fee-table-head,
+  .admin-hotel-fee-table-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-hotel-fee-table-head,
+  .admin-hotel-fee-table-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark theme overrides for Convenience Fee Page */
+.admin-shell.dark-theme .admin-hotel-fee-table-shell {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-table-row {
+  border-top-color: #1e293b !important;
+  background-color: #0f172a !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-cell {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-cell strong {
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-add-btn {
+  background: linear-gradient(135deg, #1e75ff, #0052d9) !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-add-btn:hover {
+  box-shadow: 0 4px 12px rgba(30, 117, 255, 0.4) !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.view,
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.edit {
+  background: #1e293b !important;
+  color: #3b82f6 !important;
+  border: 1px solid #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.view:hover,
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.edit:hover {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.toggle.active {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.toggle.inactive {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.delete {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-icon-btn.delete:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* Pagination Styling */
+.admin-pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--admin-surface);
+  border-top: 1px solid var(--admin-border);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-pagination-info {
+  font-size: 0.82rem;
+  color: var(--admin-muted);
+}
+
+.admin-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-pagination-btn {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.admin-pagination-btn:hover:not(:disabled) {
+  background: var(--admin-soft);
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.admin-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-pagination-page-num {
+  font-size: 0.82rem;
+  color: var(--admin-text);
+  font-weight: 600;
+}
+
+/* Dark theme overrides for pagination */
+.admin-shell.dark-theme .admin-pagination-container {
+  background: #0f172a !important;
+  border-top-color: #1e293b !important;
+}
+
+.admin-shell.dark-theme .admin-pagination-info {
+  color: #94a3b8 !important;
+}
+
+.admin-shell.dark-theme .admin-pagination-btn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-pagination-btn:hover:not(:disabled) {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-pagination-page-num {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-hotel-fee-header h1 {
+  color: #ffffff !important;
+}
+
+
+
+/* Injected unified modal styles */
+
+.admin-convenience-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(16, 34, 58, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-convenience-modal {
+  background: var(--admin-surface);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 15px 30px rgba(16, 34, 58, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.admin-convenience-modal header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-convenience-modal header h2 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.admin-convenience-modal header button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-modal header button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.admin-convenience-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-convenience-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--admin-border);
+}
+
+.admin-convenience-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.admin-convenience-detail-row strong {
+  color: var(--admin-text-light);
+  font-size: 0.88rem;
+}
+
+.admin-convenience-detail-row span {
+  font-weight: 500;
+  color: var(--admin-text);
+  font-size: 0.95rem;
+}
+
+.form-body {
+  gap: 8px;
+}
+
+.admin-convenience-edit-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--admin-text-light);
+  margin-bottom: 4px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.admin-convenience-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  font-size: 0.95rem;
+  background: var(--admin-background);
+  color: var(--admin-text);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1);
+}
+
+.admin-convenience-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: var(--admin-background);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-convenience-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--admin-primary);
+  cursor: pointer;
+}
+
+.admin-convenience-toggle-label span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.admin-convenience-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.admin-convenience-modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-modal-actions button.secondary {
+  background: var(--admin-background);
+  color: var(--admin-text-light);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-convenience-modal-actions button.secondary:hover {
+  background: var(--admin-border);
+  color: var(--admin-text);
+}
+
+.admin-convenience-modal-actions button.primary {
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  color: #fff;
+}
+
+.admin-convenience-modal-actions button.primary:hover {
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.3);
+  transform: translateY(-1px);
+}
+
+.admin-convenience-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

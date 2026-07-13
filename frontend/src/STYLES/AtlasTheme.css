@@ -34,6 +34,213 @@ body {
   color: var(--theme-text) !important;
 }
 
+.travel-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 54px);
+  overflow: hidden;
+  isolation: isolate;
+  font-family: var(--app-font-family);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(220, 30, 38, 0.22), transparent 24%),
+    radial-gradient(circle at 86% 12%, rgba(255, 189, 89, 0.22), transparent 25%),
+    radial-gradient(circle at 52% 92%, rgba(184, 20, 27, 0.14), transparent 31%),
+    linear-gradient(135deg, #fff7f4 0%, #fffdf9 42%, #eef7ff 100%);
+  color: var(--theme-navy);
+}
+
+.travel-loading-screen::before,
+.travel-loading-screen::after {
+  content: "";
+  position: absolute;
+  inset: auto;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.travel-loading-screen::before {
+  width: min(980px, 86vw);
+  height: min(980px, 86vw);
+  left: 50%;
+  bottom: -48%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle, rgba(220, 30, 38, 0.1) 0 2px, transparent 2px 32px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.9), transparent 68%);
+  opacity: 0.55;
+}
+
+.travel-loading-screen::after {
+  width: 130vw;
+  height: 48vh;
+  left: -15vw;
+  bottom: -12vh;
+  background:
+    linear-gradient(140deg, transparent 0 18%, rgba(255, 226, 210, 0.88) 18% 30%, transparent 30%),
+    linear-gradient(40deg, transparent 0 24%, rgba(238, 247, 255, 0.95) 24% 38%, transparent 38%),
+    linear-gradient(150deg, rgba(255, 241, 232, 0.85), rgba(232, 243, 255, 0.78));
+  clip-path: polygon(0 48%, 9% 34%, 18% 52%, 29% 20%, 41% 48%, 52% 28%, 65% 56%, 78% 30%, 90% 52%, 100% 38%, 100% 100%, 0 100%);
+}
+
+.travel-loading-skyline {
+  position: absolute;
+  left: 7vw;
+  right: 7vw;
+  bottom: 8vh;
+  z-index: -1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  opacity: 0.38;
+}
+
+.travel-loading-skyline span {
+  width: clamp(48px, 8vw, 118px);
+  height: clamp(70px, 12vw, 170px);
+  border-radius: 18px 18px 0 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.32) 12%, transparent 12% 36%, rgba(255, 255, 255, 0.28) 36% 48%, transparent 48%),
+    linear-gradient(180deg, rgba(220, 30, 38, 0.16), rgba(184, 20, 27, 0.05));
+}
+
+.travel-loading-skyline span:nth-child(2),
+.travel-loading-skyline span:nth-child(4) {
+  height: clamp(104px, 16vw, 220px);
+}
+
+.travel-loading-panel {
+  width: min(920px, 100%);
+  display: grid;
+  gap: clamp(26px, 4vw, 42px);
+  justify-items: center;
+  text-align: center;
+}
+
+.travel-loading-route {
+  width: min(760px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: clamp(8px, 2vw, 20px);
+}
+
+.travel-loading-pin {
+  width: clamp(48px, 7vw, 74px);
+  height: clamp(48px, 7vw, 74px);
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-strong));
+  box-shadow: 0 18px 38px rgba(184, 20, 27, 0.25);
+}
+
+.travel-loading-road {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(90deg, rgba(184, 20, 27, 0.78) 0 18px, transparent 18px 31px),
+    rgba(220, 30, 38, 0.14);
+  box-shadow: 0 12px 28px rgba(184, 20, 27, 0.14);
+}
+
+.travel-loading-vehicle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: clamp(52px, 7vw, 72px);
+  height: clamp(52px, 7vw, 72px);
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #dc1e26, #b8141b);
+  box-shadow: 0 18px 34px rgba(184, 20, 27, 0.28);
+  transform: translate(-8%, -50%);
+  animation: travelLoadingDrive 2.6s ease-in-out infinite;
+}
+
+.travel-loading-copy {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  max-width: 680px;
+}
+
+.travel-loading-spinner {
+  color: var(--theme-primary);
+  animation: travelLoadingSpin 0.9s linear infinite;
+}
+
+.travel-loading-copy h1 {
+  margin: 0;
+  color: var(--theme-navy);
+  font-size: clamp(1.7rem, 4vw, 3.1rem);
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+.travel-loading-copy p {
+  margin: 0;
+  color: var(--theme-muted);
+  font-size: clamp(0.94rem, 1.7vw, 1.08rem);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.travel-loading-screen--flight .travel-loading-vehicle {
+  border-radius: 50%;
+}
+
+.travel-loading-screen--hotel .travel-loading-pin,
+.travel-loading-screen--hotel .travel-loading-vehicle {
+  background: linear-gradient(135deg, #0f9f8f, #0b6f79);
+}
+
+@keyframes travelLoadingDrive {
+  0% {
+    left: 0;
+    transform: translate(-8%, -50%) scale(0.94);
+  }
+  50% {
+    transform: translate(-50%, -66%) scale(1.04);
+  }
+  100% {
+    left: 100%;
+    transform: translate(-92%, -50%) scale(0.94);
+  }
+}
+
+@keyframes travelLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .travel-loading-route {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .travel-loading-road {
+    width: min(320px, 78vw);
+    justify-self: center;
+  }
+
+  .travel-loading-pin--start,
+  .travel-loading-pin--end {
+    display: none;
+  }
+}
+
 .homepage,
 .travel-auth-page,
 .dashboard-layout,
@@ -3457,4 +3664,3 @@ button:focus-visible {
   overflow: visible !important;
   overflow-y: visible !important;
 }
-

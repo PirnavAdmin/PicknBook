@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import "./BusMarkupList.css";
 import { csvCell, formatCurrency, formatDateTime, toViewId } from "../../../utils/adminPortalUtils";
+import AdminPagination from "../../../components/AdminPagination";
 import {
   getBusMarkupSettings,
   createBusMarkupSetting,
@@ -48,6 +49,12 @@ export default function AdminBusMarkupListPage() {
   const [sortOrder, setSortOrder] = useState(DEFAULT_SORT_ORDER);
   const [statusFilter, setStatusFilter] = useState("all");
   const [markupTypeFilter, setMarkupTypeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, markupTypeFilter, sortBy, sortOrder]);
   
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
@@ -131,6 +138,13 @@ export default function AdminBusMarkupListPage() {
 
     return sortedRows;
   }, [rows, markupTypeFilter, sortBy, sortOrder, statusFilter]);
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return visibleRows.slice(startIndex, startIndex + itemsPerPage);
+  }, [visibleRows, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleRows.length / itemsPerPage));
 
   const handleExport = () => {
     if (visibleRows.length === 0) {
@@ -277,302 +291,20 @@ export default function AdminBusMarkupListPage() {
 
   return (
     <div className="admin-b2c-page bus-markup-list-page-container">
-      {viewRow ? (
-        <section className="admin-markup-view-screen">
-          <header className="admin-markup-view-top">
-            <h2>
-              <strong>View B2C Bus</strong> Markup Details
-            </h2>
-
-            <div className="admin-markup-view-actions">
-              <button
-                type="button"
-                className="admin-markup-view-btn primary"
-                onClick={() => {
-                  openEditModal(viewRow);
-                  setViewRow(null);
-                }}
-              >
-                <Pencil size={14} />
-                <span>Edit B2C Markup</span>
-              </button>
-              <button type="button" className="admin-markup-view-btn secondary" onClick={() => setViewRow(null)}>
-                <List size={14} />
-                <span>B2C Bus Markup List</span>
-              </button>
-            </div>
-          </header>
-
-          <div className="admin-markup-view-underline" />
-
-          <div className="admin-markup-view-card">
-            <div className="admin-markup-view-band">
-              <span>Basic</span>
-              <strong>Details</strong>
-            </div>
-
-            <div className="admin-markup-view-table-wrap">
-              <table className="admin-markup-view-table">
-                <tbody>
-                  <tr>
-                    <td className="label">ID</td>
-                    <td className="value">{toViewId(viewRow.id)}</td>
-                    <td className="label">Markup Type</td>
-                    <td className="value">{viewRow.markupType}</td>
-                    <td className="label">Seat Type</td>
-                    <td className="value">{viewRow.seatType}</td>
-                    <td className="label">Status</td>
-                    <td className="value">{viewRow.status}</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Value</td>
-                    <td className="value">{Number(viewRow.value) || 0}</td>
-                    <td className="label">Entry Date</td>
-                    <td className="value">{formatDateTime(viewRow.entryDateUtc)}</td>
-                    <td className="label">Update Date</td>
-                    <td className="value">{formatDateTime(viewRow.updateDateUtc)}</td>
-                    <td className="label">Updated By</td>
-                    <td className="value">{viewRow.updatedBy}</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Remark</td>
-                    <td className="value remark-value" colSpan={7}>
-                      <span className="remark-text">{viewRow.remark || "--"}</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <>
+      {editRow ? (
+        <div className="admin-markup-edit-page-container" style={{ width: '100%' }}>
           {/* ── PAGE HEADING ── */}
-          <section className="markup-heading">
-            <p className="markup-heading-main">B2C Bus Management</p>
-            <p className="markup-heading-sub">Markup List</p>
+          <section className="markup-heading" style={{ marginBottom: '16px' }}>
+            <p className="markup-heading-main">
+              B2C Bus <span className="markup-heading-sub">{isAdding ? "Add Markup" : "Edit Markup"}</span>
+            </p>
           </section>
 
-          {/* ── STATS ROW ── */}
-          <section className="stats-row">
-            <div className="stat-card total">
-              <div className="stat-label">Total Markups</div>
-              <div className="stat-value">{rows.length}</div>
-              <div className="stat-meta">All seat type records</div>
-            </div>
-            <div className="stat-card active">
-              <div className="stat-label">Active</div>
-              <div className="stat-value">{rows.filter(r => r.status === 'Active').length}</div>
-              <div className="stat-meta">Currently applied</div>
-            </div>
-            <div className="stat-card inactive">
-              <div className="stat-label">Inactive</div>
-              <div className="stat-value">{rows.filter(r => r.status === 'Inactive').length}</div>
-              <div className="stat-meta">Paused markups</div>
-            </div>
-          </section>
-
-          {/* ── TOOLBAR ── */}
-          <section className="markup-toolbar">
-            <div className="markup-toolbar-group">
-              <label className="markup-field">
-                <span>Sort By</span>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="updateDateUtc">Updated On</option>
-                  <option value="id">ID</option>
-                  <option value="value">Value</option>
-                  <option value="markupType">Markup Type</option>
-                  <option value="seatType">Seat Type</option>
-                  <option value="updatedBy">Updated By</option>
-                  <option value="status">Status</option>
-                </select>
-              </label>
-              <label className="markup-field">
-                <span>Order</span>
-                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                  <option value="desc">Descending</option>
-                  <option value="asc">Ascending</option>
-                </select>
-              </label>
-              <label className="markup-field">
-                <span>Markup Type</span>
-                <select value={markupTypeFilter} onChange={(e) => setMarkupTypeFilter(e.target.value)}>
-                  <option value="all">All Types</option>
-                  {availableMarkupTypes.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="markup-toolbar-actions">
-              <label className="markup-field">
-                <span>Status</span>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="all">All</option>
-                  {availableStatuses.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" className="markup-primary-btn" onClick={openAddModal}>
-                <Plus size={14} />
-                Add New
-              </button>
-              <button
-                type="button"
-                className="markup-export-btn"
-                onClick={handleExport}
-                disabled={visibleRows.length === 0}
-              >
-                <Download size={14} />
-                Export
-              </button>
-            </div>
-          </section>
-
-          <section className="admin-markup-table-wrap">
-            {isLoading ? (
-              <p className="admin-markup-empty">Loading settings...</p>
-            ) : error ? (
-              <p className="admin-markup-empty" style={{ color: "red" }}>{error}</p>
-            ) : (
-              <table className="admin-markup-table">
-                <colgroup>
-                  <col style={{ width: "7%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "9%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "15%" }} />
-                  <col style={{ width: "11%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "11%" }} />
-                  <col style={{ width: "13%" }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Seat Type</th>
-                    <th>Value</th>
-                    <th>Markup Type</th>
-                    <th>Updated On</th>
-                    <th>Updated By</th>
-                    <th>Remark</th>
-                    <th>Status</th>
-                    <th className="action-col">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={9}>
-                        <p className="admin-markup-empty">No markup records found.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    visibleRows.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <button
-                            type="button"
-                            className="markup-id-chip"
-                            onClick={() => setViewRow(row)}
-                            aria-label={`Open basic details for ${row.id}`}
-                          >
-                            <span>{row.id}</span>
-                          </button>
-                        </td>
-                        <td>{row.seatType}</td>
-                        <td>{row.markupType === "Fixed" ? formatCurrency(row.value) : `${row.value}%`}</td>
-                        <td>{row.markupType}</td>
-                        <td>{formatDateTime(row.updateDateUtc)}</td>
-                        <td>{row.updatedBy}</td>
-                        <td className="markup-remark-cell">
-                          <span className="markup-remark-text">{row.remark || "--"}</span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className={`markup-status-toggle ${String(row.status || "").toLowerCase()}`}
-                            onClick={() => handleStatusToggle(row.id)}
-                            aria-label={`Set ${row.id} status`}
-                          >
-                            {row.status === "Active" ? <Check size={14} /> : <X size={14} />}
-                            <span>{row.status}</span>
-                          </button>
-                        </td>
-                        <td className="action-col">
-                          <div className="actions-dropdown-container">
-                            <button
-                              type="button"
-                              className={`actions-trigger-btn ${activeDropdownId === row.id ? 'active' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveDropdownId(activeDropdownId === row.id ? null : row.id);
-                              }}
-                            >
-                              <span>Actions</span>
-                              <ChevronDown size={12} className="chevron-icon" />
-                            </button>
-                            {activeDropdownId === row.id && (
-                              <div className="actions-dropdown-menu">
-                                <button
-                                  type="button"
-                                  className="dropdown-item view"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setViewRow(row);
-                                    setActiveDropdownId(null);
-                                  }}
-                                >
-                                  <Eye size={13} className="item-icon" />
-                                  <span>View Details</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="dropdown-item edit"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openEditModal(row);
-                                    setActiveDropdownId(null);
-                                  }}
-                                >
-                                  <Pencil size={13} className="item-icon" />
-                                  <span>Edit Markup</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="dropdown-item delete"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeleteRow(row);
-                                    setActiveDropdownId(null);
-                                  }}
-                                >
-                                  <Trash2 size={13} className="item-icon" />
-                                  <span>Delete Markup</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            )}
-          </section>
-        </>
-      )}
-
-      {editRow && (
-        <div className="admin-markup-modal-backdrop" onClick={() => !isSaving && setEditRow(null)}>
           <section
-            className="admin-markup-modal fullscreen"
+            className="admin-markup-modal fullscreen inline-card-container"
             role="dialog"
             aria-modal="true"
             aria-label="Edit markup"
-            onClick={(event) => event.stopPropagation()}
           >
             <header>
               <h2>{isAdding ? "Add Markup Setting" : "Edit Markup Setting"}</h2>
@@ -690,7 +422,308 @@ export default function AdminBusMarkupListPage() {
             </div>
           </section>
         </div>
+      ) : viewRow ? (
+        <section className="admin-markup-view-screen">
+          <header className="admin-markup-view-top">
+            <h2>
+              <strong>View B2C Bus</strong> Markup Details
+            </h2>
+
+            <div className="admin-markup-view-actions">
+              <button
+                type="button"
+                className="admin-markup-view-btn primary"
+                onClick={() => {
+                  openEditModal(viewRow);
+                  setViewRow(null);
+                }}
+              >
+                <Pencil size={14} />
+                <span>Edit B2C Markup</span>
+              </button>
+              <button type="button" className="admin-markup-view-btn secondary" onClick={() => setViewRow(null)}>
+                <List size={14} />
+                <span>B2C Bus Markup List</span>
+              </button>
+            </div>
+          </header>
+
+          <div className="admin-markup-view-underline" />
+
+          <div className="admin-markup-view-card">
+            <div className="admin-markup-view-band">
+              <span>Basic</span>
+              <strong>Details</strong>
+            </div>
+
+            <div className="admin-markup-view-table-wrap">
+              <table className="admin-markup-view-table">
+                <tbody>
+                  <tr>
+                    <td className="label">ID</td>
+                    <td className="value">{toViewId(viewRow.id)}</td>
+                    <td className="label">Markup Type</td>
+                    <td className="value">{viewRow.markupType}</td>
+                    <td className="label">Seat Type</td>
+                    <td className="value">{viewRow.seatType}</td>
+                    <td className="label">Status</td>
+                    <td className="value">{viewRow.status}</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Value</td>
+                    <td className="value">{Number(viewRow.value) || 0}</td>
+                    <td className="label">Entry Date</td>
+                    <td className="value">{formatDateTime(viewRow.entryDateUtc)}</td>
+                    <td className="label">Update Date</td>
+                    <td className="value">{formatDateTime(viewRow.updateDateUtc)}</td>
+                    <td className="label">Updated By</td>
+                    <td className="value">{viewRow.updatedBy}</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Remark</td>
+                    <td className="value remark-value" colSpan={7}>
+                      <span className="remark-text">{viewRow.remark || "--"}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
+          {/* ── PAGE HEADING ── */}
+          <section className="markup-heading">
+            <p className="markup-heading-main">
+              B2C Bus <span className="markup-heading-sub">Markup List</span>
+            </p>
+          </section>
+
+          {/* ── STATS ROW ── */}
+          <section className="stats-row">
+            <div className="stat-card total">
+              <div className="stat-label">Total Markups</div>
+              <div className="stat-value">{rows.length}</div>
+              <div className="stat-meta">All seat type records</div>
+            </div>
+            <div className="stat-card active">
+              <div className="stat-label">Active</div>
+              <div className="stat-value">{rows.filter(r => r.status === 'Active').length}</div>
+              <div className="stat-meta">Currently applied</div>
+            </div>
+            <div className="stat-card inactive">
+              <div className="stat-label">Inactive</div>
+              <div className="stat-value">{rows.filter(r => r.status === 'Inactive').length}</div>
+              <div className="stat-meta">Paused markups</div>
+            </div>
+          </section>
+
+          {/* ── TOOLBAR ── */}
+          <section className="markup-toolbar">
+            <div className="markup-toolbar-group">
+              <label className="markup-field">
+                <span>Sort By</span>
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <option value="updateDateUtc">Updated On</option>
+                  <option value="id">ID</option>
+                  <option value="value">Value</option>
+                  <option value="markupType">Markup Type</option>
+                  <option value="seatType">Seat Type</option>
+                  <option value="updatedBy">Updated By</option>
+                  <option value="status">Status</option>
+                </select>
+              </label>
+              <label className="markup-field">
+                <span>Order</span>
+                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </label>
+              <label className="markup-field">
+                <span>Markup Type</span>
+                <select value={markupTypeFilter} onChange={(e) => setMarkupTypeFilter(e.target.value)}>
+                  <option value="all">All Types</option>
+                  {availableMarkupTypes.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="markup-toolbar-actions">
+              <label className="markup-field">
+                <span>Status</span>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  <option value="all">All</option>
+                  {availableStatuses.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="markup-primary-btn" onClick={openAddModal}>
+                <Plus size={14} />
+                Add New
+              </button>
+              <button
+                type="button"
+                className="markup-export-btn"
+                onClick={handleExport}
+                disabled={visibleRows.length === 0}
+              >
+                <Download size={14} />
+                Export
+              </button>
+            </div>
+          </section>
+
+          <section className="admin-markup-table-wrap">
+            {isLoading ? (
+              <p className="admin-markup-empty">Loading settings...</p>
+            ) : error ? (
+              <p className="admin-markup-empty" style={{ color: "red" }}>{error}</p>
+            ) : (
+              <table className="admin-markup-table">
+                <colgroup>
+                  <col style={{ width: "7%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "9%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "15%" }} />
+                  <col style={{ width: "11%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "11%" }} />
+                  <col style={{ width: "13%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Seat Type</th>
+                    <th>Value</th>
+                    <th>Markup Type</th>
+                    <th>Updated On</th>
+                    <th>Updated By</th>
+                    <th>Remark</th>
+                    <th>Status</th>
+                    <th className="action-col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <p className="admin-markup-empty">No markup records found.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedRows.map((row) => (
+                      <tr key={row.id}>
+                        <td>
+                          <button
+                            type="button"
+                            className="markup-id-chip"
+                            onClick={() => setViewRow(row)}
+                            aria-label={`Open basic details for ${row.id}`}
+                          >
+                            <span>{row.id}</span>
+                          </button>
+                        </td>
+                        <td>{row.seatType}</td>
+                        <td>{row.markupType === "Fixed" ? formatCurrency(row.value) : `${row.value}%`}</td>
+                        <td>{row.markupType}</td>
+                        <td>{formatDateTime(row.updateDateUtc)}</td>
+                        <td>{row.updatedBy}</td>
+                        <td className="markup-remark-cell">
+                          <span className="markup-remark-text">{row.remark || "--"}</span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`markup-status-toggle ${String(row.status || "").toLowerCase()}`}
+                            onClick={() => handleStatusToggle(row.id)}
+                            aria-label={`Set ${row.id} status`}
+                          >
+                            {row.status === "Active" ? <Check size={14} /> : <X size={14} />}
+                            <span>{row.status}</span>
+                          </button>
+                        </td>
+                        <td className="action-col">
+                          <div className="actions-dropdown-container">
+                            <button
+                              type="button"
+                              className={`actions-trigger-btn ${activeDropdownId === row.id ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === row.id ? null : row.id);
+                              }}
+                            >
+                              <span>Actions</span>
+                              <ChevronDown size={12} className="chevron-icon" />
+                            </button>
+                            {activeDropdownId === row.id && (
+                              <div className="actions-dropdown-menu">
+                                <button
+                                  type="button"
+                                  className="dropdown-item view"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setViewRow(row);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <Eye size={13} className="item-icon" />
+                                  <span>View Details</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditModal(row);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <Pencil size={13} className="item-icon" />
+                                  <span>Edit Markup</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item delete"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteRow(row);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <Trash2 size={13} className="item-icon" />
+                                  <span>Delete Markup</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+            {totalPages > 1 && (
+              <div style={{ marginTop: "16px" }}>
+                <AdminPagination
+                  currentPage={currentPage}
+                  totalItems={visibleRows.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                  itemName="markup records"
+                />
+              </div>
+            )}
+          </section>
+        </>
       )}
+
+
 
       {deleteRow && (
         <div className="admin-markup-modal-backdrop" onClick={() => setDeleteRow(null)}>

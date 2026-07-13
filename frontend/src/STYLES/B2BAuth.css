@@ -1,0 +1,323 @@
+/* ─── B2B Authentication Styling ────────────────────────────────────────── */
+.b2b-auth-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  font-family: "Manrope", "Inter", "Segoe UI", sans-serif;
+  color: #1e293b;
+}
+
+/* Left panel with branding & illustration */
+.b2b-auth-hero {
+  flex: 1.2;
+  position: relative;
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.b2b-auth-hero::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
+  filter: blur(50px);
+}
+
+.b2b-auth-hero-header {
+  z-index: 2;
+}
+
+.b2b-auth-hero-logo {
+  height: 48px;
+  margin-bottom: 24px;
+  object-fit: contain;
+}
+
+.b2b-auth-hero-content {
+  z-index: 2;
+  max-width: 480px;
+  margin: auto 0;
+}
+
+.b2b-auth-hero-content h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  background: linear-gradient(to right, #ffffff, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.b2b-auth-hero-content p {
+  font-size: 1.1rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.b2b-auth-features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.b2b-auth-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.b2b-auth-feature-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.b2b-auth-hero-footer {
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 24px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Right panel with authentication card */
+.b2b-auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background-color: #ffffff;
+}
+
+.b2b-auth-card {
+  width: 100%;
+  max-width: 440px;
+}
+
+.b2b-auth-card-header {
+  margin-bottom: 32px;
+}
+
+.b2b-auth-card-header h2 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.b2b-auth-card-header p {
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+/* Form Styles */
+.b2b-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.b2b-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.b2b-form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.b2b-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.b2b-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+}
+
+.b2b-input-field {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.b2b-input-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.b2b-input-toggle {
+  position: absolute;
+  right: 14px;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.b2b-input-toggle:hover {
+  color: #64748b;
+}
+
+.b2b-form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.b2b-remember-me {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  color: #475569;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.b2b-remember-me input {
+  cursor: pointer;
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+.b2b-forgot-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.b2b-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.b2b-submit-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.b2b-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.b2b-submit-btn:active {
+  transform: translateY(0);
+}
+
+.b2b-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Status Notifications */
+.b2b-status-alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.b2b-status-alert.error {
+  background-color: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+.b2b-status-alert.success {
+  background-color: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #047857;
+}
+
+/* Form Footer Toggle */
+.b2b-auth-footer {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.b2b-auth-footer a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.b2b-auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Layout */
+@media (max-width: 1024px) {
+  .b2b-auth-hero {
+    display: none;
+  }
+  .b2b-auth-form-panel {
+    background-color: #f8fafc;
+  }
+  .b2b-auth-card {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+  }
+}
+
+@media (max-width: 480px) {
+  .b2b-auth-form-panel {
+    padding: 24px 16px;
+  }
+  .b2b-auth-card {
+    padding: 24px 20px;
+  }
+}

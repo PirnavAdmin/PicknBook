@@ -1,3 +1,8 @@
+.bus-discount-list-page-container {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+}
+
 .discount-heading {
   display: flex;
   flex-direction: column;
@@ -13,10 +18,10 @@
 }
 
 .bus-discount-list-page-container .discount-heading-sub {
-  margin: 0;
-  font-size: 18px;
+  font-size: 22px !important;
   font-weight: 700 !important;
   color: #000000 !important;
+  margin-left: 8px !important;
 }
 
 .bus-discount-list-page-container .stats-row {
@@ -129,7 +134,7 @@
 
 .bus-discount-list-page-container .field input,
 .bus-discount-list-page-container .field select {
-  border: 1px solid #cbd5e1 !important;
+  border: 1px solid var(--admin-primary) !important;
   border-radius: 8px !important;
   padding: 8px 12px !important;
   font-size: 13px !important;
@@ -145,10 +150,15 @@
   padding-left: 36px !important;
 }
 
+.bus-discount-list-page-container .field input:hover,
+.bus-discount-list-page-container .field select:hover {
+  border-color: var(--admin-primary) !important;
+}
+
 .bus-discount-list-page-container .field input:focus,
 .bus-discount-list-page-container .field select:focus {
   border-color: var(--admin-primary) !important;
-  box-shadow: 0 0 0 3px rgba(30, 117, 255, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.15) !important;
   outline: none !important;
   background: #ffffff !important;
 }
@@ -168,6 +178,17 @@
   font-weight: 600 !important;
   transition: all 0.2s ease !important;
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08) !important;
+  background: #A51C49 !important;
+  border: 1.5px solid #A51C49 !important;
+  color: #ffffff !important;
+}
+
+.bus-discount-list-page-container .primary-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  color: #ffffff !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 14px rgba(165, 28, 73, 0.3) !important;
 }
 
 .bus-discount-list-page-container .field.wide {
@@ -290,23 +311,26 @@
 }
 
 .primary-btn {
-  border: 1px solid var(--admin-primary);
-  background: var(--admin-primary);
-  color: #fff;
+  border: 1.5px solid #A51C49 !important;
+  background: #A51C49 !important;
+  color: #fff !important;
   padding: 12px 18px;
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 6px 14px rgba(165, 28, 73, 0.12) !important;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+  transition: all 0.25s ease !important;
 }
 
 .primary-btn:hover {
-  background: var(--admin-primary-strong);
-  border-color: var(--admin-primary-strong);
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 18px rgba(165, 28, 73, 0.25) !important;
 }
 
 .discount-list-page-container {
@@ -642,6 +666,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -674,6 +699,7 @@
   background: #eff6ff;
   color: #2563eb;
 }
+
 .dropdown-item.view:hover .item-icon {
   color: #2563eb;
 }
@@ -682,6 +708,7 @@
   background: #eff6ff;
   color: #2563eb;
 }
+
 .dropdown-item.edit:hover .item-icon {
   color: #2563eb;
 }
@@ -690,6 +717,7 @@
   background: #eff6ff;
   color: #2563eb;
 }
+
 .dropdown-item.delete:hover .item-icon {
   color: #2563eb;
 }
@@ -698,13 +726,15 @@
    EXPORT BUTTON STYLE
    ══════════════════════════════════════ */
 .export-btn {
-  background: #2563eb !important;
-  border-color: #2563eb !important;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2) !important;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  box-shadow: 0 4px 10px rgba(165, 28, 73, 0.2) !important;
   color: #ffffff !important;
+  transition: all 0.25s ease !important;
 }
 
 .export-btn:hover {
-  background: #1d4ed8 !important;
-  border-color: #1d4ed8 !important;
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
 }

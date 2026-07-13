@@ -42,7 +42,7 @@ const HOTEL_GALLERY_SETS = [
     "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80",
   ],
 ];
-
+ 
 const HOST_NAMES = [
   "Aarav",
   "Meera",
@@ -53,7 +53,7 @@ const HOST_NAMES = [
   "Tanya",
   "Vihaan",
 ];
-
+ 
 const PROPERTY_LABELS = [
   "Guest favourite stay",
   "Boutique city stay",
@@ -62,7 +62,7 @@ const PROPERTY_LABELS = [
   "Work-and-weekend home",
   "Premium urban retreat",
 ];
-
+ 
 const HIGHLIGHT_LABELS = [
   "Fast self check-in",
   "Peaceful neighborhood",
@@ -71,26 +71,26 @@ const HIGHLIGHT_LABELS = [
   "Top-rated location",
   "Clean, modern interiors",
 ];
-
+ 
 function hashString(value) {
   const input = String(value || "hotel").trim() || "hotel";
   let hash = 0;
-
+ 
   for (let index = 0; index < input.length; index += 1) {
     hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
   }
-
+ 
   return hash;
 }
-
+ 
 function pickBySeed(collection, seedValue) {
   if (!Array.isArray(collection) || collection.length === 0) {
     return null;
   }
-
+ 
   return collection[hashString(seedValue) % collection.length];
 }
-
+ 
 export function getHotelVisuals(seedValue) {
   const seed = String(seedValue || "hotel");
   const gallery = pickBySeed(HOTEL_GALLERY_SETS, seed) || HOTEL_GALLERY_SETS[0];
@@ -99,7 +99,7 @@ export function getHotelVisuals(seedValue) {
   const highlightLabel = pickBySeed(HIGHLIGHT_LABELS, `${seed}-highlight`) || HIGHLIGHT_LABELS[0];
   const hostYears = 2 + (hashString(`${seed}-years`) % 5);
   const avatarHue = hashString(`${seed}-avatar`) % 360;
-
+ 
   return {
     gallery,
     cardImage: gallery[0],
@@ -114,12 +114,12 @@ export function getHotelVisuals(seedValue) {
     },
   };
 }
-
+ 
 export function formatNightLabel(nights) {
   const totalNights = Math.max(1, Number(nights) || 1);
   return `${totalNights} night${totalNights > 1 ? "s" : ""}`;
 }
-
+ 
 export function buildGuestSummary(searchContext = {}) {
   const rooms = Math.max(1, Number(searchContext?.rooms) || 1);
   const adults = Math.max(1, Number(searchContext?.adults) || 1);
@@ -127,59 +127,61 @@ export function buildGuestSummary(searchContext = {}) {
   const roomText = `${rooms} room${rooms > 1 ? "s" : ""}`;
   const adultText = `${adults} adult${adults > 1 ? "s" : ""}`;
   const childText = children > 0 ? `, ${children} child${children > 1 ? "ren" : ""}` : "";
-
+ 
   return `${roomText} · ${adultText}${childText}`;
 }
-
+ 
 export function buildStayFacts(hotel = {}, offer = {}, searchContext = {}) {
   const facts = [];
-
+ 
   if (hotel?.city) {
     facts.push(`Stay in ${hotel.city}`);
   }
-
+ 
   if (offer?.roomCategory) {
     facts.push(String(offer.roomCategory).replace(/_/g, " "));
   }
-
+ 
   if (offer?.bedType) {
     facts.push(`${offer.bedType} bed`);
   }
-
+ 
   if (searchContext?.adults) {
     facts.push(`${searchContext.adults} guest${Number(searchContext.adults) > 1 ? "s" : ""}`);
   }
-
+ 
   return facts.slice(0, 4);
 }
-
+ 
 export function buildStayHighlights(hotel = {}, offer = {}, nights = 1) {
   const hotelAmenities = Array.isArray(hotel?.amenities) ? hotel.amenities.filter(Boolean) : [];
   const highlights = [];
-
+ 
   if (hotelAmenities[0]) {
     highlights.push({
       title: hotelAmenities[0],
       text: "Frequently chosen by guests booking city stays.",
     });
   }
-
+ 
   highlights.push({
     title: `${formatNightLabel(nights)} ready`,
     text: "Dates and room pricing are already synced from the hotel API.",
   });
-
+ 
   if (offer?.cancellationPolicy) {
     highlights.push({
       title: "Policy clarity",
       text: String(offer.cancellationPolicy),
     });
   }
-
+ 
   highlights.push({
     title: hotel?.tag || "Great for planning",
     text: hotel?.address || hotel?.area || hotel?.city || "Central location",
   });
-
+ 
   return highlights.slice(0, 4);
 }
+ 
+ 

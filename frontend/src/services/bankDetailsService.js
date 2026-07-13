@@ -98,7 +98,7 @@ function resolveAuthToken() {
   }
 
   try {
-    return normalizeText(window.localStorage.getItem("token"), "");
+    return normalizeText(window.localStorage.getItem("token") || window.localStorage.getItem("b2b_token"), "");
   } catch {
     return "";
   }

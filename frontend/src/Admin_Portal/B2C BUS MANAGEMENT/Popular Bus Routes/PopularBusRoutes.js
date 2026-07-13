@@ -48,15 +48,48 @@ export default function AdminBusPopularRoutesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilterOption, setDateFilterOption] = useState("all"); // all, today, week, month, custom
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [secondsSinceUpdate, setSecondsSinceUpdate] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
     const fetchRoutes = async () => {
       setLoading(true);
       setError("");
+
+      let startDate = null;
+      let endDate = null;
+
+      const now = new Date();
+      if (dateFilterOption === "today") {
+        startDate = new Date(now.setHours(0, 0, 0, 0)).toISOString();
+        endDate = new Date(now.setHours(23, 59, 59, 999)).toISOString();
+      } else if (dateFilterOption === "week") {
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        startDate = new Date(startOfWeek.setHours(0, 0, 0, 0)).toISOString();
+        endDate = new Date().toISOString();
+      } else if (dateFilterOption === "month") {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = new Date(startOfMonth.setHours(0, 0, 0, 0)).toISOString();
+        endDate = new Date().toISOString();
+      } else if (dateFilterOption === "custom") {
+        if (customStartDate) {
+          startDate = new Date(new Date(customStartDate).setHours(0, 0, 0, 0)).toISOString();
+        }
+        if (customEndDate) {
+          endDate = new Date(new Date(customEndDate).setHours(23, 59, 59, 999)).toISOString();
+        }
+      }
+
       try {
-        const data = await getPopularBusRoutesFromSearchHistory({ limit: 15 });
+        const data = await getPopularBusRoutesFromSearchHistory({ 
+          limit: 15, 
+          startDate, 
+          endDate 
+        });
         if (isMounted) {
           const mappedRoutes = (data || []).map((r, index) => {
             const searchCount = Number(r.searches || r.searchCount || 0);
@@ -74,7 +107,6 @@ export default function AdminBusPopularRoutesPage() {
       } catch (err) {
         if (isMounted) {
           console.error("Error fetching popular routes:", err);
-          // Set mock data so the table is always visible and working
           const mappedRoutes = INITIAL_BUS_POPULAR_ROUTES.map(r => ({
             ...r,
             searchCount: r.searches,
@@ -94,11 +126,25 @@ export default function AdminBusPopularRoutesPage() {
     return () => {
       isMounted = false;
     };
-  }, [refreshTrigger]);
+  }, [refreshTrigger, dateFilterOption, customStartDate, customEndDate]);
 
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
+    setSecondsSinceUpdate(0);
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsSinceUpdate((prev) => {
+        if (prev >= 299) { // 5 minutes = 300 seconds
+          setRefreshTrigger((r) => r + 1);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleExport = () => {
     if (routes.length === 0) {
@@ -151,7 +197,6 @@ export default function AdminBusPopularRoutesPage() {
 
   const topThree = routes.slice(0, 3);
 
-  // Key stats calculations
   const totalSearches = routes.reduce((sum, r) => sum + (r.searchCount || 0), 0);
   const totalBookings = routes.reduce((sum, r) => sum + (r.bookingCount || 0), 0);
   const totalScore = routes.reduce((sum, r) => sum + (r.score || 0), 0);
@@ -174,7 +219,7 @@ export default function AdminBusPopularRoutesPage() {
       <header className="admin-markup-popular-header">
         <div className="admin-markup-popular-title-wrap">
           <h1>
-            <strong>B2C Popular</strong> Bus Routes
+            <span style={{ color: "#A51C49", fontWeight: 700 }}>B2C Bus</span> Popular Routes
           </h1>
         </div>
 
@@ -204,44 +249,32 @@ export default function AdminBusPopularRoutesPage() {
 
       {/* Stats Summary Panel */}
       <section className="admin-popular-stats-grid">
-        <article className="admin-popular-stat-card">
-          <div className="stat-card-icon searches">
-            <Activity size={20} />
+        <article className="admin-popular-stat-card searches">
+          <div className="stat-label">Total Searches</div>
+          <div className="stat-value">
+            {loading ? "..." : totalSearches.toLocaleString()}
           </div>
-          <div className="stat-card-info">
-            <span className="stat-label">Total Searches</span>
-            <strong className="stat-value">
-              {loading ? "..." : totalSearches.toLocaleString()}
-            </strong>
-          </div>
+          <div className="stat-meta">Across all bus routes</div>
         </article>
 
-        <article className="admin-popular-stat-card">
-          <div className="stat-card-icon bookings">
-            <Bus size={20} />
+        <article className="admin-popular-stat-card bookings">
+          <div className="stat-label">Total Bookings</div>
+          <div className="stat-value">
+            {loading ? "..." : totalBookings.toLocaleString()}
           </div>
-          <div className="stat-card-info">
-            <span className="stat-label">Total Bookings</span>
-            <strong className="stat-value">
-              {loading ? "..." : totalBookings.toLocaleString()}
-            </strong>
-          </div>
+          <div className="stat-meta">Confirmed ticket bookings</div>
         </article>
 
-        <article className="admin-popular-stat-card">
-          <div className="stat-card-icon score">
-            <Award size={20} />
+        <article className="admin-popular-stat-card score">
+          <div className="stat-label">Average Score</div>
+          <div className="stat-value">
+            {loading ? "..." : avgScore.toLocaleString()}
           </div>
-          <div className="stat-card-info">
-            <span className="stat-label">Average Score</span>
-            <strong className="stat-value">
-              {loading ? "..." : avgScore.toLocaleString()}
-            </strong>
-          </div>
+          <div className="stat-meta">Average route popularity score</div>
         </article>
       </section>
 
-      {/* Top 3 Cards Showcase */}
+      {/* Top 3 Showcase Cards */}
       {!loading && topThree.length > 0 && (
         <section className="admin-popular-showcase">
           <h2 className="showcase-title">Top Performing Routes</h2>
@@ -279,8 +312,8 @@ export default function AdminBusPopularRoutesPage() {
       )}
 
       {/* Search and Filters */}
-      <div className="admin-popular-filter-bar">
-        <div className="search-input-wrapper">
+      <div className="admin-popular-filter-bar" style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
+        <div className="search-input-wrapper" style={{ flex: "1", minWidth: "260px" }}>
           <Search size={16} className="search-icon" />
           <input
             type="text"
@@ -288,6 +321,74 @@ export default function AdminBusPopularRoutesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+
+        <div className="date-filter-wrapper" style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>Date Interval</span>
+            <select
+              value={dateFilterOption}
+              onChange={(e) => setDateFilterOption(e.target.value)}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "12px",
+                border: "1.5px solid var(--border)",
+                backgroundColor: "var(--panel)",
+                color: "var(--text-primary)",
+                fontSize: "0.9rem",
+                outline: "none",
+                cursor: "pointer",
+                height: "42px"
+              }}
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </label>
+
+          {dateFilterOption === "custom" && (
+            <>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>Start Date</span>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid var(--border)",
+                    backgroundColor: "var(--panel)",
+                    color: "var(--text-primary)",
+                    fontSize: "0.9rem",
+                    outline: "none",
+                    height: "42px"
+                  }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>End Date</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "12px",
+                    border: "1.5px solid var(--border)",
+                    backgroundColor: "var(--panel)",
+                    color: "var(--text-primary)",
+                    fontSize: "0.9rem",
+                    outline: "none",
+                    height: "42px"
+                  }}
+                />
+              </label>
+            </>
+          )}
         </div>
       </div>
 
@@ -347,3 +448,4 @@ export default function AdminBusPopularRoutesPage() {
     </section>
   );
 }
+

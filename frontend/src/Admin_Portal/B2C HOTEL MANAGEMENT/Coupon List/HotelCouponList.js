@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import "./HotelCouponList.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { csvCell, formatCouponDate, formatCouponDateTime } from "../../../utils/adminPortalUtils";
 import {
   listHotelPromotions,
@@ -49,20 +50,20 @@ function toInputDate(value) {
 
 function createDefaultForm() {
   return {
-    code: generatePromoCode(),
+    code: "",
     title: "",
     description: "",
     promotionType: "Coupon",
     discountType: "Flat",
     discountValue: "",
     maxDiscountAmount: "",
-    minBookingAmount: "0",
+    minBookingAmount: "",
     isActive: true,
     isExclusive: true,
     isAutoApply: false,
-    priority: "0",
+    priority: "",
     maxUsage: "",
-    maxUsagePerUser: "1",
+    maxUsagePerUser: "",
     startDateUtc: "",
     endDateUtc: "",
     conditions: []
@@ -78,12 +79,34 @@ export default function HotelCouponList() {
   const [sortOrder, setSortOrder] = useState(DEFAULT_SORT_ORDER);
   const [statusFilter, setStatusFilter] = useState("all");
   const [discountTypeFilter, setDiscountTypeFilter] = useState("all");
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form, setForm] = useState(createDefaultForm);
+  const [isFormViewOpen, setIsFormViewOpen] = useState(() => {
+    return sessionStorage.getItem("hotel_coupon_form_open") === "true";
+  });
+  const [form, setForm] = useState(() => {
+    const savedForm = sessionStorage.getItem("hotel_coupon_form_data");
+    return savedForm ? JSON.parse(savedForm) : createDefaultForm();
+  });
   const [formError, setFormError] = useState("");
-  const [editPromoId, setEditPromoId] = useState(null);
+  const [editPromoId, setEditPromoId] = useState(() => {
+    const saved = sessionStorage.getItem("hotel_coupon_edit_id");
+    return saved ? Number(saved) : null;
+  });
   const [deletePromo, setDeletePromo] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Synchronize form states to sessionStorage to persist across page reloads
+  useEffect(() => {
+    sessionStorage.setItem("hotel_coupon_form_open", isFormViewOpen);
+    if (editPromoId !== null) {
+      sessionStorage.setItem("hotel_coupon_edit_id", editPromoId);
+    } else {
+      sessionStorage.removeItem("hotel_coupon_edit_id");
+    }
+    sessionStorage.setItem("hotel_coupon_form_data", JSON.stringify(form));
+  }, [isFormViewOpen, editPromoId, form]);
 
   // Conditions temp states
   const [condType, setCondType] = useState("HotelCity");
@@ -136,6 +159,15 @@ export default function HotelCouponList() {
       return sortOrder === "asc" ? result : -result;
     });
   }, [promotions, discountTypeFilter, sortBy, sortOrder, statusFilter]);
+
+  const paginatedPromotions = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return visiblePromotions.slice(startIndex, startIndex + itemsPerPage);
+  }, [visiblePromotions, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [discountTypeFilter, sortBy, sortOrder, statusFilter]);
 
   const handleClearFilters = () => {
     setSortBy(DEFAULT_SORT_BY);
@@ -191,13 +223,15 @@ export default function HotelCouponList() {
 
   const openAddModal = () => {
     setFormError("");
+    setValidationErrors({});
     setEditPromoId(null);
     setForm(createDefaultForm());
-    setIsModalOpen(true);
+    setIsFormViewOpen(true);
   };
 
   const openEditModal = (p) => {
     setFormError("");
+    setValidationErrors({});
     setEditPromoId(p.id);
     setForm({
       code: p.code,
@@ -223,7 +257,14 @@ export default function HotelCouponList() {
         value2: c.value2 || null
       })) : []
     });
-    setIsModalOpen(true);
+    setIsFormViewOpen(true);
+  };
+
+  const handleCancelForm = () => {
+    setIsFormViewOpen(false);
+    sessionStorage.removeItem("hotel_coupon_form_open");
+    sessionStorage.removeItem("hotel_coupon_edit_id");
+    sessionStorage.removeItem("hotel_coupon_form_data");
   };
 
   const handleAddCondition = () => {
@@ -251,18 +292,17 @@ export default function HotelCouponList() {
     const amount = Number(form.discountValue);
     const code = String(form.code || "").trim().toUpperCase().replace(/\s+/g, "");
 
-    if (!code) {
-      setFormError("Coupon code is required.");
+    const errors = {};
+    if (!code) errors.code = true;
+    if (!form.title.trim()) errors.title = true;
+    if (!Number.isFinite(amount) || amount <= 0) errors.discountValue = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setFormError("Please fill in all compulsory fields with valid values.");
       return;
     }
-    if (!form.title.trim()) {
-      setFormError("Title is required.");
-      return;
-    }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError("Enter a valid discount value.");
-      return;
-    }
+    setValidationErrors({});
 
     const payload = {
       code,
@@ -290,7 +330,10 @@ export default function HotelCouponList() {
       } else {
         await createHotelPromotion(payload);
       }
-      setIsModalOpen(false);
+      setIsFormViewOpen(false);
+      sessionStorage.removeItem("hotel_coupon_form_open");
+      sessionStorage.removeItem("hotel_coupon_edit_id");
+      sessionStorage.removeItem("hotel_coupon_form_data");
       loadPromotions();
     } catch (err) {
       setFormError(err.message || "Failed to save hotel coupon.");
@@ -338,225 +381,58 @@ export default function HotelCouponList() {
 
   return (
     <>
-      <section className="admin-b2c-page admin-hotel-coupon-shell">
-        <header className="admin-markup-coupon-header">
-          <div className="admin-markup-coupon-title-wrap">
-            <h1>B2C Hotel Coupon List</h1>
-          </div>
-
-          <div className="admin-markup-coupon-actions">
-            <button
-              type="button"
-              className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
-              onClick={() => setIsFilterPanelOpen((prev) => !prev)}
-            >
-              <SlidersHorizontal size={15} />
-              <span>Filter</span>
-            </button>
-
-            <button
-              type="button"
-              className="admin-markup-coupon-btn clear"
-              onClick={handleClearFilters}
-              disabled={sortBy === DEFAULT_SORT_BY && statusFilter === "all" && discountTypeFilter === "all"}
-            >
-              <X size={15} />
-              <span>Clear Filter</span>
-            </button>
-
-            <button
-              type="button"
-              className="admin-markup-coupon-btn generate"
-              onClick={openAddModal}
-            >
-              <Plus size={15} />
-              <span>Add Hotel Coupon</span>
-            </button>
-
-            <button
-              type="button"
-              className="admin-markup-coupon-btn export"
-              onClick={handleExport}
-              disabled={visiblePromotions.length === 0}
-            >
-              <Download size={15} />
-              <span>Export</span>
-            </button>
-          </div>
-        </header>
-
-        {isFilterPanelOpen && (
-          <section className="admin-markup-coupon-filter">
-            <div className="admin-markup-coupon-filter-grid">
-              <label>
-                <span>Sort By</span>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="createdAtUtc">Date Created</option>
-                  <option value="id">ID</option>
-                  <option value="code">Coupon Code</option>
-                  <option value="discountValue">Value</option>
-                  <option value="startDateUtc">Start Date</option>
-                  <option value="endDateUtc">Expiry Date</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Order</span>
-                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                  <option value="desc">Descending</option>
-                  <option value="asc">Ascending</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Status</span>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Discount Type</span>
-                <select value={discountTypeFilter} onChange={(e) => setDiscountTypeFilter(e.target.value)}>
-                  <option value="all">All</option>
-                  <option value="Flat">Flat</option>
-                  <option value="Percentage">Percentage</option>
-                </select>
-              </label>
+      {isFormViewOpen ? (
+        <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-coupon-shell">
+          <section className="admin-markup-coupon-table-wrap" style={{ padding: "24px", background: "var(--panel)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h1 className="form-title" style={{ color: "#be185d", fontSize: "1.6rem", margin: 0, fontWeight: "700" }}>
+                {editPromoId ? "Edit Hotel B2C Hotel coupon" : "Add Hotel B2C Hotel coupon"}
+              </h1>
+              <button
+                type="button"
+                className="admin-markup-coupon-btn generate"
+                onClick={handleCancelForm}
+                style={{ backgroundColor: "#be185d", borderColor: "#be185d" }}
+              >
+                Coupon List
+              </button>
             </div>
-          </section>
-        )}
 
-        {loadError && <p className="admin-markup-coupon-error">{loadError}</p>}
-
-        <section className="admin-markup-coupon-table-wrap">
-          <div className="admin-markup-coupon-table-scroll">
-            <table className="admin-markup-coupon-table">
-              <colgroup>
-                <col style={{ width: "5%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "20%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "13%" }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Coupon Code</th>
-                  <th>Title</th>
-                  <th>Type</th>
-                  <th>Value</th>
-                  <th>Min Booking</th>
-                  <th>Used Count</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={9}>
-                      <p className="admin-markup-coupon-empty">Loading coupons from database...</p>
-                    </td>
-                  </tr>
-                ) : visiblePromotions.length === 0 ? (
-                  <tr>
-                    <td colSpan={9}>
-                      <p className="admin-markup-coupon-empty">No hotel coupons found.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  visiblePromotions.map((p) => (
-                    <tr key={p.id}>
-                      <td>{p.id}</td>
-                      <td>
-                        <span className="admin-markup-coupon-code">{p.code}</span>
-                      </td>
-                      <td>{p.title}</td>
-                      <td>{p.discountType}</td>
-                      <td>{p.discountType === "Percentage" ? `${p.discountValue}%` : `₹${p.discountValue}`}</td>
-                      <td>₹{p.minBookingAmount}</td>
-                      <td>{p.usedCount} / {p.maxUsage || "∞"}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`admin-markup-coupon-status ${p.isActive ? "active" : "inactive"}`}
-                          onClick={() => handleStatusToggle(p)}
-                        >
-                          {p.isActive ? <Check size={14} /> : <X size={14} />}
-                          <span>{p.isActive ? "Active" : "Inactive"}</span>
-                        </button>
-                      </td>
-                      <td className="action-col">
-                        <div className="admin-markup-coupon-action-group" style={{ justifyContent: "center" }}>
-                          <button type="button" title="Edit" onClick={() => openEditModal(p)}>
-                            <Pencil size={14} />
-                          </button>
-                          <button type="button" className="danger" title="Delete" onClick={() => setDeletePromo(p)}>
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
-      {/* Add / Edit Coupon Modal */}
-      {isModalOpen && (
-        <div className="admin-markup-coupon-backdrop" onClick={() => setIsModalOpen(false)}>
-          <section
-            className="admin-markup-coupon-modal"
-            style={{ maxWidth: "600px", width: "95%" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="generate-header">
-              <h2>{editPromoId ? "Edit Hotel Coupon" : "Add B2C Hotel Coupon"}</h2>
-            </header>
-
-            <div className="admin-markup-coupon-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", padding: "20px" }}>
+            <div className="admin-markup-coupon-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <label>
-                <span>Coupon Code:</span>
+                <span>Coupon Code: <span style={{ color: "red" }}>*</span></span>
                 <input
                   type="text"
+                  className={validationErrors.code ? "validation-error" : ""}
                   value={form.code}
-                  onChange={(e) => setForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }));
+                    if (e.target.value.trim()) {
+                      setValidationErrors(prev => ({ ...prev, code: false }));
+                    }
+                  }}
                   placeholder="e.g. HOTEL500"
                 />
               </label>
               
               <label>
-                <span>Title:</span>
+                <span>Title: <span style={{ color: "red" }}>*</span></span>
                 <input
                   type="text"
+                  className={validationErrors.title ? "validation-error" : ""}
                   value={form.title}
-                  onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, title: e.target.value }));
+                    if (e.target.value.trim()) {
+                      setValidationErrors(prev => ({ ...prev, title: false }));
+                    }
+                  }}
                   placeholder="e.g. Save flat ₹500"
                 />
               </label>
 
-              <label style={{ gridColumn: "span 2" }}>
-                <span>Description:</span>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Details about the promotion terms..."
-                  style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "8px", width: "100%", height: "50px", fontFamily: "inherit" }}
-                />
-              </label>
-
               <label>
-                <span>Discount Type:</span>
+                <span>Discount Type: <span style={{ color: "red" }}>*</span></span>
                 <select value={form.discountType} onChange={(e) => setForm(prev => ({ ...prev, discountType: e.target.value }))}>
                   <option value="Flat">Flat (INR)</option>
                   <option value="Percentage">Percentage (%)</option>
@@ -564,11 +440,17 @@ export default function HotelCouponList() {
               </label>
 
               <label>
-                <span>Discount Value:</span>
+                <span>Discount Value: <span style={{ color: "red" }}>*</span></span>
                 <input
                   type="number"
+                  className={validationErrors.discountValue ? "validation-error" : ""}
                   value={form.discountValue}
-                  onChange={(e) => setForm(prev => ({ ...prev, discountValue: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, discountValue: e.target.value }));
+                    if (e.target.value.trim()) {
+                      setValidationErrors(prev => ({ ...prev, discountValue: false }));
+                    }
+                  }}
                   placeholder="e.g. 500 or 10"
                 />
               </label>
@@ -629,76 +511,305 @@ export default function HotelCouponList() {
                 />
               </label>
 
-              <label>
-                <span>Priority:</span>
-                <input
-                  type="number"
-                  value={form.priority}
-                  onChange={(e) => setForm(prev => ({ ...prev, priority: e.target.value }))}
+              {/* Conditions Sub-form and Priority in one line side-by-side without borderTop */}
+              <div style={{ gridColumn: "span 2", display: "flex", gap: "24px", marginTop: "5px" }}>
+                
+                {/* Promotion Conditions column */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "0.82rem", fontWeight: "600", color: "#000000" }}>Promotion Conditions (Optional):</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <select value={condType} onChange={(e) => setCondType(e.target.value)} style={{ width: "180px", minWidth: "140px", padding: "8px 10px", fontSize: "0.85rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                      <option value="HotelCity">Hotel City Code</option>
+                      <option value="HotelName">Hotel Name Match</option>
+                      <option value="MinNights">Min Nights Required</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={condVal}
+                      onChange={(e) => setCondVal(e.target.value)}
+                      placeholder="Value (e.g. DEL or 3)"
+                      style={{ flex: 1, minWidth: "100px", padding: "8px 10px", fontSize: "0.85rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}
+                    />
+                    <button type="button" onClick={handleAddCondition} style={{ padding: "8px 16px", fontSize: "0.85rem", backgroundColor: "#be185d", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "600", whiteSpace: "nowrap" }}>
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Priority column */}
+                <div style={{ width: "120px", display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
+                  <span style={{ fontSize: "0.82rem", fontWeight: "600", color: "#be185d" }}>Priority:</span>
+                  <input
+                    type="number"
+                    value={form.priority}
+                    onChange={(e) => setForm(prev => ({ ...prev, priority: e.target.value }))}
+                    style={{ width: "100%", padding: "8px 10px", fontSize: "0.85rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}
+                  />
+                </div>
+
+              </div>
+
+              {form.conditions.length > 0 && (
+                <div style={{ gridColumn: "span 2", display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                  {form.conditions.map((c, idx) => (
+                    <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "3px 8px", background: "var(--surface-soft)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "0.75rem" }}>
+                      <strong>{c.conditionType}</strong> = {c.value1}
+                      <X size={12} style={{ cursor: "pointer", color: "red" }} onClick={() => handleRemoveCondition(idx)} />
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Description - placed MIDDLE */}
+              <label style={{ gridColumn: "span 2" }}>
+                <span>Description:</span>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Details about the promotion terms..."
+                  rows={3}
+                  style={{ borderRadius: "10px", padding: "8px", width: "100%", height: "75px", fontFamily: "inherit" }}
                 />
               </label>
 
-              <div style={{ display: "flex", gap: "15px", gridColumn: "span 2", marginTop: "5px" }}>
-                <label style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-                  <input
-                    type="checkbox"
-                    checked={form.isActive}
-                    onChange={(e) => setForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                  />
-                  <span>Active</span>
-                </label>
+              {/* Options - placed BELOW description */}
+              <div style={{ display: "flex", gap: "12px", gridColumn: "span 2", marginTop: "5px", alignItems: "center" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#be185d", marginRight: "10px" }}>Options:</span>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, isActive: !prev.isActive }))}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: "1px solid " + (form.isActive ? "#be185d" : "#e2e8f0"),
+                    backgroundColor: form.isActive ? "#be185d" : "transparent",
+                    color: form.isActive ? "#ffffff" : "#000000",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <Check size={16} style={{ display: form.isActive ? "inline" : "none" }} />
+                  Active
+                </button>
 
-                <label style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-                  <input
-                    type="checkbox"
-                    checked={form.isExclusive}
-                    onChange={(e) => setForm(prev => ({ ...prev, isExclusive: e.target.checked }))}
-                  />
-                  <span>Exclusive</span>
-                </label>
-              </div>
-
-              {/* Conditions Sub-form */}
-              <div style={{ gridColumn: "span 2", borderTop: "1px solid var(--border)", paddingTop: "10px", marginTop: "5px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>Promotion Conditions (Optional):</span>
-                <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
-                  <select value={condType} onChange={(e) => setCondType(e.target.value)} style={{ padding: "6px", fontSize: "0.8rem", borderRadius: "6px" }}>
-                    <option value="HotelCity">Hotel City Code</option>
-                    <option value="HotelName">Hotel Name Match</option>
-                    <option value="MinNights">Min Nights Required</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={condVal}
-                    onChange={(e) => setCondVal(e.target.value)}
-                    placeholder="Value (e.g. DEL or 3)"
-                    style={{ flex: 1, padding: "6px", fontSize: "0.8rem", borderRadius: "6px", border: "1px solid var(--border)" }}
-                  />
-                  <button type="button" onClick={handleAddCondition} style={{ padding: "6px 12px", fontSize: "0.8rem", backgroundColor: "var(--primary)", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}>
-                    Add
-                  </button>
-                </div>
-                {form.conditions.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
-                    {form.conditions.map((c, idx) => (
-                      <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "3px 8px", background: "var(--surface-soft)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "0.75rem" }}>
-                        <strong>{c.conditionType}</strong> = {c.value1}
-                        <X size={12} style={{ cursor: "pointer", color: "red" }} onClick={() => handleRemoveCondition(idx)} />
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, isExclusive: !prev.isExclusive }))}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: "1px solid " + (form.isExclusive ? "#be185d" : "#e2e8f0"),
+                    backgroundColor: form.isExclusive ? "#be185d" : "transparent",
+                    color: form.isExclusive ? "#ffffff" : "#000000",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <Check size={16} style={{ display: form.isExclusive ? "inline" : "none" }} />
+                  Exclusive
+                </button>
               </div>
             </div>
 
-            {formError && <p className="admin-markup-coupon-error" style={{ margin: "0 20px 10px" }}>{formError}</p>}
+            {formError && <p className="admin-markup-coupon-error" style={{ margin: "15px 0" }}>{formError}</p>}
 
-            <footer style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <footer style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button type="button" className="admin-markup-coupon-btn clear" onClick={handleCancelForm}>Cancel</button>
               <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave}>Save</button>
             </footer>
           </section>
-        </div>
+        </section>
+      ) : (
+        <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-coupon-shell">
+          <header className="admin-markup-coupon-header">
+            <div className="admin-markup-coupon-title-wrap">
+              <h2 style={{ fontWeight: 500 }}><span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Hotel</span> Coupon List</h2>
+            </div>
+
+            <div className="admin-markup-coupon-actions">
+              <button
+                type="button"
+                className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
+                onClick={() => setIsFilterPanelOpen((prev) => !prev)}
+              >
+                <SlidersHorizontal size={15} />
+                <span>Filter</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn clear"
+                onClick={handleClearFilters}
+                disabled={sortBy === DEFAULT_SORT_BY && statusFilter === "all" && discountTypeFilter === "all"}
+              >
+                <X size={15} />
+                <span>Clear Filter</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn generate"
+                onClick={openAddModal}
+              >
+                <Plus size={15} />
+                <span>Add Hotel Coupon</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn export"
+                onClick={handleExport}
+                disabled={visiblePromotions.length === 0}
+              >
+                <Download size={15} />
+                <span>Export</span>
+              </button>
+            </div>
+          </header>
+
+          {isFilterPanelOpen && (
+            <section className="admin-markup-coupon-filter">
+              <div className="admin-markup-coupon-filter-grid">
+                <label>
+                  <span>Sort By</span>
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="createdAtUtc">Date Created</option>
+                    <option value="id">ID</option>
+                    <option value="code">Coupon Code</option>
+                    <option value="discountValue">Value</option>
+                    <option value="startDateUtc">Start Date</option>
+                    <option value="endDateUtc">Expiry Date</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Order</span>
+                  <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Status</span>
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Discount Type</span>
+                  <select value={discountTypeFilter} onChange={(e) => setDiscountTypeFilter(e.target.value)}>
+                    <option value="all">All</option>
+                    <option value="Flat">Flat</option>
+                    <option value="Percentage">Percentage</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+          )}
+
+          {loadError && <p className="admin-markup-coupon-error">{loadError}</p>}
+
+          <section className="admin-markup-coupon-table-wrap">
+            <div className="admin-markup-coupon-table-scroll">
+              <table className="admin-markup-coupon-table">
+                <colgroup>
+                  <col style={{ width: "5%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "13%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Coupon Code</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Min Booking</th>
+                    <th>Used Count</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <p className="admin-markup-coupon-empty">Loading coupons from database...</p>
+                      </td>
+                    </tr>
+                  ) : visiblePromotions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <p className="admin-markup-coupon-empty">No hotel coupons found.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPromotions.map((p, index) => (
+                      <tr key={p.id}>
+                        <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                        <td>
+                          <span className="admin-markup-coupon-code">{p.code}</span>
+                        </td>
+                        <td>{p.title}</td>
+                        <td>{p.discountType}</td>
+                        <td>{p.discountType === "Percentage" ? `${p.discountValue}%` : `₹${p.discountValue}`}</td>
+                        <td>₹{p.minBookingAmount}</td>
+                        <td>{p.usedCount} / {p.maxUsage || "∞"}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`admin-markup-coupon-status ${p.isActive ? "active" : "inactive"}`}
+                            onClick={() => handleStatusToggle(p)}
+                          >
+                            <Check size={14} />
+                            <span>{p.isActive ? "Active" : "Inactive"}</span>
+                          </button>
+                        </td>
+                        <td className="action-col">
+                          <div className="admin-markup-coupon-action-group" style={{ justifyContent: "center" }}>
+                            <button type="button" title="Edit" onClick={() => openEditModal(p)}>
+                              <Pencil size={14} />
+                            </button>
+                            <button type="button" className="danger" title="Delete" onClick={() => setDeletePromo(p)}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={visiblePromotions.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="coupons"
+              />
+            </div>
+          </section>
+        </section>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -721,3 +832,4 @@ export default function HotelCouponList() {
     </>
   );
 }
+

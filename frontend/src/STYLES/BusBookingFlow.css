@@ -4188,6 +4188,24 @@
   }
 }
 
+/* Bus payment wallet dropdown must escape the payment details card. */
+.bus-flow-page .bus-payment-details-card,
+.bus-flow-page .bus-payment-details-card .flow-card-body,
+.bus-flow-page .bus-payment-form-grid,
+.bus-flow-page .bus-payment-form-grid label {
+  overflow: visible !important;
+}
+
+.bus-flow-page .bus-payment-details-card {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.bus-flow-page .bus-payment-form-grid label {
+  position: relative !important;
+  z-index: 11 !important;
+}
+
 /* Final atlas checkout sweep */
 .bus-flow-page {
   --flow-bg: var(--theme-page, #F3F4F6) !important;
@@ -5511,4 +5529,22 @@
   pointer-events: none !important;
   cursor: not-allowed !important;
   box-shadow: none !important;
+}
+
+/* Keep the bus payment wallet dropdown above the payment card instead of clipped. */
+.bus-flow-page .bus-payment-details-card,
+.bus-flow-page .bus-payment-details-card .flow-card-body,
+.bus-flow-page .bus-payment-form-grid,
+.bus-flow-page .bus-payment-form-grid label {
+  overflow: visible !important;
+}
+
+.bus-flow-page .bus-payment-details-card {
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+.bus-flow-page .bus-payment-form-grid label {
+  position: relative !important;
+  z-index: 21 !important;
 }

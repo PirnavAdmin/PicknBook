@@ -26,7 +26,10 @@ function getAuthHeaders() {
     return {};
   }
 
-  const token = window.localStorage.getItem("token");
+  const activePortal = window.sessionStorage.getItem("active_portal") || "b2c";
+  const token = activePortal === "b2b"
+    ? (window.localStorage.getItem("b2b_token") || window.localStorage.getItem("token"))
+    : (window.localStorage.getItem("token") || window.localStorage.getItem("b2b_token"));
   return {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };

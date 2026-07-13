@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Edit2, Trash2 } from 'lucide-react';
+import AdminPagination from '../../../components/AdminPagination';
 import { deleteBlogCategory, getBlogCategories, toggleBlogCategoryStatus, updateBlogCategory } from '../../../services/blogService';
 import { toApiAssetUrl } from '../../../services/apiClient';
 
@@ -45,7 +46,7 @@ function BlogCategoryList() {
     }, []);
 
     const [page, setPage] = useState(1);
-    const pageSize = 10;
+    const [pageSize, setPageSize] = useState(10);
     const [filterOpen, setFilterOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -228,14 +229,14 @@ function BlogCategoryList() {
         },
         titleMain: {
             fontSize: '1.8rem',
-            fontWeight: 500,
-            color: 'var(--text-primary)',
+            fontWeight: 600,
+            color: '#be185d',
             margin: 0,
         },
         titleSub: {
             fontSize: '1.8rem',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
+            fontWeight: 600,
+            color: 'black',
             margin: 0,
         },
         actions: {
@@ -267,13 +268,13 @@ function BlogCategoryList() {
             borderColor: 'var(--border)',
         },
         addBtn: {
-            background: 'linear-gradient(135deg, var(--primary), var(--primary-strong))',
+            background: '#be185d',
             color: '#ffffff',
         },
         exportBtn: {
-            background: 'var(--success)',
+            background: '#2563eb',
             color: '#ffffff',
-            borderColor: 'var(--success)',
+            borderColor: '#2563eb',
         },
         searchBox: {
             padding: '8px 12px',
@@ -376,9 +377,9 @@ function BlogCategoryList() {
             fontSize: '0.85rem',
         },
         thead: {
-            background: 'linear-gradient(90deg, var(--primary), var(--primary-strong))',
+            background: '#be185d',
             color: '#ffffff',
-            fontWeight: 700,
+            fontWeight: 600,
         },
         th: {
             padding: '6px 10px',
@@ -451,8 +452,9 @@ function BlogCategoryList() {
         actionButtons: {
             display: 'flex',
             gap: '8px',
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
             justifyContent: 'center',
+            alignItems: 'center',
         },
         actionBtn: {
             width: '32px',
@@ -605,11 +607,11 @@ function BlogCategoryList() {
                             type="button"
                             style={{ ...styles.button, ...styles.exportBtn }}
                             onMouseEnter={(e) => {
-                                e.target.style.background = 'rgba(30, 142, 62, 0.85)';
+                                e.target.style.background = '#1d4ed8';
                                 e.target.style.transform = 'translateY(-2px)';
                             }}
                             onMouseLeave={(e) => {
-                                e.target.style.background = 'var(--success)';
+                                e.target.style.background = '#2563eb';
                                 e.target.style.transform = 'translateY(0)';
                             }}
                             onClick={handleExport}
@@ -620,10 +622,12 @@ function BlogCategoryList() {
                             type="button"
                             style={{ ...styles.button, ...styles.addBtn }}
                             onMouseEnter={(e) => {
+                                e.target.style.background = '#9d124d';
                                 e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
                             }}
                             onMouseLeave={(e) => {
+                                e.target.style.background = '#be185d';
                                 e.target.style.transform = 'translateY(0)';
                                 e.target.style.boxShadow = 'none';
                             }}
@@ -668,121 +672,135 @@ function BlogCategoryList() {
                 )}
 
                 <div style={styles.tableWrapper}>
-                    {filteredCategories.length > 0 ? (
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>SN.</th>
-                                    <th style={styles.th}>Entry Date</th>
-                                    <th style={styles.th}>Image</th>
-                                    <th style={styles.th}>Name</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredCategories.slice((page - 1) * pageSize, page * pageSize).map((category, index) => (
-                                    <tr
-                                        key={category.id}
-                                        style={styles.tr}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'transparent';
-                                        }}
-                                    >
-                                        <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
-                                        <td style={styles.td}>{formatDate(category.createdAtUtc || category.createdAt || category.entryDate)}</td>
-                                        <td style={styles.td}>
-                                            {(category.imageUrl || category.image) && (category.imageUrl || category.image) !== '-' ? (
-                                                <img 
-                                                    src={toApiAssetUrl(category.imageUrl || category.image)} 
-                                                    alt={category.name} 
-                                                    title={category.name}
-                                                    style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
-                                                    onClick={() => setActivePopupImage(toApiAssetUrl(category.imageUrl || category.image))}
-                                                />
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </td>
-                                        <td style={styles.td}>{category.name}</td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={getStatusStyle(category.status)}
-                                                onClick={() => handleToggleStatus(category.id)}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.opacity = '0.85';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.opacity = '1';
-                                                }}
-                                            >
-                                                {category.status}
-                                            </button>
-                                        </td>
-                                        <td style={{ ...styles.td, ...styles.actionButtons }}>
-                                            <button
-                                                type="button"
-                                                style={styles.actionBtn}
-                                                title="View Details"
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                                    e.currentTarget.style.transform = 'scale(1.08)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'var(--surface-soft)';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                    e.currentTarget.style.transform = 'scale(1)';
-                                                }}
-                                                onClick={() => handleViewDetails(category)}
-                                            >
-                                                <Eye size={16} strokeWidth={2} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                style={styles.actionBtn}
-                                                title="Edit Category"
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                                    e.currentTarget.style.transform = 'scale(1.08)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'var(--surface-soft)';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                    e.currentTarget.style.transform = 'scale(1)';
-                                                }}
-                                                onClick={() => handleEditCategory(category)}
-                                            >
-                                                <Edit2 size={16} strokeWidth={2} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                style={{ ...styles.actionBtn, ...styles.deleteBtn }}
-                                                title="Delete Category"
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
-                                                    e.currentTarget.style.borderColor = 'var(--danger)';
-                                                    e.currentTarget.style.transform = 'scale(1.08)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
-                                                    e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
-                                                    e.currentTarget.style.transform = 'scale(1)';
-                                                }}
-                                                onClick={() => handleDeleteCategory(category)}
-                                            >
-                                                <Trash2 size={16} strokeWidth={2} />
-                                            </button>
-                                        </td>
+                    {loading ? (
+                        <div style={{ ...styles.emptyState, padding: '40px' }}>
+                            <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-secondary)' }}>Loading categories...</p>
+                        </div>
+                    ) : filteredCategories.length > 0 ? (
+                        <>
+                            <table style={styles.table}>
+                                <thead style={styles.thead}>
+                                    <tr>
+                                        <th style={styles.th}>SN.</th>
+                                        <th style={styles.th}>Entry Date</th>
+                                        <th style={styles.th}>Image</th>
+                                        <th style={styles.th}>Name</th>
+                                        <th style={styles.th}>Status</th>
+                                        <th style={styles.th}>Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredCategories.slice((page - 1) * pageSize, page * pageSize).map((category, index) => (
+                                        <tr
+                                            key={category.id}
+                                            style={styles.tr}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'transparent';
+                                            }}
+                                        >
+                                            <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
+                                            <td style={styles.td}>{formatDate(category.createdAtUtc || category.createdAt || category.entryDate)}</td>
+                                            <td style={styles.td}>
+                                                {(category.imageUrl || category.image) && (category.imageUrl || category.image) !== '-' ? (
+                                                    <img 
+                                                        src={toApiAssetUrl(category.imageUrl || category.image)} 
+                                                        alt={category.name} 
+                                                        title={category.name}
+                                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
+                                                        onClick={() => setActivePopupImage(toApiAssetUrl(category.imageUrl || category.image))}
+                                                    />
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                            <td style={styles.td}>{category.name}</td>
+                                            <td style={styles.td}>
+                                                <button
+                                                    type="button"
+                                                    style={getStatusStyle(category.status)}
+                                                    onClick={() => handleToggleStatus(category.id)}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.opacity = '0.85';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.opacity = '1';
+                                                    }}
+                                                >
+                                                    {category.status}
+                                                </button>
+                                            </td>
+                                            <td style={{ ...styles.td, ...styles.actionButtons }}>
+                                                <button
+                                                    type="button"
+                                                    style={styles.actionBtn}
+                                                    title="View Details"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'var(--surface-soft)';
+                                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleViewDetails(category)}
+                                                >
+                                                    <Eye size={16} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={styles.actionBtn}
+                                                    title="Edit Category"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'var(--surface-soft)';
+                                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleEditCategory(category)}
+                                                >
+                                                    <Edit2 size={16} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                                                    title="Delete Category"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
+                                                        e.currentTarget.style.borderColor = 'var(--danger)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleDeleteCategory(category)}
+                                                >
+                                                    <Trash2 size={16} strokeWidth={2} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <AdminPagination
+                                currentPage={page}
+                                totalItems={filteredCategories.length}
+                                itemsPerPage={pageSize}
+                                onPageChange={setPage}
+                                onItemsPerPageChange={setPageSize}
+                                itemName="categories"
+                            />
+                        </>
                     ) : (
                         <div style={styles.emptyState}>
                             <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '10px' }}>No data</div>
@@ -790,50 +808,6 @@ function BlogCategoryList() {
                         </div>
                     )}
                 </div>
-
-                {(() => {
-                    const totalPages = Math.ceil(filteredCategories.length / pageSize) || 1;
-                    return totalPages > 1 && (
-                        <div style={styles.paginationContainer}>
-                            <div style={styles.paginationInfo}>
-                                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredCategories.length)} of {filteredCategories.length} categories
-                            </div>
-                            <div style={styles.paginationButtons}>
-                                <button
-                                    type="button"
-                                    disabled={page === 1}
-                                    onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                                    style={styles.pageBtn}
-                                    onMouseEnter={(e) => {
-                                        if (page !== 1) e.target.style.background = 'var(--surface-soft)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background = 'var(--panel)';
-                                    }}
-                                >
-                                    Previous
-                                </button>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                    Page {page} of {totalPages}
-                                </span>
-                                <button
-                                    type="button"
-                                    disabled={page === totalPages}
-                                    onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                                    style={styles.pageBtn}
-                                    onMouseEnter={(e) => {
-                                        if (page !== totalPages) e.target.style.background = 'var(--surface-soft)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.background = 'var(--panel)';
-                                    }}
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    );
-                })()}
             </div>
 
             {editModalOpen && (

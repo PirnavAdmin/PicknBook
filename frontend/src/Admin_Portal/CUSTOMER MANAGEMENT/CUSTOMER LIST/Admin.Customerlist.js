@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCustomers, toggleCustomerStatus, toggleWalletStatus, addWalletBalance, resetWalletBalance, deleteCustomer } from "../../../services/customerService";
+import { setStoredValue } from '../../../utils/adminPortalStorage';
 
 function CustomerList() {
     const navigate = useNavigate();
     const toastTimerRef = useRef(null);
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -37,6 +41,9 @@ function CustomerList() {
                 maxBalance: maxBalance === '' ? "" : Number(maxBalance),
             });
             setCustomers(data || []);
+            if (statusFilter === 'All' && walletFilter === 'All' && !searchQuery && minBalance === '' && maxBalance === '') {
+                setStoredValue('customers', data || []);
+            }
         } catch (error) {
             console.error("Error fetching customers:", error);
             const detailedError = error.response?.data 
@@ -50,10 +57,18 @@ function CustomerList() {
 
     useEffect(() => {
         fetchCustomers();
+        setCurrentPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [statusFilter, walletFilter, minBalance, maxBalance, searchQuery]);
 
     const filteredCustomers = customers;
+
+    const totalItems = filteredCustomers.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredCustomers.slice(indexOfFirstItem, indexOfLastItem);
+
 
     const activeCount = customers.filter(c => c.status === 'Active').length;
     const inactiveCount = customers.filter(c => c.status !== 'Active').length;
@@ -249,27 +264,41 @@ function CustomerList() {
         header: {
             marginBottom: '20px',
         },
+
         titleSection: {
             display: 'flex',
             alignItems: 'baseline',
             gap: '8px',
-            marginBottom: '16px',
-            borderBottom: '3px solid var(--primary)',
             paddingBottom: '8px',
             width: 'fit-content',
         },
         titleMain: {
             fontSize: '2rem',
-            fontWeight: 800,
+            fontWeight: 600,
             color: 'var(--text-primary)',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.5rem',
-            fontWeight: 400,
-            color: 'var(--text-secondary)',
+            fontSize: '2rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
             margin: 0,
         },
+        addBtn: {
+            padding: '10px 16px',
+            background: '#A51C49',
+            color: '#ffffff',
+            border: '1px solid #A51C49',
+            borderRadius: '8px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.9rem',
+        },
+
         statsBar: {
             display: 'flex',
             gap: '12px',
@@ -607,7 +636,62 @@ function CustomerList() {
             background: 'rgba(74, 15, 26, 0.08)',
             color: 'var(--primary)',
         },
+        pagination: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 24px',
+            background: 'var(--panel)',
+            borderTop: '1px solid var(--border)',
+            gap: '12px',
+        },
+        paginationInfo: {
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            fontWeight: 500,
+        },
+        pageNumbers: {
+            display: 'flex',
+            gap: '6px',
+            alignItems: 'center',
+        },
+        pageBtn: {
+            padding: '6px 12px',
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--text-primary)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+        },
+        pageBtnDisabled: {
+            opacity: 0.5,
+            cursor: 'not-allowed',
+        },
+        pageNoBtn: {
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--text-primary)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+        },
+        pageNoActive: {
+            background: '#A51C49',
+            color: '#ffffff',
+            borderColor: '#A51C49',
+        },
     };
+
 
     const getStatusBadgeStyle = (status) => ({
         ...styles.statusBadge,
@@ -633,10 +717,34 @@ function CustomerList() {
                 )}
                 {/* Header */}
                 <div style={styles.header}>
-                    <div style={styles.titleSection}>
-                        <h1 style={styles.titleMain}>Customer</h1>
-                        <h2 style={styles.titleSub}>List</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div style={styles.titleSection}>
+                            <h1 style={styles.titleMain}>Customer</h1>
+                            <h2 style={styles.titleSub}>List</h2>
+                        </div>
+                        <button
+                            type="button"
+                            style={styles.addBtn}
+                            onClick={() => navigate('/admin/customer-management/add-new-customer')}
+                             onMouseEnter={(e) => {
+                                e.target.style.background = '#851237';
+                                e.target.style.borderColor = '#851237';
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(165, 28, 73, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = '#A51C49';
+                                e.target.style.color = '#ffffff';
+                                e.target.style.borderColor = '#A51C49';
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                        >
+                            + Add Customer
+                        </button>
                     </div>
+
+
 
                     {/* Stats Bar */}
                     <div style={styles.statsBar}>
@@ -877,7 +985,7 @@ function CustomerList() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredCustomers.map((customer) => (
+                                {currentItems.map((customer) => (
                                     <tr
                                         key={customer.id}
                                         style={styles.tr}
@@ -1046,7 +1154,54 @@ function CustomerList() {
                             <p>No customers found matching "{searchQuery}"</p>
                         </div>
                     )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div style={styles.pagination}>
+                            <div style={styles.paginationInfo}>
+                                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} entries
+                            </div>
+                            <div style={styles.pageNumbers}>
+                                <button
+                                    type="button"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    style={{
+                                        ...styles.pageBtn,
+                                        ...(currentPage === 1 ? styles.pageBtnDisabled : {})
+                                    }}
+                                >
+                                    Previous
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                                    <button
+                                        key={pageNum}
+                                        type="button"
+                                        onClick={() => setCurrentPage(pageNum)}
+                                        style={{
+                                            ...styles.pageNoBtn,
+                                            ...(currentPage === pageNum ? styles.pageNoActive : {})
+                                        }}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    style={{
+                                        ...styles.pageBtn,
+                                        ...(currentPage === totalPages ? styles.pageBtnDisabled : {})
+                                    }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
+
             </div>
         </>
     );

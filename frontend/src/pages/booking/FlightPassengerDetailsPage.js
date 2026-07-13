@@ -1,18 +1,61 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Info, Ticket, Tag, Mail, Phone, Check, X, Shield, ArrowRight, ShieldCheck, User } from "lucide-react";
+import { Info, Ticket, Tag, Mail, Phone, Check, X, Shield, ArrowRight, ShieldCheck, User, Plus } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
+import BookingTimer from "./BookingTimer";
 import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
 } from "./flightBookingFlowStore";
 import { openAuthModal } from "../../utils/authModalEvents";
 import { isTokenExpired } from "../../services/authSession";
-import { getFlightPricingPreview, getFlightPromotions } from "../../services/flightBookingService";
+import { getFlightPricingPreview, getFlightPromotions, bookFlight, listFlightCoupons } from "../../services/flightBookingService";
 import { toApiUrl } from "../../services/apiClient";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
+
+function yyyyMmDdToDdMmYyyy(val) {
+  if (!val) return "";
+  const match = String(val).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return val;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+function ddMmYyyyToYyyyMmDd(val) {
+  if (!val) return "";
+  const match = String(val).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return val;
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
+function resolveCleanTravelClass(travelClass) {
+  if (!travelClass || typeof travelClass !== "string") {
+    return "Economy";
+  }
+  const clean = travelClass.toLowerCase();
+  if (clean.includes("premium economy")) return "Premium Economy";
+  if (clean.includes("premium business")) return "Premium Business";
+  if (clean.includes("economy")) return "Economy";
+  if (clean.includes("business")) return "Business";
+  if (clean.includes("first")) return "First Class";
+  return travelClass;
+}
+
+function formatDobInput(value) {
+  const digits = value.replace(/\D/g, "");
+  let formatted = "";
+  if (digits.length > 0) {
+    formatted += digits.slice(0, 2);
+  }
+  if (digits.length > 2) {
+    formatted += "/" + digits.slice(2, 4);
+  }
+  if (digits.length > 4) {
+    formatted += "/" + digits.slice(4, 8);
+  }
+  return formatted;
+}
 
 function readLocalTravelers() {
   try {
@@ -46,7 +89,10 @@ function parseTravellerSummary(summary) {
 
 function buildPassengerSeed(selectedSeats, travellerCounts, existingPassengers) {
   if (Array.isArray(existingPassengers) && existingPassengers.length > 0) {
-    return existingPassengers;
+    return existingPassengers.map(p => ({
+      ...p,
+      specialAssistance: p.specialAssistance || []
+    }));
   }
 
   const seatLabels = Array.isArray(selectedSeats)
@@ -60,13 +106,13 @@ function buildPassengerSeed(selectedSeats, travellerCounts, existingPassengers) 
     passengers.push({
       id: `adult-${index + 1}`,
       passengerType: "Adult",
-      title: "Mr",
+      title: "",
       firstName: "",
       lastName: "",
-      gender: "Male",
+      nationality: "",
       dob: "",
       seatLabel: seatLabels[seatIndex] || "",
-      frequentFlyer: "",
+      specialAssistance: [],
     });
     seatIndex += 1;
   }
@@ -75,13 +121,13 @@ function buildPassengerSeed(selectedSeats, travellerCounts, existingPassengers) 
     passengers.push({
       id: `child-${index + 1}`,
       passengerType: "Child",
-      title: "Ms",
+      title: "",
       firstName: "",
       lastName: "",
-      gender: "Female",
+      nationality: "",
       dob: "",
       seatLabel: seatLabels[seatIndex] || "",
-      frequentFlyer: "",
+      specialAssistance: [],
     });
     seatIndex += 1;
   }
@@ -90,13 +136,13 @@ function buildPassengerSeed(selectedSeats, travellerCounts, existingPassengers) 
     passengers.push({
       id: `infant-${index + 1}`,
       passengerType: "Infant",
-      title: "Ms",
+      title: "",
       firstName: "",
       lastName: "",
-      gender: "Female",
+      nationality: "",
       dob: "",
       seatLabel: "",
-      frequentFlyer: "",
+      specialAssistance: [],
     });
   }
 
@@ -109,7 +155,7 @@ function isValidEmail(email) {
 
 function isValidMobile(mobile) {
   const digits = String(mobile || "").replace(/\D/g, "");
-  return digits.length >= 10 && digits.length <= 13;
+  return digits.length === 10;
 }
 
 function isPassengerValid(passenger) {
@@ -117,7 +163,7 @@ function isPassengerValid(passenger) {
     passenger.title &&
     String(passenger.firstName || "").trim() &&
     String(passenger.lastName || "").trim() &&
-    passenger.gender &&
+    String(passenger.nationality || "").trim() &&
     String(passenger.dob || "").trim()
   );
 }
@@ -129,6 +175,10 @@ export default function FlightPassengerDetailsPage() {
   const persistedState = readFlightBookingFlowState();
   const incomingState = location.state || {};
   const flowState = incomingState.flight ? incomingState : persistedState || {};
+
+  const b2bToken = localStorage.getItem("b2b_token");
+  const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
+  const isAgent = b2bToken && b2bRole === "agent";
 
   const flight = flowState.flight || null;
   const selectedSeats = flowState.selectedSeats || [];
@@ -162,11 +212,67 @@ export default function FlightPassengerDetailsPage() {
   const [specialAssistance, setSpecialAssistance] = useState(
     flowState.specialAssistance || ""
   );
+  const [activePassengerIndexForAssistance, setActivePassengerIndexForAssistance] = useState(null);
+  const [tempAssistance, setTempAssistance] = useState([]);
+  const [isAssistanceDrawerOpen, setIsAssistanceDrawerOpen] = useState(false);
+
+  const ASSISTANCE_OPTIONS = [
+    { value: "Person with intellectual or developmental disability (DPNA)", label: "Person with intellectual or developmental disability (DPNA)" },
+    { value: "Speech impaired", label: "Speech impaired" },
+    { value: "Visually impaired (BLND)", label: "Visually impaired (BLND)" },
+    { value: "Hearing impaired (DEAF)", label: "Hearing impaired (DEAF)" },
+    { value: "Wheelchair (WCHR/WCHS/WCHC)", label: "Wheelchair (WCHR/WCHS/WCHC)" },
+  ];
+
+  const compileCombinedSpecialAssistance = (updatedPassengers) => {
+    const list = [];
+    updatedPassengers.forEach((p, idx) => {
+      if (p.specialAssistance && p.specialAssistance.length > 0) {
+        list.push(`Passenger ${idx + 1}: ${p.specialAssistance.join(", ")}`);
+      }
+    });
+    return list.join("; ");
+  };
+
+  const handleOpenSpecialAssistance = (index) => {
+    setActivePassengerIndexForAssistance(index);
+    setTempAssistance(passengers[index].specialAssistance || []);
+    setIsAssistanceDrawerOpen(true);
+  };
+
+  const handleToggleAssistanceOption = (val) => {
+    setTempAssistance(prev => {
+      if (prev.includes(val)) {
+        return prev.filter(x => x !== val);
+      } else {
+        return [...prev, val];
+      }
+    });
+  };
+
+  const handleSaveSpecialAssistance = () => {
+    if (activePassengerIndexForAssistance !== null) {
+      const updatedPassengers = passengers.map((p, idx) => {
+        if (idx === activePassengerIndexForAssistance) {
+          return { ...p, specialAssistance: tempAssistance };
+        }
+        return p;
+      });
+      setPassengers(updatedPassengers);
+      const compiled = compileCombinedSpecialAssistance(updatedPassengers);
+      setSpecialAssistance(compiled);
+    }
+    setIsAssistanceDrawerOpen(false);
+    setActivePassengerIndexForAssistance(null);
+  };
   const [agreedToTerms, setAgreedToTerms] = useState(Boolean(flowState.agreedToTerms));
   const [formError, setFormError] = useState("");
   const [errors, setErrors] = useState({});
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showAssuredModal, setShowAssuredModal] = useState(false);
+  const [tripSecureAdded, setTripSecureAdded] = useState(
+    flowState.tripSecureAdded !== undefined ? Boolean(flowState.tripSecureAdded) : true
+  );
 
   const [passengerModes, setPassengerModes] = useState(() =>
     passengers.map(() => false)
@@ -217,10 +323,10 @@ export default function FlightPassengerDetailsPage() {
         return {
           ...passenger,
           selectedTravelerId: "",
-          title: "Mr",
+          title: "",
           firstName: "",
           lastName: "",
-          gender: "Male",
+          nationality: "",
           dob: "",
         };
       })
@@ -257,8 +363,8 @@ export default function FlightPassengerDetailsPage() {
               title: found.title || "Mr",
               firstName: found.firstName || "",
               lastName: found.lastName || "",
-              gender: found.gender || "Male",
-              dob: found.dobInput || "",
+              nationality: found.country || "",
+              dob: yyyyMmDdToDdMmYyyy(found.dobInput) || "",
             }
           : passenger
       )
@@ -267,10 +373,62 @@ export default function FlightPassengerDetailsPage() {
 
   // Load available coupons and featured offers on mount
   useEffect(() => {
+    const normalizeCoupon = (c) => {
+      const code = (c.couponCode || c.CouponCode || c.code || c.Code || c.name || c.Name || "").toString().toUpperCase();
+      const val = Number(c.value || c.Value || c.discountValue || c.DiscountValue || 0);
+      const type = (c.couponType || c.CouponType || c.cpnType || c.CpnType || c.discountType || c.DiscountType || "Percentage").toString();
+      const status = (c.status || c.Status || "").toString().toLowerCase();
+      const isActive = c.isActive === true || c.isActive === 1 || String(c.isActive).toLowerCase() === "true" || status === "active" || status === "" || c.isActive === undefined;
+      return {
+        couponCode: code,
+        value: val,
+        couponType: type,
+        status: status,
+        isActive: isActive
+      };
+    };
+
     async function loadPromoData() {
       try {
-        const promos = await getFlightPromotions();
-        setAvailableCoupons(promos.filter(p => !p.isActiveAutoApply && !p.isAutoApply) || []);
+        let backendPromos = [];
+        let adminCoupons = [];
+
+        // 1. Fetch from public promotions (backend)
+        try {
+          const promos = await getFlightPromotions();
+          console.log("Loaded flight promotions from backend:", promos);
+          backendPromos = (Array.isArray(promos) ? promos : []).map(normalizeCoupon);
+        } catch (err) {
+          console.error("Failed to load flight promotions from backend", err);
+        }
+
+        // 2. Fetch from admin coupons (admin)
+        try {
+          const coupons = await listFlightCoupons();
+          console.log("Loaded flight coupons from admin:", coupons);
+          adminCoupons = (Array.isArray(coupons) ? coupons : []).map(normalizeCoupon);
+        } catch (err) {
+          console.error("Failed to load flight coupons from admin (expected for regular users)", err);
+        }
+
+        // 3. Merge results
+        const mergedMap = new Map();
+
+        backendPromos.forEach(c => {
+          if (c.couponCode) {
+            mergedMap.set(c.couponCode, c);
+          }
+        });
+
+        adminCoupons.forEach(c => {
+          if (c.couponCode) {
+            mergedMap.set(c.couponCode, c);
+          }
+        });
+
+        const mergedCoupons = Array.from(mergedMap.values()).filter(c => c.isActive);
+        console.log("Final merged available coupons list:", mergedCoupons);
+        setAvailableCoupons(mergedCoupons);
         
         const response = await fetch(toApiUrl("/api/FeaturedOffers"), {
           headers: {
@@ -302,22 +460,59 @@ export default function FlightPassengerDetailsPage() {
         travelClass: flight.className || searchContext?.cabinClass || "Economy",
         tripType: searchContext?.tripType || "OneWay",
         passengerCount,
-        couponCode: code || null,
+        couponCode: null, // do NOT pass code here to prevent server error in pricing-preview
         selectedFeaturedOfferId: offerId || null
       };
 
-      const pricing = await getFlightPricingPreview(payload);
-      setPricingBreakdown(pricing);
+      let pricing;
+      try {
+        pricing = await getFlightPricingPreview(payload);
+      } catch (err) {
+        console.warn("Pricing preview endpoint failed/not found, using local fare summary fallback:", err);
+        pricing = {
+          baseFare: baseFare,
+          tax: tax,
+          convenienceFee: convenienceFee,
+          markup: markup,
+          totalFare: preservedTotal,
+          couponDiscount: 0,
+          promotionDiscount: 0
+        };
+      }
 
       if (code) {
-        if (pricing.couponDiscount > 0) {
-          setCouponSuccess(`Coupon "${code}" applied! Discount: ${formatCurrency(pricing.couponDiscount)}`);
-          setCouponCode(code);
-          setSelectedFeaturedOfferId(null);
+        const uppercaseCode = code.trim().toUpperCase();
+        const foundCoupon = availableCoupons.find(c => c.couponCode === uppercaseCode);
+        if (foundCoupon) {
+          let discount = 0;
+          const fareTotal = pricing.totalFare || (pricing.baseFare + pricing.tax + pricing.convenienceFee);
+          if (foundCoupon.couponType.toLowerCase().includes("percentage")) {
+            discount = Math.round((pricing.baseFare || fareTotal) * (foundCoupon.value / 100));
+          } else {
+            discount = foundCoupon.value;
+          }
+
+          if (discount > 0) {
+            const localPricing = {
+              ...pricing,
+              couponDiscount: discount,
+              totalFare: Math.max(0, (pricing.totalFare || fareTotal) - discount)
+            };
+            setPricingBreakdown(localPricing);
+            setCouponSuccess(`Coupon "${uppercaseCode}" applied! Discount: ${formatCurrency(discount)}`);
+            setCouponCode(uppercaseCode);
+            setSelectedFeaturedOfferId(null);
+          } else {
+            setPricingBreakdown(pricing);
+            setCouponError("Coupon is valid but offers no discount for this booking.");
+          }
         } else {
-          setCouponError("Coupon is valid but offers no discount for this booking.");
+          setPricingBreakdown(pricing);
+          setCouponError("Invalid or expired coupon code.");
+          setCouponCode("");
         }
       } else if (offerId) {
+        setPricingBreakdown(pricing);
         const disc = pricing.couponDiscount > 0 ? pricing.couponDiscount : pricing.promotionDiscount;
         if (disc > 0) {
           setCouponSuccess(`Offer applied successfully! Discount: ${formatCurrency(disc)}`);
@@ -326,6 +521,8 @@ export default function FlightPassengerDetailsPage() {
         } else {
           setCouponError("Offer is valid but offers no discount for this booking.");
         }
+      } else {
+        setPricingBreakdown(pricing);
       }
     } catch (err) {
       console.error(err);
@@ -349,6 +546,7 @@ export default function FlightPassengerDetailsPage() {
     setCouponSuccess("");
     setCouponError("");
     setPricingBreakdown(null);
+    setFormError("");
   };
 
   const handleSelectOffer = (offerId) => {
@@ -401,8 +599,9 @@ export default function FlightPassengerDetailsPage() {
   const preservedTotal =
     Number(preservedFareSummary.totalFare || 0) ||
     baseFare + tax + convenienceFee + markup;
-  const finalPayable = Math.max(0, preservedTotal - totalDiscount);
-  const isPassengerValid = (p) => p.title && p.firstName && p.lastName && p.gender && p.dob;
+  const tripSecureFee = tripSecureAdded ? 249 * passengers.length : 0;
+  const finalPayable = Math.max(0, preservedTotal - totalDiscount) + tripSecureFee;
+  const isPassengerValid = (p) => p.title && p.firstName && p.lastName && p.nationality && p.dob;
   const allPassengersValid = passengers.every(isPassengerValid);
 
   const validateForm = () => {
@@ -411,8 +610,26 @@ export default function FlightPassengerDetailsPage() {
       if (!p.title) newErrors[`passenger_${idx}_title`] = "Required";
       if (!p.firstName || !p.firstName.trim()) newErrors[`passenger_${idx}_firstName`] = "Required";
       if (!p.lastName || !p.lastName.trim()) newErrors[`passenger_${idx}_lastName`] = "Required";
-      if (!p.gender) newErrors[`passenger_${idx}_gender`] = "Required";
-      if (!p.dob) newErrors[`passenger_${idx}_dob`] = "Required";
+      if (!p.nationality || !p.nationality.trim()) newErrors[`passenger_${idx}_nationality`] = "Required";
+      
+      if (!p.dob || !p.dob.trim()) {
+        newErrors[`passenger_${idx}_dob`] = "Required";
+      } else {
+        const parts = p.dob.split("/");
+        if (parts.length !== 3 || p.dob.length !== 10) {
+          newErrors[`passenger_${idx}_dob`] = "Format: DD/MM/YYYY";
+        } else {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+          const dateObj = new Date(year, month - 1, day);
+          const isValidDate = dateObj.getFullYear() === year && dateObj.getMonth() === month - 1 && dateObj.getDate() === day;
+          const currentYear = new Date().getFullYear();
+          if (!isValidDate || year < currentYear - 120 || year > currentYear) {
+            newErrors[`passenger_${idx}_dob`] = "Invalid Date";
+          }
+        }
+      }
     });
 
     if (!contact.email || !contact.email.trim()) {
@@ -451,10 +668,16 @@ export default function FlightPassengerDetailsPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token || isTokenExpired(token)) {
-      openAuthModal("login");
-      return;
+    const b2bToken = localStorage.getItem("b2b_token");
+    const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
+    const isAgent = b2bToken && b2bRole === "agent";
+
+    if (!isAgent) {
+      const token = localStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        openAuthModal("login");
+        return;
+      }
     }
 
     setFormError("");
@@ -466,7 +689,7 @@ export default function FlightPassengerDetailsPage() {
     setShowAssuredModal(true);
   };
 
-  const handleSelectAssured = (secured) => {
+  const handleSelectAssured = async (secured) => {
     setShowAssuredModal(false);
     
     const count = passengers.length;
@@ -482,6 +705,7 @@ export default function FlightPassengerDetailsPage() {
       convenienceFee,
       discount: totalDiscount,
       assuredFee,
+      tripSecureFee,
       totalFare: finalPayable + assuredFee,
     };
     
@@ -497,10 +721,47 @@ export default function FlightPassengerDetailsPage() {
       payableAmount: finalPayable + assuredFee,
       fareSummary: finalFareSummary,
       assuredSecured: secured,
+      tripSecureAdded,
+      tripSecureFee,
     };
 
-    writeFlightBookingFlowState(payload);
-    navigate("/flight/seats", { state: payload });
+    setIsApplying(true);
+    setFormError("");
+
+    try {
+      const bookingPayload = {
+        passengerName: passengers[0]?.firstName ? `${passengers[0].title || "Mr"} ${passengers[0].firstName} ${passengers[0].lastName || ""}`.trim() : "Passenger",
+        passengerPhone: String(contact?.mobile || "").trim(),
+        passengerEmail: String(contact?.email || "").trim(),
+        travelClass: resolveCleanTravelClass(flight?.selectedTravelClass || flight?.className || searchContext?.cabinClass || "Economy"),
+        passengers: passengers.map((p, idx) => ({
+          fullName: `${p.title || ""} ${p.firstName || ""} ${p.lastName || ""}`.replace(/\s+/g, " ").trim() || `Passenger ${idx + 1}`,
+          passengerType: p.passengerType || "Adult",
+          gender: p.gender || "Male",
+          nationality: p.nationality || "Indian",
+          ...(p.dob ? { dob: ddMmYyyyToYyyyMmDd(p.dob) } : {}),
+        })),
+        couponCode: couponCode.trim().toUpperCase() || null,
+        selectedFeaturedOfferId: selectedFeaturedOfferId || null,
+        selectedPromotionId: selectedFeaturedOfferId || null,
+        adults: passengers.filter(p => p.passengerType === "Adult").length || 1,
+        children: passengers.filter(p => p.passengerType === "Child").length || 0,
+        infants: passengers.filter(p => p.passengerType === "Infant").length || 0,
+      };
+
+      await bookFlight({
+        flightId: flight.id,
+        payload: bookingPayload,
+      });
+
+      writeFlightBookingFlowState(payload);
+      navigate("/flight/seats", { state: payload });
+    } catch (error) {
+      console.error("Booking validation failed:", error);
+      setFormError(error.message || "Failed to validate booking. Please check coupon and details.");
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   const renderPassengerFields = (passenger, index) => (
@@ -555,55 +816,58 @@ export default function FlightPassengerDetailsPage() {
       </label>
 
       <label className="passenger-field">
-        <span>Gender *</span>
-        <select
-          value={passenger.gender || ""}
-          onChange={(event) => updatePassenger(index, "gender", event.target.value)}
-          className={errors[`passenger_${index}_gender`] ? "field-has-error" : ""}
-        >
-          <option value="">Gender *</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
-        {errors[`passenger_${index}_gender`] && (
-          <span className="field-error-text">{errors[`passenger_${index}_gender`]}</span>
+        <span>Nationality *</span>
+        <input
+          type="text"
+          placeholder="Nationality *"
+          value={passenger.nationality || ""}
+          onChange={(event) =>
+            updatePassenger(index, "nationality", event.target.value)
+          }
+          className={errors[`passenger_${index}_nationality`] ? "field-has-error" : ""}
+        />
+        {errors[`passenger_${index}_nationality`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_nationality`]}</span>
         )}
       </label>
 
       <label className="passenger-field">
         <span>Date of Birth *</span>
         <input
-          type={passenger.dob ? "date" : "text"}
-          placeholder="Date of Birth *"
+          type="text"
+          placeholder="DD/MM/YYYY"
           value={passenger.dob || ""}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
+          onChange={(event) => {
+            const formatted = formatDobInput(event.target.value);
+            updatePassenger(index, "dob", formatted);
           }}
-          onChange={(event) => updatePassenger(index, "dob", event.target.value)}
           className={errors[`passenger_${index}_dob`] ? "field-has-error" : ""}
         />
-        {errors[`passenger_${index}_dob`] && (
-          <span className="field-error-text">{errors[`passenger_${index}_dob`]}</span>
-        )}
       </label>
 
-      <label className="passenger-field">
-        <span>Frequent Flyer (Optional)</span>
-        <input
-          type="text"
-          placeholder="Frequent Flyer"
-          value={passenger.frequentFlyer || ""}
-          onChange={(event) =>
-            updatePassenger(index, "frequentFlyer", event.target.value)
-          }
-        />
-      </label>
+      <div className="special-assistance-grid-row">
+        <span>Special Assistance</span>
+        <div className="special-assistance-trigger-box" onClick={() => handleOpenSpecialAssistance(index)}>
+          <span className="special-assistance-trigger-text">
+            {passenger.specialAssistance && passenger.specialAssistance.length > 0
+              ? passenger.specialAssistance.join(", ")
+              : "Special Assistance"}
+          </span>
+          <span className="special-assistance-trigger-icon">
+            {passenger.specialAssistance && passenger.specialAssistance.length > 0 ? (
+              <Check size={14} className="icon-check" />
+            ) : (
+              <span className="plus-icon-symbol">+</span>
+            )}
+          </span>
+        </div>
+      </div>
     </div>
   );  // Sidebar helpers
 
   return (
     <main className="flight-flow-page">
+      <BookingTimer />
       {/* ── STEPPER PROGRESS HEADER ── */}
       <div className="flight-stepper-header">
         <div className="step-item completed">
@@ -694,6 +958,12 @@ export default function FlightPassengerDetailsPage() {
                 <span>₹ {convenienceFee.toLocaleString("en-IN")}</span>
               </div>
             )}
+            {tripSecureFee > 0 && (
+              <div className="fare-row">
+                <span>Trip Secure Fee</span>
+                <span>₹ {tripSecureFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
             {totalDiscount > 0 && (
               <div className="fare-row">
                 <span>Instant Discount</span>
@@ -710,7 +980,7 @@ export default function FlightPassengerDetailsPage() {
         {/* ── RIGHT COLUMN MAIN CONTENT ── */}
         <section className="flight-checkout-main">
           {/* Passenger Details input */}
-          <div className="flight-main-card">
+          <div className="flight-main-card flight-main-card--compact">
             <h2 className="flight-main-card-title">
               <User size={20} className="header-icon" />
               Enter Traveller Details
@@ -815,10 +1085,12 @@ export default function FlightPassengerDetailsPage() {
                   <input
                     className={`input-control contact-phone-input ${errors.contact_mobile ? "error-state" : ""}`}
                     type="text"
+                    maxLength={10}
                     placeholder="Mobile Number"
                     value={contact.mobile}
                     onChange={(e) => {
-                      setContact(prev => ({ ...prev, mobile: e.target.value }));
+                      const cleanValue = e.target.value.replace(/\D/g, "");
+                      setContact(prev => ({ ...prev, mobile: cleanValue }));
                       setErrors(prev => { const c = { ...prev }; delete c.contact_mobile; return c; });
                     }}
                   />
@@ -851,12 +1123,163 @@ export default function FlightPassengerDetailsPage() {
                   <input
                     className="input-control"
                     type="text"
+                    maxLength={10}
                     placeholder="WhatsApp number (defaults to mobile)"
                     value={contact.whatsappNumber}
-                    onChange={(e) => setContact(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                    onChange={(e) => {
+                      const cleanValue = e.target.value.replace(/\D/g, "");
+                      setContact(prev => ({ ...prev, whatsappNumber: cleanValue }));
+                    }}
                   />
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Trip Secure Benefits */}
+          <div className="trip-secure-card">
+            <h2 className="flight-main-card-title">
+              <Shield size={20} className="header-icon" style={{ color: "var(--secondary-color)" }} />
+              Trip Secure Benefits
+            </h2>
+            <p className="trip-secure-tagline">
+              Secure your journey with comprehensive travel protection services for just ₹249 per traveller
+            </p>
+
+            <div className="trip-secure-benefits-grid">
+              <div className="trip-secure-benefit-item">
+                <span className="trip-secure-benefit-icon">
+                  <Shield size={16} strokeWidth={2.5} />
+                </span>
+                <div className="trip-secure-benefit-text-wrap">
+                  <span className="trip-secure-benefit-title">Delayed/Lost Baggage Assistance</span>
+                  <span className="trip-secure-benefit-desc">Get instant baggage tracking assistance and compensation support.</span>
+                </div>
+              </div>
+
+              <div className="trip-secure-benefit-item">
+                <span className="trip-secure-benefit-icon">
+                  <Shield size={16} strokeWidth={2.5} />
+                </span>
+                <div className="trip-secure-benefit-text-wrap">
+                  <span className="trip-secure-benefit-title">Personal Accident Coverage</span>
+                  <span className="trip-secure-benefit-desc">Accident insurance coverage up to ₹5,00,000 for emergency medical expenses.</span>
+                </div>
+              </div>
+
+              <div className="trip-secure-benefit-item">
+                <span className="trip-secure-benefit-icon">
+                  <Shield size={16} strokeWidth={2.5} />
+                </span>
+                <div className="trip-secure-benefit-text-wrap">
+                  <span className="trip-secure-benefit-title">Loss of Checked-In Baggage</span>
+                  <span className="trip-secure-benefit-desc">Reimbursement for total loss of checked-in baggage up to ₹20,000.</span>
+                </div>
+              </div>
+
+              <div className="trip-secure-benefit-item">
+                <span className="trip-secure-benefit-icon">
+                  <Shield size={16} strokeWidth={2.5} />
+                </span>
+                <div className="trip-secure-benefit-text-wrap">
+                  <span className="trip-secure-benefit-title">Delay of Checked-In Baggage</span>
+                  <span className="trip-secure-benefit-desc">Compensation up to ₹10,000 for checked baggage delay beyond 6 hours.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="trip-secure-options">
+              <div 
+                className={`trip-secure-option ${tripSecureAdded ? "selected recommended" : ""}`}
+                onClick={() => setTripSecureAdded(true)}
+              >
+                <div className="trip-secure-option-input-wrap">
+                  <div className="trip-secure-radio-circle">
+                    <div className="trip-secure-radio-inner"></div>
+                  </div>
+                </div>
+                <div className="trip-secure-option-content">
+                  <span className="trip-secure-option-title">
+                    Yes, secure my trip with Trip Secure Benefits
+                    <span className="trip-secure-badge-rec">Recommended</span>
+                  </span>
+                  <span className="trip-secure-option-subtitle">
+                    I want travel protection covering lost/delayed baggage and personal accidents.
+                  </span>
+                </div>
+                <div className="trip-secure-option-price">
+                  ₹ {(249 * passengers.length).toLocaleString("en-IN")}
+                </div>
+              </div>
+
+              <div 
+                className={`trip-secure-option ${!tripSecureAdded ? "selected" : ""}`}
+                onClick={() => setTripSecureAdded(false)}
+              >
+                <div className="trip-secure-option-input-wrap">
+                  <div className="trip-secure-radio-circle">
+                    <div className="trip-secure-radio-inner"></div>
+                  </div>
+                </div>
+                <div className="trip-secure-option-content">
+                  <span className="trip-secure-option-title">
+                    No, I will travel without protection
+                  </span>
+                  <span className="trip-secure-option-subtitle">
+                    I understand the risks and agree to pay for baggage delays, loss, and accident expenses myself.
+                  </span>
+                </div>
+                <div className="trip-secure-option-price">
+                  ₹ 0
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Important Information */}
+          <div className="flight-main-card important-info-card">
+            <h2 className="flight-main-card-title">
+              <Info size={20} className="header-icon" />
+              Important Information
+            </h2>
+            <div className="important-info-content">
+              <div className="info-grid">
+                <div className="info-section">
+                  <h4 className="info-section-title">Travel Guidelines</h4>
+                  <ul className="info-list">
+                    <li>Carry a valid government-issued Photo ID (Aadhaar, Passport, Driving License, or Voter ID).</li>
+                    <li>For international travel, make sure your passport is valid for at least 6 months and you have all required visas.</li>
+                    <li>Report at the airport at least 2 hours before domestic departures and 3 hours before international departures.</li>
+                  </ul>
+                </div>
+
+                <div className="info-section">
+                  <h4 className="info-section-title">Baggage Rules</h4>
+                  <ul className="info-list">
+                    <li><strong>Cabin Baggage:</strong> Standard allowance is 1 cabin bag of up to 7 kg per passenger.</li>
+                    <li><strong>Check-in Baggage:</strong> Generally 15 kg per passenger is allowed for domestic flights. Limits may vary by airline and fare class.</li>
+                    <li>Prohibited items (like power banks, batteries, liquids above 100ml) must not be carried in check-in baggage.</li>
+                  </ul>
+                </div>
+
+                <div className="info-section">
+                  <h4 className="info-section-title">Boarding Pass & Check-in</h4>
+                  <ul className="info-list">
+                    <li><strong>Web Check-in:</strong> Mandated by airlines. Web check-in opens 48 hours to 60 minutes before departure.</li>
+                    <li>Boarding pass will be generated after successful check-in. You can download or print it before arriving at the airport.</li>
+                    <li>Alternatively, boarding passes can be collected at the airline's airport check-in counter (fees may apply).</li>
+                  </ul>
+                </div>
+
+                <div className="info-section">
+                  <h4 className="info-section-title">Unaccompanied Minors</h4>
+                  <ul className="info-list">
+                    <li>Children aged 5–12 years traveling alone are classified as Unaccompanied Minors.</li>
+                    <li>Direct booking and separate coordination with the airline is required to request escort services.</li>
+                    <li>Special forms and parent/guardian contact details must be provided at the airport check-in counter.</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -899,107 +1322,111 @@ export default function FlightPassengerDetailsPage() {
           </div>
 
           {/* Coupons & Offers */}
-          <div className="flight-main-card">
-            <h2 className="flight-main-card-title">
-              <Tag size={20} className="header-icon" />
-              Apply Coupons & Offers
-            </h2>
+          {!isAgent && (
+            <div className="flight-main-card">
+              <h2 className="flight-main-card-title">
+                <Tag size={20} className="header-icon" />
+                Apply Coupons & Offers
+              </h2>
 
-            <div style={{ display: "flex", gap: 12 }}>
-              <input
-                className="input-control"
-                style={{ textTransform: "uppercase" }}
-                type="text"
-                placeholder="Enter promo code"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                disabled={isApplying || selectedFeaturedOfferId !== null}
-              />
-              {couponCode && pricingBreakdown?.couponDiscount > 0 ? (
-                <button type="button" className="btn-secondary" onClick={handleRemoveCoupon}>Remove</button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={handleApplyCoupon}
+              <div style={{ display: "flex", gap: 12 }}>
+                <input
+                  className="input-control"
+                  style={{ textTransform: "uppercase" }}
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
                   disabled={isApplying || selectedFeaturedOfferId !== null}
-                >
-                  {isApplying ? "Applying..." : "Apply"}
-                </button>
+                />
+                {couponCode ? (
+                  <button type="button" className="btn-secondary" onClick={handleRemoveCoupon}>Remove</button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleApplyCoupon}
+                    disabled={isApplying || selectedFeaturedOfferId !== null}
+                  >
+                    {isApplying ? "Applying..." : "Apply"}
+                  </button>
+                )}
+              </div>
+
+              {couponError && <p style={{ color: "var(--danger-color)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponError}</p>}
+              {couponSuccess && <p style={{ color: "var(--success-color)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponSuccess}</p>}
+
+              {/* Coupons list */}
+              {availableCoupons.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Available Coupons</h4>
+                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
+                    {availableCoupons.map((coupon) => (
+                      <div
+                        key={coupon.id}
+                        style={{
+                          minWidth: 200,
+                          border: "1px dashed var(--border-color)",
+                          borderRadius: 8,
+                          padding: 10,
+                          backgroundColor: "#f8fafc",
+                          position: "relative"
+                        }}
+                      >
+                        <strong style={{ display: "block", fontSize: "0.875rem", color: "var(--secondary-color)" }}>{coupon.couponCode}</strong>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                          {String(coupon.couponType || coupon.cpnType || "Percentage").toLowerCase().includes("percentage") ? `${coupon.value}%` : `₹${coupon.value}`} Off
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-action-outline"
+                          style={{ width: "100%", height: 30, padding: 0, marginTop: 8, fontSize: "0.75rem" }}
+                          onClick={() => loadPricing(coupon.couponCode, null)}
+                          disabled={isApplying || selectedFeaturedOfferId !== null}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Featured offers list */}
+              {featuredOffers.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Featured Offers</h4>
+                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
+                    {featuredOffers.map((offer) => (
+                      <div
+                        key={offer.id}
+                        style={{
+                          minWidth: 200,
+                          border: "1px solid var(--border-color)",
+                          borderRadius: 8,
+                          padding: 10,
+                          backgroundColor: "#fff",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                        }}
+                      >
+                        <strong style={{ display: "block", fontSize: "0.875rem" }}>{offer.title}</strong>
+                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "4px 0" }}>{offer.subtitle}</p>
+                        <button
+                          type="button"
+                          className="btn-action-outline"
+                          style={{ width: "100%", height: 30, padding: 0, marginTop: 4, fontSize: "0.75rem" }}
+                          onClick={() => handleSelectOffer(offer.id)}
+                          disabled={isApplying || couponCode !== ""}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-
-            {couponError && <p style={{ color: "var(--danger-color)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponError}</p>}
-            {couponSuccess && <p style={{ color: "var(--success-color)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponSuccess}</p>}
-
-            {/* Coupons list */}
-            {availableCoupons.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Available Coupons</h4>
-                <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
-                  {availableCoupons.map((coupon) => (
-                    <div
-                      key={coupon.id}
-                      style={{
-                        minWidth: 200,
-                        border: "1px dashed var(--border-color)",
-                        borderRadius: 8,
-                        padding: 10,
-                        backgroundColor: "#f8fafc",
-                        position: "relative"
-                      }}
-                    >
-                      <strong style={{ display: "block", fontSize: "0.875rem", color: "var(--secondary-color)" }}>{coupon.name}</strong>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{coupon.discountValue}% Off</span>
-                      <button
-                        type="button"
-                        className="btn-action-outline"
-                        style={{ width: "100%", height: 30, padding: 0, marginTop: 8, fontSize: "0.75rem" }}
-                        onClick={() => loadPricing(coupon.name, null)}
-                        disabled={isApplying || selectedFeaturedOfferId !== null}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Featured offers list */}
-            {featuredOffers.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Featured Offers</h4>
-                <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
-                  {featuredOffers.map((offer) => (
-                    <div
-                      key={offer.id}
-                      style={{
-                        minWidth: 200,
-                        border: "1px solid var(--border-color)",
-                        borderRadius: 8,
-                        padding: 10,
-                        backgroundColor: "#fff",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
-                      }}
-                    >
-                      <strong style={{ display: "block", fontSize: "0.875rem" }}>{offer.title}</strong>
-                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "4px 0" }}>{offer.subtitle}</p>
-                      <button
-                        type="button"
-                        className="btn-action-outline"
-                        style={{ width: "100%", height: 30, padding: 0, marginTop: 4, fontSize: "0.75rem" }}
-                        onClick={() => handleSelectOffer(offer.id)}
-                        disabled={isApplying || couponCode !== ""}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </section>
       </div>
 
@@ -1141,6 +1568,50 @@ export default function FlightPassengerDetailsPage() {
                 Secure My Trip
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL / DRAWER 3: SPECIAL ASSISTANCE DRAWER ── */}
+      {isAssistanceDrawerOpen && (
+        <div className="drawer-overlay" onClick={() => setIsAssistanceDrawerOpen(false)}>
+          <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
+            <header className="drawer-header">
+              <button type="button" className="drawer-close-btn" onClick={() => setIsAssistanceDrawerOpen(false)}>
+                <X size={20} />
+              </button>
+              <h3 className="drawer-title">SPECIAL ASSISTANCE</h3>
+              <p className="drawer-subtitle">For a <span>seamless journey</span></p>
+            </header>
+            
+            <div className="drawer-body">
+              <p className="drawer-instruction">Please select option for Special Assistance</p>
+              
+              <div className="assistance-options-list">
+                {ASSISTANCE_OPTIONS.map((option) => {
+                  const isChecked = tempAssistance.includes(option.value);
+                  return (
+                    <label key={option.value} className={`assistance-option-card ${isChecked ? "selected" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleAssistanceOption(option.value)}
+                      />
+                      <span className="option-checkbox-custom">
+                        {isChecked && <Check size={12} />}
+                      </span>
+                      <span className="option-label-text">{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <footer className="drawer-footer">
+              <button type="button" className="btn-primary drawer-done-btn" onClick={handleSaveSpecialAssistance}>
+                Done
+              </button>
+            </footer>
           </div>
         </div>
       )}

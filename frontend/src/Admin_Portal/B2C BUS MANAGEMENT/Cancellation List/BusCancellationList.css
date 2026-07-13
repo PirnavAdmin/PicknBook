@@ -1,5 +1,23 @@
 .admin-cancel-page {
   gap: 12px;
+  padding-top: 10px !important;
+}
+
+.admin-cancel-page .admin-action-btn {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease-in-out !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+  font-weight: 600 !important;
+}
+
+.admin-cancel-page .admin-action-btn:hover {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+  transform: translateY(-1px) !important;
 }
 
 .admin-cancel-header h1 {
@@ -34,18 +52,19 @@
   box-shadow: 0 10px 20px rgba(16, 34, 58, 0.08);
 }
 
+/* One solid equal color for table heading */
 .admin-cancel-table-head {
   display: grid;
   grid-template-columns: 0.72fr 1fr 1.25fr 1fr 0.85fr 0.7fr 0.58fr;
   gap: 8px;
   padding: 8px;
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  background: #be185d !important; /* solid cerise pink */
 }
 
+/* Remove separate block backgrounds in heading, center text */
 .admin-cancel-table-head span {
   min-height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.16);
+  background: transparent !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -67,14 +86,18 @@
   border-top: 1px solid var(--admin-border);
 }
 
+/* Center all data vertically and horizontally inside card cells */
 .admin-cancel-cell {
   min-height: 56px;
   border: 1px solid var(--admin-border);
   border-radius: 10px;
   background: var(--admin-surface);
   padding: 8px;
-  display: grid;
-  align-content: center;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
   gap: 3px;
   color: var(--admin-text);
   font-size: 0.81rem;
@@ -83,11 +106,13 @@
 .admin-cancel-cell strong {
   color: var(--admin-text);
   font-size: 0.86rem;
+  text-align: center;
 }
 
 .admin-cancel-cell small {
   color: var(--admin-muted);
   font-size: 0.75rem;
+  text-align: center;
 }
 
 .admin-cancel-empty {
@@ -123,7 +148,6 @@
   .admin-cancel-table-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .admin-cancel-filters {
     grid-template-columns: 1fr;
   }
@@ -148,38 +172,26 @@
 .admin-cancel-toolbar .admin-actions-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-/* Make both chips and buttons have exactly the same height and alignment */
-.admin-cancel-toolbar .admin-chip,
-.admin-cancel-toolbar .admin-actions-row button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  box-sizing: border-box;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 999px; /* Make buttons also pills so they align beautifully with chips */
-  padding: 0 16px;
-  transition: all 0.2s ease-in-out;
-}
-
-/* Button colors */
 /* Filter button */
 .admin-cancel-toolbar .admin-actions-row button:first-of-type {
-  background: var(--admin-soft);
-  color: var(--admin-primary);
-  border: 1.5px solid var(--admin-primary) !important;
-  cursor: pointer;
+  background: #ffffff !important;
+  color: #be185d !important;
+  border: 1.5px solid #be185d !important;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 
 .admin-cancel-toolbar .admin-actions-row button:first-of-type:hover {
-  background: var(--admin-primary);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(30, 117, 255, 0.2);
+  background: #be185d !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
 }
 
 /* Clear Filter button */
@@ -187,7 +199,10 @@
   background: #ffffff !important;
   color: var(--admin-muted) !important;
   border: 1.5px solid var(--admin-border) !important;
-  cursor: pointer;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
 }
 
 .admin-cancel-toolbar .admin-cancel-clear-btn:hover {
@@ -198,14 +213,133 @@
 
 /* Export button */
 .admin-cancel-toolbar .admin-actions-row button:last-of-type {
-  background: var(--admin-success-soft) !important;
-  color: var(--admin-success) !important;
-  border: 1.5px solid var(--admin-success) !important;
-  cursor: pointer;
+  background: #ffffff !important;
+  color: #be185d !important;
+  border: 1.5px solid #be185d !important;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
 }
 
 .admin-cancel-toolbar .admin-actions-row button:last-of-type:hover {
-  background: var(--admin-success) !important;
+  background: #be185d !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
+}
+
+/* Modal Detail Pop-up Overlay */
+.admin-cancel-page .admin-view-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2000 !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.admin-cancel-page .admin-view-card {
+  background: var(--admin-surface) !important;
+  border-radius: 18px !important;
+  width: min(900px, 95vw) !important;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16) !important;
+  border: 1px solid var(--admin-border) !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  animation: modalScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@keyframes modalScaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.admin-cancel-page .admin-view-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1.5px solid var(--admin-border) !important;
+}
+
+.admin-cancel-page .admin-view-header button {
+  border: 1.5px solid var(--admin-border) !important;
+  background: var(--admin-soft) !important;
+  color: var(--admin-primary) !important;
+  border-radius: 10px !important;
+  padding: 6px 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-cancel-page .admin-view-header button:hover {
+  background: var(--admin-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--admin-primary) !important;
+}
+
+.admin-cancel-page .admin-view-header-subtitle {
+  margin: 6px 0 0 !important;
+  color: var(--admin-muted) !important;
+  font-size: 0.85rem !important;
+}
+
+.admin-cancel-page .admin-view-meta-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+.admin-cancel-page .admin-view-meta-chip {
+  padding: 6px 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--admin-border) !important;
+  background: var(--admin-soft) !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: var(--admin-primary) !important;
+}
+
+.admin-cancel-page .admin-view-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 16px !important;
+  padding-top: 20px !important;
+}
+
+.admin-cancel-page .admin-view-grid span {
+  display: block !important;
+  font-size: 0.72rem !important;
+  color: var(--admin-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: 6px !important;
+  font-weight: 700 !important;
+}
+
+.admin-cancel-page .admin-view-grid strong {
+  font-size: 0.95rem !important;
+  color: var(--admin-text) !important;
+  font-weight: 700 !important;
+}
+
+.admin-cancel-page .admin-view-highlight-card {
+  border-radius: 14px !important;
+  border: 1.5px solid var(--admin-border) !important;
+  padding: 12px 16px !important;
+  background: var(--admin-soft) !important;
+  display: grid !important;
 }

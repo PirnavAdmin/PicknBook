@@ -1,12 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { getStoredValue } from "../../utils/adminPortalStorage";
-import {
-  DEFAULT_CMS_PAGES,
-  ensureCurrentLegalPageContent,
-  normalizePolicySlug,
-} from "../../data/legalPages";
+import { getPublicPageBySlug } from "../../services/cmsPageService";
+import TravelLoadingScreen from "../../components/layout/TravelLoadingScreen";
 import "../../STYLES/LegalPage.css";
 
 function splitLegalContent(description) {
@@ -18,20 +14,61 @@ function splitLegalContent(description) {
 
 export default function LegalPage() {
   const { slug } = useParams();
-  const normalizedSlug = normalizePolicySlug(slug);
+  const [page, setPage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const pages = useMemo(() => {
-    const storedPages = getStoredValue("cms-pages", DEFAULT_CMS_PAGES);
-    return ensureCurrentLegalPageContent(storedPages);
-  }, []);
+  useEffect(() => {
+    const fetchPage = async () => {
+      setLoading(true);
+      try {
+        const data = await getPublicPageBySlug(slug);
+        setPage(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching legal page:", err);
+        if (err.response && err.response.status === 404) {
+          setError("The requested page does not exist or is currently inactive.");
+        } else {
+          setError("Failed to load page content.");
+        }
+        setPage(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const page = pages.find(
-    (item) =>
-      normalizePolicySlug(item?.slug) === normalizedSlug &&
-      String(item?.status || "Active").toLowerCase() !== "inactive"
-  );
+    if (slug) {
+      fetchPage();
+    }
+  }, [slug]);
 
-  if (!page) {
+  // Set document metadata dynamically
+  useEffect(() => {
+    if (page) {
+      document.title = page.metaTitle || page.title || "Pick N Book";
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute("content", page.metaDescription || "");
+      }
+    }
+    return () => {
+      document.title = "Pick N Book - Premium Travel Booking";
+    };
+  }, [page]);
+
+  if (loading) {
+    return (
+      <TravelLoadingScreen
+        title="Loading page..."
+        message="Please wait while we retrieve the latest page content."
+        variant="page"
+        icon="route"
+      />
+    );
+  }
+
+  if (error || !page) {
     return (
       <main className="legal-page">
         <section className="legal-shell legal-empty">
@@ -40,13 +77,14 @@ export default function LegalPage() {
             Back to home
           </Link>
           <h1>Page not available</h1>
-          <p>The requested policy page is not configured yet.</p>
+          <p>{error || "The requested policy page is not configured yet."}</p>
         </section>
       </main>
     );
   }
 
-  const contentBlocks = splitLegalContent(page.description);
+  const isHtml = /<[a-z][\s\S]*>/i.test(page.description || "");
+  const contentBlocks = isHtml ? [] : splitLegalContent(page.description);
 
   return (
     <main className="legal-page">
@@ -63,7 +101,9 @@ export default function LegalPage() {
         </header>
 
         <article className="legal-content-card">
-          {contentBlocks.length > 0 ? (
+          {isHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: page.description }} />
+          ) : contentBlocks.length > 0 ? (
             contentBlocks.map((block, index) => {
               const headingMatch = block.match(/^(\d+\.\s+.+)$/m);
               const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);

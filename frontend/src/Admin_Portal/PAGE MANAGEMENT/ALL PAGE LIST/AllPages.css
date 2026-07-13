@@ -14,21 +14,18 @@
 
 .header h2 {
   font-size: 1.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
+  font-weight: 600;
+  color: #1e293b;
   margin: 0;
 }
 
-.header h2 span {
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
 
+body .page-container .header .add-btn,
+body .add-btn,
 .add-btn {
-  background: var(--primary);
-  color: white;
-  border: none;
+  background: #A51C49 !important;
+  color: white !important;
+  border: none !important;
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
@@ -36,10 +33,12 @@
   transition: all 0.2s ease;
 }
 
+body .page-container .header .add-btn:hover,
+body .add-btn:hover,
 .add-btn:hover {
-  background: var(--primary-strong);
+  background: #851237 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2);
 }
 
 .page-table {
@@ -51,7 +50,7 @@
 }
 
 .page-table th {
-  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  background: #A51C49 !important;
   color: white;
   padding: 10px;
   font-size: 14px;
@@ -126,3 +125,69 @@
   border-color: var(--danger);
   transform: scale(1.08);
 }
+
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: white;
+  border-top: 1px solid #ddd;
+  gap: 12px;
+  border-radius: 0 0 6px 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #1e293b;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-no-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  background: white;
+  color: #1e293b;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.page-no-btn.active {
+  background: #A51C49;
+  color: white;
+  border-color: #A51C49;
+}
+
+

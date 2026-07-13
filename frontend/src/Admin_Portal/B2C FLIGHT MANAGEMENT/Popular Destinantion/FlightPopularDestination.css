@@ -87,12 +87,20 @@
 
 .flight-destination-filter-grid input,
 .flight-destination-filter-grid select {
-  border: 1px solid var(--border);
+  border: 1.5px solid #A51C49 !important;
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 0.85rem;
   background: var(--panel);
   color: var(--text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.flight-destination-filter-grid input:focus,
+.flight-destination-filter-grid select:focus {
+  border-color: #A51C49 !important;
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.15) !important;
 }
 
 .flight-destination-filter-grid .wide {
@@ -120,30 +128,27 @@
 }
 
 .flight-markup-table thead {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  background: #A51C49 !important;
   color: #ffffff;
 }
 
 .flight-markup-table th,
 .flight-markup-table td {
-  padding: 6px 8px;
+  padding: 10px 8px;
   border-bottom: 1px solid var(--border);
-  text-align: left;
+  text-align: center !important;
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.flight-markup-th-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  font-size: 0.78rem;
-  font-weight: 700;
+.flight-markup-table th {
+  font-weight: 500 !important;
+  font-size: 0.85rem;
+  color: #ffffff !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .flight-markup-empty-cell {
@@ -377,3 +382,4 @@
     border-bottom: 0;
   }
 }
+

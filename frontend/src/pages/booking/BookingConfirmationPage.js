@@ -135,7 +135,7 @@ export default function BookingConfirmationPage() {
                   <div className="passenger-details">
                     <span className="name">
                       {passenger.title ? `${passenger.title}. ` : ""}
-                      {passenger.firstName || passenger.fullName || `Passenger ${index + 1}`} {passenger.lastName || ""}
+                      {passenger.firstName || passenger.fullName || `Passenger ${index + 1}`} {passenger.lastName || ""}{passenger.gender && ` (${passenger.gender[0].toUpperCase()})`}
                     </span>
                     <span className="meta">
                       Age: {passenger.age || "N/A"} | {passenger.gender || "N/A"}

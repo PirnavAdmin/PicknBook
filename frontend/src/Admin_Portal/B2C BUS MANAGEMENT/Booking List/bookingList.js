@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./BookingList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import { listAdminBusBookings } from "../../../services/adminBusService";
+import AdminPagination from "../../../components/AdminPagination";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -301,7 +302,7 @@ function normalizeBusBookingRecord(record) {
   );
 
   return {
-    bookingId: getFieldValue(["bookingId", "BookingId"], null),
+    bookingId: getFieldValue(["bookingId", "BookingId", "id", "Id"], null),
     bookingReference: String(
       getFieldValue(["bookingReference", "BookingReference"], "")
     ),
@@ -502,6 +503,25 @@ function normalizeBusBookingRecord(record) {
   };
 }
 
+const formatAdminDate = (dateString) => {
+  if (!dateString || dateString === "--") return "--";
+  try {
+    const parts = dateString.split("-");
+    if (parts.length === 3) {
+      const year = parts[0];
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      if (monthIndex >= 0 && monthIndex < 12) {
+        return `${day} ${months[monthIndex]} ${year}`;
+      }
+    }
+    return dateString;
+  } catch {
+    return dateString;
+  }
+};
+
 const parseNumber = (value, fallback = 0) => {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : fallback;
@@ -631,7 +651,7 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const safeSourceType = normalizeText(sourceType, "Bus");
   const status = toAdminStatusLabel(record?.status);
   const bookingReference = normalizeText(record?.bookingReference, "");
-  const bookingId = normalizeText(record?.bookingId, "");
+  const bookingId = normalizeText(record?.bookingId || record?.id, "");
   const tripNumber = normalizeText(record?.tripNumber, "");
   const bookedAtValue = record?.bookedAtUtc || null;
   const departureValue = record?.departureTimeUtc || record?.departureTime || record?.departureDateTime || null;
@@ -658,7 +678,7 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   }
 
   return {
-    id: bookingReference || bookingId || "--",
+    id: bookingId || bookingReference || "--",
     bookingId,
     bookingReference,
     tripType: safeSourceType,
@@ -715,6 +735,12 @@ export default function AdminB2CBookingListPage() {
   const [bookings, setBookings] = useAdminList("b2c-bookings", []);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const todayDate = new Date().toISOString().slice(0, 10);
 
@@ -797,6 +823,13 @@ export default function AdminB2CBookingListPage() {
       return true;
     });
   }, [bookings, filters]);
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredBookings.slice(startIndex, startIndex + pageSize);
+  }, [filteredBookings, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(filteredBookings.length / pageSize) || 1;
 
   const todayBookedCount = bookings.filter(
     (item) => isBookingOnDate(item, todayDate) && mapAdminStatusClass(item.status) === "success"
@@ -897,7 +930,7 @@ export default function AdminB2CBookingListPage() {
   return (
     <section className="admin-b2c-page admin-booking-page">
       <header className="admin-b2c-header">
-        <h1>B2C Bus Booking List</h1>
+        <h1><span className="admin-heading-red">B2C Bus</span> Booking List</h1>
       </header>
 
       <div className="admin-toolbar-row">
@@ -987,15 +1020,15 @@ export default function AdminB2CBookingListPage() {
 
       <section className="admin-stat-grid" aria-label="Booking summary cards">
         <article className="admin-stat-card">
-          <strong>{filteredBookings.filter((item) => mapAdminStatusClass(item.status) === "success").length}</strong>
+          <strong className="text-success">{filteredBookings.filter((item) => mapAdminStatusClass(item.status) === "success").length}</strong>
           <span>Filtered Booked</span>
         </article>
         <article className="admin-stat-card">
-          <strong>{filteredBookings.filter((item) => mapAdminStatusClass(item.status) === "pending").length}</strong>
+          <strong className="text-warning">{filteredBookings.filter((item) => mapAdminStatusClass(item.status) === "pending").length}</strong>
           <span>Filtered Pending</span>
         </article>
         <article className="admin-stat-card">
-          <strong>{adminProfitFormatter.format(filteredProfit)}</strong>
+          <strong className={getProfitClassName(filteredProfit)}>{adminProfitFormatter.format(filteredProfit)}</strong>
           <span>Current Filter Profit</span>
         </article>
         <div className="admin-stat-stack">
@@ -1020,67 +1053,89 @@ export default function AdminB2CBookingListPage() {
         {isLoading ? (
           <div className="admin-table-empty">Loading bookings...</div>
         ) : filteredBookings.length ? (
-          <div className="admin-table-body">
-            {filteredBookings.map((booking) => (
-              <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-table-row">
-                <div className="admin-table-cell">
-                  <strong>{safeValue(booking.id)}</strong>
-                  <small>{safeValue(booking.createdAt)}</small>
-                </div>
+          <>
+            <div className="admin-table-body">
+              {paginatedBookings.map((booking) => (
+                <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-table-row">
+                  <div className="admin-table-cell">
+                    <strong>{safeValue(booking.id)}</strong>
+                    <div className="admin-date-badge">
+                      <span className="admin-calendar-emoji">📅</span>
+                      <span>{formatAdminDate(booking.createdAt)}</span>
+                    </div>
+                  </div>
 
-                <div className="admin-table-cell">
-                  <strong>{safeValue(booking.passengerName)}</strong>
-                  <small>{safeValue(booking.passengerPhone)}</small>
-                </div>
+                  <div className="admin-table-cell">
+                    <strong>{safeValue(booking.passengerName)}</strong>
+                    <small>{safeValue(booking.passengerPhone)}</small>
+                  </div>
 
-                <div className="admin-table-cell">
-                  <strong>
-                    {safeValue(booking.from)} to {safeValue(booking.to)}
-                  </strong>
-                  <small>{safeValue(booking.journeyDate)}</small>
-                </div>
+                  <div className="admin-table-cell">
+                    <div className="admin-route-segment">
+                      <span>{safeValue(booking.from)}</span>
+                      <span className="admin-segment-arrow">➔</span>
+                      <span>{safeValue(booking.to)}</span>
+                    </div>
+                    <div className="admin-date-badge">
+                      <span className="admin-calendar-emoji">📅</span>
+                      <span>{formatAdminDate(booking.journeyDate)}</span>
+                    </div>
+                  </div>
 
-                <div className="admin-table-cell admin-cell-centered">
-                  <strong>{safeValue(booking.journeyTime)}</strong>
-                </div>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong>{safeValue(booking.journeyTime)}</strong>
+                  </div>
 
-                <div className="admin-table-cell">
-                  <strong>{safeValue(booking.pnr)}</strong>
-                  <span className={`admin-status-pill ${mapAdminStatusClass(booking.status)}`}>
-                    {safeValue(booking.status)}
-                  </span>
-                </div>
+                  <div className="admin-table-cell">
+                    <strong>{safeValue(booking.pnr)}</strong>
+                    <span className={`admin-status-pill ${mapAdminStatusClass(booking.status)}`}>
+                      {safeValue(booking.status)}
+                    </span>
+                  </div>
 
-                <div className="admin-table-cell">
-                  <strong>{safeValue(booking.operator)}</strong>
-                  <small>
-                    {safeValue(booking.tripType)} | {safeValue(booking.vehicleType)}
-                  </small>
-                </div>
+                  <div className="admin-table-cell">
+                    <strong>{safeValue(booking.operator)}</strong>
+                    <small>
+                      {safeValue(booking.tripType)} | {safeValue(booking.vehicleType)}
+                    </small>
+                  </div>
 
-                <div className="admin-table-cell admin-cell-centered">
-                  <strong>{adminCurrencyFormatter.format(Number(booking.fare) || 0)}</strong>
-                </div>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong>{adminCurrencyFormatter.format(Number(booking.fare) || 0)}</strong>
+                  </div>
 
-                <div className="admin-table-cell admin-cell-centered">
-                  <strong className={getProfitClassName(booking.calculatedProfit)}>
-                    {adminProfitFormatter.format(Number(booking.calculatedProfit) || 0)}
-                  </strong>
-                  <small>{getProfitLabel(booking.calculatedProfit)}</small>
-                </div>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong className={getProfitClassName(booking.calculatedProfit)}>
+                      {adminProfitFormatter.format(Number(booking.calculatedProfit) || 0)}
+                    </strong>
+                    <small>{getProfitLabel(booking.calculatedProfit)}</small>
+                  </div>
 
-                <div className="admin-table-cell admin-cell-centered">
-                  <button
-                    type="button"
-                    className="admin-action-btn"
-                    onClick={() => setSelectedBooking(booking)}
-                  >
-                    View
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <button
+                      type="button"
+                      className="admin-action-btn"
+                      onClick={() => setSelectedBooking(booking)}
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <AdminPagination
+              currentPage={currentPage}
+              totalItems={filteredBookings.length}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              itemName="bookings"
+            />
+          </>
         ) : (
           <div className="admin-table-empty">No bookings available for the selected filters.</div>
         )}
@@ -1153,11 +1208,16 @@ export default function AdminB2CBookingListPage() {
                 </strong>
               </div>
               <div>
-                <span>PNR / Status</span>
+                <span>PNR</span>
                 <strong>{safeValue(selectedBooking.pnr)}</strong>
-                <span className={`admin-status-pill ${mapAdminStatusClass(selectedBooking.status)}`}>
-                  {safeValue(selectedBooking.status)}
-                </span>
+              </div>
+              <div>
+                <span>Status</span>
+                <div>
+                  <span className={`admin-status-pill ${mapAdminStatusClass(selectedBooking.status)}`}>
+                    {safeValue(selectedBooking.status)}
+                  </span>
+                </div>
               </div>
               <div>
                 <span>Operator / Type</span>

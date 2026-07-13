@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import adminFeaturedOffersService from "../../../services/adminFeaturedOffersService";
 import "./BusSearchHistory.css";
+import AdminPagination from "../../../components/AdminPagination";
 
 const DEFAULT_FILTERS = {
   query: "",
@@ -743,16 +744,17 @@ const formatSearchDate = (value) => {
   if (!parsed) {
     return "--";
   }
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const year = parsed.getUTCFullYear();
+  let hours = parsed.getUTCHours();
+  const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strHours = String(hours).padStart(2, '0');
 
-  return parsed.toLocaleString("en-IN", {
-    timeZone: "UTC",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return `${day}-${month}-${year}, ${strHours}:${minutes} ${ampm}`;
 };
 
 const formatDepartDate = (value) => {
@@ -760,12 +762,11 @@ const formatDepartDate = (value) => {
   if (!parsed) {
     return "--";
   }
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const year = parsed.getFullYear();
 
-  return parsed.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return `${day}-${month}-${year}`;
 };
 
 function mapLocalSearchRecord(record, index = 0) {
@@ -864,6 +865,7 @@ export default function AdminSearchHistoryPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [activePage, setActivePage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const loadSearchHistory = useCallback(async (activeFilters) => {
     setIsLoading(true);
@@ -953,10 +955,10 @@ export default function AdminSearchHistoryPage() {
     });
   }, [historyRows, filters, deletedRecordIds]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
   const safeActivePage = Math.min(activePage, totalPages);
-  const startIndex = (safeActivePage - 1) * PAGE_SIZE;
-  const pagedRows = filteredRows.slice(startIndex, startIndex + PAGE_SIZE);
+  const startIndex = (safeActivePage - 1) * itemsPerPage;
+  const pagedRows = filteredRows.slice(startIndex, startIndex + itemsPerPage);
 
   const applyFilters = () => {
     setFilters(draftFilters);
@@ -1017,7 +1019,10 @@ export default function AdminSearchHistoryPage() {
   return (
     <section className="admin-b2c-page admin-search-history-page">
       <header className="admin-b2c-header admin-search-history-header">
-        <h1>B2C Bus Search List</h1>
+        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
+          <span style={{ color: "#be185d" }}>B2C Bus </span>
+          <span style={{ color: "black" }}>Search List</span>
+        </h1>
       </header>
 
       <div className="admin-toolbar-row admin-search-history-toolbar">
@@ -1154,50 +1159,16 @@ export default function AdminSearchHistoryPage() {
           <div className="admin-search-history-empty">Result Not Found.</div>
         )}
 
-        <footer className="admin-search-history-pagination">
-          <button
-            type="button"
-            onClick={() => setActivePage(1)}
-            disabled={safeActivePage === 1}
-          >
-            First
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePage((current) => Math.max(1, current - 1))}
-            disabled={safeActivePage === 1}
-          >
-            Prev
-          </button>
-
-          {Array.from({ length: totalPages }, (_, index) => index + 1)
-            .slice(Math.max(0, safeActivePage - 3), safeActivePage + 2)
-            .map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                className={safeActivePage === pageNumber ? "active" : ""}
-                onClick={() => setActivePage(pageNumber)}
-              >
-                {pageNumber}
-              </button>
-            ))}
-
-          <button
-            type="button"
-            onClick={() => setActivePage((current) => Math.min(totalPages, current + 1))}
-            disabled={safeActivePage === totalPages}
-          >
-            Next
-          </button>
-          <button
-            type="button"
-            onClick={() => setActivePage(totalPages)}
-            disabled={safeActivePage === totalPages}
-          >
-            Last
-          </button>
-        </footer>
+        {filteredRows.length > 0 && (
+          <AdminPagination
+            currentPage={safeActivePage}
+            totalItems={filteredRows.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setActivePage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="search history records"
+          />
+        )}
       </section>
     </section>
   );

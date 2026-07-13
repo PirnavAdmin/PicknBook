@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Facebook, LockKeyhole, Mail, Phone, ShieldCheck, X, Eye, EyeOff } from "lucide-react";
+import { Facebook, LockKeyhole, Mail, Phone, ShieldCheck, X, Eye, EyeOff, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import "../../STYLES/AuthModal.css";
 import brandLogo from "../../assets/images/brand/pick-n-book-logo.png";
-import { requestAuth, readApiMessage } from "../../services/authService";
+import { requestAuth, readApiMessage, loginUser, sendRegistrationOtp, verifyRegistrationOtp } from "../../services/authService";
 import { AUTH_MODAL_EVENT } from "../../utils/authModalEvents";
 
 const OTP_LENGTH = 6;
@@ -53,7 +53,7 @@ function buildUserFromEmailLogin(payload, email) {
   return {
     userId: String(
       pickFirst(source, ["userId", "UserId", "id", "Id", "uid", "Uid"], "") ||
-        pickFirst(root, ["userId", "UserId", "id", "Id"], `email-${email}`)
+      pickFirst(root, ["userId", "UserId", "id", "Id"], `email-${email}`)
     ),
     name: String(
       pickFirst(
@@ -76,7 +76,7 @@ function extractToken(payload) {
   const nested = root.data || root.Data || root.result || root.Result || root.user || root.User || {};
   return String(
     pickFirst(root, ["token", "Token", "accessToken", "AccessToken", "jwtToken", "JwtToken"], "") ||
-      pickFirst(nested, ["token", "Token", "accessToken", "AccessToken", "jwtToken", "JwtToken"], "")
+    pickFirst(nested, ["token", "Token", "accessToken", "AccessToken", "jwtToken", "JwtToken"], "")
   );
 }
 
@@ -89,10 +89,28 @@ export default function AuthModal() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState("login"); // 'login', 'register', 'forgot-password'
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !otpSent || timeLeft <= 0) return;
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [isOpen, otpSent, timeLeft <= 0]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     const handleOpen = (event) => {
@@ -131,6 +149,10 @@ export default function AuthModal() {
     setIsOpen(false);
     setStatus({ type: "", message: "" });
     setErrors({});
+    setOtpSent(false);
+    setOtp("");
+    setTimeLeft(0);
+    setViewMode("login");
   };
 
   const completeLogin = (message) => {
@@ -175,10 +197,19 @@ export default function AuthModal() {
     setOtp("");
     setErrors({});
     setStatus({ type: "", message: "" });
+    setTimeLeft(0);
+  };
+
+  const switchView = (mode) => {
+    setViewMode(mode);
+    setErrors({});
+    setStatus({ type: "", message: "" });
+    setOtpSent(false);
+    setTimeLeft(0);
   };
 
   const sendOtp = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
     if (loading) return;
 
     if (!/^[6-9]\d{9}$/.test(mobile)) {
@@ -190,20 +221,14 @@ export default function AuthModal() {
     setStatus({ type: "", message: "" });
 
     try {
-      const payload = await requestAuth(
-        "/api/Auth/send-registration-otp",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            phoneNumber: mobile,
-            channel: "Mobile",
-          }),
-        },
-        "Unable to send OTP."
-      );
+      const payload = await sendRegistrationOtp({
+        phoneNumber: mobile,
+        channel: "Mobile",
+      });
 
       setOtpSent(true);
       setOtp("");
+      setTimeLeft(300);
       setStatus({
         type: "success",
         message: readApiMessage(payload, "OTP sent to your mobile number."),
@@ -233,18 +258,11 @@ export default function AuthModal() {
     setStatus({ type: "", message: "" });
 
     try {
-      await requestAuth(
-        "/api/Auth/verify-registration-otp",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            phoneNumber: mobile,
-            channel: "Mobile",
-            otp,
-          }),
-        },
-        "OTP verification failed."
-      );
+      await verifyRegistrationOtp({
+        phoneNumber: mobile,
+        channel: "Mobile",
+        otp,
+      });
 
       const guestUser = buildGuestUserFromMobile(mobile);
       localStorage.setItem("user", JSON.stringify(guestUser));
@@ -289,17 +307,10 @@ export default function AuthModal() {
     setStatus({ type: "", message: "" });
 
     try {
-      const payload = await requestAuth(
-        "/api/Auth/login",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: trimmedEmail,
-            password,
-          }),
-        },
-        "Email login failed."
-      );
+      const payload = await loginUser({
+        email: trimmedEmail,
+        password,
+      });
 
       const token = extractToken(payload);
       const user = buildUserFromEmailLogin(payload, trimmedEmail);
@@ -340,7 +351,7 @@ export default function AuthModal() {
       <div className="pnb-auth-modal">
         <aside className="pnb-auth-promo">
           <img src={brandLogo} alt="Pick N Book" className="pnb-auth-promo-logo" />
-          <span className="pnb-auth-pill">PICKNBOOK ACCESS</span>
+
           <h2>Travel Smarter with PickNBook</h2>
           <p>Book buses, flights and hotels in one place.</p>
 
@@ -365,14 +376,26 @@ export default function AuthModal() {
 
           <div className="pnb-auth-secure">
             <ShieldCheck size={13} />
-            <span>Secure Access</span>
+            <span>
+              {viewMode === "login" && "SECURE ACCESS"}
+              {viewMode === "register" && "SECURE REGISTRATION"}
+              {viewMode === "forgot-password" && "RESET PASSWORD"}
+            </span>
           </div>
 
-          <h2>Login to PickNBook</h2>
+          <h2>
+            {viewMode === "login" && "Login to PickNBook"}
+            {viewMode === "register" && "Create your account"}
+            {viewMode === "forgot-password" && "Forgot Password?"}
+          </h2>
           <p className="pnb-auth-copy">
-            {authMethod === "email"
-              ? "Enter your email and password to continue."
-              : "Enter your mobile number. New users can continue with OTP automatically."}
+            {viewMode === "login" && (
+              authMethod === "email"
+                ? "Enter your email and password to continue."
+                : "Enter your mobile number. New users can continue with OTP automatically."
+            )}
+            {viewMode === "register" && "Register to enjoy a seamless booking experience."}
+            {viewMode === "forgot-password" && "No worries! Enter your mobile number and we'll send you an OTP to reset your password."}
           </p>
 
           {status.message && (
@@ -381,131 +404,297 @@ export default function AuthModal() {
             </p>
           )}
 
-          {authMethod === "email" ? (
-            <form className="pnb-auth-form" onSubmit={loginWithEmail}>
-              <label>
-                Email
-                <span className="pnb-auth-input">
-                  <Mail size={16} />
-                  <input
-                    type="email"
-                    placeholder="Enter email address"
-                    value={email}
-                    onChange={handleEmailChange}
-                    autoComplete="email"
-                  />
-                </span>
-                {errors.email && <small>{errors.email}</small>}
-              </label>
+          {viewMode === "login" && (
+            <>
+              {authMethod === "email" ? (
+                <form className="pnb-auth-form" onSubmit={loginWithEmail}>
+                  <label>
+                    Email
+                    <span className="pnb-auth-input">
+                      <Mail size={16} />
+                      <input
+                        type="email"
+                        placeholder="Enter email address"
+                        value={email}
+                        onChange={handleEmailChange}
+                        autoComplete="email"
+                      />
+                    </span>
+                    {errors.email && <small>{errors.email}</small>}
+                  </label>
 
-              <label>
-                Password
-                <span className="pnb-auth-input">
-                  <LockKeyhole size={16} />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter password"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    autoComplete="current-password"
-                  />
+                  <label>
+                    Password
+                    <span className="pnb-auth-input">
+                      <LockKeyhole size={16} />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        value={password}
+                        onChange={handlePasswordChange}
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        className="pnb-auth-eye-btn"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </span>
+                    {errors.password && <small>{errors.password}</small>}
+                  </label>
+
+                  <button type="submit" className="pnb-auth-primary" disabled={loading}>
+                    {loading ? "Please wait..." : "Login with email"}
+                  </button>
+                </form>
+              ) : (
+                <form className="pnb-auth-form" onSubmit={otpSent ? verifyOtp : sendOtp}>
+                  <label>
+                    Mobile Number
+                    <span className="pnb-auth-phone-row">
+                      <span className="pnb-auth-country">IN +91</span>
+                      <span className="pnb-auth-input">
+                        <Phone size={16} />
+                        <input
+                          type="tel"
+                          placeholder="Enter 10-digit mobile number"
+                          value={mobile}
+                          onChange={handleMobileChange}
+                          disabled={otpSent || loading}
+                          autoComplete="tel"
+                        />
+                      </span>
+                    </span>
+                    {errors.mobile && <small>{errors.mobile}</small>}
+                  </label>
+
+                  {otpSent && (
+                    <>
+                      <label>
+                        OTP
+                        <span className="pnb-auth-input">
+                          <ShieldCheck size={16} />
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Enter 6-digit OTP"
+                            value={otp}
+                            onChange={handleOtpChange}
+                            autoComplete="one-time-code"
+                          />
+                        </span>
+                        {errors.otp && <small>{errors.otp}</small>}
+                      </label>
+                      <div className="travel-auth-register" style={{ marginTop: "4px", marginBottom: "8px" }}>
+                        {timeLeft > 0 ? (
+                          <p className="travel-otp-timer-text" style={{ margin: 0 }}>
+                            OTP will expire in <span className="travel-otp-timer-highlight">{formatTime(timeLeft)}</span>
+                          </p>
+                        ) : (
+                          <p className="travel-otp-resend-text" style={{ margin: 0, color: "#901143", fontWeight: "700" }}>
+                            OTP expired.{" "}
+                            <button
+                              type="button"
+                              className="pnb-auth-text-action"
+                              style={{ margin: 0, padding: 0, display: "inline", textDecoration: "underline" }}
+                              onClick={() => sendOtp()}
+                              disabled={loading}
+                            >
+                              Resend OTP
+                            </button>
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <button type="submit" className="pnb-auth-primary" disabled={loading || (otpSent && timeLeft === 0)}>
+                    {loading ? "Please wait..." : otpSent ? "Verify & Continue" : "Continue"}
+                  </button>
+                </form>
+              )}
+
+              {otpSent && authMethod === "mobile" && (
+                <button
+                  type="button"
+                  className="pnb-auth-text-action"
+                  onClick={() => {
+                    setOtpSent(false);
+                    setTimeLeft(0);
+                  }}
+                  disabled={loading}
+                >
+                  Change mobile number
+                </button>
+              )}
+
+              <div className="pnb-auth-divider">
+                <span>or continue with</span>
+              </div>
+
+              <div className="pnb-auth-socials">
+                {authMethod === "mobile" ? (
                   <button
                     type="button"
-                    className="pnb-auth-eye-btn"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => switchAuthMethod("email")}
+                    aria-label="Continue with email"
+                    title="Email"
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    <Mail size={20} />
+                    <span>Email</span>
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => switchAuthMethod("mobile")}
+                    aria-label="Continue with mobile"
+                    title="Mobile"
+                  >
+                    <Phone size={20} />
+                    <span>Mobile</span>
+                  </button>
+                )}
+                <button type="button" className="pnb-auth-social-google" onClick={() => handleSocialLogin("Google")} aria-label="Continue with Google" title="Google">
+                  <FcGoogle size={22} />
+                  <span>Google</span>
+                </button>
+                <button type="button" className="pnb-auth-social-facebook" onClick={() => handleSocialLogin("Facebook")} aria-label="Continue with Facebook" title="Facebook">
+                  <Facebook size={21} />
+                  <span>Facebook</span>
+                </button>
+              </div>
+
+              <div className="pnb-auth-divider pnb-auth-divider-thin">
+                <span>New here?</span>
+              </div>
+
+              <div className="pnb-auth-actions-group">
+                <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchView("register")}>
+                  <User size={16} />
+                  Sign Up
+                </button>
+                <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchView("forgot-password")}>
+                  <LockKeyhole size={16} />
+                  Forgot Password?
+                </button>
+              </div>
+
+              <div className="pnb-auth-footer-note">
+                <ShieldCheck size={14} />
+                Your data is safe and secure with us.
+              </div>
+            </>
+          )}
+
+          {viewMode === "register" && (
+            <form className="pnb-auth-form" onSubmit={(e) => { e.preventDefault(); setStatus({ type: 'error', message: 'Registration not implemented yet.' }); }}>
+              <label>
+                Full Name
+                <span className="pnb-auth-input">
+                  <User size={16} />
+                  <input type="text" placeholder="Enter your full name" />
                 </span>
-                {errors.password && <small>{errors.password}</small>}
               </label>
 
-              <button type="submit" className="pnb-auth-primary" disabled={loading}>
-                {loading ? "Please wait..." : "Login with email"}
-              </button>
-            </form>
-          ) : (
-            <form className="pnb-auth-form" onSubmit={otpSent ? verifyOtp : sendOtp}>
               <label>
                 Mobile Number
                 <span className="pnb-auth-phone-row">
                   <span className="pnb-auth-country">IN +91</span>
                   <span className="pnb-auth-input">
                     <Phone size={16} />
-                    <input
-                      type="tel"
-                      placeholder="Enter 10-digit mobile number"
-                      value={mobile}
-                      onChange={handleMobileChange}
-                      disabled={otpSent || loading}
-                      autoComplete="tel"
-                    />
+                    <input type="tel" placeholder="Enter 10-digit mobile" />
                   </span>
                 </span>
-                {errors.mobile && <small>{errors.mobile}</small>}
               </label>
 
-              {otpSent && (
-                <label>
-                  OTP
-                  <span className="pnb-auth-input">
-                    <ShieldCheck size={16} />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Enter 6-digit OTP"
-                      value={otp}
-                      onChange={handleOtpChange}
-                      autoComplete="one-time-code"
-                    />
-                  </span>
-                  {errors.otp && <small>{errors.otp}</small>}
-                </label>
-              )}
+              <label>
+                Email (Optional)
+                <span className="pnb-auth-input">
+                  <Mail size={16} />
+                  <input type="email" placeholder="Enter your email address" />
+                </span>
+              </label>
 
-              <button type="submit" className="pnb-auth-primary" disabled={loading}>
-                {loading ? "Please wait..." : otpSent ? "Verify & Continue" : "Continue"}
+              <label>
+                Set Password
+                <span className="pnb-auth-input">
+                  <LockKeyhole size={16} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={handlePasswordChange}
+                  />
+                  <button
+                    type="button"
+                    className="pnb-auth-eye-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
+
+              <div className="pnb-auth-checklist">
+                <span className="pnb-auth-check-item is-valid"><span className="check-icon">✓</span> At least 8 characters</span>
+                <span className="pnb-auth-check-item is-valid"><span className="check-icon">✓</span> 1 number</span>
+                <span className="pnb-auth-check-item is-valid"><span className="check-icon">✓</span> 1 special char</span>
+              </div>
+
+              <div className="pnb-auth-secondary-grid" style={{ marginBottom: "12px" }}>
+                <button type="button" className="pnb-auth-back-link" onClick={() => switchView("login")} style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
+                  Back to Login
+                </button>
+              </div>
+
+              <button type="submit" className="pnb-auth-primary">
+                Register
+              </button>
+              <div className="pnb-auth-terms">
+                By continuing, you agree to our <a href="#">Terms & Privacy Policy</a>
+              </div>
+            </form>
+          )}
+
+          {viewMode === "forgot-password" && (
+            <form className="pnb-auth-form" onSubmit={(e) => { e.preventDefault(); setStatus({ type: 'error', message: 'Password reset not implemented yet.' }); }}>
+              <label>
+                Mobile Number
+                <span className="pnb-auth-phone-row">
+                  <span className="pnb-auth-country">IN +91</span>
+                  <span className="pnb-auth-input">
+                    <Phone size={16} />
+                    <input type="tel" placeholder="Enter 10-digit mobile" />
+                  </span>
+                </span>
+              </label>
+
+              <button type="submit" className="pnb-auth-primary" style={{ marginTop: '10px' }}>
+                Send OTP
+              </button>
+
+              <div className="pnb-auth-divider">
+                <span>OR</span>
+              </div>
+
+              <div className="pnb-auth-secondary-grid">
+                <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchView("register")}>
+                  <User size={16} /> Register
+                </button>
+                <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchView("register")}>
+                  <User size={16} /> Sign Up
+                </button>
+              </div>
+
+              <button type="button" className="pnb-auth-back-link" onClick={() => switchView("login")}>
+                &larr; Back to Login
               </button>
             </form>
           )}
 
-          {otpSent && authMethod === "mobile" && (
-            <button type="button" className="pnb-auth-text-action" onClick={() => setOtpSent(false)} disabled={loading}>
-              Change mobile number
-            </button>
-          )}
-
-          {authMethod === "email" && (
-            <button type="button" className="pnb-auth-text-action" onClick={() => switchAuthMethod("mobile")} disabled={loading}>
-              Use mobile OTP
-            </button>
-          )}
-
-          <div className="pnb-auth-divider">
-            <span>or continue with</span>
-          </div>
-
-          <div className="pnb-auth-socials">
-            <button
-              type="button"
-              className={authMethod === "email" ? "is-active" : ""}
-              onClick={() => switchAuthMethod("email")}
-              aria-label="Continue with email"
-              title="Email"
-            >
-              <Mail size={20} />
-              <span>Email</span>
-            </button>
-            <button type="button" className="pnb-auth-social-google" onClick={() => handleSocialLogin("Google")} aria-label="Continue with Google" title="Google">
-              <FcGoogle size={22} />
-              <span>Google</span>
-            </button>
-            <button type="button" className="pnb-auth-social-facebook" onClick={() => handleSocialLogin("Facebook")} aria-label="Continue with Facebook" title="Facebook">
-              <Facebook size={21} />
-              <span>Facebook</span>
-            </button>
-          </div>
         </section>
       </div>
     </div>

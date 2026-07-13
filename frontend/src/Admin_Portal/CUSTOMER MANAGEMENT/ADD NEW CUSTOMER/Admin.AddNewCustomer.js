@@ -195,7 +195,7 @@ function AddNewCustomer() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '28px',
+            marginBottom: '12px',
         },
         titleWrapper: {
             display: 'flex',
@@ -205,22 +205,22 @@ function AddNewCustomer() {
             width: 'fit-content',
         },
         titleMain: {
-            fontSize: '2rem',
-            fontWeight: 800,
-            color: 'var(--text-primary)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#A51C49',
             margin: 0,
         },
         titleSub: {
-            fontSize: '2rem',
-            fontWeight: 800,
-            color: 'var(--text-secondary)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#A51C49',
             margin: 0,
         },
         backBtn: {
             padding: '10px 16px',
-            background: 'var(--primary)',
+            background: '#A51C49',
             color: '#ffffff',
-            border: '1px solid var(--primary)',
+            border: '1px solid #A51C49',
             borderRadius: '8px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -241,7 +241,7 @@ function AddNewCustomer() {
             alignItems: 'center',
             gap: '10px',
             padding: '14px 20px',
-            background: 'linear-gradient(90deg, var(--primary), var(--primary-strong))',
+            background: '#A51C49',
             color: '#ffffff',
             fontWeight: 700,
             borderRadius: '12px 12px 0 0',
@@ -260,6 +260,7 @@ function AddNewCustomer() {
             border: '1px solid var(--border)',
             borderTop: 'none',
         },
+
         formGrid: {
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
@@ -311,16 +312,17 @@ function AddNewCustomer() {
         buttonGroup: {
             display: 'flex',
             gap: '12px',
-            justifyContent: 'center',
+            justifyContent: 'flex-end',
             padding: '20px',
             background: 'var(--surface-soft)',
             borderTop: '1px solid var(--border)',
         },
+
         submitBtn: {
             padding: '12px 36px',
-            background: 'var(--primary)',
+            background: '#A51C49',
             color: '#ffffff',
-            border: '1px solid var(--primary)',
+            border: '1px solid #A51C49',
             borderRadius: '8px',
             fontWeight: 700,
             fontSize: '0.9rem',
@@ -328,6 +330,7 @@ function AddNewCustomer() {
             transition: 'all 0.2s ease',
             letterSpacing: '0.5px',
         },
+
         resetBtn: {
             padding: '12px 36px',
             background: 'var(--panel)',
@@ -394,19 +397,20 @@ function AddNewCustomer() {
                         style={styles.backBtn}
                         onClick={() => navigate('/admin/customer-management/customer-list')}
                         onMouseEnter={(e) => {
-                            e.target.style.background = 'var(--primary-strong)';
-                            e.target.style.borderColor = 'var(--primary-strong)';
+                            e.target.style.background = '#851237';
+                            e.target.style.borderColor = '#851237';
                             e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(194, 24, 91, 0.2)';
                         }}
                         onMouseLeave={(e) => {
-                            e.target.style.background = 'var(--primary)';
+                            e.target.style.background = '#A51C49';
                             e.target.style.color = '#ffffff';
-                            e.target.style.borderColor = 'var(--primary)';
+                            e.target.style.borderColor = '#A51C49';
                             e.target.style.transform = 'translateY(0)';
                             e.target.style.boxShadow = 'none';
                         }}
                     >
+
                         Customer List
                     </button>
                 </div>
@@ -419,6 +423,8 @@ function AddNewCustomer() {
                             Customer Basic Information
                         </div>
                         <div style={styles.sectionContent}>
+
+
                             <div style={styles.formGrid}>
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
@@ -624,6 +630,8 @@ function AddNewCustomer() {
                             Contact Information
                         </div>
                         <div style={styles.sectionContent}>
+
+
                             <div style={styles.formGrid}>
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>Address</label>
@@ -712,6 +720,8 @@ function AddNewCustomer() {
                             Documentation
                         </div>
                         <div style={styles.sectionContent}>
+
+
                             <div style={styles.formGrid}>
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>Aadhar Number</label>
@@ -767,6 +777,9 @@ function AddNewCustomer() {
             </div>
         </>
     );
+
+
 }
 
 export default AddNewCustomer;
+

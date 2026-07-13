@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./BusCancellationList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import { getCancellationReports, listAdminBusBookings } from "../../../services/adminBusService";
+import AdminPagination from "../../../components/AdminPagination";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -231,9 +232,14 @@ function normalizeBusBookingRecord(record) {
         "phoneNo",
         "PhoneNo",
         "contactNumber",
-        "ContactNumber"
+        "ContactNumber",
+        "contactPhone",
+        "ContactPhone",
+        "mobileNo",
+        "MobileNo"
       ], "") ||
-      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "")
+      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "") ||
+      pickFirst(passengersRaw?.[0], ["passengerPhone", "passengerPhoneNo", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo", "mobileNo", "MobileNo"], "")
     ),
     passengerEmail: String(
       getFieldValue(["passengerEmail", "PassengerEmail"], "")
@@ -427,10 +433,6 @@ const toAdminStatusLabel = (statusValue) => {
 const mapAdminStatusClass = (statusValue) => {
   const key = normalizeText(statusValue, "").toLowerCase();
 
-  if (CANCELLED_STATUS_SET.has(key)) {
-    return "cancelled";
-  }
-
   if (PENDING_STATUS_SET.has(key)) {
     return "pending";
   }
@@ -448,9 +450,25 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const bookingReference = normalizeText(record?.bookingReference || record?.pnr, "");
   const bookingId = normalizeText(record?.bookingId || record?.id, "");
   const tripNumber = normalizeText(record?.tripNumber || record?.pnr, "");
-  const bookedAtValue = record?.bookedAtUtc || record?.cancelledDateUtc || null;
-  const departureValue = record?.departureTimeUtc || record?.journeyDateIst || null;
-  const arrivalValue = record?.arrivalTimeUtc || record?.arrivalTime || record?.arrivalDateTime || record?.droppingTime || record?.dropTime || null;
+  const bookedAtValue = pickFirst(record, [
+    "bookedAtUtc", "BookedAtUtc", "bookedAt", "BookedAt",
+    "createdAt", "CreatedAt", "createdDate", "CreatedDate",
+    "createdDateUtc", "CreatedDateUtc", "cancelledDateUtc",
+    "CancelledDateUtc", "cancelledAtUtc", "CancelledAtUtc",
+    "cancelledAt", "CancelledAt", "timestamp", "Timestamp"
+  ], null);
+  const departureValue = pickFirst(record, [
+    "departureTimeUtc", "DepartureTimeUtc", "departureTime", "DepartureTime",
+    "journeyDateIst", "JourneyDateIst", "departureDateTimeUtc", "DepartureDateTimeUtc",
+    "departureDateTime", "DepartureDateTime", "journeyDateTime", "JourneyDateTime",
+    "journeyDate", "JourneyDate", "departDate", "DepartDate",
+    "journeyTime", "JourneyTime"
+  ], null);
+  const arrivalValue = pickFirst(record, [
+    "arrivalTimeUtc", "ArrivalTimeUtc", "arrivalTime", "ArrivalTime",
+    "arrivalDateTimeUtc", "ArrivalDateTimeUtc", "arrivalDateTime", "ArrivalDateTime",
+    "droppingTime", "DroppingTime", "dropTime", "DropTime"
+  ], null);
 
   const depTime = toTimeKey(departureValue);
   const arrTime = toTimeKey(arrivalValue);
@@ -460,17 +478,14 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const inferredProfit = Math.round(fare * 0.04);
   const profit = parseNumber(record?.profit, inferredProfit);
 
-  let fromCity = record?.fromCity || "";
-  let toCity = record?.toCity || "";
-  if (record?.segment && (!fromCity || !toCity)) {
-    const parts = record.segment.split("-");
-    if (parts.length === 2) {
-      fromCity = parts[0].trim();
-      toCity = parts[1].trim();
-    } else {
-      fromCity = record.segment;
-    }
-  }
+  const rawPayload = record?.raw || record || {};
+  const rawPaymentMethod = rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || rawPayload?.paymentMode || "--";
+  const rawPaymentDetails = rawPayload?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--";
+  const initialPaymentStatus = rawPayload?.paymentStatus || (mapAdminStatusClass(record?.status) === "cancelled" ? "Completed" : "Pending");
+
+  // Get fromCity and toCity safely
+  const fromCity = record?.fromCity || rawPayload?.fromCity || rawPayload?.source || rawPayload?.sourceCity || "--";
+  const toCity = record?.toCity || rawPayload?.toCity || rawPayload?.destination || rawPayload?.destinationCity || "--";
 
   return {
     id: bookingReference || bookingId || "--",
@@ -493,6 +508,9 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     profit,
     cancellationReason: normalizeText(record?.cancellationReason, ""),
     cancelledAtValue: record?.cancelledAtUtc || record?.cancelledDateUtc || null,
+    paymentMethod: rawPaymentMethod,
+    paymentDetails: rawPaymentDetails,
+    paymentStatus: initialPaymentStatus,
     raw: record,
   };
 };
@@ -550,6 +568,10 @@ export default function AdminCancellationListPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   useEffect(() => {
     async function loadCancellationBookings(activeFilters) {
       setIsLoading(true);
@@ -602,6 +624,15 @@ export default function AdminCancellationListPage() {
     loadCancellationBookings(filters);
   }, [filters, setCancellationBookings]);
 
+  const handleUpdatePaymentStatus = (id, newStatus) => {
+    setCancellationBookings((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, paymentStatus: newStatus } : item))
+    );
+    if (selectedCancellation && selectedCancellation.id === id) {
+      setSelectedCancellation((prev) => ({ ...prev, paymentStatus: newStatus }));
+    }
+  };
+
   const filteredCancellations = useMemo(() => {
     return cancellationBookings.filter((booking) => {
       if (filters.bookingId) {
@@ -635,9 +666,16 @@ export default function AdminCancellationListPage() {
     });
   }, [cancellationBookings, filters]);
 
+  // Compute pagination limits
+  const totalPages = Math.ceil(filteredCancellations.length / itemsPerPage) || 1;
+  const paginatedCancellations = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCancellations.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCancellations, currentPage, itemsPerPage]);
+
   const handleFilterChange = (field, value) => {
-    setDraftFilters((previous) => ({
-      ...previous,
+    setDraftFilters((prev) => ({
+      ...prev,
       [field]: value,
     }));
   };
@@ -645,151 +683,237 @@ export default function AdminCancellationListPage() {
   const applyFilters = () => {
     setFilters(draftFilters);
     setIsFiltersOpen(false);
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
     setDraftFilters(DEFAULT_FILTERS);
     setFilters(DEFAULT_FILTERS);
     setIsFiltersOpen(false);
+    setCurrentPage(1);
   };
 
   const handleExport = () => {
     const headers = [
-      "Trip Type",
-      "ID",
-      "PNR",
-      "Date",
-      "From",
-      "To",
-      "Journey Date",
-      "Journey Time",
-      "Passenger Name",
-      "Passenger Phone",
-      "Cancellation Charge",
-      "Refund Amount",
-      "Status",
+      "bookingId",
+      "bookingReference",
+      "tripType",
+      "pnr",
+      "createdAt",
+      "passengerName",
+      "passengerPhone",
+      "segmentFrom",
+      "segmentTo",
+      "journeyDate",
+      "journeyTime",
+      "operator",
+      "vehicleType",
+      "fare",
+      "profit",
+      "cancellationCharges",
+      "refundAmount",
+      "paymentMethod",
+      "paymentDetails",
+      "paymentStatus",
+      "reason",
     ];
 
     const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
     const rows = filteredCancellations.map((booking) => [
+      booking.bookingId,
+      booking.bookingReference,
       booking.tripType,
-      booking.id,
       booking.pnr,
       booking.createdAt,
+      booking.passengerName,
+      booking.passengerPhone,
       booking.from,
       booking.to,
       booking.journeyDate,
       booking.journeyTime,
-      booking.passengerName,
-      booking.passengerPhone,
+      booking.operator,
+      booking.vehicleType,
+      booking.fare,
+      booking.profit,
       booking.cancellationCharge,
       booking.refundAmount,
-      booking.status,
+      booking.paymentMethod,
+      booking.paymentDetails,
+      booking.paymentStatus,
+      booking.cancellationReason,
     ]);
 
-    const csvBody = [
+    const csvContent = [
       headers.map(escapeCsv).join(","),
       ...rows.map((row) => row.map(escapeCsv).join(",")),
     ].join("\n");
 
-    const blob = new Blob([`\uFEFF${csvBody}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+    const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
-    link.download = "admin-bus-cancellations.csv";
+    link.href = downloadUrl;
+    link.download = `admin-b2c-bus-cancellations-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(downloadUrl);
   };
 
   return (
-    <section className="admin-b2c-page admin-cancel-page">
-      <header className="admin-b2c-header admin-cancel-header">
-        <h1>B2C Bus Cancellation List</h1>
+    <section className="admin-b2c-page admin-cancel-page" style={{ padding: "28px 32px", fontFamily: "'Inter', sans-serif" }}>
+      <header className="admin-b2c-header admin-cancel-header" style={{ marginBottom: "5px" }}>
+        <h1 style={{ fontWeight: 700, margin: 0, fontSize: "1.85rem" }}>
+          <span style={{ color: "#be185d" }}>B2C Bus </span>
+          <span style={{ color: "black" }}>Cancellation List</span>
+        </h1>
       </header>
 
-      <div className="admin-toolbar-row admin-cancel-toolbar">
+      {/* Toolbar controls */}
+      <div className="admin-toolbar-row admin-cancel-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <div className="admin-chip-row">
-          <span className="admin-chip admin-cancel-chip">
+          <span className="admin-chip admin-cancel-chip" style={{ color: "#be185d", borderColor: "#be185d", backgroundColor: "rgba(190, 24, 93, 0.05)", fontWeight: "600", padding: "6px 14px", borderRadius: "100px", fontSize: "0.85rem" }}>
             Cancelled Records: {filteredCancellations.length}
           </span>
         </div>
 
-        <div className="admin-actions-row">
-          <button type="button" onClick={() => setIsFiltersOpen((current) => !current)}>
+        <div className="admin-actions-row" style={{ display: "flex", gap: "10px" }}>
+          <button
+            type="button"
+            onClick={() => setIsFiltersOpen((current) => !current)}
+            style={{
+              padding: "8px 18px",
+              borderRadius: "100px",
+              border: "1.5px solid #be185d",
+              background: "#be185d",
+              color: "#ffffff",
+              fontSize: "0.85rem",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
             {isFiltersOpen ? "Hide Filter" : "Filter"}
           </button>
-          <button type="button" className="admin-cancel-clear-btn" onClick={clearFilters}>
+          <button
+            type="button"
+            className="admin-cancel-clear-btn"
+            onClick={clearFilters}
+            style={{
+              padding: "8px 18px",
+              borderRadius: "100px",
+              border: "1.5px solid var(--border, #cbd5e1)",
+              background: "transparent",
+              color: "var(--text-secondary, #475569)",
+              fontSize: "0.85rem",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
             Clear Filter
           </button>
-          <button type="button" onClick={handleExport}>
+          <button
+            type="button"
+            onClick={handleExport}
+            style={{
+              padding: "8px 18px",
+              borderRadius: "100px",
+              border: "1.5px solid #2563eb",
+              background: "#2563eb",
+              color: "#ffffff",
+              fontSize: "0.85rem",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
             Export
           </button>
         </div>
       </div>
 
-      {errorMessage ? <div className="admin-data-error">{errorMessage}</div> : null}
+      {errorMessage && (
+        <div style={{ color: "red", padding: "10px", marginBottom: "15px", border: "1px solid red", borderRadius: "8px", background: "#fef2f2" }}>
+          <strong>Error:</strong> {errorMessage}
+        </div>
+      )}
 
-      {isFiltersOpen ? (
-        <section className="flight-ops-filters admin-ops-filters admin-cancel-filters">
-          <label>
-            <span>ID</span>
+      {/* Filters options panel */}
+      {isFiltersOpen && (
+        <section className="flight-ops-filters admin-ops-filters admin-cancel-filters" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>ID</span>
             <input
               type="text"
               placeholder="Search by booking id"
               value={draftFilters.bookingId}
-              onChange={(event) => handleFilterChange("bookingId", event.target.value)}
+              onChange={(e) => handleFilterChange("bookingId", e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
             />
           </label>
-          <label>
-            <span>PNR</span>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>PNR</span>
             <input
               type="text"
               placeholder="Search by PNR"
               value={draftFilters.pnr}
-              onChange={(event) => handleFilterChange("pnr", event.target.value)}
+              onChange={(e) => handleFilterChange("pnr", e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
             />
           </label>
-          <label>
-            <span>Passenger Name</span>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>Passenger Name</span>
             <input
               type="text"
               placeholder="Search by passenger"
               value={draftFilters.passengerName}
-              onChange={(event) => handleFilterChange("passengerName", event.target.value)}
+              onChange={(e) => handleFilterChange("passengerName", e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
             />
           </label>
-          <label>
-            <span>Passenger Phone</span>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>Passenger Mobile</span>
             <input
               type="text"
               placeholder="Search by mobile"
               value={draftFilters.passengerPhone}
-              onChange={(event) => handleFilterChange("passengerPhone", event.target.value)}
+              onChange={(e) => handleFilterChange("passengerPhone", e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
             />
           </label>
 
-          <div className="filters-actions admin-cancel-filter-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+          <div className="filters-actions admin-cancel-filter-actions" style={{ gridColumn: "span 4", display: "flex", gap: "10px", marginTop: "10px" }}>
+            <button
+              type="button"
+              className="primary"
+              onClick={applyFilters}
+              style={{ padding: "8px 20px", borderRadius: "6px", border: "none", backgroundColor: "#be185d", color: "#ffffff", fontWeight: "600", cursor: "pointer" }}
+            >
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={clearFilters}
+              style={{ padding: "8px 20px", borderRadius: "6px", border: "1px solid var(--border)", backgroundColor: "transparent", cursor: "pointer" }}
+            >
               Reset
             </button>
           </div>
         </section>
-      ) : null}
+      )}
 
+      {/* Grid Table Card-Rows */}
       <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head">
+        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1fr 1.2fr 1.5fr 1.2fr 1fr 1.2fr 1fr 0.8fr" }}>
           <span>ID</span>
           <span>PNR / Date</span>
           <span>Segment / Journey</span>
           <span>Passenger Name</span>
           <span>Amount</span>
-          <span>Status</span>
+          <span>Payment Info</span>
+          <span>Payment Status</span>
           <span>Action</span>
         </header>
 
@@ -797,24 +921,28 @@ export default function AdminCancellationListPage() {
           <div className="admin-cancel-empty">Loading cancellation records...</div>
         ) : filteredCancellations.length ? (
           <div className="admin-cancel-table-body">
-            {filteredCancellations.map((booking) => (
-              <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-cancel-table-row">
+            {paginatedCancellations.map((booking) => (
+              <article key={booking.id} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1fr 1.2fr 1.5fr 1.2fr 1fr 1.2fr 1fr 0.8fr" }}>
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.id)}</strong>
                 </div>
 
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.pnr)}</strong>
-                  <small>{safeValue(booking.createdAt)}</small>
+                  <div className="admin-date-badge">
+                    <span className="admin-calendar-emoji">📅</span>
+                    <span>{booking.createdAt}</span>
+                  </div>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>
-                    {safeValue(booking.from)} to {safeValue(booking.to)}
-                  </strong>
-                  <small>
-                    {safeValue(booking.journeyDate)} | {safeValue(booking.journeyTime)}
-                  </small>
+                  <div className="admin-route-segment">
+                    <span style={{ fontWeight: "700" }}>{booking.from} to {booking.to}</span>
+                  </div>
+                  <div className="admin-date-badge">
+                    <span className="admin-calendar-emoji">📅</span>
+                    <span>{booking.journeyDate} | {booking.journeyTime}</span>
+                  </div>
                 </div>
 
                 <div className="admin-cancel-cell">
@@ -828,8 +956,28 @@ export default function AdminCancellationListPage() {
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <span className="admin-status-pill cancelled">Cancelled</span>
-                  <small>C / R</small>
+                  <strong>Method:</strong> {safeValue(booking.paymentMethod)}
+                  <small style={{ wordBreak: "break-all" }}><strong>Txn:</strong> {safeValue(booking.paymentDetails)}</small>
+                </div>
+
+                <div className="admin-cancel-cell">
+                  <select
+                    value={booking.paymentStatus}
+                    onChange={(e) => handleUpdatePaymentStatus(booking.id, e.target.value)}
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                      backgroundColor: booking.paymentStatus === "Completed" ? "#ecfdf5" : "#fffbeb",
+                      color: booking.paymentStatus === "Completed" ? "#10b981" : "#d97706",
+                      fontSize: "0.8rem",
+                      fontWeight: "600",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                  </select>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
@@ -837,6 +985,18 @@ export default function AdminCancellationListPage() {
                     type="button"
                     className="admin-action-btn"
                     onClick={() => setSelectedCancellation(booking)}
+                    style={{
+                      backgroundColor: "#be185d",
+                      borderColor: "#be185d",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "6px 16px",
+                      fontSize: "0.8rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
                   >
                     View
                   </button>
@@ -848,14 +1008,21 @@ export default function AdminCancellationListPage() {
           <div className="admin-cancel-empty">Result Not Found.</div>
         )}
 
-        <footer className="admin-cancel-footnote">
-          <strong>CC :-</strong> Cancellation Charge, <strong>RA :-</strong> Refund Amount,
-          <strong> C :-</strong> Cancel, <strong>R :-</strong> Refund.
-        </footer>
+        {filteredCancellations.length > 0 && (
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={filteredCancellations.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="cancellations"
+          />
+        )}
       </section>
 
-      {selectedCancellation ? (
-        <div className="admin-view-backdrop" onClick={() => setSelectedCancellation(null)}>
+      {/* View Detail Backdrop Modal */}
+      {selectedCancellation && (
+        <div className="admin-view-backdrop" onClick={() => setSelectedCancellation(null)} style={{ zIndex: 1000 }}>
           <article
             className="admin-view-card"
             role="dialog"
@@ -886,33 +1053,58 @@ export default function AdminCancellationListPage() {
 
             <section className="admin-view-grid">
               <div>
-                <span>Trip Type</span>
-                <strong>{safeValue(selectedCancellation.tripType)}</strong>
+                <span>Trip segment</span>
+                <strong>{safeValue(selectedCancellation.from)} to {safeValue(selectedCancellation.to)}</strong>
               </div>
               <div>
                 <span>Passenger Phone</span>
                 <strong>{safeValue(selectedCancellation.passengerPhone)}</strong>
               </div>
               <div>
-                <span>Booking ID</span>
-                <strong>{safeValue(selectedCancellation.id)}</strong>
+                <span>Booking Reference</span>
+                <strong>{safeValue(selectedCancellation.bookingReference)}</strong>
               </div>
               <div>
-                <span>PNR / Date</span>
-                <strong>{safeValue(selectedCancellation.pnr)}</strong>
-                <small>{safeValue(selectedCancellation.createdAt)}</small>
+                <span>Journey Date</span>
+                <strong>{safeValue(selectedCancellation.journeyDate)} | {safeValue(selectedCancellation.journeyTime)}</strong>
               </div>
               <div>
-                <span>Segment</span>
-                <strong>
-                  {safeValue(selectedCancellation.from)} to {safeValue(selectedCancellation.to)}
-                </strong>
+                <span>Operator</span>
+                <strong>{safeValue(selectedCancellation.operator)}</strong>
               </div>
               <div>
-                <span>Journey Date & Time</span>
-                <strong>
-                  {safeValue(selectedCancellation.journeyDate)} | {safeValue(selectedCancellation.journeyTime)}
-                </strong>
+                <span>Travel Class</span>
+                <strong>{safeValue(selectedCancellation.vehicleType)}</strong>
+              </div>
+              <div>
+                <span>Cancellation Reason</span>
+                <strong>{selectedCancellation.cancellationReason || "No reason given"}</strong>
+              </div>
+              <div>
+                <span>Payment Method</span>
+                <strong>{safeValue(selectedCancellation.paymentMethod)}</strong>
+              </div>
+              <div>
+                <span>Payment Details (Txn)</span>
+                <strong>{safeValue(selectedCancellation.paymentDetails)}</strong>
+              </div>
+              <div>
+                <span>Payment Status</span>
+                <select
+                  value={selectedCancellation.paymentStatus}
+                  onChange={(e) => handleUpdatePaymentStatus(selectedCancellation.id, e.target.value)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    border: "1.5px solid var(--border)",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
               </div>
               <div className="admin-view-highlight-card">
                 <span>Refund Amount</span>
@@ -925,8 +1117,7 @@ export default function AdminCancellationListPage() {
             </section>
           </article>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
-

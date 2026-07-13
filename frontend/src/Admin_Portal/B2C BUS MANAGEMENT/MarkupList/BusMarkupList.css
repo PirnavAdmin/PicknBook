@@ -1,9 +1,14 @@
-/* ═══════════════════════════════════
-   PAGE HEADING  — same as Discount List
-   ═══════════════════════════════════ */
+.bus-markup-list-page-container {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  padding-top: 24px !important;
+  margin-top: 0px !important;
+}
+
 .markup-heading {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
   gap: 4px;
 }
 
@@ -16,10 +21,10 @@
 }
 
 .bus-markup-list-page-container .markup-heading-sub {
-  margin: 0;
-  font-size: 18px;
+  font-size: 22px !important;
   font-weight: 700 !important;
   color: #000000 !important;
+  margin-left: 8px !important;
 }
 
 /* ═══════════════════════════════════
@@ -78,9 +83,9 @@
 
 /* Primary "Add New" button */
 .markup-primary-btn {
-  border: 1px solid var(--admin-primary);
-  background: var(--admin-primary);
-  color: #fff;
+  border: 1.5px solid #A51C49 !important;
+  background: #A51C49 !important;
+  color: #fff !important;
   padding: 10px 16px;
   border-radius: 10px;
   font-weight: 600;
@@ -90,19 +95,22 @@
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(30, 117, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+  transition: all 0.25s ease !important;
 }
 
 .markup-primary-btn:hover {
-  background: var(--admin-primary-strong);
-  border-color: var(--admin-primary-strong);
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
 }
 
 /* Export button */
 .markup-export-btn {
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #fff;
+  border: 1.5px solid #A51C49 !important;
+  background: #A51C49 !important;
+  color: #fff !important;
   padding: 10px 16px;
   border-radius: 10px;
   font-weight: 600;
@@ -112,12 +120,15 @@
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+  transition: all 0.25s ease !important;
 }
 
 .markup-export-btn:hover:not(:disabled) {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
 }
 
 .markup-export-btn:disabled {
@@ -838,21 +849,25 @@
 
 .admin-markup-modal-actions button {
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 10px 20px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.25s ease !important;
 }
 
 .admin-markup-modal-actions button.primary {
-  background: var(--admin-primary) !important;
+  background: #A51C49 !important;
   color: white !important;
-  border-color: var(--admin-primary) !important;
+  border-color: #A51C49 !important;
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.15) !important;
 }
 
 .admin-markup-modal-actions button.primary:hover {
-  background: var(--admin-primary-strong) !important;
-  border-color: var(--admin-primary-strong) !important;
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
 }
 
 .admin-markup-modal-actions .secondary {
@@ -860,10 +875,29 @@
   color: var(--text-primary);
 }
 
+.admin-markup-modal-actions .secondary:hover {
+  transform: translateY(-3px) !important;
+}
+
 .admin-markup-modal-actions .danger {
   background: var(--danger-soft);
   color: var(--danger);
   border-color: rgba(180, 35, 24, 0.35);
+}
+
+.admin-markup-modal.fullscreen.inline-card-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03) !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  padding: 32px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  margin-top: 10px !important;
 }
 
 .admin-markup-delete-copy {
@@ -888,3 +922,4 @@
     border-bottom: 0;
   }
 }
+

@@ -1104,10 +1104,16 @@ export default function BusSeatSelectionPage({
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token || isTokenExpired(token)) {
-      openAuthModal("login");
-      return;
+    const b2bToken = localStorage.getItem("b2b_token");
+    const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
+    const isAgent = b2bToken && b2bRole === "agent";
+
+    if (!isAgent) {
+      const token = localStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        openAuthModal("login");
+        return;
+      }
     }
 
     const seatCodes = selectedSeats.map((seat) => seat.label).filter(Boolean);
@@ -1147,18 +1153,46 @@ export default function BusSeatSelectionPage({
       selectedDroppingId,
       boardingPoint: selectedBoarding,
       droppingPoint: selectedDropping,
-      fareSummary: {
-        baseFare: pricingPreview.subtotalBeforeCoupon,
-        subtotalBeforeCoupon: pricingPreview.subtotalBeforeCoupon,
-        couponAmount: pricingPreview.couponAmount,
-        taxableFare: pricingPreview.taxableFare,
-        gstPercent: pricingPreview.gstPercent,
-        gstAmount: pricingPreview.gstAmount,
-        tax: pricingPreview.gstAmount,
-        convenienceFee: pricingPreview.convenienceFee,
-        grandTotal: pricingPreview.grandTotal,
-        totalFare: pricingPreview.grandTotal,
-      },
+      fareSummary: (() => {
+        let markupValue = 0;
+        const rawMarkup = localStorage.getItem("b2b_markup_settings");
+        if (rawMarkup) {
+          try {
+            const parsedMarkup = JSON.parse(rawMarkup);
+            if (parsedMarkup.busType === "percentage") {
+              markupValue = pricingPreview.subtotalBeforeCoupon * (Number(parsedMarkup.busValue) / 100);
+            } else if (parsedMarkup.busType === "fixed") {
+              markupValue = Number(parsedMarkup.busValue) * seatCodes.length;
+            }
+          } catch (e) {
+            console.error("Error reading B2B bus markup", e);
+          }
+        }
+
+        // B2B Discounts (Removed as requested)
+        const tierDiscount = 0;
+        const volumeDiscount = 0;
+        const isAgent = localStorage.getItem("b2b_role") === "Agent";
+
+        const wholesaleFare = pricingPreview.grandTotal;
+        const displayTotal = isAgent ? (wholesaleFare + markupValue) : (pricingPreview.grandTotal + markupValue);
+
+        return {
+          baseFare: pricingPreview.subtotalBeforeCoupon,
+          subtotalBeforeCoupon: pricingPreview.subtotalBeforeCoupon,
+          couponAmount: pricingPreview.couponAmount,
+          taxableFare: pricingPreview.taxableFare,
+          gstPercent: pricingPreview.gstPercent,
+          gstAmount: pricingPreview.gstAmount,
+          tax: pricingPreview.gstAmount,
+          convenienceFee: pricingPreview.convenienceFee,
+          markup: markupValue,
+          tierDiscount,
+          volumeDiscount,
+          grandTotal: displayTotal,
+          totalFare: displayTotal,
+        };
+      })(),
       pricingPreview,
     };
 

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Eye, Pencil, Trash2, X } from "lucide-react";
 import "./Airline BrandList.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
 
 function AirlineBrands() {
@@ -24,6 +25,21 @@ function AirlineBrands() {
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalItems = airlines.length;
+  const paginatedAirlines = useMemo(() => {
+    const sorted = [...airlines].sort((a, b) => {
+      const numA = parseInt(String(a.id).replace(/\D/g, "")) || 0;
+      const numB = parseInt(String(b.id).replace(/\D/g, "")) || 0;
+      return numA - numB;
+    });
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sorted.slice(startIndex, startIndex + itemsPerPage);
+  }, [airlines, currentPage]);
 
   // Navigation
   const goToAdd = () => {
@@ -143,7 +159,9 @@ function AirlineBrands() {
       {page === "list" && (
         <>
           <div className="header">
-            <h2>Airline Brand List</h2>
+            <h2 style={{ fontWeight: 500 }}>
+              <span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Flight</span> Airline Brand List
+            </h2>
             <div className="actions">
               <button className="btn add" onClick={goToAdd}>
                 + Add Airline Brand
@@ -154,80 +172,87 @@ function AirlineBrands() {
             </div>
           </div>
 
-          <table className="table">
-            <thead>
-              <tr>
-                <th>SN.</th>
-                <th>ID</th>
-                <th>Airline</th>
-                <th>Airline Code</th>
-                <th>Image</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {airlines.map((item, index) => (
-                <tr key={item.id}>
-                  <td>{index + 1}</td>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.code}</td>
-
-                  <td>
-                    {item.image ? (
-                      <button className="view-btn" onClick={() => handleViewImage(item)}>
-                        View
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: "12px", color: "#94a3b8" }}>No Image</span>
-                    )}
-                  </td>
-
-                  <td>
-                    <span
-                      className={
-                        item.status === "Active"
-                          ? "status active"
-                          : "status inactive"
-                      }
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-
-                  <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                    <button
-                      className="icon-btn view"
-                      title="View Image"
-                      onClick={() => handleViewImage(item)}
-                      disabled={!item.image}
-                      style={{ opacity: item.image ? 1 : 0.5, cursor: item.image ? "pointer" : "not-allowed" }}
-                    >
-                      <Eye size={14} />
-                    </button>
-
-                    <button
-                      className="icon-btn edit"
-                      title="Edit"
-                      onClick={() => handleEdit(item)}
-                    >
-                      <Pencil size={14} />
-                    </button>
-
-                    <button
-                      className="icon-btn delete"
-                      title="Delete"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
+          <div style={{ border: '1px solid var(--admin-border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--admin-surface)' }}>
+            <table className="table" style={{ border: 'none', borderRadius: '0' }}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Airline</th>
+                  <th>Airline Code</th>
+                  <th>Image</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedAirlines.map((item, index) => {
+                  const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
+                  return (
+                  <tr key={item.id}>
+                    <td>{globalIndex}</td>
+                    <td>{item.name}</td>
+                    <td>{item.code}</td>
+                    <td>
+                      {item.image ? (
+                        <button className="view-btn" onClick={() => handleViewImage(item)}>
+                          View
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>No Image</span>
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className={
+                          item.status === "Active"
+                            ? "status active"
+                            : "status inactive"
+                        }
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                      <button
+                        className="icon-btn view"
+                        title="View Image"
+                        onClick={() => handleViewImage(item)}
+                        disabled={!item.image}
+                        style={{ opacity: item.image ? 1 : 0.5, cursor: item.image ? "pointer" : "not-allowed" }}
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
+                        className="icon-btn edit"
+                        title="Edit"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className="icon-btn delete"
+                        title="Delete"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div style={{ borderTop: '1px solid var(--admin-border)' }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="airline brands"
+              />
+            </div>
+          </div>
         </>
       )}
 
@@ -325,3 +350,4 @@ function AirlineBrands() {
 }
 
 export default AirlineBrands;
+

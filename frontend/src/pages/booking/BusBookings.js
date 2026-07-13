@@ -15,6 +15,8 @@ import {
   listBusBookings,
   cancelBusPassengers,
 } from "../../services/busBookingService";
+import TravelLoadingScreen from "../../components/layout/TravelLoadingScreen";
+import CancellationModal from "./CancellationModal";
 import "../../STYLES/BusOpsDashboard.css";
 import { formatDateTime } from "../../utils/apiDateFormat";
 
@@ -25,18 +27,19 @@ function formatCurrency(value) {
 }
 
 function getStatusClassName(status) {
-  if (status === "Cancelled") {
+  const norm = String(status || "").trim().toLowerCase();
+  if (norm.includes("cancel")) {
     return "danger";
   }
-
-  if (status === "Completed") {
-    return "completed";
-  }
-
-  if (status === "Booked") {
+  if (
+    norm.includes("confirm") ||
+    norm.includes("success") ||
+    norm.includes("complete") ||
+    norm.includes("booked") ||
+    norm.includes("active")
+  ) {
     return "success";
   }
-
   return "default";
 }
 
@@ -88,6 +91,8 @@ export default function BusBookings() {
   const [selectedPassengerIds, setSelectedPassengerIds] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -104,7 +109,13 @@ export default function BusBookings() {
       setBookings(result);
     } catch (error) {
       setBookings([]);
-      setErrorMessage(error.message || "Unable to load bus bookings.");
+      const status = Number(error?.status);
+      const msg = String(error?.message || "").toLowerCase();
+      if (status === 401 || status === 403 || msg.includes("unauthorized") || msg.includes("please login")) {
+        setErrorMessage("Please log in to view your bus bookings.");
+      } else {
+        setErrorMessage(error.message || "Unable to load bus bookings.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -200,11 +211,15 @@ export default function BusBookings() {
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    const reason = window.prompt("Enter cancellation reason (optional):", "Plan changed");
-    if (reason === null) {
-      return;
-    }
+  const triggerCancelBooking = (bookingId) => {
+    setCancelModalBookingId(bookingId);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelBooking = async (reason) => {
+    const bookingId = cancelModalBookingId;
+    if (!bookingId) return;
+    setIsCancelModalOpen(false);
 
     setCancellingBookingId(bookingId);
     setErrorMessage("");
@@ -220,6 +235,7 @@ export default function BusBookings() {
       setErrorMessage(error.message || "Unable to cancel booking.");
     } finally {
       setCancellingBookingId(null);
+      setCancelModalBookingId(null);
     }
   };
 
@@ -248,6 +264,17 @@ export default function BusBookings() {
       setIsCancellingPassengers(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <TravelLoadingScreen
+        title="Loading bus bookings..."
+        message="Fetching your latest bus trips and ticket details."
+        variant="bus"
+        icon="bus"
+      />
+    );
+  }
 
   return (
     <div className="flight-ops-page bus-booking-status-page">
@@ -477,7 +504,7 @@ export default function BusBookings() {
                         <button
                           type="button"
                           title="Cancel booking"
-                          onClick={() => handleCancelBooking(booking.bookingId)}
+                          onClick={() => triggerCancelBooking(booking.bookingId)}
                           disabled={
                             displayStatus === "Cancelled" ||
                             displayStatus === "Completed" ||
@@ -610,7 +637,7 @@ export default function BusBookings() {
                             )}
                           </td>
                           <td style={{ textDecoration: p.isCancelled ? "line-through" : "none" }}>
-                            {p.fullName}
+                            {p.fullName}{p.gender && ` (${p.gender[0].toUpperCase()})`}
                           </td>
                           <td>{p.seatNumber || "--"}</td>
                           <td>{p.age > 0 ? `${p.age} / ` : ""}{p.gender}</td>
@@ -657,6 +684,16 @@ export default function BusBookings() {
           </div>
         </div>
       )}
+      <CancellationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancelModalBookingId(null);
+        }}
+        onConfirm={handleCancelBooking}
+        title="Cancel Bus Booking"
+        message="Are you sure you want to cancel this booking?"
+      />
     </div>
   );
 }

@@ -1,21 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, PencilLine, List } from "lucide-react";
+import { CheckCircle2, XCircle, PencilLine, Eye, Trash2, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import "./HotelConvenienceFee.css";
 import { getHotelConvenienceFees, saveHotelConvenienceFee } from "../../../services/adminHotelService";
+import AdminPagination from "../../../components/AdminPagination";
 
-const inrFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 2,
-});
+const inrFormatter = {
+  format: (value) => `₹ ${Number(value).toFixed(2)}`
+};
 
 const formatDateTime = (value) => {
-  const parsed = new Date(value || "");
+  if (!value) return "--";
+  let dateString = String(value);
+  if (!dateString.endsWith("Z") && !dateString.includes("+")) {
+    dateString += "Z";
+  }
+  const parsed = new Date(dateString);
   if (Number.isNaN(parsed.getTime())) {
     return "--";
   }
 
   return parsed.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -25,27 +31,58 @@ const formatDateTime = (value) => {
   });
 };
 
+function normalizeFeeResponse(data) {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  if (data.message && !data.id && data.feeInr === undefined) {
+    return null;
+  }
+
+  return {
+    id: data.id ?? data.Id ?? null,
+    feeInr: Number(data.feeInr ?? data.FeeInr ?? data.value ?? 0) || 0,
+    isActive: data.isActive ?? data.IsActive ?? (String(data.status || "").toLowerCase() === "active"),
+    createdAt: data.createdAt ?? data.CreatedAt ?? data.entryDateUtc ?? null,
+    updatedAt: data.updateDateUtc ?? data.updatedAt ?? data.UpdatedAt ?? data.updatedAtUtc ?? data.updateDate ?? data.UpdateDate ?? data.updatedDate ?? data.UpdatedDate ?? data.modifiedDate ?? data.ModifiedDate ?? data.modifiedAt ?? data.ModifiedAt ?? data.createdAt ?? data.CreatedAt ?? data.entryDateUtc ?? null,
+  };
+}
+
 export default function HotelConvenienceFee() {
+  const navigate = useNavigate();
   const [fee, setFee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const [isViewing, setIsViewing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [newFeeVal, setNewFeeVal] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddMode, setIsAddMode] = useState(false);
+  const [editFeeInr, setEditFeeInr] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadFee = async () => {
     setLoading(true);
     setError("");
     try {
       const data = await getHotelConvenienceFees();
-      // Find the active fee from list, or take the first one
-      const activeFee = data.find(f => f.status === "Active") || data[0] || null;
-      setFee(activeFee);
-      if (activeFee) {
-        setNewFeeVal(String(activeFee.feeInr));
+      
+      // Hotel api returns an array, pick the first or active
+      let targetFee = null;
+      if (Array.isArray(data)) {
+        targetFee = data.find(f => f.status === "Active" || f.isActive) || data[0] || null;
+      } else {
+        targetFee = data;
       }
+      
+      const normalized = normalizeFeeResponse(targetFee);
+      setFee(normalized);
     } catch (err) {
-      setError(err.message || "Unable to load hotel convenience fee settings.");
+      setError(err.message || "Failed to load hotel convenience fee.");
+      setFee(null);
     } finally {
       setLoading(false);
     }
@@ -55,122 +92,172 @@ export default function HotelConvenienceFee() {
     loadFee();
   }, []);
 
-  const handleSave = async () => {
-    const numericFee = Number(newFeeVal);
-    if (!Number.isFinite(numericFee) || numericFee < 0) {
-      setError("Enter a valid convenience fee amount (>= 0).");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError("");
-    try {
-      await saveHotelConvenienceFee({ feeInr: numericFee });
-      setIsEditing(false);
-      await loadFee();
-    } catch (err) {
-      setError(err.message || "Failed to update convenience fee.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleOpenEdit = () => {
+    navigate("/admin/b2c-hotel/add-convenience-fee");
   };
 
+  const handleOpenAdd = () => {
+    navigate("/admin/b2c-hotel/add-convenience-fee");
+  };
+
+
+
+  const handleOpenView = () => {
+    setIsViewing(true);
+  };
+
+  const feesList = fee ? [fee] : [];
+  const totalItems = feesList.length;
+  
   return (
     <section className="admin-b2c-page admin-convenience-page">
-      <header className="admin-b2c-header admin-convenience-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1>B2C Hotel Convenience Fee</h1>
-        {fee && !isEditing && (
-          <button
-            type="button"
-            className="admin-convenience-icon-btn edit"
-            onClick={() => setIsEditing(true)}
-            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.85rem", fontWeight: "600" }}
-          >
-            <PencilLine size={15} />
-            Edit Fee
-          </button>
-        )}
-      </header>
+      <div className="admin-convenience-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <header className="admin-b2c-header admin-convenience-header" style={{ marginBottom: 0 }}>
+          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Hotel</span> Convenience Fee</h1>
+        </header>
+
+        <button
+          type="button"
+          className="admin-convenience-icon-btn edit"
+          style={{ width: 'auto', padding: '8px 16px', gap: '6px', fontSize: '0.88rem', fontWeight: 700, borderRadius: '9px', height: 'auto' }}
+          onClick={handleOpenAdd}
+        >
+          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
+          Add Convenience Fee
+        </button>
+      </div>
 
       {loading ? (
         <div className="admin-data-info">Loading convenience fee settings...</div>
+      ) : error ? (
+        <div className="admin-data-error">{error}</div>
       ) : (
-        <div style={{ marginTop: "20px" }}>
-          {error && <div className="admin-data-error" style={{ marginBottom: "15px" }}>{error}</div>}
+        <div className="admin-convenience-table-shell">
+          <header className="admin-convenience-table-head">
+            <span>ID</span>
+            <span>Fee (INR)</span>
+            <span>Status</span>
+            <span>Created</span>
+            <span>Updated</span>
+            <span>Action</span>
+          </header>
 
-          {isEditing || !fee ? (
-            <section className="admin-convenience-edit-shell" style={{ maxWidth: "500px", padding: "24px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "16px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600" }}>
-                  <span>Fee Amount (INR):</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={newFeeVal}
-                    onChange={(e) => setNewFeeVal(e.target.value)}
-                    placeholder="e.g. 150"
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)" }}
-                  />
-                </label>
-                
-                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                    style={{ padding: "10px 16px", borderRadius: "8px", background: "var(--primary)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "650" }}
-                  >
-                    {isSubmitting ? "Saving..." : "Save Settings"}
-                  </button>
-                  {fee && (
+          {feesList.length > 0 ? (
+            <div className="admin-convenience-table-body">
+              {feesList.map((f, i) => (
+                <article key={f.id || i} className="admin-convenience-table-row">
+                  <div className="admin-convenience-cell">
+                    <strong>{f.id || (i + 1)}</strong>
+                  </div>
+
+                  <div className="admin-convenience-cell">
+                    <span>{inrFormatter.format(f.feeInr)}</span>
+                  </div>
+
+                  <div className="admin-convenience-cell admin-convenience-status-cell">
+                    <span className={`admin-convenience-status-dot ${f.isActive ? "active" : "inactive"}`}>
+                      <span className={`dot ${f.isActive ? "green" : "red"}`}></span>
+                      {f.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <div className="admin-convenience-cell">
+                    <span>{formatDateTime(f.createdAt)}</span>
+                  </div>
+
+                  <div className="admin-convenience-cell">
+                    <span>{formatDateTime(f.updatedAt)}</span>
+                  </div>
+
+                  <div className="admin-convenience-cell admin-convenience-action-cell">
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setNewFeeVal(String(fee.feeInr));
-                      }}
-                      style={{ padding: "10px 16px", borderRadius: "8px", background: "var(--border)", color: "var(--text-primary)", border: "1px solid var(--border)", cursor: "pointer" }}
+                      className="admin-convenience-action-btn view"
+                      title="View Details"
+                      onClick={handleOpenView}
                     >
-                      Cancel
+                      <Eye size={16} />
                     </button>
-                  )}
-                </div>
-              </div>
-            </section>
-          ) : (
-            <section className="admin-convenience-table-shell" style={{ width: "100%", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "16px", overflow: "hidden" }}>
-              <header className="admin-convenience-table-head" style={{ display: "grid", gridTemplateColumns: "1fr 2fr 2fr 3fr 3fr", padding: "12px 20px", background: "var(--surface-soft)", fontWeight: "650", borderBottom: "1px solid var(--border)", fontSize: "0.88rem" }}>
-                <span>ID</span>
-                <span>Fee (INR)</span>
-                <span>Status</span>
-                <span>Created</span>
-                <span>Updated</span>
-              </header>
-
-              <div className="admin-convenience-table-body" style={{ padding: "12px 20px" }}>
-                <article className="admin-convenience-table-row" style={{ display: "grid", gridTemplateColumns: "1fr 2fr 2fr 3fr 3fr", alignItems: "center", fontSize: "0.85rem" }}>
-                  <span>{fee.id}</span>
-                  <strong>{inrFormatter.format(fee.feeInr)}</strong>
-                  <span className="admin-convenience-status-cell">
-                    {fee.status === "Active" ? (
-                      <span className="admin-convenience-status active" style={{ color: "green", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                        <CheckCircle2 size={14} /> Active
-                      </span>
-                    ) : (
-                      <span className="admin-convenience-status inactive" style={{ color: "red", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                        <XCircle size={14} /> Inactive
-                      </span>
-                    )}
-                  </span>
-                  <span>{formatDateTime(fee.entryDateUtc)}</span>
-                  <span>{formatDateTime(fee.updateDateUtc)}</span>
+                    <button
+                      type="button"
+                      className="admin-convenience-action-btn edit"
+                      title="Edit Fee"
+                      onClick={handleOpenEdit}
+                    >
+                      <PencilLine size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-convenience-action-btn delete"
+                      title="Delete (Disabled for demo)"
+                      disabled
+                      style={{ opacity: 0.5, cursor: "not-allowed" }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </article>
-              </div>
-            </section>
+              ))}
+            </div>
+          ) : (
+            <div className="admin-convenience-empty">
+              <span>No convenience fee configured yet.</span>
+              <button
+                type="button"
+                className="admin-convenience-icon-btn edit"
+                onClick={handleOpenAdd}
+              >
+                <PencilLine size={16} /> Configure Now
+              </button>
+            </div>
           )}
+
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            itemName="records"
+          />
+        </div>
+      )}
+
+      {/* View Modal */}
+      {isViewing && fee && (
+        <div className="admin-convenience-modal-backdrop" onClick={() => setIsViewing(false)}>
+          <div className="admin-convenience-modal" onClick={e => e.stopPropagation()}>
+            <header>
+              <h2>View Convenience Fee</h2>
+              <button onClick={() => setIsViewing(false)}><X size={20} /></button>
+            </header>
+            <div className="admin-convenience-modal-body">
+              <div className="admin-convenience-detail-row">
+                <strong>ID:</strong>
+                <span>{fee.id || 1}</span>
+              </div>
+              <div className="admin-convenience-detail-row">
+                <strong>Fee Amount:</strong>
+                <span>{inrFormatter.format(fee.feeInr)}</span>
+              </div>
+              <div className="admin-convenience-detail-row">
+                <strong>Status:</strong>
+                <span style={{ color: fee.isActive ? '#28a745' : '#be185d', fontWeight: 600 }}>
+                  {fee.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+              <div className="admin-convenience-detail-row">
+                <strong>Created At:</strong>
+                <span>{formatDateTime(fee.createdAt)}</span>
+              </div>
+              <div className="admin-convenience-detail-row">
+                <strong>Updated At:</strong>
+                <span>{formatDateTime(fee.updatedAt)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </section>
   );
 }
+

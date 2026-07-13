@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import './DiscountList.css';
+import AdminPagination from '../../../components/AdminPagination';
 import {
   listDiscounts,
   deleteDiscount
@@ -47,6 +48,12 @@ function DiscountList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeDropdownId, setActiveDropdownId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -101,14 +108,14 @@ function DiscountList() {
       const numA = parseInt(String(a.id).replace(/\D/g, '')) || 0;
       const numB = parseInt(String(b.id).replace(/\D/g, '')) || 0;
       if (numA !== numB) {
-        return numB - numA;
+        return numA - numB;
       }
       const dateA = new Date(a.entryDate);
       const dateB = new Date(b.entryDate);
       if (!isNaN(dateA) && !isNaN(dateB)) {
-        return dateB - dateA;
+        return dateA - dateB;
       }
-      return String(b.id).localeCompare(String(a.id));
+      return String(a.id).localeCompare(String(b.id));
     });
 
     return sorted.filter((row) => {
@@ -125,6 +132,13 @@ function DiscountList() {
       return matchesSearch && matchesStatus;
     });
   }, [rows, searchTerm, statusFilter]);
+
+  const paginatedDiscounts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDiscounts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDiscounts, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredDiscounts.length / itemsPerPage));
 
   const activeCount = rows.filter((row) => row.status === 'Active').length;
   const inactiveCount = rows.filter((row) => row.status === 'Inactive').length;
@@ -193,7 +207,7 @@ function DiscountList() {
   };
 
   const handleEdit = (row) => {
-    navigate('/admin/b2c-bus/discounts/new', { state: { mode: 'edit', row } });
+    navigate('/admin/b2c-bus/add-discount', { state: { mode: 'edit', row } });
   };
 
   const handleDelete = async (rowId) => {
@@ -211,8 +225,9 @@ function DiscountList() {
   return (
     <div className="discount-list-page-container bus-discount-list-page-container">
       <section className="discount-heading">
-        <p className="discount-heading-main">B2C Bus Management</p>
-        <p className="discount-heading-sub">Discount List</p>
+        <p className="discount-heading-main">
+          B2C Bus <span className="discount-heading-sub">Discount List</span>
+        </p>
       </section>
 
       <section className="stats-row">
@@ -262,7 +277,7 @@ function DiscountList() {
               <option value="Inactive">Inactive</option>
             </select>
           </label>
-          <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-bus/discounts/new')}>
+          <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-bus/add-discount')}>
             <FaPlus aria-hidden="true" />
             Add B2C Discount
           </button>
@@ -295,14 +310,14 @@ function DiscountList() {
                   Loading discounts...
                 </td>
               </tr>
-            ) : filteredDiscounts.length === 0 ? (
+            ) : paginatedDiscounts.length === 0 ? (
               <tr>
                 <td colSpan={9} className="empty-cell">
                   No discounts match your filters.
                 </td>
               </tr>
             ) : (
-              filteredDiscounts.map((row) => (
+              paginatedDiscounts.map((row) => (
                 <tr key={row.id}>
                   <td>
                     <div className="id-chip">{row.id}</div>
@@ -393,6 +408,17 @@ function DiscountList() {
             )}
           </tbody>
         </table>
+
+        <div style={{ marginTop: '16px' }}>
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={filteredDiscounts.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="discounts"
+          />
+        </div>
       </section>
     </div>
   );

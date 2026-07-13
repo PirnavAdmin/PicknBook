@@ -109,8 +109,6 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
   font-size: 0.78rem;
   font-weight: 700;
 }

@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const FALLBACK_PROXY_TARGET =
-  "https://localhost:7179";
+  "http://65.2.53.198:3000";
 
 function normalizeHttpUrl(value) {
   if (typeof value !== "string") {

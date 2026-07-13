@@ -6,32 +6,81 @@
 .offer-add-page {
   width: 100%;
   min-width: 0;
+  margin-top: 10px !important;
+  padding: 20px 24px !important;
 }
 
 .offer-add-shell {
-  margin-top: 16px;
+  margin-top: 12px;
   border: 1px solid var(--border, #ead6d6);
   border-radius: 16px;
   background: var(--panel, #ffffff);
-  padding: 18px;
+  padding: 0 !important;
   box-shadow: var(--shadow-sm, 0 10px 28px rgba(80, 30, 30, 0.08));
+  overflow: hidden;
 }
 
 .offer-add-form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  padding: 20px;
 }
 
+/* Header inside container */
+.offer-add-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 0 20px;
+}
+
+body .offer-add-page .offer-add-heading,
+.offer-add-heading {
+  font-size: 1.5rem !important;
+  font-weight: 500 !important;
+  color: #A51C49 !important;
+  margin: 0 !important;
+}
+
+.offer-add-list-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 22px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #A51C49 !important;
+  border: 2px solid #A51C49 !important;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.offer-add-list-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.25);
+}
+
+/* Three columns with label above control */
 .offer-add-grid {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr) 170px minmax(0, 1fr);
-  gap: 14px 16px;
-  align-items: center;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px 20px;
+}
+
+.offer-add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .offer-add-label {
-  color: var(--text-secondary, #664242);
-  font-size: 0.86rem;
+  color: #000000 !important;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -73,19 +122,24 @@
   resize: vertical;
 }
 
+/* Description headings - removed background, decreased font weight, black color */
 .offer-add-section-bar {
   display: flex;
   align-items: center;
-  min-height: 34px;
-  border-radius: 10px;
-  background: var(--surface-soft, #fff6f6);
-  color: var(--text-primary, #241414);
-  font-weight: 800;
-  padding: 8px 12px;
+  min-height: auto;
+  border-radius: 0;
+  background: transparent !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  padding: 4px 0;
+  margin-top: 4px;
 }
 
 .offer-add-actions {
-  margin-top: 0;
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .offer-add-actions button:disabled {
@@ -99,38 +153,51 @@
   font-weight: 700;
 }
 
-@media (max-width: 900px) {
+/* Save / Primary Button */
+.offer-add-actions button.primary {
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease-in-out !important;
+}
+
+/* Reset / Secondary Button */
+.offer-add-actions button.secondary {
+  background: transparent !important;
+  border: 2px solid #A51C49 !important;
+  color: #A51C49 !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease-in-out !important;
+}
+
+.offer-add-actions button.primary:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-2px) !important;
+}
+
+.offer-add-actions button.secondary:hover {
+  background: rgba(165, 28, 73, 0.05) !important;
+  transform: translateY(-2px) !important;
+}
+
+@media (max-width: 992px) {
+  .offer-add-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
   .offer-add-grid {
     grid-template-columns: 1fr;
-    align-items: stretch;
+    gap: 12px;
   }
-
-  .offer-add-label {
-    margin-bottom: -8px;
-  }
-
-}
-
-.offer-add-control input[type="file"] {
-  height: auto;
-  padding: 6px 10px;
-  cursor: pointer;
-  border: 1px dashed var(--border, #e4caca);
-  background: var(--surface-soft, #fffdfd);
-}
-
-.offer-add-control input[type="file"]::file-selector-button {
-  background: var(--primary, #a73434);
-  color: #ffffff;
-  border: 0;
-  padding: 5px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  margin-right: 10px;
-  transition: background-color 0.2s;
-}
-
-.offer-add-control input[type="file"]::file-selector-button:hover {
-  background: #8b2525;
 }

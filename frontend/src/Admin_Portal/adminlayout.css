@@ -1,21 +1,22 @@
-.admin-shell {
+.admin-shell,
+body .admin-shell {
   --sidebar-float-size: 44px;
-  --admin-primary: #1e75ff;
-  --admin-primary-strong: #0052d9;
-  --admin-border: #eef2f6;
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  --admin-border: #dde8f5;
   --admin-text: #0f172a;
   --admin-muted: #64748b;
-  --admin-surface: #ffffff;
-  --admin-soft: #f8fafc;
-  --admin-success: #10b981;
+  --admin-surface: rgba(255, 255, 255, 0.88);
+  --admin-soft: rgba(248, 250, 255, 0.9);
+  --admin-success: #10b981 !important;
   --admin-success-soft: #ecfdf5;
   --admin-danger: #ef4444;
   --admin-danger-soft: #fef2f2;
-  --page-bg: #f1f5fa;
-  --success: var(--admin-success);
+  --page-bg: transparent;
+  --success: #10b981 !important;
   --success-soft: var(--admin-success-soft);
-  --primary: var(--admin-primary);
-  --primary-strong: var(--admin-primary-strong);
+  --primary: #A51C49 !important;
+  --primary-strong: #851237 !important;
   --text-primary: var(--admin-text);
   --text-secondary: var(--admin-muted);
   --text-muted: var(--admin-muted);
@@ -28,19 +29,165 @@
   --border: var(--admin-border);
   --text: var(--admin-text);
   --muted: var(--admin-muted);
-  --accent: var(--admin-primary);
+  --accent: #A51C49 !important;
   --radius: 16px;
-  --shadow: 0 10px 30px rgba(22, 65, 128, 0.04), 0 1px 3px rgba(22, 65, 128, 0.02);
-  --shadow-sm: 0 4px 12px rgba(22, 65, 128, 0.03);
+  --shadow: 0 10px 30px rgba(22, 65, 128, 0.07), 0 1px 3px rgba(22, 65, 128, 0.04);
+  --shadow-sm: 0 4px 12px rgba(22, 65, 128, 0.05);
 
   min-height: 100vh;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--page-bg);
+  background: transparent;
   color: var(--text);
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+
+/* ══════════════════════════════════════════════════════════
+   WORLD LANDMARKS TRAVEL SKYLINE — FIXED BACKGROUND LAYER
+══════════════════════════════════════════════════════════ */
+.admin-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(180deg,
+      #e8f4fd 0%,
+      #f0f8ff 35%,
+      #f7fbff 65%,
+      #ffffff 100%);
+}
+
+/* The actual SVG skyline canvas */
+.admin-skyline-bg {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.95;
+  background-image: url('../assets/images/admin-skyline-bg.png');
+  background-size: 100% auto;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+
+.admin-skyline-bg svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Flying Plane Animation ── */
+@keyframes adminPlaneFly {
+  0% {
+    transform: translate(-60px, 0px) rotate(-8deg) scale(0.85);
+    opacity: 0;
+  }
+
+  5% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translate(50vw, -60px) rotate(-6deg) scale(1);
+  }
+
+  95% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(110vw, -40px) rotate(-4deg) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.admin-plane-fly {
+  animation: adminPlaneFly 26s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform-origin: center;
+}
+
+/* ── Hot Air Balloon 1 ── */
+@keyframes adminBalloon1 {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(8px, -22px) scale(1.05);
+  }
+}
+
+.admin-balloon-1 {
+  animation: adminBalloon1 14s ease-in-out infinite;
+}
+
+/* ── Hot Air Balloon 2 ── */
+@keyframes adminBalloon2 {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(-6px, -18px) scale(0.95);
+  }
+}
+
+.admin-balloon-2 {
+  animation: adminBalloon2 18s ease-in-out infinite;
+}
+
+/* ── Clouds Drift ── */
+@keyframes adminCloudDrift {
+  0% {
+    transform: translateX(0px);
+  }
+
+  100% {
+    transform: translateX(30px);
+  }
+}
+
+.admin-cloud-1 {
+  animation: adminCloudDrift 20s ease-in-out infinite alternate;
+}
+
+.admin-cloud-2 {
+  animation: adminCloudDrift 25s ease-in-out infinite alternate-reverse;
+}
+
+.admin-cloud-3 {
+  animation: adminCloudDrift 18s ease-in-out infinite alternate;
+}
+
+/* ── Dotted path dash animation ── */
+@keyframes adminDashMove {
+  0% {
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dashoffset: -120;
+  }
+}
+
+.admin-flight-path {
+  stroke-dasharray: 8 6;
+  animation: adminDashMove 4s linear infinite;
+}
+
+.admin-flight-path-2 {
+  stroke-dasharray: 8 6;
+  animation: adminDashMove 5s linear infinite;
 }
 
 
@@ -64,12 +211,75 @@
   flex-direction: column;
   gap: 0;
   padding: 0;
-  background: var(--page-bg);
+  background: transparent;
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
+
+/* ══════════════════════════════════════════
+   GLOBAL TRANSPARENT PAGE BACKGROUNDS
+   — Let the fixed world-landmarks skyline
+     show through all admin pages
+* ══════════════════════════════════════════ */
+
+/* All direct page wrapper divs inside main-area with smooth fade-in page transition */
+@keyframes adminPageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.main-area>div {
+  animation: adminPageFadeIn 0.45s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+
+.main-area>div,
+.hbl-page,
+.hsh-page,
+.hcnl-page,
+.hcl-page,
+.hml-page,
+.hpd-page,
+.dash-page,
+.admin-b2c-page,
+[class$="-page"],
+[class*="-page "] {
+  background: transparent !important;
+}
+
+/* White frosted glass on all cards and panels — so they pop against the skyline */
+.metric-card-premium,
+.dashboard-card-shell,
+.admin-table-shell,
+.admin-ops-filters,
+.hbl-table-wrap,
+.hbl-stat-card,
+.hsh-top-cities,
+.hcnl-table-wrap,
+.hcnl-stat-card,
+.hml-table-wrap,
+.hpd-card,
+.admin-placeholder,
+.login-box,
+.pin-box {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+}
+
+
 
 .admin-placeholder {
   border: 1px solid var(--border);
@@ -353,6 +563,41 @@
   box-sizing: border-box;
 }
 
+.admin-b2c-hotel-page {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  --primary: #A51C49 !important;
+  --primary-strong: #851237 !important;
+  padding-top: 2px !important;
+  gap: 4px !important;
+}
+
+.admin-b2c-hotel-page header {
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.admin-b2c-hotel-page header h1, 
+.admin-b2c-hotel-page header h2, 
+.admin-b2c-hotel-page header h3 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.admin-b2c-hotel-page .admin-markup-coupon-header,
+.admin-b2c-hotel-page .admin-b2c-header {
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+}
+
+.admin-b2c-hotel-page .admin-markup-coupon-actions,
+.admin-b2c-hotel-page .admin-actions-row {
+  justify-content: flex-end;
+  gap: 8px !important;
+}
+
 .admin-b2c-header h1 {
   margin: 0;
   font-size: 22px;
@@ -473,7 +718,7 @@
 }
 
 .admin-table-head {
-  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary));
+  background: #1e293b;
   padding: 8px;
 }
 
@@ -590,7 +835,7 @@
 .admin-markup-coupon-table-scroll::-webkit-scrollbar-thumb,
 .admin-markup-used-table-scroll::-webkit-scrollbar-thumb,
 .flight-markup-table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(30, 117, 255, 0.4) !important;
+  background: rgba(239, 68, 68, 0.4) !important;
   border-radius: 10px !important;
   transition: background 0.2s ease;
 }
@@ -599,7 +844,7 @@
 .admin-markup-coupon-table-scroll::-webkit-scrollbar-thumb:hover,
 .admin-markup-used-table-scroll::-webkit-scrollbar-thumb:hover,
 .flight-markup-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(30, 117, 255, 0.7) !important;
+  background: rgba(239, 68, 68, 0.7) !important;
 }
 
 .admin-table-shell::-webkit-scrollbar-track,
@@ -641,5 +886,92 @@
 .admin-shell.dark-theme .admin-actions-row button:hover {
   background: #334155 !important;
   border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* ── Smooth Top Loading Progress Bar ── */
+.admin-page-top-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(220, 30, 38, 0.08);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.admin-page-top-loader-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #be185d 0%, #ffaa00 50%, #be185d 100%);
+  animation: adminLoaderRun 0.45s ease-out forwards;
+}
+
+@keyframes adminLoaderRun {
+  0% {
+    width: 0;
+  }
+  60% {
+    width: 75%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+/* Globally remove all underlines below page title headings in admin portal */
+[class*="underline"],
+[class*="Underline"],
+.admin-flight-booking-title strong::after,
+.admin-bus-booking-title strong::after {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════
+   GLOBAL BRAND RED/CERISE TO RASPBERRY OVERRIDES
+   ══════════════════════════════════════ */
+body .admin-markup-table thead,
+body .menu-list-table thead,
+body .admin-markup-table-wrap thead,
+body table thead,
+body thead,
+.admin-markup-table thead {
+  background: #A51C49 !important;
+  background-color: #A51C49 !important;
+  background-image: none !important;
+}
+
+body .admin-markup-table th,
+body .menu-list-table th,
+body table th,
+body th,
+.admin-markup-table th {
+  background: #A51C49 !important;
+  background-color: #A51C49 !important;
+  color: #ffffff !important;
+}
+
+body .primary-btn,
+body .btn.add,
+body .btn.back,
+body .btn.filter,
+body .btn.export,
+body .submit-btn,
+body .menu-list-add-btn {
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+}
+
+body .primary-btn:hover,
+body .btn.add:hover,
+body .btn.back:hover,
+body .btn.filter:hover,
+body .btn.export:hover,
+body .submit-btn:hover,
+body .menu-list-add-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
   color: #ffffff !important;
 }

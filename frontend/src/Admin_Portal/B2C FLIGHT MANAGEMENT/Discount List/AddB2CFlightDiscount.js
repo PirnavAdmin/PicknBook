@@ -16,6 +16,7 @@ const DEFAULT_FORM = {
   startDate: '',
   endDate: '',
   travelClass: '',
+  isAutoApply: false,
 };
 
 function buildInitialForm(row) {
@@ -66,6 +67,7 @@ function buildInitialForm(row) {
     startDate,
     endDate,
     travelClass: travelClass,
+    isAutoApply: raw.isAutoApply === true || raw.isAutoApply === 1 || String(raw.isAutoApply).toLowerCase() === 'true',
   };
 }
 
@@ -183,7 +185,7 @@ function AddB2CFlightDiscount() {
             const promo = await getFlightPromotionById(editingRow.id);
             if (promo) {
               const isFlat = promo.discountType === 0 || promo.discountType === 'Flat' || promo.discountType === 'Fixed';
-              
+
               let travelClass = 'All';
               if (Array.isArray(promo.conditions)) {
                 const cond = promo.conditions.find(c => c.conditionType === 0 || c.conditionType === 'TravelClass');
@@ -223,6 +225,7 @@ function AddB2CFlightDiscount() {
                 startDate,
                 endDate,
                 travelClass: travelClass,
+                isAutoApply: promo.isAutoApply === true || promo.isAutoApply === 1 || String(promo.isAutoApply).toLowerCase() === 'true',
               });
               return;
             }
@@ -274,7 +277,7 @@ function AddB2CFlightDiscount() {
     setSubmitting(true);
     try {
       const type = formValues.discountType === 'Fixed' || formValues.discountType === 'Flat' ? 'Flat' : 'Percentage';
-      
+
       const conditions = [];
       if (formValues.travelClass && formValues.travelClass !== 'All') {
         conditions.push({
@@ -311,6 +314,7 @@ function AddB2CFlightDiscount() {
         startDate: startISO,
         endDate: endISO,
         isActive: formValues.status === 'Active',
+        isAutoApply: formValues.isAutoApply,
         conditions: conditions
       };
 
@@ -334,7 +338,7 @@ function AddB2CFlightDiscount() {
         }
       }
 
-      navigate('/admin/b2c-flight/discounts');
+      navigate('/admin/b2c-flight/discount-list');
     } catch (err) {
       console.warn("Failed to submit to server, using local storage fallback", err);
       try {
@@ -370,7 +374,7 @@ function AddB2CFlightDiscount() {
       } catch (storageErr) {
         console.error("Local storage fallback failed", storageErr);
       }
-      navigate('/admin/b2c-flight/discounts');
+      navigate('/admin/b2c-flight/discount-list');
     } finally {
       setSubmitting(false);
     }
@@ -415,17 +419,17 @@ function AddB2CFlightDiscount() {
         }
         /* Light Theme (White Mode) - Red star & button */
         .admin-shell.light-theme .admin-b2c-page .required-star {
-          color: #dc1e26 !important;
+          color: #A51C49 !important;
         }
         .admin-shell.light-theme .admin-b2c-page .primary-btn {
-          background: #dc1e26 !important;
-          border-color: #dc1e26 !important;
+          background: #A51C49 !important;
+          border-color: #A51C49 !important;
           color: #ffffff !important;
-          box-shadow: 0 4px 10px rgba(220, 30, 38, 0.2) !important;
+          box-shadow: 0 4px 10px rgba(194, 24, 91, 0.2) !important;
         }
         .admin-shell.light-theme .admin-b2c-page .primary-btn:hover {
-          background: #b5151b !important;
-          border-color: #b5151b !important;
+          background: #9c1048 !important;
+          border-color: #9c1048 !important;
         }
         /* Dark Theme (Black/Dark Mode) - Blue star & button */
         .admin-shell.dark-theme .admin-b2c-page .required-star {
@@ -514,10 +518,10 @@ function AddB2CFlightDiscount() {
       <section className="add-discount-card" style={{ background: 'var(--admin-surface)', borderColor: 'var(--admin-border)' }}>
         <header className="add-discount-header" style={{ borderColor: 'var(--admin-border)' }}>
           <div>
-            <p className="add-discount-title" style={{ color: 'var(--admin-text)' }}>{editingRow ? 'Edit B2C Flight Discount' : 'Add B2C Flight Discount'}</p>
+            <p className="add-discount-title" style={{ color: 'var(--admin-text)' }}>{editingRow ? <><span style={{ color: '#A51C49', fontWeight: 700 }}>Edit B2C Flight</span> Discount</> : <><span style={{ color: '#A51C49', fontWeight: 700 }}>Add B2C Flight</span> Discount</>}</p>
             <p className="add-discount-subtitle" style={{ color: 'var(--admin-muted)' }}>Configure flight promotions based on the table details.</p>
           </div>
-          <button type="button" className="ghost-btn" style={{ borderColor: 'var(--admin-primary)', color: 'var(--admin-primary)', background: 'transparent' }} onClick={() => navigate('/admin/b2c-flight/discounts')}>
+          <button type="button" className="ghost-btn" style={{ borderColor: 'var(--admin-primary)', color: 'var(--admin-primary)', background: 'transparent' }} onClick={() => navigate('/admin/b2c-flight/discount-list')}>
             B2C Flight Discount List
           </button>
         </header>
@@ -660,6 +664,45 @@ function AddB2CFlightDiscount() {
             />
           </label>
 
+          <div className="add-field" style={{ gridColumn: '1 / -1' }}>
+            <span style={{ color: 'var(--admin-text)' }}>Auto Apply</span>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: '4px'
+            }}>
+              <div
+                onClick={() => !submitting && setFormValues(prev => ({ ...prev, isAutoApply: !prev.isAutoApply }))}
+                style={{
+                  width: '48px',
+                  height: '26px',
+                  borderRadius: '13px',
+                  background: formValues.isAutoApply ? '#A51C49' : '#cbd5e1',
+                  position: 'relative',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.25s ease',
+                  flexShrink: 0
+                }}
+              >
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  position: 'absolute',
+                  top: '3px',
+                  left: formValues.isAutoApply ? '25px' : '3px',
+                  transition: 'left 0.25s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+              <span style={{ color: 'var(--admin-text)', fontSize: '14px', fontWeight: 500 }}>
+                {formValues.isAutoApply ? 'Yes — Discount will be applied automatically' : 'No — User must apply manually'}
+              </span>
+            </div>
+          </div>
+
           {error ? <p className="form-error">{error}</p> : null}
 
           <div className="form-actions" style={{ borderColor: 'var(--admin-border)' }}>
@@ -677,3 +720,4 @@ function AddB2CFlightDiscount() {
 }
 
 export default AddB2CFlightDiscount;
+

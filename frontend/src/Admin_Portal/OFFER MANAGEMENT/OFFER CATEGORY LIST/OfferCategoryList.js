@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Check, Filter, Pencil, Plus, Trash2, X } from "lucide-react";
 import "./OfferCategoryList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
+import AdminPagination from "../../../components/AdminPagination";
 
 const INITIAL_CATEGORIES = [
   {
@@ -53,6 +54,8 @@ export default function AdminOfferCategoryListPage({ onAddCategory }) {
   const [editForm, setEditForm] = useState(DEFAULT_EDIT_FORM);
   const [editError, setEditError] = useState("");
   const [deleteCategory, setDeleteCategory] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const filteredCategories = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
@@ -64,6 +67,17 @@ export default function AdminOfferCategoryListPage({ onAddCategory }) {
       return matchesQuery && matchesStatus;
     });
   }, [categories, filters]);
+
+  const paginatedCategories = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCategories.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCategories, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCategories.length / itemsPerPage));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredCategories.length]);
 
   const handleFilterChange = (field) => (event) => {
     setFilters((previous) => ({ ...previous, [field]: event.target.value }));
@@ -222,9 +236,9 @@ export default function AdminOfferCategoryListPage({ onAddCategory }) {
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((category, index) => (
+                paginatedCategories.map((category, index) => (
                   <tr key={category.id}>
-                    <td>{index + 1}</td>
+                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td>{category.name}</td>
                     <td>{category.entryDate}</td>
                     <td>{category.updatedDate}</td>
@@ -267,6 +281,16 @@ export default function AdminOfferCategoryListPage({ onAddCategory }) {
               )}
             </tbody>
           </table>
+          <div style={{ marginTop: "16px", padding: "0 24px 24px" }}>
+            <AdminPagination
+              currentPage={currentPage}
+              totalItems={filteredCategories.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemName="categories"
+            />
+          </div>
         </section>
       </section>
 

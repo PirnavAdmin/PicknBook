@@ -682,12 +682,12 @@ const formatSearchDate = (value) => {
     return "--";
   }
 
-  return parsed.toLocaleDateString("en-IN", {
+  return parsed.toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
     timeZone: "Asia/Kolkata",
-  });
+  }).replace(/\//g, "-");
 };
 
 const formatDepartDateParts = (value) => {
@@ -696,12 +696,13 @@ const formatDepartDateParts = (value) => {
     return { dayMonth: "--", year: "" };
   }
 
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const year = parsed.getFullYear();
+
   return {
-    dayMonth: parsed.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-    }),
-    year: parsed.toLocaleDateString("en-IN", { year: "numeric" }),
+    dayMonth: `${day}-${month}-${year}`,
+    year: "",
   };
 };
 
@@ -816,6 +817,7 @@ export default function AdminFlightSearchHistoryPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [activePage, setActivePage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const loadSearchHistory = useCallback(async (activeFilters) => {
     setIsLoading(true);
@@ -927,14 +929,15 @@ export default function AdminFlightSearchHistoryPage() {
     });
   }, [historyRows, filters, deletedRecordIds]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
   const safeActivePage = Math.min(activePage, totalPages);
-  const startIndex = (safeActivePage - 1) * PAGE_SIZE;
-  const pagedRows = filteredRows.slice(startIndex, startIndex + PAGE_SIZE);
+  const startIndex = (safeActivePage - 1) * itemsPerPage;
+  const pagedRows = filteredRows.slice(startIndex, startIndex + itemsPerPage);
 
   const applyFilters = () => {
     setFilters(draftFilters);
     setIsFiltersOpen(false);
+    setActivePage(1);
   };
 
   const clearFilters = () => {
@@ -942,6 +945,7 @@ export default function AdminFlightSearchHistoryPage() {
     setFilters(DEFAULT_FILTERS);
     setDeletedRecordIds([]);
     setIsFiltersOpen(false);
+    setActivePage(1);
   };
 
   const handleExport = () => {
@@ -989,7 +993,10 @@ export default function AdminFlightSearchHistoryPage() {
   return (
     <section className="admin-b2c-page admin-search-history-page admin-flight-search-history-page">
       <header className="admin-b2c-header admin-search-history-header">
-        <h1>B2C Flight Search List</h1>
+        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
+          <span style={{ color: "#be185d" }}>B2C Flight </span>
+          <span style={{ color: "black" }}>Search List</span>
+        </h1>
       </header>
 
       <div className="admin-toolbar-row admin-search-history-toolbar">
@@ -1178,13 +1185,16 @@ export default function AdminFlightSearchHistoryPage() {
           <div className="admin-search-history-empty">Result Not Found.</div>
         )}
 
-        <AdminPagination
-          currentPage={safeActivePage}
-          totalItems={filteredRows.length}
-          itemsPerPage={PAGE_SIZE}
-          onPageChange={setActivePage}
-          itemName="flight search history records"
-        />
+        {filteredRows.length > 0 && (
+          <AdminPagination
+            currentPage={safeActivePage}
+            totalItems={filteredRows.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setActivePage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="flight search history records"
+          />
+        )}
       </section>
 
       {selectedRecord ? (
@@ -1196,10 +1206,7 @@ export default function AdminFlightSearchHistoryPage() {
             aria-label="Flight search details"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="admin-view-header" style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "16px" }}>
-              <button type="button" onClick={() => setSelectedRecord(null)} style={{ order: -1 }}>
-                Close
-              </button>
+            <header className="admin-view-header">
               <div className="admin-view-header-main">
                 <h2>Flight Search Detail</h2>
                 <p className="admin-view-header-subtitle">
@@ -1207,6 +1214,9 @@ export default function AdminFlightSearchHistoryPage() {
                   {normalizeText(selectedRecord.customerId, "0")}
                 </p>
               </div>
+              <button type="button" onClick={() => setSelectedRecord(null)}>
+                Close
+              </button>
             </header>
 
             <section className="admin-view-grid">

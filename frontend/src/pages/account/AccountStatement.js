@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../STYLES/AccountStatement.css";
+import { getLedgerStatement } from "../../services/b2bService";
 
 const MONTH_MAP = {
   Jan: 0,
@@ -111,11 +112,58 @@ function formatCurrency(value) {
   return `Rs ${Math.abs(value).toLocaleString("en-IN")}`;
 }
 
+const getB2BTransactions = () => {
+  const saved = localStorage.getItem("b2b_ledger_transactions");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return ALL_TRANSACTIONS;
+    }
+  }
+  localStorage.setItem("b2b_ledger_transactions", JSON.stringify(ALL_TRANSACTIONS));
+  return ALL_TRANSACTIONS;
+};
+
 const AccountStatement = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterType, setFilterType] = useState("Mini Statement");
   const [filterData, setFilterData] = useState({ year: "2026", month: "Feb" });
-  const [transactions, setTransactions] = useState(ALL_TRANSACTIONS);
+  const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const loadLedger = async () => {
+    setIsLoading(true);
+    setErrorMsg("");
+    try {
+      const data = await getLedgerStatement();
+      if (Array.isArray(data)) {
+        // Sort newest first
+        const sorted = data.sort((a, b) => {
+          const dateA = new Date(a.createdAtUtc || a.createdAt || a.date || 0).getTime();
+          const dateB = new Date(b.createdAtUtc || b.createdAt || b.date || 0).getTime();
+          if (dateA !== dateB) return dateB - dateA;
+          return (b.id || 0) - (a.id || 0);
+        });
+        setAllTransactions(sorted);
+        setTransactions(sorted);
+      } else {
+        setAllTransactions([]);
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error("Error loading live B2B ledger statement:", err);
+      setErrorMsg("Failed to load live ledger data from the backend.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLedger();
+  }, []);
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
@@ -123,18 +171,18 @@ const AccountStatement = () => {
   };
 
   const handleSearch = () => {
-    let filtered = ALL_TRANSACTIONS;
+    let filtered = [...allTransactions];
 
     if (filterType === "Mini Statement") {
       filtered = filtered.slice(0, 5);
     } else if (filterType === "Yearly") {
       const year = Number.parseInt(filterData.year, 10);
-      filtered = filtered.filter((item) => new Date(item.date).getFullYear() === year);
+      filtered = filtered.filter((item) => new Date(item.createdAtUtc || item.createdAt || item.date).getFullYear() === year);
     } else if (filterType === "Monthly") {
       const year = Number.parseInt(filterData.year, 10);
       const month = MONTH_MAP[filterData.month];
       filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
+        const itemDate = new Date(item.createdAtUtc || item.createdAt || item.date);
         return itemDate.getFullYear() === year && itemDate.getMonth() === month;
       });
     }
@@ -143,7 +191,7 @@ const AccountStatement = () => {
   };
 
   const handleClearFilter = () => {
-    setTransactions(ALL_TRANSACTIONS);
+    setTransactions(allTransactions);
     setFilterData({ year: "2026", month: "Feb" });
     setFilterType("Mini Statement");
     setIsFilterOpen(false);
@@ -232,26 +280,42 @@ const AccountStatement = () => {
               </tr>
             </thead>
             <tbody>
-              {transactions.length > 0 ? (
-                transactions.map((transaction, index) => (
-                  <tr key={transaction.id}>
-                    <td className="statement-serial">{index + 1}</td>
-                    <td>
-                      <strong>{transaction.detail}</strong>
-                      <small>{transaction.bookingRef}</small>
-                    </td>
-                    <td className={transaction.debit > 0 ? "statement-debit" : "statement-muted"}>
-                      {transaction.debit > 0 ? formatCurrency(transaction.debit) : "-"}
-                    </td>
-                    <td className={transaction.credit > 0 ? "statement-credit" : "statement-muted"}>
-                      {transaction.credit > 0 ? formatCurrency(transaction.credit) : "-"}
-                    </td>
-                    <td className={transaction.balance < 0 ? "statement-debit" : "statement-credit"}>
-                      {formatCurrency(transaction.balance)}
-                    </td>
-                    <td>{new Date(transaction.date).toLocaleDateString("en-IN")}</td>
-                  </tr>
-                ))
+              {isLoading ? (
+                <tr>
+                  <td colSpan="6" className="statement-empty">
+                    Loading ledger data...
+                  </td>
+                </tr>
+              ) : errorMsg ? (
+                <tr>
+                  <td colSpan="6" className="statement-empty statement-debit">
+                    {errorMsg}
+                  </td>
+                </tr>
+              ) : transactions.length > 0 ? (
+                transactions.map((transaction, index) => {
+                  const displayBalance = transaction.runningBalance !== undefined ? transaction.runningBalance : transaction.balance;
+                  const displayDate = transaction.createdAtUtc || transaction.createdAt || transaction.date;
+                  return (
+                    <tr key={transaction.id || index}>
+                      <td className="statement-serial">{index + 1}</td>
+                      <td>
+                        <strong>{transaction.detail || transaction.description || "Booking"}</strong>
+                        <small>{transaction.bookingRef || transaction.reference}</small>
+                      </td>
+                      <td className={transaction.debit > 0 ? "statement-debit" : "statement-muted"}>
+                        {transaction.debit > 0 ? formatCurrency(transaction.debit) : "-"}
+                      </td>
+                      <td className={transaction.credit > 0 ? "statement-credit" : "statement-muted"}>
+                        {transaction.credit > 0 ? formatCurrency(transaction.credit) : "-"}
+                      </td>
+                      <td className={displayBalance < 0 ? "statement-debit" : "statement-credit"}>
+                        {formatCurrency(displayBalance)}
+                      </td>
+                      <td>{displayDate ? new Date(displayDate).toLocaleDateString("en-IN") : "-"}</td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="6" className="statement-empty">

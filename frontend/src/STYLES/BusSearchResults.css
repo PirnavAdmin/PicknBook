@@ -2179,6 +2179,71 @@
   background: var(--bus-primary);
 }
 
+/* Full-screen search loader polish */
+.bus-loading-screen {
+  padding: clamp(18px, 3vw, 44px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 16%, rgba(220, 30, 38, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 12%, rgba(255, 196, 95, 0.24), transparent 26%),
+    radial-gradient(circle at 48% 102%, rgba(184, 20, 27, 0.16), transparent 34%),
+    linear-gradient(135deg, #fff4ef 0%, #fffdf9 43%, #eef7ff 100%) !important;
+}
+
+.bus-loading-screen::before,
+.bus-loading-screen::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bus-loading-screen::before {
+  width: min(1180px, 92vw);
+  height: min(1180px, 92vw);
+  left: 50%;
+  bottom: -58%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle, rgba(220, 30, 38, 0.09) 0 2px, transparent 2px 34px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.82), transparent 70%);
+  opacity: 0.58;
+}
+
+.bus-loading-screen::after {
+  left: -8vw;
+  right: -8vw;
+  bottom: -8vh;
+  height: 40vh;
+  background: linear-gradient(145deg, rgba(255, 224, 208, 0.82), rgba(232, 243, 255, 0.7));
+  clip-path: polygon(0 46%, 9% 28%, 20% 52%, 31% 18%, 43% 48%, 54% 24%, 67% 54%, 78% 26%, 90% 50%, 100% 34%, 100% 100%, 0 100%);
+  opacity: 0.8;
+}
+
+.bus-loading-screen .bus-map-animation {
+  position: relative;
+  z-index: 1;
+  width: min(94vw, 1260px);
+  padding: 0;
+}
+
+.bus-loading-screen .bus-map-svg {
+  height: clamp(430px, 74vh, 760px);
+  border-radius: 0;
+  filter: drop-shadow(0 30px 44px rgba(184, 20, 27, 0.12));
+}
+
+@media (max-width: 760px) {
+  .bus-loading-screen .bus-map-animation {
+    width: 112vw;
+  }
+
+  .bus-loading-screen .bus-map-svg {
+    height: clamp(360px, 68vh, 620px);
+  }
+}
+
 /* Themed compact filter rail */
 .bus-results-layout {
   grid-template-columns: 306px 1fr;
@@ -2764,4 +2829,3 @@
 .bus-arrive-cell span {
   color: var(--theme-primary, #dc1e26) !important;
 }
-

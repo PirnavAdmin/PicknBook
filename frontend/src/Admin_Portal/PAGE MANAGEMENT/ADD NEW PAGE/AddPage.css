@@ -3,123 +3,129 @@
 }
 
 .add-container {
-  padding: 8px 24px;
-  background: #f4f6f9;
-  min-height: 100vh;
+  padding: 15px 24px 40px 24px;
+  background: transparent !important;
   font-family: "Segoe UI", sans-serif;
 }
 
-.top-bar {
+/* ── Header inside container ── */
+.add-page-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  padding: 10px 0 20px 0;
+  border-bottom: 1.5px solid #f1f5f9;
+  margin-bottom: 20px;
 }
 
-.top-bar h2 {
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
+.add-page-heading {
+  font-size: 1.5rem !important;
+  font-weight: 500 !important;
+  color: #A51C49 !important;
+  margin: 0 !important;
 }
 
-.list-btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 8px 14px;
+.add-page-list-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 22px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #A51C49 !important;
+  border: 2px solid #A51C49 !important;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
-.list-btn:hover {
-  background: var(--primary-strong);
+.add-page-list-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.25);
 }
 
 .section {
-  background: white;
+  background: white !important;
   margin-top: 12px;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  margin-bottom: 30px !important;
+  padding: 24px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(22, 65, 128, 0.04), 0 1px 3px rgba(22, 65, 128, 0.02) !important;
+  width: 100%;
 }
 
+/* ── Full Solid Cresip Pink Background for Ribbons ── */
 .section h3 {
-  background: rgba(74, 15, 26, 0.05);
-  border-bottom: 2.5px solid var(--primary);
-  color: #ffffff;
-  padding: 0;
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  padding: 8px 16px !important;
   margin-bottom: 15px;
   font-size: 14px;
   font-weight: 700;
   display: flex;
-  overflow: hidden;
-  border-radius: 6px 6px 0 0;
-  position: relative;
+  align-items: center;
+  border-radius: 6px !important;
+  border-bottom: none !important;
 }
 
-.section h3::before {
-  content: "";
-  position: absolute;
-  right: 35px;
-  top: 0;
-  bottom: 0;
-  width: 45px;
-  background: rgba(74, 15, 26, 0.12);
-  transform: skewX(-35deg);
-  pointer-events: none;
-}
-
+.section h3::before,
 .section h3::after {
-  content: "";
-  position: absolute;
-  right: -15px;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  background: rgba(74, 15, 26, 0.2);
-  transform: skewX(-35deg);
-  pointer-events: none;
+  display: none !important;
 }
 
 .section h3 span.title-tab {
-  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
-  padding: 8px 28px 8px 16px;
-  display: inline-block;
-  clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+  background: transparent !important;
+  padding: 0 !important;
+  clip-path: none !important;
   color: #ffffff !important;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-bottom: 10px;
-  padding: 10px;
+  gap: 10px 16px;
+  margin-bottom: 4px;
+  padding: 4px 10px;
 }
 
 input,
 select,
 textarea {
   padding: 8px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid #cbd5e1 !important;
   border-radius: 6px;
   width: 100%;
-  background: var(--panel);
-  color: var(--text-primary);
+  background: #ffffff !important;
+  color: #1e293b !important;
   outline: none;
   transition: all 0.2s ease;
+}
+
+input[type="text"],
+select {
+  height: 38px;
+}
+
+/* Equal styling for file inputs */
+input[type="file"] {
+  height: 38px;
+  padding: 5px 12px;
+  line-height: normal;
+  background: #ffffff !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(74, 15, 26, 0.15) !important;
+  border-color: #A51C49 !important;
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.15) !important;
 }
 
 textarea {
@@ -132,46 +138,56 @@ textarea {
   resize: vertical;
 }
 
+/* ── Submit Area (spaced footer with border-top) ── */
 .submit-area {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 15px;
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-top: 14px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid #e2e8f0 !important;
 }
 
-.submit-btn {
-  background: var(--primary);
-  color: white;
-  border: 1.5px solid var(--primary);
-  padding: 10px 30px;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* High-specificity Submit Button color override */
+body .add-container .submit-area .submit-btn,
+body .submit-btn,
+button.submit-btn {
+  background: #A51C49 !important;
+  color: white !important;
+  border: 1.5px solid #A51C49 !important;
+  padding: 10px 30px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 
-.submit-btn:hover {
-  background: var(--primary-strong);
-  border-color: var(--primary-strong);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 15, 26, 0.2);
+body .add-container .submit-area .submit-btn:hover,
+body .submit-btn:hover,
+button.submit-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2) !important;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px !important;
 }
 
+/* Fields label color black */
 .form-group label {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-top: 4px;
+  font-weight: 700;
+  color: #000000 !important;
+  margin-top: 0px !important;
+  text-transform: uppercase;
 }
 
 .current-file {
   font-size: 11px;
-  color: var(--primary);
+  color: #A51C49 !important;
   font-weight: normal;
   word-break: break-all;
 }

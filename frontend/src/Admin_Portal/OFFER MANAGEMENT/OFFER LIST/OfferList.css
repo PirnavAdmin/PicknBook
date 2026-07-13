@@ -16,11 +16,12 @@
   cursor: pointer;
   background: #ffffff;
   transition: border-color 0.2s, box-shadow 0.2s;
+  margin: 0 auto;
 }
 
 .offer-list-thumbnail-box:hover {
-  border-color: var(--primary, #a73434);
-  box-shadow: 0 4px 10px rgba(167, 52, 52, 0.15);
+  border-color: var(--primary, #A51C49);
+  box-shadow: 0 4px 10px rgba(165, 28, 73, 0.15);
 }
 
 .offer-list-thumbnail {
@@ -61,7 +62,7 @@
 }
 
 .offer-edit-file-uploader input[type="file"]::file-selector-button {
-  background: var(--primary, #a73434);
+  background: var(--primary, #A51C49);
   color: #ffffff;
   border: 0;
   padding: 6px 12px;
@@ -73,7 +74,7 @@
 }
 
 .offer-edit-file-uploader input[type="file"]::file-selector-button:hover {
-  background: #8b2525;
+  background: #851237;
 }
 
 .offer-edit-current-image {
@@ -133,4 +134,34 @@
 .condition-edit-panel {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
+
+/* Vertical align table data in the middle */
+.admin-markup-table tbody td,
+.admin-markup-table thead th {
+  vertical-align: middle !important;
+}
+
+/* Remove space above heading */
+.flight-markup-panel {
+  padding-top: 10px !important;
+  margin-top: 10px !important;
+}
+
+.flight-markup-toolbar {
+  margin-top: 0 !important;
+  margin-bottom: 4px !important;
+  padding-bottom: 0 !important;
+}
+
+.admin-markup-table-wrap {
+  margin-top: 0px !important;
+}
+
+.offer-list-title-heading {
+  font-weight: 500 !important;
+  font-size: 1.6rem !important;
+}
+
+
+
 

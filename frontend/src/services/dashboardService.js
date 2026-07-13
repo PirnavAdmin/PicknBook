@@ -155,6 +155,7 @@ function resolveAuthToken() {
 
   return (
     window.localStorage.getItem("token") ||
+    window.localStorage.getItem("b2b_token") ||
     window.localStorage.getItem("authToken") ||
     window.localStorage.getItem("accessToken") ||
     ""

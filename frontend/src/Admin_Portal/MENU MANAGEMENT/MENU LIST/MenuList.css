@@ -5,15 +5,76 @@
 
 .menu-management-panel {
   padding: 0 24px;
-  margin-top: 24px;
+  margin-top: 10px;
   margin-bottom: 24px;
   box-sizing: border-box;
 }
 
-.admin-markup-table-wrap {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--panel);
-  overflow: hidden;
+/* ── White container for table ── */
+.menu-list-container {
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  border: 1px solid #e2e8f0;
+  margin-top: 0px !important;
+}
+
+/* ── Header outside container ── */
+.menu-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 8px 0;
+}
+
+.menu-list-heading {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin: 0 !important;
+}
+
+.menu-list-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 22px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #A51C49 !important;
+  border: 2px solid #A51C49 !important;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.menu-list-add-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.25);
+}
+
+/* ── Table header (cerise pink - matching image-2) ── */
+body .menu-management-panel .admin-markup-table-wrap thead,
+body .menu-management-panel .admin-markup-table thead,
+body .menu-management-panel .menu-list-table thead,
+body .admin-markup-table thead,
+.menu-list-table thead,
+.admin-markup-table thead {
+  background: #A51C49 !important;
+  background-color: #A51C49 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+
+/* ── Hide old toolbar if present ── */
+body .menu-management-panel .flight-markup-toolbar {
+  display: none !important;
+}
+
+body .menu-management-panel .admin-markup-table-wrap {
+  margin-top: 0px !important;
 }

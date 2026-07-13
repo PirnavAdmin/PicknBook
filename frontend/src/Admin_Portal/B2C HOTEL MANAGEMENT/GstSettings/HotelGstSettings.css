@@ -1,1 +1,46 @@
 @import "../../B2C BUS MANAGEMENT/GstSettings/BusGstSettings.css";
+
+/* Hover effects for buttons */
+.markup-primary-btn,
+.markup-export-btn,
+.admin-markup-coupon-btn,
+.dropdown-item {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.markup-primary-btn:hover {
+  background-color: #9d124d !important; /* darker pink */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2);
+}
+
+.markup-export-btn:hover {
+  background-color: #1d4ed8 !important; /* darker blue */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.admin-markup-coupon-btn.generate:hover {
+  background-color: #9d124d !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2);
+}
+
+.admin-markup-coupon-btn.clear:hover {
+  background-color: #e2e8f0 !important;
+  transform: translateY(-1px);
+}
+
+.dropdown-item:hover {
+  background-color: var(--surface-soft) !important;
+}
+
+/* Make sure active/inactive toggle buttons on the form align correctly and transition smoothly */
+.admin-markup-coupon-form button {
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-markup-coupon-form button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

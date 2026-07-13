@@ -1,11 +1,5 @@
-import React, { useState } from "react";
-import {
-  CreditCard,
-  Landmark,
-  Loader2,
-  Smartphone,
-  Wallet,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   bookBus,
@@ -14,21 +8,40 @@ import {
 } from "../../services/busBookingService";
 import { sendBookingNotifications } from "../../services/bookingNotificationsService";
 import "../../STYLES/BusBookingFlow.css";
+import BookingTimer from "./BookingTimer";
 import { saveBookingPassengersToTravelers } from "../../utils/travelerStorage";
 import {
   clearBusBookingFlowState,
   readBusBookingFlowState,
 } from "./busBookingFlowStore";
+import { getAccountProfile } from "../../services/accountProfileService";
+import { getLedgerStatement } from "../../services/b2bService";
+import {
+  UpiIcon,
+  CardIcon,
+  NetBankingIcon,
+  WalletIcon,
+  PaytmIcon,
+  PhonePeIcon,
+  AmazonPayIcon,
+  CustomWalletSelect,
+} from "../../components/PaymentIcons";
 
 function formatCurrency(amount) {
   return `₹ ${new Intl.NumberFormat("en-IN").format(Number(amount) || 0)}`;
 }
 
 const PAYMENT_METHODS = [
-  { id: "upi", label: "UPI", icon: Smartphone },
-  { id: "card", label: "Credit / Debit Card", icon: CreditCard },
-  { id: "netbanking", label: "Net Banking", icon: Landmark },
-  { id: "wallet", label: "Wallet", icon: Wallet },
+  { id: "upi", label: "UPI", icon: UpiIcon },
+  { id: "card", label: "Credit / Debit Card", icon: CardIcon },
+  { id: "netbanking", label: "Net Banking", icon: NetBankingIcon },
+  { id: "wallet", label: "Wallet", icon: WalletIcon },
+];
+
+const WALLET_OPTIONS = [
+  { id: "paytm", label: "Paytm", icon: PaytmIcon },
+  { id: "amazonpay", label: "Amazon Pay", icon: AmazonPayIcon },
+  { id: "phonepe", label: "PhonePe Wallet", icon: PhonePeIcon },
 ];
 
 function buildBookingPayload(flowState) {
@@ -133,6 +146,10 @@ function buildBookingPayload(flowState) {
 }
 
 function isPaymentInputValid(method, formValues) {
+  if (method === "agent_wallet") {
+    return true;
+  }
+
   if (method === "upi") {
     return /\S+@\S+/.test(formValues.upiId || "");
   }
@@ -157,7 +174,14 @@ function isPaymentInputValid(method, formValues) {
   return false;
 }
 
-function shouldUseDemoFallback(error) {
+function isAuthError(error) {
+  const status = Number(error?.status);
+  if (status === 401 || status === 403) return true;
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("unauthorized") || message.includes("please login") || message.includes("forbidden");
+}
+
+function isNetworkError(error) {
   const message = String(error?.message || "").toLowerCase();
   return (
     message.includes("failed to fetch") ||
@@ -206,19 +230,20 @@ function buildBusTicketPayload(
     duration: bus.duration || "--",
     bookedAt: new Date().toISOString(),
     passengers: passengers.map((passenger) => ({
-      name: `${passenger.title || ""} ${passenger.firstName || ""} ${
-        passenger.lastName || ""
-      }`
+      name: `${passenger.title || ""} ${passenger.firstName || ""} ${passenger.lastName || ""}`
         .replace(/\s+/g, " ")
         .trim(),
       passengerType: "Adult",
-      seat: passenger.seatLabel || "",
+      seat: passenger.seatLabel || passenger.seat || "",
+      gender: passenger.gender || "",
+      age: passenger.age || passenger.Age || "",
     })),
     seats: selectedSeats.map((seat) => seat.label || seat),
     contact: flowState.contact || {},
     paymentMethod:
-      PAYMENT_METHODS.find((method) => method.id === paymentMethod)?.label ||
-      paymentMethod,
+      paymentMethod === "agent_wallet"
+        ? "Agent Wallet"
+        : (PAYMENT_METHODS.find((method) => method.id === paymentMethod)?.label || paymentMethod),
     fare: {
       subtotalBeforeCoupon: Number(flowState.pricingPreview?.subtotalBeforeCoupon || fareSummary.subtotalBeforeCoupon || fareSummary.baseFare || 0),
       autoDiscountAmount: Number(flowState.pricingPreview?.autoDiscountAmount || 0),
@@ -283,7 +308,46 @@ export default function BusPaymentPage() {
     flowState.payableAmount || fareSummary.grandTotal || fareSummary.totalFare || 0
   );
 
-  const [selectedMethod, setSelectedMethod] = useState("upi");
+  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  const [agentProfile, setAgentProfile] = useState(null);
+
+  useEffect(() => {
+    if (isAgent) {
+      // 1. Initial cached profile load (if available)
+      getAccountProfile()
+        .then((profile) => {
+          if (profile) setAgentProfile(profile);
+        })
+        .catch((err) => console.error("Error loading agent cached profile", err));
+
+      // 2. Fetch live wallet balance from B2B Ledger statement
+      getLedgerStatement()
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            const sorted = [...data].sort((a, b) => {
+              const dateA = new Date(a.createdAtUtc || a.createdAt || a.date || 0).getTime();
+              const dateB = new Date(b.createdAtUtc || b.createdAt || b.date || 0).getTime();
+              if (dateA !== dateB) return dateB - dateA;
+              return (b.id || 0) - (a.id || 0);
+            });
+            const latest = sorted[0];
+            if (latest && latest.runningBalance !== undefined) {
+              setAgentProfile((prev) => ({
+                ...(prev || {}),
+                walletBalance: Number(latest.runningBalance)
+              }));
+            }
+          }
+        })
+        .catch((err) => console.error("Error loading live agent ledger balance", err));
+    }
+  }, [isAgent]);
+
+  const availableMethods = isAgent
+    ? [{ id: "agent_wallet", label: "Agent Wallet", icon: WalletIcon }, ...PAYMENT_METHODS]
+    : PAYMENT_METHODS;
+
+  const [selectedMethod, setSelectedMethod] = useState(isAgent ? "agent_wallet" : "upi");
   const [formValues, setFormValues] = useState({
     upiId: "",
     cardNumber: "",
@@ -323,6 +387,18 @@ export default function BusPaymentPage() {
       return;
     }
 
+    if (selectedMethod === "agent_wallet") {
+      const balance = Number(agentProfile?.walletBalance ?? 0);
+      const markup = Number(flowState.fareSummary?.markup || 0);
+      const tierDiscount = Number(flowState.fareSummary?.tierDiscount || 0);
+      const volumeDiscount = Number(flowState.fareSummary?.volumeDiscount || 0);
+      const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
+      if (balance < wholesalePrice) {
+        setPaymentError(`Insufficient wallet balance. You need ₹ ${wholesalePrice.toFixed(2)} (wholesale price) but only have ₹ ${balance.toFixed(2)}.`);
+        return;
+      }
+    }
+
     setPaymentError("");
     setIsSubmitting(true);
 
@@ -350,6 +426,21 @@ export default function BusPaymentPage() {
       const bookingReference =
         response?.bookingReference || `PNB-${Date.now().toString().slice(-8)}`;
 
+      if (isAgent && agentProfile) {
+        const markup = Number(flowState.fareSummary?.markup || 0);
+        const tierDiscount = Number(flowState.fareSummary?.tierDiscount || 0);
+        const volumeDiscount = Number(flowState.fareSummary?.volumeDiscount || 0);
+        const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
+        const updatedBalance = Number(agentProfile.walletBalance) - Number(wholesalePrice);
+        const updatedProfile = { ...agentProfile, walletBalance: updatedBalance };
+
+        if (localStorage.getItem("b2b_user")) {
+          localStorage.setItem("b2b_user", JSON.stringify(updatedProfile));
+        }
+        localStorage.setItem("user", JSON.stringify(updatedProfile));
+
+      }
+
       const ticketPayload = buildBusTicketPayload(
         flowState,
         bookingReference,
@@ -357,7 +448,7 @@ export default function BusPaymentPage() {
         "live"
       );
 
-      const notificationStatus = await sendBookingNotifications({
+      await sendBookingNotifications({
         bookingReference,
         ticketType: "bus",
         providerName: ticketPayload.providerName,
@@ -367,18 +458,21 @@ export default function BusPaymentPage() {
         contact: ticketPayload.contact,
       });
 
-      ticketPayload.notifications = notificationStatus;
-
       saveBookingPassengersToTravelers(flowState.passengers, flowState.contact);
 
+      sessionStorage.removeItem("booking_session_expiry");
       clearBusBookingFlowState();
       navigateToBusPrintTicket(navigate, bookingReference, flowState.contact);
     } catch (error) {
-      const fallbackMessage = shouldUseDemoFallback(error)
-        ? "Booking could not be saved to the server. Please check your connection or backend API and try again."
-        : "Unable to process payment right now.";
-
-      setPaymentError(error.message || fallbackMessage);
+      let displayMessage;
+      if (isAuthError(error)) {
+        displayMessage = "You must be logged in to complete a booking. Please sign in and try again.";
+      } else if (isNetworkError(error)) {
+        displayMessage = "Unable to reach the booking server. Please check your internet connection and try again.";
+      } else {
+        displayMessage = error.message || "Unable to process payment right now. Please try again.";
+      }
+      setPaymentError(displayMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -386,6 +480,7 @@ export default function BusPaymentPage() {
 
   return (
     <main className="bus-flow-page">
+      <BookingTimer />
       <div className="bus-flow-shell">
         <section className="flow-payment-layout">
           <div className="flow-payment-main">
@@ -394,14 +489,14 @@ export default function BusPaymentPage() {
 
               <div className="flow-card-body">
                 <div className="payment-method-grid">
-                  {PAYMENT_METHODS.map((method) => (
+                  {availableMethods.map((method) => (
                     <button
                       type="button"
                       key={method.id}
                       className={selectedMethod === method.id ? "active" : ""}
                       onClick={() => setSelectedMethod(method.id)}
                     >
-                      <method.icon size={16} />
+                      <method.icon size={20} active={selectedMethod === method.id} />
                       <span>{method.label}</span>
                     </button>
                   ))}
@@ -409,10 +504,67 @@ export default function BusPaymentPage() {
               </div>
             </article>
 
-            <article className="flow-card">
-              <header>Enter Payment Details</header>
+            <article className="flow-card bus-payment-details-card" style={{ overflow: "visible" }}>
+              <header style={{ borderTopLeftRadius: "8px", borderTopRightRadius: "8px" }}>Enter Payment Details</header>
 
-              <div className="flow-card-body payment-form-grid">
+              <div className="flow-card-body payment-form-grid bus-payment-form-grid" style={{ overflow: "visible" }}>
+                {selectedMethod === "agent_wallet" && (() => {
+                  const markup = Number(flowState.fareSummary?.markup || 0);
+                  const tierDiscount = Number(flowState.fareSummary?.tierDiscount || 0);
+                  const volumeDiscount = Number(flowState.fareSummary?.volumeDiscount || 0);
+                  const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
+                  const balance = Number(agentProfile?.walletBalance ?? 0);
+                  const hasSufficient = balance >= wholesalePrice;
+                  return (
+                    <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, background: "rgba(255,255,255,0.02)", padding: 15, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                          <span style={{ color: "var(--b2b-text-secondary)" }}>Customer Price (Collected):</span>
+                          <span style={{ fontWeight: 600 }}>₹ {payableAmount.toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "var(--b2b-success)" }}>
+                          <span>Agent Markup (Your Profit):</span>
+                          <span>+ ₹ {markup.toFixed(2)}</span>
+                        </div>
+                        {tierDiscount > 0 && (
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "var(--b2b-success)" }}>
+                            <span>Tier Discount (Commission):</span>
+                            <span>- ₹ {tierDiscount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {volumeDiscount > 0 && (
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "var(--b2b-success)" }}>
+                            <span>Bulk Volume Discount:</span>
+                            <span>- ₹ {volumeDiscount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                          <span style={{ fontWeight: 500 }}>Wholesale Price (To Deduct):</span>
+                          <strong style={{ color: "var(--b2b-accent)" }}>₹ {wholesalePrice.toFixed(2)}</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.03)", padding: 15, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <span style={{ fontWeight: 500 }}>Current Wallet Balance:</span>
+                        <strong style={{ fontSize: "1.2rem", color: hasSufficient ? "#10b981" : "#ef4444" }}>
+                          ₹ {new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(balance)}
+                        </strong>
+                      </div>
+
+                      {!hasSufficient ? (
+                        <div style={{ color: "#ef4444", fontSize: "0.85rem", background: "rgba(239, 68, 68, 0.05)", padding: 12, borderRadius: 6, border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                          <strong>Insufficient Balance:</strong> You need an additional ₹ {(wholesalePrice - balance).toFixed(2)} to complete this booking. Please top up your wallet in the B2B portal.
+                        </div>
+                      ) : (
+                        <div style={{ color: "#10b981", fontSize: "0.85rem", background: "rgba(16, 185, 129, 0.05)", padding: 12, borderRadius: 6, border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                          ✔ Balance is sufficient. Click <strong>Pay Now</strong> to proceed (only ₹ {wholesalePrice.toFixed(2)} will be debited).
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {selectedMethod === "upi" && (
                   <label>
                     <span>UPI ID</span>
@@ -518,20 +670,16 @@ export default function BusPaymentPage() {
                 {selectedMethod === "wallet" && (
                   <label>
                     <span>Select Wallet</span>
-                    <select
+                    <CustomWalletSelect
                       value={formValues.walletProvider}
-                      onChange={(event) =>
+                      options={WALLET_OPTIONS}
+                      onChange={(val) =>
                         setFormValues((previous) => ({
                           ...previous,
-                          walletProvider: event.target.value,
+                          walletProvider: val,
                         }))
                       }
-                    >
-                      <option value="">Choose wallet</option>
-                      <option value="paytm">Paytm</option>
-                      <option value="amazonpay">Amazon Pay</option>
-                      <option value="phonepe">PhonePe Wallet</option>
-                    </select>
+                    />
                   </label>
                 )}
               </div>

@@ -214,8 +214,8 @@ function getAdminProfile() {
 const SEARCHABLE_PAGES = [
     { label: 'Dashboard', category: 'General', path: '/admin' },
     { label: 'Bus Bookings List', category: 'Bus Management', path: '/admin/b2c-bus/booking-list' },
-    { label: 'Bus Discount List', category: 'Bus Management', path: '/admin/b2c-bus/discounts' },
-    { label: 'Add Bus Discount', category: 'Bus Management', path: '/admin/b2c-bus/discounts/new' },
+    { label: 'Bus Discount List', category: 'Bus Management', path: '/admin/b2c-bus/discount-list' },
+    { label: 'Add Bus Discount', category: 'Bus Management', path: '/admin/b2c-bus/add-discount' },
     { label: 'Bus Discount Mapping', category: 'Bus Management', path: '/admin/b2c-bus/discount-mapping' },
     { label: 'Bus Markup List', category: 'Bus Management', path: '/admin/b2c-bus/markup-list' },
     { label: 'Bus GST Settings', category: 'Bus Management', path: '/admin/b2c-bus/gst-settings' },
@@ -229,9 +229,9 @@ const SEARCHABLE_PAGES = [
     { label: 'Popular Bus Routes', category: 'Bus Management', path: '/admin/b2c-bus/popular-routes' },
 
     { label: 'Flight Booking List', category: 'Flight Management', path: '/admin/b2c-flight/booking-list' },
-    { label: 'Flight Discount List', category: 'Flight Management', path: '/admin/b2c-flight/discounts' },
-    { label: 'Add Flight Discount', category: 'Flight Management', path: '/admin/b2c-flight/discounts/new' },
-    { label: 'Flight Markup List', category: 'Flight Management', path: '/admin/b2c-flight/markup' },
+    { label: 'Flight Discount List', category: 'Flight Management', path: '/admin/b2c-flight/discount-list' },
+    { label: 'Add Flight Discount', category: 'Flight Management', path: '/admin/b2c-flight/add-discount' },
+    { label: 'Flight Markup List', category: 'Flight Management', path: '/admin/b2c-flight/markup-list' },
     { label: 'Flight Coupon List', category: 'Flight Management', path: '/admin/b2c-flight/coupon-list' },
     { label: 'Flight Used Coupon List', category: 'Flight Management', path: '/admin/b2c-flight/used-coupon-list' },
     { label: 'Flight Convenience Fee', category: 'Flight Management', path: '/admin/b2c-flight/convenience-fee' },
@@ -849,7 +849,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             transition: 'all 0.3s ease',
             fontSize: '0.75rem',
             padding: 0,
-            background: theme === 'light' ? 'linear-gradient(135deg, #dc1e26, #ef4444)' : 'linear-gradient(135deg, #1e75ff, #0052d9)',
+            background: theme === 'light' ? 'linear-gradient(135deg, #be185d, #ef4444)' : 'linear-gradient(135deg, #1e75ff, #0052d9)',
             boxShadow: theme === 'light' ? '0 4px 12px rgba(220, 30, 38, 0.15)' : '0 4px 12px rgba(30, 117, 255, 0.15)',
             boxSizing: 'border-box',
         },
@@ -885,7 +885,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             color: 'white',
             fontSize: '0.75rem',
             flexShrink: 0,
-            background: theme === 'light' ? 'linear-gradient(135deg, #dc1e26, #ef4444)' : 'linear-gradient(135deg, #1e75ff, #0052d9)',
+            background: theme === 'light' ? 'linear-gradient(135deg, #be185d, #ef4444)' : 'linear-gradient(135deg, #1e75ff, #0052d9)',
             boxShadow: theme === 'light' ? '0 4px 12px rgba(220, 30, 38, 0.2)' : '0 4px 12px rgba(30, 117, 255, 0.2)',
         },
         dsaInfo: {
@@ -1077,92 +1077,122 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.75'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
-                        <img src={pickNBookLogo} alt="PickNBook Logo" style={{ height: '36px', width: 'auto' }} />
+                        <img src={pickNBookLogo} alt="PickNBook Logo" style={{ height: '46px', width: 'auto' }} />
                     </div>
-
-                    <div style={styles.searchWrapper} data-search-wrapper>
-                        <span style={styles.searchBarIcon}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </span>
-                        <input
-                            type="text"
-                            placeholder="Search anything..."
-                            value={searchQuery || ''}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setShowSearchDropdown(true);
-                            }}
-                            onFocus={() => setShowSearchDropdown(true)}
-                            style={styles.searchBarInput}
-                            onFocusCapture={(e) => {
-                                e.target.style.borderColor = 'var(--admin-primary)';
-                                e.target.style.boxShadow = '0 4px 16px rgba(30, 117, 255, 0.08)';
-                            }}
-                            onBlurCapture={(e) => {
-                                e.target.style.borderColor = 'var(--admin-border)';
-                                e.target.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.01)';
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && filteredSearchPages.length > 0) {
+ 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '440px' }}>
+                        <div style={styles.searchWrapper} data-search-wrapper>
+                            <span style={styles.searchBarIcon}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </span>
+                            <input
+                                type="text"
+                                placeholder="Search anything..."
+                                value={searchQuery || ''}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setShowSearchDropdown(true);
+                                }}
+                                onFocus={() => setShowSearchDropdown(true)}
+                                style={styles.searchBarInput}
+                                onMouseEnter={(e) => {
+                                    if (document.activeElement !== e.currentTarget) {
+                                        e.currentTarget.style.borderColor = '#be185d';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (document.activeElement !== e.currentTarget) {
+                                        e.currentTarget.style.borderColor = 'var(--admin-border)';
+                                    }
+                                }}
+                                onFocusCapture={(e) => {
+                                    e.currentTarget.style.borderColor = '#be185d';
+                                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(190, 24, 93, 0.15)';
+                                }}
+                                onBlurCapture={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--admin-border)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.01)';
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && filteredSearchPages.length > 0) {
+                                        navigate(filteredSearchPages[0].path);
+                                        setShowSearchDropdown(false);
+                                        setSearchQuery('');
+                                        e.target.blur();
+                                    }
+                                }}
+                            />
+                            {showSearchDropdown && (
+                                <div style={styles.searchDropdown}>
+                                    <div style={{ padding: '8px 16px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--admin-muted)', fontWeight: 700, borderBottom: '1px solid var(--admin-border)', marginBottom: '4px' }}>
+                                        {searchQuery ? 'Search Results' : 'Suggested Pages'}
+                                    </div>
+                                    {filteredSearchPages.length > 0 ? (
+                                        filteredSearchPages.map((page, idx) => (
+                                            <button
+                                                key={page.path + idx}
+                                                style={styles.searchDropdownItem}
+                                                onClick={() => {
+                                                    navigate(page.path);
+                                                    setShowSearchDropdown(false);
+                                                    setSearchQuery('');
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = 'var(--admin-soft)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = 'none';
+                                                }}
+                                            >
+                                                <span style={styles.searchDropdownLabel}>{page.label}</span>
+                                                <span style={styles.searchDropdownCategory}>{page.category}</span>
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div style={styles.noSearchResults}>
+                                            No matching pages found
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (filteredSearchPages.length > 0) {
                                     navigate(filteredSearchPages[0].path);
                                     setShowSearchDropdown(false);
                                     setSearchQuery('');
-                                    e.target.blur();
                                 }
                             }}
-                        />
-                        <span style={{
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'var(--admin-soft)',
-                            border: '1px solid var(--admin-border)',
-                            color: 'var(--admin-muted)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontSize: '0.7rem',
-                            fontWeight: '600',
-                            pointerEvents: 'none',
-                        }}>
-                            Ctrl + K
-                        </span>
-                        {showSearchDropdown && (
-                            <div style={styles.searchDropdown}>
-                                <div style={{ padding: '8px 16px', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--admin-muted)', fontWeight: 700, borderBottom: '1px solid var(--admin-border)', marginBottom: '4px' }}>
-                                    {searchQuery ? 'Search Results' : 'Suggested Pages'}
-                                </div>
-                                {filteredSearchPages.length > 0 ? (
-                                    filteredSearchPages.map((page, idx) => (
-                                        <button
-                                            key={page.path + idx}
-                                            style={styles.searchDropdownItem}
-                                            onClick={() => {
-                                                navigate(page.path);
-                                                setShowSearchDropdown(false);
-                                                setSearchQuery('');
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = 'var(--admin-soft)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = 'none';
-                                            }}
-                                        >
-                                            <span style={styles.searchDropdownLabel}>{page.label}</span>
-                                            <span style={styles.searchDropdownCategory}>{page.category}</span>
-                                        </button>
-                                    ))
-                                ) : (
-                                    <div style={styles.noSearchResults}>
-                                        No matching pages found
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            style={{
+                                height: '42px',
+                                padding: '0 20px',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #be185d, #851237)',
+                                color: '#ffffff',
+                                border: 'none',
+                                fontWeight: '700',
+                                fontSize: '0.88rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 4px 12px rgba(190, 24, 93, 0.2)',
+                                flexShrink: 0
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(190, 24, 93, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
+                            }}
+                        >
+                            Search
+                        </button>
                     </div>
                 </div>
 
@@ -1599,3 +1629,4 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
 }
 
 export default Topbar;
+

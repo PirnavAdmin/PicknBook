@@ -26,7 +26,7 @@ const buildSlug = (value) =>
 const AddPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const pageListPath = "/admin/page-management/pages";
+  const pageListPath = "/admin/page-management/all-pages";
 
   const editingPage = useMemo(() => location.state?.page || null, [location.state]);
   
@@ -95,6 +95,20 @@ const AddPage = () => {
     }
   };
 
+  const handleRemoveFile = (field) => {
+    if (field === "image") {
+      setImageFile(null);
+      setFormData((previous) => ({ ...previous, imageName: "" }));
+      const fileInput = document.getElementById("image-input");
+      if (fileInput) fileInput.value = "";
+    } else if (field === "banner") {
+      setBannerFile(null);
+      setFormData((previous) => ({ ...previous, bannerName: "" }));
+      const fileInput = document.getElementById("banner-input");
+      if (fileInput) fileInput.value = "";
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (loading) return;
@@ -119,6 +133,30 @@ const AddPage = () => {
     data.append("MetaKeyword", formData.metaKeyword || "");
     data.append("MetaDescription", formData.metaDescription || "");
     data.append("Description", formData.description || "");
+    data.append("ImageName", formData.imageName || "");
+    data.append("BannerName", formData.bannerName || "");
+    data.append("ImagePath", formData.imageName ? (editingPage?.imagePath || "") : "");
+    data.append("BannerPath", formData.bannerName ? (editingPage?.bannerPath || "") : "");
+
+    // Deletion flags for image
+    if (!formData.imageName) {
+      data.append("DeleteImage", "true");
+      data.append("RemoveImage", "true");
+      data.append("ClearImage", "true");
+      data.append("IsImageDeleted", "true");
+      data.append("imageDeleted", "true");
+      data.append("removeImage", "true");
+    }
+
+    // Deletion flags for banner
+    if (!formData.bannerName) {
+      data.append("DeleteBanner", "true");
+      data.append("RemoveBanner", "true");
+      data.append("ClearBanner", "true");
+      data.append("IsBannerDeleted", "true");
+      data.append("bannerDeleted", "true");
+      data.append("removeBanner", "true");
+    }
 
     if (imageFile) {
       data.append("Image", imageFile);
@@ -127,9 +165,9 @@ const AddPage = () => {
       data.append("Banner", bannerFile);
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      if (editingPage && editingPage.id) {
+      if (editingPage && editingPage.id && !String(editingPage.id).startsWith("default-")) {
         await updateAdminPage(editingPage.id, data);
       } else {
         await createAdminPage(data);
@@ -150,20 +188,25 @@ const AddPage = () => {
 
   return (
     <div className="add-container">
-      <div className="top-bar">
-        <h2>{editingPage ? "Edit Page" : "Add New Page"}</h2>
-        <button className="list-btn" onClick={() => navigate(pageListPath)}>
-          All Page List
-        </button>
-      </div>
-
       <form onSubmit={handleSubmit}>
         <div className="section">
+          {/* ── Header inside container ── */}
+          <div className="add-page-header">
+            <h2 className="add-page-heading">{editingPage ? "Edit Page" : "Add New Page"}</h2>
+            <button 
+              type="button" 
+              className="add-page-list-btn" 
+              onClick={() => navigate(pageListPath)}
+            >
+              All Page List
+            </button>
+          </div>
+
           <h3><span className="title-tab">Basic Details</span></h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label>Title</label>
+              <label>Title <span style={{ color: "#d93025" }}>*</span></label>
               <input
                 placeholder="Page title"
                 value={formData.title}
@@ -181,13 +224,73 @@ const AddPage = () => {
               />
             </div>
             <div className="form-group">
-              <label>Image [max_size: 1MB] {formData.imageName && <span className="current-file">({formData.imageName})</span>}</label>
-              <input type="file" onChange={handleFileChange("image")} disabled={loading} accept="image/*" />
+              <label>
+                Image [max_size: 1MB]{" "}
+                {formData.imageName && (
+                  <span className="current-file">
+                    ({formData.imageName}){" "}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile("image")}
+                      className="remove-file-btn"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#d93025",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        fontSize: "0.8rem",
+                        padding: "0 4px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </span>
+                )}
+              </label>
+              <input
+                type="file"
+                id="image-input"
+                onChange={handleFileChange("image")}
+                disabled={loading}
+                accept="image/*"
+              />
             </div>
 
             <div className="form-group">
-              <label>OG Image [max_size: 1MB] {formData.bannerName && <span className="current-file">({formData.bannerName})</span>}</label>
-              <input type="file" onChange={handleFileChange("banner")} disabled={loading} accept="image/*" />
+              <label>
+                OG Image [max_size: 1MB]{" "}
+                {formData.bannerName && (
+                  <span className="current-file">
+                    ({formData.bannerName}){" "}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile("banner")}
+                      className="remove-file-btn"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#d93025",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        fontSize: "0.8rem",
+                        padding: "0 4px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </span>
+                )}
+              </label>
+              <input
+                type="file"
+                id="banner-input"
+                onChange={handleFileChange("banner")}
+                disabled={loading}
+                accept="image/*"
+              />
             </div>
             
             <div className="form-group">
@@ -237,28 +340,30 @@ const AddPage = () => {
                 disabled={loading}
               />
             </div>
+
+            {/* Description section inside the same grid spanning 3 columns */}
+            <div className="form-group" style={{ gridColumn: 'span 3', marginTop: '2px' }}>
+              <label>Description</label>
+              <textarea
+                className="editor"
+                rows={4}
+                placeholder="Write description..."
+                value={formData.description}
+                onChange={handleChange("description")}
+                disabled={loading}
+                style={{ minHeight: '100px' }}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="section">
-          <h3><span className="title-tab">Description</span></h3>
-          <textarea
-            className="editor"
-            rows={4}
-            placeholder="Write description..."
-            value={formData.description}
-            onChange={handleChange("description")}
-            disabled={loading}
-          />
-        </div>
+          {formError && <p className="admin-markup-form-error" style={{ marginTop: '16px' }}>{formError}</p>}
+          {saved && <p className="menu-form-success" style={{ marginTop: '16px' }}>Page saved successfully.</p>}
 
-        {formError && <p className="admin-markup-form-error">{formError}</p>}
-        {saved && <p className="menu-form-success">Page saved successfully.</p>}
-
-        <div className="submit-area">
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? "SAVING..." : (editingPage ? "UPDATE" : "SUBMIT")}
-          </button>
+          <div className="submit-area">
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? "SAVING..." : (editingPage ? "UPDATE" : "SUBMIT")}
+            </button>
+          </div>
         </div>
       </form>
     </div>

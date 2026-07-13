@@ -97,6 +97,8 @@ function normalizeProfile(payload = {}) {
       "imageUrl",
       "ImageUrl",
     ]),
+    walletBalance: pickFirst(profile, ["walletBalance", "WalletBalance"], 0.00),
+    walletStatus: pickFirst(profile, ["walletStatus", "WalletStatus"], "Active"),
   };
 }
 
@@ -138,6 +140,7 @@ export async function getAccountProfile() {
   const sessionProfile = normalizeProfile(getAuthUser());
   const userId = getAuthUserId() || storedProfile.userId || sessionProfile.userId;
   const candidatePaths = [
+    "/api/Profile",
     "/api/Auth/me",
     "/api/Auth/profile",
     "/api/Auth/user",

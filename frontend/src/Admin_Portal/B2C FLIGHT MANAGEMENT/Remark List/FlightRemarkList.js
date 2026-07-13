@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { Download, PencilLine, PlusCircle, Trash2 } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Download, PencilLine, PlusCircle, Trash2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./FlightRemarkList.css";
+import AdminPagination from "../../../components/AdminPagination";
+import { getFlightRemarks, deleteFlightRemark } from "../../../services/flightBookingService";
 
 const safeValue = (value, fallback = "--") => {
   const text = String(value ?? "").trim();
@@ -120,11 +122,53 @@ const formatRemarkDateTime = (value) => {
 export default function AdminFlightRemarkListPage() {
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [viewRecord, setViewRecord] = useState(null);
+  const itemsPerPage = 10;
 
-  const records = useMemo(() => {
-    void refreshKey;
-    return listFlightRemarks();
+  useEffect(() => {
+    let active = true;
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await getFlightRemarks();
+        if (active) {
+          if (Array.isArray(data)) {
+            setRecords(data.map((record, index) => normalizeRemarkRecord(record, index)));
+          } else {
+            setRecords(listFlightRemarks());
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch flight remarks from server, falling back to local storage", err);
+        if (active) {
+          setRecords(listFlightRemarks());
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+    loadData();
+    return () => { active = false; };
   }, [refreshKey]);
+
+  const sortedAllRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const numA = parseInt(String(a.id).replace(/\D/g, "")) || 0;
+      const numB = parseInt(String(b.id).replace(/\D/g, "")) || 0;
+      return numA - numB;
+    });
+  }, [records]);
+
+  const totalItems = sortedAllRecords.length;
+  const paginatedRecords = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedAllRecords.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedAllRecords, currentPage]);
 
   const escapeCsv = (value) => {
     const text = String(value ?? "");
@@ -173,13 +217,18 @@ export default function AdminFlightRemarkListPage() {
     URL.revokeObjectURL(downloadUrl);
   };
 
-  const handleDelete = (record) => {
+  const handleDelete = async (record) => {
     const ok = window.confirm(`Delete remark ${safeValue(record?.id)}?`);
     if (!ok) {
       return;
     }
 
-    deleteFlightRemarkById(record?.id);
+    try {
+      await deleteFlightRemark(record.id);
+    } catch (e) {
+      console.warn("Failed to delete remark on server, running local fallback", e);
+      deleteFlightRemarkById(record?.id);
+    }
     setRefreshKey((value) => value + 1);
   };
 
@@ -188,7 +237,7 @@ export default function AdminFlightRemarkListPage() {
       <div className="admin-flight-remark-toolbar">
         <header className="admin-b2c-header admin-flight-remark-header">
           <h1>
-            <strong>B2C</strong> Remark List
+            <span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Remark List
           </h1>
         </header>
 
@@ -196,7 +245,7 @@ export default function AdminFlightRemarkListPage() {
           <button
             type="button"
             className="admin-flight-remark-btn"
-            onClick={() => navigate("/admin/b2c-flight/remark-list/add")}
+            onClick={() => navigate("/admin/b2c-flight/remark-edit-list")}
           >
             <PlusCircle size={15} />
             Add Remark
@@ -210,7 +259,6 @@ export default function AdminFlightRemarkListPage() {
 
       <section className="admin-cancel-table-shell admin-flight-remark-table-shell">
         <header className="admin-cancel-table-head admin-flight-remark-table-head">
-          <span>SN</span>
           <span>ID</span>
           <span>Entry Date</span>
           <span>Update Date</span>
@@ -221,33 +269,30 @@ export default function AdminFlightRemarkListPage() {
           <span>Action</span>
         </header>
 
-        {records.length ? (
+        {paginatedRecords.length ? (
           <div className="admin-cancel-table-body">
-            {records.map((record, index) => (
+            {paginatedRecords.map((record) => (
               <article
                 key={`flight-remark-${record.id}-${record.updatedAtUtc}`}
                 className="admin-cancel-table-row admin-flight-remark-table-row"
               >
                 <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{index + 1}</strong>
-                </div>
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{safeValue(record.id)}</strong>
+                  <span>{safeValue(record.id)}</span>
                 </div>
                 <div className="admin-cancel-cell">
-                  <strong>{formatRemarkDateTime(record.entryDateUtc)}</strong>
+                  <span>{formatRemarkDateTime(record.entryDateUtc)}</span>
                 </div>
                 <div className="admin-cancel-cell">
-                  <strong>{formatRemarkDateTime(record.updatedAtUtc)}</strong>
+                  <span>{formatRemarkDateTime(record.updatedAtUtc)}</span>
                 </div>
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.sourceType, "--")}</strong>
+                  <span>{safeValue(record.sourceType, "--")}</span>
                 </div>
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.updatedBy)}</strong>
+                  <span>{safeValue(record.updatedBy)}</span>
                 </div>
-                <div className="admin-cancel-cell">
-                  <strong>{safeValue(record.remark, "--")}</strong>
+                <div className="admin-cancel-cell" style={{ wordBreak: "break-word", whiteSpace: "normal", overflowWrap: "break-word" }}>
+                  <span>{safeValue(record.remark, "--")}</span>
                 </div>
                 <div className="admin-cancel-cell admin-cell-centered">
                   <span className={`admin-flight-remark-status ${normalizeStatusKey(record.status)}`}>
@@ -257,11 +302,19 @@ export default function AdminFlightRemarkListPage() {
                 <div className="admin-cancel-cell admin-cell-centered admin-flight-remark-action-cell">
                   <button
                     type="button"
+                    className="admin-flight-remark-icon-btn view"
+                    aria-label={`View remark ${record.id}`}
+                    onClick={() => setViewRecord(record)}
+                  >
+                    <Eye size={15} />
+                  </button>
+                  <button
+                    type="button"
                     className="admin-flight-remark-icon-btn edit"
                     aria-label={`Edit remark ${record.id}`}
                     onClick={() =>
                       navigate(
-                        `/admin/b2c-flight/remark-list/edit?ref_id=${encodeURIComponent(
+                        `/admin/b2c-flight/remark-edit-list?ref_id=${encodeURIComponent(
                           String(record.id)
                         )}`
                       )
@@ -284,9 +337,64 @@ export default function AdminFlightRemarkListPage() {
         ) : (
           <div className="admin-cancel-empty">not found any record.</div>
         )}
+
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="remarks"
+        />
       </section>
+
+      {viewRecord && (
+        <div className="admin-markup-modal-backdrop" onClick={() => setViewRecord(null)}>
+          <div className="admin-markup-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "520px", width: "100%", maxHeight: "90vh", overflowY: "auto", background: "var(--panel)", borderRadius: "16px", padding: "24px", boxSizing: "border-box" }}>
+            <header className="flight-markup-modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "12px", borderBottom: "1px solid var(--border)" }}>
+              <h2 style={{ fontSize: "1.2rem", fontWeight: "700", margin: 0, color: "var(--text-primary)" }}>View B2C Flight Remark</h2>
+              <button className="flight-markup-modal-close" onClick={() => setViewRecord(null)}>X</button>
+            </header>
+            <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Remark ID</span>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>{viewRecord.id}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Source Type</span>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>{viewRecord.sourceType}</span>
+              </div>
+              <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Remark Content</span>
+                <p style={{ fontSize: "13px", margin: "0", background: "var(--surface-soft)", color: "var(--text-primary)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", wordBreak: "break-word" }}>{viewRecord.remark}</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Status</span>
+                <div>
+                  <span className={`admin-flight-remark-status ${normalizeStatusKey(viewRecord.status)}`}>{viewRecord.status}</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Updated By</span>
+                <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{viewRecord.updatedBy}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Created Date</span>
+                <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>{formatRemarkDateTime(viewRecord.entryDateUtc)}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", color: "#64748b" }}>Updated Date</span>
+                <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>{formatRemarkDateTime(viewRecord.updatedAtUtc)}</span>
+              </div>
+            </div>
+            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
+              <button className="admin-flight-remark-btn" onClick={() => setViewRecord(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
 
 

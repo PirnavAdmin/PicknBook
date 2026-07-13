@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaEdit, FaTrashAlt, FaTimes } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 import './DiscountMapping.css';
+import AdminPagination from '../../../components/AdminPagination';
 import {
   listDiscounts,
   getConditions,
@@ -52,6 +53,20 @@ function DiscountMapping() {
   });
   const [editingConditionId, setEditingConditionId] = useState(null);
   const [savingCondition, setSavingCondition] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedDiscountId]);
+
+  const paginatedConditions = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return conditions.slice(startIndex, startIndex + itemsPerPage);
+  }, [conditions, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(conditions.length / itemsPerPage));
 
   // Load all discounts
   const loadDiscountsData = useCallback(async () => {
@@ -366,8 +381,9 @@ function DiscountMapping() {
   return (
     <div className="admin-b2c-page bus-discount-mapping-page-container">
       <section className="discount-heading">
-        <p className="discount-heading-main">B2C Bus Management</p>
-        <p className="discount-heading-sub">Discount Mapping / Conditions</p>
+        <p className="discount-heading-main">
+          B2C Bus <span className="discount-heading-sub">Discount Mapping / Conditions</span>
+        </p>
       </section>
 
       {/* Select Discount Card */}
@@ -466,6 +482,22 @@ function DiscountMapping() {
                   type="submit"
                   className="primary-btn"
                   disabled={savingCondition}
+                  style={{
+                    backgroundColor: '#A51C49',
+                    borderColor: '#A51C49',
+                    color: '#ffffff',
+                    transition: 'all 0.25s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#851237';
+                    e.currentTarget.style.borderColor = '#851237';
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#A51C49';
+                    e.currentTarget.style.borderColor = '#A51C49';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
                   {savingCondition ? 'Saving...' : editingConditionId ? 'Update Rule' : 'Add Rule'}
                 </button>
@@ -492,7 +524,7 @@ function DiscountMapping() {
               <p style={{ color: 'var(--muted)', fontSize: '14px', textAlign: 'center', padding: '24px 0' }}>
                 Loading rules...
               </p>
-            ) : conditions.length === 0 ? (
+            ) : paginatedConditions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '36px 12px', border: '2px dashed var(--border)', borderRadius: '12px', background: 'var(--admin-soft)' }}>
                 <p style={{ color: 'var(--muted)', fontSize: '14px', fontWeight: '500', margin: '0 0 6px 0' }}>
                   No conditions defined.
@@ -502,53 +534,68 @@ function DiscountMapping() {
                 </p>
               </div>
             ) : (
-              <div className="active-rules-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {conditions.map((cond) => (
-                  <div
-                    key={cond.id}
-                    className="rule-item-card"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 18px',
-                      backgroundColor: 'var(--admin-soft, #fdfdfd)',
-                      borderRadius: '12px',
-                      border: editingConditionId === cond.id ? '2px solid var(--admin-primary)' : '1px solid var(--border)',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text)' }}>
-                        If <strong style={{ color: 'var(--admin-primary)' }}>{cond.conditionType}</strong> is <strong>{cond.conditionOperator}</strong>
-                      </span>
-                      <span style={{ fontSize: '13px', color: '#555' }}>
-                        Value: <strong style={{ color: '#222' }}>{cond.value1}</strong>
-                      </span>
-                    </div>
+              <div>
+                <div className="active-rules-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {paginatedConditions.map((cond) => (
+                    <div
+                      key={cond.id}
+                      className="rule-item-card"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '14px 18px',
+                        backgroundColor: 'var(--admin-soft, #fdfdfd)',
+                        borderRadius: '12px',
+                        border: editingConditionId === cond.id ? '2px solid var(--admin-primary)' : '1px solid var(--border)',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text)' }}>
+                          If <strong style={{ color: 'var(--admin-primary)' }}>{cond.conditionType}</strong> is <strong>{cond.conditionOperator}</strong>
+                        </span>
+                        <span style={{ fontSize: '13px', color: '#555' }}>
+                          Value: <strong style={{ color: '#222' }}>{cond.value1}</strong>
+                        </span>
+                      </div>
 
-                    <div className="table-actions" style={{ gap: '6px' }}>
-                      <button
-                        type="button"
-                        className="ghost-btn small icon-btn"
-                        onClick={() => handleEditClick(cond)}
-                        title="Edit Rule"
-                        disabled={savingCondition}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        type="button"
-                        className="danger-btn small icon-btn"
-                        onClick={() => handleDeleteCondition(cond.id)}
-                        title="Delete Rule"
-                        disabled={savingCondition}
-                      >
-                        <FaTrashAlt />
-                      </button>
+                      <div className="table-actions" style={{ gap: '6px' }}>
+                        <button
+                          type="button"
+                          className="ghost-btn small icon-btn"
+                          onClick={() => handleEditClick(cond)}
+                          title="Edit Rule"
+                          disabled={savingCondition}
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          type="button"
+                          className="danger-btn small icon-btn"
+                          onClick={() => handleDeleteCondition(cond.id)}
+                          title="Delete Rule"
+                          disabled={savingCondition}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </div>
                     </div>
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <AdminPagination
+                      currentPage={currentPage}
+                      totalItems={conditions.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
+                      itemName="rules"
+                    />
                   </div>
-                ))}
+                )}
               </div>
             )}
           </section>
@@ -568,3 +615,4 @@ function DiscountMapping() {
 }
 
 export default DiscountMapping;
+

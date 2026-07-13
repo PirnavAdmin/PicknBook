@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  CreditCard,
-  Landmark,
   Loader2,
-  Smartphone,
-  Wallet,
   Check,
   X,
   ShieldCheck,
@@ -15,17 +11,30 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { bookFlight } from "../../services/flightBookingService";
 import { sendBookingNotifications } from "../../services/bookingNotificationsService";
 import "../../STYLES/FlightBookingFlow.css";
+import BookingTimer from "./BookingTimer";
 import { saveBookingPassengersToTravelers } from "../../utils/travelerStorage";
 import {
   clearFlightBookingFlowState,
   readFlightBookingFlowState,
 } from "./flightBookingFlowStore";
+import { getAccountProfile } from "../../services/accountProfileService";
+import { getLedgerStatement } from "../../services/b2bService";
+import {
+  UpiIcon,
+  CardIcon,
+  NetBankingIcon,
+  WalletIcon,
+  PaytmIcon,
+  PhonePeIcon,
+  AmazonPayIcon,
+  MobiKwikIcon
+} from "../../components/PaymentIcons";
 
 const PAYMENT_METHODS = [
-  { id: "upi", label: "UPI", icon: Smartphone },
-  { id: "card", label: "Credit / Debit Card", icon: CreditCard },
-  { id: "netbanking", label: "Net Banking", icon: Landmark },
-  { id: "wallet", label: "Wallet", icon: Wallet },
+  { id: "upi", label: "UPI", icon: UpiIcon },
+  { id: "card", label: "Credit / Debit Card", icon: CardIcon },
+  { id: "netbanking", label: "Net Banking", icon: NetBankingIcon },
+  { id: "wallet", label: "Wallet", icon: WalletIcon },
 ];
 
 function formatCurrency(amount) {
@@ -35,6 +44,10 @@ function formatCurrency(amount) {
 }
 
 function isPaymentInputValid(method, formValues, upiSubMethod = "qr") {
+  if (method === "agent_wallet") {
+    return true;
+  }
+
   if (method === "upi") {
     if (upiSubMethod === "qr") return true;
     return /\S+@\S+/.test(formValues.upiId || "");
@@ -60,6 +73,13 @@ function isPaymentInputValid(method, formValues, upiSubMethod = "qr") {
   return false;
 }
 
+function ddMmYyyyToYyyyMmDd(val) {
+  if (!val) return "";
+  const match = String(val).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return val;
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
 function mapPassengersForApi(passengers) {
   return (Array.isArray(passengers) ? passengers : []).map((passenger, index) => ({
     fullName: `${passenger.title || ""} ${passenger.firstName || ""} ${passenger.lastName || ""}`
@@ -67,20 +87,49 @@ function mapPassengersForApi(passengers) {
       .trim() || `Passenger ${index + 1}`,
     passengerType: passenger.passengerType || "Adult",
     gender: passenger.gender || "Male",
+    nationality: passenger.nationality || "Indian",
+    ...(passenger.dob ? { dob: ddMmYyyyToYyyyMmDd(passenger.dob) } : {}),
     ...(passenger.seatLabel ? { seatNumber: passenger.seatLabel } : {}),
   }));
 }
 
+function resolveCleanTravelClass(travelClass) {
+  if (!travelClass || typeof travelClass !== "string") {
+    return "Economy";
+  }
+  const clean = travelClass.toLowerCase();
+  if (clean.includes("premium economy")) return "Premium Economy";
+  if (clean.includes("premium business")) return "Premium Business";
+  if (clean.includes("economy")) return "Economy";
+  if (clean.includes("business")) return "Business";
+  if (clean.includes("first")) return "First Class";
+  return travelClass;
+}
+
 function buildFlightBookingPayload(flowState) {
   const passengers = mapPassengersForApi(flowState.passengers);
+  const rawClass =
+    flowState.flight?.selectedTravelClass ||
+    flowState.flight?.className ||
+    flowState.searchContext?.cabinClass ||
+    "Economy";
+
+  const adults = (flowState.passengers || []).filter(p => p.passengerType === "Adult").length;
+  const children = (flowState.passengers || []).filter(p => p.passengerType === "Child").length;
+  const infants = (flowState.passengers || []).filter(p => p.passengerType === "Infant").length;
+
   return {
     passengerName: passengers[0]?.fullName || "Passenger",
     passengerPhone: String(flowState.contact?.mobile || "").trim(),
     passengerEmail: String(flowState.contact?.email || "").trim(),
-    travelClass: flowState.flight?.className || flowState.searchContext?.cabinClass || "Economy",
+    travelClass: resolveCleanTravelClass(rawClass),
     passengers,
-    couponCode: flowState.couponCode || null,
+    couponCode: flowState.couponCode ? flowState.couponCode.trim().toUpperCase() : null,
     selectedFeaturedOfferId: flowState.selectedFeaturedOfferId || null,
+    selectedPromotionId: flowState.selectedFeaturedOfferId || null,
+    adults: adults || 1,
+    children: children || 0,
+    infants: infants || 0,
   };
 }
 
@@ -181,14 +230,19 @@ function buildTicketPayload(flowState, bookingResponse, paymentMethod, mode = "l
         ? apiSeatAssignments
         : selectedSeats.map((seat) => seat.label || seat),
     contact: flowState.contact || {},
-    paymentMethod: PAYMENT_METHODS.find((method) => method.id === paymentMethod)?.label ||
-      paymentMethod,
+    paymentMethod:
+      paymentMethod === "agent_wallet"
+        ? "Agent Wallet"
+        : (PAYMENT_METHODS.find((method) => method.id === paymentMethod)?.label || paymentMethod),
     fare: {
       baseFare: Number(fareSummary.baseFare || 0),
       tax: Number(fareSummary.tax || 0),
       convenienceFee: Number(fareSummary.convenienceFee || 0),
       discount: Number(flowState.couponDiscount || fareSummary.discount || 0),
       totalFare: Number(flowState.payableAmount || fareSummary.totalFare || 0),
+      tripSecureFee: Number(fareSummary.tripSecureFee || 0),
+      travelAssistanceFee: Number(fareSummary.travelAssistanceFee || 0),
+      zeroCancellationFee: Number(fareSummary.zeroCancellationFee || 0),
     },
     totalPaid: Number(flowState.payableAmount || fareSummary.totalFare || 0),
     notifications: {
@@ -214,7 +268,46 @@ export default function FlightPaymentPage() {
   const fareSummary = flowState.fareSummary || {};
   const payableAmount = Number(flowState.payableAmount || fareSummary.totalFare || 0);
 
-  const [selectedMethod, setSelectedMethod] = useState("upi");
+  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  const [agentProfile, setAgentProfile] = useState(null);
+
+  useEffect(() => {
+    if (isAgent) {
+      // 1. Initial cached profile load (if available)
+      getAccountProfile()
+        .then((profile) => {
+          if (profile) setAgentProfile(profile);
+        })
+        .catch((err) => console.error("Error loading agent cached profile", err));
+
+      // 2. Fetch live wallet balance from B2B Ledger statement
+      getLedgerStatement()
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            const sorted = [...data].sort((a, b) => {
+              const dateA = new Date(a.createdAtUtc || a.createdAt || a.date || 0).getTime();
+              const dateB = new Date(b.createdAtUtc || b.createdAt || b.date || 0).getTime();
+              if (dateA !== dateB) return dateB - dateA;
+              return (b.id || 0) - (a.id || 0);
+            });
+            const latest = sorted[0];
+            if (latest && latest.runningBalance !== undefined) {
+              setAgentProfile((prev) => ({
+                ...(prev || {}),
+                walletBalance: Number(latest.runningBalance)
+              }));
+            }
+          }
+        })
+        .catch((err) => console.error("Error loading live agent ledger balance", err));
+    }
+  }, [isAgent]);
+
+  const availableMethods = isAgent
+    ? [{ id: "agent_wallet", label: "Agent Wallet", icon: WalletIcon }, ...PAYMENT_METHODS]
+    : PAYMENT_METHODS;
+
+  const [selectedMethod, setSelectedMethod] = useState(isAgent ? "agent_wallet" : "upi");
   const [upiSubMethod, setUpiSubMethod] = useState("qr");
   const [activeField, setActiveField] = useState("");
   const [qrTimer, setQrTimer] = useState(300);
@@ -231,12 +324,11 @@ export default function FlightPaymentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (selectedMethod !== "upi" || upiSubMethod !== "qr") return;
     const interval = setInterval(() => {
       setQrTimer((t) => (t > 0 ? t - 1 : 300));
     }, 1000);
     return () => clearInterval(interval);
-  }, [selectedMethod, upiSubMethod]);
+  }, []);
 
   const formatTimer = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -286,11 +378,22 @@ export default function FlightPaymentPage() {
       </main>
     );
   }
-
   const handlePayNow = async () => {
-    if (!isPaymentInputValid(selectedMethod, formValues, upiSubMethod)) {
-      setPaymentError("Enter valid payment details for the selected method.");
-      return;
+    if (selectedMethod === "agent_wallet") {
+      const balance = Number(agentProfile?.walletBalance ?? 0);
+      const markup = Number(flowState.fareSummary?.markup || 0);
+      const tierDiscount = Number(flowState.fareSummary?.tierDiscount || 0);
+      const volumeDiscount = Number(flowState.fareSummary?.volumeDiscount || 0);
+      const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
+      if (balance < wholesalePrice) {
+        setPaymentError(`Insufficient wallet balance. You need ₹ ${wholesalePrice.toFixed(2)} (wholesale price) but only have ₹ ${balance.toFixed(2)}.`);
+        return;
+      }
+    } else {
+      if (!isPaymentInputValid(selectedMethod, formValues, upiSubMethod)) {
+        setPaymentError("Enter valid payment details for the selected method.");
+        return;
+      }
     }
 
     setPaymentError("");
@@ -305,6 +408,23 @@ export default function FlightPaymentPage() {
         flightId: flight.id,
         payload: buildFlightBookingPayload(flowState),
       });
+
+      const bookingReference = response?.bookingReference || `PNB-${Date.now().toString().slice(-8)}`;
+
+      if (isAgent && agentProfile) {
+        const markup = Number(flowState.fareSummary?.markup || 0);
+        const tierDiscount = Number(flowState.fareSummary?.tierDiscount || 0);
+        const volumeDiscount = Number(flowState.fareSummary?.volumeDiscount || 0);
+        const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
+        const updatedBalance = Number(agentProfile.walletBalance) - Number(wholesalePrice);
+        const updatedProfile = { ...agentProfile, walletBalance: updatedBalance };
+        
+        if (localStorage.getItem("b2b_user")) {
+          localStorage.setItem("b2b_user", JSON.stringify(updatedProfile));
+        }
+        localStorage.setItem("user", JSON.stringify(updatedProfile));
+
+      }
 
       const ticketPayload = buildTicketPayload(
         flowState,
@@ -322,8 +442,19 @@ export default function FlightPaymentPage() {
         contact: ticketPayload.contact,
       });
       ticketPayload.notifications = notificationStatus;
+
+      try {
+        const existingStr = localStorage.getItem("mock_tickets");
+        const existing = existingStr ? JSON.parse(existingStr) : [];
+        existing.unshift(ticketPayload);
+        localStorage.setItem("mock_tickets", JSON.stringify(existing));
+      } catch (e) {
+        console.error("Error saving mock flight booking:", e);
+      }
+
       saveBookingPassengersToTravelers(flowState.passengers, flowState.contact);
 
+      sessionStorage.removeItem("booking_session_expiry");
       clearFlightBookingFlowState();
       navigate("/ticket/confirmation", { state: ticketPayload, replace: true });
     } catch (error) {
@@ -339,6 +470,7 @@ export default function FlightPaymentPage() {
 
   return (
     <main className="flight-flow-page">
+      <BookingTimer />
       {/* ── STEPPER PROGRESS HEADER ── */}
       <div className="flight-stepper-header">
         <div className="step-item completed">
@@ -443,6 +575,24 @@ export default function FlightPaymentPage() {
                 <span>₹ {Number(fareSummary.assuredFee).toLocaleString("en-IN")}</span>
               </div>
             )}
+            {Number(fareSummary.tripSecureFee) > 0 && (
+              <div className="fare-row">
+                <span>Trip Secure Fee</span>
+                <span>₹ {Number(fareSummary.tripSecureFee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(fareSummary.travelAssistanceFee) > 0 && (
+              <div className="fare-row">
+                <span>Travel Assistance</span>
+                <span>₹ {Number(fareSummary.travelAssistanceFee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {Number(fareSummary.zeroCancellationFee) > 0 && (
+              <div className="fare-row">
+                <span>Zero Cancellation</span>
+                <span>₹ {Number(fareSummary.zeroCancellationFee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
             {Number(flowState.couponDiscount || fareSummary.discount) > 0 && (
               <div className="fare-row">
                 <span>Instant Discount</span>
@@ -460,10 +610,15 @@ export default function FlightPaymentPage() {
         <section className="flight-checkout-main">
           {/* Payment Selection Card */}
           <div className="flight-main-card">
-            <h2 className="flight-main-card-title">Select Payment Method</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+              <h2 className="flight-main-card-title" style={{ margin: 0 }}>Select Payment Method</h2>
+              <div className="qr-timer" style={{ margin: 0 }}>
+                ⏳ Expiration time: <span className="timer-countdown">{formatTimer(qrTimer)}</span>
+              </div>
+            </div>
             
             <div className="flight-payment-methods" style={{ padding: 0, marginBottom: 24 }}>
-              {PAYMENT_METHODS.map((method) => (
+              {availableMethods.map((method) => (
                 <button
                   type="button"
                   key={method.id}
@@ -480,6 +635,64 @@ export default function FlightPaymentPage() {
             </div>
 
             <div className="flight-payment-form" style={{ padding: 0 }}>
+              {/* Agent Wallet Section */}
+              {selectedMethod === "agent_wallet" && (() => {
+                const markup = Number(flowState.fareSummary?.markup || 0);
+                const tierDiscount = Number(flowState.fareSummary?.tierDiscount || 0);
+                const volumeDiscount = Number(flowState.fareSummary?.volumeDiscount || 0);
+                const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
+                const balance = Number(agentProfile?.walletBalance ?? 0);
+                const hasSufficient = balance >= wholesalePrice;
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "20px 0" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, background: "rgba(255,255,255,0.02)", padding: 15, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                        <span style={{ color: "var(--b2b-text-secondary)" }}>Customer Price (Collected):</span>
+                        <span style={{ fontWeight: 600 }}>₹ {payableAmount.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "var(--b2b-success)" }}>
+                        <span>Agent Markup (Your Profit):</span>
+                        <span>+ ₹ {markup.toFixed(2)}</span>
+                      </div>
+                      {tierDiscount > 0 && (
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "var(--b2b-success)" }}>
+                          <span>Tier Discount (Commission):</span>
+                          <span>- ₹ {tierDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {volumeDiscount > 0 && (
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "var(--b2b-success)" }}>
+                          <span>Bulk Volume Discount:</span>
+                          <span>- ₹ {volumeDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                        <span style={{ fontWeight: 500 }}>Wholesale Price (To Deduct):</span>
+                        <strong style={{ color: "var(--b2b-accent)" }}>₹ {wholesalePrice.toFixed(2)}</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.03)", padding: 15, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <span style={{ fontWeight: 500 }}>Current Wallet Balance:</span>
+                      <strong style={{ fontSize: "1.2rem", color: hasSufficient ? "#10b981" : "#ef4444" }}>
+                        ₹ {new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2 }).format(balance)}
+                      </strong>
+                    </div>
+
+                    {!hasSufficient ? (
+                      <div style={{ color: "#ef4444", fontSize: "0.85rem", background: "rgba(239, 68, 68, 0.05)", padding: 12, borderRadius: 6, border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                        <strong>Insufficient Balance:</strong> You need an additional ₹ {(wholesalePrice - balance).toFixed(2)} to complete this booking. Please top up your wallet in the B2B portal.
+                      </div>
+                    ) : (
+                      <div style={{ color: "#10b981", fontSize: "0.85rem", background: "rgba(16, 185, 129, 0.05)", padding: 12, borderRadius: 6, border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                        ✔ Balance is sufficient. Click <strong>Pay Now</strong> to proceed (only ₹ {wholesalePrice.toFixed(2)} will be debited).
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* 1. UPI Payment Section */}
               {selectedMethod === "upi" && (
                 <div className="upi-payment-container">
@@ -518,9 +731,6 @@ export default function FlightPaymentPage() {
                       <div className="qr-instructions">
                         <p className="qr-main-text">Scan & Pay using GPay, PhonePe, Paytm or BHIM</p>
                         <p className="qr-sub-text">Generate secure dynamic checkout code</p>
-                        <div className="qr-timer">
-                          ⏳ Expiration time: <span className="timer-countdown">{formatTimer(qrTimer)}</span>
-                        </div>
                       </div>
                     </div>
                   ) : (
@@ -739,10 +949,10 @@ export default function FlightPaymentPage() {
                   <label className="section-subtitle-label">Select Digital Wallet</label>
                   <div className="popular-wallets-grid">
                     {[
-                      { id: "paytm", label: "Paytm", logo: "📱" },
-                      { id: "amazonpay", label: "Amazon Pay", logo: "🛒" },
-                      { id: "phonepe", label: "PhonePe Wallet", logo: "💸" },
-                      { id: "mobikwik", label: "MobiKwik", logo: "👛" },
+                      { id: "paytm", label: "Paytm", icon: PaytmIcon },
+                      { id: "amazonpay", label: "Amazon Pay", icon: AmazonPayIcon },
+                      { id: "phonepe", label: "PhonePe Wallet", icon: PhonePeIcon },
+                      { id: "mobikwik", label: "MobiKwik", icon: MobiKwikIcon },
                     ].map((wallet) => (
                       <button
                         key={wallet.id}
@@ -750,7 +960,9 @@ export default function FlightPaymentPage() {
                         className={`wallet-card-btn ${formValues.walletProvider === wallet.id ? "active" : ""}`}
                         onClick={() => setFormValues((prev) => ({ ...prev, walletProvider: wallet.id }))}
                       >
-                        <span className="wallet-logo-icon">{wallet.logo}</span>
+                        <span className="wallet-logo-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                          <wallet.icon size={24} />
+                        </span>
                         <span className="wallet-label-text">{wallet.label}</span>
                       </button>
                     ))}

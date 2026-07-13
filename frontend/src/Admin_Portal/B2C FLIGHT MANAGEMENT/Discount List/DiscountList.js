@@ -3,6 +3,8 @@ import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown } from '
 import { useNavigate } from 'react-router-dom';
 import { listFlightPromotions, deleteFlightPromotion } from '../../../services/flightBookingService';
 import './DiscountList.css';
+import AdminPagination from '../../../components/AdminPagination';
+import { Percent, CheckCircle2, XCircle } from 'lucide-react';
 
 const initialRows = [
   {
@@ -119,6 +121,8 @@ function DiscountList() {
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const loadPromotions = async () => {
     setRefreshing(true);
@@ -193,6 +197,13 @@ function DiscountList() {
     });
   }, [rows, searchTerm, statusFilter, dateFilter]);
 
+  const paginatedDiscounts = useMemo(() => {
+    return filteredDiscounts.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [filteredDiscounts, currentPage, itemsPerPage]);
+
   const activeCount = rows.filter((row) => row.status === 'Active').length;
   const inactiveCount = rows.filter((row) => row.status === 'Inactive').length;
 
@@ -242,7 +253,7 @@ function DiscountList() {
   };
 
   const handleEdit = (row) => {
-    navigate('/admin/b2c-flight/discounts/new', { state: { mode: 'edit', row } });
+    navigate('/admin/b2c-flight/add-discount', { state: { mode: 'edit', row } });
   };
 
   const handleDelete = async (rowId) => {
@@ -283,15 +294,15 @@ function DiscountList() {
         /* Light Theme (White Mode) - Red buttons */
         .admin-shell.light-theme .discount-list-page-container .primary-btn,
         .admin-shell.light-theme .discount-list-page-container .export-btn {
-          background: #dc1e26 !important;
-          border-color: #dc1e26 !important;
+          background: #A51C49 !important;
+          border-color: #A51C49 !important;
           color: #ffffff !important;
-          box-shadow: 0 4px 10px rgba(220, 30, 38, 0.2) !important;
+          box-shadow: 0 4px 10px rgba(194, 24, 91, 0.2) !important;
         }
         .admin-shell.light-theme .discount-list-page-container .primary-btn:hover,
         .admin-shell.light-theme .discount-list-page-container .export-btn:hover {
-          background: #b5151b !important;
-          border-color: #b5151b !important;
+          background: #9c1048 !important;
+          border-color: #9c1048 !important;
         }
 
         /* Dark Theme (Black/Dark Mode) - Blue buttons */
@@ -309,8 +320,10 @@ function DiscountList() {
         }
       `}</style>
       <section className="discount-heading">
-        <p className="discount-heading-main">B2C Flight Management</p>
-        <p className="discount-heading-sub">Discount List</p>
+        <h1 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 700 }}>
+          <span style={{ color: '#A51C49' }}>B2C Flight</span>{' '}
+          <span style={{ color: '#1a1a2e' }}>Discount List</span>
+        </h1>
       </section>
 
       {selectedRow ? (
@@ -440,7 +453,7 @@ function DiscountList() {
               </div>
             )}
           </div>
-          <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-flight/discounts/new')}>
+          <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-flight/add-discount')}>
             <FaPlus aria-hidden="true" />
             Add B2C Discount
           </button>
@@ -474,7 +487,7 @@ function DiscountList() {
                 </td>
               </tr>
             ) : (
-              filteredDiscounts.map((row) => (
+              paginatedDiscounts.map((row) => (
                 <tr key={row.id}>
                   <td>
                     <div className="id-chip">{highlightText(row.id, searchTerm)}</div>
@@ -551,9 +564,18 @@ function DiscountList() {
             )}
           </tbody>
         </table>
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filteredDiscounts.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          itemName="discounts"
+        />
       </section>
     </div>
   );
 }
 
 export default DiscountList;
+

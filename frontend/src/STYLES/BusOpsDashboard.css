@@ -235,23 +235,27 @@
 }
 
 .bus-booking-status-page .status-badge.success {
-  background: #fff3ed !important;
-  color: #f03b1e !important;
+  background: #edfdf3 !important;
+  color: #137a3b !important;
+  border: 1px solid rgba(19, 122, 59, 0.15) !important;
 }
 
 .bus-booking-status-page .status-badge.completed {
-  background: #eafbf0 !important;
-  color: #008444 !important;
+  background: #edfdf3 !important;
+  color: #137a3b !important;
+  border: 1px solid rgba(19, 122, 59, 0.15) !important;
 }
 
 .bus-booking-status-page .status-badge.danger {
-  background: #f4f7fb !important;
-  color: #1d55a5 !important;
+  background: #fff0ef !important;
+  color: #c0362c !important;
+  border: 1px solid rgba(192, 54, 44, 0.15) !important;
 }
 
 .bus-booking-status-page .status-badge.default {
-  background: #f4f7fb !important;
-  color: #334e78 !important;
+  background: #f1f5f9 !important;
+  color: #6a6a6a !important;
+  border: 1px solid #cbd5e1 !important;
 }
 
 .bus-booking-status-page .table-actions {
@@ -522,18 +526,21 @@
 }
 
 .status-badge.success {
-  color: #143f77;
-  background: #f4f8fd;
+  color: #137a3b !important;
+  background: #edfdf3 !important;
+  border: 1px solid rgba(19, 122, 59, 0.15) !important;
 }
 
 .status-badge.danger {
-  color: #325e97;
-  background: #f3f7fd;
+  color: #c0362c !important;
+  background: #fff0ef !important;
+  border: 1px solid rgba(192, 54, 44, 0.15) !important;
 }
 
 .status-badge.default {
-  color: #3f5c82;
-  background: #f4f8fd;
+  color: #6a6a6a !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
 }
 
 .table-actions {
@@ -729,9 +736,9 @@
 
 .status-badge.success,
 .status-badge.default {
-  border-color: #ffd0bf !important;
-  background: #fff4ed !important;
-  color: var(--theme-primary-strong, #b8141b) !important;
+  border-color: #cbd5e1 !important;
+  background: #f1f5f9 !important;
+  color: #6a6a6a !important;
 }
 
 .flight-ops-filters input:focus,

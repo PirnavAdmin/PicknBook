@@ -319,6 +319,44 @@ export default function FlightSeatSelectionPage() {
 
   const [activeTab, setActiveTab] = useState("seat");
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+  const [activeSeatFilter, setActiveSeatFilter] = useState(null);
+
+  const [travelAssistanceAdded, setTravelAssistanceAdded] = useState(
+    flowState.travelAssistanceAdded || false
+  );
+  const [zeroCancellationAdded, setZeroCancellationAdded] = useState(
+    flowState.zeroCancellationAdded || false
+  );
+  const [activeInsuranceTerms, setActiveInsuranceTerms] = useState(null);
+
+  const handleFilterToggle = (filterType) => {
+    setActiveSeatFilter((prev) => (prev === filterType ? null : filterType));
+  };
+
+  const doesSeatMatchFilter = (seat, filter) => {
+    if (!seat) return false;
+    const isSelected = selectedSeatLabels.includes(seat.label);
+    const isBooked = seat.status === "booked" || seat.isBooked;
+
+    switch (filter) {
+      case "middle_free":
+        return seat.isMiddle && !seat.isExtraLegroom && seat.rowNumber > 12 && !isBooked && !isSelected;
+      case "standard_window":
+        return seat.isWindow && !seat.isExtraLegroom && seat.rowNumber > 12 && !isBooked && !isSelected;
+      case "standard_aisle":
+        return seat.isAisle && !seat.isExtraLegroom && seat.rowNumber > 12 && !isBooked && !isSelected;
+      case "preferred":
+        return !seat.isExtraLegroom && seat.rowNumber <= 12 && !isBooked && !isSelected;
+      case "extra":
+        return seat.isExtraLegroom && !isBooked && !isSelected;
+      case "booked":
+        return isBooked;
+      case "selected":
+        return isSelected;
+      default:
+        return true;
+    }
+  };
 
   const [hoveredSeat, setHoveredSeat] = useState(null);
   const [tooltipCoords, setTooltipCoords] = useState({ x: 0, y: 0 });
@@ -508,6 +546,10 @@ export default function FlightSeatSelectionPage() {
   const convenienceFee = Number(previousFareSummary.convenienceFee || 0);
   const discount = Number(previousFareSummary.discount || flowState.couponDiscount || 0);
   const assuredFee = Number(previousFareSummary.assuredFee || 0);
+  const tripSecureFee = Number(previousFareSummary.tripSecureFee || flowState.tripSecureFee || 0);
+  const passengerCount = flowState.passengers?.length || travellers.seatRequired || 1;
+  const travelAssistanceFee = travelAssistanceAdded ? 189 * passengerCount : 0;
+  const zeroCancellationFee = zeroCancellationAdded ? 499 * passengerCount : 0;
   const totalFare =
     baseFareTotal +
     seatSurcharge +
@@ -515,7 +557,10 @@ export default function FlightSeatSelectionPage() {
     baggageFee +
     tax +
     convenienceFee +
-    assuredFee -
+    assuredFee +
+    travelAssistanceFee +
+    zeroCancellationFee +
+    tripSecureFee -
     discount;
 
   if (!flight) {
@@ -579,6 +624,8 @@ export default function FlightSeatSelectionPage() {
       passengers: passengersWithSeats,
       mealPreference,
       baggagePlan,
+      travelAssistanceAdded,
+      zeroCancellationAdded,
       fareSummary: {
         baseFare: baseFareTotal,
         seatSurcharge,
@@ -587,6 +634,9 @@ export default function FlightSeatSelectionPage() {
         tax,
         convenienceFee,
         assuredFee,
+        tripSecureFee,
+        travelAssistanceFee,
+        zeroCancellationFee,
         discount,
         totalFare,
       },
@@ -697,6 +747,24 @@ export default function FlightSeatSelectionPage() {
                 <span>₹ {assuredFee.toLocaleString("en-IN")}</span>
               </div>
             )}
+            {tripSecureFee > 0 && (
+              <div className="fare-row">
+                <span>Trip Secure Fee</span>
+                <span>₹ {tripSecureFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {travelAssistanceAdded && (
+              <div className="fare-row">
+                <span>Travel Assistance</span>
+                <span>₹ {travelAssistanceFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {zeroCancellationAdded && (
+              <div className="fare-row">
+                <span>Zero Cancellation</span>
+                <span>₹ {zeroCancellationFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
             {discount > 0 && (
               <div className="fare-row">
                 <span>Instant Discount</span>
@@ -770,51 +838,94 @@ export default function FlightSeatSelectionPage() {
 
                 {/* Airplane Cabin Legends */}
                 <div className="airplane-legend-container">
-                  <h4 className="legend-title">Select Your Preferred Seat</h4>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <h4 className="legend-title" style={{ margin: 0, textAlign: "left" }}>Select Your Preferred Seat</h4>
+                    {activeSeatFilter && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveSeatFilter(null)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--secondary-color)",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          padding: "4px 10px",
+                          borderRadius: 6,
+                          backgroundColor: "rgba(37, 99, 235, 0.08)",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        Reset Filter
+                      </button>
+                    )}
+                  </div>
                   <div className="airplane-legend-grid">
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "middle_free" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("middle_free")}
+                    >
                       <div className="legend-seat standard free">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Middle Seat</span>
                         <span className="legend-price">Free</span>
                       </div>
                     </div>
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "standard_window" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("standard_window")}
+                    >
                       <div className="legend-seat standard window">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Standard Window</span>
                         <span className="legend-price">+₹250</span>
                       </div>
                     </div>
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "standard_aisle" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("standard_aisle")}
+                    >
                       <div className="legend-seat standard aisle">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Standard Aisle</span>
                         <span className="legend-price">+₹200</span>
                       </div>
                     </div>
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "preferred" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("preferred")}
+                    >
                       <div className="legend-seat preferred">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Preferred Rows 2-5</span>
                         <span className="legend-price">+₹350 - ₹600</span>
                       </div>
                     </div>
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "extra" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("extra")}
+                    >
                       <div className="legend-seat extra">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Extra Legroom</span>
                         <span className="legend-price">+₹999 - ₹1249</span>
                       </div>
                     </div>
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "booked" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("booked")}
+                    >
                       <div className="legend-seat booked">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Booked</span>
                         <span className="legend-price">Unavailable</span>
                       </div>
                     </div>
-                    <div className="legend-item">
+                    <div
+                      className={`legend-item ${activeSeatFilter === "selected" ? "active" : ""}`}
+                      onClick={() => handleFilterToggle("selected")}
+                    >
                       <div className="legend-seat selected">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Selected</span>
@@ -965,11 +1076,14 @@ export default function FlightSeatSelectionPage() {
                               else seatClass += " seat-middle-side";
                             }
 
+                            const doesMatch = !activeSeatFilter || doesSeatMatchFilter(seat, activeSeatFilter);
+                            const isDimmed = activeSeatFilter && !doesMatch;
+
                             rowElements.push(
                               <div
                                 key={seat?.id || `${rowNumber}-${seatLetter}`}
-                                className="seat-container"
-                                onMouseEnter={(e) => handleSeatMouseEnter(e, seat)}
+                                className={`seat-container ${isDimmed ? "dimmed" : ""}`}
+                                onMouseEnter={(e) => !isDimmed && handleSeatMouseEnter(e, seat)}
                                 onMouseLeave={handleSeatMouseLeave}
                               >
                                 <button
@@ -1103,28 +1217,127 @@ export default function FlightSeatSelectionPage() {
               </div>
             ) : (
               // Insurance Tab Content
-              <div style={{ padding: "12px 0" }}>
-                <div
-                  style={{
-                    border: "1px solid var(--border-color)",
-                    borderRadius: 12,
-                    padding: 20,
-                    backgroundColor: "#f8fafc",
-                    display: "flex",
-                    gap: 16,
-                    alignItems: "flex-start"
-                  }}
-                >
-                  <ShieldCheck size={36} style={{ color: "var(--secondary-color)", flexShrink: 0 }} />
-                  <div>
-                    <h3 style={{ margin: "0 0 6px 0", fontSize: "1rem" }}>
-                      {flowState.assuredSecured ? "Your booking is protected" : "Add protection to your booking"}
-                    </h3>
-                    <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)" }}>
-                      {flowState.assuredSecured
-                        ? "You have secured full refunds on cancellations under PickNBook protection."
-                        : "Secure full refunds, instant payouts and 24x7 support by opting in. Go back to traveller details to secure."}
-                    </p>
+              <div className="insurance-section-container">
+                <div className="insurance-cards-grid">
+                  {/* Card 1: Travel Assistance */}
+                  <div className="insurance-addon-card">
+                    <div className="insurance-addon-card-body">
+                      <h3 className="insurance-card-title">
+                        Travel <span className="highlight-green">Assistance</span>
+                      </h3>
+                      <p className="insurance-card-subtitle">Travel protected with exclusive benefits</p>
+                      
+                      <div className="insurance-benefits-list">
+                        <div className="insurance-benefit-item">
+                          <span className="benefit-check-circle">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                          <span>Flight delay benefit beyond 2 hours</span>
+                        </div>
+                        <div className="insurance-benefit-item">
+                          <span className="benefit-check-circle">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                          <span>Emergency Medical expenses</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="insurance-read-more"
+                        onClick={() => setActiveInsuranceTerms("travel")}
+                      >
+                        Read More
+                      </button>
+
+                      <hr className="insurance-divider" />
+
+                      <div className="insurance-price-row">
+                        <div className="insurance-price-info">
+                          <span className="insurance-tax-label">Inclusive of taxes</span>
+                          <span className="insurance-price-val">₹189</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`insurance-action-btn ${travelAssistanceAdded ? "added" : "add"}`}
+                          onClick={() => setTravelAssistanceAdded(!travelAssistanceAdded)}
+                        >
+                          {travelAssistanceAdded ? (
+                            <>
+                              <Check size={14} strokeWidth={3} /> Added
+                            </>
+                          ) : (
+                            "Add"
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="insurance-terms-text">
+                        By clicking on 'Add' I agree to purchase Travel Assistance and agree to all T&Cs I confirm that I am an Indian citizen upto the age of 90 years.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Zero Cancellation */}
+                  <div className="insurance-addon-card recommended">
+                    <div className="insurance-recommended-badge">Recommended</div>
+                    <div className="insurance-addon-card-body">
+                      <h3 className="insurance-card-title">
+                        Zero <span className="highlight-green">Cancellation</span>
+                      </h3>
+                      <p className="insurance-card-subtitle">
+                        Assistance service including Zero Cancellation. Cancel up to 24 hours before departure, claim your refund, no questions asked!
+                      </p>
+                      
+                      <div className="insurance-benefits-list">
+                        <div className="insurance-benefit-item">
+                          <span className="benefit-check-circle">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                          <span>Trip Cancellation</span>
+                        </div>
+                        <div className="insurance-benefit-item">
+                          <span className="benefit-check-circle">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                          <span>Coverage limit ₹5,000 · Cancel ≥24 hrs</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="insurance-read-more"
+                        onClick={() => setActiveInsuranceTerms("cancellation")}
+                      >
+                        Read More
+                      </button>
+
+                      <hr className="insurance-divider" />
+
+                      <div className="insurance-price-row">
+                        <div className="insurance-price-info">
+                          <span className="insurance-tax-label">Now say goodbye to Cancellation Fee</span>
+                          <span className="insurance-price-val">₹499</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`insurance-action-btn ${zeroCancellationAdded ? "added" : "add"}`}
+                          onClick={() => setZeroCancellationAdded(!zeroCancellationAdded)}
+                        >
+                          {zeroCancellationAdded ? (
+                            <>
+                              <Check size={14} strokeWidth={3} /> Added
+                            </>
+                          ) : (
+                            "Add"
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="insurance-terms-text">
+                        By clicking 'Add' I agreed to purchase assistance services including zero cancellation powered by Asego and accept all applicable T&Cs. I confirm that I am an Indian citizen upto the age of 70 years.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1184,6 +1397,58 @@ export default function FlightSeatSelectionPage() {
           Continue to Payment <ArrowRight size={16} />
         </button>
       </div>
+
+      {/* Insurance Terms Modal */}
+      {activeInsuranceTerms && (
+        <div className="insurance-modal-overlay" onClick={() => setActiveInsuranceTerms(null)}>
+          <div className="insurance-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="insurance-modal-close"
+              onClick={() => setActiveInsuranceTerms(null)}
+            >
+              <X size={20} />
+            </button>
+            {activeInsuranceTerms === "travel" ? (
+              <div className="insurance-modal-body">
+                <h3>Travel Assistance Benefits</h3>
+                <p>Enjoy travel protection with the following exclusive coverage benefits:</p>
+                <ul>
+                  <li><strong>Flight Delay:</strong> Benefit beyond 2 hours delay.</li>
+                  <li><strong>Emergency Medical Expenses:</strong> Medical costs incurred during transit.</li>
+                  <li><strong>Baggage Delay & Loss:</strong> Assistance and financial payout.</li>
+                  <li><strong>Emergency Assistance:</strong> 24x7 support coverage.</li>
+                </ul>
+                <p className="insurance-modal-disclaimer">
+                  Valid for Indian citizens up to the age of 90 years. Inclusive of all taxes.
+                </p>
+              </div>
+            ) : (
+              <div className="insurance-modal-body">
+                <h3>Zero Cancellation Benefits</h3>
+                <p>Say goodbye to cancellation fees and get fully refunded with peace of mind:</p>
+                <ul>
+                  <li><strong>Trip Cancellation:</strong> Cancel up to 24 hours before departure.</li>
+                  <li><strong>Full Refund:</strong> Claim refund of your flight fare up to ₹5,000.</li>
+                  <li><strong>No Questions Asked:</strong> Processed immediately without hassle or extensive documentation.</li>
+                  <li><strong>Asego Powered:</strong> Trusted assistance services.</li>
+                </ul>
+                <p className="insurance-modal-disclaimer">
+                  Valid for Indian citizens up to the age of 70 years. Cancel >= 24 hrs prior to departure.
+                </p>
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ width: "100%", marginTop: "16px" }}
+              onClick={() => setActiveInsuranceTerms(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

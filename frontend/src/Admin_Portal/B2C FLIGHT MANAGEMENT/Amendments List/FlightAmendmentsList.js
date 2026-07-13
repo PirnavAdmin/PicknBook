@@ -5,6 +5,37 @@ import AdminPagination from "../../../components/AdminPagination";
 
 const FLIGHT_AMENDMENTS_STORAGE_KEY = "admin_flight_amendments_records";
 
+const MOCK_AMENDMENTS = [
+  {
+    id: "1",
+    requestDateUtc: new Date().toISOString(),
+    from: "Delhi",
+    to: "Mumbai",
+    segment: "DEL → BOM",
+    customerName: "Rahul Sharma",
+    customerPhone: "9876543210",
+    status: "Pending",
+    supplierRemark: "No special instructions from supplier.",
+    customerRemark: "Please change departure date from 10th July to 12th July.",
+    adminRemark: "Processing request with the airline.",
+    updatedBy: "Travel Admin"
+  },
+  {
+    id: "2",
+    requestDateUtc: new Date(Date.now() - 86400000).toISOString(),
+    from: "Bengaluru",
+    to: "Kolkata",
+    segment: "BLR → CCU",
+    customerName: "Priyanka Sen",
+    customerPhone: "8765432109",
+    status: "Approved",
+    supplierRemark: "Flight date changed successfully.",
+    customerRemark: "Urgent rescheduling required due to meeting change.",
+    adminRemark: "Approved after airline verification.",
+    updatedBy: "Travel Admin"
+  }
+];
+
 const normalizeText = (value, fallback = "") => {
   const text = String(value ?? "").trim();
   return text || fallback;
@@ -35,13 +66,14 @@ const readAmendmentRecords = () => {
   try {
     const raw = window.localStorage.getItem(FLIGHT_AMENDMENTS_STORAGE_KEY) || "";
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      window.localStorage.setItem(FLIGHT_AMENDMENTS_STORAGE_KEY, JSON.stringify(MOCK_AMENDMENTS));
+      return MOCK_AMENDMENTS.map((record, index) => normalizeAmendmentRecord(record, index));
     }
 
     return parsed.map((record, index) => normalizeAmendmentRecord(record, index));
   } catch {
-    return [];
+    return MOCK_AMENDMENTS.map((record, index) => normalizeAmendmentRecord(record, index));
   }
 };
 
@@ -302,7 +334,7 @@ export default function AdminFlightAmendmentsListPage() {
     <section className="admin-b2c-page admin-flight-amend-page">
       <header className="admin-b2c-header admin-flight-amend-header">
         <h1>
-          <strong>B2C Flight</strong> Amendments List
+          <span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Amendments List
         </h1>
       </header>
 
@@ -318,7 +350,7 @@ export default function AdminFlightAmendmentsListPage() {
           <button type="button" onClick={clearFilters}>
             Clear Filter
           </button>
-          <button type="button" onClick={handleExport}>
+          <button type="button" className="admin-flight-btn-export" onClick={handleExport}>
             Export
           </button>
         </div>
@@ -527,4 +559,5 @@ export default function AdminFlightAmendmentsListPage() {
     </section>
   );
 }
+
 

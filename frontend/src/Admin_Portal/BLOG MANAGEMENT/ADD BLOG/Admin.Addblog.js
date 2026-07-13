@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
-import { toApiAssetUrl } from '../../../services/apiClient';
+import { toApiAssetUrl, NgrokSafeImage } from '../../../services/apiClient';
 
 const DEFAULT_FORM_STATE = {
     title: '',
@@ -33,7 +33,7 @@ const createFormState = (blog) => ({
     addedBy: blog?.addedByName || blog?.author || blog?.addedBy || '',
     subTitle: blog?.subTitle || '',
     featured: blog?.isFeatured ? 'Yes' : 'No',
-    isPublished: blog?.isPublished ? 'Yes' : 'No',
+    isPublished: blog ? (blog.isPublished ? 'Yes' : 'No') : 'Yes',
     metaTitle: blog?.metaTitle || '',
     metaKeyword: blog?.metaKeyword || '',
     metaDescription: blog?.metaDescription || '',
@@ -73,6 +73,8 @@ const AddBlogForm = () => {
     }, [location.state]);
 
     const [formData, setFormData] = useState(() => createFormState(editingBlog));
+    const [imagePreview, setImagePreview] = useState(() => editingBlog ? (editingBlog.imageUrl || editingBlog.image || '') : '');
+    const [ogImagePreview, setOgImagePreview] = useState(() => editingBlog ? (editingBlog.ogImageUrl || editingBlog.ogImage || '') : '');
     const [toast, setToast] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,6 +91,8 @@ const AddBlogForm = () => {
     useEffect(() => {
         if (editingBlog) {
             setFormData(createFormState(editingBlog));
+            setImagePreview(editingBlog.imageUrl || editingBlog.image || '');
+            setOgImagePreview(editingBlog.ogImageUrl || editingBlog.ogImage || '');
         }
     }, [editingBlog]);
 
@@ -112,6 +116,15 @@ const AddBlogForm = () => {
             [name]: file,
             [labelField]: file?.name || prev[labelField],
         }));
+        
+        if (file) {
+            const previewUrl = URL.createObjectURL(file);
+            if (name === 'image') {
+                setImagePreview(previewUrl);
+            } else if (name === 'ogImage') {
+                setOgImagePreview(previewUrl);
+            }
+        }
     };
 
     const buildSlug = (title) =>
@@ -212,12 +225,14 @@ const AddBlogForm = () => {
 
     const handleReset = () => {
         setFormData(createFormState(editingBlog));
+        setImagePreview(editingBlog ? (editingBlog.imageUrl || editingBlog.image || '') : '');
+        setOgImagePreview(editingBlog ? (editingBlog.ogImageUrl || editingBlog.ogImage || '') : '');
         showToast(isEditing ? 'Changes reset.' : 'Form reset.', 'info');
     };
 
     const styles = {
         container: {
-            padding: '24px 32px',
+            padding: '12px 32px',
             background: 'var(--page-bg)',
             minHeight: '100vh',
         },
@@ -232,33 +247,33 @@ const AddBlogForm = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '24px',
+            marginBottom: '10px',
             gap: '16px',
             flexWrap: 'wrap',
         },
         titleWrapper: {
             display: 'flex',
             alignItems: 'baseline',
-            gap: '8px',
+            gap: '4px',
             paddingBottom: '0px',
         },
         titleMain: {
-            fontSize: '2.2rem',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#be185d',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.8rem',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#be185d',
             margin: 0,
         },
         listBtn: {
             padding: '10px 16px',
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
+            background: '#be185d',
+            color: '#ffffff',
+            border: '1px solid #be185d',
             borderRadius: '8px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -269,7 +284,7 @@ const AddBlogForm = () => {
             fontSize: '0.9rem',
         },
         sectionHeader: {
-            background: 'linear-gradient(90deg, var(--primary), var(--primary-strong))',
+            background: '#be185d',
             color: '#ffffff',
             padding: '8px 15px',
             fontWeight: 700,
@@ -414,9 +429,9 @@ const AddBlogForm = () => {
         },
         submitBtn: {
             padding: '12px 40px',
-            background: 'var(--primary)',
+            background: '#be185d',
             color: '#ffffff',
-            border: '1.5px solid var(--primary)',
+            border: '1.5px solid #be185d',
             borderRadius: '8px',
             fontWeight: 700,
             fontSize: '1rem',
@@ -490,35 +505,35 @@ const AddBlogForm = () => {
                         {toast.message}
                     </div>
                 )}
-                <div style={styles.header}>
-                    <div style={styles.titleWrapper}>
-                        <h1 style={styles.titleMain}>{isEditing ? 'Edit' : 'Add'}</h1>
-                        <h2 style={styles.titleSub}>Blog</h2>
-                    </div>
-                    <button
-                        type="button"
-                        style={styles.listBtn}
-                        onMouseEnter={(e) => {
-                            e.target.style.background = 'var(--primary)';
-                            e.target.style.color = '#ffffff';
-                            e.target.style.borderColor = 'var(--primary)';
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.background = 'var(--panel)';
-                            e.target.style.color = 'var(--text-primary)';
-                            e.target.style.borderColor = 'var(--border)';
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = 'none';
-                        }}
-                        onClick={() => navigate('/admin/blog-management/blog-list')}
-                    >
-                        Blog List
-                    </button>
-                </div>
-
                 <div style={styles.card}>
+                    <div style={{ ...styles.header, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+                        <div style={styles.titleWrapper}>
+                            <h1 style={styles.titleMain}>{isEditing ? 'Edit' : 'Add'}</h1>
+                            <h2 style={styles.titleSub}>Blog</h2>
+                        </div>
+                        <button
+                            type="button"
+                            style={styles.listBtn}
+                            onMouseEnter={(e) => {
+                                e.target.style.background = '#9d124d';
+                                e.target.style.color = '#ffffff';
+                                e.target.style.borderColor = '#9d124d';
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = '#be185d';
+                                e.target.style.color = '#ffffff';
+                                e.target.style.borderColor = '#be185d';
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                            onClick={() => navigate('/admin/blog-management/blog-list')}
+                        >
+                            Blog List
+                        </button>
+                    </div>
+
                     <form onSubmit={handleSubmit}>
                          <div style={styles.sectionHeader}>Basic Information</div>
                         <table style={styles.tableForm}>
@@ -556,10 +571,10 @@ const AddBlogForm = () => {
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                            {formData.imageName && (
+                                            {imagePreview && (
                                                 <div style={{ marginBottom: '4px' }}>
-                                                    <img 
-                                                        src={toApiAssetUrl(formData.imageName)} 
+                                                    <NgrokSafeImage 
+                                                        src={imagePreview.startsWith('blob:') ? imagePreview : toApiAssetUrl(imagePreview)} 
                                                         alt="Current Blog" 
                                                         style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
                                                     />
@@ -744,10 +759,10 @@ const AddBlogForm = () => {
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                            {formData.ogImageName && (
+                                            {ogImagePreview && (
                                                 <div style={{ marginBottom: '4px' }}>
-                                                    <img 
-                                                        src={toApiAssetUrl(formData.ogImageName)} 
+                                                    <NgrokSafeImage 
+                                                        src={ogImagePreview.startsWith('blob:') ? ogImagePreview : toApiAssetUrl(ogImagePreview)} 
                                                         alt="Current OG" 
                                                         style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
                                                     />
@@ -810,16 +825,16 @@ const AddBlogForm = () => {
                                 style={styles.submitBtn}
                                 disabled={isSubmitting}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--primary-strong)';
+                                    e.target.style.background = '#9d124d';
                                     e.target.style.color = '#ffffff';
-                                    e.target.style.borderColor = 'var(--primary-strong)';
+                                    e.target.style.borderColor = '#9d124d';
                                     e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--primary)';
+                                    e.target.style.background = '#be185d';
                                     e.target.style.color = '#ffffff';
-                                    e.target.style.borderColor = 'var(--primary)';
+                                    e.target.style.borderColor = '#be185d';
                                     e.target.style.transform = 'translateY(0)';
                                     e.target.style.boxShadow = 'none';
                                 }}

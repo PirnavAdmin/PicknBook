@@ -22,21 +22,99 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  border: 1.5px solid #A51C49 !important;
+  background: #A51C49 !important;
+  color: #fff !important;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-flight-remark-btn:hover {
+  background: #9c1048 !important;
+  border-color: #9c1048 !important;
+  transform: translateY(-2px) !important;
 }
 
 .admin-flight-remark-btn.secondary {
-  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary)) !important;
+  border: 1.5px solid #1e75ff !important;
+  background: #1e75ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(30, 117, 255, 0.15) !important;
+}
+
+.admin-flight-remark-btn.secondary:hover {
+  background: #0052d9 !important;
+  border-color: #0052d9 !important;
+  transform: translateY(-2px) !important;
 }
 
 .admin-flight-remark-table-head,
 .admin-flight-remark-table-row {
-  grid-template-columns: 0.35fr 0.4fr 1.05fr 1.05fr 0.95fr 1.05fr 1.7fr 0.75fr 0.75fr;
+  grid-template-columns: 0.4fr 1.05fr 1.05fr 0.95fr 1.05fr 1.7fr 0.75fr 0.75fr;
+}
+
+.admin-flight-remark-table-head {
+  background: #A51C49 !important;
+}
+
+.admin-flight-remark-table-head span {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  font-size: 0.8rem;
 }
 
 .admin-flight-remark-action-cell {
   grid-auto-flow: column;
   justify-content: center;
   gap: 8px;
+}
+
+.admin-flight-remark-submit-btn,
+.admin-flight-remark-reset-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 0 28px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.22s ease-in-out;
+}
+
+.admin-flight-remark-submit-btn {
+  border: 1.5px solid #A51C49 !important;
+  color: #ffffff !important;
+  background: #A51C49 !important;
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+}
+
+.admin-flight-remark-submit-btn:hover {
+  background: #9c1048 !important;
+  border-color: #9c1048 !important;
+  transform: translateY(-2px) !important;
+}
+
+.admin-flight-remark-reset-btn {
+  border: 1.5px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+}
+
+.admin-flight-remark-reset-btn:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
 }
 
 .admin-flight-remark-icon-btn {
@@ -59,6 +137,28 @@
   background: linear-gradient(135deg, var(--admin-danger), var(--admin-primary-strong));
 }
 
+.admin-flight-remark-edit-list-btn {
+  min-height: 34px;
+  border: 1.5px solid #A51C49;
+  border-radius: 10px;
+  padding: 0 16px;
+  color: #A51C49;
+  font-size: 0.84rem;
+  font-weight: 600;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.22s ease-in-out;
+}
+
+.admin-flight-remark-edit-list-btn:hover {
+  background: #A51C49;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
 .admin-flight-remark-status {
   min-height: 28px;
   border-radius: 8px;
@@ -73,10 +173,44 @@
   font-weight: 800;
 }
 
+.admin-flight-remark-status.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
 .admin-flight-remark-status.inactive {
   border-color: var(--admin-danger);
   background: var(--admin-danger-soft);
   color: var(--admin-danger);
+}
+
+.admin-flight-remark-action-cell {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.admin-flight-remark-icon-btn.view {
+  background: #10b981 !important;
+}
+
+.admin-flight-remark-icon-btn.view:hover {
+  background: #059669 !important;
+  transform: translateY(-2px);
+}
+
+.admin-flight-remark-icon-btn.edit:hover {
+  background: #be185d !important;
+  transform: translateY(-2px);
+}
+
+.admin-flight-remark-icon-btn.delete:hover {
+  background: #b91c1c !important;
+  transform: translateY(-2px);
 }
 
 @media (max-width: 1040px) {
@@ -92,4 +226,5 @@
     grid-template-columns: 1fr;
   }
 }
+
 

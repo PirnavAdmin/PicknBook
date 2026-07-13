@@ -1,5 +1,4 @@
-/* ── Admin Verify PIN – Travel Adventures Theme (matching login) ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Mono:ital,wght@0,700;1,700&display=swap');
 
 /* ── Reset (scoped) ── */
 .pin-wrapper *,
@@ -10,343 +9,547 @@
   box-sizing: border-box;
 }
 
-/* ── Full-page wrapper — same split layout as login ── */
+/* ── Full-page wrapper: fixed, no scroll ── */
 .pin-wrapper {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Inter', sans-serif;
   overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 50%, #faf5ff 100%);
+  isolation: isolate;
 }
 
-/* ──────────────────────────────── LEFT SIDE ──────────────────────────────── */
-.pin-left {
-  width: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(160deg, #e0f7f5 0%, #b2ebf2 30%, #80deea 60%, #4dd0e1 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Cloud shapes */
-.pin-left::before {
-  content: '';
-  position: absolute;
-  top: 60px;
-  right: -40px;
-  width: 180px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 50px;
-  filter: blur(1px);
-}
-
-.pin-left::after {
-  content: '';
-  position: absolute;
-  bottom: 100px;
-  left: 30px;
-  width: 140px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 40px;
-  filter: blur(1px);
-}
-
-.pin-logo-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 2;
-}
-
-.pin-logo-img {
-  width: 220px;
-  max-width: 80%;
-  height: auto;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.12));
-  animation: pinLogoFloat 6s ease-in-out infinite;
-}
-
-@keyframes pinLogoFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.pin-plane {
-  position: absolute;
-  top: 30px;
-  right: 80px;
-  font-size: 32px;
-  opacity: 0.5;
-  transform: rotate(-20deg);
-  animation: pinPlaneFly 10s ease-in-out infinite;
-  z-index: 1;
-}
-
-@keyframes pinPlaneFly {
-  0%, 100% { transform: rotate(-20deg) translate(0, 0); }
-  25% { transform: rotate(-15deg) translate(10px, -8px); }
-  50% { transform: rotate(-20deg) translate(20px, 0); }
-  75% { transform: rotate(-25deg) translate(10px, 8px); }
-}
-
-/* ──────────────────────────────── RIGHT SIDE ──────────────────────────────── */
-.pin-right {
-  width: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
-  background: linear-gradient(160deg, #a7e8f0 0%, #b3e8f0 25%, #c8eef5 50%, #dff5fa 75%, #e8f8fc 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Cloud decorations */
-.pin-right::before {
-  content: '';
-  position: absolute;
-  top: 40px;
-  right: 60px;
-  width: 120px;
-  height: 55px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 40px;
-  box-shadow: -30px 10px 0 15px rgba(255, 255, 255, 0.5);
-}
-
-.pin-right::after {
-  content: '';
-  position: absolute;
-  top: 120px;
-  left: 40px;
-  width: 90px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.45);
-  border-radius: 30px;
-  box-shadow: 25px 8px 0 10px rgba(255, 255, 255, 0.3);
-}
-
-/* Bus image */
-.pin-bus-img {
-  position: absolute;
-  bottom: -10px;
-  right: -20px;
-  width: 360px;
-  height: auto;
-  opacity: 0.45;
+.skyline-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
   pointer-events: none;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+  opacity: 0.7;
 }
 
-/* ──────────────────────────────── CARD (Glassmorphism) ──────────────────────────────── */
+.skyline-background svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pin-wrapper .lm {
+  stroke: #dc2626 !important;
+}
+
+.pin-wrapper .lm-thin {
+  stroke: #fca5a5 !important;
+}
+
+.pin-wrapper .lm-dot {
+  stroke: #fca5a5 !important;
+}
+
+.pin-wrapper .admin-plane-fly path[fill="#4fa8e8"] {
+  fill: #ef4444 !important;
+}
+
+.pin-wrapper .admin-plane-fly path[fill="#2a85cc"] {
+  fill: #b91c1c !important;
+}
+
+@keyframes adminPlaneFly {
+  0% {
+    transform: translate(-60px, 0px) rotate(-8deg) scale(0.85);
+    opacity: 0;
+  }
+
+  5% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translate(50vw, -60px) rotate(-6deg) scale(1);
+  }
+
+  95% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(110vw, -40px) rotate(-4deg) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.admin-plane-fly {
+  animation: adminPlaneFly 26s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform-origin: center;
+}
+
+@keyframes adminBalloon1 {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(8px, -22px) scale(1.05);
+  }
+}
+
+.admin-balloon-1 {
+  animation: adminBalloon1 14s ease-in-out infinite;
+}
+
+@keyframes adminBalloon2 {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(-6px, -18px) scale(0.95);
+  }
+}
+
+.admin-balloon-2 {
+  animation: adminBalloon2 18s ease-in-out infinite;
+}
+
+@keyframes adminCloudDrift {
+  0% {
+    transform: translateX(0px);
+  }
+
+  100% {
+    transform: translateX(30px);
+  }
+}
+
+.admin-cloud-1 {
+  animation: adminCloudDrift 20s ease-in-out infinite alternate;
+}
+
+.admin-cloud-2 {
+  animation: adminCloudDrift 25s ease-in-out infinite alternate-reverse;
+}
+
+.admin-cloud-3 {
+  animation: adminCloudDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes adminDashMove {
+  0% {
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dashoffset: -120;
+  }
+}
+
+.admin-flight-path {
+  stroke-dasharray: 8 6;
+  animation: adminDashMove 4s linear infinite;
+}
+
+.admin-flight-path-2 {
+  stroke-dasharray: 8 6;
+  animation: adminDashMove 5s linear infinite;
+}
+
+/* Logo Box inside card */
+.logo-container-card {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.logo-img-hd {
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  mix-blend-mode: multiply;
+  display: block;
+}
+
+/* ── PIN CARD ── */
 .pin-box {
-  width: 370px;
-  max-width: 95%;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 20px;
-  padding: 36px 32px 32px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-  z-index: 5;
-  animation: pinCardSlide 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  width: 90%;
+  max-width: 360px;
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-radius: 24px;
+  padding: 24px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.06), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  animation: pinCardEnter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 3;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes pinCardSlide {
-  from { opacity: 0; transform: translateY(30px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+.pin-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 32px 70px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
-/* Hide old top-title */
-.top-title {
-  display: none;
+@keyframes pinCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-/* ── Card Title ── */
+/* Title */
 .pin-title {
-  background: linear-gradient(135deg, #e53935, #ff6f00);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-size: 30px;
+  font-size: 20px;
   font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.8px;
+  margin-bottom: 4px;
   text-align: center;
-  margin-bottom: 2px;
-  letter-spacing: -0.5px;
 }
 
-/* ── Info banner ── */
+/* Info banner */
 .info {
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  padding: 12px 14px;
-  margin: 12px 0 18px;
-  border-left: 4px solid #43a047;
-  border-radius: 0 10px 10px 0;
-  font-size: 13px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 3px solid #3b82f6;
+  padding: 10px 12px;
+  margin: 12px 0 16px;
+  border-radius: 4px 8px 8px 4px;
+  font-size: 12px;
   font-weight: 500;
-  color: #2e7d32;
+  color: #1e3a8a;
+  line-height: 1.5;
+  text-align: center;
 }
 
-/* ── Inputs ── */
+/* Input fields */
 .pin-box input {
   width: 100%;
-  padding: 11px 14px;
-  margin-top: 12px;
-  border: 1.5px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 9px 12px;
+  margin-top: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
   font-family: 'Inter', sans-serif;
-  color: #111827;
-  background: #fff;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01) inset;
+}
+
+.pin-box input:hover {
+  border-color: rgba(15, 23, 42, 0.15);
+  background: #ffffff;
 }
 
 .pin-box input:focus {
-  border-color: #4dd0e1;
-  box-shadow: 0 0 0 3px rgba(77, 208, 225, 0.15);
+  border-color: #ef4444;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1), 0 2px 4px rgba(239, 68, 68, 0.02);
 }
 
 .pin-box input::placeholder {
-  color: #9ca3af;
+  color: #94a3b8;
   font-weight: 400;
 }
 
-/* ── Error ── */
+/* Error */
 .pin-box .error {
-  color: #dc2626;
+  color: #ef4444;
   font-size: 12px;
   font-weight: 500;
-  margin-top: 8px;
-}
-
-/* ── CAPTCHA Row ── */
-.pin-box .captcha-row {
+  margin-top: 6px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 16px;
+  justify-content: center;
+  gap: 4px;
 }
 
-.pin-box .captcha-code {
-  background: linear-gradient(135deg, #e53935, #ff6f00);
-  padding: 10px 18px;
-  color: #fff;
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: 4px;
+/* CAPTCHA Row */
+.captcha-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  height: 38px;
+  width: 100%;
+  max-width: 240px;
+}
+
+.captcha-code {
+  flex: 1.1;
+  background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(239, 68, 68, 0.04) 8px, rgba(239, 68, 68, 0.04) 9px),
+    repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(239, 68, 68, 0.04) 8px, rgba(239, 68, 68, 0.04) 9px),
+    rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 0 10px;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 6px;
   border-radius: 8px;
   user-select: none;
-  font-family: 'Courier New', monospace;
-  min-width: 90px;
+  font-family: 'Space Mono', monospace;
+  font-style: italic;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(229, 57, 53, 0.25);
+  position: relative;
+  text-shadow: 1px 1px 2px rgba(239, 68, 68, 0.15);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transform: skewX(-6deg) rotate(-1deg);
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pin-box .refresh-btn {
-  background: linear-gradient(135deg, #0288d1, #0097a7);
-  border: none;
-  color: #fff;
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 700;
+.captcha-code::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40%;
+  height: 2px;
+  background: rgba(220, 38, 38, 0.45);
+  transform: rotate(4deg);
+  pointer-events: none;
+}
+
+.captcha-code::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 55%;
+  height: 1.5px;
+  background: rgba(220, 38, 38, 0.4);
+  transform: rotate(-6deg);
+  pointer-events: none;
+}
+
+.refresh-btn {
+  flex: 0.7;
+  background: #dc2626;
+  border: 1px solid #dc2626;
+  color: #ffffff;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
   font-family: 'Inter', sans-serif;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px rgba(2, 136, 209, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pin-box .refresh-btn:hover {
+.refresh-btn:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(2, 136, 209, 0.35);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2);
 }
 
-/* ── Verify Button ── */
+.refresh-btn:active {
+  transform: translateY(0);
+}
+
+/* Verify Button */
 .verify-btn {
   width: 100%;
-  margin-top: 18px;
-  padding: 13px 20px;
+  margin-top: 14px;
+  padding: 10px 16px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #ff6f00, #e53935);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: transform 0.15s, box-shadow 0.25s;
-  box-shadow: 0 4px 16px rgba(229, 57, 53, 0.3);
+  letter-spacing: 0.4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.verify-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .verify-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(229, 57, 53, 0.4);
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
 }
 
 .verify-btn:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 }
 
 .verify-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
-/* ──────────────────────────────── RESPONSIVE ──────────────────────────────── */
-@media (max-width: 900px) {
-  .pin-wrapper {
-    flex-direction: column;
-  }
-
-  .pin-left {
-    width: 100%;
-    padding: 40px 20px;
-    min-height: 200px;
-  }
-
-  .pin-logo-img {
-    width: 160px;
-  }
-
-  .pin-right {
-    width: 100%;
-    padding: 30px 20px 50px;
-    align-items: flex-start;
-  }
-
-  .pin-box {
-    width: 100%;
-    max-width: 420px;
-  }
-}
-
+/* ── RESPONSIVE ── */
 @media (max-width: 480px) {
-  .pin-left {
-    min-height: 160px;
-    padding: 30px 16px;
-  }
-
-  .pin-logo-img {
-    width: 130px;
-  }
-
   .pin-box {
-    padding: 28px 22px 24px;
-    border-radius: 16px;
+    width: 92%;
+    padding: 20px 22px;
+    border-radius: 20px;
   }
 
   .pin-title {
-    font-size: 26px;
+    font-size: 18px;
   }
+
+  .info {
+    font-size: 11px;
+    padding: 8px 10px;
+    margin: 10px 0 12px;
+  }
+
+  .logo-img-hd {
+    width: 140px;
+  }
+
+  .captcha-row {
+    gap: 8px;
+  }
+
+  .captcha-code {
+    font-size: 16px;
+    letter-spacing: 5px;
+    padding: 8px 10px;
+  }
+
+  .refresh-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
+/* OTP Input Wrapper */
+.otp-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Override input margins to sit inside wrapper */
+.otp-input-wrapper input {
+  margin-top: 0 !important;
+  width: 100%;
+  padding-right: 75px !important;
+  /* Ensure text doesn't overlap timer/button */
+}
+
+.otp-input-action {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 5;
+}
+
+.otp-input-timer-text {
+  font-size: 13px;
+  color: #ef4444;
+  font-weight: 700;
+  pointer-events: none;
+  user-select: none;
+  background: rgba(254, 242, 242, 0.9);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.otp-input-resend-btn {
+  background: #fef2f2;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 10px;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
+}
+
+.otp-input-resend-btn:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+.otp-input-resend-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.otp-input-timer-btn {
+  background: #fef2f2;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  cursor: not-allowed;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
+}
+
+.resend-success-msg {
+  color: #16a34a;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-top: 8px;
+  text-align: center;
 }

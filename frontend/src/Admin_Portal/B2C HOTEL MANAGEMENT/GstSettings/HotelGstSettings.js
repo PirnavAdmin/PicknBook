@@ -1,32 +1,61 @@
-import React, { useEffect, useState } from "react";
-import { Check, Edit, Plus, Trash2, X, AlertCircle } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { Check, Edit, Trash2, Plus, ArrowLeft, X } from "lucide-react";
 import "./HotelGstSettings.css";
-import { getHotelGstSettings, saveHotelGstSetting } from "../../../services/adminHotelService";
+import AdminPagination from "../../../components/AdminPagination";
+import {
+  listHotelPricingRules,
+  createHotelPricingRule,
+  updateHotelPricingRule,
+  deleteHotelPricingRule
+} from "../../../services/adminHotelService";
+
+function createDefaultForm() {
+  return {
+    markupType: "Flat",
+    markupValue: "",
+    convenienceFeeType: "Flat",
+    convenienceFeeValue: "",
+    gstPercent: "",
+    isActive: true
+  };
+}
 
 export default function HotelGstSettings() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [gstPercent, setGstPercent] = useState("");
-  const [category, setCategory] = useState("Hotel");
-  const [remark, setRemark] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Toolbar state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Separated view states with sessionStorage persistence
+  const [isFormViewOpen, setIsFormViewOpen] = useState(() => {
+    return sessionStorage.getItem("hotel_gst_form_open") === "true";
+  });
+  const [editId, setEditId] = useState(() => {
+    const savedId = sessionStorage.getItem("hotel_gst_edit_id");
+    return savedId ? Number(savedId) : null;
+  });
+  const [form, setForm] = useState(() => {
+    const savedForm = sessionStorage.getItem("hotel_gst_form_data");
+    return savedForm ? JSON.parse(savedForm) : createDefaultForm();
+  });
 
   const loadSettings = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await getHotelGstSettings();
+      const data = await listHotelPricingRules();
       setRows(Array.isArray(data) ? data : []);
-      const activeSetting = data.find(g => g.status === "Active");
-      if (activeSetting) {
-        setGstPercent(String(activeSetting.gstPercent));
-        setCategory(activeSetting.gstCategory || "Hotel");
-        setRemark(activeSetting.remark || "");
-      }
     } catch (err) {
-      setError(err.message || "Failed to load GST settings.");
+      setError(err.message || "Failed to load GST & pricing settings.");
     } finally {
       setLoading(false);
     }
@@ -36,148 +65,528 @@ export default function HotelGstSettings() {
     loadSettings();
   }, []);
 
+  // Close actions dropdown on clicking outside
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveDropdownId(null);
+    };
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, []);
+
+  // Synchronize states to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("hotel_gst_form_open", isFormViewOpen);
+    if (editId !== null) {
+      sessionStorage.setItem("hotel_gst_edit_id", editId);
+    } else {
+      sessionStorage.removeItem("hotel_gst_edit_id");
+    }
+    sessionStorage.setItem("hotel_gst_form_data", JSON.stringify(form));
+  }, [isFormViewOpen, editId, form]);
+
+  // Search & Filter Memo
+  const filteredRows = useMemo(() => {
+    return rows.filter(r => {
+      const matchesSearch =
+        String(r.id).includes(searchTerm) ||
+        String(r.markupValue).includes(searchTerm) ||
+        String(r.convenienceFeeValue).includes(searchTerm) ||
+        String(r.gstPercent).includes(searchTerm) ||
+        String(r.updatedBy || "").toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && r.isActive) ||
+        (statusFilter === "inactive" && !r.isActive);
+
+    return matchesSearch && matchesStatus;
+    });
+  }, [rows, searchTerm, statusFilter]);
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRows.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredRows, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const openAddForm = () => {
+    setError("");
+    setValidationErrors({});
+    setEditId(null);
+    setForm(createDefaultForm());
+    setIsFormViewOpen(true);
+  };
+
+  const loadRowToForm = (row) => {
+    setError("");
+    setValidationErrors({});
+    setEditId(row.id);
+    setForm({
+      markupType: row.markupType || "Flat",
+      markupValue: String(row.markupValue || ""),
+      convenienceFeeType: row.convenienceFeeType || "Flat",
+      convenienceFeeValue: String(row.convenienceFeeValue || ""),
+      gstPercent: String(row.gstPercent || ""),
+      isActive: !!row.isActive
+    });
+    setIsFormViewOpen(true);
+  };
+
+  const handleCancelForm = () => {
+    setIsFormViewOpen(false);
+    sessionStorage.removeItem("hotel_gst_form_open");
+    sessionStorage.removeItem("hotel_gst_edit_id");
+    sessionStorage.removeItem("hotel_gst_form_data");
+    setValidationErrors({});
+    setError("");
+  };
+
   const handleSave = async () => {
-    const percent = Number(gstPercent);
-    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
-      setError("Enter a valid GST percentage (0 - 100).");
+    setError("");
+    const mValue = Number(form.markupValue);
+    const cfValue = Number(form.convenienceFeeValue);
+    const gstVal = Number(form.gstPercent);
+
+    const errors = {};
+    if (form.markupValue === "" || !Number.isFinite(mValue) || mValue < 0) errors.markupValue = true;
+    if (form.convenienceFeeValue === "" || !Number.isFinite(cfValue) || cfValue < 0) errors.convenienceFeeValue = true;
+    if (form.gstPercent === "" || !Number.isFinite(gstVal) || gstVal < 0 || gstVal > 100) errors.gstPercent = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setError("Please fill in all compulsory fields with valid values.");
       return;
     }
+    setValidationErrors({});
+
+    const payload = {
+      markupType: form.markupType,
+      markupValue: mValue,
+      convenienceFeeType: form.convenienceFeeType,
+      convenienceFeeValue: cfValue,
+      gstPercent: gstVal,
+      isActive: form.isActive
+    };
 
     setIsSubmitting(true);
-    setError("");
     try {
-      await saveHotelGstSetting({
-        gstCategory: category,
-        gstPercent: percent,
-        remark: remark.trim()
-      });
-      setIsEditing(false);
+      if (editId) {
+        await updateHotelPricingRule(editId, payload);
+      } else {
+        await createHotelPricingRule(payload);
+      }
+      handleCancelForm();
       await loadSettings();
     } catch (err) {
-      setError(err.message || "Failed to save GST setting.");
+      setError(err.message || "Failed to save pricing rule.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const activeGst = rows.find(r => r.status === "Active");
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this pricing rule?")) {
+      return;
+    }
+    setError("");
+    try {
+      await deleteHotelPricingRule(id);
+      if (editId === id) {
+        handleCancelForm();
+      }
+      await loadSettings();
+    } catch (err) {
+      setError(err.message || "Failed to delete pricing rule.");
+    }
+  };
+
+  const handleToggleStatus = async (row) => {
+    setError("");
+    const payload = {
+      markupType: row.markupType,
+      markupValue: row.markupValue,
+      convenienceFeeType: row.convenienceFeeType,
+      convenienceFeeValue: row.convenienceFeeValue,
+      gstPercent: row.gstPercent,
+      isActive: !row.isActive
+    };
+    try {
+      await updateHotelPricingRule(row.id, payload);
+      await loadSettings();
+    } catch (err) {
+      setError(err.message || "Failed to toggle status.");
+    }
+  };
+
+  const handleExport = () => {
+    const headers = ["ID", "Markup Type", "Markup Value", "Convenience Fee Type", "Convenience Fee Value", "GST Percent", "Status", "Updated On", "Updated By"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredRows.map(r => [
+        r.id,
+        r.markupType,
+        r.markupValue,
+        r.convenienceFeeType,
+        r.convenienceFeeValue,
+        r.gstPercent,
+        r.isActive ? "Active" : "Inactive",
+        new Date(r.updatedAtUtc || r.createdAtUtc).toISOString(),
+        r.updatedBy || ""
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `hotel-gst-settings-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <section className="admin-b2c-page admin-gst-settings-page">
-      <header className="admin-b2c-header admin-gst-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1>B2C Hotel GST Settings</h1>
-          <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "var(--text-secondary)" }}>Manage GST percentages applied on hotel reservation checkout bookings</p>
-        </div>
-        {activeGst && !isEditing && (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.85rem", fontWeight: "600" }}
-          >
-            <Edit size={14} /> Update Rate
-          </button>
-        )}
-      </header>
+    <div className="admin-b2c-page admin-b2c-hotel-page bus-gst-settings-page-container">
+      {isFormViewOpen ? (
+        /* ── CONFIGURATION FORM VIEW ── */
+        <section className="admin-markup-coupon-table-wrap" style={{ padding: "24px", background: "var(--panel)", borderRadius: "16px", border: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+            <h1 style={{ fontSize: "1.6rem", margin: 0, fontWeight: "700", color: "#000000" }}>
+              Configure <span style={{ color: "#be185d" }}>B2C Hotel</span> GST Settings
+            </h1>
+            <button
+              type="button"
+              className="admin-markup-coupon-btn generate"
+              onClick={handleCancelForm}
+              style={{ backgroundColor: "#be185d", borderColor: "#be185d", display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <ArrowLeft size={15} />
+              <span>GST Settings List</span>
+            </button>
+          </div>
 
-      {loading ? (
-        <div className="admin-data-info">Loading GST settings...</div>
-      ) : (
-        <div style={{ marginTop: "24px" }}>
-          {error && <div className="admin-data-error" style={{ marginBottom: "15px" }}>{error}</div>}
+          {error && <div className="admin-data-error" style={{ marginBottom: "15px", color: "red", fontSize: "0.85rem" }}>{error}</div>}
 
-          {isEditing || !activeGst ? (
-            <section className="admin-gst-edit-shell" style={{ maxWidth: "550px", padding: "24px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "16px" }}>
-              <h2 style={{ fontSize: "1rem", margin: "0 0 16px 0", fontWeight: "700" }}>Configure GST Settings</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600" }}>
-                  <span>Category Name:</span>
-                  <input
-                    type="text"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    placeholder="Hotel"
-                    disabled
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface-soft)", color: "var(--text-secondary)" }}
-                  />
-                </label>
+          <div className="admin-markup-coupon-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span>Markup Type: <span style={{ color: "red" }}>*</span></span>
+              <select value={form.markupType} onChange={(e) => setForm(prev => ({ ...prev, markupType: e.target.value }))}>
+                <option value="Flat">Flat</option>
+                <option value="Percentage">Percentage</option>
+              </select>
+            </label>
 
-                <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600" }}>
-                  <span>GST Percentage (%):</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={gstPercent}
-                    onChange={(e) => setGstPercent(e.target.value)}
-                    placeholder="e.g. 18"
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)" }}
-                  />
-                </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span>Markup Value: <span style={{ color: "red" }}>*</span></span>
+              <input
+                type="number"
+                className={validationErrors.markupValue ? "validation-error" : ""}
+                value={form.markupValue}
+                onChange={(e) => {
+                  setForm(prev => ({ ...prev, markupValue: e.target.value }));
+                  if (e.target.value.trim()) {
+                    setValidationErrors(prev => ({ ...prev, markupValue: false }));
+                  }
+                }}
+                placeholder="e.g. 499.50"
+              />
+            </label>
 
-                <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600" }}>
-                  <span>Remark:</span>
-                  <input
-                    type="text"
-                    value={remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    placeholder="e.g. Standard 12% / 18% GST"
-                    style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)" }}
-                  />
-                </label>
-                
-                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                    style={{ padding: "10px 16px", borderRadius: "8px", background: "var(--primary)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "650" }}
-                  >
-                    {isSubmitting ? "Saving..." : "Save GST Settings"}
-                  </button>
-                  {activeGst && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setGstPercent(String(activeGst.gstPercent));
-                        setRemark(activeGst.remark || "");
-                      }}
-                      style={{ padding: "10px 16px", borderRadius: "8px", background: "var(--border)", color: "var(--text-primary)", border: "1px solid var(--border)", cursor: "pointer" }}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            </section>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-              <section className="admin-gst-active-card" style={{ padding: "24px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "green", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                  <Check size={14} /> ACTIVE SETTING
-                </span>
-                <div style={{ fontSize: "2.5rem", fontWeight: "800", color: "var(--primary)" }}>{activeGst.gstPercent}%</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: "600" }}>Category: {activeGst.gstCategory}</div>
-                {activeGst.remark && <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Remark: {activeGst.remark}</div>}
-              </section>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span>Convenience Fee Type: <span style={{ color: "red" }}>*</span></span>
+              <select value={form.convenienceFeeType} onChange={(e) => setForm(prev => ({ ...prev, convenienceFeeType: e.target.value }))}>
+                <option value="Flat">Flat</option>
+                <option value="Percentage">Percentage</option>
+              </select>
+            </label>
 
-              <section className="admin-gst-history-list" style={{ padding: "24px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "16px" }}>
-                <h3 style={{ margin: "0 0 12px 0", fontSize: "0.9rem", fontWeight: "700" }}>GST Audit History</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
-                  {rows.map((row) => (
-                    <div key={row.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px", borderBottom: "1px solid var(--border)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                      <span>{row.gstPercent}% ({row.status})</span>
-                      <span>{new Date(row.entryDateUtc).toLocaleDateString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span>Convenience Fee Value: <span style={{ color: "red" }}>*</span></span>
+              <input
+                type="number"
+                className={validationErrors.convenienceFeeValue ? "validation-error" : ""}
+                value={form.convenienceFeeValue}
+                onChange={(e) => {
+                  setForm(prev => ({ ...prev, convenienceFeeValue: e.target.value }));
+                  if (e.target.value.trim()) {
+                    setValidationErrors(prev => ({ ...prev, convenienceFeeValue: false }));
+                  }
+                }}
+                placeholder="e.g. 200.00"
+              />
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", gridColumn: "span 2" }}>
+              <span>GST Percentage (%): <span style={{ color: "red" }}>*</span></span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                className={validationErrors.gstPercent ? "validation-error" : ""}
+                value={form.gstPercent}
+                onChange={(e) => {
+                  setForm(prev => ({ ...prev, gstPercent: e.target.value }));
+                  if (e.target.value.trim()) {
+                    setValidationErrors(prev => ({ ...prev, gstPercent: false }));
+                  }
+                }}
+                placeholder="e.g. 18"
+              />
+            </label>
+
+            <div style={{ display: "flex", gap: "12px", gridColumn: "span 2", marginTop: "10px", alignItems: "center" }}>
+              <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#be185d", marginRight: "10px" }}>Status: <span style={{ color: "red" }}>*</span></span>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, isActive: true }))}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid " + (form.isActive ? "#10b981" : "#e2e8f0"),
+                  backgroundColor: form.isActive ? "#10b981" : "transparent",
+                  color: form.isActive ? "#ffffff" : "#000000",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s"
+                }}
+              >
+                <Check size={16} style={{ display: form.isActive ? "inline" : "none" }} />
+                Active
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, isActive: false }))}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid " + (!form.isActive ? "#ef4444" : "#e2e8f0"),
+                  backgroundColor: !form.isActive ? "#ef4444" : "transparent",
+                  color: !form.isActive ? "#ffffff" : "#000000",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s"
+                }}
+              >
+                <X size={16} style={{ display: !form.isActive ? "inline" : "none" }} />
+                Inactive
+              </button>
             </div>
-          )}
-        </div>
+
+          </div>
+
+          <footer style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+            <button type="button" className="admin-markup-coupon-btn clear" onClick={handleCancelForm}>Cancel</button>
+            <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : editId ? "Update GST Settings" : "Save GST Settings"}
+            </button>
+          </footer>
+        </section>
+      ) : (
+        /* ── TABLE / LIST VIEW ── */
+        <>
+          {/* ── PAGE HEADING ── */}
+          <section className="markup-heading">
+            <h2 style={{ fontWeight: 500, margin: 0, fontSize: "1.6rem" }}>
+              <span style={{ color: "#A51C49", fontWeight: 500 }}>B2C Hotel</span> <span style={{ color: "#000000" }}>GST Settings</span>
+            </h2>
+          </section>
+
+          {/* ── STATS ROW ── */}
+          <section className="stats-row">
+            <div className="stat-card total" style={{ borderLeft: "4px solid #3b82f6" }}>
+              <div className="stat-label">Total GST Settings</div>
+              <div className="stat-value">{rows.length}</div>
+              <div className="stat-meta">Across all hotel pricing rules</div>
+            </div>
+            <div className="stat-card active" style={{ borderLeft: "4px solid #10b981" }}>
+              <div className="stat-label">Active</div>
+              <div className="stat-value">{rows.filter(r => r.isActive).length}</div>
+              <div className="stat-meta">Currently applied to bookings</div>
+            </div>
+            <div className="stat-card inactive" style={{ borderLeft: "4px solid #ef4444" }}>
+              <div className="stat-label">Inactive</div>
+              <div className="stat-value">{rows.filter(r => !r.isActive).length}</div>
+              <div className="stat-meta">Paused GST rules</div>
+            </div>
+          </section>
+
+          {/* ── TOOLBAR ── */}
+          <section className="markup-toolbar">
+            <div className="markup-toolbar-group">
+              <label className="markup-field">
+                <span>Search GST Settings</span>
+                <div className="search-input-wrapper">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="search-icon">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search by ID, values, updated by..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </label>
+              <label className="markup-field">
+                <span>Status</span>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  <option value="all">All</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </label>
+            </div>
+            <div className="markup-toolbar-actions">
+              <button type="button" className="markup-primary-btn" onClick={openAddForm} style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
+                <Plus size={14} aria-hidden="true" />
+                Add GST Setting
+              </button>
+              <button type="button" className="markup-export-btn" onClick={handleExport} disabled={filteredRows.length === 0} style={{ backgroundColor: "#2563eb", borderColor: "#2563eb", color: "#ffffff" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export
+              </button>
+            </div>
+          </section>
+
+          {/* ── TABLE ── */}
+          <section className="admin-markup-table-wrap">
+            {loading ? (
+              <p className="admin-markup-empty">Loading GST settings...</p>
+            ) : error ? (
+              <p className="admin-markup-empty" style={{ color: "red" }}>{error}</p>
+            ) : (
+              <table className="admin-markup-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Markup</th>
+                    <th>Conv. Fee</th>
+                    <th>GST Percent</th>
+                    <th>Updated On</th>
+                    <th>Updated By</th>
+                    <th>Status</th>
+                    <th className="action-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.length === 0 ? (
+                    <tr>
+                      <td colSpan="8">
+                        <p className="admin-markup-empty">No GST records found.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedRows.map((row) => (
+                      <tr key={row.id}>
+                        <td>
+                          <button
+                            type="button"
+                            className="markup-id-chip"
+                            onClick={() => loadRowToForm(row)}
+                            aria-label={`Open details for ${row.id}`}
+                          >
+                            <span>{row.id}</span>
+                          </button>
+                        </td>
+                        <td style={{ fontWeight: 600 }}>{row.markupValue} ({row.markupType})</td>
+                        <td>{row.convenienceFeeValue} ({row.convenienceFeeType})</td>
+                        <td>{row.gstPercent}%</td>
+                        <td>{new Date(row.updatedAtUtc || row.createdAtUtc).toLocaleString()}</td>
+                        <td>{row.updatedBy || '--'}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`markup-status-toggle ${row.isActive ? "active" : "inactive"}`}
+                            onClick={() => handleToggleStatus(row)}
+                            aria-label={`Set ${row.id} status`}
+                          >
+                            {row.isActive ? <Check size={14} /> : <X size={14} />}
+                            <span>{row.isActive ? "Active" : "Inactive"}</span>
+                          </button>
+                        </td>
+                        <td className="action-col">
+                          <div className="actions-dropdown-container">
+                            <button
+                              type="button"
+                              className={`actions-trigger-btn ${activeDropdownId === row.id ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === row.id ? null : row.id);
+                              }}
+                            >
+                              <span>Actions</span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="chevron-icon">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                              </svg>
+                            </button>
+                            {activeDropdownId === row.id && (
+                              <div className="actions-dropdown-menu">
+                                <button
+                                  type="button"
+                                  className="dropdown-item edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    loadRowToForm(row);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="item-icon">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                  </svg>
+                                  <span>Edit Setting</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item delete"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(row.id);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <Trash2 size={13} className="item-icon" />
+                                  <span>Delete Setting</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={filteredRows.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="records"
+              />
+            </div>
+          </section>
+        </>
       )}
-    </section>
+    </div>
   );
 }
+

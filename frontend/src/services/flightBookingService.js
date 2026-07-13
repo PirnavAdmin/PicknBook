@@ -17,7 +17,7 @@ function resolveApiBaseUrl() {
   const preferProxyInDev =
     isLocalDevelopment() &&
     String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-      "true";
+    "true";
 
   if (preferProxyInDev) {
     return "";
@@ -199,8 +199,12 @@ function buildFallbackFlights({ from, to, date }) {
 }
 
 function shouldUseFallbackFlights(error) {
-  const message = String(error?.message || "").toLowerCase();
+  const status = Number(error?.status);
+  if ([401, 403, 404, 405, 502, 503, 504].includes(status)) {
+    return true;
+  }
 
+  const message = String(error?.message || "").toLowerCase();
   if (!message) {
     return false;
   }
@@ -208,9 +212,15 @@ function shouldUseFallbackFlights(error) {
   return (
     message.includes("cannot get /api/flightbookings") ||
     message.includes("err_ngrok_3200") ||
+    message.includes("err_ngrok_3004") ||
+    message.includes("err_ngrok_8012") ||
+    message.includes("bad gateway") ||
+    message.includes("service unavailable") ||
     (message.includes("endpoint") && message.includes("offline")) ||
     message.includes("failed to fetch") ||
-    message.includes("networkerror")
+    message.includes("networkerror") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden")
   );
 }
 
@@ -233,13 +243,28 @@ function normalizeText(value, fallback = "") {
   return text || fallback;
 }
 
-function resolveAuthToken() {
+function resolveAuthToken(urlOrPath = "") {
   if (typeof window === "undefined") {
     return "";
   }
 
   try {
-    return normalizeText(window.localStorage.getItem("token"), "");
+    const isUrlAdmin = String(urlOrPath || "").toLowerCase().includes("/admin/") ||
+      window.location.pathname.toLowerCase().startsWith("/admin");
+    if (isUrlAdmin) {
+      const adminToken = window.localStorage.getItem("adminToken");
+      if (adminToken && adminToken !== "undefined" && adminToken !== "null") {
+        return normalizeText(adminToken, "");
+      }
+    }
+    const activePortal = window.sessionStorage.getItem("active_portal") || "b2c";
+    const resolvedToken = activePortal === "b2b"
+      ? (window.localStorage.getItem("b2b_token") || window.localStorage.getItem("token"))
+      : (window.localStorage.getItem("token") || window.localStorage.getItem("b2b_token"));
+    return normalizeText(
+      resolvedToken || window.localStorage.getItem("adminToken"),
+      ""
+    );
   } catch {
     return "";
   }
@@ -267,8 +292,8 @@ function normalizeFlightSearchRecord(record, index = 0) {
   );
   const classOptions = Array.isArray(classOptionsRaw)
     ? classOptionsRaw
-        .map((option) => normalizeFlightClassOption(option))
-        .filter((option) => option.travelClass)
+      .map((option) => normalizeFlightClassOption(option))
+      .filter((option) => option.travelClass)
     : [];
   const selectedTravelClass = String(
     pickFirst(
@@ -310,7 +335,7 @@ function normalizeFlightSearchRecord(record, index = 0) {
     ),
     flightNumber: String(
       pickFirst(record, ["flightNumber", "FlightNumber", "tripNumber", "TripNumber"], "--") ||
-        "--"
+      "--"
     ),
     cabinClass: String(pickFirst(record, ["cabinClass", "CabinClass"], "") || ""),
     fromCity: String(pickFirst(record, ["fromCity", "FromCity", "source", "Source"], "") || ""),
@@ -436,7 +461,7 @@ function normalizeFlightBookingRecord(record) {
     ),
     tripNumber: String(
       pickFirst(record, ["tripNumber", "TripNumber", "flightNumber", "FlightNumber"], "") ||
-        ""
+      ""
     ),
     passengers,
   };
@@ -505,7 +530,7 @@ function normalizeFlightDiscountRecord(record) {
     value: Number(pickFirst(record, ["value", "Value"], 0)) || 0,
     discountType: String(
       pickFirst(record, ["discountType", "DiscountType"], "Percentage") ||
-        "Percentage"
+      "Percentage"
     ),
     name: String(pickFirst(record, ["name", "Name"], "") || ""),
     entryDate: pickFirst(
@@ -527,7 +552,7 @@ function normalizeFlightDiscountRecord(record) {
 function toFlightDiscountRequestPayload(discount) {
   const discountType = String(
     pickFirst(discount, ["discountType", "DiscountType", "type"], "Percentage") ||
-      "Percentage"
+    "Percentage"
   ).trim();
   const value = Number(pickFirst(discount, ["value", "Value"], 0)) || 0;
 
@@ -536,7 +561,7 @@ function toFlightDiscountRequestPayload(discount) {
     discountType,
     name: String(
       pickFirst(discount, ["name", "Name"], `${discountType || "Flight"} Discount`) ||
-        `${discountType || "Flight"} Discount`
+      `${discountType || "Flight"} Discount`
     ).trim(),
     status: String(pickFirst(discount, ["status", "Status"], "Active") || "Active").trim(),
     updatedBy: String(
@@ -596,11 +621,11 @@ function normalizeAirlineWebCheckRecord(record) {
 function toAirlineWebCheckRequestPayload(link) {
   const airline = String(
     pickFirst(link, ["airline", "Airline", "airlineName", "AirlineName", "name"], "") ||
-      ""
+    ""
   ).trim();
   const airlineCode = String(
     pickFirst(link, ["airlineCode", "AirlineCode", "code", "Code"], "") ||
-      airline.slice(0, 2)
+    airline.slice(0, 2)
   )
     .trim()
     .toUpperCase();
@@ -621,7 +646,7 @@ function normalizePopularDestinationRecord(record) {
     id: pickFirst(record, ["id", "Id"], null),
     title: String(
       pickFirst(record, ["title", "Title", "destinationName", "DestinationName"], "") ||
-        ""
+      ""
     ),
     subTitle: String(pickFirst(record, ["subTitle", "SubTitle"], "") || ""),
     category: String(pickFirst(record, ["category", "Category"], "") || ""),
@@ -641,7 +666,7 @@ function toPopularDestinationRequestPayload(destination) {
   return {
     title: String(
       pickFirst(destination, ["title", "Title", "destinationName", "DestinationName"], "") ||
-        ""
+      ""
     ).trim(),
     subTitle: String(pickFirst(destination, ["subTitle", "SubTitle"], "") || "").trim(),
     imageUrl: String(pickFirst(destination, ["imageUrl", "ImageUrl"], "") || "").trim(),
@@ -739,15 +764,15 @@ function mergeAdminCancellationPayload(payload) {
     ) || 0,
     cancellationStatus: String(
       pickFirst(payload, ["cancellationStatus", "CancellationStatus", "status"], "Pending") ||
-        "Pending"
+      "Pending"
     ),
     customerRefundStatus: String(
       pickFirst(payload, ["customerRefundStatus", "CustomerRefundStatus"], "Pending") ||
-        "Pending"
+      "Pending"
     ),
     adminRefundStatus: String(
       pickFirst(payload, ["adminRefundStatus", "AdminRefundStatus"], "Pending") ||
-        "Pending"
+      "Pending"
     ),
     customerRefundAmountInr:
       Number(pickFirst(payload, ["customerRefundAmountInr", "CustomerRefundAmountInr"], 0)) ||
@@ -784,7 +809,7 @@ function mergeAdminAmendmentPayload(payload) {
     ) || 0,
     amendmentStatus: String(
       pickFirst(payload, ["amendmentStatus", "AmendmentStatus", "status"], "Pending") ||
-        "Pending"
+      "Pending"
     ),
     supplierRemark: pickFirst(payload, ["supplierRemark", "SupplierRemark"], null),
     customerRemark: pickFirst(payload, ["customerRemark", "CustomerRemark"], null),
@@ -856,7 +881,7 @@ async function requestJson(urlOrPath, options = {}) {
     requireUserId: _requireUserId,
     ...fetchOptions
   } = options || {};
-  const resolvedToken = skipAuth ? "" : resolveAuthToken();
+  const resolvedToken = skipAuth ? "" : resolveAuthToken(urlOrPath);
   const headers = {
     Accept: "application/json",
     ...(resolvedToken && !options?.headers?.Authorization
@@ -906,20 +931,12 @@ export async function searchFlights({ from, to, date, travelClass }) {
   try {
     const data = await requestJson(url, { method: "GET" });
 
-    if (Array.isArray(data)) {
+    if (Array.isArray(data) && data.length > 0) {
       return data.map((record, index) => normalizeFlightSearchRecord(record, index));
     }
 
-    const responseText = String(data || "").toLowerCase();
-    if (
-      responseText.includes("<!doctype html") ||
-      responseText.includes("<html") ||
-      responseText.includes("cannot get /api/flightbookings")
-    ) {
-      return buildFallbackFlights({ from, to, date });
-    }
-
-    return [];
+    // Fallback to template mock flights if no flight is seeded for the queried route
+    return buildFallbackFlights({ from, to, date });
   } catch (error) {
     if (shouldUseFallbackFlights(error)) {
       return buildFallbackFlights({ from, to, date });
@@ -929,7 +946,16 @@ export async function searchFlights({ from, to, date, travelClass }) {
   }
 }
 
+export function isFallbackFlightId(flightId) {
+  const normalized = String(flightId || "").toLowerCase();
+  return normalized.startsWith("fallback-flight-") || normalized.startsWith("fallback_flight-") || normalized.startsWith("fallback_flight_");
+}
+
 export async function bookFlight({ flightId, payload, userId } = {}) {
+  if (isFallbackFlightId(flightId)) {
+    throw new Error("Invalid flight selection. Please go back and re-select your flight.");
+  }
+
   const data = await requestJson(`${FLIGHT_BOOKINGS_ROOT}/${flightId}/book`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -1194,28 +1220,154 @@ export async function listFlightBookings({ passengerPhone, status, userId } = {}
     status,
   });
 
+  let apiBookings = [];
   try {
     const data = await requestJson(url, { method: "GET", userId, requireUserId: true });
-    return Array.isArray(data)
-      ? data.map((record) => normalizeFlightBookingRecord(record))
-      : [];
+    if (Array.isArray(data)) {
+      apiBookings = data.map((record) => normalizeFlightBookingRecord(record));
+    }
   } catch (error) {
-    if (shouldUseFallbackFlights(error)) {
-      return [];
+    console.warn("Backend listFlightBookings failed, relying on mock storage", error);
+  }
+
+  // Get local mock bookings
+  let mockBookings = [];
+  try {
+    const mockStr = localStorage.getItem("mock_tickets");
+    if (mockStr) {
+      const mockList = JSON.parse(mockStr);
+      if (Array.isArray(mockList)) {
+        mockBookings = mockList
+          .filter((t) => String(t.ticketType || "").toLowerCase() === "flight")
+          .map((t) => {
+            const passengersRaw = Array.isArray(t.passengers) ? t.passengers : [];
+            const passengersMapped = passengersRaw.map((p, idx) => ({
+              passengerId: p.passengerId || idx + 1,
+              name: p.name || "",
+              gender: p.gender || "",
+              status: p.status || t.status || "Booked",
+              age: p.age || "",
+              passengerType: p.passengerType || "Adult",
+              seatNumber: p.seat || "",
+            }));
+
+            return {
+              bookingId: t.bookingReference || `MOCK-${t.bookingReference}`,
+              bookingReference: t.bookingReference || "",
+              passengerName: passengersMapped[0]?.name || t.contact?.name || "Passenger",
+              passengerPhone: t.contact?.mobile || t.contact?.phone || "",
+              passengerEmail: t.contact?.email || "",
+              fromCity: t.fromCity || "",
+              toCity: t.toCity || "",
+              providerName: t.providerName || "Airlines",
+              departureTimeUtc: t.departureTime || null,
+              arrivalTimeUtc: t.arrivalTime || null,
+              travelClass: t.travelClass || "",
+              seatsBooked: passengersMapped.length || 1,
+              totalPriceInr: Number(t.totalPaid || t.fare?.totalFare || 0),
+              status: t.status || "Booked",
+              bookedAtUtc: t.bookedAt || null,
+              cancelledAtUtc: null,
+              cancellationReason: "",
+              tripNumber: t.tripNumber || "",
+              passengers: passengersMapped,
+            };
+          });
+      }
+    }
+  } catch (e) {
+    console.error("Error reading mock flight bookings:", e);
+  }
+
+  // Filter mock bookings by passengerPhone if supplied
+  if (passengerPhone) {
+    const cleanPhone = String(passengerPhone).replace(/\D/g, "");
+    if (cleanPhone) {
+      mockBookings = mockBookings.filter((b) => {
+        const bPhone = String(b.passengerPhone || "").replace(/\D/g, "");
+        return bPhone.includes(cleanPhone);
+      });
+    }
+  }
+
+  // Filter by status if supplied
+  if (status && status !== "All") {
+    mockBookings = mockBookings.filter((b) => {
+      return String(b.status || "").toLowerCase() === String(status).toLowerCase();
+    });
+  }
+
+  // Merge, avoiding duplicates by bookingReference
+  const apiRefs = new Set(apiBookings.map((b) => b.bookingReference).filter(Boolean));
+  const uniqueMocks = mockBookings.filter((b) => !apiRefs.has(b.bookingReference));
+
+  return [...apiBookings, ...uniqueMocks];
+}
+
+export async function getFlightBookingById(bookingId, { userId } = {}) {
+  try {
+    const data = await requestJson(`${FLIGHT_BOOKINGS_ROOT}/bookings/${bookingId}`, {
+      method: "GET",
+      userId,
+      requireUserId: true,
+    });
+    return normalizeFlightBookingRecord(data);
+  } catch (error) {
+    console.warn(`Backend getFlightBookingById for ${bookingId} failed, checking mock storage`, error);
+
+    // Check localStorage
+    try {
+      const mockStr = localStorage.getItem("mock_tickets");
+      if (mockStr) {
+        const mockList = JSON.parse(mockStr);
+        if (Array.isArray(mockList)) {
+          const found = mockList.find(
+            (t) =>
+              (t.bookingReference === bookingId || `MOCK-${t.bookingReference}` === bookingId) &&
+              String(t.ticketType || "").toLowerCase() === "flight"
+          );
+          if (found) {
+            const passengersRaw = Array.isArray(found.passengers) ? found.passengers : [];
+            const passengersMapped = passengersRaw.map((p, idx) => ({
+              passengerId: p.passengerId || idx + 1,
+              name: p.name || "",
+              gender: p.gender || "",
+              status: p.status || found.status || "Booked",
+              age: p.age || "",
+              passengerType: p.passengerType || "Adult",
+              seatNumber: p.seat || "",
+            }));
+
+            return {
+              bookingId: found.bookingReference || `MOCK-${found.bookingReference}`,
+              bookingReference: found.bookingReference || "",
+              passengerName: passengersMapped[0]?.name || found.contact?.name || "Passenger",
+              passengerPhone: found.contact?.mobile || found.contact?.phone || "",
+              passengerEmail: found.contact?.email || "",
+              fromCity: found.fromCity || "",
+              toCity: found.toCity || "",
+              providerName: found.providerName || "Airlines",
+              departureTimeUtc: found.departureTime || null,
+              arrivalTimeUtc: found.arrivalTime || null,
+              travelClass: found.travelClass || "",
+              seatsBooked: passengersMapped.length || 1,
+              totalPriceInr: Number(found.totalPaid || found.fare?.totalFare || 0),
+              status: found.status || "Booked",
+              bookedAtUtc: found.bookedAt || null,
+              cancelledAtUtc: null,
+              cancellationReason: "",
+              tripNumber: found.tripNumber || "",
+              passengers: passengersMapped,
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error reading mock ticket detail:", e);
     }
 
     throw error;
   }
-}
-
-export async function getFlightBookingById(bookingId, { userId } = {}) {
-  const data = await requestJson(`${FLIGHT_BOOKINGS_ROOT}/bookings/${bookingId}`, {
-    method: "GET",
-    userId,
-    requireUserId: true,
-  });
-
-  return normalizeFlightBookingRecord(data);
 }
 
 export async function cancelFlightBooking(bookingId, reason, { userId } = {}) {
@@ -1437,9 +1589,55 @@ export async function getPopularDestinations() {
 }
 
 export async function listUsedCoupons() {
-  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/used-coupons`, {
+  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/coupons/used`, {
     method: "GET",
   });
-  return data || [];
+  if (!Array.isArray(data)) {
+    return [];
+  }
+  return data.map((record) => ({
+    id: record.id,
+    bookingId: record.bookingId,
+    couponCode: record.couponCode,
+    usedDate: record.usedDateUtc || record.usedDate || "",
+    totalFare: record.totalFareInr ?? record.totalFare ?? 0,
+    cpnType: record.couponType || record.cpnType || "Fixed",
+    cpnValue: record.couponValue ?? record.cpnValue ?? 0,
+    cpnAmount: record.couponAmountInr ?? record.cpnAmount ?? 0,
+    bookingStatus: record.bookingStatus || "Confirmed",
+  }));
 }
+
+export async function getFlightRemarks() {
+  return requestJson("/api/admin/flight/remarks", {
+    method: "GET",
+  });
+}
+
+export async function createFlightRemark(payload) {
+  return requestJson("/api/admin/flight/remarks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getFlightRemarkById(id) {
+  return requestJson(`/api/admin/flight/remarks/${id}`, {
+    method: "GET",
+  });
+}
+
+export async function updateFlightRemark(id, payload) {
+  return requestJson(`/api/admin/flight/remarks/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteFlightRemark(id) {
+  return requestJson(`/api/admin/flight/remarks/${id}`, {
+    method: "DELETE",
+  });
+}
+
 

@@ -1,4 +1,8 @@
 .admin-markup-coupon-shell {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  --primary: #A51C49 !important;
+  --primary-strong: #851237 !important;
   display: grid;
   gap: 16px;
   width: 100%;
@@ -24,7 +28,7 @@
 .admin-markup-coupon-title-wrap h1 {
   margin: 0;
   font-size: 1.6rem;
-  color: var(--primary) !important;
+  color: #000000 !important;
 }
 
 .admin-markup-coupon-title-line {
@@ -344,25 +348,29 @@
   font-weight: 600;
 }
 
-.admin-markup-coupon-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 16px;
-}
-
 .admin-markup-coupon-modal-actions button {
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 10px 20px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.25s ease !important;
 }
 
-.admin-markup-coupon-modal-actions .primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-  color: #ffffff;
-  border-color: var(--primary);
+.admin-markup-coupon-modal-actions .primary,
+.admin-markup-coupon-modal-actions .primary.generate-submit {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border-color: #A51C49 !important;
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.15) !important;
+}
+
+.admin-markup-coupon-modal-actions .primary:hover,
+.admin-markup-coupon-modal-actions .primary.generate-submit:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
 }
 
 .admin-markup-coupon-modal-actions .secondary {
@@ -370,10 +378,42 @@
   color: var(--text-primary);
 }
 
+.admin-markup-coupon-modal-actions .secondary:hover {
+  transform: translateY(-3px) !important;
+}
+
 .admin-markup-coupon-modal-actions .danger {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-color: rgba(180, 35, 24, 0.35);
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+}
+
+.admin-markup-coupon-modal-actions .danger:hover {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3) !important;
+}
+
+.admin-markup-coupon-modal.generate.inline-card-container {
+  width: 96% !important;
+  max-width: 96% !important;
+  margin: 0 auto !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03) !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  padding: 32px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.admin-markup-coupon-modal.generate.inline-card-container .generate-header h2 {
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
 }
 
 .admin-markup-coupon-delete-copy {
@@ -398,3 +438,4 @@
     border-bottom: 0;
   }
 }
+

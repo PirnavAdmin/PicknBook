@@ -1,0 +1,703 @@
+/* ─── B2B Layout & Sidebar Styling ────────────────────────────────────────── */
+
+:root {
+  --b2b-bg-primary: #0f172a;
+  --b2b-bg-secondary: #1e293b;
+  --b2b-bg-tertiary: #334155;
+  --b2b-text-primary: #f8fafc;
+  --b2b-text-secondary: #94a3b8;
+  --b2b-accent: #3b82f6;
+  --b2b-accent-hover: #2563eb;
+  --b2b-success: #10b981;
+  --b2b-warning: #f59e0b;
+  --b2b-border: #1e293b;
+  --b2b-card-bg: #1e293b;
+  --b2b-sidebar-width: 260px;
+}
+
+.b2b-layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #0b0f19;
+  color: var(--b2b-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.b2b-layout-wrapper-light {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--theme-page, #f4f6f8);
+  color: inherit;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── B2B Topbar ─────────────────────────────────────────────────────────── */
+.b2b-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+  padding: 0 24px;
+  background-color: var(--b2b-bg-secondary);
+  color: var(--b2b-text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.b2b-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.b2b-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.b2b-brand-logo {
+  height: 38px;
+  object-fit: contain;
+}
+
+.b2b-tag {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+}
+
+.b2b-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Wallet widget */
+.b2b-wallet-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 14px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.b2b-wallet-widget:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.b2b-wallet-icon {
+  color: var(--b2b-warning);
+}
+
+.b2b-wallet-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.b2b-wallet-label {
+  font-size: 0.65rem;
+  color: var(--b2b-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.b2b-wallet-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--b2b-text-primary);
+}
+
+/* Agent Info */
+.b2b-agent-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.b2b-agent-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.b2b-agent-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.b2b-agent-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.b2b-agent-tier {
+  font-size: 0.7rem;
+  color: var(--b2b-warning);
+  font-weight: 500;
+}
+
+/* Sign out btn */
+.b2b-signout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.b2b-signout-btn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+/* ─── Layout Body (Sidebar + Content) ─────────────────────────────────────── */
+.b2b-layout-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* B2B Sidebar */
+.b2b-sidebar {
+  width: var(--b2b-sidebar-width);
+  background-color: var(--b2b-bg-secondary);
+  color: var(--b2b-text-primary);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.b2b-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px;
+}
+
+.b2b-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--b2b-text-secondary);
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.b2b-sidebar-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--b2b-text-primary);
+}
+
+.b2b-sidebar-item.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--b2b-accent);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+}
+
+.b2b-sidebar-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 20px 0 8px 24px;
+}
+
+.b2b-sidebar-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.05);
+  margin: 15px 12px;
+}
+
+/* B2B Main Content */
+.b2b-main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: #0b0f19;
+}
+
+/* ─── Agent Dashboard Page ────────────────────────────────────────────────── */
+.b2b-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.b2b-dashboard-header {
+  margin-bottom: 28px;
+}
+
+.b2b-dashboard-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #fff, var(--b2b-text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+
+.b2b-dashboard-header p {
+  font-size: 0.9rem;
+  color: var(--b2b-text-secondary);
+}
+
+/* Stats Cards Grid */
+.b2b-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.b2b-layout-wrapper .b2b-card {
+  background-color: var(--b2b-card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.b2b-layout-wrapper .b2b-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.b2b-card-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.15;
+}
+
+.b2b-card-glow.blue { background-color: #3b82f6; }
+.b2b-card-glow.green { background-color: #10b981; }
+.b2b-card-glow.gold { background-color: #f59e0b; }
+
+.b2b-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.b2b-card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--b2b-text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.b2b-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.b2b-card-icon.blue { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.b2b-card-icon.green { background-color: rgba(10, 185, 129, 0.1); color: #10b981; }
+.b2b-card-icon.gold { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+.b2b-card-body h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.b2b-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--b2b-text-secondary);
+}
+
+.b2b-trend-up {
+  color: var(--b2b-success);
+  font-weight: 600;
+}
+
+/* Quick Tools */
+.b2b-quick-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 900px) {
+  .b2b-quick-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+.b2b-panel {
+  background-color: var(--b2b-bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.b2b-panel-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  color: #fff;
+  border-left: 4px solid var(--b2b-accent);
+  padding-left: 12px;
+}
+
+/* Booking Engines Links */
+.b2b-engines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.b2b-engine-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--b2b-text-primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.b2b-engine-card:hover {
+  background-color: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.b2b-engine-icon {
+  margin-bottom: 12px;
+  color: var(--b2b-accent);
+}
+
+.b2b-engine-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.b2b-engine-card p {
+  font-size: 0.75rem;
+  color: var(--b2b-text-secondary);
+  text-align: center;
+}
+
+/* Agent Information Card */
+.b2b-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.b2b-info-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 8px;
+}
+
+.b2b-info-item:last-child {
+  border-bottom: none;
+}
+
+.b2b-info-label {
+  font-size: 0.8rem;
+  color: var(--b2b-text-secondary);
+}
+
+.b2b-info-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--b2b-text-primary);
+}
+
+/* Custom classes for nested forms */
+.b2b-layout-wrapper .dashboard-layout {
+  display: block;
+}
+
+.b2b-layout-wrapper .dashboard-sidebar {
+  display: none; /* Hide default sidebar when in B2B layout */
+}
+
+.b2b-layout-wrapper .dashboard-main {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+
+/* ─── Persistent B2B Booking Flow Styles (Dark Theme Overrides) ─────────── */
+.b2b-layout-wrapper .flight-flow-page,
+.b2b-layout-wrapper .bus-flow-page,
+.b2b-layout-wrapper .hotel-checkout-page,
+.b2b-layout-wrapper .confirmation-page-wrapper,
+.b2b-layout-wrapper .bus-search-page,
+.b2b-layout-wrapper .flight-search-page,
+.b2b-layout-wrapper .hotel-search-page,
+.b2b-layout-wrapper .payment-page {
+  background-color: var(--b2b-bg-primary) !important;
+  color: var(--b2b-text-primary) !important;
+  padding: 24px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+  margin-top: 10px;
+}
+
+/* Backgrounds & borders for B2B booking components */
+.b2b-layout-wrapper .flow-card,
+.b2b-layout-wrapper .flight-main-card,
+.b2b-layout-wrapper .flight-sidebar-card,
+.b2b-layout-wrapper .hotel-panel,
+.b2b-layout-wrapper .hotel-card,
+.b2b-layout-wrapper .search-results-container,
+.b2b-layout-wrapper .bus-card,
+.b2b-layout-wrapper .flight-card,
+.b2b-layout-wrapper .ticket-confirmation-card,
+.b2b-layout-wrapper .passenger-card,
+.b2b-layout-wrapper .fare-summary-card,
+.b2b-layout-wrapper .hotel-booking-form,
+.b2b-layout-wrapper .guest-details-form,
+.b2b-layout-wrapper .flight-checkout-main,
+.b2b-layout-wrapper .flight-checkout-sidebar,
+.b2b-layout-wrapper .booking-summary-box,
+.b2b-layout-wrapper .cancellation-card,
+.b2b-layout-wrapper .timer-banner,
+.b2b-layout-wrapper .interactive-map-panel {
+  background-color: var(--b2b-card-bg) !important;
+  color: var(--b2b-text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Force B2C typography to match B2B light-gray and white colors */
+.b2b-layout-wrapper h1,
+.b2b-layout-wrapper h2,
+.b2b-layout-wrapper h3,
+.b2b-layout-wrapper h4,
+.b2b-layout-wrapper h5,
+.b2b-layout-wrapper p,
+.b2b-layout-wrapper span,
+.b2b-layout-wrapper strong,
+.b2b-layout-wrapper label,
+.b2b-layout-wrapper legend,
+.b2b-layout-wrapper li,
+.b2b-layout-wrapper header,
+.b2b-layout-wrapper .card-title,
+.b2b-layout-wrapper .flight-main-card-title,
+.b2b-layout-wrapper .section-title,
+.b2b-layout-wrapper .fare-value,
+.b2b-layout-wrapper .duration,
+.b2b-layout-wrapper .time {
+  color: var(--b2b-text-primary) !important;
+}
+
+.b2b-layout-wrapper .text-muted,
+.b2b-layout-wrapper .subtitle,
+.b2b-layout-wrapper .sub-text,
+.b2b-layout-wrapper .helper-text,
+.b2b-layout-wrapper .field label,
+.b2b-layout-wrapper .section-heading p,
+.b2b-layout-wrapper .hotel-section-heading p {
+  color: var(--b2b-text-secondary) !important;
+}
+
+/* Button & interactive components overrides */
+.b2b-layout-wrapper button,
+.b2b-layout-wrapper .hotel-primary-button,
+.b2b-layout-wrapper .bus-primary-button,
+.b2b-layout-wrapper .flight-primary-button,
+.b2b-layout-wrapper .payment-btn,
+.b2b-layout-wrapper .btn-primary,
+.b2b-layout-wrapper .cta-button,
+.b2b-layout-wrapper .seat-legend-item,
+.b2b-layout-wrapper .flight-payment-methods button {
+  background-color: var(--b2b-bg-tertiary) !important;
+  color: var(--b2b-text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px !important;
+}
+
+.b2b-layout-wrapper button.active,
+.b2b-layout-wrapper .payment-method-grid button.active,
+.b2b-layout-wrapper .payment-method-tab-btn.active,
+.b2b-layout-wrapper .hotel-method-pill.is-active,
+.b2b-layout-wrapper .hotel-primary-button,
+.b2b-layout-wrapper .bus-primary-button,
+.b2b-layout-wrapper .flight-primary-button,
+.b2b-layout-wrapper .btn-primary,
+.b2b-layout-wrapper .cta-button,
+.b2b-layout-wrapper .confirm-btn {
+  background-color: var(--b2b-accent) !important;
+  color: #ffffff !important;
+  border-color: var(--b2b-accent) !important;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25) !important;
+}
+
+.b2b-layout-wrapper button:hover,
+.b2b-layout-wrapper .hotel-primary-button:hover,
+.b2b-layout-wrapper .bus-primary-button:hover,
+.b2b-layout-wrapper .flight-primary-button:hover {
+  background-color: var(--b2b-accent-hover) !important;
+  color: #ffffff !important;
+}
+
+/* Inputs, drop-downs, autocomplete selections */
+.b2b-layout-wrapper input[type="text"],
+.b2b-layout-wrapper input[type="number"],
+.b2b-layout-wrapper input[type="email"],
+.b2b-layout-wrapper input[type="tel"],
+.b2b-layout-wrapper input[type="date"],
+.b2b-layout-wrapper input[type="password"],
+.b2b-layout-wrapper select,
+.b2b-layout-wrapper textarea,
+.b2b-layout-wrapper .field-control,
+.b2b-layout-wrapper .place-input {
+  background-color: var(--b2b-bg-primary) !important;
+  color: var(--b2b-text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px !important;
+  padding: 10px 12px !important;
+}
+
+.b2b-layout-wrapper input:focus,
+.b2b-layout-wrapper select:focus,
+.b2b-layout-wrapper textarea:focus {
+  border-color: var(--b2b-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Passenger detail maps, seats scrollers, tables */
+.b2b-layout-wrapper table,
+.b2b-layout-wrapper th,
+.b2b-layout-wrapper td,
+.b2b-layout-wrapper header,
+.b2b-layout-wrapper .divider,
+.b2b-layout-wrapper hr,
+.b2b-layout-wrapper .payment-form-grid,
+.b2b-layout-wrapper .bus-payment-form-grid {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.b2b-layout-wrapper th {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  color: var(--b2b-text-secondary) !important;
+}
+
+/* Seat map selections & legends overrides */
+.b2b-layout-wrapper .seat,
+.b2b-layout-wrapper .seat-option {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background-color: var(--b2b-bg-tertiary) !important;
+}
+
+.b2b-layout-wrapper .seat.available,
+.b2b-layout-wrapper .seat-option.available {
+  background-color: #2b394f !important;
+}
+
+.b2b-layout-wrapper .seat.selected,
+.b2b-layout-wrapper .seat-option.selected {
+  background-color: var(--b2b-success) !important;
+  border-color: var(--b2b-success) !important;
+}
+
+.b2b-layout-wrapper .seat.occupied,
+.b2b-layout-wrapper .seat-option.occupied {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.03) !important;
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Miscellaneous light-theme reset classes */
+.b2b-layout-wrapper .alert,
+.b2b-layout-wrapper .warning-message,
+.b2b-layout-wrapper .promo-chip,
+.b2b-layout-wrapper .fare-breakdown div {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+@keyframes b2b-pulse-orange {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.96);
+  }
+}
+
+.b2b-low-balance-warning {
+  animation: b2b-pulse-orange 2s infinite ease-in-out;
+}
+

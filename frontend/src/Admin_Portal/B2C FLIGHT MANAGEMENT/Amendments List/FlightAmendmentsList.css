@@ -55,23 +55,33 @@
 }
 
 .admin-flight-btn-export {
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong)) !important;
+  background: #1e75ff !important;
   color: #ffffff !important;
-  border-color: var(--admin-primary) !important;
+  border-color: #1e75ff !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
+  cursor: pointer !important;
+  transition: all 0.22s ease-in-out !important;
+  box-shadow: 0 4px 10px rgba(30, 117, 255, 0.15) !important;
 }
 
 .admin-flight-btn-export:hover {
-  box-shadow: 0 4px 12px rgba(30, 117, 255, 0.4) !important;
+  background: #0052d9 !important;
+  border-color: #0052d9 !important;
   color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 14px rgba(30, 117, 255, 0.3) !important;
 }
 
 .admin-shell.dark-theme .admin-flight-btn-export {
-  background: linear-gradient(135deg, #1e75ff, #0052d9) !important;
+  background: #1e75ff !important;
   color: #ffffff !important;
-  border: none !important;
+  border-color: #1e75ff !important;
 }
 
 .admin-shell.dark-theme .admin-flight-btn-export:hover {
-  box-shadow: 0 4px 12px rgba(30, 117, 255, 0.4) !important;
+  background: #0052d9 !important;
+  border-color: #0052d9 !important;
 }
 

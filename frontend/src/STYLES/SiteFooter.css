@@ -169,7 +169,7 @@
   border-top: 1px dotted rgba(255, 255, 255, 0.2);
 }
 
-/* Middle Section: We Accept, Apps, and Newsletter */
+/* Middle Section: We Accept and Apps */
 .footer-middle-section {
   display: flex;
   justify-content: space-between;
@@ -230,44 +230,6 @@
   transform: translateY(-2px);
 }
 
-/* Newsletter block */
-.footer-middle-right {
-  flex-grow: 1;
-  max-width: 400px;
-}
-
-.footer-subscribe-form {
-  display: flex;
-  width: 100%;
-}
-
-.subscribe-input {
-  flex-grow: 1;
-  background: #ffffff;
-  border: 1px solid #cccccc;
-  border-radius: 4px 0 0 4px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #333333;
-  outline: none;
-}
-
-.subscribe-btn {
-  background: #d3761b;
-  color: #ffffff;
-  border: none;
-  border-radius: 0 4px 4px 0;
-  padding: 10px 24px;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.subscribe-btn:hover {
-  background: #b56212;
-}
-
 /* Copyright Row */
 .footer-copyright-row {
   text-align: center;
@@ -281,54 +243,61 @@
   .footer-shell {
     padding: 30px 20px 20px;
   }
-  
+
   .footer-detail-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .footer-detail-row.align-start {
     align-items: flex-start;
   }
-  
+
   .footer-row-label {
     flex: none;
   }
-  
+
   .footer-row-content {
     padding-left: 0;
   }
-  
+
   .footer-link-divider:first-of-type {
     display: none;
   }
-  
+
   .footer-middle-section {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .footer-middle-left {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .footer-accept-block {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .footer-middle-right {
     max-width: 100%;
   }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .footer-policy-divider {

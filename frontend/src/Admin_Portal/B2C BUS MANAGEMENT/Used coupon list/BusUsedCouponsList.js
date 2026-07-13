@@ -3,6 +3,7 @@ import { Download, Loader2, SlidersHorizontal, X } from "lucide-react";
 import "./BusUsedCouponsList.css";
 import { csvCell, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
 import { listBusUsedCoupons } from "../../../services/busBookingService";
+import AdminPagination from "../../../components/AdminPagination";
 
 const DEFAULT_USED_COUPON_SORT_BY = "usedDate";
 const DEFAULT_USED_COUPON_SORT_ORDER = "desc";
@@ -33,6 +34,12 @@ export default function AdminBusUsedCouponListPage() {
   const [sortOrder, setSortOrder] = useState(DEFAULT_USED_COUPON_SORT_ORDER);
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [cpnTypeFilter, setCpnTypeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [bookingStatusFilter, cpnTypeFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     let isMounted = true;
@@ -110,6 +117,13 @@ export default function AdminBusUsedCouponListPage() {
     });
   }, [usedCoupons, bookingStatusFilter, cpnTypeFilter, sortBy, sortOrder]);
 
+  const paginatedUsedCoupons = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return visibleUsedCoupons.slice(startIndex, startIndex + itemsPerPage);
+  }, [visibleUsedCoupons, currentPage]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleUsedCoupons.length / itemsPerPage));
+
   const hasActiveFilters =
     sortBy !== DEFAULT_USED_COUPON_SORT_BY ||
     sortOrder !== DEFAULT_USED_COUPON_SORT_ORDER ||
@@ -175,7 +189,10 @@ export default function AdminBusUsedCouponListPage() {
     <section className="admin-b2c-page admin-markup-used-shell">
       <header className="admin-markup-used-header">
         <div className="admin-markup-used-title-wrap">
-          <h1>B2C Bus Used Coupon List</h1>
+          <h1>
+            <span style={{ color: '#A51C49' }}>B2C Bus </span>
+            <span style={{ color: '#000000' }}>Used Coupon List</span>
+          </h1>
         </div>
 
         <div className="admin-markup-used-actions">
@@ -301,14 +318,14 @@ export default function AdminBusUsedCouponListPage() {
                     </p>
                   </td>
                 </tr>
-              ) : visibleUsedCoupons.length === 0 ? (
+              ) : paginatedUsedCoupons.length === 0 ? (
                 <tr>
                   <td colSpan={10}>
                     <p className="admin-markup-used-empty">No used coupons found.</p>
                   </td>
                 </tr>
               ) : (
-                visibleUsedCoupons.map((record) => (
+                paginatedUsedCoupons.map((record) => (
                   <tr key={`${record.id}-${record.bookingId}`}>
                     <td>{record.id}</td>
                     <td>{record.bookingId}</td>
@@ -334,7 +351,19 @@ export default function AdminBusUsedCouponListPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={visibleUsedCoupons.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="records"
+          />
+        )}
       </section>
     </section>
   );
 }
+

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import "./FlightAllowedFareType.css";
 
 const ALLOWED_FARE_TYPE_STORAGE_KEY = "admin_flight_allowed_fare_types";
@@ -205,7 +206,9 @@ export default function AdminFlightAllowedFareTypePage() {
   return (
     <section className="admin-b2c-page admin-flight-fare-type-page">
       <header className="admin-b2c-header admin-flight-fare-type-header">
-        <h1>Allowed Fare Type</h1>
+        <h1 style={{ fontWeight: 500 }}>
+          <span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Allowed Fare Type
+        </h1>
       </header>
 
       {successMessage ? (
@@ -271,6 +274,8 @@ export default function AdminFlightAllowedFareTypePage() {
                 />
               </div>
 
+              <ChevronDown className="admin-flight-fare-type-chevron" size={16} />
+
               {isDropdownOpen ? (
                 <div className="admin-flight-fare-type-dropdown" role="listbox">
                   {filteredOptions.length === 0 ? (
@@ -310,4 +315,5 @@ export default function AdminFlightAllowedFareTypePage() {
     </section>
   );
 }
+
 

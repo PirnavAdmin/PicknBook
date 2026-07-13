@@ -15,6 +15,7 @@ import {
   listFlightBookings,
 } from "../../services/flightBookingService";
 import "../../STYLES/FlightOpsDashboard.css";
+import CancellationModal from "./CancellationModal";
 import { formatDateTime } from "../../utils/apiDateFormat";
 
 
@@ -52,6 +53,8 @@ export default function FlightCancelRequest() {
   const [loadingDetailFor, setLoadingDetailFor] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -131,11 +134,15 @@ export default function FlightCancelRequest() {
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    const reason = window.prompt("Enter cancellation reason:", "Plan changed");
-    if (reason === null) {
-      return;
-    }
+  const triggerCancelBooking = (bookingId) => {
+    setCancelModalBookingId(bookingId);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelBooking = async (reason) => {
+    const bookingId = cancelModalBookingId;
+    if (!bookingId) return;
+    setIsCancelModalOpen(false);
 
     setCancellingBookingId(bookingId);
     setErrorMessage("");
@@ -151,6 +158,7 @@ export default function FlightCancelRequest() {
       setErrorMessage(error.message || "Unable to cancel booking.");
     } finally {
       setCancellingBookingId(null);
+      setCancelModalBookingId(null);
     }
   };
 
@@ -335,7 +343,7 @@ export default function FlightCancelRequest() {
                         <button
                           type="button"
                           title="Cancel booking"
-                          onClick={() => handleCancelBooking(booking.bookingId)}
+                          onClick={() => triggerCancelBooking(booking.bookingId)}
                           disabled={
                             booking.status === "Cancelled" ||
                             cancellingBookingId === booking.bookingId
@@ -411,6 +419,16 @@ export default function FlightCancelRequest() {
           </div>
         </div>
       )}
+      <CancellationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancelModalBookingId(null);
+        }}
+        onConfirm={handleCancelBooking}
+        title="Cancel Flight Ticket"
+        message="Are you sure you want to cancel this ticket?"
+      />
     </div>
   );
 }

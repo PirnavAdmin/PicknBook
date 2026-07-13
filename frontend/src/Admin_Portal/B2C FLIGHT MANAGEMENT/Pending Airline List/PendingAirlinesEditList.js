@@ -182,7 +182,7 @@ export default function AdminFlightPendingAirlineEditPage() {
         setRemark("");
       }
       setTimeout(() => {
-        navigate("/admin/b2c-flight/pending-airlines");
+        navigate("/admin/b2c-flight/pending-airline-list");
       }, 600);
     } catch (error) {
       console.error("Failed to save pending airline via API", error);
@@ -200,7 +200,7 @@ export default function AdminFlightPendingAirlineEditPage() {
           <button
             type="button"
             className="admin-flight-pending-edit-list-btn"
-            onClick={() => navigate("/admin/b2c-flight/pending-airlines")}
+            onClick={() => navigate("/admin/b2c-flight/pending-airline-list")}
           >
             <List size={14} />
             Pending Airline List
@@ -222,7 +222,7 @@ export default function AdminFlightPendingAirlineEditPage() {
           <button
             type="button"
             className="admin-flight-pending-edit-list-btn"
-            onClick={() => navigate("/admin/b2c-flight/pending-airlines")}
+            onClick={() => navigate("/admin/b2c-flight/pending-airline-list")}
           >
             <List size={14} />
             Pending Airline List
@@ -244,7 +244,7 @@ export default function AdminFlightPendingAirlineEditPage() {
         <button
           type="button"
           className="admin-flight-pending-edit-list-btn"
-          onClick={() => navigate("/admin/b2c-flight/pending-airlines")}
+          onClick={() => navigate("/admin/b2c-flight/pending-airline-list")}
         >
           <List size={14} />
           Pending Airline List

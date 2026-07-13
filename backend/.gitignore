@@ -1,0 +1,12 @@
+# Build outputs
+bin/
+obj/
+tmpseed/
+tmpbuild*/
+.vs/
+
+# User-specific files
+*.user
+
+# Local settings
+appsettings.Development.json

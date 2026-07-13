@@ -121,22 +121,22 @@ function AddBlogSubCategory() {
             paddingBottom: '0px',
         },
         titleMain: {
-            fontSize: '2.2rem',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#be185d',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.8rem',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#be185d',
             margin: 0,
         },
         backBtn: {
             padding: '10px 16px',
-            background: 'var(--primary)',
+            background: '#be185d',
             color: '#ffffff',
-            border: '1px solid var(--primary)',
+            border: '1px solid #be185d',
             borderRadius: '8px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -262,9 +262,9 @@ function AddBlogSubCategory() {
         },
         submitBtn: {
             padding: '12px 40px',
-            background: 'var(--primary)',
+            background: '#be185d',
             color: '#ffffff',
-            border: '1px solid var(--primary)',
+            border: '1px solid #be185d',
             borderRadius: '8px',
             fontWeight: 700,
             fontSize: '1rem',
@@ -328,34 +328,34 @@ function AddBlogSubCategory() {
                         {toast.message}
                     </div>
                 )}
-                <div style={styles.header}>
-                    <div style={styles.titleWrapper}>
-                        <h1 style={styles.titleMain}>Add Blog Sub</h1>
-                        <h2 style={styles.titleSub}>Category</h2>
-                    </div>
-                    <button
-                        type="button"
-                        style={styles.backBtn}
-                        onMouseEnter={(e) => {
-                            e.target.style.background = 'var(--primary-strong)';
-                            e.target.style.borderColor = 'var(--primary-strong)';
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.background = 'var(--primary)';
-                            e.target.style.color = '#ffffff';
-                            e.target.style.borderColor = 'var(--primary)';
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = 'none';
-                        }}
-                        onClick={() => navigate('/admin/blog-management/blog-sub-category-list')}
-                    >
-                        Sub Category List
-                    </button>
-                </div>
-
                 <div style={styles.formContainer}>
+                    <div style={{ ...styles.header, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+                        <div style={styles.titleWrapper}>
+                            <h1 style={styles.titleMain}>Add Blog Sub</h1>
+                            <h2 style={styles.titleSub}>Category</h2>
+                        </div>
+                        <button
+                            type="button"
+                            style={styles.backBtn}
+                            onMouseEnter={(e) => {
+                                e.target.style.background = '#9d124d';
+                                e.target.style.borderColor = '#9d124d';
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.background = '#be185d';
+                                e.target.style.color = '#ffffff';
+                                e.target.style.borderColor = '#be185d';
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                            onClick={() => navigate('/admin/blog-management/blog-sub-category-list')}
+                        >
+                            Sub Category List
+                        </button>
+                    </div>
+
                     <form onSubmit={handleSubmit}>
                         <table style={styles.tableForm}>
                             <tbody>
@@ -534,14 +534,14 @@ function AddBlogSubCategory() {
                                 type="submit"
                                 style={styles.submitBtn}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--primary-strong)';
-                                    e.target.style.borderColor = 'var(--primary-strong)';
+                                    e.target.style.background = '#b91c1c';
+                                    e.target.style.borderColor = '#b91c1c';
                                     e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(74, 15, 26, 0.2)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(220, 30, 38, 0.2)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--primary)';
-                                    e.target.style.borderColor = 'var(--primary)';
+                                    e.target.style.background = '#be185d';
+                                    e.target.style.borderColor = '#be185d';
                                     e.target.style.transform = 'translateY(0)';
                                     e.target.style.boxShadow = 'none';
                                 }}

@@ -24,14 +24,12 @@
 
 .admin-convenience-table-head span {
   min-height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.16);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
   text-align: center;
 }
 
@@ -42,27 +40,31 @@
 .admin-convenience-table-row {
   display: grid;
   grid-template-columns: 0.4fr 0.8fr 0.7fr 1fr 1fr 0.5fr;
-  gap: 8px;
-  padding: 8px;
-  border-top: 1px solid var(--admin-border);
+  gap: 0;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--admin-border);
 }
 
 .admin-convenience-cell {
-  min-height: 56px;
-  border: 1px solid var(--admin-border);
-  border-radius: 10px;
-  background: var(--admin-surface);
-  padding: 8px;
-  display: grid;
-  align-content: center;
-  gap: 3px;
+  min-height: 40px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   color: var(--admin-text);
-  font-size: 0.81rem;
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
-.admin-convenience-cell strong {
+.admin-convenience-cell strong,
+.admin-convenience-cell span {
   color: var(--admin-text);
-  font-size: 0.87rem;
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
 .admin-convenience-status-cell {
@@ -70,32 +72,76 @@
   text-align: center;
 }
 
-.admin-convenience-status {
-  min-height: 28px;
-  border-radius: 8px;
-  padding: 0 9px;
+.admin-convenience-status-dot {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: #ffffff;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
-.admin-convenience-status.active {
-  border: 1px solid var(--admin-success);
-  background: var(--admin-success);
+.admin-convenience-status-dot .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
-.admin-convenience-status.inactive {
-  border: 1px solid #dc3545;
-  background: #dc3545;
+.admin-convenience-status-dot .dot.green {
+  background: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.18);
+}
+
+.admin-convenience-status-dot .dot.red {
+  background: #be185d;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.18);
+}
+
+.admin-convenience-status-dot.active {
+  color: #28a745;
+}
+
+.admin-convenience-status-dot.inactive {
+  color: #be185d;
 }
 
 .admin-convenience-action-cell {
   justify-items: center;
-  grid-auto-flow: column;
-  gap: 6px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-convenience-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.admin-convenience-action-btn.view {
+  background: #17a2b8;
+}
+
+.admin-convenience-action-btn.edit {
+  background: #A51C49;
+}
+
+.admin-convenience-action-btn.delete {
+  background: #be185d;
 }
 
 .admin-convenience-icon-btn {
@@ -151,3 +197,196 @@
     grid-template-columns: 1fr;
   }
 }
+
+.admin-convenience-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(16, 34, 58, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-convenience-modal {
+  background: var(--admin-surface);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 15px 30px rgba(16, 34, 58, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.admin-convenience-modal header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-convenience-modal header h2 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.admin-convenience-modal header button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-modal header button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.admin-convenience-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-convenience-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--admin-border);
+}
+
+.admin-convenience-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.admin-convenience-detail-row strong {
+  color: var(--admin-text-light);
+  font-size: 0.88rem;
+}
+
+.admin-convenience-detail-row span {
+  font-weight: 500;
+  color: var(--admin-text);
+  font-size: 0.95rem;
+}
+
+.form-body {
+  gap: 8px;
+}
+
+.admin-convenience-edit-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--admin-text-light);
+  margin-bottom: 4px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.admin-convenience-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  font-size: 0.95rem;
+  background: var(--admin-background);
+  color: var(--admin-text);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1);
+}
+
+.admin-convenience-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: var(--admin-background);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-convenience-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--admin-primary);
+  cursor: pointer;
+}
+
+.admin-convenience-toggle-label span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.admin-convenience-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.admin-convenience-modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-modal-actions button.secondary {
+  background: var(--admin-background);
+  color: var(--admin-text-light);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-convenience-modal-actions button.secondary:hover {
+  background: var(--admin-border);
+  color: var(--admin-text);
+}
+
+.admin-convenience-modal-actions button.primary {
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  color: #fff;
+}
+
+.admin-convenience-modal-actions button.primary:hover {
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.3);
+  transform: translateY(-1px);
+}
+
+.admin-convenience-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+

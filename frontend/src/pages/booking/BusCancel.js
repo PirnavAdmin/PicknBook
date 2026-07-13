@@ -14,6 +14,8 @@ import {
   getBusBookingById,
   listBusBookings,
 } from "../../services/busBookingService";
+import TravelLoadingScreen from "../../components/layout/TravelLoadingScreen";
+import CancellationModal from "./CancellationModal";
 import "../../STYLES/BusOpsDashboard.css";
 import { formatDateTime } from "../../utils/apiDateFormat";
 
@@ -24,14 +26,19 @@ function formatCurrency(value) {
 }
 
 function getStatusClassName(status) {
-  if (status === "Cancelled") {
+  const norm = String(status || "").trim().toLowerCase();
+  if (norm.includes("cancel")) {
     return "danger";
   }
-
-  if (status === "Booked") {
+  if (
+    norm.includes("confirm") ||
+    norm.includes("success") ||
+    norm.includes("complete") ||
+    norm.includes("booked") ||
+    norm.includes("active")
+  ) {
     return "success";
   }
-
   return "default";
 }
 
@@ -51,6 +58,8 @@ export default function BusCancelRequest() {
   const [loadingDetailFor, setLoadingDetailFor] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -126,11 +135,15 @@ export default function BusCancelRequest() {
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    const reason = window.prompt("Enter cancellation reason:", "Plan changed");
-    if (reason === null) {
-      return;
-    }
+  const triggerCancelBooking = (bookingId) => {
+    setCancelModalBookingId(bookingId);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelBooking = async (reason) => {
+    const bookingId = cancelModalBookingId;
+    if (!bookingId) return;
+    setIsCancelModalOpen(false);
 
     setCancellingBookingId(bookingId);
     setErrorMessage("");
@@ -146,8 +159,20 @@ export default function BusCancelRequest() {
       setErrorMessage(error.message || "Unable to cancel booking.");
     } finally {
       setCancellingBookingId(null);
+      setCancelModalBookingId(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <TravelLoadingScreen
+        title="Loading cancellation records..."
+        message="Checking your latest bus cancellation status."
+        variant="bus"
+        icon="bus"
+      />
+    );
+  }
 
   return (
     <div className="flight-ops-page">
@@ -329,7 +354,7 @@ export default function BusCancelRequest() {
                         <button
                           type="button"
                           title="Cancel booking"
-                          onClick={() => handleCancelBooking(booking.bookingId)}
+                          onClick={() => triggerCancelBooking(booking.bookingId)}
                           disabled={
                             booking.status === "Cancelled" ||
                             cancellingBookingId === booking.bookingId
@@ -407,6 +432,16 @@ export default function BusCancelRequest() {
           </div>
         </div>
       )}
+      <CancellationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancelModalBookingId(null);
+        }}
+        onConfirm={handleCancelBooking}
+        title="Cancel Bus Ticket"
+        message="Are you sure you want to cancel this ticket?"
+      />
     </div>
   );
 }

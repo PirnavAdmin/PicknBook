@@ -12,6 +12,7 @@ import {
   deleteOfferCondition,
 } from "../../../services/adminFeaturedOffersService";
 import { toApiUrl } from "../../../services/apiClient";
+import AdminPagination from "../../../components/AdminPagination";
 
 const BOOKING_TYPE_OPTIONS = [
   { value: "Bus", label: "Bus" },
@@ -157,14 +158,14 @@ function buildOfferFormData(formValues, fileInputObject) {
   formData.append("Title", String(formValues.title || "").trim());
   formData.append("BookingType", normalizeBookingType(formValues.bookingType));
   formData.append("IsActive", Boolean(formValues.isActive));
-  
+
   if (formValues.offerCode) {
     formData.append("OfferCode", String(formValues.offerCode).trim());
   } else {
     const generatedCode = `OFFER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     formData.append("OfferCode", generatedCode);
   }
-  
+
   if (formValues.displayOrder !== undefined && formValues.displayOrder !== null && formValues.displayOrder !== "") {
     formData.append("DisplayOrder", Number(formValues.displayOrder));
   }
@@ -174,42 +175,42 @@ function buildOfferFormData(formValues, fileInputObject) {
   if (formValues.longDescription !== undefined && formValues.longDescription !== null) {
     formData.append("Description", String(formValues.longDescription).trim());
   }
-  
+
   if (formValues.startDateUtc) {
     formData.append("StartDateUtc", toUtcIso(formValues.startDateUtc));
   }
   if (formValues.endDateUtc) {
     formData.append("EndDateUtc", toUtcIso(formValues.endDateUtc));
   }
-  
+
   const finalDiscountType = formValues.discountType || (formValues.isPercentageDiscount ? "Percentage" : "Flat");
   formData.append("DiscountType", finalDiscountType);
   formData.append("IsPercentageDiscount", finalDiscountType === "Percentage");
-  
+
   if (formValues.discountValue !== undefined && formValues.discountValue !== null && formValues.discountValue !== "") {
     formData.append("DiscountValue", Number(formValues.discountValue));
   }
-  
+
   if (formValues.maxDiscountAmount !== undefined && formValues.maxDiscountAmount !== null && formValues.maxDiscountAmount !== "") {
     formData.append("MaxDiscountAmount", Number(formValues.maxDiscountAmount));
   }
-  
+
   if (formValues.minBookingAmount !== undefined && formValues.minBookingAmount !== null && formValues.minBookingAmount !== "") {
     formData.append("MinBookingAmount", Number(formValues.minBookingAmount));
   }
-  
+
   if (formValues.maxUsage !== undefined && formValues.maxUsage !== null && formValues.maxUsage !== "") {
     formData.append("MaxUsage", Number(formValues.maxUsage));
     formData.append("MaxCouponUsage", Number(formValues.maxUsage));
   }
-  
+
   formData.append("UsedCount", Number(formValues.couponUsedCount) || 0);
   formData.append("CouponUsedCount", Number(formValues.couponUsedCount) || 0);
-  
+
   if (fileInputObject) {
     formData.append("Image", fileInputObject);
   }
-  
+
   return formData;
 }
 
@@ -227,6 +228,8 @@ export default function AdminOfferListPage({ onAddOffer }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [editError, setEditError] = useState("");
   const [deleteOffer, setDeleteOffer] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Condition Management State
   const [conditionsOffer, setConditionsOffer] = useState(null);
@@ -278,6 +281,17 @@ export default function AdminOfferListPage({ onAddOffer }) {
     });
   }, [filters, offers]);
 
+  const paginatedOffers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredOffers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredOffers, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOffers.length / itemsPerPage));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredOffers.length]);
+
   const handleFilterChange = (field) => (event) => {
     setFilters((previous) => ({ ...previous, [field]: event.target.value }));
   };
@@ -295,11 +309,11 @@ export default function AdminOfferListPage({ onAddOffer }) {
       // Step 1: Get full details by ID first
       const fullOffer = await getAdminFeaturedOfferById(offer.id);
       const normalized = normalizeOffer(fullOffer);
-      
+
       // Step 2: Toggle state and save via PUT
       normalized.isActive = !offer.isActive;
       const formData = buildOfferFormData(normalized, null);
-      
+
       await updateAdminFeaturedOffer(offer.id, formData);
       await loadOffers();
       setDetailsOffer((previous) =>
@@ -321,7 +335,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
       // Step 1: GET /api/AdminFeaturedOffers/{id} to get fresh details
       const fullOffer = await getAdminFeaturedOfferById(offer.id);
       const normalized = normalizeOffer(fullOffer);
-      
+
       setEditOffer(normalized);
       setEditForm({
         title: normalized.title || "",
@@ -551,8 +565,8 @@ export default function AdminOfferListPage({ onAddOffer }) {
           conditionType === "SourceCity"
             ? "e.g. Hyderabad"
             : conditionType === "DestinationCity"
-            ? "e.g. Bangalore"
-            : "Compare value"
+              ? "e.g. Bangalore"
+              : "Compare value"
         }
         value={value1 || ""}
         onChange={(e) => setConditionForm((prev) => ({ ...prev, value1: e.target.value }))}
@@ -731,12 +745,10 @@ export default function AdminOfferListPage({ onAddOffer }) {
           </section>
         </section>
       ) : (
-        <section className="flight-markup-panel" style={{ padding: "28px 32px" }}>
+        <section className="flight-markup-panel" style={{ padding: "16px 24px" }}>
           <header className="flight-markup-toolbar">
             <div className="flight-markup-title">
-              <h1>
-                <strong>Offer List</strong>
-              </h1>
+              <h1 className="offer-list-title-heading">OFFER List</h1>
             </div>
 
             <div className="admin-markup-coupon-actions">
@@ -832,9 +844,9 @@ export default function AdminOfferListPage({ onAddOffer }) {
                     </td>
                   </tr>
                 ) : (
-                  filteredOffers.map((offer, index) => (
+                  paginatedOffers.map((offer, index) => (
                     <tr key={offer.id}>
-                      <td>{index + 1}</td>
+                      <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td>{formatDateTime(offer.endDateUtc)}</td>
                       <td>
                         {offer.imageUrl ? (
@@ -858,9 +870,8 @@ export default function AdminOfferListPage({ onAddOffer }) {
                           className={`markup-status-toggle ${offer.isActive ? "active" : "inactive"}`}
                           onClick={() => handleToggleStatus(offer)}
                           disabled={busyId === offer.id}
-                          aria-label={`Set offer ${offer.id} status to ${
-                            offer.isActive ? "inactive" : "active"
-                          }`}
+                          aria-label={`Set offer ${offer.id} status to ${offer.isActive ? "inactive" : "active"
+                            }`}
                         >
                           {offer.isActive ? <Check size={14} /> : <X size={14} />}
                           <span>{formatStatusLabel(offer.isActive)}</span>
@@ -913,6 +924,16 @@ export default function AdminOfferListPage({ onAddOffer }) {
                 )}
               </tbody>
             </table>
+            <div style={{ marginTop: "16px", padding: "0 24px 24px" }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={filteredOffers.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+                itemName="offers"
+              />
+            </div>
           </section>
         </section>
       )}
@@ -959,199 +980,199 @@ export default function AdminOfferListPage({ onAddOffer }) {
 
             <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
               <div className="admin-markup-form-grid">
-              <label className="wide">
-                <span>Offer Name (Title) *</span>
-                <input
-                  type="text"
-                  value={editForm.title}
-                  onChange={(event) => setEditForm((previous) => ({ ...previous, title: event.target.value }))}
-                  required
-                />
-              </label>
-
-              <label>
-                <span>Booking Type *</span>
-                <select
-                  value={editForm.bookingType}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({ ...previous, bookingType: event.target.value }))
-                  }
-                  required
-                >
-                  {BOOKING_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>Status</span>
-                <select
-                  value={editForm.isActive ? "active" : "inactive"}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({
-                      ...previous,
-                      isActive: event.target.value === "active",
-                    }))
-                  }
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Display Order</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={editForm.displayOrder}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({ ...previous, displayOrder: event.target.value }))
-                  }
-                  placeholder="e.g. 1"
-                />
-              </label>
-
-              <label>
-                <span>Offer Starts</span>
-                <input
-                  type="datetime-local"
-                  value={editForm.startDateUtc}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({
-                      ...previous,
-                      startDateUtc: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <label>
-                <span>Offer Ends</span>
-                <input
-                  type="datetime-local"
-                  value={editForm.endDateUtc}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({
-                      ...previous,
-                      endDateUtc: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <label>
-                <span>Discount Type</span>
-                <select
-                  value={editForm.discountType}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({
-                      ...previous,
-                      discountType: event.target.value,
-                      isPercentageDiscount: event.target.value === "Percentage",
-                    }))
-                  }
-                >
-                  <option value="Flat">Flat Discount</option>
-                  <option value="Percentage">Percentage Discount</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Discount Value</span>
-                <input
-                  type="number"
-                  value={editForm.discountValue}
-                  onChange={(event) => setEditForm((previous) => ({ ...previous, discountValue: event.target.value }))}
-                  placeholder="e.g. 50 or 500"
-                />
-              </label>
-
-              <label>
-                <span>Min Booking Amount (INR)</span>
-                <input
-                  type="number"
-                  value={editForm.minBookingAmount}
-                  onChange={(event) => setEditForm((previous) => ({ ...previous, minBookingAmount: event.target.value }))}
-                  placeholder="e.g. 500"
-                />
-              </label>
-
-              <label>
-                <span>Max Discount Amount (INR)</span>
-                <input
-                  type="number"
-                  value={editForm.maxDiscountAmount}
-                  onChange={(event) => setEditForm((previous) => ({ ...previous, maxDiscountAmount: event.target.value }))}
-                  placeholder="e.g. 150"
-                />
-              </label>
-
-              <label>
-                <span>Max Usage</span>
-                <input
-                  type="number"
-                  value={editForm.maxUsage}
-                  onChange={(event) => setEditForm((previous) => ({ ...previous, maxUsage: event.target.value }))}
-                  placeholder="e.g. 500"
-                />
-              </label>
-
-              <label className="wide">
-                <span>Image Upload</span>
-                <div className="offer-edit-file-uploader">
+                <label className="wide">
+                  <span>Offer Name (Title) *</span>
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => {
-                      if (event.target.files && event.target.files[0]) {
-                        setSelectedFile(event.target.files[0]);
-                      }
-                    }}
+                    type="text"
+                    value={editForm.title}
+                    onChange={(event) => setEditForm((previous) => ({ ...previous, title: event.target.value }))}
+                    required
                   />
-                  {editForm.imageUrl && (
-                    <div className="offer-edit-current-image">
-                      <span>Current image:</span>
-                      <img src={toApiUrl(editForm.imageUrl)} alt="Current Offer" />
-                    </div>
-                  )}
-                </div>
-              </label>
+                </label>
 
-              <label className="wide">
-                <span>Short Description (Subtitle)</span>
-                <textarea
-                  value={editForm.shortDescription}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({
-                      ...previous,
-                      shortDescription: event.target.value,
-                    }))
-                  }
-                  placeholder="Brief summary shown in the user portal card"
-                />
-              </label>
+                <label>
+                  <span>Booking Type *</span>
+                  <select
+                    value={editForm.bookingType}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({ ...previous, bookingType: event.target.value }))
+                    }
+                    required
+                  >
+                    {BOOKING_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <label className="wide">
-                <span>Long Description (Description)</span>
-                <textarea
-                  value={editForm.longDescription}
-                  onChange={(event) =>
-                    setEditForm((previous) => ({
-                      ...previous,
-                      longDescription: event.target.value,
-                    }))
-                  }
-                  placeholder="Full terms and conditions"
-                  style={{ minHeight: "140px" }}
-                />
-              </label>
-            </div>
+                <label>
+                  <span>Status</span>
+                  <select
+                    value={editForm.isActive ? "active" : "inactive"}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({
+                        ...previous,
+                        isActive: event.target.value === "active",
+                      }))
+                    }
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </label>
 
-            {editError && <p className="admin-markup-form-error">{editError}</p>}
+                <label>
+                  <span>Display Order</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.displayOrder}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({ ...previous, displayOrder: event.target.value }))
+                    }
+                    placeholder="e.g. 1"
+                  />
+                </label>
+
+                <label>
+                  <span>Offer Starts</span>
+                  <input
+                    type="datetime-local"
+                    value={editForm.startDateUtc}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({
+                        ...previous,
+                        startDateUtc: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label>
+                  <span>Offer Ends</span>
+                  <input
+                    type="datetime-local"
+                    value={editForm.endDateUtc}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({
+                        ...previous,
+                        endDateUtc: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label>
+                  <span>Discount Type</span>
+                  <select
+                    value={editForm.discountType}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({
+                        ...previous,
+                        discountType: event.target.value,
+                        isPercentageDiscount: event.target.value === "Percentage",
+                      }))
+                    }
+                  >
+                    <option value="Flat">Flat Discount</option>
+                    <option value="Percentage">Percentage Discount</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Discount Value</span>
+                  <input
+                    type="number"
+                    value={editForm.discountValue}
+                    onChange={(event) => setEditForm((previous) => ({ ...previous, discountValue: event.target.value }))}
+                    placeholder="e.g. 50 or 500"
+                  />
+                </label>
+
+                <label>
+                  <span>Min Booking Amount (INR)</span>
+                  <input
+                    type="number"
+                    value={editForm.minBookingAmount}
+                    onChange={(event) => setEditForm((previous) => ({ ...previous, minBookingAmount: event.target.value }))}
+                    placeholder="e.g. 500"
+                  />
+                </label>
+
+                <label>
+                  <span>Max Discount Amount (INR)</span>
+                  <input
+                    type="number"
+                    value={editForm.maxDiscountAmount}
+                    onChange={(event) => setEditForm((previous) => ({ ...previous, maxDiscountAmount: event.target.value }))}
+                    placeholder="e.g. 150"
+                  />
+                </label>
+
+                <label>
+                  <span>Max Usage</span>
+                  <input
+                    type="number"
+                    value={editForm.maxUsage}
+                    onChange={(event) => setEditForm((previous) => ({ ...previous, maxUsage: event.target.value }))}
+                    placeholder="e.g. 500"
+                  />
+                </label>
+
+                <label className="wide">
+                  <span>Image Upload</span>
+                  <div className="offer-edit-file-uploader">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => {
+                        if (event.target.files && event.target.files[0]) {
+                          setSelectedFile(event.target.files[0]);
+                        }
+                      }}
+                    />
+                    {editForm.imageUrl && (
+                      <div className="offer-edit-current-image">
+                        <span>Current image:</span>
+                        <img src={toApiUrl(editForm.imageUrl)} alt="Current Offer" />
+                      </div>
+                    )}
+                  </div>
+                </label>
+
+                <label className="wide">
+                  <span>Short Description (Subtitle)</span>
+                  <textarea
+                    value={editForm.shortDescription}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({
+                        ...previous,
+                        shortDescription: event.target.value,
+                      }))
+                    }
+                    placeholder="Brief summary shown in the user portal card"
+                  />
+                </label>
+
+                <label className="wide">
+                  <span>Long Description (Description)</span>
+                  <textarea
+                    value={editForm.longDescription}
+                    onChange={(event) =>
+                      setEditForm((previous) => ({
+                        ...previous,
+                        longDescription: event.target.value,
+                      }))
+                    }
+                    placeholder="Full terms and conditions"
+                    style={{ minHeight: "140px" }}
+                  />
+                </label>
+              </div>
+
+              {editError && <p className="admin-markup-form-error">{editError}</p>}
             </div>
 
             <div className="admin-markup-modal-actions">

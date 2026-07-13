@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { List } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./FlightRemarkEditList.css";
+import {
+  createFlightRemark as apiCreateFlightRemark,
+  getFlightRemarkById as apiGetFlightRemarkById,
+  updateFlightRemark as apiUpdateFlightRemark
+} from "../../../services/flightBookingService";
 
 const FLIGHT_REMARKS_STORAGE_KEY = "admin_flight_remarks_records";
 
@@ -206,13 +211,43 @@ export default function AdminFlightRemarkEditPage() {
   const refId = normalizeText(searchParams.get("ref_id"), "");
   const isEditing = Boolean(refId);
 
-  const record = useMemo(() => getFlightRemarkById(refId), [refId]);
-
-  const [sourceType, setSourceType] = useState(() => normalizeText(record?.sourceType, ""));
-  const [status, setStatus] = useState(() => normalizeText(record?.status, "Active"));
-  const [remark, setRemark] = useState(() => normalizeText(record?.remark, ""));
+  const [sourceType, setSourceType] = useState("");
+  const [status, setStatus] = useState("Active");
+  const [remark, setRemark] = useState("");
+  const [record, setRecord] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (!refId) return;
+    let active = true;
+    const fetchRecord = async () => {
+      setLoading(true);
+      try {
+        const data = await apiGetFlightRemarkById(refId);
+        if (active && data) {
+          setRecord(data);
+          setSourceType(data.sourceType || "");
+          setStatus(data.status || "Active");
+          setRemark(data.remark || "");
+        }
+      } catch (err) {
+        console.warn("Failed to load remark from server, using local fallback", err);
+        const local = getFlightRemarkById(refId);
+        if (active && local) {
+          setRecord(local);
+          setSourceType(local.sourceType || "");
+          setStatus(local.status || "Active");
+          setRemark(local.remark || "");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchRecord();
+    return () => { active = false; };
+  }, [refId]);
 
   const handleReset = () => {
     setSourceType("");
@@ -222,7 +257,8 @@ export default function AdminFlightRemarkEditPage() {
     setErrorMessage("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async (event) => {
+    if (event) event.preventDefault();
     setStatusMessage("");
     setErrorMessage("");
 
@@ -239,28 +275,39 @@ export default function AdminFlightRemarkEditPage() {
       return;
     }
 
-    const updatedBy = "Travel Admin";
+    const payload = {
+      sourceType: cleanedSourceType,
+      status,
+      remark: cleanedRemark,
+      updatedBy: "Travel Admin",
+    };
 
-    const saved = isEditing
-      ? updateFlightRemarkById(refId, {
-          sourceType: cleanedSourceType,
-          status,
-          remark: cleanedRemark,
-          updatedBy,
-        })
-      : createFlightRemark({
-          sourceType: cleanedSourceType,
-          status,
-          remark: cleanedRemark,
-          updatedBy,
-        });
-
-    if (!saved) {
-      setErrorMessage("Unable to save remark.");
-      return;
+    try {
+      if (isEditing) {
+        await apiUpdateFlightRemark(refId, payload);
+        updateFlightRemarkById(refId, payload);
+      } else {
+        await apiCreateFlightRemark(payload);
+        createFlightRemark(payload);
+      }
+      setStatusMessage(isEditing ? "Remark updated successfully." : "Remark added successfully.");
+      setTimeout(() => {
+        navigate("/admin/b2c-flight/remark-list");
+      }, 800);
+    } catch (err) {
+      console.warn("API call failed, running local backup write", err);
+      const saved = isEditing
+        ? updateFlightRemarkById(refId, payload)
+        : createFlightRemark(payload);
+      if (saved) {
+        setStatusMessage(isEditing ? "Remark updated successfully (offline backup)." : "Remark added successfully (offline backup).");
+        setTimeout(() => {
+          navigate("/admin/b2c-flight/remark-list");
+        }, 800);
+      } else {
+        setErrorMessage("Unable to save remark.");
+      }
     }
-
-    setStatusMessage(isEditing ? "Remark updated successfully." : "Remark added successfully.");
   };
 
   if (isEditing && !record) {
@@ -290,7 +337,11 @@ export default function AdminFlightRemarkEditPage() {
     <section className="admin-b2c-page admin-flight-remark-edit-page">
       <div className="admin-flight-remark-edit-head-row">
         <header className="admin-b2c-header admin-flight-remark-edit-header">
-          <h1>{resolveHeading(isEditing)}</h1>
+          <h1>
+            <span style={{ color: '#A51C49', fontWeight: 700 }}>
+              {isEditing ? 'Edit B2C Flight Remark' : 'Add B2C Flight Remark'}
+            </span>
+          </h1>
         </header>
 
         <button
@@ -327,11 +378,24 @@ export default function AdminFlightRemarkEditPage() {
 
           <div className="admin-flight-remark-edit-label">Remark</div>
           <div className="admin-flight-remark-edit-field admin-flight-remark-edit-remark">
-            <input
-              type="text"
+            <textarea
               value={remark}
               onChange={(event) => setRemark(event.target.value)}
               placeholder="Remark"
+              rows={4}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                borderRadius: "12px",
+                border: "1.5px solid var(--admin-border)",
+                background: "var(--admin-panel)",
+                color: "var(--admin-text)",
+                fontSize: "0.9rem",
+                fontFamily: "inherit",
+                resize: "vertical",
+                minHeight: "80px",
+                boxSizing: "border-box"
+              }}
             />
           </div>
         </div>
@@ -351,5 +415,6 @@ export default function AdminFlightRemarkEditPage() {
     </section>
   );
 }
+
 
 

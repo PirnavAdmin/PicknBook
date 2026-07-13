@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Eye, Pencil, Plus, SlidersHorizontal, Trash2, X, Loader2 } from "lucide-react";
 import "./FlightPopularDestination.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { formatCouponDateTime } from "../../../utils/adminPortalUtils";
 import {
   getPopularDestinations,
@@ -62,6 +63,9 @@ export default function AdminFlightPopularDestinationsPage() {
   const [editForm, setEditForm] = useState(createDefaultFlightPopularDestinationForm);
   const [editError, setEditError] = useState("");
   const [deleteDestination, setDeleteDestination] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const colWidths = ["4%", "14%", "12%", "12%", "8%", "10%", "8%", "16%", "8%", "8%"];
   const headers = [
@@ -178,6 +182,16 @@ export default function AdminFlightPopularDestinationsPage() {
 
     return sorted;
   }, [categoryFilter, destinations, placementFilter, query, sortBy, sortOrder, statusFilter]);
+
+  const totalPages = Math.ceil(visibleDestinations.length / itemsPerPage) || 1;
+  const paginatedDestinations = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return visibleDestinations.slice(startIndex, startIndex + itemsPerPage);
+  }, [visibleDestinations, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, sortBy, sortOrder, statusFilter, categoryFilter, placementFilter]);
 
   const hasActiveFilters =
     query.trim() ||
@@ -432,8 +446,10 @@ export default function AdminFlightPopularDestinationsPage() {
       <section className="admin-b2c-page flight-markup-panel">
         <header className="flight-markup-toolbar">
           <div className="flight-markup-title">
-            <h1>Popular Destination List</h1>
-            <div className="flight-markup-title-underline" aria-hidden="true" />
+            <h1 style={{ fontWeight: 500 }}>
+              <span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Flight</span> <span style={{ color: '#000000', fontWeight: 500 }}>Popular Destination List</span>
+            </h1>
+            <div className="flight-markup-title-underline" aria-hidden="true" style={{ background: '#A51C49' }} />
           </div>
 
           <div className="flight-markup-actions">
@@ -550,8 +566,9 @@ export default function AdminFlightPopularDestinationsPage() {
               <span>Loading popular destinations...</span>
             </div>
           ) : (
-            <div className="flight-markup-table-scroll">
-              <table className="flight-markup-table flight-destinations-table">
+            <div style={{ border: '1px solid var(--admin-border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--admin-surface)' }}>
+              <div className="flight-markup-table-scroll" style={{ border: 'none', borderRadius: '0', boxShadow: 'none' }}>
+                <table className="flight-markup-table flight-destinations-table">
                 <colgroup>
                   {colWidths.map((width, index) => (
                     <col key={`${width}-${index}`} style={{ width }} />
@@ -561,9 +578,7 @@ export default function AdminFlightPopularDestinationsPage() {
                   <tr>
                     {headers.map((headerLabel) => (
                       <th key={headerLabel}>
-                        <div className="flight-markup-th-pill">
-                          <span>{headerLabel}</span>
-                        </div>
+                        <span>{headerLabel}</span>
                       </th>
                     ))}
                   </tr>
@@ -576,28 +591,31 @@ export default function AdminFlightPopularDestinationsPage() {
                       </td>
                     </tr>
                   ) : (
-                    visibleDestinations.map((destination, index) => {
+                    paginatedDestinations.map((destination, index) => {
                       const placementLabel =
                         String(destination.placement || "").toLowerCase() === "side" ? "Side" : "Main";
                       const url = safeExternalUrl(destination.url);
 
                       return (
                         <tr key={destination.id}>
-                          <td>{index + 1}</td>
+                          <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                           <td>{formatCouponDateTime(destination.entryDate)}</td>
                           <td>{destination.title}</td>
                           <td>{destination.subTitle || "--"}</td>
                           <td>
-                            <div className="markup-action-group">
-                              <button
-                                type="button"
-                                title="View"
-                                aria-label={`View image for ${destination.title}`}
-                                onClick={() => setViewDestination(destination)}
-                              >
-                                <Eye size={14} />
-                              </button>
-                            </div>
+                            {destination.imageUrl || destination.imageName ? (
+                              <img
+                                src={destination.imageUrl || destination.imageName}
+                                alt={destination.title}
+                                style={{ height: "40px", width: "40px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border)" }}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'inline-block';
+                                }}
+                              />
+                            ) : null}
+                            <span style={{ fontSize: "12px", color: "#94a3b8", display: (destination.imageUrl || destination.imageName) ? 'none' : 'inline-block' }}>No Image</span>
                           </td>
                           <td>{destination.category}</td>
                           <td>{placementLabel}</td>
@@ -651,6 +669,16 @@ export default function AdminFlightPopularDestinationsPage() {
                 </tbody>
               </table>
             </div>
+            <div style={{ borderTop: '1px solid var(--admin-border)' }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={visibleDestinations.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="popular destinations"
+              />
+            </div>
+          </div>
           )}
         </section>
       </section>
@@ -944,3 +972,4 @@ export default function AdminFlightPopularDestinationsPage() {
     </>
   );
 }
+

@@ -326,3 +326,118 @@
     content: "";
   }
 }
+
+/* ────────────────────────────────────────────────────────
+   B2B Theme Sync Overrides
+   ──────────────────────────────────────────────────────── */
+
+.b2b-layout-wrapper .account-page {
+  background: #0b0f19 !important;
+  color: var(--b2b-text-primary) !important;
+}
+
+.b2b-layout-wrapper .account-profile-card {
+  background: var(--b2b-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.b2b-layout-wrapper .account-profile-image {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: linear-gradient(135deg, var(--b2b-bg-tertiary), var(--b2b-bg-secondary)) !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.b2b-layout-wrapper .account-user-name {
+  color: var(--b2b-text-primary) !important;
+}
+
+.b2b-layout-wrapper .account-profile-status {
+  color: var(--b2b-text-secondary) !important;
+}
+
+.b2b-layout-wrapper .account-personal-info {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.b2b-layout-wrapper .account-info-head h4 {
+  color: var(--b2b-text-secondary) !important;
+}
+
+.b2b-layout-wrapper .account-info-row {
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.b2b-layout-wrapper .account-info-label {
+  color: var(--b2b-text-secondary) !important;
+}
+
+.b2b-layout-wrapper .account-info-label::after {
+  color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.b2b-layout-wrapper .account-info-value {
+  color: var(--b2b-text-primary) !important;
+}
+
+.b2b-layout-wrapper .account-primary-btn {
+  background: var(--b2b-accent) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.25) !important;
+}
+
+.b2b-layout-wrapper .account-primary-btn:hover {
+  background: var(--b2b-accent-hover) !important;
+  transform: translateY(-1px);
+}
+
+.b2b-layout-wrapper .account-secondary-btn {
+  background: var(--b2b-bg-tertiary) !important;
+  color: var(--b2b-text-primary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.b2b-layout-wrapper .account-secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.b2b-layout-wrapper .account-header {
+  background: var(--b2b-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.b2b-layout-wrapper .account-header h1 {
+  color: var(--b2b-text-primary) !important;
+}
+
+.b2b-layout-wrapper .account-header p {
+  color: var(--b2b-text-secondary) !important;
+}
+
+.b2b-layout-wrapper .account-card {
+  background: var(--b2b-bg-secondary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.b2b-layout-wrapper .account-card:hover {
+  border-color: var(--b2b-accent) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+.b2b-layout-wrapper .account-card-icon {
+  background: rgba(59, 130, 246, 0.1) !important;
+  color: var(--b2b-accent) !important;
+  border: 1px solid rgba(59, 130, 246, 0.15) !important;
+}
+
+.b2b-layout-wrapper .account-card-title {
+  color: var(--b2b-text-primary) !important;
+}
+
+.b2b-layout-wrapper .account-card-desc {
+  color: var(--b2b-text-secondary) !important;
+}

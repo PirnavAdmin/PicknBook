@@ -18,6 +18,17 @@ import {
   Sunset,
   X,
   XCircle,
+  ChevronDown,
+  ChevronUp,
+  Lock,
+  Briefcase,
+  Undo,
+  Utensils,
+  Armchair,
+  Zap,
+  ZapOff,
+  Check,
+  ShieldAlert,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -40,6 +51,39 @@ const LOADING_STATUSES = [
   "Checking luggage allowances and policy...",
   "Applying student and corporate deals...",
   "Securing optimal route options..."
+];
+
+const FLIGHT_PROMO_ITEMS = [
+  {
+    id: "route-offers",
+    icon: IndianRupee,
+    title: "Route Offers",
+    text: "Check coupons before payment",
+  },
+  {
+    id: "seat-sync",
+    icon: Armchair,
+    title: "Live Seats",
+    text: "Fresh seat availability",
+  },
+  {
+    id: "trusted-travels",
+    icon: ShieldAlert,
+    title: "Trusted Travels",
+    text: "Compare verified operators",
+  },
+  {
+    id: "quick-ticket",
+    icon: Plane,
+    title: "Quick Ticket",
+    text: "Print ticket after booking",
+  },
+  {
+    id: "time-picks",
+    icon: Clock3,
+    title: "Smart Timings",
+    text: "Sort flights by departure",
+  },
 ];
 
 const MONTHS = [
@@ -330,6 +374,23 @@ function getTimeDisplay(hour) {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 
+function getAirportName(code, city) {
+  const c = String(code || "").toUpperCase().trim();
+  const nameMap = {
+    DEL: "Indira Gandhi International Airport",
+    BOM: "Chhatrapati Shivaji Maharaj International Airport",
+    BLR: "Kempegowda International Airport",
+    MAA: "Chennai International Airport",
+    HYD: "Rajiv Gandhi International Airport",
+    CCU: "Netaji Subhas Chandra Bose International Airport",
+    COK: "Cochin International Airport",
+    GOI: "Dabolim Airport",
+    DXB: "Dubai International Airport",
+    JFK: "John F. Kennedy International Airport",
+  };
+  return nameMap[c] || `${city || c} Airport`;
+}
+
 function getClassBadgeTone(travelClass) {
   if (travelClass.includes("First")) {
     return "elite";
@@ -386,6 +447,16 @@ function normalizeTravellerSummary(value) {
   return text || "1 Adult";
 }
 
+function getSelectedFarePrice(basePrice, type) {
+  if (type === "flexi") {
+    return Math.round(basePrice * 1.066);
+  }
+  if (type === "upfront") {
+    return Math.round(basePrice * 1.203);
+  }
+  return basePrice;
+}
+
 export default function FlightSearchResults() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -433,6 +504,7 @@ export default function FlightSearchResults() {
 
   const [selectedClassByFlight, setSelectedClassByFlight] = useState({});
   const [expandedFlightId, setExpandedFlightId] = useState(null);
+  const [selectedFareType, setSelectedFareType] = useState("saver");
 
   const [priceMin, setPriceMin] = useState(0);
   const [timeMin, setTimeMin] = useState(0);
@@ -769,6 +841,15 @@ export default function FlightSearchResults() {
     return nextFlights;
   }, [filteredFlights, sortBy]);
 
+  const currentExpandedFlight = useMemo(() => {
+    return flights.find((f) => f.id === expandedFlightId) || null;
+  }, [flights, expandedFlightId]);
+
+  const selectedFarePrice = useMemo(() => {
+    if (!currentExpandedFlight) return 0;
+    return getSelectedFarePrice(currentExpandedFlight.fare, selectedFareType);
+  }, [currentExpandedFlight, selectedFareType]);
+
   const travellerCounts = getTravellerCounts(travellerText);
   const flightsFoundCount = filteredFlights.length;
   const activeBookingFlight =
@@ -873,7 +954,16 @@ export default function FlightSearchResults() {
     }
   };
 
-  const handleStartBookingJourney = (flight) => {
+  const handleToggleFlightExpand = (flightId) => {
+    if (expandedFlightId === flightId) {
+      setExpandedFlightId(null);
+    } else {
+      setExpandedFlightId(flightId);
+      setSelectedFareType("saver");
+    }
+  };
+
+  const handleStartBookingJourney = (flight, selectedPrice = null, selectedClass = null) => {
     setBookingError("");
     setBookingSuccess("");
     const bookingTravellerCounts = getTravellerCounts(travellerText);
@@ -882,29 +972,65 @@ export default function FlightSearchResults() {
       bookingTravellerCounts.adults + bookingTravellerCounts.children
     );
 
+    const basePrice = selectedPrice !== null ? selectedPrice : flight.fare;
+    const resolvedClass = selectedClass !== null ? selectedClass : flight.className;
+
     const flowPayload = {
-      flight,
+      flight: {
+        ...flight,
+        fare: basePrice,
+        className: resolvedClass,
+      },
       searchContext: {
         source: sourceName,
         destination: destinationName,
         tripType,
         departureDate: formatDateInput(selectedDate),
         travellers: travellerText,
-        cabinClass: flight.className || cabinClass,
+        cabinClass: resolvedClass || cabinClass,
       },
       selectedSeatLabels: [],
       selectedSeats: [],
       mealPreference: "standard",
       baggagePlan: "20kg",
-      fareSummary: {
-        baseFare: Number(flight.fare || 0) * seatRequired,
-        seatSurcharge: 0,
-        mealFee: 0,
-        baggageFee: 0,
-        tax: 0,
-        convenienceFee: 0,
-        totalFare: Number(flight.fare || 0) * seatRequired,
-      },
+      fareSummary: (() => {
+        let markupValue = 0;
+        const rawMarkup = localStorage.getItem("b2b_markup_settings");
+        if (rawMarkup) {
+          try {
+            const parsedMarkup = JSON.parse(rawMarkup);
+            if (parsedMarkup.flightType === "percentage") {
+              markupValue = (Number(basePrice || 0) * seatRequired) * (Number(parsedMarkup.flightValue) / 100);
+            } else if (parsedMarkup.flightType === "fixed") {
+              markupValue = Number(parsedMarkup.flightValue) * seatRequired;
+            }
+          } catch (e) {
+            console.error("Error reading B2B flight markup", e);
+          }
+        }
+
+        // B2B Discounts (Removed as requested)
+        const tierDiscount = 0;
+        const volumeDiscount = 0;
+        const isAgent = localStorage.getItem("b2b_role") === "Agent";
+
+        const baseFare = Number(basePrice || 0) * seatRequired;
+        const wholesaleFare = baseFare;
+        const displayTotal = isAgent ? (wholesaleFare + markupValue) : (baseFare + markupValue);
+
+        return {
+          baseFare,
+          seatSurcharge: 0,
+          mealFee: 0,
+          baggageFee: 0,
+          tax: 0,
+          convenienceFee: 0,
+          markup: markupValue,
+          tierDiscount,
+          volumeDiscount,
+          totalFare: displayTotal,
+        };
+      })(),
     };
 
     writeFlightBookingFlowState(flowPayload);
@@ -1307,6 +1433,20 @@ export default function FlightSearchResults() {
           </div>
         )}
 
+        <section className="flight-promo-scroller" aria-label="Travel booking highlights">
+          {FLIGHT_PROMO_ITEMS.map((item) => (
+            <article className="flight-promo-chip" key={item.id}>
+              <span className="flight-promo-icon" aria-hidden="true">
+                <item.icon size={16} />
+              </span>
+              <div>
+                <strong>{item.title}</strong>
+                <small>{item.text}</small>
+              </div>
+            </article>
+          ))}
+        </section>
+
         <div className="results-layout">
             <aside className="filters-rail">
               <header className="flights-count">
@@ -1517,111 +1657,273 @@ export default function FlightSearchResults() {
                     <p>No flights match the selected filters for this date.</p>
                   </div>
                 ) : (
-                  sortedFlights.map((flight) => (
-                    <article className="flight-card" key={flight.id}>
-                      <div className="airline-cell">
-                        <img src={flight.logo} alt={flight.airlineName} />
-                        <h4>{flight.airlineName}</h4>
-                        <p>({flight.flightNumber})</p>
-                        <span className="good">
-                          {flight.totalAvailableSeats > 0
-                            ? `${flight.totalAvailableSeats} seats available`
-                            : "Sold out"}
-                        </span>
-                      </div>
+                  sortedFlights.map((flight) => {
+                    const isExpanded = expandedFlightId === flight.id;
+                    const flightCardJsx = (
+                      <article 
+                        className={`flight-card-modern ${isExpanded ? "expanded" : ""}`} 
+                        key={flight.id}
+                        onClick={() => handleToggleFlightExpand(flight.id)}
+                      >
+                        <div className="flight-card-main-row">
+                          {/* Top Meta Line */}
+                          <div className="flight-card-meta-line">
+                            <div className="flight-identity">
+                              <img src={flight.logo} alt={flight.airlineName} className="airline-logo-mini" />
+                              <span className="flight-number-mini">{flight.airlineName} ({flight.flightNumber})</span>
+                            </div>
+                            <div className="flight-badge-gold">
+                              {flight.totalAvailableSeats <= 5 && flight.totalAvailableSeats > 0 ? "Only a few seats left" : "Filling Fast"}
+                            </div>
+                          </div>
 
-                      <div className="timeline-cell">
-                        <div className="city-time">
-                          <strong>{flight.sourceCode}</strong>
-                          <span>{flight.departDate}</span>
-                          <em>{flight.departureTime}</em>
+                          {/* Center Flight Info Row */}
+                          <div className="flight-card-info-grid">
+                            {/* Departure Block */}
+                            <div className="airport-info-block departure">
+                              <div className="time-code-row">
+                                <span className="large-time">{flight.departureTime}</span>
+                                <span className="city-code">{flight.sourceCode}</span>
+                              </div>
+                              <span className="airport-name-sub">{getAirportName(flight.sourceCode, sourceName)}</span>
+                            </div>
+
+                            {/* Route Path Block */}
+                            <div className="route-path-block">
+                              <span className="duration-label">{flight.duration}</span>
+                              <div className="path-visual-line">
+                                <div className="dashed-line"></div>
+                                <Plane className="plane-icon-mini" size={14} style={{ transform: "rotate(90deg)" }} />
+                                <div className="dashed-line"></div>
+                                <div className="end-dot"></div>
+                              </div>
+                              <span className="stops-label">{flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop`}</span>
+                            </div>
+
+                            {/* Arrival Block */}
+                            <div className="airport-info-block arrival">
+                              <div className="time-code-row">
+                                <span className="city-code">{flight.destinationCode}</span>
+                                <span className="large-time">{flight.arrivalTime}</span>
+                              </div>
+                              <span className="airport-name-sub">{getAirportName(flight.destinationCode, destinationName)}</span>
+                            </div>
+
+                            {/* Price & Action Block */}
+                            <div className="price-action-block" onClick={(e) => e.stopPropagation()}>
+                              <div className="starts-at-label">Starts at</div>
+                              <div className="price-caret-row" onClick={() => handleToggleFlightExpand(flight.id)}>
+                                <span className="starts-price">₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</span>
+                                <span className="caret-icon-wrapper">
+                                  {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                </span>
+                              </div>
+                              <div className="bluchips-earn-label">
+                                + Earn {Math.round(flight.fare * 0.093)} {flight.airlineName} BluChips
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="duration-line">
-                          <span>{flight.duration}</span>
-                        </div>
+                        {isExpanded && (
+                          <div className="fare-selection-zone" onClick={(e) => e.stopPropagation()}>
+                            {/* Main Fare Comparison Table Layout */}
+                            <div className="fare-table-container">
+                              {/* Features List Column (Left) */}
+                              <div className="fare-features-labels-column">
+                                <div className="feature-label-cell header-cell">
+                                  <span className="fare-types-title">Fare Types</span>
+                                  <button type="button" className="know-more-btn">Know more</button>
+                                </div>
+                                <div className="feature-label-cell group-title">Baggage</div>
+                                <div className="feature-label-cell group-title">Change/cancellation</div>
+                                <div className="feature-label-cell group-title">Add-ons and services</div>
+                              </div>
 
-                        <div className="city-time">
-                          <strong>{flight.destinationCode}</strong>
-                          <span>{flight.departDate}</span>
-                          <em>{flight.arrivalTime}</em>
-                        </div>
-                      </div>
+                              {/* Fare Cards Columns (Right) */}
+                              <div className="fare-columns-container">
+                                {/* Column 1: Saver Fare */}
+                                <div 
+                                  className={`fare-column-card ${selectedFareType === 'saver' ? 'active' : ''}`}
+                                  onClick={() => setSelectedFareType('saver')}
+                                >
+                                  <div className="fare-column-header">
+                                    <span className="fare-badge saver">Saver fare</span>
+                                    <div className="fare-column-price">₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</div>
+                                    <div className="fare-column-bluchips">
+                                      + Earn {Math.round(flight.fare * 0.093)} {flight.airlineName} BluChips
+                                    </div>
+                                  </div>
 
-                      <div className="service-cell">
-                        <span className={`fare-tag ${flight.fareTagTone}`}>
-                          {flight.className}
-                        </span>
-                        <p>
-                          Seats: {flight.availableSeats}/{flight.totalSeats}
-                        </p>
-                        <p>
-                          Classes:{" "}
-                          {flight.supportedTravelClasses.length > 0
-                            ? flight.supportedTravelClasses.join(", ")
-                            : "--"}
-                        </p>
-                        <div className="flight-action-row">
-                          <button
-                            type="button"
-                            className="class-toggle-btn"
-                            onClick={() =>
-                              setExpandedFlightId((previous) =>
-                                previous === flight.id ? null : flight.id
-                              )
-                            }
-                          >
-                            {expandedFlightId === flight.id
-                              ? "Hide Class Fares"
-                              : "Show Class Fares"}
-                          </button>
-                          <button
-                            type="button"
-                            className="book-btn"
-                            onClick={() => handleStartBookingJourney(flight)}
-                            disabled={flight.availableSeats <= 0}
-                          >
-                            Book Now
-                          </button>
-                        </div>
-                      </div>
+                                  <div className="fare-column-features-group baggage">
+                                    <div className="feature-item">
+                                      <Lock size={14} className="feature-icon" />
+                                      <span>7 kg Cabin bag allowance</span>
+                                    </div>
+                                    <div className="feature-item">
+                                      <Briefcase size={14} className="feature-icon" />
+                                      <span>15 kg Check-in bag allowance</span>
+                                    </div>
+                                  </div>
 
-                      <div className="price-cell">
-                        <div className="price-line">
-                          <strong>{formatCurrency(flight.fare)}</strong>
-                        </div>
-                        <p className="price-caption">per person</p>
-                      </div>
+                                  <div className="fare-column-features-group changes">
+                                    <div className="feature-item">
+                                      <Undo size={14} className="feature-icon" />
+                                      <span>Change and cancellation charges <strong>Standard</strong></span>
+                                    </div>
+                                  </div>
 
-                      {expandedFlightId === flight.id && (
-                        <div className="class-options-panel">
-                          <p>Select travel class:</p>
-                          {flight.classOptions.map((option) => (
-                            <button
-                              key={option.travelClass}
-                              type="button"
-                              className={`class-option${
-                                option.travelClass === flight.className
-                                  ? " active"
-                                  : ""
-                              }${option.availableSeats <= 0 ? " out-of-stock" : ""}`}
-                              onClick={() =>
-                                handleClassChange(flight.id, option.travelClass)
-                              }
-                            >
-                              <span>{option.travelClass}</span>
-                              <strong>{formatCurrency(option.priceInr)}</strong>
-                              <em>
-                                {option.availableSeats > 0
-                                  ? `${option.availableSeats} seats left`
-                                  : "Sold out"}
-                              </em>
-                            </button>
-                          ))}
+                                  <div className="fare-column-features-group addons empty">
+                                    <span className="no-addons-placeholder">—</span>
+                                  </div>
+                                </div>
+
+                                {/* Column 2: Flexi Plus Fare */}
+                                <div 
+                                  className={`fare-column-card ${selectedFareType === 'flexi' ? 'active' : ''}`}
+                                  onClick={() => setSelectedFareType('flexi')}
+                                >
+                                  <div className="fare-column-header">
+                                    <span className="fare-badge flexi">Flexi plus fare</span>
+                                    <div className="fare-column-price">
+                                      ₹{new Intl.NumberFormat("en-IN").format(Math.round(flight.fare * 1.066))}
+                                    </div>
+                                    <div className="fare-column-bluchips">
+                                      + Earn {Math.round(flight.fare * 1.066 * 0.094)} {flight.airlineName} BluChips
+                                    </div>
+                                  </div>
+
+                                  <div className="fare-column-features-group baggage">
+                                    <div className="feature-item">
+                                      <Lock size={14} className="feature-icon" />
+                                      <span>7 kg Cabin bag allowance</span>
+                                    </div>
+                                    <div className="feature-item">
+                                      <Briefcase size={14} className="feature-icon" />
+                                      <span>15 kg Check-in bag allowance</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="fare-column-features-group changes">
+                                    <div className="feature-item">
+                                      <Undo size={14} className="feature-icon" />
+                                      <span>Change and cancellation charges <strong>Partial</strong></span>
+                                    </div>
+                                  </div>
+
+                                  <div className="fare-column-features-group addons">
+                                    <div className="feature-item">
+                                      <Utensils size={14} className="feature-icon" />
+                                      <span>Complimentary meal</span>
+                                    </div>
+                                    <div className="feature-item">
+                                      <Armchair size={14} className="feature-icon" />
+                                      <span>Complimentary standard seat</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Column 3: UpFront Fare */}
+                                <div 
+                                  className={`fare-column-card ${selectedFareType === 'upfront' ? 'active' : ''}`}
+                                  onClick={() => setSelectedFareType('upfront')}
+                                >
+                                  {/* NEW Ribbon */}
+                                  <div className="new-ribbon">New</div>
+                                  
+                                  <div className="fare-column-header">
+                                    <span className="fare-badge upfront">{flight.airlineName} UpFront</span>
+                                    <div className="fare-column-price">
+                                      ₹{new Intl.NumberFormat("en-IN").format(Math.round(flight.fare * 1.203))}
+                                    </div>
+                                    <div className="fare-column-bluchips">
+                                      + Earn {Math.round(flight.fare * 1.203 * 0.096)} {flight.airlineName} BluChips
+                                    </div>
+                                  </div>
+
+                                  <div className="fare-column-features-group baggage">
+                                    <div className="feature-item">
+                                      <Lock size={14} className="feature-icon" />
+                                      <span>7 kg Cabin bag allowance</span>
+                                    </div>
+                                    <div className="feature-item">
+                                      <Briefcase size={14} className="feature-icon" />
+                                      <span>20 kg Check-in bag allowance</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="fare-column-features-group changes">
+                                    <div className="feature-item">
+                                      <Check size={14} className="feature-icon success" />
+                                      <span><strong>ZERO</strong> change fee (beyond 72 hours)</span>
+                                    </div>
+                                    <div className="feature-item">
+                                      <Undo size={14} className="feature-icon" />
+                                      <span>Cancellation charges <strong>Low</strong></span>
+                                    </div>
+                                  </div>
+
+                                  <div className="fare-column-features-group addons">
+                                    <div className="feature-item">
+                                      <Utensils size={14} className="feature-icon" />
+                                      <span>Complimentary meal</span>
+                                    </div>
+                                    <div className="feature-item">
+                                      <Armchair size={14} className="feature-icon" />
+                                      <span>Front two-row economy seats</span>
+                                    </div>
+                                    <div className="feature-item warning">
+                                      <ZapOff size={14} className="feature-icon danger" />
+                                      <span>Fast Forward not included</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Bottom Sticky/Action Bar */}
+                            <div className="fare-selection-footer-bar">
+                              <div className="total-fare-display-block">
+                                <span className="total-fare-label">TOTAL FARE</span>
+                                <span className="total-fare-amount">
+                                  ₹{new Intl.NumberFormat("en-IN").format(selectedFarePrice)}
+                                </span>
+                                <button type="button" className="view-details-link-btn">View Details</button>
+                              </div>
+                              <button 
+                                type="button" 
+                                className="fare-next-btn"
+                                onClick={() => {
+                                  const upgradedClassName = 
+                                    selectedFareType === "saver" ? "Economy (Saver)" :
+                                    selectedFareType === "flexi" ? "Economy (Flexi Plus)" : 
+                                    `${flight.airlineName} UpFront`;
+                                  handleStartBookingJourney(flight, selectedFarePrice, upgradedClassName);
+                                }}
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </article>
+                    );
+
+                    if (isExpanded) {
+                      return (
+                        <div className="expanded-flight-wrapper" key={flight.id}>
+                          <div className="expanded-flight-header">
+                            <span>{flight.sourceCode}</span>
+                            <span className="expanded-header-line"></span>
+                            <span>{flight.destinationCode}</span>
+                          </div>
+                          {flightCardJsx}
                         </div>
-                      )}
-                    </article>
-                  ))
+                      );
+                    }
+
+                    return flightCardJsx;
+                  })
                 )}
               </div>
             </section>

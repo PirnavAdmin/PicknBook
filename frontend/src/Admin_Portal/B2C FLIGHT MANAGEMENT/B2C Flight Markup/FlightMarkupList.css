@@ -52,21 +52,33 @@
 }
 
 .flight-markup-action-btn.primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  background: #A51C49;
   color: #ffffff;
-  border-color: var(--primary);
+  border-color: #A51C49;
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.2);
 }
 
-.flight-markup-action-btn.secondary,
-.flight-markup-action-btn.filter {
-  background: var(--surface-soft);
+.flight-markup-action-btn.primary:hover {
+  background: #9c1048;
+  border-color: #9c1048;
+  transform: translateY(-2px);
 }
 
-.flight-markup-action-btn.filter.active,
+.flight-markup-action-btn.secondary {
+  background: #1e75ff;
+  color: #ffffff;
+  border-color: #1e75ff;
+  box-shadow: 0 4px 10px rgba(30, 117, 255, 0.2);
+}
+
+.flight-markup-action-btn.secondary:hover {
+  background: #0052d9;
+  border-color: #0052d9;
+  transform: translateY(-2px);
+}
+
 .flight-markup-action-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--surface-soft);
+  transform: translateY(-2px);
 }
 
 .flight-markup-table-wrap {
@@ -122,9 +134,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
   font-size: 0.72rem;
   font-weight: 700;
   max-width: 100%;
@@ -296,9 +308,17 @@
 }
 
 .flight-markup-modal-actions .primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  background: #A51C49;
   color: #ffffff;
-  border-color: var(--primary);
+  border-color: #A51C49;
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.2);
+  transition: all 0.2s ease;
+}
+
+.flight-markup-modal-actions .primary:hover {
+  background: #9c1048;
+  border-color: #9c1048;
+  transform: translateY(-2px);
 }
 
 .flight-markup-modal-actions .secondary {
@@ -485,17 +505,33 @@
 .admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.primary,
 .admin-shell.light-theme .flight-markup-panel .flight-markup-modal-actions .primary,
 .admin-shell.light-theme .flight-markup-panel .admin-markup-modal-actions .primary {
-  background: linear-gradient(135deg, #dc1e26, #b8141b);
-  border-color: #dc1e26;
-  color: #ffffff;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+}
+
+.admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.primary:hover,
+.admin-shell.light-theme .flight-markup-panel .flight-markup-modal-actions .primary:hover,
+.admin-shell.light-theme .flight-markup-panel .admin-markup-modal-actions .primary:hover {
+  background: #9c1048 !important;
+  border-color: #9c1048 !important;
+  transform: translateY(-2px) !important;
 }
 
 .admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.secondary,
 .admin-shell.light-theme .flight-markup-panel .flight-markup-modal-actions .secondary,
 .admin-shell.light-theme .flight-markup-panel .admin-markup-modal-actions .secondary {
-  background: #ffffff;
-  color: var(--text-primary);
-  border-color: var(--border);
+  background: #1e75ff !important;
+  color: #ffffff !important;
+  border-color: #1e75ff !important;
+}
+
+.admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.secondary:hover,
+.admin-shell.light-theme .flight-markup-panel .flight-markup-modal-actions .secondary:hover,
+.admin-shell.light-theme .flight-markup-panel .admin-markup-modal-actions .secondary:hover {
+  background: #0052d9 !important;
+  border-color: #0052d9 !important;
+  transform: translateY(-2px) !important;
 }
 
 .admin-shell.dark-theme .flight-markup-panel .flight-markup-action-btn.primary,
@@ -503,30 +539,49 @@
 .admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-actions .primary,
 .admin-shell.dark-theme .flight-markup-modal-actions .primary,
 .admin-shell.dark-theme .flight-markup-action-btn.primary {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
-  border-color: #2563eb !important;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
   color: #ffffff !important;
 }
 
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-action-btn.primary:hover,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-actions .primary:hover,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-actions .primary:hover,
+.admin-shell.dark-theme .flight-markup-modal-actions .primary:hover,
+.admin-shell.dark-theme .flight-markup-action-btn.primary:hover {
+  background: #9c1048 !important;
+  border-color: #9c1048 !important;
+  transform: translateY(-2px) !important;
+}
+
 .admin-shell.dark-theme .flight-markup-table thead {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  background: linear-gradient(135deg, #A51C49, #9c1048) !important;
 }
 
 .admin-shell.dark-theme .flight-markup-title h1 {
-  color: #3b82f6 !important;
+  color: #ffffff !important;
 }
 
 .admin-shell.dark-theme .flight-markup-title-underline {
-  background: #3b82f6 !important;
+  background: #A51C49 !important;
 }
 
 .admin-shell.dark-theme .flight-markup-panel .flight-markup-action-btn.secondary,
 .admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-actions .secondary,
 .admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-actions .secondary,
 .admin-shell.dark-theme .flight-markup-modal-actions .secondary {
-  background: #243047 !important;
-  color: #f8fafc !important;
-  border-color: #334155 !important;
+  background: #1e75ff !important;
+  color: #ffffff !important;
+  border-color: #1e75ff !important;
+}
+
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-action-btn.secondary:hover,
+.admin-shell.dark-theme .flight-markup-panel .flight-markup-modal-actions .secondary:hover,
+.admin-shell.dark-theme .flight-markup-panel .admin-markup-modal-actions .secondary:hover,
+.admin-shell.dark-theme .flight-markup-modal-actions .secondary:hover {
+  background: #0052d9 !important;
+  border-color: #0052d9 !important;
+  transform: translateY(-2px) !important;
 }
 
 .admin-shell.dark-theme .flight-markup-panel .flight-markup-modal,
@@ -641,3 +696,4 @@
     border-bottom: 0;
   }
 }
+

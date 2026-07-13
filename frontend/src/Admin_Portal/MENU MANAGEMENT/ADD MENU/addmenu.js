@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check, List, RotateCcw } from "lucide-react";
+import { Check, List, PlusCircle, RotateCcw } from "lucide-react";
 import "./addmenu.css";
 import { createMenuItem, updateMenuItem } from "../../../services/menuService";
 
@@ -22,6 +22,7 @@ export default function AdminMenuAddPage({ onBack }) {
 
   const [formValues, setFormValues] = useState(DEFAULT_FORM);
   const [formError, setFormError] = useState("");
+  const [errors, setErrors] = useState({});
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -39,10 +40,14 @@ export default function AdminMenuAddPage({ onBack }) {
     } else {
       setFormValues(DEFAULT_FORM);
     }
+    setErrors({});
   }, [editItem]);
 
   const handleChange = (field) => (event) => {
     setFormValues((previous) => ({ ...previous, [field]: event.target.value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: false }));
+    }
   };
 
   const handleReset = () => {
@@ -61,6 +66,7 @@ export default function AdminMenuAddPage({ onBack }) {
       setFormValues(DEFAULT_FORM);
     }
     setFormError("");
+    setErrors({});
     setSaved(false);
   };
 
@@ -68,7 +74,8 @@ export default function AdminMenuAddPage({ onBack }) {
     event.preventDefault();
     setSaved(false);
     setFormError("");
-
+    
+    const newErrors = {};
     const name = String(formValues.name || "").trim();
     const slug = String(formValues.slug || "").trim();
     const displayTitle = String(formValues.displayTitle || "").trim();
@@ -77,18 +84,16 @@ export default function AdminMenuAddPage({ onBack }) {
     const locationVal = String(formValues.location || "").trim();
     const icon = String(formValues.icon || "").trim();
 
-    if (!name || !slug || !displayTitle) {
-      setFormError("Menu Name, Menu Title, and Menu Slug are required.");
-      return;
-    }
+    if (!name) newErrors.name = true;
+    if (!slug) newErrors.slug = true;
+    if (!displayTitle) newErrors.displayTitle = true;
+    if (formValues.order === "" || !Number.isFinite(orderValue) || orderValue < 0) newErrors.order = true;
+    if (!moduleValue) newErrors.module = true;
+    if (!locationVal) newErrors.location = true;
 
-    if (!Number.isFinite(orderValue) || orderValue < 0) {
-      setFormError("Enter a valid Menu Order number.");
-      return;
-    }
-
-    if (!moduleValue || !locationVal) {
-      setFormError("Menu Site Type and Menu Type are required.");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setFormError("Please fill in all compulsory fields with valid inputs.");
       return;
     }
 
@@ -127,22 +132,23 @@ export default function AdminMenuAddPage({ onBack }) {
 
   return (
     <section className="flight-markup-panel menu-management-panel">
-      <header className="flight-markup-toolbar">
-        <div className="flight-markup-title">
-          <h1>{editItem ? "Edit Menu" : "Add Menu"}</h1>
+      <section className="menu-form-shell">
+        {/* ── Header inside container ── */}
+        <div className="menu-form-header">
+          <h1 className="menu-form-heading">{editItem ? "Edit Menu" : "Add Menu"}</h1>
+          <button
+            type="button"
+            className="menu-form-list-btn"
+            onClick={() => {
+              if (onBack) onBack();
+              else navigate("/admin/menu-management/menus");
+            }}
+          >
+            <List size={16} />
+            Menu List
+          </button>
         </div>
 
-        {onBack && (
-          <div className="flight-markup-actions">
-            <button type="button" className="flight-markup-action-btn primary" onClick={onBack}>
-              <List size={16} />
-              <span>Menu List</span>
-            </button>
-          </div>
-        )}
-      </header>
-
-      <section className="menu-form-shell">
         <form onSubmit={handleSubmit}>
           <div className="basic-details-ribbon-bar">
             <div className="basic-details-ribbon">Basic Details</div>
@@ -150,21 +156,34 @@ export default function AdminMenuAddPage({ onBack }) {
 
           <div className="menu-form-grid">
             <label>
-              <span>Menu Name</span>
-              <input type="text" placeholder="Enter menu name" value={formValues.name} onChange={handleChange("name")} />
+              <span>Menu Name <span className="compulsory-star">*</span></span>
+              <input 
+                type="text" 
+                placeholder="Enter menu name" 
+                value={formValues.name} 
+                onChange={handleChange("name")} 
+                className={errors.name ? "input-error" : ""}
+              />
             </label>
             <label>
-              <span>Menu Title</span>
+              <span>Menu Title <span className="compulsory-star">*</span></span>
               <input
                 type="text"
                 placeholder="Enter menu title"
                 value={formValues.displayTitle}
                 onChange={handleChange("displayTitle")}
+                className={errors.displayTitle ? "input-error" : ""}
               />
             </label>
             <label>
-              <span>Menu Slug</span>
-              <input type="text" placeholder="Enter menu slug" value={formValues.slug} onChange={handleChange("slug")} />
+              <span>Menu Slug <span className="compulsory-star">*</span></span>
+              <input 
+                type="text" 
+                placeholder="Enter menu slug" 
+                value={formValues.slug} 
+                onChange={handleChange("slug")} 
+                className={errors.slug ? "input-error" : ""}
+              />
             </label>
             <label>
               <span>Menu Status</span>
@@ -174,26 +193,35 @@ export default function AdminMenuAddPage({ onBack }) {
               </select>
             </label>
             <label>
-              <span>Menu Order</span>
+              <span>Menu Order <span className="compulsory-star">*</span></span>
               <input
                 type="number"
                 min="0"
                 placeholder="Enter order number"
                 value={formValues.order}
                 onChange={handleChange("order")}
+                className={errors.order ? "input-error" : ""}
               />
             </label>
             <label>
-              <span>Menu Site Type</span>
-              <select value={formValues.module} onChange={handleChange("module")}>
+              <span>Menu Site Type <span className="compulsory-star">*</span></span>
+              <select 
+                value={formValues.module} 
+                onChange={handleChange("module")}
+                className={errors.module ? "input-error" : ""}
+              >
                 <option value="B2C">B2C</option>
                 <option value="B2B">B2B</option>
                 <option value="Admin">Admin</option>
               </select>
             </label>
             <label>
-              <span>Menu Type</span>
-              <select value={formValues.location} onChange={handleChange("location")}>
+              <span>Menu Type <span className="compulsory-star">*</span></span>
+              <select 
+                value={formValues.location} 
+                onChange={handleChange("location")}
+                className={errors.location ? "input-error" : ""}
+              >
                 <option value="header">Header</option>
                 <option value="footer">Footer</option>
                 <option value="sidebar">Sidebar</option>

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Check, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import "./MenuList.css";
 import { getAdminMenuItems, updateMenuItem, deleteMenuItem } from "../../../services/menuService";
+import AdminPagination from "../../../components/AdminPagination";
 
 const DEFAULT_EDIT_FORM = {
   name: "",
@@ -34,6 +35,19 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
   const [editForm, setEditForm] = useState(DEFAULT_EDIT_FORM);
   const [editError, setEditError] = useState("");
   const [deleteItem, setDeleteItem] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const paginatedMenus = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return menuItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [menuItems, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(menuItems.length / itemsPerPage));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [menuItems.length]);
 
   const fetchMenus = async () => {
     setLoading(true);
@@ -155,24 +169,20 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
   return (
     <>
       <section className="flight-markup-panel menu-management-panel">
-        <header className="flight-markup-toolbar">
-          <div className="flight-markup-title">
-            <h1>Menu List</h1>
-          </div>
+        {/* ── Header outside table container ── */}
+        <div className="menu-list-header">
+          <h1 className="menu-list-heading">Menu List</h1>
+          <button
+            type="button"
+            className="menu-list-add-btn"
+            onClick={onAddMenu}
+          >
+            <Plus size={16} />
+            Add Menu
+          </button>
+        </div>
 
-          <div className="flight-markup-actions">
-            <button
-              type="button"
-              className="flight-markup-action-btn primary"
-              onClick={onAddMenu}
-            >
-              <Plus size={16} />
-              <span>Add Menu</span>
-            </button>
-          </div>
-        </header>
-
-        <section className="admin-markup-table-wrap">
+        <section className="admin-markup-table-wrap menu-list-container">
           {loading ? (
             <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading menus...</p>
           ) : (
@@ -182,10 +192,10 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
                   <col key={`${width}-${index}`} style={{ width }} />
                 ))}
               </colgroup>
-              <thead>
-                <tr>
+              <thead style={{ background: '#A51C49', backgroundColor: '#A51C49' }}>
+                <tr style={{ background: '#A51C49', backgroundColor: '#A51C49' }}>
                   {headers.map((header) => (
-                    <th key={header} className={header === "Action" ? "action-col" : undefined}>
+                    <th key={header} className={header === "Action" ? "action-col" : undefined} style={{ background: '#A51C49', backgroundColor: '#A51C49', color: '#ffffff' }}>
                       {header}
                     </th>
                   ))}
@@ -199,9 +209,9 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
                     </td>
                   </tr>
                 ) : (
-                  menuItems.map((item, index) => (
+                  paginatedMenus.map((item, index) => (
                     <tr key={item.id}>
-                      <td>{index + 1}</td>
+                      <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td>{item.name}</td>
                       <td>{item.slug}</td>
                       <td>{item.displayTitle}</td>
@@ -256,6 +266,17 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
               </tbody>
             </table>
           )}
+
+          <div style={{ marginTop: '16px', padding: '0 20px 20px' }}>
+            <AdminPagination
+              currentPage={currentPage}
+              totalItems={menuItems.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemName="menus"
+            />
+          </div>
         </section>
       </section>
 

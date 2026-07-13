@@ -85,28 +85,46 @@
 }
 
 .icon-btn {
-  border: 1px solid var(--admin-border);
-  padding: 6px 8px;
+  border: 0;
+  padding: 8px 12px;
   cursor: pointer;
   border-radius: 8px;
   background: var(--admin-surface);
-  color: var(--admin-text);
+  color: #ffffff !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease-in-out;
 }
 
 .icon-btn.view {
-  border-color: var(--admin-border);
-  color: var(--admin-primary);
+  background: #A51C49 !important;
+  box-shadow: 0 4px 8px rgba(194, 24, 91, 0.15);
+}
+
+.icon-btn.view:hover {
+  background: #9c1048 !important;
+  transform: translateY(-2px);
 }
 
 .icon-btn.edit {
-  border-color: var(--admin-primary);
-  color: var(--admin-primary);
+  background: #A51C49 !important;
+  box-shadow: 0 4px 8px rgba(194, 24, 91, 0.15);
+}
+
+.icon-btn.edit:hover {
+  background: #9c1048 !important;
+  transform: translateY(-2px);
 }
 
 .icon-btn.delete {
-  border-color: var(--admin-danger);
-  color: var(--admin-danger);
+  background: linear-gradient(135deg, var(--admin-danger), var(--admin-primary-strong)) !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15);
+}
+
+.icon-btn.delete:hover {
+  transform: translateY(-2px);
 }
 
 .icon-btn:hover {
@@ -177,9 +195,9 @@
 .submit-btn {
   margin-top: 20px;
   padding: 10px 20px;
-  border: 2px solid var(--admin-primary) !important;
+  border: 2px solid #A51C49 !important;
   background: var(--admin-surface) !important;
-  color: var(--admin-primary) !important;
+  color: #A51C49 !important;
   cursor: pointer;
   border-radius: 10px;
   font-weight: 700;
@@ -188,26 +206,26 @@
 }
 
 .submit-btn:hover {
-  background: var(--admin-primary) !important;
+  background: #A51C49 !important;
   color: #ffffff !important;
 }
 
 /* Default White Theme Color rules (Red theme) */
 .table th {
-  background: linear-gradient(135deg, var(--admin-primary-strong), var(--admin-primary)) !important;
+  background: linear-gradient(135deg, #9c1048, #A51C49) !important;
   color: #ffffff;
 }
 
 .btn.filter {
-  background: var(--admin-primary-strong) !important;
-  border-color: var(--admin-primary-strong) !important;
+  background: #9c1048 !important;
+  border-color: #9c1048 !important;
   color: #ffffff !important;
 }
 
 .btn.add,
 .btn.back {
-  background: var(--admin-primary) !important;
-  border-color: var(--admin-primary) !important;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
   color: #ffffff !important;
 }
 
@@ -292,3 +310,4 @@
   color: #ef4444 !important;
   border-color: #dc2626 !important;
 }
+

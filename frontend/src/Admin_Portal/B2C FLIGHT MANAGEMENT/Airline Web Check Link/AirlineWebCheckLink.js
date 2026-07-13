@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "./AirlineWebCheckLink.css";
+import AdminPagination from "../../../components/AdminPagination";
 import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
 import { listAirlineWebCheckins, createAirlineWebCheckin, deleteAirlineWebCheckin } from "../../../services/flightBookingService";
 
@@ -42,6 +43,16 @@ function AirlineWebCheckLink() {
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [formData, setFormData] = useState({ name: "", code: "", url: "" });
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalItems = airlines.length;
+  const paginatedAirlines = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return airlines.slice(startIndex, startIndex + itemsPerPage);
+  }, [airlines, currentPage]);
 
   // Navigation
   const goToAdd = () => {
@@ -142,7 +153,9 @@ function AirlineWebCheckLink() {
       {page === "list" && (
         <>
           <div className="header">
-            <h2>Airline WebCheck Link List</h2>
+            <h2 style={{ fontWeight: 500 }}>
+              <span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Flight</span> Airline WebCheck Link List
+            </h2>
             <div className="actions">
               <button className="btn add" onClick={goToAdd}>
                 + Add WebCheck Link
@@ -150,53 +163,66 @@ function AirlineWebCheckLink() {
             </div>
           </div>
 
-          <table className="table">
-            <thead>
-              <tr>
-                <th>SN.</th>
-                <th>ID</th>
-                <th>Airline</th>
-                <th>Airline Code</th>
-                <th>Url</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {airlines.map((item, index) => (
-                <tr key={item.id}>
-                  <td>{index + 1}</td>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.code}</td>
-                  <td>{item.url}</td>
-                  <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                    <button
-                      className="icon-btn view"
-                      title="View"
-                      onClick={() => setSelectedAirline(item)}
-                    >
-                      👁
-                    </button>
-                    <button
-                      className="icon-btn edit"
-                      title="Edit"
-                      onClick={() => handleEdit(item)}
-                    >
-                      ✏
-                    </button>
-                    <button
-                      className="icon-btn delete"
-                      title="Delete"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      🗑
-                    </button>
-                  </td>
+          <div style={{ border: '1px solid var(--admin-border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--admin-surface)' }}>
+            <table className="table" style={{ border: 'none', borderRadius: '0' }}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Airline</th>
+                  <th>Airline Code</th>
+                  <th>Url</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {paginatedAirlines.map((item, index) => {
+                  const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
+                  return (
+                  <tr key={item.id}>
+                    <td>{globalIndex}</td>
+                    <td>{item.name}</td>
+                    <td>{item.code}</td>
+                    <td>{item.url}</td>
+                    <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                      <button
+                        className="icon-btn view"
+                        title="View"
+                        onClick={() => setSelectedAirline(item)}
+                      >
+                        👁
+                      </button>
+                      <button
+                        className="icon-btn edit"
+                        title="Edit"
+                        onClick={() => handleEdit(item)}
+                      >
+                        ✏
+                      </button>
+                      <button
+                        className="icon-btn delete"
+                        title="Delete"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        🗑
+                      </button>
+                    </td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div style={{ borderTop: '1px solid var(--admin-border)' }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="webcheck links"
+              />
+            </div>
+          </div>
         </>
       )}
 
@@ -292,3 +318,4 @@ function AirlineWebCheckLink() {
 }
 
 export default AirlineWebCheckLink;
+

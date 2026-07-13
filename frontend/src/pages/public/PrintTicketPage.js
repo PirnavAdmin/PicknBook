@@ -261,7 +261,15 @@ function mapTicketToBus(ticket, fallbackPnr) {
     ) || "--"
   ).trim();
   const pnr = String(ticket?.bookingReference || ticket?.pnr || fallbackPnr || "--").trim();
-  const totalFare = ticket?.totalPaid ?? ticket?.totalFare ?? ticket?.fare?.totalFare ?? 0;
+  
+  let totalFare = Number(ticket?.totalPaid ?? ticket?.totalFare ?? ticket?.fare?.totalFare ?? 0);
+  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  if (isAgent) {
+    const markup = Number(ticket?.fare?.markup || 0);
+    const tierDiscount = Number(ticket?.fare?.tierDiscount || 0);
+    const volumeDiscount = Number(ticket?.fare?.volumeDiscount || 0);
+    totalFare = totalFare + markup + tierDiscount + volumeDiscount;
+  }
 
   return {
     type: "bus",
@@ -345,10 +353,25 @@ const FlipCard = ({ frontElement, backElement }) => {
 
 const BusTicket = ({ data, id }) => (
   <article id={id} className="pb-ticket-card">
-    <header className="pb-ticket-head">
-      <div>
-        <span>GoTravels - Ticket</span>
-        <h2>{data.operator} - {data.busNo}</h2>
+    <header className="pb-ticket-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {(() => {
+          const userObj = (() => {
+            try {
+              const u = localStorage.getItem("b2b_user") || localStorage.getItem("user");
+              return u ? JSON.parse(u) : null;
+            } catch { return null; }
+          })();
+          const logo = localStorage.getItem("b2b_agency_logo") || userObj?.logoUrl || userObj?.LogoUrl;
+          const isAgent = localStorage.getItem("b2b_role") === "Agent";
+          if (isAgent && logo) {
+            return <img src={logo} alt="Agency Logo" style={{ maxHeight: 36, maxWidth: 120, objectFit: "contain", borderRadius: 4 }} />;
+          }
+          return <span>GoTravels - Ticket</span>;
+        })()}
+        <div>
+          <h2>{data.operator} - {data.busNo}</h2>
+        </div>
       </div>
       <strong>{data.status}</strong>
     </header>
@@ -454,11 +477,23 @@ const BusTicket = ({ data, id }) => (
 
 const BusBackSide = ({ id, ticket }) => {
   const fare = ticket?.fare || {};
-  const discount = Number(fare.discount ?? fare.discountAmount ?? ticket?.discount ?? ticket?.discountAmount ?? 0);
+  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  
+  const discount = isAgent ? 0 : Number(fare.discount ?? fare.discountAmount ?? ticket?.discount ?? ticket?.discountAmount ?? 0);
   const tax = Number(fare.tax ?? fare.taxes ?? fare.gstAmount ?? ticket?.tax ?? ticket?.gstAmount ?? 0);
   const convenienceFee = Number(fare.convenienceFee ?? ticket?.convenienceFee ?? 0);
-  const totalFare = Number(ticket?.totalPaid ?? ticket?.totalFare ?? fare.totalFare ?? 0);
-  const baseFare = Number(fare.baseFare ?? ticket?.baseFare ?? (totalFare - convenienceFee - tax + discount));
+  
+  let totalFare = Number(ticket?.totalPaid ?? ticket?.totalFare ?? fare.totalFare ?? 0);
+  if (isAgent) {
+    const markup = Number(fare.markup || 0);
+    const tierDiscount = Number(fare.tierDiscount || 0);
+    const volumeDiscount = Number(fare.volumeDiscount || 0);
+    totalFare = totalFare + markup + tierDiscount + volumeDiscount;
+  }
+  
+  const baseFare = isAgent 
+    ? Number(fare.baseFare || 0) + Number(fare.markup || 0)
+    : Number(fare.baseFare ?? ticket?.baseFare ?? (totalFare - convenienceFee - tax + discount));
   const gstPercent = Number(fare.gstPercent ?? ticket?.gstPercent ?? 0);
   const atlasGradient = 'linear-gradient(135deg, #b8141b 0%, #dc1e26 100%)';
 

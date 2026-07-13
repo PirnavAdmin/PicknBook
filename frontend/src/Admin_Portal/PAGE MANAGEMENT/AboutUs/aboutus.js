@@ -34,8 +34,8 @@ export default function AdminAboutUsPage() {
           details: data?.whoWeAre?.details || "",
           imageUrl: data?.whoWeAre?.imageUrl || "",
         },
-        countSection: data?.countSection || [],
-        teamMembers: data?.teamMembers || [],
+        countSection: [],
+        teamMembers: [],
       });
     } catch (err) {
       console.error("Error loading About Us:", err);
@@ -150,15 +150,29 @@ export default function AdminAboutUsPage() {
 
   return (
     <div className="about-container">
-      <div className="top-bar">
-        <h2>Manage <span style={{ color: "#000" }}>About Us</span></h2>
-      </div>
-
       {loading && !formData.aboutDescription ? (
         <div className="loading-state">Loading About Us details...</div>
       ) : (
         <form onSubmit={handleSubmit}>
-          {/* About Description */}
+          {/* Top Header outside containers */}
+          <div className="about-page-header" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 0 10px 0',
+            borderBottom: '1.5px solid #f1f5f9',
+            marginBottom: '16px'
+          }}>
+            <h2 className="about-page-heading" style={{
+              fontSize: '1.5rem',
+              fontWeight: 500,
+              color: '#A51C49',
+              margin: 0
+            }}>Manage About Us</h2>
+          </div>
+
+
+          {/* Section 1: About Description */}
           <div className="form-section">
             <h3><span className="title-tab">About Description</span></h3>
             <div className="form-grid">
@@ -193,16 +207,16 @@ export default function AdminAboutUsPage() {
             </div>
           </div>
 
-          {/* Count Section */}
+          {/* Section 2: Count Section */}
           <div className="form-section">
-            <div className="section-header">
+            <div className="section-header" style={{ marginTop: 0 }}>
               <h3><span className="title-tab">Count Section</span></h3>
               <button type="button" className="add-row-btn" onClick={addCountRow} disabled={loading}>
                 + Add Row
               </button>
             </div>
             {formData.countSection.length === 0 ? (
-              <p style={{ textAlign: "center", color: "#888", padding: "20px 0" }}>
+              <p style={{ textAlign: "center", color: "#888", padding: "16px 0", margin: 0 }}>
                 No statistics configured. Click "+ Add Row" to add one.
               </p>
             ) : (
@@ -247,7 +261,7 @@ export default function AdminAboutUsPage() {
             )}
           </div>
 
-          {/* Who We Are */}
+          {/* Section 3: Who We Are */}
           <div className="form-section">
             <h3><span className="title-tab">Who We Are</span></h3>
             <div className="form-grid">
@@ -287,86 +301,92 @@ export default function AdminAboutUsPage() {
             </div>
           </div>
 
-          {/* Team Members */}
+          {/* Section 4: Team Members */}
           <div className="form-section">
-            <div className="section-header">
+            <div className="section-header" style={{ marginTop: 0 }}>
               <h3><span className="title-tab">Team Members</span></h3>
               <button type="button" className="add-row-btn" onClick={addTeamRow} disabled={loading}>
                 + Add Member
               </button>
             </div>
-            <table className="about-sub-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Designation</th>
-                  <th>Image URL</th>
-                  <th>Display Order</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.teamMembers.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="empty-row">No team members configured.</td>
-                  </tr>
-                ) : (
-                  formData.teamMembers.map((member, index) => (
-                    <tr key={index}>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Name"
-                          value={member.name}
-                          onChange={(e) => handleTeamChange(index, "name", e.target.value)}
-                          disabled={loading}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Designation"
-                          value={member.designation}
-                          onChange={(e) => handleTeamChange(index, "designation", e.target.value)}
-                          disabled={loading}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Image URL"
-                          value={member.imageUrl}
-                          onChange={(e) => handleTeamChange(index, "imageUrl", e.target.value)}
-                          disabled={loading}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={member.displayOrder}
-                          onChange={(e) => handleTeamChange(index, "displayOrder", e.target.value)}
-                          disabled={loading}
-                        />
-                      </td>
-                      <td className="action-td">
-                        <button
-                          type="button"
-                          className="delete-row-btn"
-                          onClick={() => removeTeamRow(index)}
-                          disabled={loading}
-                        >
-                          🗑
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            {formData.teamMembers.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#888", padding: "16px 0", margin: 0 }}>
+                No team members configured. Click "+ Add Member" to add one.
+              </p>
+            ) : (
+              <div style={{ display: 'grid', gap: '15px', padding: '10px 0' }}>
+                {formData.teamMembers.map((member, index) => (
+                  <div key={index} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1.2fr 1.2fr 1.8fr 80px 42px',
+                    gap: '12px',
+                    alignItems: 'end',
+                    padding: '12px',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <div className="form-group" style={{ gap: '2px' }}>
+                      <label>Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={member.name}
+                        onChange={(e) => handleTeamChange(index, "name", e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="form-group" style={{ gap: '2px' }}>
+                      <label>Designation</label>
+                      <input
+                        type="text"
+                        placeholder="Designation"
+                        value={member.designation}
+                        onChange={(e) => handleTeamChange(index, "designation", e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="form-group" style={{ gap: '2px' }}>
+                      <label>Image URL</label>
+                      <input
+                        type="text"
+                        placeholder="Image URL"
+                        value={member.imageUrl}
+                        onChange={(e) => handleTeamChange(index, "imageUrl", e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="form-group" style={{ gap: '2px' }}>
+                      <label>Order</label>
+                      <input
+                        type="number"
+                        value={member.displayOrder}
+                        onChange={(e) => handleTeamChange(index, "displayOrder", e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="form-group" style={{ gap: '2px' }}>
+                      <label style={{ visibility: 'hidden', height: '17px' }}>Action</label>
+
+                      <button
+                        type="button"
+                        className="delete-row-btn"
+                        onClick={() => removeTeamRow(index)}
+                        disabled={loading}
+                        style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 0, padding: 0 }}
+                      >
+                        🗑
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {error && <p className="error-msg">{error}</p>}
-          {saved && <p className="success-msg">About Us page updated successfully.</p>}
+          {error && <p className="error-msg" style={{ marginTop: '16px' }}>{error}</p>}
+          {saved && <p className="success-msg" style={{ marginTop: '16px' }}>About Us page updated successfully.</p>}
 
           <div className="submit-area">
             <button type="submit" className="submit-btn" disabled={loading}>
@@ -374,7 +394,9 @@ export default function AdminAboutUsPage() {
             </button>
           </div>
         </form>
+
       )}
     </div>
   );
 }
+

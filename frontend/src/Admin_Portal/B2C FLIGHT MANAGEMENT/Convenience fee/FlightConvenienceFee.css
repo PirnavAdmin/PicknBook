@@ -18,6 +18,20 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  background: var(--admin-primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-flight-fee-add-btn:hover {
+  background: var(--admin-primary-strong);
+  transform: translateY(-1px);
 }
 
 .admin-flight-fee-table-shell {
@@ -42,14 +56,12 @@
 
 .admin-flight-fee-table-head span {
   min-height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.16);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 0.8rem;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -77,10 +89,12 @@
   font-size: 0.81rem;
 }
 
-.admin-flight-fee-cell strong {
-  color: var(--admin-text);
-  font-size: 0.88rem;
-  text-align: center !important;
+.admin-flight-fee-cell strong,
+.admin-flight-fee-cell span {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
 }
 
 .admin-flight-fee-cell-center {
@@ -311,3 +325,198 @@
   color: #ffffff !important;
 }
 
+
+
+/* Injected unified modal styles */
+
+.admin-convenience-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(16, 34, 58, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-convenience-modal {
+  background: var(--admin-surface);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 15px 30px rgba(16, 34, 58, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.admin-convenience-modal header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-convenience-modal header h2 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.admin-convenience-modal header button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-modal header button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.admin-convenience-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-convenience-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--admin-border);
+}
+
+.admin-convenience-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.admin-convenience-detail-row strong {
+  color: var(--admin-text-light);
+  font-size: 0.88rem;
+}
+
+.admin-convenience-detail-row span {
+  font-weight: 500;
+  color: var(--admin-text);
+  font-size: 0.95rem;
+}
+
+.form-body {
+  gap: 8px;
+}
+
+.admin-convenience-edit-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--admin-text-light);
+  margin-bottom: 4px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.admin-convenience-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  font-size: 0.95rem;
+  background: var(--admin-background);
+  color: var(--admin-text);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1);
+}
+
+.admin-convenience-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: var(--admin-background);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-convenience-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--admin-primary);
+  cursor: pointer;
+}
+
+.admin-convenience-toggle-label span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.admin-convenience-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.admin-convenience-modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.admin-convenience-modal-actions button.secondary {
+  background: var(--admin-background);
+  color: var(--admin-text-light);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-convenience-modal-actions button.secondary:hover {
+  background: var(--admin-border);
+  color: var(--admin-text);
+}
+
+.admin-convenience-modal-actions button.primary {
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
+  color: #fff;
+}
+
+.admin-convenience-modal-actions button.primary:hover {
+  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.3);
+  transform: translateY(-1px);
+}
+
+.admin-convenience-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

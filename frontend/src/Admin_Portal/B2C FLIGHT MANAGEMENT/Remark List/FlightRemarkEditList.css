@@ -45,13 +45,13 @@
 .admin-flight-remark-edit-label {
   min-height: 48px;
   border-right: 1px dashed var(--admin-border);
-  background: var(--admin-soft);
-  color: var(--admin-text);
+  background: #f8fafc;
+  color: #334155;
   display: inline-flex;
   align-items: center;
-  padding: 0 10px;
-  font-size: 1.02rem;
-  font-weight: 800;
+  padding: 0 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .admin-flight-remark-edit-field {
@@ -87,29 +87,36 @@
 
 .admin-flight-remark-edit-actions {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 14px;
-  padding: 12px 0 14px;
+  padding: 12px 14px 14px;
   flex-wrap: wrap;
 }
 
 .admin-flight-remark-submit-btn,
 .admin-flight-remark-reset-btn {
-  min-height: 40px;
-  border-radius: 12px;
-  padding: 0 34px;
-  font-size: 1.02rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 0 28px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   cursor: pointer;
+  transition: all 0.22s ease-in-out;
 }
 
 .admin-flight-remark-submit-btn {
-  border: 0;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-strong));
-  box-shadow: 0 12px 20px rgba(47, 47, 47, 0.18);
+  border: 1.5px solid #A51C49 !important;
+  color: #ffffff !important;
+  background: #A51C49 !important;
+  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+}
+
+.admin-flight-remark-submit-btn:hover {
+  background: #9c1048 !important;
+  border-color: #9c1048 !important;
+  transform: translateY(-2px) !important;
 }
 
 .admin-flight-remark-reset-btn {
@@ -146,4 +153,5 @@
     max-width: 280px;
   }
 }
+
 

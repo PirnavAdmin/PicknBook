@@ -8,9 +8,12 @@ function getAuthHeaders() {
   const isAdminRoute =
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().startsWith("/admin");
+  const activePortal = typeof window !== "undefined" ? window.sessionStorage.getItem("active_portal") || "b2c" : "b2c";
   const token = isAdminRoute
     ? localStorage.getItem("adminToken") || localStorage.getItem("token")
-    : localStorage.getItem("token");
+    : activePortal === "b2b"
+      ? (localStorage.getItem("b2b_token") || localStorage.getItem("token"))
+      : (localStorage.getItem("token") || localStorage.getItem("b2b_token"));
 
   return {
     Accept: "application/json",

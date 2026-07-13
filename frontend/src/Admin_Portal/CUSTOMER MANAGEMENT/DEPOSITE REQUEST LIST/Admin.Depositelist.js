@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getDepositRequests, cycleDepositStatus, updateAdminRemark } from "../../../services/depositService";
+import depositApi, { getDepositRequests, cycleDepositStatus, updateAdminRemark } from "../../../services/depositService";
 
 function DepositRequestList() {
     const toastTimerRef = useRef(null);
     const [depositRequests, setDepositRequests] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -14,6 +17,10 @@ function DepositRequestList() {
     const [maxAmount, setMaxAmount] = useState('');
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [toast, setToast] = useState(null);
+
+    const [editPopupOpen, setEditPopupOpen] = useState(false);
+    const [requestToEdit, setRequestToEdit] = useState(null);
+    const [newStatus, setNewStatus] = useState('');
 
     const showToast = (message, tone = 'info') => {
         if (toastTimerRef.current) {
@@ -42,6 +49,7 @@ function DepositRequestList() {
 
     useEffect(() => {
         fetchDepositRequests();
+        setCurrentPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [statusFilter, typeFilter, searchQuery]);
 
@@ -49,6 +57,13 @@ function DepositRequestList() {
     const filteredRequests = depositRequests
         .filter(request => (minAmount === '' ? true : request.amount >= Number(minAmount)))
         .filter(request => (maxAmount === '' ? true : request.amount <= Number(maxAmount)));
+
+    const totalItems = filteredRequests.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+
 
     const handleClearFilters = () => {
         setSearchQuery('');
@@ -67,8 +82,7 @@ function DepositRequestList() {
             'Amount',
             'Type',
             'Status',
-            'User Remark',
-            'Admin Remark',
+            'Payment Details',
             'Entry Date',
             'Transaction Date'
         ];
@@ -79,7 +93,6 @@ function DepositRequestList() {
             r.type,
             r.status,
             r.userRemark,
-            r.adminRemark,
             r.entryDate,
             r.transactionDate
         ]);
@@ -123,15 +136,42 @@ function DepositRequestList() {
     };
 
     const getStatusStyle = (status) => {
-        switch (status) {
-            case 'Rejected':
-                return { background: 'rgba(217, 48, 37, 0.12)', color: 'var(--danger)', border: '1px solid rgba(217, 48, 37, 0.3)' };
-            case 'Pending':
-                return { background: 'rgba(74, 15, 26, 0.12)', color: 'var(--primary)', border: '1px solid rgba(74, 15, 26, 0.3)' };
-            case 'Approved':
+        const s = (status || '').toLowerCase();
+        switch (s) {
+            case 'pending':
+                return { background: 'rgba(255, 193, 7, 0.12)', color: '#d97706', border: '1px solid rgba(255, 193, 7, 0.3)' };
+            case 'processing':
+                return { background: 'rgba(0, 123, 255, 0.12)', color: '#007bff', border: '1px solid rgba(0, 123, 255, 0.3)' };
+            case 'completed':
+            case 'approved':
                 return { background: 'rgba(30, 142, 62, 0.12)', color: 'var(--success)', border: '1px solid rgba(30, 142, 62, 0.3)' };
+            case 'rejected':
+                return { background: 'rgba(217, 48, 37, 0.12)', color: 'var(--danger)', border: '1px solid rgba(217, 48, 37, 0.3)' };
             default:
                 return { background: 'var(--surface-soft)', color: 'var(--text-secondary)', border: '1px solid var(--border)' };
+        }
+    };
+
+
+
+    const handleEditStatusPopup = (request) => {
+        setRequestToEdit(request);
+        const currentStatus = (request.adminRemark || request.status || '').toLowerCase();
+        const validOptions = ['pending', 'processing', 'completed', 'rejected'];
+        setNewStatus(validOptions.includes(currentStatus) ? currentStatus : 'pending');
+        setEditPopupOpen(true);
+    };
+
+    const handleSaveStatus = async () => {
+        if (!requestToEdit) return;
+        try {
+            await updateAdminRemark(requestToEdit.id, newStatus);
+            showToast('Status updated successfully.', 'success');
+            setEditPopupOpen(false);
+            fetchDepositRequests();
+        } catch (error) {
+            console.error("Error updating status:", error);
+            showToast("Failed to update status.", "error");
         }
     };
 
@@ -154,22 +194,22 @@ function DepositRequestList() {
             display: 'flex',
             alignItems: 'baseline',
             gap: '8px',
-            borderBottom: '3px solid var(--primary)',
             paddingBottom: '8px',
             width: 'fit-content',
         },
         titleMain: {
             fontSize: '2rem',
-            fontWeight: 800,
+            fontWeight: 600,
             color: 'var(--text-primary)',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.5rem',
-            fontWeight: 400,
-            color: 'var(--text-secondary)',
+            fontSize: '2rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
             margin: 0,
         },
+
         actions: {
             display: 'flex',
             gap: '10px',
@@ -224,7 +264,7 @@ function DepositRequestList() {
         },
         th: {
             padding: '12px 14px',
-            textAlign: 'left',
+            textAlign: 'center',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)',
             whiteSpace: 'nowrap',
         },
@@ -232,6 +272,7 @@ function DepositRequestList() {
             padding: '12px 14px',
             borderBottom: '1px solid var(--border)',
             color: 'var(--text-primary)',
+            textAlign: 'center',
         },
         tr: {
             transition: 'background-color 0.2s ease',
@@ -416,7 +457,62 @@ function DepositRequestList() {
             background: 'rgba(74, 15, 26, 0.08)',
             color: 'var(--primary)',
         },
+        pagination: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 24px',
+            background: 'var(--panel)',
+            borderTop: '1px solid var(--border)',
+            gap: '12px',
+        },
+        paginationInfo: {
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            fontWeight: 500,
+        },
+        pageNumbers: {
+            display: 'flex',
+            gap: '6px',
+            alignItems: 'center',
+        },
+        pageBtn: {
+            padding: '6px 12px',
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--text-primary)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+        },
+        pageBtnDisabled: {
+            opacity: 0.5,
+            cursor: 'not-allowed',
+        },
+        pageNoBtn: {
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid var(--border)',
+            background: 'var(--panel)',
+            color: 'var(--text-primary)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+        },
+        pageNoActive: {
+            background: '#A51C49',
+            color: '#ffffff',
+            borderColor: '#A51C49',
+        },
     };
+
 
     return (
         <>
@@ -561,41 +657,49 @@ function DepositRequestList() {
                 )}
 
                 {selectedRequest && (
-                    <div style={styles.detailCard}>
-                        <div style={styles.detailHeader}>
-                            <div style={styles.detailTitle}>Request Details</div>
-                            <button
-                                type="button"
-                                style={styles.secondaryBtn}
-                                onClick={() => setSelectedRequest(null)}
-                            >
-                                Close
-                            </button>
-                        </div>
-                        <div style={styles.detailGrid}>
-                            <div>
-                                <div style={styles.detailLabel}>User</div>
-                                <div style={styles.detailValue}>{selectedRequest.user}</div>
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+                    }}>
+                        <div style={{
+                            background: 'var(--panel)', padding: '24px', borderRadius: '14px', width: '600px', maxWidth: '90%',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                        }}>
+                            <div style={styles.detailHeader}>
+                                <div style={{ ...styles.detailTitle, fontSize: '1.25rem', marginBottom: '16px' }}>Request Details</div>
+                                <button
+                                    type="button"
+                                    style={styles.secondaryBtn}
+                                    onClick={() => setSelectedRequest(null)}
+                                >
+                                    Close
+                                </button>
                             </div>
-                            <div>
-                                <div style={styles.detailLabel}>Amount</div>
-                                <div style={styles.detailValue}>Rs. {selectedRequest.amount}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Type</div>
-                                <div style={styles.detailValue}>{selectedRequest.type}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Status</div>
-                                <div style={styles.detailValue}>{selectedRequest.status}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Entry Date</div>
-                                <div style={styles.detailValue}>{selectedRequest.entryDate}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Transaction Date</div>
-                                <div style={styles.detailValue}>{selectedRequest.transactionDate}</div>
+                            <div style={styles.detailGrid}>
+                                <div>
+                                    <div style={styles.detailLabel}>User</div>
+                                    <div style={styles.detailValue}>{selectedRequest.user}</div>
+                                </div>
+                                <div>
+                                    <div style={styles.detailLabel}>Amount</div>
+                                    <div style={styles.detailValue}>Rs. {selectedRequest.amount}</div>
+                                </div>
+                                <div>
+                                    <div style={styles.detailLabel}>Type</div>
+                                    <div style={styles.detailValue}>{selectedRequest.type}</div>
+                                </div>
+                                <div>
+                                    <div style={styles.detailLabel}>Status</div>
+                                    <div style={styles.detailValue}>{selectedRequest.status}</div>
+                                </div>
+                                <div>
+                                    <div style={styles.detailLabel}>Entry Date</div>
+                                    <div style={styles.detailValue}>{selectedRequest.entryDate}</div>
+                                </div>
+                                <div>
+                                    <div style={styles.detailLabel}>Transaction Date</div>
+                                    <div style={styles.detailValue}>{selectedRequest.transactionDate}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -605,7 +709,7 @@ function DepositRequestList() {
                 <div style={styles.tableWrapper}>
                     {loading ? (
                         <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading requests...</p>
-                    ) : filteredRequests.length > 0 ? (
+                    ) : (
                         <table style={styles.table}>
                             <thead style={styles.thead}>
                                 <tr>
@@ -614,92 +718,184 @@ function DepositRequestList() {
                                     <th style={styles.th}>Amount</th>
                                     <th style={styles.th}>Type</th>
                                     <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>User Remark</th>
-                                    <th style={styles.th}>Admin Remark</th>
+                                    <th style={styles.th}>Payment Details</th>
                                     <th style={styles.th}>Entry Date</th>
                                     <th style={styles.th}>Trns. Date</th>
                                     <th style={styles.th}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredRequests.map((request, index) => (
-                                    <tr
-                                        key={request.id}
-                                        style={styles.tr}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'transparent';
-                                        }}
-                                    >
-                                        <td style={{ ...styles.td, ...styles.snBadge }}>{index + 1}</td>
-                                        <td style={{ ...styles.td, ...styles.userCell }}>{request.user}</td>
-                                        <td style={{ ...styles.td, ...styles.amountCell }}>Rs. {request.amount}</td>
-                                        <td style={styles.td}>{request.type}</td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={{
-                                                    ...styles.statusBadge,
-                                                    ...getStatusStyle(request.status)
-                                                }}
-                                                onClick={() => handleCycleStatus(request)}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.opacity = '0.8';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.opacity = '1';
-                                                }}
-                                            >
-                                                {request.status}
-                                            </button>
-                                        </td>
-                                        <td style={styles.td}>{request.userRemark}</td>
-                                        <td style={styles.td}>{request.adminRemark}</td>
-                                        <td style={styles.td}>{request.entryDate}</td>
-                                        <td style={styles.td}>{request.transactionDate}</td>
-                                        <td style={{ ...styles.td, ...styles.actionButtons }}>
-                                            <button
-                                                type="button"
-                                                style={{ ...styles.actionBtn, ...styles.detailsBtn }}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(74, 15, 26, 0.12)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.background = 'var(--surface-soft)';
-                                                }}
-                                                title="View Details"
-                                                onClick={() => setSelectedRequest(request)}
-                                            >
-                                                Details
-                                            </button>
-                                            <button
-                                                type="button"
-                                                style={{ ...styles.actionBtn, ...styles.editBtn }}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(74, 15, 26, 0.18)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.background = 'var(--surface-soft)';
-                                                }}
-                                                title="Edit"
-                                                onClick={() => handleEditRemark(request)}
-                                            >
-                                                Edit
-                                            </button>
+                                {currentItems.length > 0 ? (
+                                    currentItems.map((request, index) => (
+                                        <tr
+                                            key={request.id}
+                                            style={styles.tr}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'transparent';
+                                            }}
+                                        >
+                                            <td style={{ ...styles.td, ...styles.snBadge }}>{indexOfFirstItem + index + 1}</td>
+
+                                            <td style={{ ...styles.td, ...styles.userCell }}>{request.user}</td>
+                                            <td style={{ ...styles.td, ...styles.amountCell }}>Rs. {request.amount}</td>
+                                            <td style={styles.td}>{request.type}</td>
+                                            <td style={styles.td}>
+                                                <button
+                                                    type="button"
+                                                    style={{
+                                                        ...styles.statusBadge,
+                                                        ...getStatusStyle(request.adminRemark || request.status)
+                                                    }}
+                                                    onClick={() => handleCycleStatus(request)}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.opacity = '0.8';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.opacity = '1';
+                                                    }}
+                                                >
+                                                    {request.adminRemark || request.status}
+                                                </button>
+                                            </td>
+                                            <td style={styles.td}>{request.userRemark}</td>
+                                            <td style={styles.td}>{request.entryDate}</td>
+                                            <td style={styles.td}>{request.transactionDate}</td>
+                                            <td style={{ ...styles.td, ...styles.actionButtons }}>
+                                                <button
+                                                    type="button"
+                                                    style={{ ...styles.actionBtn, ...styles.detailsBtn }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.background = 'rgba(74, 15, 26, 0.12)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.background = 'var(--surface-soft)';
+                                                    }}
+                                                    title="View Details"
+                                                    onClick={() => setSelectedRequest(request)}
+                                                >
+                                                    Details
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={{ ...styles.actionBtn, ...styles.editBtn }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.background = 'rgba(74, 15, 26, 0.18)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.background = 'var(--surface-soft)';
+                                                    }}
+                                                    title="Edit"
+                                                    onClick={() => handleEditStatusPopup(request)}
+                                                >
+                                                    Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '10px' }}>No data</div>
+                                            <p>No deposit requests found matching "{searchQuery}"</p>
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
-                    ) : (
-                        <div style={styles.emptyState}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '10px' }}>No data</div>
-                            <p>No deposit requests found matching "{searchQuery}"</p>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div style={styles.pagination}>
+                            <div style={styles.paginationInfo}>
+                                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} entries
+                            </div>
+                            <div style={styles.pageNumbers}>
+                                <button
+                                    type="button"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    style={{
+                                        ...styles.pageBtn,
+                                        ...(currentPage === 1 ? styles.pageBtnDisabled : {})
+                                    }}
+                                >
+                                    Previous
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                                    <button
+                                        key={pageNum}
+                                        type="button"
+                                        onClick={() => setCurrentPage(pageNum)}
+                                        style={{
+                                            ...styles.pageNoBtn,
+                                            ...(currentPage === pageNum ? styles.pageNoActive : {})
+                                        }}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    style={{
+                                        ...styles.pageBtn,
+                                        ...(currentPage === totalPages ? styles.pageBtnDisabled : {})
+                                    }}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
+
+                {editPopupOpen && requestToEdit && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+                    }}>
+                        <div style={{
+                            background: 'var(--panel)', padding: '24px', borderRadius: '12px', width: '400px', maxWidth: '90%',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                        }}>
+                            <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'var(--text-primary)', textAlign: 'center' }}>Update Status</h3>
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Status</label>
+                                <select 
+                                    value={newStatus} 
+                                    onChange={e => setNewStatus(e.target.value)}
+                                    style={{
+                                        width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
+                                        background: 'var(--surface-soft)', color: 'var(--text-primary)', outline: 'none'
+                                    }}
+                                >
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button 
+                                    onClick={() => setEditPopupOpen(false)}
+                                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleSaveStatus}
+                                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer' }}
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );

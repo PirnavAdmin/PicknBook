@@ -2070,6 +2070,8 @@ select.field-control option {
 .brand-marquee .marquee-slide { width: 196px; }
 
 .brand-slide {
+  width: 100%;
+  box-sizing: border-box;
   height: 112px;
   display: flex;
   flex-direction: column;
@@ -2080,11 +2082,11 @@ select.field-control option {
 }
 
 .brand-logo {
-  width: 126px;
-  height: 58px;
+  max-width: 90%;
+  max-height: 50px;
+  width: auto;
+  height: auto;
   object-fit: contain;
-  transform: scale(var(--brand-scale, 1));
-  transform-origin: center;
   filter: none;
 }
 

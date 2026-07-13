@@ -28,7 +28,7 @@ export default function AdminQueryList() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
-  const [selectedQuery, setSelectedQuery] = useState(null);
+  const [viewQuery, setViewQuery] = useState(null);
   const [editStatusQuery, setEditStatusQuery] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [toast, setToast] = useState(null);
@@ -85,8 +85,11 @@ export default function AdminQueryList() {
       await deleteAdminQuery(id);
       setQueries((prev) => prev.filter((q) => q.id !== id));
       showToast("Query deleted successfully.", "success");
-      if (selectedQuery && selectedQuery.id === id) {
-        setSelectedQuery(null);
+      if (viewQuery && viewQuery.id === id) {
+        setViewQuery(null);
+      }
+      if (editStatusQuery && editStatusQuery.id === id) {
+        setEditStatusQuery(null);
       }
     } catch {
       showToast("Failed to delete query.", "error");
@@ -165,13 +168,13 @@ export default function AdminQueryList() {
     },
     titleMain: {
       fontSize: "1.8rem",
-      fontWeight: 500,
+      fontWeight: 400,
       color: "var(--text-primary)",
       margin: 0,
     },
     titleSub: {
       fontSize: "1.8rem",
-      fontWeight: 500,
+      fontWeight: 400,
       color: "var(--text-secondary)",
       margin: 0,
     },
@@ -334,7 +337,7 @@ export default function AdminQueryList() {
     actionButtons: {
       display: "flex",
       gap: "8px",
-      flexWrap: "wrap",
+      flexWrap: "nowrap",
       justifyContent: "center",
     },
     actionBtn: {
@@ -389,11 +392,9 @@ export default function AdminQueryList() {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginTop: "20px",
-      padding: "12px 18px",
+      padding: "16px 24px",
       background: "var(--panel)",
-      borderRadius: "12px",
-      border: "1.5px solid var(--border)",
+      borderTop: "1px solid var(--border)",
       gap: "16px",
       flexWrap: "wrap",
     },
@@ -685,7 +686,7 @@ export default function AdminQueryList() {
                           type="button"
                           style={styles.actionBtn}
                           title="View Details"
-                          onClick={() => setSelectedQuery(q)}
+                          onClick={() => setViewQuery(q)}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = "rgba(74, 15, 26, 0.15)";
                             e.currentTarget.style.borderColor = "var(--primary)";
@@ -699,14 +700,11 @@ export default function AdminQueryList() {
                         >
                           <Eye size={16} strokeWidth={2} />
                         </button>
-                        <button
+                         <button
                           type="button"
                           style={styles.actionBtn}
                           title="Edit Status"
-                          onClick={() => {
-                            setEditStatusQuery(q);
-                            setNewStatus(q.status || "Pending");
-                          }}
+                          onClick={() => setEditStatusQuery(q)}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = "rgba(74, 15, 26, 0.15)";
                             e.currentTarget.style.borderColor = "var(--primary)";
@@ -750,105 +748,224 @@ export default function AdminQueryList() {
               <p>No queries found matching the search criteria.</p>
             </div>
           )}
+
+          {totalPages >= 1 && (
+            <div style={styles.paginationContainer}>
+              <div style={styles.paginationInfo}>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredQueries.length)} of {filteredQueries.length} queries
+              </div>
+              <div style={styles.paginationButtons}>
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  style={{ ...styles.pageBtn, opacity: page === 1 ? 0.5 : 1, cursor: page === 1 ? "default" : "pointer" }}
+                >
+                  Previous
+                </button>
+                <span style={{ fontSize: "0.85rem", fontWeight: 700, padding: "0 8px" }}>
+                  {page} / {totalPages}
+                </span>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  style={{ ...styles.pageBtn, opacity: page === totalPages ? 0.5 : 1, cursor: page === totalPages ? "default" : "pointer" }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {totalPages > 1 && (
-          <div style={styles.paginationContainer}>
-            <div style={styles.paginationInfo}>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredQueries.length)} of {filteredQueries.length} queries
-            </div>
-            <div style={styles.paginationButtons}>
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                style={{ ...styles.pageBtn, opacity: page === 1 ? 0.5 : 1, cursor: page === 1 ? "default" : "pointer" }}
-              >
-                Previous
-              </button>
-              <span style={{ fontSize: "0.85rem", fontWeight: 700, padding: "0 8px" }}>
-                {page} / {totalPages}
-              </span>
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                style={{ ...styles.pageBtn, opacity: page === totalPages ? 0.5 : 1, cursor: page === totalPages ? "default" : "pointer" }}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* View Modal */}
-        {selectedQuery && (
-          <div style={styles.modalOverlay} onClick={() => setSelectedQuery(null)}>
-            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Query Details</h3>
-                <button style={styles.modalCloseBtn} onClick={() => setSelectedQuery(null)}>
-                  <X size={18} />
+        {viewQuery && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setViewQuery(null)}>
+            <div style={{ background: "var(--panel)", padding: "24px", borderRadius: "14px", width: "600px", maxWidth: "90%", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>Query Details</h3>
+                <button type="button" onClick={() => setViewQuery(null)} style={{ padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", color: "var(--text-primary)" }}>
+                  Close
                 </button>
               </div>
-              <div style={styles.modalBody}>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Name</span>
-                  <span style={styles.detailVal}>{selectedQuery.name}</span>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Name</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.name}</div>
                 </div>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Email</span>
-                  <span style={styles.detailVal}>{selectedQuery.email}</span>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Email</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.email}</div>
                 </div>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Mobile</span>
-                  <span style={styles.detailVal}>{selectedQuery.phoneNo || "-"}</span>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Mobile</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.phoneNo || "-"}</div>
                 </div>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Query Type</span>
-                  <span style={styles.detailVal}>{selectedQuery.subject || "ContactUs"}</span>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Query Type</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.subject || "ContactUs"}</div>
                 </div>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Message</span>
-                  <span style={styles.detailVal}>{selectedQuery.message}</span>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Status</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.status}</div>
                 </div>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Status</span>
-                  <span style={{ ...getStatusBadgeStyle(selectedQuery.status), alignSelf: "flex-start" }}>
-                    {selectedQuery.status || "Pending"}
-                  </span>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Entry Date</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{formatDate(viewQuery.createdAtUtc || viewQuery.entryDate)}</div>
                 </div>
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Entry Date</span>
-                  <span style={styles.detailVal}>{formatDate(selectedQuery.createdAtUtc || selectedQuery.entryDate)}</span>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Message</div>
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)", background: "var(--surface-soft)", padding: "12px", borderRadius: "8px", marginTop: "4px", wordBreak: "break-all" }}>{viewQuery.message}</div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Edit Status Modal */}
+        {/* Edit Modal */}
         {editStatusQuery && (
-          <div style={styles.modalOverlay} onClick={() => setEditStatusQuery(null)}>
-            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Update Query Status</h3>
-                <button style={styles.modalCloseBtn} onClick={() => setEditStatusQuery(null)}>
-                  <X size={18} />
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setEditStatusQuery(null)}>
+            <div style={{
+              background: "#ffffff",
+              borderRadius: "12px",
+              width: "650px",
+              maxWidth: "95%",
+              overflow: "hidden",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.15)"
+            }} onClick={(e) => e.stopPropagation()}>
+              
+              {/* Header */}
+              <div style={{
+                background: "#A51C49",
+                padding: "14px 20px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative"
+              }}>
+                <h3 style={{ margin: 0, color: "#ffffff", fontSize: "1.2rem", fontWeight: "700" }}>Edit Query</h3>
+                <button
+                  type="button"
+                  onClick={() => setEditStatusQuery(null)}
+                  style={{
+                    position: "absolute",
+                    right: "20px",
+                    background: "none",
+                    border: "none",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleStatusUpdateSubmit} style={styles.modalBody}>
-                <div style={styles.formGroup}>
-                  <label style={styles.detailLabel}>Status</label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
-                    style={styles.filterSelect}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Replied">Replied</option>
-                  </select>
+
+              {/* Body */}
+              <form
+                onSubmit={handleStatusUpdateSubmit}
+                style={{
+                  padding: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  background: "#ffffff"
+                }}
+              >
+                {/* Two fields in one line */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Name</label>
+                    <input
+                      type="text"
+                      value={editStatusQuery.name || ""}
+                      disabled
+                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Email</label>
+                    <input
+                      type="email"
+                      value={editStatusQuery.email || ""}
+                      disabled
+                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Mobile</label>
+                    <input
+                      type="text"
+                      value={editStatusQuery.phoneNo || ""}
+                      disabled
+                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Query Type</label>
+                    <input
+                      type="text"
+                      value={editStatusQuery.subject || "ContactUs"}
+                      disabled
+                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Status</label>
+                    <select
+                      value={newStatus || editStatusQuery.status || "Pending"}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#ffffff", color: "#111827", cursor: "pointer" }}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Resolved">Resolved</option>
+                      <option value="Replied">Replied</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Entry Date</label>
+                    <input
+                      type="text"
+                      value={formatDate(editStatusQuery.createdAtUtc || editStatusQuery.entryDate)}
+                      disabled
+                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
+                    />
+                  </div>
                 </div>
-                <button type="submit" style={styles.submitBtn}>
+
+                {/* Message takes full width */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Message</label>
+                  <textarea
+                    rows="3"
+                    value={editStatusQuery.message || ""}
+                    disabled
+                    style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827", resize: "none" }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    background: "#A51C49",
+                    color: "#ffffff",
+                    padding: "10px 16px",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    marginTop: "8px",
+                    transition: "background 0.2s"
+                  }}
+                >
                   Save Changes
                 </button>
               </form>

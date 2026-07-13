@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "../../contexts/UserContext";
 import { getAccountProfile } from "../../services/accountProfileService";
 import "../../STYLES/myAccount.css";
@@ -38,8 +38,11 @@ const accountCards = [
 const MyAccount = () => {
   const { userData, updateUserData } = useContext(UserContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState("");
+
+  const isB2B = location.pathname.startsWith("/b2b");
 
   useEffect(() => {
     let isMounted = true;
@@ -79,30 +82,52 @@ const MyAccount = () => {
     }
 
     try {
-      const storedUser = JSON.parse(window.localStorage.getItem("user") || "{}");
+      const key = isB2B ? "b2b_user" : "user";
+      const storedUser = JSON.parse(window.localStorage.getItem(key) || "{}");
       return { ...storedUser, ...userData };
     } catch {
       return userData;
     }
-  }, [userData]);
+  }, [userData, isB2B]);
 
   const userName =
+    hydratedUserData.agencyName ||
+    hydratedUserData.companyName ||
+    hydratedUserData.businessName ||
     [hydratedUserData.firstName, hydratedUserData.lastName].filter(Boolean).join(" ") ||
     hydratedUserData.name ||
+    hydratedUserData.fullName ||
     (hydratedUserData.email ? hydratedUserData.email.split("@")[0] : "User");
 
-  const userLocation = hydratedUserData.location || "India";
+  const userLocation = hydratedUserData.location || hydratedUserData.city || "India";
   const profileInitial = userName?.trim()?.charAt(0)?.toUpperCase() || "U";
 
   const personalDetails = [
     { label: "First Name", value: readValue(hydratedUserData.firstName) },
     { label: "Last Name", value: readValue(hydratedUserData.lastName) },
     { label: "Email", value: readValue(hydratedUserData.email) },
-    { label: "Mobile", value: readValue(hydratedUserData.mobile) },
+    { label: "Mobile", value: readValue(hydratedUserData.phoneNumber || hydratedUserData.phone || hydratedUserData.mobile) },
     { label: "Location", value: userLocation },
   ];
 
   const handleCardClick = (action) => {
+    if (isB2B) {
+      if (action === "booking") {
+        navigate("/b2b/dashboard/bus-bookings");
+        return;
+      }
+      if (action === "passenger") {
+        navigate("/b2b/dashboard/traveler-list");
+        return;
+      }
+      if (action === "security") {
+        navigate("/b2b/dashboard/change-password");
+        return;
+      }
+      navigate("/b2b/dashboard");
+      return;
+    }
+
     if (action === "booking") {
       navigate("/dashboard/bus-bookings");
       return;
@@ -152,10 +177,16 @@ const MyAccount = () => {
             </div>
 
             <div className="account-profile-actions">
-              <button type="button" className="account-primary-btn" onClick={() => navigate("/edit-profile")}>
-                Edit Profile
-              </button>
-              <button type="button" className="account-secondary-btn" onClick={() => navigate("/change-password")}>
+              {!isB2B && (
+                <button type="button" className="account-primary-btn" onClick={() => navigate("/edit-profile")}>
+                  Edit Profile
+                </button>
+              )}
+              <button
+                type="button"
+                className={isB2B ? "account-primary-btn" : "account-secondary-btn"}
+                onClick={() => navigate(isB2B ? "/b2b/dashboard/change-password" : "/change-password")}
+              >
                 Change Password
               </button>
             </div>

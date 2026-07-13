@@ -155,6 +155,14 @@ window.fetch = async function (input, init) {
               window.location.href = loginPath;
             }
           } else {
+            // Agents use b2b_token — never apply the B2C login popup to them on 401 fetch errors
+            const b2bToken = localStorage.getItem("b2b_token");
+            const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
+            const isLoggedInAgent = b2bToken && b2bRole === "agent";
+            if (isLoggedInAgent) {
+              return response;
+            }
+
             if (!isUserProtectedPath(currentPath)) {
               return response;
             }

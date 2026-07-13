@@ -1,0 +1,266 @@
+/* ── Hotel Edit/Add Pricing Rule ── */
+
+.hml-edit-page {
+  padding: 28px 32px;
+  font-family: 'Inter', sans-serif;
+  background: #f8fafc;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hml-edit-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hml-edit-head-row h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+
+.hml-edit-back-btn {
+  min-height: 34px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 16px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s;
+}
+.hml-edit-back-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+.hml-edit-shell {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.hml-edit-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 1fr 2fr;
+  border-top: 1px solid #e2e8f0;
+}
+
+.hml-edit-label {
+  min-height: 50px;
+  border-right: 1px dashed #e2e8f0;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.hml-edit-field {
+  min-height: 50px;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #f1f5f9;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+}
+.hml-edit-field:nth-child(4n) {
+  border-right: 0;
+}
+
+.hml-edit-field input,
+.hml-edit-field select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #d93025;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 13.5px;
+  font-weight: 400;
+  font-family: inherit;
+  padding: 0 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.hml-edit-field input:focus,
+.hml-edit-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.hml-edit-field input::placeholder {
+  color: #94a3b8;
+}
+
+.hml-edit-field input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Toggle switch for isActive */
+.hml-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hml-toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.hml-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.hml-toggle-track {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #cbd5e1;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.25s;
+  border: none;
+}
+.hml-toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.hml-toggle-switch input:checked + .hml-toggle-track {
+  background: #16a34a;
+}
+.hml-toggle-switch input:checked + .hml-toggle-track::after {
+  transform: translateX(20px);
+}
+
+.hml-toggle-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  user-select: none;
+}
+
+/* Actions row */
+.hml-edit-actions {
+  display: flex;
+  gap: 10px;
+  padding: 16px 14px;
+}
+.hml-edit-submit-btn {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 32px;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hml-edit-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+.hml-edit-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hml-edit-cancel-btn {
+  min-height: 40px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 24px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #64748b;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hml-edit-cancel-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Messages */
+.hml-edit-error {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+}
+.hml-edit-success {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Active warning info bar */
+.hml-edit-info-bar {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12.5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .hml-edit-page { padding: 20px 16px; }
+  .hml-edit-grid { grid-template-columns: 1fr; }
+  .hml-edit-label,
+  .hml-edit-field {
+    border-right: 0;
+  }
+}

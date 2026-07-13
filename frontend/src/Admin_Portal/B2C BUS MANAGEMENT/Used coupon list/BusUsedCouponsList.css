@@ -1,4 +1,8 @@
 .admin-markup-used-shell {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  --primary: #A51C49 !important;
+  --primary-strong: #851237 !important;
   display: grid;
   gap: 16px;
   width: 100%;
@@ -24,7 +28,7 @@
 .admin-markup-used-title-wrap h1 {
   margin: 0;
   font-size: 1.6rem;
-  color: var(--primary) !important;
+  color: #000000 !important;
 }
 
 .admin-markup-used-title-line {
@@ -267,3 +271,5 @@
     border-bottom: 0;
   }
 }
+
+

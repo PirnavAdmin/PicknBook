@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: ./backend/PickNBook.Api
       dockerfile: Dockerfile
     env_file:
       - ./.env
@@ -36,7 +36,7 @@ services:
     volumes:
       - backend_wwwroot:/app/wwwroot
     restart: unless-stopped
- 
+
   frontend:
     build:
       context: ./frontend
@@ -59,7 +59,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
- 
+
 volumes:
   backend_wwwroot:
- 

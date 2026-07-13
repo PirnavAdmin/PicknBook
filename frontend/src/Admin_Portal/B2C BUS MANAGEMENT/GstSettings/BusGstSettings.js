@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import "./BusGstSettings.css";
 import { csvCell, formatDateTime, toViewId } from "../../../utils/adminPortalUtils";
+import AdminPagination from "../../../components/AdminPagination";
 import {
   getBusGstSettings,
   createBusGstSetting,
@@ -50,6 +51,13 @@ export default function AdminBusGstSettingsPage() {
   const sortOrder = DEFAULT_SORT_ORDER;
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, categoryFilter]);
+
   const [activeDropdownId, setActiveDropdownId] = useState(null);
 
   const [viewRow, setViewRow] = useState(null);
@@ -138,6 +146,13 @@ export default function AdminBusGstSettingsPage() {
 
     return sortedRows;
   }, [rows, searchTerm, categoryFilter, sortBy, sortOrder, statusFilter]);
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return visibleRows.slice(startIndex, startIndex + itemsPerPage);
+  }, [visibleRows, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleRows.length / itemsPerPage));
 
   const handleExport = () => {
     if (visibleRows.length === 0) {
@@ -350,8 +365,9 @@ export default function AdminBusGstSettingsPage() {
         <div className="admin-b2c-page bus-gst-settings-page-container">
           {/* ── PAGE HEADING ── */}
           <section className="markup-heading">
-            <p className="markup-heading-main">B2C Bus Management</p>
-            <p className="markup-heading-sub">GST Settings</p>
+            <p className="markup-heading-main">
+              B2C Bus <span className="markup-heading-sub">GST Settings</span>
+            </p>
           </section>
 
           {/* ── STATS ROW ── */}
@@ -450,14 +466,14 @@ export default function AdminBusGstSettingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.length === 0 ? (
+                  {paginatedRows.length === 0 ? (
                     <tr>
                       <td colSpan={8}>
                         <p className="admin-markup-empty">No GST records found.</p>
                       </td>
                     </tr>
                   ) : (
-                    visibleRows.map((row) => (
+                    paginatedRows.map((row) => (
                       <tr key={row.id}>
                         <td>
                           <button
@@ -547,6 +563,18 @@ export default function AdminBusGstSettingsPage() {
                   )}
                 </tbody>
               </table>
+            )}
+            {totalPages > 1 && (
+              <div style={{ marginTop: "16px" }}>
+                <AdminPagination
+                  currentPage={currentPage}
+                  totalItems={visibleRows.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                  itemName="GST records"
+                />
+              </div>
             )}
           </section>
         </div>

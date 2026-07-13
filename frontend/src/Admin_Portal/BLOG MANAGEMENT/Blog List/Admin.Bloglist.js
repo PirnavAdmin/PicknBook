@@ -16,8 +16,9 @@ import {
     Check,
     AlertCircle,
 } from 'lucide-react';
+import AdminPagination from '../../../components/AdminPagination';
 import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
-import { toApiAssetUrl } from '../../../services/apiClient';
+import { toApiAssetUrl, NgrokSafeImage } from '../../../services/apiClient';
 
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -248,16 +249,16 @@ function BlogList() {
             paddingBottom: '10px',
         },
         titleMain: {
-            fontSize: '2.2rem',
-            fontWeight: 500,
-            color: 'var(--text-primary)',
+            fontSize: '1.8rem',
+            fontWeight: 600,
+            color: '#be185d',
             margin: 0,
             letterSpacing: '-0.5px',
         },
         titleSub: {
-            fontSize: '1.4rem',
-            fontWeight: 300,
-            color: 'var(--text-secondary)',
+            fontSize: '1.8rem',
+            fontWeight: 600,
+            color: 'black',
             margin: 0,
         },
         actions: {
@@ -290,15 +291,15 @@ function BlogList() {
             borderColor: 'var(--border)',
         },
         addBtn: {
-            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)',
+            background: '#be185d',
             color: '#ffffff',
-            boxShadow: '0 4px 14px rgba(74, 15, 26, 0.25)',
+            boxShadow: '0 4px 14px rgba(190, 24, 93, 0.25)',
         },
         exportBtn: {
-            background: 'var(--success)',
+            background: '#2563eb',
             color: '#ffffff',
-            borderColor: 'var(--success)',
-            boxShadow: '0 4px 14px rgba(30, 142, 62, 0.25)',
+            borderColor: '#2563eb',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
         },
         searchBox: {
             padding: '8px 12px',
@@ -420,10 +421,10 @@ function BlogList() {
             fontSize: '0.9rem',
         },
         thead: {
-            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)',
+            background: '#be185d',
             color: '#ffffff',
-            fontWeight: 800,
-            borderBottom: '2px solid var(--primary)',
+            fontWeight: 600,
+            borderBottom: '2px solid var(--border)',
         },
         th: {
             padding: '6px 10px',
@@ -744,14 +745,14 @@ function BlogList() {
                             type="button"
                             style={{ ...styles.button, ...styles.exportBtn }}
                             onMouseEnter={(e) => {
-                                e.target.style.background = 'rgba(30, 142, 62, 0.9)';
+                                e.target.style.background = '#1d4ed8';
                                 e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 6px 20px rgba(30, 142, 62, 0.3)';
+                                e.target.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.3)';
                             }}
                             onMouseLeave={(e) => {
-                                e.target.style.background = 'var(--success)';
+                                e.target.style.background = '#2563eb';
                                 e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = '0 4px 14px rgba(30, 142, 62, 0.25)';
+                                e.target.style.boxShadow = '0 4px 14px rgba(37, 99, 235, 0.25)';
                             }}
                             onClick={handleExport}
                         >
@@ -762,12 +763,14 @@ function BlogList() {
                             type="button"
                             style={{ ...styles.button, ...styles.addBtn }}
                             onMouseEnter={(e) => {
+                                e.target.style.background = '#9d124d';
                                 e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 8px 24px rgba(74, 15, 26, 0.35)';
+                                e.target.style.boxShadow = '0 8px 24px rgba(190, 24, 93, 0.35)';
                             }}
                             onMouseLeave={(e) => {
+                                e.target.style.background = '#be185d';
                                 e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = '0 4px 14px rgba(74, 15, 26, 0.25)';
+                                e.target.style.boxShadow = '0 4px 14px rgba(190, 24, 93, 0.25)';
                             }}
                             onClick={handleAddBlog}
                         >
@@ -778,7 +781,20 @@ function BlogList() {
                 </div>
 
                 {selectedBlog && (
-                    <div style={styles.detailCard}>
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 2000,
+                        padding: '20px'
+                    }}>
+                    <div style={{ ...styles.detailCard, width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', margin: 0 }}>
                         <div style={styles.detailHeader}>
                             <div style={styles.detailTitle}>
                                 <FileText size={22} />
@@ -847,188 +863,192 @@ function BlogList() {
                                 </div>
                             </div>
                         </div>
+                        </div>
                     </div>
                 )}
 
                 <div style={styles.tableWrapper}>
-                    {filteredBlogs.length > 0 ? (
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
-                                <tr>
-                                    <th style={styles.th}>SN.</th>
-                                    <th style={styles.th}>Title</th>
-                                    <th style={styles.th}>Entry Date</th>
-                                    <th style={styles.th}>Image</th>
-                                    <th style={styles.th}>Category</th>
-                                    <th style={styles.th}>Sub Category</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={{ ...styles.th, ...styles.actionColumn }}>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody style={styles.tbody}>
-                                {filteredBlogs.map((blog, index) => (
-                                    <tr key={blog.id} style={styles.tr}>
-                                        <td style={styles.td}>
-                                            <span style={styles.sn}>{index + 1}</span>
-                                        </td>
-                                        <td style={{ ...styles.td, ...styles.blogTitle, textAlign: 'center' }}>
-                                            {blog.title}
-                                        </td>
-                                        <td style={styles.td}>
-                                            {blog.entryDate}
-                                        </td>
-                                        <td style={styles.td}>
-                                            {blog.image ? (
-                                                <img
-                                                    src={toApiAssetUrl(blog.image)}
-                                                    alt={blog.title}
-                                                    title={blog.title}
-                                                    style={{
-                                                        width: '45px',
-                                                        height: '45px',
-                                                        objectFit: 'cover',
-                                                        borderRadius: '6px',
-                                                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                                                        display: 'block',
-                                                        margin: '0 auto',
-                                                        cursor: 'pointer',
-                                                    }}
-                                                    onClick={() => setActivePopupImage(toApiAssetUrl(blog.image))}
-                                                />
-                                            ) : (
-                                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>-</span>
-                                            )}
-                                        </td>
-                                        <td style={styles.td}>
-                                            {(() => {
-                                                const catObj = categories.find(c => c.name === blog.category);
-                                                const catImg = catObj?.imageUrl || catObj?.image;
-                                                return (
-                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                                                        {catImg && catImg !== '-' ? (
-                                                            <img
-                                                                src={toApiAssetUrl(catImg)}
-                                                                alt={blog.category}
-                                                                title={blog.category}
-                                                                style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
-                                                                onClick={() => setActivePopupImage(toApiAssetUrl(catImg))}
-                                                            />
-                                                        ) : (
-                                                            <span>-</span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td style={styles.td}>
-                                            {(() => {
-                                                const subObj = subCategories.find(s => s.name === blog.subCategory);
-                                                const subImg = subObj?.imageUrl || subObj?.image;
-                                                return (
-                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                                                        {subImg && subImg !== '-' ? (
-                                                            <img
-                                                                src={toApiAssetUrl(subImg)}
-                                                                alt={blog.subCategory}
-                                                                title={blog.subCategory}
-                                                                style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
-                                                                onClick={() => setActivePopupImage(toApiAssetUrl(subImg))}
-                                                            />
-                                                        ) : (
-                                                            <span>-</span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={getStatusStyle(blog.status)}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.opacity = '0.85';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.opacity = '1';
-                                                }}
-                                                onClick={() => handleToggleStatus(blog.id)}
-                                            >
-                                                {blog.status === 'Active' ? (
-                                                    <Check size={12} />
-                                                ) : (
-                                                    <AlertCircle size={12} />
-                                                )}
-                                                {blog.status}
-                                            </button>
-                                        </td>
-                                        <td
-                                            style={{
-                                                ...styles.td,
-                                                ...styles.actionColumn,
-                                                ...styles.actionCell,
-                                            }}
-                                        >
-                                            <div style={styles.actionButtons}>
-                                                <button
-                                                    type="button"
-                                                    style={styles.actionBtn}
-                                                    title="View Details"
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                        e.currentTarget.style.borderColor = 'var(--primary)';
-                                                        e.currentTarget.style.transform = 'scale(1.08)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'var(--surface-soft)';
-                                                        e.currentTarget.style.borderColor = 'var(--border)';
-                                                        e.currentTarget.style.transform = 'scale(1)';
-                                                    }}
-                                                    onClick={() => handleViewDetails(blog)}
-                                                >
-                                                    <Eye size={16} strokeWidth={2} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    style={styles.actionBtn}
-                                                    title="Edit Blog"
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
-                                                        e.currentTarget.style.borderColor = 'var(--primary)';
-                                                        e.currentTarget.style.transform = 'scale(1.08)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'var(--surface-soft)';
-                                                        e.currentTarget.style.borderColor = 'var(--border)';
-                                                        e.currentTarget.style.transform = 'scale(1)';
-                                                    }}
-                                                    onClick={() => handleEditBlogNavigate(blog)}
-                                                >
-                                                    <Edit2 size={16} strokeWidth={2} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    style={{ ...styles.actionBtn, ...styles.deleteBtn }}
-                                                    title="Delete Blog"
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
-                                                        e.currentTarget.style.borderColor = 'var(--danger)';
-                                                        e.currentTarget.style.transform = 'scale(1.08)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
-                                                        e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
-                                                        e.currentTarget.style.transform = 'scale(1)';
-                                                    }}
-                                                    onClick={() => handleDeleteBlog(blog)}
-                                                >
-                                                    <Trash2 size={16} strokeWidth={2} />
-                                                </button>
-                                            </div>
-                                        </td>
+                    {loading ? (
+                        <div style={{ ...styles.emptyState, padding: '40px' }}>
+                            <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-secondary)' }}>Loading blogs...</p>
+                        </div>
+                    ) : filteredBlogs.length > 0 ? (
+                        <>
+                            <table style={styles.table}>
+                                <thead style={styles.thead}>
+                                    <tr>
+                                        <th style={styles.th}>SN.</th>
+                                        <th style={styles.th}>Title</th>
+                                        <th style={styles.th}>Entry Date</th>
+                                        <th style={styles.th}>Image</th>
+                                        <th style={styles.th}>Category</th>
+                                        <th style={styles.th}>Sub Category</th>
+                                        <th style={styles.th}>Status</th>
+                                        <th style={{ ...styles.th, ...styles.actionColumn }}>Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody style={styles.tbody}>
+                                    {filteredBlogs.map((blog, index) => (
+                                        <tr key={blog.id} style={styles.tr}>
+                                            <td style={styles.td}>
+                                                <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
+                                            </td>
+                                            <td style={{ ...styles.td, ...styles.blogTitle, textAlign: 'center' }}>
+                                                {blog.title}
+                                            </td>
+                                            <td style={styles.td}>
+                                                {blog.entryDate}
+                                            </td>
+                                            <td style={styles.td}>
+                                                {blog.image && blog.image !== '-' ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <NgrokSafeImage
+                                                            src={toApiAssetUrl(blog.image)}
+                                                            alt={blog.title}
+                                                            title={blog.title}
+                                                            style={{
+                                                                width: '45px',
+                                                                height: '45px',
+                                                                objectFit: 'cover',
+                                                                borderRadius: '6px',
+                                                                display: 'block',
+                                                                cursor: 'pointer',
+                                                                border: '1.5px solid rgba(0, 0, 0, 0.08)'
+                                                            }}
+                                                            onClick={() => setActivePopupImage(toApiAssetUrl(blog.image))}
+                                                        />
+                                                        <span style={{ display: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px' }}>Invalid Image</span>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>-</span>
+                                                )}
+                                            </td>
+                                            <td style={styles.td}>
+                                                {(() => {
+                                                    const catObj = categories.find(c => c.name === blog.category);
+                                                    const catImg = catObj?.imageUrl || catObj?.image;
+                                                    return (
+                                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                                            {catImg && catImg !== '-' && (
+                                                                <NgrokSafeImage
+                                                                    src={toApiAssetUrl(catImg)}
+                                                                    alt={blog.category}
+                                                                    title={blog.category}
+                                                                    style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
+                                                                    onClick={() => setActivePopupImage(toApiAssetUrl(catImg))}
+                                                                />
+                                                            )}
+                                                            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                                                                {blog.category && blog.category !== '-' ? blog.category : '-'}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td style={styles.td}>
+                                                {(() => {
+                                                    const subObj = subCategories.find(s => s.name === blog.subCategory);
+                                                    const subImg = subObj?.imageUrl || subObj?.image;
+                                                    return (
+                                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                                            {subImg && subImg !== '-' && (
+                                                                <NgrokSafeImage
+                                                                    src={toApiAssetUrl(subImg)}
+                                                                    alt={blog.subCategory}
+                                                                    title={blog.subCategory}
+                                                                    style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
+                                                                    onClick={() => setActivePopupImage(toApiAssetUrl(subImg))}
+                                                                />
+                                                            )}
+                                                            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                                                                {blog.subCategory && blog.subCategory !== '-' ? blog.subCategory : '-'}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td style={styles.td}>
+                                                <button
+                                                    type="button"
+                                                    style={getStatusStyle(blog.status)}
+                                                    onClick={() => handleToggleStatus(blog.id)}
+                                                    onMouseEnter={(e) => { e.target.style.opacity = '0.85'; }}
+                                                    onMouseLeave={(e) => { e.target.style.opacity = '1'; }}
+                                                >
+                                                    {blog.status}
+                                                </button>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <div style={styles.actionButtons}>
+                                                    <button
+                                                        type="button"
+                                                        style={styles.actionBtn}
+                                                        title="View Details"
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                            e.currentTarget.style.borderColor = 'var(--primary)';
+                                                            e.currentTarget.style.transform = 'scale(1.08)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'var(--surface-soft)';
+                                                            e.currentTarget.style.borderColor = 'var(--border)';
+                                                            e.currentTarget.style.transform = 'scale(1)';
+                                                        }}
+                                                        onClick={() => handleViewDetails(blog)}
+                                                    >
+                                                        <Eye size={16} strokeWidth={2} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        style={styles.actionBtn}
+                                                        title="Edit Blog"
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                            e.currentTarget.style.borderColor = 'var(--primary)';
+                                                            e.currentTarget.style.transform = 'scale(1.08)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'var(--surface-soft)';
+                                                            e.currentTarget.style.borderColor = 'var(--border)';
+                                                            e.currentTarget.style.transform = 'scale(1)';
+                                                        }}
+                                                        onClick={() => handleEditBlogNavigate(blog)}
+                                                    >
+                                                        <Edit2 size={16} strokeWidth={2} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                                                        title="Delete Blog"
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
+                                                            e.currentTarget.style.borderColor = 'var(--danger)';
+                                                            e.currentTarget.style.transform = 'scale(1.08)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
+                                                            e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
+                                                            e.currentTarget.style.transform = 'scale(1)';
+                                                        }}
+                                                        onClick={() => handleDeleteBlog(blog)}
+                                                    >
+                                                        <Trash2 size={16} strokeWidth={2} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <AdminPagination
+                                currentPage={page}
+                                totalItems={totalBlogs}
+                                itemsPerPage={pageSize}
+                                onPageChange={setPage}
+                                onItemsPerPageChange={setPageSize}
+                                itemName="blogs"
+                            />
+                        </>
                     ) : (
                         <div style={styles.emptyState}>
                             <div style={styles.emptyStateIcon}>
@@ -1045,55 +1065,6 @@ function BlogList() {
                         </div>
                     )}
                 </div>
-
-                {totalPages > 1 && (
-                    <div style={styles.paginationContainer}>
-                        <div style={styles.paginationInfo}>
-                            Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalBlogs)} of {totalBlogs} blogs
-                        </div>
-                        <div style={styles.paginationButtons}>
-                            <button
-                                type="button"
-                                style={{
-                                    ...styles.pageBtn,
-                                    opacity: page === 1 ? 0.5 : 1,
-                                    cursor: page === 1 ? 'not-allowed' : 'pointer'
-                                }}
-                                disabled={page === 1}
-                                onClick={handlePrevPage}
-                            >
-                                Previous
-                            </button>
-                            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(p => (
-                                <button
-                                    key={p}
-                                    type="button"
-                                    style={{
-                                        ...styles.pageBtn,
-                                        background: page === p ? 'var(--primary)' : 'var(--panel)',
-                                        color: page === p ? '#ffffff' : 'var(--text-primary)',
-                                        borderColor: page === p ? 'var(--primary)' : 'var(--border)'
-                                    }}
-                                    onClick={() => setPage(p)}
-                                >
-                                    {p}
-                                </button>
-                            ))}
-                            <button
-                                type="button"
-                                style={{
-                                    ...styles.pageBtn,
-                                    opacity: page === totalPages ? 0.5 : 1,
-                                    cursor: page === totalPages ? 'not-allowed' : 'pointer'
-                                }}
-                                disabled={page === totalPages}
-                                onClick={handleNextPage}
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {activePopupImage && (
