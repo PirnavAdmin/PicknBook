@@ -2,7 +2,7 @@
 const { createProxyMiddleware } = require("http-proxy-middleware");
 const https = require("https");
 
-const FALLBACK_PROXY_TARGET = "https://paycheck-baton-overfull.ngrok-free.dev";
+const FALLBACK_PROXY_TARGET = "https://www.picknbook.in";
 
 function normalizeHttpUrl(value) {
   if (typeof value !== "string") return "";

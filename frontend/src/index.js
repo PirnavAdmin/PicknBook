@@ -52,6 +52,20 @@ initializeGuestId();
 
 // Global Fetch Interceptor to handle session completion/expiration (401 Unauthorized) and Guest ID
 const originalFetch = window.fetch;
+
+function shouldUseNgrokHeader(input) {
+  try {
+    const url = typeof input === "string" ? input : input?.url;
+    const parsed = new URL(url, window.location.origin);
+    return (
+      parsed.hostname.includes("ngrok-free.dev") ||
+      parsed.hostname.includes("ngrok.io")
+    );
+  } catch {
+    return false;
+  }
+}
+
 window.fetch = async function (input, init) {
   let options = init || {};
   let headers = {};
@@ -139,7 +153,9 @@ window.fetch = async function (input, init) {
     }
   }
 
-  headers["ngrok-skip-browser-warning"] = "true";
+  if (shouldUseNgrokHeader(input)) {
+    headers["ngrok-skip-browser-warning"] = "true";
+  }
 
   options = { ...options, headers };
 

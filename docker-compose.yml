@@ -13,8 +13,14 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-PickNBookApi}
       Jwt__Audience: ${JWT_AUDIENCE:-PickNBookUsers}
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
-      Cors__AllowedOrigins__0: ${FRONTEND_PUBLIC_URL:-http://localhost:3000}
-      Cors__AllowedOrigins__1: ${FRONTEND_PUBLIC_URL_ALT:-http://127.0.0.1:3000}
+      Cors__AllowedOrigins__0: ${FRONTEND_PUBLIC_URL:-https://www.picknbook.in}
+      Cors__AllowedOrigins__1: ${FRONTEND_PUBLIC_URL_ALT:-https://picknbook.in}
+      Cors__AllowedOrigins__2: ${FRONTEND_PUBLIC_URL_HTTP:-http://www.picknbook.in}
+      Cors__AllowedOrigins__3: ${FRONTEND_PUBLIC_URL_ALT_HTTP:-http://picknbook.in}
+      Cors__AllowedOrigins__4: ${FRONTEND_LOCAL_URL:-http://localhost:3000}
+      Cors__AllowedOrigins__5: ${FRONTEND_LOCAL_URL_ALT:-http://127.0.0.1:3000}
+      Cors__AllowedOrigins__6: ${FRONTEND_DEV_URL:-http://localhost:5173}
+      Cors__AllowedOrigins__7: ${FRONTEND_DEV_URL_ALT:-http://127.0.0.1:5173}
       Amadeus__BaseUrl: ${AMADEUS_BASE_URL:-https://test.api.amadeus.com}
       Amadeus__ClientId: ${AMADEUS_CLIENT_ID:-OyZ3je6eRLoxKkWnRlJdmfFvGNhxcfAQ}
       Amadeus__ClientSecret: ${AMADEUS_CLIENT_SECRET:-IUmmOTXycK7A16CB}
@@ -42,13 +48,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-/}
-        REACT_APP_AUTH_API_BASE_URL: ${REACT_APP_AUTH_API_BASE_URL:-/}
-        REACT_APP_BUS_API_BASE_URL: ${REACT_APP_BUS_API_BASE_URL:-/}
-        REACT_APP_ADMIN_API_BASE_URL: ${REACT_APP_ADMIN_API_BASE_URL:-/}
-        REACT_APP_DASHBOARD_API_BASE_URL: ${REACT_APP_DASHBOARD_API_BASE_URL:-/}
-        REACT_APP_BANK_API_BASE_URL: ${REACT_APP_BANK_API_BASE_URL:-/}
-        REACT_APP_NOTIFICATIONS_API_BASE_URL: ${REACT_APP_NOTIFICATIONS_API_BASE_URL:-/}
+        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-https://www.picknbook.in}
+        REACT_APP_AUTH_API_BASE_URL: ${REACT_APP_AUTH_API_BASE_URL:-https://www.picknbook.in}
+        REACT_APP_BUS_API_BASE_URL: ${REACT_APP_BUS_API_BASE_URL:-https://www.picknbook.in}
+        REACT_APP_ADMIN_API_BASE_URL: ${REACT_APP_ADMIN_API_BASE_URL:-https://www.picknbook.in}
+        REACT_APP_DASHBOARD_API_BASE_URL: ${REACT_APP_DASHBOARD_API_BASE_URL:-https://www.picknbook.in}
+        REACT_APP_BANK_API_BASE_URL: ${REACT_APP_BANK_API_BASE_URL:-https://www.picknbook.in}
+        REACT_APP_NOTIFICATIONS_API_BASE_URL: ${REACT_APP_NOTIFICATIONS_API_BASE_URL:-https://www.picknbook.in}
         REACT_APP_PLACES_API_URL: ${REACT_APP_PLACES_API_URL:-/api/Places}
         REACT_APP_USE_DIRECT_API_IN_DEV: ${REACT_APP_USE_DIRECT_API_IN_DEV:-false}
         REACT_APP_DEFAULT_USER_ID: ${REACT_APP_DEFAULT_USER_ID:-user_123}

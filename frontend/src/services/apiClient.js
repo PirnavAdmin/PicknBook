@@ -3,7 +3,7 @@
 
 
 const FALLBACK_API_BASE_URL =
-  "https://undogmatically-knotlike-evita.ngrok-free.dev";
+  "https://www.picknbook.in";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 
@@ -202,11 +202,28 @@ export function toApiAssetUrl(urlOrPath) {
 }
 
 export function withNgrokSkipWarningHeader(urlOrPath, headers = {}) {
-  return {
+  const nextHeaders = {
     ...headers,
-    "ngrok-skip-browser-warning": "true",
     "User-Agent": "custom-app-client",
   };
+
+  try {
+    const parsed = new URL(
+      toApiUrl(urlOrPath),
+      typeof window !== "undefined" ? window.location.origin : undefined
+    );
+
+    if (
+      parsed.hostname.includes("ngrok-free.dev") ||
+      parsed.hostname.includes("ngrok.io")
+    ) {
+      nextHeaders["ngrok-skip-browser-warning"] = "true";
+    }
+  } catch {
+    // Keep the request usable for relative URLs and non-browser contexts.
+  }
+
+  return nextHeaders;
 }
 
 export async function readResponsePayload(response) {
