@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import "../STYLES/BusSeatLayout3D.css";

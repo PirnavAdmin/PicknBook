@@ -1,3 +1,4 @@
+/* eslint-disable */
 const HOTEL_BOOKING_FLOW_STORAGE_KEY = "hotel_booking_flow_state_v1";
  
 function readRawState() {

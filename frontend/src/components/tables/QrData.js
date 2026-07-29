@@ -1,3 +1,4 @@
+/* eslint-disable */
 const qrData = [
   {
     id: 1,

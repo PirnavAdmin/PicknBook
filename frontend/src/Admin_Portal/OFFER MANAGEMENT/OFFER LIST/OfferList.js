@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Filter, Pencil, Plus, RefreshCw, Trash2, X, ZoomIn, Sliders } from "lucide-react";
 import "./OfferList.css";

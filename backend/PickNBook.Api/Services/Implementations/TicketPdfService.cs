@@ -331,28 +331,28 @@ public class TicketPdfService : ITicketPdfService
         y += 13;
 
         gfx.DrawString(
-            ToIst(req.DepartureTime).ToString("HH:mm"),
+            ToIst(req.BoardingPointTime).ToString("HH:mm"),
             fBold,
             navyBrush,
             col1,
             y);
 
         gfx.DrawString(
-            ToIst(req.DepartureTime).ToString("ddd, dd MMM, yyyy"),
+            ToIst(req.BoardingPointTime).ToString("ddd, dd MMM, yyyy"),
             fBold,
             navyBrush,
             col2,
             y);
 
         gfx.DrawString(
-            ToIst(req.ArrivalTime).ToString("HH:mm"),
+            ToIst(req.ArrivalPointTime).ToString("HH:mm"),
             fBold,
             navyBrush,
             col3,
             y);
 
         gfx.DrawString(
-            ToIst(req.ArrivalTime).ToString("ddd, dd MMM, yyyy"),
+            ToIst(req.ArrivalPointTime).ToString("ddd, dd MMM, yyyy"),
             fBold,
             navyBrush,
             col4,
@@ -477,7 +477,7 @@ public class TicketPdfService : ITicketPdfService
         var pnrBrush = new XSolidBrush(XColor.FromArgb(17, 66, 173));
 
         gfx.DrawString(
-            req.BookingReference,
+            req.Pnr,
             pnrFont,
             pnrBrush,
             new XRect(sideX, sY, sw, 36),
@@ -496,6 +496,24 @@ public class TicketPdfService : ITicketPdfService
 
         gfx.DrawString(
             $"{req.Currency} {req.Price:0.00}",
+            fBold,
+            navyBrush,
+            sideX,
+            sY);
+
+        sY += 22;
+
+        gfx.DrawString(
+            "GST INCLUDED",
+            fKicker,
+            grayBrush,
+            sideX,
+            sY);
+
+        sY += 13;
+
+        gfx.DrawString(
+            $"{req.Currency} {req.GstAmount:0.00}",
             fBold,
             navyBrush,
             sideX,
@@ -630,12 +648,49 @@ public class TicketPdfService : ITicketPdfService
             "No bulky items allowed"
         });
 
-        TermsSection("3. CANCELLATION TERMS", new[]
+        var cancellationBullets = new List<string>();
+        if (!string.IsNullOrWhiteSpace(req.CancellationPoliciesJson))
         {
-            "Cancel 12+ hours: 100% refund",
-            "Cancel 6–12 hours: 75% refund",
-            "Cancel <6 hours: 50% refund"
-        });
+            try
+            {
+                var jsonStr = req.CancellationPoliciesJson.Trim();
+                if (jsonStr.StartsWith("\"") && jsonStr.EndsWith("\"") && !jsonStr.StartsWith("\"["))
+                {
+                    jsonStr = jsonStr.Trim('"');
+                    if (jsonStr.Length > 0 && jsonStr.Length % 4 == 0)
+                    {
+                        try
+                        {
+                            var bytes = Convert.FromBase64String(jsonStr);
+                            jsonStr = System.Text.Encoding.UTF8.GetString(bytes);
+                        }
+                        catch { /* not valid base64 */ }
+                    }
+                }
+
+                var options = new System.Text.Json.JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+                };
+                var policies = System.Text.Json.JsonSerializer.Deserialize<List<SrdvCancellationPolicyDto>>(jsonStr, options);
+                if (policies != null && policies.Any())
+                {
+                    // Clean up and format the policy strings if necessary
+                    cancellationBullets.AddRange(policies.Select(p => !string.IsNullOrWhiteSpace(p.PolicyString) ? p.PolicyString : $"Cancel {p.TimeBeforeDept} hrs: {p.CancellationCharge} {p.CancellationChargeType}"));
+                }
+            }
+            catch { }
+        }
+        
+        if (cancellationBullets.Count == 0)
+        {
+            cancellationBullets.Add("Cancel 12+ hours: 100% refund");
+            cancellationBullets.Add("Cancel 6–12 hours: 75% refund");
+            cancellationBullets.Add("Cancel <6 hours: 50% refund");
+        }
+
+        TermsSection("3. CANCELLATION TERMS", cancellationBullets.ToArray());
 
         double rY = 55;
 
@@ -766,16 +821,11 @@ public class TicketPdfService : ITicketPdfService
         }
 
         FareRow(
-            $"GST ({req.GstPercent:0.##}%)",
+            "GST",
             $"+ ₹ {req.GstAmount:0.00}",
             fReg,
             grayBrush);
 
-        FareRow(
-            "Convenience Fee",
-            $"+ ₹ {req.ConvenienceFee:0.00}",
-            fReg,
-            grayBrush);
 
         FareRow(
             "Total Fare",

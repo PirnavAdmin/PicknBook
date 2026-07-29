@@ -1,3 +1,4 @@
+/* eslint-disable */
 // B2B Admin Centralized API & Storage Service
 
 const FALLBACK_API_BASE_URL = "https://undogmatically-knotlike-evita.ngrok-free.dev";

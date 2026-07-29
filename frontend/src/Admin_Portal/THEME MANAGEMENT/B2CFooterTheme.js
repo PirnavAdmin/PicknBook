@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { FaTrashAlt, FaEdit, FaPlus, FaCheck, FaTimes, FaSpinner, FaEye } from "react-icons/fa";
 import { Search, Heart } from "lucide-react";

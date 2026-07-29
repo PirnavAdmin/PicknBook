@@ -20,7 +20,7 @@ namespace PickNBook.Api.Controllers
     ICurrentUserService currentUserService,
     ITicketEmailService ticketEmailService,
     IWhatsAppService whatsAppService,
-    IAmadeusService amadeusService,
+    ISrdvFlightService srdvFlightService,
     ILogger<FlightBookingsController> logger) : BaseApiController
     {
 
@@ -132,36 +132,36 @@ namespace PickNBook.Api.Controllers
             var requestedClass = string.IsNullOrWhiteSpace(travelClass) ? travelClassAlias : travelClass;
             var normalizedClass = ResolveTravelClass(requestedClass);
 
-            // Attempt to query Amadeus
+            // Attempt to query SRDV
             var fromIata = requestedFrom != null && CityToIata.TryGetValue(requestedFrom.Trim(), out var fCode) ? fCode : null;
             var toIata = requestedTo != null && CityToIata.TryGetValue(requestedTo.Trim(), out var tCode) ? tCode : null;
 
-            List<FlightOfferDto>? amadeusOffers = null;
+            List<FlightOfferDto>? srdvOffers = null;
             if (fromIata != null && toIata != null && date.HasValue)
             {
                 try
                 {
                     var searchDate = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day);
-                    amadeusOffers = await amadeusService.SearchFlightsAsync(fromIata, toIata, searchDate);
+                    srdvOffers = await srdvFlightService.SearchFlightsAsync(fromIata, toIata, searchDate);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "Amadeus flight search failed. Falling back to database/mock results.");
+                    logger.LogWarning(ex, "SRDV flight search failed. Falling back to database/mock results.");
                 }
             }
 
-            if (amadeusOffers != null && amadeusOffers.Count > 0)
+            if (srdvOffers != null && srdvOffers.Count > 0)
             {
-                var dbFlights = await GetOrCreateAmadeusFlightsInDbAsync(amadeusOffers);
+                var dbFlights = await GetOrCreateSrdvFlightsInDbAsync(srdvOffers);
                 
                 foreach (var dbFlight in dbFlights)
                 {
                     await EnsureFlightClassInventoriesForFlightAsync(dbFlight.Id, dbFlight.PriceInr);
                 }
 
-                var amadeusResponse = new List<object>();
+                var srdvResponse = new List<object>();
 
-                var groupedOffers = amadeusOffers.GroupBy(o => new {
+                var groupedOffers = srdvOffers.GroupBy(o => new {
                     o.Airline,
                     o.Origin,
                     o.Destination,
@@ -292,7 +292,7 @@ namespace PickNBook.Api.Controllers
 
                     var supportedClasses = new[] { "Economy", "Premium Economy", "Business", "Premium Business", "First Class" };
 
-                    amadeusResponse.Add(new
+                    srdvResponse.Add(new
                     {
                         dbFlight.Id,
                         dbFlight.FlightNumber,
@@ -329,7 +329,7 @@ namespace PickNBook.Api.Controllers
                     });
                 }
 
-                return Ok(amadeusResponse);
+                return Ok(srdvResponse);
             }
 
             if (date.HasValue)
@@ -715,10 +715,41 @@ namespace PickNBook.Api.Controllers
                     }
 
                     var pnr = await GenerateUniqueFlightPnrAsync();
+                    
+                    FlightBookingResponseDto? srdvBookingResponse = null;
+                    if (!string.IsNullOrEmpty(flight.TraceId) && !string.IsNullOrEmpty(flight.ResultIndex))
+                    {
+                        var srdvReq = new FlightBookingRequestDto
+                        {
+                            TraceId = flight.TraceId,
+                            ResultIndex = flight.ResultIndex,
+                            Passengers = passengers!.Select(p => new FlightPassengerDto
+                            {
+                                Title = p.Gender == "Male" ? "Mr" : "Ms",
+                                FirstName = p.FullName,
+                                LastName = "Passenger", // default
+                                PaxType = p.PassengerType == "Adult" ? 1 : p.PassengerType == "Child" ? 2 : 3,
+                                DateOfBirth = "1990-01-01T00:00:00", // Default
+                                Gender = p.Gender == "Male" ? 1 : 2,
+                                ContactNo = request.PassengerPhone,
+                                Email = request.PassengerEmail ?? "info@picknbook.com"
+                            }).ToList()
+                        };
+                        
+                        srdvBookingResponse = await srdvFlightService.BookFlightAsync(srdvReq);
+                        
+                        if (!srdvBookingResponse.Success)
+                        {
+                            throw new Exception($"SRDV Booking Failed: {srdvBookingResponse.ErrorMessage}");
+                        }
+                    }
+
                     var reservation = new FlightReservation
                     {
                         BookingReference = $"FL-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 1000)}",
-                        Pnr = pnr,
+                        Pnr = srdvBookingResponse?.Pnr ?? pnr,
+                        SrdvBookingId = srdvBookingResponse?.SrdvBookingId,
+                        SrdvTicketResponseJson = srdvBookingResponse?.ResponseJson,
                         UserId = userId!,
                         FlightBookingId = flight.Id,
                         PassengerName = request.PassengerName.Trim(),
@@ -2110,7 +2141,7 @@ Refund: ₹{currentRefundAmount}
             }
         }
 
-        private async Task<List<FlightBooking>> GetOrCreateAmadeusFlightsInDbAsync(List<FlightOfferDto> offers)
+        private async Task<List<FlightBooking>> GetOrCreateSrdvFlightsInDbAsync(List<FlightOfferDto> offers)
         {
             var flights = new List<FlightBooking>();
 
@@ -2147,11 +2178,18 @@ Refund: ₹{currentRefundAmount}
                 }
 
                 decimal priceInr = decimal.Round(basePrice, 2, MidpointRounding.AwayFromZero);
+                var firstOffer = group.First();
 
                 if (existing != null)
                 {
                     existing.PriceInr = priceInr;
                     existing.AvailableSeats = group.Max(o => o.AvailableSeats);
+                    existing.TraceId = firstOffer.TraceId;
+                    existing.ResultIndex = firstOffer.ResultIndex;
+                    existing.SrdvIndex = firstOffer.SrdvIndex;
+                    existing.IsLcc = firstOffer.IsLcc;
+                    existing.SrdvType = firstOffer.SrdvType;
+                    existing.SegmentsJson = firstOffer.SegmentsJson;
                     flights.Add(existing);
                 }
                 else
@@ -2167,7 +2205,13 @@ Refund: ₹{currentRefundAmount}
                         PriceInr = priceInr,
                         TotalSeats = 180,
                         AvailableSeats = group.Max(o => o.AvailableSeats),
-                        CabinClass = "MultiClass"
+                        CabinClass = "MultiClass",
+                        TraceId = firstOffer.TraceId,
+                        ResultIndex = firstOffer.ResultIndex,
+                        SrdvIndex = firstOffer.SrdvIndex,
+                        IsLcc = firstOffer.IsLcc,
+                        SrdvType = firstOffer.SrdvType,
+                        SegmentsJson = firstOffer.SegmentsJson
                     };
                     dbContext.FlightBookings.Add(newFlight);
                     flights.Add(newFlight);

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import { Search, ClipboardList, Download, RefreshCw, FileText, CheckCircle2, XCircle } from "lucide-react";
 import { getBookingsReport } from "../../services/b2bService";

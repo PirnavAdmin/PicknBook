@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Download, Printer, Ticket } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";

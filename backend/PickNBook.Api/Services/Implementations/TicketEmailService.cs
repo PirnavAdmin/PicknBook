@@ -5,7 +5,8 @@ using PickNBook.Api.Models.DTOs;
 
 namespace PickNBook.Api.Services;
 
-public class TicketEmailService : ITicketEmailService
+public class 
+    TicketEmailService : ITicketEmailService
 {
     private readonly IEmailService _emailService;
     private readonly ITicketPdfService _ticketPdfService;
@@ -355,6 +356,14 @@ public class TicketEmailService : ITicketEmailService
         // EMAIL BODY
         // =========================================
 
+        var gstSection = request.GstAmount > 0 
+            ? $@"
+        <p>
+            <b>GST:</b>
+            ₹{request.GstAmount:0.00}
+        </p>"
+            : string.Empty;
+
         var body = $@"
         <p>Hi {request.PassengerName},</p>
 
@@ -364,13 +373,18 @@ public class TicketEmailService : ITicketEmailService
         </p>
 
         <p>
-            <b>Booking Reference:</b>
-            {request.BookingReference}
+            <b>PNR / Ticket No:</b>
+            {request.Pnr}
         </p>
 
         <p>
-            <b>Departure:</b>
-            {ToIst(request.DepartureTime):ddd, dd MMM yyyy HH:mm}
+            <b>Boarding:</b>
+            {request.BoardingPoint} at {ToIst(request.BoardingPointTime):ddd, dd MMM yyyy HH:mm}
+        </p>
+        
+        <p>
+            <b>Dropping:</b>
+            {request.ArrivalPoint} at {ToIst(request.ArrivalPointTime):ddd, dd MMM yyyy HH:mm}
         </p>
 
         <p>
@@ -378,22 +392,10 @@ public class TicketEmailService : ITicketEmailService
             {passengerLines}
         </p>
 
-        <p>
-            <b>Fare:</b>
-            ₹{request.NetFare:0.00}
-        </p>
+
 
         {discountSection}
-
-        <p>
-            <b>GST ({request.GstPercent:0.##}%):</b>
-            ₹{request.GstAmount:0.00}
-        </p>
-
-        <p>
-            <b>Convenience Fee:</b>
-            ₹{request.ConvenienceFee:0.00}
-        </p>
+        {gstSection}
 
         <p>
             <b>Total Fare:</b>
@@ -483,8 +485,8 @@ public class TicketEmailService : ITicketEmailService
         </p>
 
         <p>
-            <b>Booking Reference:</b>
-            {request.BookingReference}
+            <b>PNR / Ticket No:</b>
+            {request.Pnr}
         </p>
 
         <p>
@@ -500,14 +502,11 @@ public class TicketEmailService : ITicketEmailService
         {discountSection}
 
         <p>
-            <b>GST ({request.GstPercent:0.##}%):</b>
+            <b>GST:</b>
             ₹{request.GstAmount:0.00}
         </p>
 
-        <p>
-            <b>Convenience Fee:</b>
-            ₹{request.ConvenienceFee:0.00}
-        </p>
+
 
         <p>
             <b>Total Fare:</b>

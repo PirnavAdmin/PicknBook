@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useMemo, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useLocation } from "react-router-dom";

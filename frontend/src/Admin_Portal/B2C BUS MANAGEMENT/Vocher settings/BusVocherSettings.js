@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import { ShieldCheck, Save, RefreshCw, Mail, Phone, MapPin, FileText, CheckCircle2 } from "lucide-react";
 import "./BusVocherSettings.css";

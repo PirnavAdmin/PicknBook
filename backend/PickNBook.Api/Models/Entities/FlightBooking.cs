@@ -1,4 +1,4 @@
-﻿namespace PickNBook.Api.Models
+namespace PickNBook.Api.Models
 {
     public class FlightBooking
     {
@@ -13,5 +13,13 @@
         public int AvailableSeats { get; set; }
         public int TotalSeats { get; set; }
         public string CabinClass { get; set; } = "Economy";
+
+        // SRDV Tracking Fields
+        public string? TraceId { get; set; }
+        public string? ResultIndex { get; set; }
+        public int? SrdvIndex { get; set; }
+        public bool IsLcc { get; set; }
+        public string? SrdvType { get; set; }
+        public string? SegmentsJson { get; set; }
     }
 }

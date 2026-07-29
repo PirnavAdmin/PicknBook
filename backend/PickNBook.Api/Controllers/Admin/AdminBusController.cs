@@ -11,7 +11,7 @@ namespace PickNBook.Api.Controllers
     [ApiController]
     [Route("api/admin/bus")]
     //public class AdminBusController(AppDbContext dbContext) : ControllerBase
-    public class AdminBusController(AppDbContext dbContext) : AdminApiController
+    public class AdminBusController(AppDbContext dbContext, PickNBook.Api.Services.ISrdvBusService srdvBusService) : AdminApiController
     {
         private static readonly TimeSpan IndiaOffset = TimeSpan.FromHours(5.5);
         private static readonly string[] AllowedDiscountTypes = ["Percentage", "Fixed"];
@@ -100,6 +100,176 @@ namespace PickNBook.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("bookings/{bookingId:int}/cancel")]
+        public async Task<IActionResult> CancelBooking(int bookingId, [FromBody] AdminCancelBusBookingRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var reservation = await dbContext.BusReservations
+                .Include(r => r.BusBooking)
+                .FirstOrDefaultAsync(r => r.Id == bookingId);
+
+            if (reservation == null || reservation.BusBooking == null)
+            {
+                return NotFound(new { message = "Booking not found." });
+            }
+
+            if (reservation.Status == "Cancelled")
+            {
+                return BadRequest(new { message = "Booking is already cancelled." });
+            }
+
+            var passengers = await dbContext.BusReservationPassengers
+                .Where(p => p.BusReservationId == bookingId)
+                .ToListAsync();
+
+            bool providerCancelled = false;
+            string providerMessage = string.Empty;
+
+            bool partialAllowed = false;
+            string actualTraceId = reservation.BusBooking.TraceId ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(reservation.SrdvBookingResponseJson))
+            {
+                try
+                {
+                    var j = System.Text.Json.JsonDocument.Parse(reservation.SrdvBookingResponseJson);
+                    if (j.RootElement.TryGetProperty("TraceId", out var traceProp) && traceProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                    {
+                        var traceStr = traceProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(traceStr))
+                        {
+                            actualTraceId = traceStr;
+                        }
+                    }
+                    if (j.RootElement.TryGetProperty("PartialCancellationAllowed", out var pc))
+                    {
+                        partialAllowed = pc.ValueKind == System.Text.Json.JsonValueKind.String 
+                            ? pc.GetString()?.ToLower() == "true" 
+                            : pc.GetBoolean();
+                    }
+                }
+                catch { }
+            }
+
+            try
+            {
+                var activePassengers = passengers.Where(p => !p.IsCancelled).ToList();
+                int initialActiveCount = activePassengers.Count;
+
+                if (request.PassengerIdsToCancel != null && request.PassengerIdsToCancel.Any())
+                {
+                    var passengersToCancel = activePassengers.Where(p => request.PassengerIdsToCancel.Contains(p.Id)).ToList();
+                    
+                    if (passengersToCancel.Count < activePassengers.Count && !partialAllowed)
+                    {
+                        return BadRequest(new { message = "Provider does not allow partial cancellations." });
+                    }
+
+                    activePassengers = passengersToCancel;
+                }
+
+                if (!activePassengers.Any())
+                {
+                    return BadRequest(new { message = "No valid active passengers selected for cancellation." });
+                }
+
+                var seatNumbers = activePassengers
+                    .Where(x => !string.IsNullOrWhiteSpace(x.SeatNumber))
+                    .Select(x => x.SeatNumber!)
+                    .ToList();
+
+                if (seatNumbers.Any())
+                {
+                    if (partialAllowed)
+                    {
+                        List<BusReservationPassenger> successfullyCancelledPassengers = new();
+                        foreach (var p in activePassengers)
+                        {
+                            if (string.IsNullOrWhiteSpace(p.SeatNumber)) continue;
+
+                            var cancelResult = await srdvBusService.CancelTicketAsync(
+                                actualTraceId,
+                                p.SeatNumber,
+                                string.IsNullOrWhiteSpace(request.Reason) ? "Cancelled by admin" : request.Reason.Trim()
+                            );
+                            
+                            if (cancelResult.Success)
+                            {
+                                successfullyCancelledPassengers.Add(p);
+                            }
+                            else
+                            {
+                                throw new Exception($"SRDV Provider Error: {cancelResult.ErrorMessage}");
+                            }
+                        }
+
+                        if (successfullyCancelledPassengers.Count == 0)
+                        {
+                            throw new Exception("SRDV Provider failed to cancel the seats on their server.");
+                        }
+
+                        activePassengers = successfullyCancelledPassengers;
+                    }
+                    else
+                    {
+                        var cancelResult = await srdvBusService.CancelTicketAsync(
+                            actualTraceId,
+                            string.Join(",", seatNumbers),
+                            string.IsNullOrWhiteSpace(request.Reason) ? "Cancelled by admin" : request.Reason.Trim()
+                        );
+
+                        if (!cancelResult.Success)
+                        {
+                            throw new Exception($"SRDV Provider Error: {cancelResult.ErrorMessage}");
+                        }
+                    }
+                }
+
+                foreach (var p in activePassengers)
+                {
+                    p.IsCancelled = true;
+                    p.CancelledAtUtc = DateTime.UtcNow;
+                }
+                providerCancelled = true;
+
+                // Calculate refund proportionally
+                decimal totalFareOfCancelled = (reservation.CustomerFareInr / Math.Max(1, passengers.Count)) * activePassengers.Count;
+                decimal thisRefund = Math.Max(0m, totalFareOfCancelled - request.CancellationCharges);
+                
+                reservation.CancellationChargeInr = (reservation.CancellationChargeInr ?? 0m) + request.CancellationCharges;
+                reservation.RefundAmountInr = (reservation.RefundAmountInr ?? 0m) + thisRefund;
+            }
+            catch (Exception ex)
+            {
+                providerMessage = ex.Message;
+            }
+
+            var allCancelled = passengers.All(p => p.IsCancelled);
+            reservation.Status = allCancelled ? "Cancelled" : "Partially Cancelled";
+            if (allCancelled)
+            {
+                reservation.CancelledAtUtc = DateTime.UtcNow;
+            }
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new
+            {
+                BookingId = reservation.Id,
+                Pnr = reservation.Pnr,
+                Status = reservation.Status,
+                CancelledAt = reservation.CancelledAtUtc,
+                CancellationCharges = reservation.CancellationChargeInr,
+                RefundAmount = reservation.RefundAmountInr,
+                Message = providerCancelled 
+                    ? "Cancellation successful." 
+                    : $"Cancellation logged locally. Provider API error: {providerMessage}"
+            });
+        }
+
         [HttpGet("discounts")]
         public async Task<IActionResult> GetDiscounts()
         {
@@ -151,6 +321,16 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(error);
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Code))
+            {
+                var normalizedCode = request.Code.Trim();
+                var exists = await dbContext.BusDiscounts.AnyAsync(x => x.Code == normalizedCode);
+                if (exists)
+                {
+                    return BadRequest($"Discount code '{normalizedCode}' already exists.");
+                }
+            }
+
             var now = DateTime.UtcNow;
             var row = new BusDiscount
             {
@@ -194,6 +374,16 @@ namespace PickNBook.Api.Controllers
             if (error is not null)
             {
                 return BadRequest(error);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Code))
+            {
+                var normalizedCode = request.Code.Trim();
+                var exists = await dbContext.BusDiscounts.AnyAsync(x => x.Code == normalizedCode && x.Id != id);
+                if (exists)
+                {
+                    return BadRequest($"Discount code '{normalizedCode}' already exists.");
+                }
             }
 
             row.Code = request.Code?.Trim();
@@ -280,13 +470,29 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(error);
             }
 
+            var status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+            var seatType = request.SeatType.Trim();
+
+            if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingActive = await dbContext.BusMarkupSettings
+                    .Where(x => x.SeatType == seatType && x.Status == "Active")
+                    .ToListAsync();
+
+                foreach (var item in existingActive)
+                {
+                    item.Status = "Inactive";
+                    item.UpdateDateUtc = DateTime.UtcNow;
+                }
+            }
+
             var now = DateTime.UtcNow;
             var row = new BusMarkupSetting
             {
-                SeatType = request.SeatType.Trim(),
+                SeatType = seatType,
                 Value = request.Value,
                 MarkupType = request.MarkupType.Trim(),
-                Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
+                Status = status,
                 EntryDateUtc = now,
                 UpdateDateUtc = now,
                 UpdatedBy = request.UpdatedBy.Trim(),
@@ -310,10 +516,26 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(error);
             }
 
-            row.SeatType = request.SeatType.Trim();
+            var status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+            var seatType = request.SeatType.Trim();
+
+            if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingActive = await dbContext.BusMarkupSettings
+                    .Where(x => x.SeatType == seatType && x.Status == "Active" && x.Id != id)
+                    .ToListAsync();
+
+                foreach (var item in existingActive)
+                {
+                    item.Status = "Inactive";
+                    item.UpdateDateUtc = DateTime.UtcNow;
+                }
+            }
+
+            row.SeatType = seatType;
             row.Value = request.Value;
             row.MarkupType = request.MarkupType.Trim();
-            row.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+            row.Status = status;
             row.UpdateDateUtc = DateTime.UtcNow;
             row.UpdatedBy = request.UpdatedBy.Trim();
             row.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
@@ -364,12 +586,28 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(error);
             }
 
+            var status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+            var category = request.GstCategory.Trim();
+
+            if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingActive = await dbContext.BusGstSettings
+                    .Where(x => x.GstCategory == category && x.Status == "Active")
+                    .ToListAsync();
+
+                foreach (var item in existingActive)
+                {
+                    item.Status = "Inactive";
+                    item.UpdateDateUtc = DateTime.UtcNow;
+                }
+            }
+
             var now = DateTime.UtcNow;
             var row = new BusGstSetting
             {
-                GstCategory = request.GstCategory.Trim(),
+                GstCategory = category,
                 GstPercent = request.GstPercent,
-                Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
+                Status = status,
                 EntryDateUtc = now,
                 UpdateDateUtc = now,
                 UpdatedBy = request.UpdatedBy.Trim(),
@@ -393,9 +631,25 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(error);
             }
 
-            row.GstCategory = request.GstCategory.Trim();
+            var status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+            var category = request.GstCategory.Trim();
+
+            if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingActive = await dbContext.BusGstSettings
+                    .Where(x => x.GstCategory == category && x.Status == "Active" && x.Id != id)
+                    .ToListAsync();
+
+                foreach (var item in existingActive)
+                {
+                    item.Status = "Inactive";
+                    item.UpdateDateUtc = DateTime.UtcNow;
+                }
+            }
+
+            row.GstCategory = category;
             row.GstPercent = request.GstPercent;
-            row.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
+            row.Status = status;
             row.UpdateDateUtc = DateTime.UtcNow;
             row.UpdatedBy = request.UpdatedBy.Trim();
             row.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
@@ -1485,6 +1739,36 @@ namespace PickNBook.Api.Controllers
                 });
 
             return Ok(response);
+        }
+
+        [HttpGet("srdv-wallet/balance")]
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> GetSrdvMasterWalletBalance()
+        {
+            try
+            {
+                var rawJson = await srdvBusService.GetSrdvMasterWalletBalanceAsync();
+                return Content(rawJson, "application/json");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error fetching SRDV wallet balance", error = ex.Message });
+            }
+        }
+
+        [HttpGet("srdv-wallet/log")]
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> GetSrdvMasterWalletLog()
+        {
+            try
+            {
+                var rawJson = await srdvBusService.GetSrdvMasterWalletLogAsync();
+                return Content(rawJson, "application/json");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error fetching SRDV wallet log", error = ex.Message });
+            }
         }
     }
 }

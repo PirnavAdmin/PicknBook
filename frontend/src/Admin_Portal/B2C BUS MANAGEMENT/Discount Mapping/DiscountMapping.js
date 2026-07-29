@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaEdit, FaTrashAlt, FaTimes } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';

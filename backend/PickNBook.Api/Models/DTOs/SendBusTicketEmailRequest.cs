@@ -20,7 +20,9 @@ namespace PickNBook.Api.Models.DTOs
         public bool IsOvernightArrival { get; set; }
         public int DurationMinutes { get; set; }
         public string BoardingPoint { get; set; } = string.Empty;
+        public DateTime BoardingPointTime { get; set; }
         public string ArrivalPoint { get; set; } = string.Empty;
+        public DateTime ArrivalPointTime { get; set; }
 
         // ── Fare breakdown ────────────────────────────────────
         public decimal Price { get; set; }                 // final customer fare (after coupon)
@@ -29,7 +31,6 @@ namespace PickNBook.Api.Models.DTOs
         public decimal GstAmount { get; set; }
         public decimal BaseFare { get; set; }              // base fare before coupon
         public decimal NetFare { get; set; }
-        public decimal ConvenienceFee { get; set; }        // convenience fee added
         public string Currency { get; set; } = "INR";
 
         // ── Coupon (null if no coupon applied) ────────────────
@@ -51,6 +52,8 @@ namespace PickNBook.Api.Models.DTOs
         public decimal AutoDiscountAmount { get; set; }
 
         public decimal CouponDiscountAmount { get; set; }
+        
+        public string? CancellationPoliciesJson { get; set; }
     }
 
     public class BusPassengerSeatDto

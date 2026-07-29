@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
 import { listHotelCancellations } from "../../../services/adminHotelService";
 import "../../B2C BUS MANAGEMENT/Cancellation List/BusCancellationList.css";

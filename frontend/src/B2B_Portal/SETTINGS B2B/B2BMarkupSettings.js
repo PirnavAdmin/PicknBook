@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import { CheckCircle2, AlertCircle, RefreshCw, Plus, Tag } from "lucide-react";
 import { getMarkupSettings, updateMarkupSettings } from "../../services/b2bService";

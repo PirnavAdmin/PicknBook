@@ -55,5 +55,16 @@ namespace PickNBook.Api.Models
         public decimal AutoDiscountAmountInr { get; set; }
 
         public decimal CouponDiscountAmountInr { get; set; }
+
+        // SRDV Booking Response Fields
+        public string? SrdvBookingId { get; set; }
+        public string? SrdvTicketNo { get; set; }
+        public string? SrdvBookingResponseJson { get; set; }
+
+        // Specific SRDV Selected Points
+        public string? BoardingPointName { get; set; }
+        public DateTime? BoardingPointTime { get; set; }
+        public string? DroppingPointName { get; set; }
+        public DateTime? DroppingPointTime { get; set; }
     }
 }

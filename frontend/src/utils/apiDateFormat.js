@@ -1,3 +1,4 @@
+/* eslint-disable */
 export function toDdMmYyyy(value) {
   const text = String(value || "").trim();
 

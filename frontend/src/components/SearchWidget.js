@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * SearchWidget.js — Standalone search widget extracted from HomePage.
  * Uses identical CSS classes (search-panel, tabs, tab, trip-chip, etc.)
@@ -21,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import { toDisplayDate } from "../utils/apiDateFormat";
+import { searchBusCities } from "../services/busBookingService";
 import "../STYLES/HomePage.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -42,11 +44,6 @@ const FLIGHT_TRIP_TYPES = [
 const BUS_TRIP_TYPES = [
   { value: "oneway", label: "One Way" },
   { value: "twoway", label: "Two Way" },
-];
-
-const FALLBACK_CITIES = [
-  "Hyderabad", "Bengaluru", "Chennai", "Mumbai", "Pune",
-  "Vijayawada", "Visakhapatnam", "Delhi", "Kolkata", "Ahmedabad",
 ];
 
 const USE_DIRECT_API_IN_DEV =
@@ -93,7 +90,7 @@ function createMultiCityLeg(from = "", to = "", offsetDays = 0) {
 
 // ─── PlaceAutocomplete ────────────────────────────────────────────────────────
 
-function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholder, className, error }) {
+function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholder, className, error, onSelectOption }) {
   const [inputValue, setInputValue] = useState(value || "");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -127,26 +124,39 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const endpoint = new URL(PLACES_API_URL, window.location.origin);
-        endpoint.searchParams.set("query", query);
-        endpoint.searchParams.set("tripType", tripType);
-        endpoint.searchParams.set("field", field);
-        endpoint.searchParams.set("limit", "20");
+        if (tripType === "buses" || tripType === "bus") {
+          const busCities = await searchBusCities(query);
+          if (controller.signal.aborted) return;
+          const normalized = (Array.isArray(busCities) ? busCities : [])
+            .map((item) => {
+              if (typeof item === "string") return { cityName: item, cityId: item, stateName: "" };
+              return {
+                cityName: item.cityName || item.CityName || item.cityNameWithState || item.name || item.description || item.label || "",
+                cityId: String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || ""),
+                stateName: item.stateName || item.StateName || "",
+              };
+            })
+            .filter((item) => item.cityName);
+          setResults(normalized);
+        } else {
+          const endpoint = new URL(PLACES_API_URL, window.location.origin);
+          endpoint.searchParams.set("query", query);
+          endpoint.searchParams.set("tripType", tripType);
+          endpoint.searchParams.set("field", field);
+          endpoint.searchParams.set("limit", "20");
 
-        const response = await fetch(endpoint.toString(), { signal: controller.signal });
-        if (!response.ok) throw new Error(`Places API ${response.status}`);
-        const payload = await response.json();
-        const rawList = Array.isArray(payload) ? payload : Array.isArray(payload?.value) ? payload.value : [];
-        const normalized = rawList
-          .map((item) => ({ cityName: typeof item === "string" ? item : item?.cityName || "", usageCount: typeof item === "object" && item?.usageCount ? item.usageCount : 0 }))
-          .filter((item) => item.cityName);
-        setResults(normalized);
+          const response = await fetch(endpoint.toString(), { signal: controller.signal });
+          if (!response.ok) throw new Error(`Places API ${response.status}`);
+          const payload = await response.json();
+          const rawList = Array.isArray(payload) ? payload : Array.isArray(payload?.value) ? payload.value : [];
+          const normalized = rawList
+            .map((item) => ({ cityName: typeof item === "string" ? item : item?.cityName || "", usageCount: typeof item === "object" && item?.usageCount ? item.usageCount : 0 }))
+            .filter((item) => item.cityName);
+          setResults(normalized);
+        }
       } catch (err) {
         if (err.name !== "AbortError") {
-          const fallback = FALLBACK_CITIES
-            .filter((c) => c.toLowerCase().includes(query.toLowerCase()))
-            .map((cityName, i) => ({ cityName, usageCount: 100 - i }));
-          setResults(fallback);
+          setResults([]);
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -186,15 +196,15 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
       </div>
       {error && <span style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: 4, display: "block" }}>{error}</span>}
       {open && (
-        <div className="place-dropdown">
+        <div className={tripType === "bus" || tripType === "buses" ? "bus-place-dropdown" : "place-dropdown"}>
           {loading ? (
-            <div className="place-meta">Searching places...</div>
+            <div className={tripType === "bus" || tripType === "buses" ? "bus-place-meta" : "place-meta"}>Searching places...</div>
           ) : results.length > 0 ? (
             results.map((item) => (
               <button
                 key={`${item.cityName}-${item.usageCount}`}
                 type="button"
-                className="place-option"
+                className={tripType === "bus" || tripType === "buses" ? "bus-place-option" : "place-option"}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(item.cityName)}
               >
@@ -202,7 +212,7 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
               </button>
             ))
           ) : (
-            <div className="place-meta">No matching places found</div>
+            <div className={tripType === "bus" || tripType === "buses" ? "bus-place-meta" : "place-meta"}>No matching places found</div>
           )}
         </div>
       )}

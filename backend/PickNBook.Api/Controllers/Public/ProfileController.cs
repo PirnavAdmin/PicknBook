@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using PickNBook.Api.Data;
 
 namespace PickNBook.Api.Controllers;

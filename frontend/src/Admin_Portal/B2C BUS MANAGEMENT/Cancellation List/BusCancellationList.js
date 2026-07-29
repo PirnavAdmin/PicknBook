@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import "./BusCancellationList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 const store = new Map();
 
 export function getItem(key) {

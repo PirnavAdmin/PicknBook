@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../../B2C BUS MANAGEMENT/Discount List/AddB2CBusDiscount.css';

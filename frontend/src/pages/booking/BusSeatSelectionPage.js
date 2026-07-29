@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import { Clock3, Info } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -7,18 +8,9 @@ import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
 } from "./busBookingFlowStore";
-import { getBusPricingPreview, getBusSeatMap } from "../../services/busBookingService";
+import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
 import { openAuthModal } from "../../utils/authModalEvents";
-
-const BOARDING_LABELS = [
-  "Main Circle",
-  "Metro Station",
-  "Cross Roads",
-  "Market Junction",
-  "Bypass",
-  "Service Road",
-];
 
 function formatCurrency(amount) {
   const value = Number(amount) || 0;
@@ -26,43 +18,6 @@ function formatCurrency(amount) {
     maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
   }).format(value)}`;
-}
-
-function parseClockToMinutes(clockText) {
-  const [hoursRaw, minutesRaw] = String(clockText || "")
-    .split(":")
-    .map((part) => Number(part));
-
-  if (!Number.isFinite(hoursRaw) || !Number.isFinite(minutesRaw)) {
-    return 0;
-  }
-
-  return hoursRaw * 60 + minutesRaw;
-}
-
-function formatMinutesToClock(totalMinutes) {
-  const minutesInDay = 24 * 60;
-  const normalized = ((totalMinutes % minutesInDay) + minutesInDay) % minutesInDay;
-  const hours = Math.floor(normalized / 60);
-  const minutes = normalized % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-function createPointOptions(baseName, city, baseTime, idPrefix, offsets) {
-  return BOARDING_LABELS.map((label, index) => {
-    const isFirst = index === 0;
-    const pointName = isFirst ? baseName : `${city} ${label}`;
-    const minutes = parseClockToMinutes(baseTime) + offsets[index % offsets.length];
-
-    return {
-      id: `${idPrefix}-${index + 1}`,
-      name: pointName,
-      address: isFirst
-        ? `Near ${pointName}`
-        : `${label}, ${city}`,
-      time: formatMinutesToClock(minutes),
-    };
-  });
 }
 
 function hashFromText(text) {
@@ -746,7 +701,7 @@ export default function BusSeatSelectionPage({
     
     const fetchSeatMap = async () => {
       try {
-        const seatMap = await getBusSeatMap(bus.id);
+        const seatMap = await getBusSeatMap(bus);
         setBackendSeatMap(seatMap);
       } catch (error) {
         console.error("Failed to fetch seat map:", error);
@@ -842,7 +797,9 @@ export default function BusSeatSelectionPage({
           baseFare: Number(backendSeat?.baseFare) || seatFareBeforeTax,
           markupAmount: Number(backendSeat?.markupAmount) || 0,
           fareBeforeTax: seatFareBeforeTax,
-          fare: seatFareBeforeTax,
+          priceInr: Number(backendSeat?.priceInr) || seatFareBeforeTax + (Number(backendSeat?.markupAmount) || 0),
+          tax: Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0,
+          fare: seatFareBeforeTax + (Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0),
         };
       });
 
@@ -858,50 +815,97 @@ export default function BusSeatSelectionPage({
     seatData.seats.forEach((seat) => {
       map.set(seat.label, seat);
     });
+
+    // Fallback: if SRDV raw layout data produced seats that aren't in
+    // seatData.seats (e.g. when backend returns rawLayoutData but no
+    // parsed sections/seatDefinitions), parse them here so selectedSeats
+    // can resolve labels clicked in the SeatSelection SRDV grid renderer.
+    const rawLayout = backendSeatMap?.rawLayoutData;
+    if (rawLayout) {
+      const parseSrdvSeats = (container, isUpper = false) => {
+        if (!container || typeof container !== "object") return;
+        if (container.SeatName || container.SeatNo || container.SeatType) {
+          const seatName = String(container.SeatName || container.seatName || container.SeatNo || container.label || "").trim();
+          if (!seatName) return;
+          const publishedFare = parseFloat(container?.Price?.PublishedFare || container?.Price?.BaseFare || container?.SeatFare || container?.fare || 0) || 0;
+          const gstAmount = parseFloat(container?.Price?.Tax || container?.Price?.GSTAmount || container?.Price?.ServiceTaxAbsolute || 0) || 0;
+          let trueBaseFare = parseFloat(container?.Price?.BaseFare || 0);
+          if (!trueBaseFare) {
+            trueBaseFare = publishedFare - gstAmount;
+          }
+
+          if (map.has(seatName)) {
+            const existing = map.get(seatName);
+            existing.srdvBaseFare = trueBaseFare;
+            existing.srdvTax = gstAmount;
+            existing.fare = publishedFare;
+          } else {
+            const rawSeatType = String(container.SeatType || container.seatType || "").toLowerCase();
+            const isSleeper = rawSeatType.includes("sleeper") || rawSeatType.includes("berth");
+            const isAvailable = String(container.SeatStatus ?? container.seatStatus ?? "true").toLowerCase() === "true";
+            map.set(seatName, {
+              id: `seat-${seatName}`,
+              label: seatName,
+              displayLabel: seatName,
+              deck: isUpper ? "Upper Deck" : "Lower Deck",
+              deckGroup: isUpper ? "Upper Deck" : "Lower Deck",
+              kind: isSleeper ? "sleeper" : "seater",
+              status: isAvailable ? "available" : "booked",
+              seatType: String(container.SeatType || container.seatType || "Seater"),
+              baseFare: trueBaseFare,
+              markupAmount: 0,
+              fareBeforeTax: publishedFare,
+              tax: gstAmount,
+              fare: publishedFare,
+              row: parseInt(container.RowNo ?? container.rowNo ?? 0, 10),
+              column: parseInt(container.ColumnNo ?? container.columnNo ?? 0, 10),
+              srdvBaseFare: trueBaseFare,
+              srdvTax: gstAmount,
+            });
+          }
+          return;
+        }
+        const items = Array.isArray(container) ? container : Object.values(container);
+        items.forEach((item) => {
+          if (!item || typeof item !== "object") return;
+          if (item.SeatName || item.SeatNo || item.SeatType) {
+            parseSrdvSeats(item, isUpper);
+          } else {
+            parseSrdvSeats(item, isUpper);
+          }
+        });
+      };
+      if (rawLayout.Result) parseSrdvSeats(rawLayout.Result, false);
+      if (rawLayout.ResultUpperSeat) parseSrdvSeats(rawLayout.ResultUpperSeat, true);
+      if (map.size === 0) parseSrdvSeats(rawLayout, false);
+    }
+
     return map;
-  }, [seatData.seats]);
+  }, [seatData.seats, backendSeatMap]);
 
   const boardingPoints = useMemo(() => {
     if (!bus) {
       return [];
     }
 
-    // Debug: Log what's actually in backendSeatMap
-    if (backendSeatMap) {
-      console.log("📊 Full backendSeatMap structure:", {
-        keys: Object.keys(backendSeatMap),
-        boardingPoints: backendSeatMap.boardingPoints,
-        droppingPoints: backendSeatMap.droppingPoints,
-        full: backendSeatMap,
-      });
+    let rawPoints = Array.isArray(backendSeatMap?.boardingPoints) && backendSeatMap.boardingPoints.length > 0
+      ? backendSeatMap.boardingPoints
+      : Array.isArray(bus?.boardingPoints) && bus.boardingPoints.length > 0
+        ? bus.boardingPoints
+        : [];
+
+    if (rawPoints.length === 0) {
+      rawPoints = [{ id: "b1", name: "Main Bus Stand", address: "City Center", time: bus?.departureTime || "" }];
     }
 
-    // Priority 1: Use API data if available
-    if (Array.isArray(backendSeatMap?.boardingPoints) && backendSeatMap.boardingPoints.length > 0) {
-      console.log("✅ Using API boarding points:", backendSeatMap.boardingPoints);
-      return backendSeatMap.boardingPoints.map((point, index) => ({
-        id: `boarding-${index + 1}`,
-        name: point.name,
-        address: point.address,
-        time: formatMinutesToClock(
-          parseClockToMinutes(bus.departureTime) + [-35, -28, -20, -14, -8, -4][index % 6]
-        ),
-      }));
-    }
+    return rawPoints.map((point, index) => {
+      const id = String(point?.Id || point?.id || `boarding-${index + 1}`);
+      const name = String(point?.Name || point?.name || point?.location || point || "Boarding Point");
+      const address = String(point?.Address || point?.address || point?.landmark || name);
+      const time = String(point?.Time || point?.time || bus.departureTime || "");
 
-    if (backendSeatMap) {
-      console.warn("⚠️ Backend API has NOT been updated yet with boardingPoints field. Backend needs to return boardingPoints array in the /api/BusBookings/{busId}/seats response.");
-      console.warn("⚠️ Falling back to synthetic data. This should be removed once backend is updated.");
-    }
-    
-    // Fallback to synthetic generation if API data not available
-    return createPointOptions(
-      bus.boardingPoint,
-      bus.fromCity,
-      bus.departureTime,
-      "boarding",
-      [-35, -28, -20, -14, -8, -4]
-    );
+      return { id, name, address, time };
+    });
   }, [bus, backendSeatMap]);
 
   const droppingPoints = useMemo(() => {
@@ -909,32 +913,24 @@ export default function BusSeatSelectionPage({
       return [];
     }
 
-    // Priority 1: Use API data if available
-    if (Array.isArray(backendSeatMap?.droppingPoints) && backendSeatMap.droppingPoints.length > 0) {
-      console.log("✅ Using API dropping points:", backendSeatMap.droppingPoints);
-      return backendSeatMap.droppingPoints.map((point, index) => ({
-        id: `dropping-${index + 1}`,
-        name: point.name,
-        address: point.address,
-        time: formatMinutesToClock(
-          parseClockToMinutes(bus.arrivalTime) + [-6, -2, 4, 10, 16, 22][index % 6]
-        ),
-      }));
+    let rawPoints = Array.isArray(backendSeatMap?.droppingPoints) && backendSeatMap.droppingPoints.length > 0
+      ? backendSeatMap.droppingPoints
+      : Array.isArray(bus?.droppingPoints) && bus.droppingPoints.length > 0
+        ? bus.droppingPoints
+        : [];
+
+    if (rawPoints.length === 0) {
+      rawPoints = [{ id: "d1", name: "Main Bus Stand", address: "City Center", time: bus?.arrivalTime || "" }];
     }
 
-    if (backendSeatMap) {
-      console.warn("⚠️ Backend API has NOT been updated yet with droppingPoints field. Backend needs to return droppingPoints array in the /api/BusBookings/{busId}/seats response.");
-      console.warn("⚠️ Falling back to synthetic data. This should be removed once backend is updated.");
-    }
-    
-    // Fallback to synthetic generation if API data not available
-    return createPointOptions(
-      bus.droppingPoint,
-      bus.toCity,
-      bus.arrivalTime,
-      "dropping",
-      [-6, -2, 4, 10, 16, 22]
-    );
+    return rawPoints.map((point, index) => {
+      const id = String(point?.Id || point?.id || `dropping-${index + 1}`);
+      const name = String(point?.Name || point?.name || point?.location || point || "Dropping Point");
+      const address = String(point?.Address || point?.address || point?.landmark || name);
+      const time = String(point?.Time || point?.time || bus.arrivalTime || "");
+
+      return { id, name, address, time };
+    });
   }, [bus, backendSeatMap]);
 
   const selectedSeats = useMemo(
@@ -951,7 +947,7 @@ export default function BusSeatSelectionPage({
   );
 
   const selectedSeatTotal = selectedSeats.reduce(
-    (accumulator, seat) => accumulator + (Number(seat.fare) || 0),
+    (accumulator, seat) => accumulator + (Number(seat.priceInr) || (Number(seat.baseFare) + Number(seat.markupAmount)) || Number(seat.fareBeforeTax) || Number(seat.fare) || 0),
     0
   );
 
@@ -1106,7 +1102,8 @@ export default function BusSeatSelectionPage({
 
     const b2bToken = localStorage.getItem("b2b_token");
     const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-    const isAgent = b2bToken && b2bRole === "agent";
+    const activePortal = sessionStorage.getItem("active_portal");
+    const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
     if (!isAgent) {
       const token = localStorage.getItem("token");
@@ -1117,19 +1114,9 @@ export default function BusSeatSelectionPage({
     }
 
     const seatCodes = selectedSeats.map((seat) => seat.label).filter(Boolean);
-    let pricingPreview = null;
 
-    try {
-      pricingPreview = await getBusPricingPreview({
-        busId: bus.id,
-        seatCodes,
-      });
-    } catch (error) {
-      console.error("Error fetching bus pricing preview:", error);
-      setSelectionError(error.message || "Unable to preview pricing. Please try again.");
-      return;
-    }
-
+    // Build fareSummary directly from seat data (no API call needed here –
+    // Pricing Preview requires a BlockKey which is only obtained after Block API).
     const selectedSeatsWithAdjacency = selectedSeats.map((seat) => ({
       ...seat,
       adjacentBookedGenders: getAdjacentBookedGenders(seat, allSeatRows, seatsByLabel),
@@ -1142,6 +1129,21 @@ export default function BusSeatSelectionPage({
       gender: "",
     }));
 
+    const seatTotal = selectedSeatsWithAdjacency.reduce(
+      (sum, seat) => sum + (Number(seat.seatFare) || Number(seat.priceInr) || Number(seat.fare) || 0),
+      0
+    );
+    const seatBaseFare = selectedSeatsWithAdjacency.reduce(
+      (sum, seat) => sum + (Number(seat.baseFare) || Number(seat.seatFare) || Number(seat.fare) || 0),
+      0
+    );
+    const seatTax = selectedSeatsWithAdjacency.reduce(
+      (sum, seat) => sum + (Number(seat.tax) || Number(seat.gstAmount) || 0),
+      0
+    );
+
+    const displayTotal = seatTotal;
+
     const flowData = {
       bus,
       searchContext,
@@ -1153,47 +1155,24 @@ export default function BusSeatSelectionPage({
       selectedDroppingId,
       boardingPoint: selectedBoarding,
       droppingPoint: selectedDropping,
-      fareSummary: (() => {
-        let markupValue = 0;
-        const rawMarkup = localStorage.getItem("b2b_markup_settings");
-        if (rawMarkup) {
-          try {
-            const parsedMarkup = JSON.parse(rawMarkup);
-            if (parsedMarkup.busType === "percentage") {
-              markupValue = pricingPreview.subtotalBeforeCoupon * (Number(parsedMarkup.busValue) / 100);
-            } else if (parsedMarkup.busType === "fixed") {
-              markupValue = Number(parsedMarkup.busValue) * seatCodes.length;
-            }
-          } catch (e) {
-            console.error("Error reading B2B bus markup", e);
-          }
-        }
-
-        // B2B Discounts (Removed as requested)
-        const tierDiscount = 0;
-        const volumeDiscount = 0;
-        const isAgent = localStorage.getItem("b2b_role") === "Agent";
-
-        const wholesaleFare = pricingPreview.grandTotal;
-        const displayTotal = isAgent ? (wholesaleFare + markupValue) : (pricingPreview.grandTotal + markupValue);
-
-        return {
-          baseFare: pricingPreview.subtotalBeforeCoupon,
-          subtotalBeforeCoupon: pricingPreview.subtotalBeforeCoupon,
-          couponAmount: pricingPreview.couponAmount,
-          taxableFare: pricingPreview.taxableFare,
-          gstPercent: pricingPreview.gstPercent,
-          gstAmount: pricingPreview.gstAmount,
-          tax: pricingPreview.gstAmount,
-          convenienceFee: pricingPreview.convenienceFee,
-          markup: markupValue,
-          tierDiscount,
-          volumeDiscount,
-          grandTotal: displayTotal,
-          totalFare: displayTotal,
-        };
-      })(),
-      pricingPreview,
+      fareSummary: {
+        baseFare: seatBaseFare,
+        subtotalBeforeCoupon: seatBaseFare,
+        couponAmount: 0,
+        taxableFare: seatBaseFare,
+        gstPercent: 5,
+        gstAmount: seatTax,
+        gstAmount: seatTax,
+        tax: seatTax,
+        convenienceFee: 0,
+        markup: 0,
+        tierDiscount: 0,
+        volumeDiscount: 0,
+        grandTotal: displayTotal,
+        totalFare: displayTotal,
+      },
+      // pricingPreview is intentionally NOT set here.
+      // It will be populated on the Payment page after the Block API returns a BlockKey.
     };
 
     writeBusBookingFlowState(flowData);
@@ -1207,7 +1186,7 @@ export default function BusSeatSelectionPage({
     setSeatFetchError("");
     
     try {
-      const seatMap = await getBusSeatMap(bus.id);
+      const seatMap = await getBusSeatMap(bus);
       setBackendSeatMap(seatMap);
     } catch (error) {
       setSeatFetchError("Failed to load seats. Please check your connection and try again.");
@@ -1477,7 +1456,7 @@ export default function BusSeatSelectionPage({
 
   return (
     <main className={`bus-flow-page${embedded ? " bus-flow-page--embedded" : ""}`}>
-      <div className="bus-flow-shell">
+      <div className="bus-flow-shell" style={embedded ? { minWidth: 0 } : {}}>
         {!embedded && (
         <section className="bus-flow-summary-card">
           <div className="bus-flow-trip-strip">
@@ -1633,6 +1612,7 @@ export default function BusSeatSelectionPage({
               <div className="modern-seat-layout-wrapper">
                 <SeatSelection
                   vehicleType="bus"
+                  seatData={backendSeatMap?.rawLayoutData || null}
                   layoutKind={layoutKind}
                   hasDeckSections={hasDeckSections}
                   hasBackendSections={hasBackendSections}

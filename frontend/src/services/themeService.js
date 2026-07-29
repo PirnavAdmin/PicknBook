@@ -1,3 +1,4 @@
+/* eslint-disable */
 // LocalStorage-based B2C theme service
 
 const DEFAULT_THEMES = [

@@ -382,3 +382,216 @@
     padding: 0 10px;
   }
 }
+
+/* Topbar Red-Theme Modern Layout (Matches Screenshot) */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  min-height: 60px;
+  height: 60px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+.left-group {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.nav-menu-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.nav-menu-links .menu-item {
+  position: relative;
+  cursor: pointer;
+  border: none;
+  background: transparent !important;
+  font-family: inherit;
+  outline: none;
+  padding: 16px 4px;
+  color: #0f172a !important;
+  font-size: 15px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.nav-menu-links .menu-item svg {
+  color: #0f172a !important;
+  transition: color 0.2s ease;
+}
+
+.nav-menu-links .menu-item:hover {
+  color: #dc2626 !important;
+  background: transparent !important;
+}
+
+.nav-menu-links .menu-item:hover svg {
+  color: #dc2626 !important;
+}
+
+/* Active Nav Item (Red Icon, Red Text, Red Underline Indicator) */
+.nav-menu-links .menu-item.active {
+  color: #dc2626 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.nav-menu-links .menu-item.active svg {
+  color: #dc2626 !important;
+}
+
+.nav-menu-links .menu-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #dc2626;
+  border-radius: 3px 3px 0 0;
+}
+
+/* Right Section Actions */
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.topbar-nav-link {
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  font-size: 14.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 8px;
+  transition: color 0.2s ease;
+}
+
+.topbar-nav-link svg {
+  color: #0f172a;
+  transition: color 0.2s ease;
+}
+
+.topbar-nav-link:hover {
+  color: #dc2626;
+}
+
+.topbar-nav-link:hover svg {
+  color: #dc2626;
+}
+
+/* Single Login / Sign Up Red Button */
+.topbar-login-btn {
+  background: #dc2626 !important;
+  border: 1.5px solid #dc2626 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  padding: 8px 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2) !important;
+}
+
+.topbar-login-btn svg {
+  color: #ffffff !important;
+}
+
+.topbar-login-btn:hover {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+}
+
+/* ── AIRBNB-STYLE ANIMATED TOPBAR NAV TABS ── */
+.airbnb-nav-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  position: relative !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.menu-item.airbnb-tab-item {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 8px 16px !important;
+  min-height: 38px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #475569 !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: color 0.2s ease !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.menu-item.airbnb-tab-item:hover {
+  color: #0f172a !important;
+  background: rgba(241, 245, 249, 0.6) !important;
+}
+
+.menu-item.airbnb-tab-item.active {
+  color: #e11d48 !important; /* Airbnb Signature Brand Red */
+  font-weight: 700 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.menu-item.airbnb-tab-item.active .tab-icon-wrap {
+  color: #e11d48 !important;
+}
+
+.tab-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.airbnb-tab-indicator {
+  position: absolute !important;
+  bottom: -4px !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 3px !important;
+  background: linear-gradient(90deg, #ff385c, #e11d48) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 2px 10px rgba(225, 29, 72, 0.45) !important;
+}
+

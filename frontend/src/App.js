@@ -1,4 +1,5 @@
 /* eslint-disable */
+// Trigger HMR
 import React, { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
@@ -501,8 +502,8 @@ function AppContent() {
   const isAdminPath = normalizedPath.startsWith("/admin");
   const isB2BPath = normalizedPath.startsWith("/b2b");
   
-  const isAgent = localStorage.getItem("b2b_role") === "Agent";
-  
+  const activePortalStr = sessionStorage.getItem("active_portal") || "b2c";
+  const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortalStr === "b2b";  
   const isBookingPath =
     normalizedPath === "/web-checkin" ||
     normalizedPath === "/fetch-ticket" ||

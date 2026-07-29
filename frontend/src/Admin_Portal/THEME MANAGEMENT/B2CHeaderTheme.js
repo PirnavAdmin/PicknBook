@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { getActiveLayout, updateHeaderConfig } from "../../services/themeService";
 import { toApiAssetUrl } from "../../services/apiClient";

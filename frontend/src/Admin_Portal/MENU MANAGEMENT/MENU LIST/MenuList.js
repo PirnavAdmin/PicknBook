@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
 import { Check, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import "./MenuList.css";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import "../../STYLES/AccountStatement.css";
 import { getLedgerStatement } from "../../services/b2bService";

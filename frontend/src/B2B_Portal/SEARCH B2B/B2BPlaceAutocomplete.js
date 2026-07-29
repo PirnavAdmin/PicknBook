@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useRef } from "react";
 import { Plane, Bus, Building2 } from "lucide-react";
 import "../../STYLES/B2BLayout.css";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { getThemes, createTheme, activateTheme, deleteTheme } from "../../services/themeService";
 

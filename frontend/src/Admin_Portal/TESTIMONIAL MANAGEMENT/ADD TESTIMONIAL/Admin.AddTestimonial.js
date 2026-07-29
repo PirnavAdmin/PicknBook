@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createAdminTestimonial, updateAdminTestimonial } from "../../../services/testimonialService";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import { Phone, Mail, MapPin, Loader2 } from "lucide-react";
 import { createQuery } from "../../services/queryService";

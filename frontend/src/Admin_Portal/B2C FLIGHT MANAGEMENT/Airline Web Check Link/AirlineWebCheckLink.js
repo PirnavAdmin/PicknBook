@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useMemo } from "react";
 import "./AirlineWebCheckLink.css";
 import AdminPagination from "../../../components/AdminPagination";

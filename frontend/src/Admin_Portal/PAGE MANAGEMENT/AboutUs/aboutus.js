@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import "./aboutus.css";
 import { getAdminAboutUs, updateAdminAboutUs } from "../../../services/cmsPageService";

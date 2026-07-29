@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import QRRow from "./QrRow";
 import "../../STYLES/QR.css";

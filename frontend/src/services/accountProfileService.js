@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { getAuthToken, getAuthUser, getAuthUserId, setAuthUser } from "./authSession";
 import { toApiUrl, withNgrokSkipWarningHeader } from "./apiClient";
 

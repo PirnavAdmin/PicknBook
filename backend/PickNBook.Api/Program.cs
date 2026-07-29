@@ -12,17 +12,18 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------------- SERVICES ----------------
-builder.Services.Configure<AmadeusSettings>(
-    builder.Configuration.GetSection("Amadeus"));
-builder.Services.AddHttpClient<IAmadeusService, AmadeusService>();
+builder.Services.Configure<PickNBook.Api.Models.Config.SrdvSettings>(
+    builder.Configuration.GetSection("Srdv"));
+
+builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>();
+builder.Services.AddHttpClient<IHotelService, SrdvHotelService>();
+builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>();
 
 builder.Services.AddHttpClient("TicketEmailApi", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(20);
 });
-builder.Services.Configure<HotelbedsSettings>(
-    builder.Configuration.GetSection("Hotelbeds"));
-builder.Services.AddHttpClient<IHotelService, HotelbedsService>();
+
 builder.Services.AddHttpClient<IGeoIpService, GeoIpService>();
 
 builder.Services.AddScoped<IBookingNotificationService, BookingNotificationService>();
@@ -52,6 +53,7 @@ builder.Services.AddScoped<
     IBusPromotionEngineService,
     BusPromotionEngineService>();
 builder.Services.AddScoped<IFlightMarkupService, FlightMarkupService>();
+builder.Services.AddScoped<IHotelMarkupService, HotelMarkupService>();
 builder.Services.AddScoped<IFlightPromotionEngine, FlightPromotionEngine>();
 builder.Services.AddScoped<IFlightPricingService, FlightPricingService>();
 builder.Services.AddScoped<IUserBookingHistoryService, UserBookingHistoryService>();
@@ -192,10 +194,11 @@ app.UseMiddleware<RequestProfilingMiddleware>();
 
 // ---------------- MIDDLEWARE ----------------
 
+app.UseSwagger();
+app.UseSwaggerUI();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
 var shouldSeed = builder.Configuration.GetValue<bool>("SeedDatabase", false);

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
@@ -22,96 +23,97 @@ namespace PickNBook.Api.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<HotelsController> _logger;
         private readonly ITicketEmailService _ticketEmailService;
+        private readonly IMemoryCache _cache;
 
         public HotelsController(
             IHotelService hotelService,
             AppDbContext dbContext,
             ICurrentUserService currentUserService,
             ILogger<HotelsController> logger,
-            ITicketEmailService ticketEmailService)
+            ITicketEmailService ticketEmailService,
+            IMemoryCache cache)
         {
             _hotelService = hotelService;
             _dbContext = dbContext;
             _currentUserService = currentUserService;
             _logger = logger;
             _ticketEmailService = ticketEmailService;
+            _cache = cache;
         }
 
         // =====================================
         // SEARCH HOTELS
         // =====================================
-        [HttpGet("search")]
+
+
+        [HttpPost("SearchHotels")]
         [AllowAnonymous]
-        public async Task<IActionResult> Search([FromQuery] string cityCode, [FromQuery] DateTime checkInDate, [FromQuery] DateTime checkOutDate, [FromQuery] int adults = 1, [FromQuery] int rooms = 1)
+        public async Task<IActionResult> SearchHotelsMultiLevelPost([FromBody] SrdvHotelSearchRequestDto request)
         {
-            _logger.LogInformation("Search hotels request received: City: {City}, CheckIn: {CheckIn:yyyy-MM-dd}, CheckOut: {CheckOut:yyyy-MM-dd}, Adults: {Adults}, Rooms: {Rooms}",
-                cityCode, checkInDate, checkOutDate, adults, rooms);
-
-            if (string.IsNullOrWhiteSpace(cityCode))
+            if (request == null)
             {
-                return BadRequest(new { message = "cityCode is required." });
+                return BadRequest(new { message = "Request body is required." });
             }
 
-            if (checkInDate == DateTime.MinValue || checkOutDate == DateTime.MinValue)
+            if (string.IsNullOrWhiteSpace(request.CityId))
             {
-                return BadRequest(new { message = "checkInDate and checkOutDate are required and must be valid dates." });
-            }
-
-            if (checkOutDate <= checkInDate)
-            {
-                return BadRequest(new { message = "checkOutDate must be after checkInDate." });
-            }
-
-            if (adults < 1)
-            {
-                return BadRequest(new { message = "adults must be at least 1." });
-            }
-
-            if (rooms < 1)
-            {
-                return BadRequest(new { message = "rooms must be at least 1." });
+                return BadRequest(new { message = "CityId is required." });
             }
 
             try
             {
-                var hotels = await _hotelService.SearchHotelsAsync(cityCode.Trim().ToUpper(), checkInDate, checkOutDate, adults, rooms);
-                
-                try
-                {
-                    var searchLog = new HotelSearchLog
-                    {
-                        SearchQuery = cityCode.Trim().ToUpperInvariant(),
-                        CheckInDate = DateOnly.FromDateTime(checkInDate),
-                        CheckOutDate = DateOnly.FromDateTime(checkOutDate),
-                        Adults = adults,
-                        Rooms = rooms,
-                        UserId = _currentUserService.GetUserOrGuestId(),
-                        SearchedAtUtc = DateTime.UtcNow
-                    };
-                    _dbContext.HotelSearchLogs.Add(searchLog);
-                    await _dbContext.SaveChangesAsync();
-                }
-                catch (Exception logEx)
-                {
-                    _logger.LogWarning(logEx, "Failed to log hotel search query to database.");
-                }
+                var response = await _hotelService.SearchHotelsMultiLevelAsync(request);
 
-                return Ok(hotels);
+                // Fire-and-forget logging to the database
+                var userId = _currentUserService.GetUserOrGuestId();
+                var cityId = request.CityId.Trim().ToUpperInvariant();
+                var checkInStr = request.CheckInDate;
+                var checkOutStr = request.CheckOutDate;
+                var roomGuests = request.RoomGuests;
+                var noOfRoomsStr = request.NoOfRooms;
+                var scopeFactory = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        DateTime parsedCheckIn = DateTime.TryParse(checkInStr, out var cin) ? cin : DateTime.UtcNow.AddDays(10);
+                        DateTime parsedCheckOut = DateTime.TryParse(checkOutStr, out var cout) ? cout : DateTime.UtcNow.AddDays(13);
+                        int adults = roomGuests?.Sum(rg => int.TryParse(rg.NoOfAdults, out var a) ? a : 1) ?? 1;
+                        int rooms = int.TryParse(noOfRoomsStr, out var r) ? r : 1;
+
+                        var searchLog = new HotelSearchLog
+                        {
+                            SearchQuery = cityId,
+                            CheckInDate = DateOnly.FromDateTime(parsedCheckIn),
+                            CheckOutDate = DateOnly.FromDateTime(parsedCheckOut),
+                            Adults = adults,
+                            Rooms = rooms,
+                            UserId = userId,
+                            SearchedAtUtc = DateTime.UtcNow
+                        };
+                        dbContext.HotelSearchLogs.Add(searchLog);
+                        await dbContext.SaveChangesAsync();
+                    }
+                    catch (Exception logEx)
+                    {
+                        // Background task exceptions should ideally be logged via a resolved logger from the scope
+                    }
+                });
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                bool isTesting = System.AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName != null && a.FullName.Contains("Test", System.StringComparison.OrdinalIgnoreCase));
-                if (isTesting)
-                {
-                    _logger.LogError(ex, "Provider failure during hotel search for city {City}", cityCode);
-                    return StatusCode(500, new { message = ex.Message });
-                }
-
-                _logger.LogWarning(ex, "Provider failure during hotel search for city {City}. Falling back to mock results.", cityCode);
-                var mockHotels = GetMockHotels(cityCode, checkInDate, checkOutDate, adults, rooms);
-                return Ok(mockHotels);
+                _logger.LogError(ex, "Provider failure during hotel search for CityId {CityId}", request.CityId);
+                return StatusCode(500, new { message = $"SRDV Provider failure: {ex.Message}" });
             }
         }
+
+
 
         // =====================================
         // GET OFFER DETAILS
@@ -125,16 +127,6 @@ namespace PickNBook.Api.Controllers
             if (string.IsNullOrWhiteSpace(offerId))
             {
                 return BadRequest(new { message = "offerId is required." });
-            }
-
-            if (offerId.StartsWith("mock-offer-", StringComparison.OrdinalIgnoreCase))
-            {
-                var mockOffer = GetMockOfferDetails(offerId);
-                if (mockOffer == null)
-                {
-                    return NotFound(new { message = "Hotel offer not found or has expired." });
-                }
-                return Ok(mockOffer);
             }
 
             try
@@ -154,9 +146,321 @@ namespace PickNBook.Api.Controllers
         }
 
         // =====================================
+        // GET HOTEL INFO
+        // =====================================
+        [HttpGet("GetHotelInfo")]
+        [HttpGet("info")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetHotelInfo([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string srdvType = "", [FromQuery] string srdvIndex = "", [FromQuery] string endUserIp = "", [FromQuery] string clientId = "", [FromQuery] string userName = "", [FromQuery] string password = "")
+        {
+            _logger.LogInformation("Fetch hotel info GET request received: HotelCode: {HotelCode}", hotelCode);
+
+            if (string.IsNullOrWhiteSpace(traceId) || string.IsNullOrWhiteSpace(resultIndex) || string.IsNullOrWhiteSpace(hotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required." });
+            }
+
+            try
+            {
+                var req = new HotelInfoRequestDto
+                {
+                    TraceId = traceId.Trim(),
+                    ResultIndex = resultIndex.Trim(),
+                    HotelCode = hotelCode.Trim(),
+                    SrdvType = srdvType?.Trim() ?? "",
+                    SrdvIndex = srdvIndex?.Trim() ?? "",
+                    EndUserIp = endUserIp?.Trim() ?? "",
+                    ClientId = clientId?.Trim() ?? "",
+                    UserName = userName?.Trim() ?? "",
+                    Password = password?.Trim() ?? ""
+                };
+                var details = await _hotelService.GetHotelInfoAsync(req);
+                return Ok(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during hotel info retrieval for HotelCode {HotelCode}", hotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("GetHotelInfo")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PostHotelInfo([FromBody] HotelInfoRequestDto request)
+        {
+            _logger.LogInformation("Fetch hotel info POST request received: HotelCode: {HotelCode}", request.HotelCode);
+
+            if (string.IsNullOrWhiteSpace(request.TraceId) || string.IsNullOrWhiteSpace(request.ResultIndex) || string.IsNullOrWhiteSpace(request.HotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required in the request body." });
+            }
+
+            try
+            {
+                var details = await _hotelService.GetHotelInfoAsync(request);
+                return Ok(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during hotel info retrieval for HotelCode {HotelCode}", request.HotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        [HttpGet("rooms")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetHotelRooms([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode)
+        {
+            _logger.LogInformation("Fetch hotel rooms GET request received: HotelCode: {HotelCode}", hotelCode);
+
+            if (string.IsNullOrWhiteSpace(traceId) || string.IsNullOrWhiteSpace(resultIndex) || string.IsNullOrWhiteSpace(hotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required." });
+            }
+
+            try
+            {
+                var rooms = await _hotelService.GetHotelRoomAsync(traceId.Trim(), resultIndex.Trim(), hotelCode.Trim());
+                return Ok(rooms);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during hotel rooms retrieval for HotelCode {HotelCode}", hotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("GetHotelRoom")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PostHotelRooms([FromBody] HotelRoomRequestDto request)
+        {
+            _logger.LogInformation("Fetch hotel rooms POST request received: HotelCode: {HotelCode}", request.HotelCode);
+
+            if (string.IsNullOrWhiteSpace(request.TraceId) || string.IsNullOrWhiteSpace(request.ResultIndex) || string.IsNullOrWhiteSpace(request.HotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required in the request body." });
+            }
+
+            try
+            {
+                var rooms = await _hotelService.GetHotelRoomAsync(request);
+                return Ok(rooms);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during hotel rooms retrieval for HotelCode {HotelCode}", request.HotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // =====================================
+        // BLOCK ROOM
+        // =====================================
+        [HttpPost("BlockRoom")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PostBlockRoom([FromBody] BlockRoomRequestDto request)
+        {
+            _logger.LogInformation("Block room POST request received: HotelCode: {HotelCode}", request.HotelCode);
+
+            if (string.IsNullOrWhiteSpace(request.TraceId) || string.IsNullOrWhiteSpace(request.ResultIndex) || string.IsNullOrWhiteSpace(request.HotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required in the request body." });
+            }
+
+            try
+            {
+                var blockRes = await _hotelService.BlockRoomAsync(request);
+                return Ok(blockRes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during block room for HotelCode {HotelCode}", request.HotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        [HttpGet("blockRoom")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetBlockRoom([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string hotelName = "", [FromQuery] int noOfRooms = 1, [FromQuery] decimal price = 0m)
+        {
+            _logger.LogInformation("Block room GET request received: HotelCode: {HotelCode}", hotelCode);
+
+            if (string.IsNullOrWhiteSpace(traceId) || string.IsNullOrWhiteSpace(resultIndex) || string.IsNullOrWhiteSpace(hotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required." });
+            }
+
+            try
+            {
+                var req = new BlockRoomRequestDto
+                {
+                    TraceId = traceId.Trim(),
+                    ResultIndex = resultIndex.Trim(),
+                    HotelCode = hotelCode.Trim(),
+                    HotelName = hotelName.Trim(),
+                    NoOfRooms = noOfRooms,
+                    Price = price
+                };
+                var blockRes = await _hotelService.BlockRoomAsync(req);
+                return Ok(blockRes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during block room for HotelCode {HotelCode}", hotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        [HttpGet("bookRoom")]
+        [Authorize]
+        public async Task<IActionResult> GetBookRoom([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string hotelName = "", [FromQuery] string guestName = "John Doe", [FromQuery] string guestEmail = "guest@example.com", [FromQuery] string guestPhone = "9876543210", [FromQuery] int noOfRooms = 1, [FromQuery] decimal price = 0m)
+        {
+            _logger.LogInformation("Book room GET request received: HotelCode: {HotelCode}, Guest: {GuestName}", hotelCode, guestName);
+
+            if (string.IsNullOrWhiteSpace(traceId) || string.IsNullOrWhiteSpace(resultIndex) || string.IsNullOrWhiteSpace(hotelCode))
+            {
+                return BadRequest(new { message = "traceId, resultIndex, and hotelCode are required." });
+            }
+
+            try
+            {
+                var req = new HotelBookRequestDto
+                {
+                    TraceId = traceId.Trim(),
+                    ResultIndex = resultIndex.Trim(),
+                    HotelCode = hotelCode.Trim(),
+                    HotelName = hotelName.Trim(),
+                    GuestName = guestName.Trim(),
+                    GuestEmail = guestEmail.Trim(),
+                    GuestPhone = guestPhone.Trim(),
+                    NoOfRooms = noOfRooms,
+                    Price = price
+                };
+                var bookRes = await _hotelService.BookRoomAsync(req);
+
+                if (bookRes?.BookResult != null && bookRes.BookResult.Error.ErrorCode == 0)
+                {
+                    try
+                    {
+                        var bRes = bookRes.BookResult;
+                        var bookingRef = !string.IsNullOrWhiteSpace(bRes.BookingRefNo) ? bRes.BookingRefNo : $"HT-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 1000)}";
+
+                        var reservation = new HotelReservation
+                        {
+                            BookingReference = bookingRef,
+                            ProviderBookingId = bRes.BookingId > 0 ? bRes.BookingId.ToString() : null,
+                            SrdvBookingId = bRes.BookingId > 0 ? bRes.BookingId.ToString() : null,
+                            ConfirmationNo = bRes.ConfirmationNo,
+                            InvoiceNumber = bRes.InvoiceNumber,
+                            UserId = _currentUserService.GetUserOrGuestId(),
+                            HotelId = hotelCode.Trim(),
+                            HotelName = !string.IsNullOrWhiteSpace(hotelName) ? hotelName.Trim() : hotelCode.Trim(),
+                            OfferId = resultIndex.Trim(),
+                            TraceId = traceId.Trim(),
+                            GuestName = string.IsNullOrWhiteSpace(guestName) ? "Guest User" : guestName.Trim(),
+                            GuestEmail = string.IsNullOrWhiteSpace(guestEmail) ? "guest@example.com" : guestEmail.Trim(),
+                            GuestPhone = string.IsNullOrWhiteSpace(guestPhone) ? "9876543210" : guestPhone.Trim(),
+                            GuestNationality = "IN",
+                            CheckInDate = DateTime.UtcNow.AddDays(1),
+                            CheckOutDate = DateTime.UtcNow.AddDays(5),
+                            Adults = 1,
+                            Rooms = noOfRooms > 0 ? noOfRooms : 1,
+                            Price = price,
+                            SrdvOfferedPrice = price,
+                            TotalPrice = price,
+                            Status = !string.IsNullOrWhiteSpace(bRes.Status) ? bRes.Status : "Confirmed",
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _dbContext.HotelReservations.Add(reservation);
+                        await _dbContext.SaveChangesAsync();
+                    }
+                    catch (Exception dbEx)
+                    {
+                        _logger.LogWarning(dbEx, "Failed to persist HotelReservation record to database during GetBookRoom.");
+                    }
+                }
+
+                return Ok(bookRes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during book room for HotelCode {HotelCode}", hotelCode);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // =====================================
+        // SEND CHANGE REQUEST / HOTEL CANCEL (EXACT MULTI-LEVEL PARITY & MOCK FOR SWAGGER/B2B)
+        // =====================================
+        [HttpPost("SendChangeRequest")]
+        [HttpPost("CancelRoom")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PostSendChangeRequest([FromBody] HotelCancelRequestDto request)
+        {
+            _logger.LogInformation("Hotel cancel POST request received: BookingId: {BookingId}, RequestType: {RequestType}", request.BookingId, request.RequestType);
+
+            if (request.BookingId <= 0)
+            {
+                return BadRequest(new { message = "bookingId is required in the request body." });
+            }
+
+            try
+            {
+                var cancelRes = await _hotelService.CancelRoomAsync(request);
+
+                // If cancellation was successful on provider side, update DB status and send email
+                if (cancelRes != null && cancelRes.Error.ErrorCode == 0)
+                {
+                    var bookingIdStr = request.BookingId.ToString();
+                    var reservation = await _dbContext.HotelReservations.FirstOrDefaultAsync(r => 
+                        r.ProviderBookingId == bookingIdStr || 
+                        r.SrdvBookingId == bookingIdStr ||
+                        r.Id == request.BookingId);
+
+                    if (reservation != null)
+                    {
+                        reservation.Status = "Cancelled";
+                        reservation.CancelledAt = DateTime.UtcNow;
+                        reservation.UpdatedAt = DateTime.UtcNow;
+                        if (!string.IsNullOrWhiteSpace(request.Remarks))
+                        {
+                            reservation.CancellationReason = request.Remarks;
+                        }
+
+                        await _dbContext.SaveChangesAsync();
+                        _logger.LogInformation("Updated HotelReservation {BookingReference} (ID: {Id}) status to Cancelled in database.", reservation.BookingReference, reservation.Id);
+
+                        try
+                        {
+                            await _ticketEmailService.SendHotelCancellationAsync(reservation);
+                        }
+                        catch (Exception mailEx)
+                        {
+                            _logger.LogError(mailEx, "Failed to send hotel cancellation email for booking {BookingReference}", reservation.BookingReference);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("HotelReservation record not found in database for BookingId {BookingId}", request.BookingId);
+                    }
+                }
+                else if (cancelRes != null && cancelRes.Error != null && cancelRes.Error.ErrorCode != 0)
+                {
+                    _logger.LogWarning("Hotel cancel provider failure for BookingId {BookingId}, ErrorCode: {ErrorCode}", request.BookingId, cancelRes.Error.ErrorCode);
+                    return StatusCode(502, cancelRes);
+                }
+
+                return Ok(cancelRes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Provider failure during hotel cancel for BookingId {BookingId}", request.BookingId);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // =====================================
         // BOOK HOTEL
         // =====================================
-        [HttpPost("book")]
+        [HttpPost("BookRoom")]
         [Authorize]
         public async Task<IActionResult> Book([FromBody] HotelBookingRequestDto request)
         {
@@ -171,31 +475,39 @@ namespace PickNBook.Api.Controllers
             if (string.IsNullOrWhiteSpace(request.OfferId) || string.IsNullOrWhiteSpace(request.GuestName) ||
                 string.IsNullOrWhiteSpace(request.GuestEmail) || string.IsNullOrWhiteSpace(request.GuestPhone))
             {
+                System.IO.File.WriteAllText("book_error.txt", "Required fields missing.");
                 return BadRequest(new { message = "OfferId, GuestName, GuestEmail, and GuestPhone are required." });
             }
 
             // 1. Revalidate and retrieve offer details
             HotelOfferDto? offerDetails;
-            if (request.OfferId.StartsWith("mock-offer-", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                offerDetails = GetMockOfferDetails(request.OfferId);
+                _logger.LogDebug("Getting offer details for OfferId: '{OfferId}'", request.OfferId.Trim());
+                offerDetails = await _hotelService.GetOfferDetailsAsync(request.OfferId.Trim());
+                if (offerDetails == null)
+                {
+                    _logger.LogDebug("GetOfferDetailsAsync returned NULL for OfferId: '{OfferId}'", request.OfferId.Trim());
+                }
+                else
+                {
+                    _logger.LogDebug("GetOfferDetailsAsync returned SUCCESS for OfferId: '{OfferId}'", request.OfferId.Trim());
+                }
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    offerDetails = await _hotelService.GetOfferDetailsAsync(request.OfferId.Trim());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Provider failure during offer revalidation before booking OfferId: {OfferId}", request.OfferId);
-                    return StatusCode(500, new { message = "Unable to revalidate offer with provider." });
-                }
+                _logger.LogError(ex, "Provider failure during offer revalidation before booking OfferId: {OfferId}", request.OfferId);
+                return StatusCode(500, new { message = $"Unable to revalidate offer with provider: {ex.Message}" });
             }
 
+            // If not in cache, return NotFound directly (no fallback offer construction)
             if (offerDetails == null)
             {
-                return NotFound(new { message = "Selected offer is no longer available or expired." });
+                return NotFound(new
+                {
+                    message = "Selected offer is no longer available or expired.",
+                    hint = "Please search for hotels again (offers are cached for 30 minutes)."
+                });
             }
 
             var strategy = _dbContext.Database.CreateExecutionStrategy();
@@ -205,57 +517,23 @@ namespace PickNBook.Api.Controllers
                 {
                     await using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
-                    // Load active pricing setting
-                    var setting = await _dbContext.HotelPricingSettings.FirstOrDefaultAsync(s => s.IsActive);
-                    if (setting == null)
-                    {
-                        setting = new HotelPricingSetting
-                        {
-                            MarkupType = "Percentage",
-                            MarkupValue = 10.00m,
-                            ConvenienceFeeType = "Flat",
-                            ConvenienceFeeValue = 250.00m,
-                            GstPercent = 18.00m
-                        };
-                    }
-
-                    // offerDetails.Price is the Base Price (which is Net + Markup)
-                    decimal basePrice = offerDetails.Price;
-                    decimal netPrice = 0m;
+                    // SRDV Supplier Pricing: Direct supplier rate without platform markup, convenience fee, or custom GST
+                    decimal srdvOfferedPrice = offerDetails.Price;
+                    decimal basePrice = srdvOfferedPrice;
+                    decimal netPrice = srdvOfferedPrice;
+                    
                     decimal markupAmount = 0m;
-
-                    if (setting.MarkupType == "Percentage")
+                    using var markupScope = HttpContext.RequestServices.CreateScope();
+                    var markupService = markupScope.ServiceProvider.GetService<IHotelMarkupService>();
+                    if (markupService != null && srdvOfferedPrice > 0)
                     {
-                        netPrice = basePrice / (1m + setting.MarkupValue / 100m);
-                        markupAmount = basePrice - netPrice;
+                        markupAmount = await markupService.CalculateMarkupAsync(srdvOfferedPrice, offerDetails.CityCode, offerDetails.HotelId, "B2C");
                     }
-                    else if (setting.MarkupType == "Flat")
-                    {
-                        netPrice = Math.Max(0m, basePrice - setting.MarkupValue);
-                        markupAmount = setting.MarkupValue;
-                    }
-
+                    
                     decimal convenienceFee = 0m;
-                    if (setting.ConvenienceFeeType == "Percentage")
-                    {
-                        convenienceFee = basePrice * (setting.ConvenienceFeeValue / 100m);
-                    }
-                    else if (setting.ConvenienceFeeType == "Flat")
-                    {
-                        convenienceFee = setting.ConvenienceFeeValue;
-                    }
-
-                    decimal gstPercent = setting.GstPercent;
-                    decimal gstAmount = (markupAmount + convenienceFee) * (gstPercent / 100m);
-                    decimal totalPrice = basePrice + convenienceFee + gstAmount;
-
-                    // Round amounts to 2 decimal places
-                    netPrice = decimal.Round(netPrice, 2, MidpointRounding.AwayFromZero);
-                    markupAmount = decimal.Round(markupAmount, 2, MidpointRounding.AwayFromZero);
-                    basePrice = decimal.Round(basePrice, 2, MidpointRounding.AwayFromZero);
-                    convenienceFee = decimal.Round(convenienceFee, 2, MidpointRounding.AwayFromZero);
-                    gstAmount = decimal.Round(gstAmount, 2, MidpointRounding.AwayFromZero);
-                    totalPrice = decimal.Round(totalPrice, 2, MidpointRounding.AwayFromZero);
+                    decimal gstPercent = 0m;
+                    decimal gstAmount = 0m;
+                    decimal totalPrice = srdvOfferedPrice + markupAmount;
 
                     decimal couponDiscount = 0m;
                     HotelCoupon? couponApplied = null;
@@ -273,8 +551,16 @@ namespace PickNBook.Api.Controllers
                         if (totalPrice < 0) totalPrice = 0;
                     }
 
+                    // Round final total price
+                    totalPrice = decimal.Round(totalPrice, 2, MidpointRounding.AwayFromZero);
+
                     // Generate local booking reference
                     var bookingRef = $"HT-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 1000)}";
+
+                    // Retrieve cached BlockRoom details if present to copy SRDV GST and Cancellation Policies
+                    _cache.TryGetValue($"block_{offerDetails.ResultIndex}", out PickNBookBlockRoomResponseDto? cachedBlockRes);
+                    var blockResult = cachedBlockRes?.BlockRoomResult;
+                    var firstRoom = blockResult?.HotelRoomsDetails?.FirstOrDefault();
 
                     var reservation = new HotelReservation
                     {
@@ -287,12 +573,15 @@ namespace PickNBook.Api.Controllers
                         GuestName = request.GuestName.Trim(),
                         GuestEmail = request.GuestEmail.Trim(),
                         GuestPhone = request.GuestPhone.Trim(),
+                        GuestNationality = "IN",
+                        RoomTypeName = offerDetails.RoomCategory,
                         CheckInDate = DateTime.TryParse(offerDetails.CheckInDate, out var checkIn) ? checkIn : DateTime.MinValue,
                         CheckOutDate = DateTime.TryParse(offerDetails.CheckOutDate, out var checkOut) ? checkOut : DateTime.MinValue,
-                        Adults = offerDetails.Beds > 0 ? offerDetails.Beds : 1, // Adults mapped from offer
+                        Adults = offerDetails.Beds > 0 ? offerDetails.Beds : 1,
                         Rooms = offerDetails.RoomQuantity,
                         
-                        Price = basePrice,
+                        SrdvOfferedPrice = srdvOfferedPrice,
+                        Price = srdvOfferedPrice,
                         NetPrice = netPrice,
                         MarkupAmount = markupAmount,
                         BasePrice = basePrice,
@@ -300,6 +589,18 @@ namespace PickNBook.Api.Controllers
                         GstPercent = gstPercent,
                         GstAmount = gstAmount,
                         TotalPrice = totalPrice,
+
+                        // SRDV Supplier GST Breakdown
+                        SrdvGstAmount = firstRoom?.Price?.TotalGSTAmount ?? 0m,
+                        SrdvCgstAmount = firstRoom?.Price?.GST?.CGSTAmount ?? 0m,
+                        SrdvSgstAmount = firstRoom?.Price?.GST?.SGSTAmount ?? 0m,
+                        SrdvIgstAmount = firstRoom?.Price?.GST?.IGSTAmount ?? 0m,
+
+                        // SRDV Supplier Specs & Cancellation Policy
+                        RatePlanCode = firstRoom?.RatePlanCode,
+                        RoomTypeCode = firstRoom?.RoomTypeCode,
+                        LastCancellationDate = DateTime.TryParse(firstRoom?.LastCancellationDate, out var lcd) ? lcd : null,
+                        CancellationPolicyJson = firstRoom?.CancellationPolicies != null ? System.Text.Json.JsonSerializer.Serialize(firstRoom.CancellationPolicies) : null,
                         
                         CouponCode = request.CouponCode?.Trim().ToUpperInvariant(),
                         CouponDiscount = couponDiscount,
@@ -312,48 +613,57 @@ namespace PickNBook.Api.Controllers
                     _dbContext.HotelReservations.Add(reservation);
                     await _dbContext.SaveChangesAsync();
 
-                    // 2. Call Hotelbeds Booking API
-                    HotelBookingResponseDto hotelbedsBooking;
-                    if (offerDetails.OfferId.StartsWith("mock-offer-", StringComparison.OrdinalIgnoreCase))
+                    // 2. Call SRDV Booking API
+                    HotelBookingResponseDto srdvBooking;
+                    try
                     {
-                        hotelbedsBooking = new HotelBookingResponseDto
-                        {
-                            ProviderBookingId = "MOCK-BK-" + Random.Shared.Next(100000, 999999),
-                            Status = "Confirmed",
-                            OfferId = offerDetails.OfferId,
-                            GuestName = request.GuestName,
-                            GuestEmail = request.GuestEmail,
-                            GuestPhone = request.GuestPhone,
-                            UserId = userId!,
-                            Price = totalPrice,
-                            Currency = offerDetails.Currency,
-                            CreatedAt = DateTime.UtcNow
-                        };
+                        srdvBooking = await _hotelService.BookHotelAsync(
+                            offerDetails.OfferId,
+                            reservation.GuestName,
+                            reservation.GuestEmail,
+                            reservation.GuestPhone,
+                            userId!);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        try
-                        {
-                            hotelbedsBooking = await _hotelService.BookHotelAsync(
-                                offerDetails.OfferId,
-                                reservation.GuestName,
-                                reservation.GuestEmail,
-                                reservation.GuestPhone,
-                                userId!);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Hotelbeds booking provider call failed for OfferId {OfferId}", offerDetails.OfferId);
-                            // Rollback local db entry
-                            await transaction.RollbackAsync();
-                            return BadRequest(new { message = $"Booking failed at provider: {ex.Message}" });
-                        }
+                        _logger.LogError(ex, "SRDV booking provider call failed for OfferId {OfferId}", offerDetails.OfferId);
+                        // Rollback local db entry
+                        await transaction.RollbackAsync();
+                        System.IO.File.WriteAllText("book_error.txt", $"Exception: {ex.Message}");
+                        return BadRequest(new { message = $"Booking failed at provider: {ex.Message}" });
                     }
 
-                    // 3. Update database record with provider details
-                    reservation.ProviderBookingId = hotelbedsBooking.ProviderBookingId;
-                    reservation.Status = "Confirmed";
+                    reservation.ProviderBookingId = srdvBooking.ProviderBookingId;
+                    reservation.SrdvBookingId = srdvBooking.ProviderBookingId;
+                    reservation.ConfirmationNo = srdvBooking.ConfirmationNo;
+                    reservation.InvoiceNumber = srdvBooking.InvoiceNumber;
+                    reservation.SrdvBookingResponseJson = System.Text.Json.JsonSerializer.Serialize(srdvBooking);
                     reservation.UpdatedAt = DateTime.UtcNow;
+
+                    if (!string.IsNullOrEmpty(srdvBooking.Error))
+                    {
+                        reservation.Status = "Failed";
+                        await _dbContext.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                        System.IO.File.WriteAllText("book_error.txt", $"Provider Error: {srdvBooking.Error}");
+                        return BadRequest(new { message = $"Booking failed at provider: {srdvBooking.Error}" });
+                    }
+                    
+                    reservation.TraceId = offerDetails.TraceId;
+                    reservation.Status = srdvBooking.Status;
+                    reservation.UpdatedAt = DateTime.UtcNow;
+
+                    if (srdvBooking.Status == "VerifyPrice")
+                    {
+                        await _dbContext.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                        return Ok(new
+                        {
+                            message = "Price or Cancellation Policy has changed at provider. Please verify the new price before confirming.",
+                            requiresPriceVerification = true,
+                            bookingDetails = srdvBooking
+                        });
+                    }
 
                     if (couponApplied != null)
                     {
@@ -405,6 +715,7 @@ namespace PickNBook.Api.Controllers
                     catch (Exception mailEx)
                     {
                         _logger.LogError(mailEx, "Failed to send hotel booking confirmation email for reservation {BookingReference}", reservation.BookingReference);
+                        System.IO.File.WriteAllText("email_error.txt", $"Email Exception: {mailEx.ToString()}");
                     }
 
                     var responseDto = new HotelBookingResponseDto
@@ -555,10 +866,11 @@ namespace PickNBook.Api.Controllers
                         }
                         else
                         {
-                            providerCancelled = await _hotelService.CancelBookingAsync(booking.ProviderBookingId);
+                            providerCancelled = await _hotelService.CancelBookingAsync(booking.ProviderBookingId, booking.TraceId);
                             if (!providerCancelled)
                             {
-                                _logger.LogWarning("Cancellation at Hotelbeds provider was unsuccessful for BookingId {BookingId}, proceeding with local cancellation only.", parsedBookingId);
+                                _logger.LogWarning("Cancellation at provider was unsuccessful for BookingId {BookingId}. Aborting local cancellation.", parsedBookingId);
+                                return StatusCode(502, new { message = "Supplier failed to cancel the booking. Please contact support or try again later." });
                             }
                         }
                     }
@@ -580,6 +892,10 @@ namespace PickNBook.Api.Controllers
                         }
                     }
 
+                    var (cancellationCharges, refundAmount) = SrdvHotelService.EvaluateCancellationFee(booking);
+
+                    booking.CancellationCharges = cancellationCharges;
+                    booking.RefundAmount = refundAmount;
                     booking.Status = "Cancelled";
                     booking.CancelledAt = DateTime.UtcNow;
                     booking.CancellationReason = string.IsNullOrWhiteSpace(reason) ? "Cancelled by user" : reason.Trim();
@@ -711,177 +1027,6 @@ namespace PickNBook.Api.Controllers
 
             return (true, discount, "Coupon is valid.", coupon);
         }
-
-        private List<HotelSearchResponseDto> GetMockHotels(string cityCode, DateTime checkIn, DateTime checkOut, int adults, int rooms)
-        {
-            var cityNormalized = cityCode.Trim().ToUpperInvariant();
-            var checkInStr = checkIn.ToString("yyyy-MM-dd");
-            var checkOutStr = checkOut.ToString("yyyy-MM-dd");
-            var nights = Math.Max(1, (int)(checkOut.Date - checkIn.Date).TotalDays);
-
-            var hotels = new List<HotelSearchResponseDto>();
-
-            if (cityNormalized == "BLR" || cityNormalized == "BANGALORE")
-            {
-                hotels.Add(new HotelSearchResponseDto
-                {
-                    HotelId = "mock-hotel-blr-1",
-                    Name = "The Leela Palace Bangalore",
-                    CityCode = "BLR",
-                    Address = "23 Airport Road, Indiranagar, Bangalore",
-                    Rating = 4.9,
-                    Latitude = 12.9606,
-                    Longitude = 77.6485,
-                    Images = new List<string> {
-                        "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
-                        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80"
-                    },
-                    Amenities = new List<string> { "Free Wi-Fi", "Pool", "Spa", "Valet Parking", "Fitness Center" }
-                });
-                hotels.Add(new HotelSearchResponseDto
-                {
-                    HotelId = "mock-hotel-blr-2",
-                    Name = "Taj West End",
-                    CityCode = "BLR",
-                    Address = "25 Race Course Road, Bangalore",
-                    Rating = 4.8,
-                    Latitude = 12.9847,
-                    Longitude = 77.5841,
-                    Images = new List<string> {
-                        "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80",
-                        "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80"
-                    },
-                    Amenities = new List<string> { "Free Wi-Fi", "Pool", "Spa", "Heritage Garden", "Bar" }
-                });
-            }
-            else if (cityNormalized == "HYD" || cityNormalized == "HYDERABAD")
-            {
-                hotels.Add(new HotelSearchResponseDto
-                {
-                    HotelId = "mock-hotel-hyd-1",
-                    Name = "Taj Falaknuma Palace",
-                    CityCode = "HYD",
-                    Address = "Engine Bowli, Falaknuma, Hyderabad",
-                    Rating = 4.9,
-                    Latitude = 17.3315,
-                    Longitude = 78.4674,
-                    Images = new List<string> {
-                        "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80",
-                        "https://images.unsplash.com/photo-1561501900-3701fa6a0864?auto=format&fit=crop&w=800&q=80"
-                    },
-                    Amenities = new List<string> { "Free Wi-Fi", "Pool", "Heritage Tour", "Spa", "Fine Dining" }
-                });
-                hotels.Add(new HotelSearchResponseDto
-                {
-                    HotelId = "mock-hotel-hyd-2",
-                    Name = "ITC Kohenur",
-                    CityCode = "HYD",
-                    Address = "Plot No. 5, Survey No. 83/1, Madhapur, Hyderabad",
-                    Rating = 4.7,
-                    Latitude = 17.4415,
-                    Longitude = 78.3812,
-                    Images = new List<string> {
-                        "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
-                        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80"
-                    },
-                    Amenities = new List<string> { "Free Wi-Fi", "Pool", "Spa", "Club Lounge", "Tech Enabled Rooms" }
-                });
-            }
-            else
-            {
-                hotels.Add(new HotelSearchResponseDto
-                {
-                    HotelId = "mock-hotel-gen-1",
-                    Name = "Luxury Palace Hotel " + cityNormalized,
-                    CityCode = cityNormalized,
-                    Address = "123 Main Promenade, " + cityNormalized,
-                    Rating = 4.6,
-                    Latitude = 15.4909,
-                    Longitude = 73.8278,
-                    Images = new List<string> {
-                        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
-                        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80"
-                    },
-                    Amenities = new List<string> { "Free Wi-Fi", "Pool", "Spa", "Beach Access", "All-Inclusive" }
-                });
-            }
-
-            foreach (var h in hotels)
-            {
-                h.Offers.Add(new HotelOfferDto
-                {
-                    OfferId = $"mock-offer-{h.HotelId}-deluxe",
-                    HotelId = h.HotelId,
-                    HotelName = h.Name,
-                    CityCode = h.CityCode,
-                    Latitude = h.Latitude,
-                    Longitude = h.Longitude,
-                    Address = h.Address,
-                    CheckInDate = checkInStr,
-                    CheckOutDate = checkOutStr,
-                    RoomQuantity = rooms,
-                    RoomCategory = "Deluxe Room",
-                    BedType = "King",
-                    Beds = adults,
-                    RoomDescription = "Spacious room with modern amenities and scenic city views.",
-                    Price = 8500m * rooms * nights,
-                    Currency = "INR",
-                    CancellationPolicy = "Free cancellation up to 24 hours before check-in.",
-                    PaymentType = "GUARANTEE"
-                });
-
-                h.Offers.Add(new HotelOfferDto
-                {
-                    OfferId = $"mock-offer-{h.HotelId}-suite",
-                    HotelId = h.HotelId,
-                    HotelName = h.Name,
-                    CityCode = h.CityCode,
-                    Latitude = h.Latitude,
-                    Longitude = h.Longitude,
-                    Address = h.Address,
-                    CheckInDate = checkInStr,
-                    CheckOutDate = checkOutStr,
-                    RoomQuantity = rooms,
-                    RoomCategory = "Executive Suite",
-                    BedType = "King",
-                    Beds = adults,
-                    RoomDescription = "Luxury suite featuring a separate living area and complimentary lounge access.",
-                    Price = 14500m * rooms * nights,
-                    Currency = "INR",
-                    CancellationPolicy = "Free cancellation up to 48 hours before check-in.",
-                    PaymentType = "GUARANTEE"
-                });
-            }
-
-            return hotels;
-        }
-
-        private HotelOfferDto? GetMockOfferDetails(string offerId)
-        {
-            var parts = offerId.Split('-');
-            if (parts.Length < 4) return null;
-
-            string city = "GEN";
-            string hotelNum = "1";
-            string roomType = "deluxe";
-
-            if (offerId.Contains("blr")) city = "BLR";
-            else if (offerId.Contains("hyd")) city = "HYD";
-
-            if (offerId.Contains("-2")) hotelNum = "2";
-
-            if (offerId.Contains("suite")) roomType = "suite";
-
-            var checkIn = DateTime.UtcNow.AddDays(1);
-            var checkOut = DateTime.UtcNow.AddDays(3);
-
-            var hotels = GetMockHotels(city, checkIn, checkOut, 1, 1);
-            var matchHotel = hotels.FirstOrDefault(h => h.HotelId.Contains(hotelNum));
-            if (matchHotel == null) matchHotel = hotels.First();
-
-            return matchHotel.Offers.FirstOrDefault(o => o.OfferId == offerId) 
-                   ?? matchHotel.Offers.First();
-        }
-
     }
 }
+

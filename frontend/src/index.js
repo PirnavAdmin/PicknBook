@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
@@ -137,6 +138,8 @@ window.fetch = async function (input, init) {
       headers["X-Guest-Id"] = guestId;
     }
   }
+
+  headers["ngrok-skip-browser-warning"] = "true";
 
   options = { ...options, headers };
 

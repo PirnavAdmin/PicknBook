@@ -16,7 +16,14 @@ namespace PickNBook.Api.Models
         public int TotalSeats { get; set; }
         public string BoardingPoint { get; set; } = string.Empty;
         public string DroppingPoint { get; set; } = string.Empty;
-        public string? BoardingPointsJson { get; set; }
-        public string? DroppingPointsJson { get; set; }
+
+        // SRDV Tracking Fields
+        public string? TraceId { get; set; }
+        public string? ResultIndex { get; set; }
+        public int? SrdvIndex { get; set; }
+        public string? RouteId { get; set; }
+        public string? OperatorId { get; set; }
+        
+        public string? CancellationPoliciesJson { get; set; }
     }
 }

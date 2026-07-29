@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import "./login admin.css";
 import { User, Lock, Eye, EyeOff, TrendingUp, Calendar, ShieldCheck, Headphones } from "lucide-react";

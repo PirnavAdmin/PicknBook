@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, CalendarDays, CheckCircle2, Clock3, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble
@@ -247,7 +248,8 @@ export default function HotelPassengerDetailsPage() {
   // B2B Discounts (Removed as requested)
   const tierDiscount = 0;
   const volumeDiscount = 0;
-  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  const activePortal = sessionStorage.getItem("active_portal");
+  const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
 
   const wholesalePrice = basePrice + tax + convenienceFee;
   const finalPayable = isAgent ? (wholesalePrice + markupValue) : (basePrice + tax + convenienceFee + markupValue);

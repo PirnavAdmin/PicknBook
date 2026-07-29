@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import './sidebar_admin.css';

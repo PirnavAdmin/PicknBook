@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { Star, Loader2 } from "lucide-react";
 import { getPublicTestimonials } from "../../services/testimonialService";

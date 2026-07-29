@@ -1,0 +1,17 @@
+<svg width="220" height="92" viewBox="0 0 220 92" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Royal Cruiser Logo</title>
+  <desc id="desc">Logo for Royal Cruiser private buses</desc>
+  <defs>
+    <linearGradient id="royalGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1f3a8a"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="216" height="88" rx="18" fill="url(#royalGrad)"/>
+  <path d="M18 49c3-14 18-29 36-29h16c4 0 7 3 7 7v17H18z" fill="#ffffff" opacity="0.92"/>
+  <path d="M24 33h48v7H24z" fill="#1e40af"/>
+  <circle cx="33" cy="54" r="5" fill="#172554"/>
+  <circle cx="62" cy="54" r="5" fill="#172554"/>
+  <text x="88" y="39" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#ffffff">ROYAL</text>
+  <text x="88" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#dbeafe" letter-spacing="0.6">PRIVATE CRUISER</text>
+</svg>

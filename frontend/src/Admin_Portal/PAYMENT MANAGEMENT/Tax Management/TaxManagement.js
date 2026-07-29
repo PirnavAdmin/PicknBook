@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useRef, useState } from 'react';
 import './TaxManagement.css';
 

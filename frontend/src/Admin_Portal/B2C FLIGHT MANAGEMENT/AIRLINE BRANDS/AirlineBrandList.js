@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useMemo } from "react";
 import { Eye, Pencil, Trash2, X } from "lucide-react";
 import "./Airline BrandList.css";

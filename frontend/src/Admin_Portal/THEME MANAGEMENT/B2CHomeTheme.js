@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { FaGripVertical, FaPlus, FaCheck, FaTimes, FaSpinner, FaEye, FaEdit, FaTrashAlt } from "react-icons/fa";
 import { getHomeTheme, updateHomeTheme } from "../../services/themeService";

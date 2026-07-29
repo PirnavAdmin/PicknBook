@@ -26,5 +26,13 @@ public class FlightOfferDto
     public decimal? CabinBagsWeight { get; set; }
     public string? CabinBagsUnit { get; set; }
     public int? CabinBagsQuantity { get; set; }
+
+    // SRDV Tracking Fields
+    public string? TraceId { get; set; }
+    public string? ResultIndex { get; set; }
+    public int? SrdvIndex { get; set; }
+    public bool IsLcc { get; set; }
+    public string? SrdvType { get; set; }
+    public string? SegmentsJson { get; set; }
 }
 

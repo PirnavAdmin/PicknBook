@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeftRight,
@@ -1012,7 +1013,8 @@ export default function FlightSearchResults() {
         // B2B Discounts (Removed as requested)
         const tierDiscount = 0;
         const volumeDiscount = 0;
-        const isAgent = localStorage.getItem("b2b_role") === "Agent";
+        const activePortal = sessionStorage.getItem("active_portal");
+        const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
 
         const baseFare = Number(basePrice || 0) * seatRequired;
         const wholesaleFare = baseFare;

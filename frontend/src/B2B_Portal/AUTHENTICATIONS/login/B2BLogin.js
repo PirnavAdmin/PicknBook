@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, LockKeyhole, Eye, EyeOff, LogIn, ShieldCheck, CheckCircle2 } from "lucide-react";

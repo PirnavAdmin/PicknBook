@@ -23,7 +23,28 @@ import {
   Clock,
   IndianRupee,
   Tag,
+  Headphones,
+  Lock,
+  Route,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  ThumbsUp,
+  ArrowLeft,
+  Snowflake,
+  Armchair,
+  Ticket,
+  Handshake,
+  Star,
+  Quote,
 } from "lucide-react";
+import luxuryBusImg from "../../assets/images/buses/luxury_bus_exterior.png";
+import offerGreenBusImg from "../../assets/images/buses/offer_green_bus.svg";
+import offerYellowBusImg from "../../assets/images/buses/offer_yellow_bus.svg";
+import offerBlueBusImg from "../../assets/images/buses/offer_blue_bus.svg";
+import sunsetHighwayBg from "../../assets/images/buses/sunset-highway-bg.svg";
+import busBooking3dIllustration from "../../assets/images/buses/bus-booking-3d-illustration.svg";
+import betterBookingHabits3d from "../../assets/images/buses/better-booking-habits-3d.svg";
 import travelServiceRoute from "../../assets/images/illustrations/travel-service-route.png";
 import travelServiceFares from "../../assets/images/illustrations/travel-service-fares.png";
 import travelServiceTraveller from "../../assets/images/illustrations/travel-service-traveller.png";
@@ -46,12 +67,190 @@ import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
 import { getActiveOffers, getPublicFeaturedOffers } from "../../services/adminFeaturedOffersService";
-import { listHotBusRoutes } from "../../services/busBookingService";
+import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
 import { listHotFlightRoutes } from "../../services/flightBookingService";
 import { searchHotels } from "../../services/hotelBookingService";
 import { toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
 import { openAuthModal } from "../../utils/authModalEvents";
+
+function AiFlightLogoIcon({ className, size = 32 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: "block" }}
+    >
+      <defs>
+        <linearGradient id="aiFlightBadgeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2563EB" />
+          <stop offset="50%" stopColor="#1D4ED8" />
+          <stop offset="100%" stopColor="#1E3A8A" />
+        </linearGradient>
+        <filter id="aiSparkleGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* 3D Circular Badge Base */}
+      <circle cx="50" cy="50" r="46" fill="url(#aiFlightBadgeBg)" stroke="#60A5FA" strokeWidth="2.5" />
+      <circle cx="50" cy="50" r="41" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeDasharray="5 3" />
+
+      {/* AI Stars & Sparkles */}
+      <path d="M 72 21 L 74.5 26.5 L 80 29 L 74.5 31.5 L 72 37 L 69.5 31.5 L 64 29 L 69.5 26.5 Z" fill="#FACC15" filter="url(#aiSparkleGlowFilter)" />
+      <path d="M 24 65 L 25.5 68.5 L 29 70 L 25.5 71.5 L 24 75 L 22.5 71.5 L 19 70 L 22.5 68.5 Z" fill="#93C5FD" />
+      <path d="M 77 62 L 78 64.5 L 80.5 65.5 L 78 66.5 L 77 69 L 76 66.5 L 73.5 65.5 L 76 64.5 Z" fill="#93C5FD" />
+
+      {/* Flight Neural Trail */}
+      <path d="M 21 73 Q 33 67 43 53" stroke="#93C5FD" strokeWidth="2.5" strokeDasharray="3 3" strokeLinecap="round" />
+
+      {/* Stylized White 3D Airplane */}
+      <g transform="translate(17, 14) scale(0.66)">
+        <path
+          d="M74.5 25.5C76 24 78 24.5 79 26.5C80 28.5 79.5 30.5 78 32L53.5 56.5L50.5 78.5C50 81.5 47 83 44.5 81.5L34 74.5L25 81.5C23.5 82.5 21.5 82 21 80.5C20.5 79 21 77.5 22 76.5L28.5 69L20 62L12 65C10.5 65.5 9 65 8.5 63.5C8 62 8.5 60.5 10 59.5L23.5 48.5L36 21C37 18.5 39.5 17.5 42 19L51.5 25.5L74.5 25.5Z"
+          fill="#FFFFFF"
+          filter="drop-shadow(0px 3px 5px rgba(0,0,0,0.25))"
+        />
+        <path
+          d="M51.5 25.5 L40 44 L56.5 53.5 Z"
+          fill="#60A5FA"
+          opacity="0.8"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function TravelAiLogoIcon({ className, size = 32 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: "block" }}
+    >
+      <defs>
+        <linearGradient id="travelAiGradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2563EB" />
+          <stop offset="50%" stopColor="#1D4ED8" />
+          <stop offset="100%" stopColor="#0F172A" />
+        </linearGradient>
+        <filter id="travelAiGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* 3D Circular Base Badge */}
+      <circle cx="50" cy="50" r="46" fill="url(#travelAiGradBg)" stroke="#60A5FA" strokeWidth="2.5" />
+
+      {/* Futuristic Latitude & Longitude Trajectory Lines */}
+      <ellipse cx="50" cy="50" rx="36" ry="18" fill="none" stroke="rgba(255, 255, 255, 0.3)" strokeWidth="1.5" transform="rotate(-20 50 50)" />
+      <ellipse cx="50" cy="50" rx="36" ry="36" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.2" strokeDasharray="4 3" />
+
+      {/* Glowing AI Stars & Sparkles */}
+      <path d="M 74 20 L 76.5 25.5 L 82 28 L 76.5 30.5 L 74 36 L 71.5 30.5 L 66 28 L 71.5 25.5 Z" fill="#FACC15" filter="url(#travelAiGlow)" />
+      <path d="M 24 64 L 25.5 67.5 L 29 69 L 25.5 70.5 L 24 74 L 22.5 70.5 L 19 69 L 22.5 67.5 Z" fill="#93C5FD" />
+      <circle cx="76" cy="64" r="2.5" fill="#38BDF8" />
+
+      {/* Curved Neural Flight Trajectory */}
+      <path d="M 22 70 Q 40 40 76 28" stroke="#38BDF8" strokeWidth="2.5" strokeDasharray="3 3" strokeLinecap="round" />
+
+      {/* Stylized 3D White Airplane / Travel Icon */}
+      <g transform="translate(24, 20) scale(0.68)">
+        <path
+          d="M74.5 25.5C76 24 78 24.5 79 26.5C80 28.5 79.5 30.5 78 32L53.5 56.5L50.5 78.5C50 81.5 47 83 44.5 81.5L34 74.5L25 81.5C23.5 82.5 21.5 82 21 80.5C20.5 79 21 77.5 22 76.5L28.5 69L20 62L12 65C10.5 65.5 9 65 8.5 63.5C8 62 8.5 60.5 10 59.5L23.5 48.5L36 21C37 18.5 39.5 17.5 42 19L51.5 25.5L74.5 25.5Z"
+          fill="#FFFFFF"
+          filter="drop-shadow(0px 3px 5px rgba(0,0,0,0.3))"
+        />
+        <path
+          d="M51.5 25.5 L40 44 L56.5 53.5 Z"
+          fill="#38BDF8"
+          opacity="0.9"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function AiPandaLogoIcon({ className, size = 32 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: "block" }}
+    >
+      <defs>
+        <linearGradient id="aiPandaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F1F5F9" />
+        </linearGradient>
+        <filter id="pandaGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#000000" floodOpacity="0.2" />
+        </filter>
+      </defs>
+
+      {/* 3D Circular Badge Ring */}
+      <circle cx="50" cy="50" r="46" fill="url(#aiPandaBg)" stroke="#E2E8F0" strokeWidth="2" />
+
+      <g transform="translate(0, 5)">
+        {/* Panda Black Ears */}
+        <circle cx="30" cy="27" r="12" fill="#0F172A" />
+        <circle cx="30" cy="27" r="7" fill="#334155" />
+        <circle cx="70" cy="27" r="12" fill="#0F172A" />
+        <circle cx="70" cy="27" r="7" fill="#334155" />
+
+        {/* 3D White Head */}
+        <ellipse cx="50" cy="47" rx="27" ry="23" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.2" filter="url(#pandaGlow)" />
+
+        {/* Cute Black Eye Patches */}
+        <ellipse cx="38" cy="45" rx="7.5" ry="8.5" fill="#0F172A" transform="rotate(-12 38 45)" />
+        <ellipse cx="62" cy="45" rx="7.5" ry="8.5" fill="#0F172A" transform="rotate(12 62 45)" />
+
+        {/* Expressive Eyes with Highlights */}
+        <circle cx="39" cy="44" r="3.2" fill="#FFFFFF" />
+        <circle cx="40" cy="43.5" r="1.6" fill="#000000" />
+        <circle cx="61" cy="44" r="3.2" fill="#FFFFFF" />
+        <circle cx="60" cy="43.5" r="1.6" fill="#000000" />
+
+        {/* Nose */}
+        <ellipse cx="50" cy="52" rx="4" ry="2.8" fill="#0F172A" />
+
+        {/* Happy Smile & Tongue */}
+        <path d="M 46 55.5 Q 50 60.5 54 55.5" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 48 57.5 Q 50 61.5 52 57.5 Z" fill="#F43F5E" />
+
+        {/* Rosy Pink Cheeks */}
+        <ellipse cx="28" cy="51" rx="4.5" ry="2.5" fill="#FDA4AF" opacity="0.8" />
+        <ellipse cx="72" cy="51" rx="4.5" ry="2.5" fill="#FDA4AF" opacity="0.8" />
+
+        {/* Little Paws */}
+        <ellipse cx="30" cy="67" rx="7" ry="5.5" fill="#0F172A" />
+        <ellipse cx="70" cy="67" rx="7" ry="5.5" fill="#0F172A" />
+
+        {/* Pink Speech Bubble (...) Top Right */}
+        <g transform="translate(63, 11)">
+          <path d="M 0 10 C 0 4.5 4.5 0 10 0 C 15.5 0 20 4.5 20 10 C 20 15.5 15.5 20 10 20 C 7.5 20 5.2 19 3.5 17.5 L 0 21 L 1.5 16.5 C 0.5 14.8 0 12.5 0 10 Z" fill="#F43F5E" />
+          <circle cx="6" cy="10" r="1.5" fill="#FFFFFF" />
+          <circle cx="10" cy="10" r="1.5" fill="#FFFFFF" />
+          <circle cx="14" cy="10" r="1.5" fill="#FFFFFF" />
+        </g>
+      </g>
+    </svg>
+  );
+}
 
 const CLASS_OPTIONS = [
   "Economy",
@@ -63,7 +262,8 @@ const CLASS_OPTIONS = [
 
 const FLIGHT_TRIP_TYPES = [
   { value: "oneway", label: "One Way" },
-  { value: "twoway", label: "Two Way" },
+  { value: "twoway", label: "Round Trip" },
+  { value: "multicity", label: "Multi City" },
 ];
 
 const USE_DIRECT_API_IN_DEV =
@@ -91,6 +291,49 @@ const FEATURED_OFFER_ASSET_PATHS = [
 const BUS_TRIP_TYPES = [
   { value: "oneway", label: "One Way" },
   { value: "twoway", label: "Two Way" },
+];
+
+const DEFAULT_BUS_FEATURED_OFFERS = [
+  {
+    id: "bus-offer-1",
+    title: "wheelsbus",
+    couponCode: "wheelsbus",
+    bookingType: "Bus",
+    badgeLabel: "SPECIAL OFFER",
+    theme: "pink",
+    endDateUtc: "2026-07-25T23:59:59Z",
+    couponExpiresAtUtc: "2026-07-25T23:59:59Z",
+  },
+  {
+    id: "bus-offer-2",
+    title: "June10",
+    couponCode: "June10",
+    bookingType: "Bus",
+    badgeLabel: "EXCLUSIVE OFFER",
+    theme: "green",
+    endDateUtc: "2026-08-08T23:59:59Z",
+    couponExpiresAtUtc: "2026-08-08T23:59:59Z",
+  },
+  {
+    id: "bus-offer-3",
+    title: "BUS50",
+    couponCode: "BUS50",
+    bookingType: "Bus",
+    badgeLabel: "50% OFF",
+    theme: "yellow",
+    endDateUtc: "2026-10-08T23:59:59Z",
+    couponExpiresAtUtc: "2026-10-08T23:59:59Z",
+  },
+  {
+    id: "bus-offer-4",
+    title: "JULYfair",
+    couponCode: "JULYfair",
+    bookingType: "Bus",
+    badgeLabel: "SPECIAL OFFER",
+    theme: "blue",
+    endDateUtc: "2026-07-31T23:59:59Z",
+    couponExpiresAtUtc: "2026-07-31T23:59:59Z",
+  },
 ];
 
 const FALLBACK_CITIES = [
@@ -520,10 +763,10 @@ const HOME_GUIDE_NOTES = [
 const HOME_SERVICE_BLOCKS = [
   {
     id: "services",
-    kicker: "Travel Desk Services",
+    kicker: "Pick N Book Services",
     title: "Online Bus Booking Made Simple",
     text:
-      "Search routes, compare departures, check fares, and keep booking details in one clear flow. Travel Desk is built for quick city-to-city planning without jumping between different tools.",
+      "Search routes, compare departures, check fares, and keep booking details in one clear flow. Pick N Book is built for quick city-to-city planning without jumping between different tools.",
     points: [
       "Live route search with practical filters",
       "Boarding, dropping, and timing details in one place",
@@ -1117,7 +1360,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every bus booking feel clear before you pay.",
     insightsText:
-      "Travel Desk helps users compare the full bus journey, not just the price, so the final booking feels easier to trust.",
+      "Pick N Book helps users compare the full bus journey, not just the price, so the final booking feels easier to trust.",
     highlights: HIGHLIGHTS,
     services: HOME_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book buses with clearer choices",
@@ -1145,21 +1388,21 @@ const HOME_MODE_CONTENT = {
       "Save routes, compare fares, and keep tickets ready for city-to-city journeys.",
     appOffer: "Code TRAVELFIRST",
     appBenefits: HOME_APP_BENEFITS,
-    aboutTitle: "About Travel Desk Bus Booking",
+    aboutTitle: "About Pick N Book Bus Booking",
     aboutParagraphs: [
-      "Travel Desk bus booking mode helps you compare routes, fares, travel duration, and seat availability from top private operators and state transport corporations.",
+      "Pick N Book bus booking mode helps you compare routes, fares, travel duration, and seat availability from top private operators and state transport corporations.",
       "With direct operator mappings, clear cancellation terms, boarding clarity, and secure payments, we make city-to-city road travel easy and reliable."
     ],
   },
   flights: {
     mode: "flights",
     Icon: Plane,
-    heroTitleStart: "Travel Beyond ",
-    heroTitleEnd: "The Ordinary",
-    heroSubtitle: "Book your flight tickets with lowest fares, live flight tracking, easy cancellation, and secure booking.",
-    heroTags: ["Live Flight Tracking", "Seat Selection", "Boarding Clarity"],
+    heroTitleStart: "Travel More ",
+    heroTitleEnd: "Spend Less",
+    heroSubtitle: "Book flights to anywhere in the world at the best prices",
+    heroTags: ["Domestic Flights", "International Routes", "Instant Booking"],
     valueProps: [
-      { icon: Plane, title: "Comfortable Journey", desc: "Spacious seats and premium comfort" },
+      { icon: Plane, title: "Wide Airline Network", desc: "Top carriers across popular routes" },
       { icon: ShieldCheck, title: "Safe & Secure", desc: "Your safety is our top priority" },
       { icon: Clock, title: "On Time Performance", desc: "Punctual flights, always on time" },
       { icon: IndianRupee, title: "Best Price Guarantee", desc: "Get the best deals for your journey" }
@@ -1167,7 +1410,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every flight search feel organized before you book.",
     insightsText:
-      "Travel Desk brings fare comparison, traveller details, cabin choices, and airline actions into a calmer flight booking flow.",
+      "Pick N Book brings fare comparison, traveller details, cabin choices, and airline actions into a calmer flight booking flow.",
     highlights: FLIGHT_HIGHLIGHTS,
     services: FLIGHT_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book flights with clearer choices",
@@ -1195,9 +1438,9 @@ const HOME_MODE_CONTENT = {
       "Save frequent flight routes, compare airline choices, and keep PNR and check-in actions ready.",
     appOffer: "Use code FLYFIRST",
     appBenefits: HOME_FLIGHT_APP_BENEFITS,
-    aboutTitle: "About Travel Desk Flight Booking",
+    aboutTitle: "About Pick N Book Flight Booking",
     aboutParagraphs: [
-      "Travel Desk flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
+      "Pick N Book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
       "Manage booking passenger details, select your seats, view cabin class conditions, and complete check-in procedures directly from your personalized portal."
     ],
   },
@@ -1217,7 +1460,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every hotel search feel clear before you choose.",
     insightsText:
-      "Travel Desk hotel mode brings destination, dates, room count, guest details, and stay choices into the same calm booking flow.",
+      "Pick N Book hotel mode brings destination, dates, room count, guest details, and stay choices into the same calm booking flow.",
     highlights: HOTEL_HIGHLIGHTS,
     services: HOTEL_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book hotels with clearer choices",
@@ -1245,9 +1488,9 @@ const HOME_MODE_CONTENT = {
       "Save favourite cities, compare stay options, and keep room and guest details ready.",
     appOffer: "Use code STAYFIRST",
     appBenefits: HOME_HOTEL_APP_BENEFITS,
-    aboutTitle: "About Travel Desk Hotel Booking",
+    aboutTitle: "About Pick N Book Hotel Booking",
     aboutParagraphs: [
-      "Travel Desk hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
+      "Pick N Book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
       "Whether it is a business trip, weekend break, family stay, or stopover, hotel mode keeps room choices, stay dates, amenities, and booking details easy to compare.",
     ],
   },
@@ -1576,6 +1819,16 @@ function normalizeFeaturedOffer(offer, index) {
     "OfferImageUrl",
     "bannerImageUrl",
     "BannerImageUrl",
+    "bannerImage",
+    "BannerImage",
+    "banner",
+    "Banner",
+    "imgUrl",
+    "ImgUrl",
+    "pictureUrl",
+    "PictureUrl",
+    "mediaUrl",
+    "MediaUrl",
     "thumbnailUrl",
     "ThumbnailUrl",
   ]);
@@ -1636,7 +1889,7 @@ function normalizeFeaturedOffer(offer, index) {
     subtitle: pickOfferValue(offer, ["subtitle", "Subtitle"]),
     description: pickOfferValue(offer, ["description", "Description", "subtitle", "Subtitle"]),
     couponCode: pickOfferValue(offer, ["couponCode", "CouponCode", "code", "Code"]) || promotionCode,
-    imageUrl: cleanFeaturedOfferImageUrl(imageUrl),
+    imageUrl: resolveFeaturedOfferImageSrc(imageUrl),
     bookingType,
     isActive: normalizeOfferActiveFlag(isActive),
     couponExpiresAtUtc: pickOfferValue(offer, ["couponExpiresAtUtc", "CouponExpiresAtUtc"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
@@ -1943,57 +2196,77 @@ function PlaceAutocomplete({
       setLoading(true);
 
       try {
-        const endpoint = new URL(PLACES_API_URL, window.location.origin);
-        endpoint.searchParams.set("query", query);
-        endpoint.searchParams.set("tripType", tripType);
-        endpoint.searchParams.set("field", field);
-        endpoint.searchParams.set("limit", "20");
+        if (tripType === "bus" || tripType === "buses") {
+          const busCities = await searchBusCities(query);
+          if (controller.signal.aborted) return;
+          const normalized = (Array.isArray(busCities) ? busCities : [])
+            .map((item) => {
+              if (typeof item === "string") return { cityName: item, cityId: item, stateName: "" };
+              return {
+                cityName: item.cityName || item.CityName || item.cityNameWithState || item.name || item.description || item.label || "",
+                cityId: String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || ""),
+                stateName: item.stateName || item.StateName || "",
+              };
+            })
+            .filter((item) => item.cityName);
+          setResults(normalized);
+        } else {
+          const endpoint = new URL(PLACES_API_URL, window.location.origin);
+          endpoint.searchParams.set("query", query);
+          endpoint.searchParams.set("tripType", tripType);
+          endpoint.searchParams.set("field", field);
+          endpoint.searchParams.set("limit", "20");
 
-        const needsNgrokBypass =
-          endpoint.hostname.includes("ngrok-free.dev") ||
-          endpoint.hostname.includes("ngrok.io");
+          const needsNgrokBypass =
+            endpoint.hostname.includes("ngrok-free.dev") ||
+            endpoint.hostname.includes("ngrok.io");
 
-        const response = await fetch(endpoint.toString(), {
-          signal: controller.signal,
-          headers: needsNgrokBypass
-            ? { "ngrok-skip-browser-warning": "true" }
-            : undefined,
-        });
+          const response = await fetch(endpoint.toString(), {
+            signal: controller.signal,
+            headers: needsNgrokBypass
+              ? { "ngrok-skip-browser-warning": "true" }
+              : undefined,
+          });
 
-        if (!response.ok) {
-          throw new Error(`Place API failed with status ${response.status}`);
+          if (!response.ok) {
+            throw new Error(`Place API failed with status ${response.status}`);
+          }
+
+          const payload = await response.json();
+
+          const rawList = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.value)
+              ? payload.value
+              : [];
+
+          const normalized = rawList
+            .map((item) => ({
+              cityName: typeof item === "string" ? item : item?.cityName || "",
+              usageCount:
+                typeof item === "object" && item?.usageCount
+                  ? item.usageCount
+                  : 0,
+            }))
+            .filter((item) => item.cityName);
+
+          setResults(normalized);
         }
-
-        const payload = await response.json();
-
-        const rawList = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.value)
-            ? payload.value
-            : [];
-
-        const normalized = rawList
-          .map((item) => ({
-            cityName: typeof item === "string" ? item : item?.cityName || "",
-            usageCount:
-              typeof item === "object" && item?.usageCount
-                ? item.usageCount
-                : 0,
-          }))
-          .filter((item) => item.cityName);
-
-        setResults(normalized);
       } catch (error) {
         if (error.name !== "AbortError") {
-          const normalizedQuery = query.toLowerCase();
-          const fallbackMatches = FALLBACK_CITIES.filter((city) =>
-            city.toLowerCase().includes(normalizedQuery),
-          ).map((cityName, index) => ({
-            cityName,
-            usageCount: 100 - index,
-          }));
+          if (tripType !== "bus" && tripType !== "buses") {
+            const normalizedQuery = query.toLowerCase();
+            const fallbackMatches = FALLBACK_CITIES.filter((city) =>
+              city.toLowerCase().includes(normalizedQuery),
+            ).map((cityName, index) => ({
+              cityName,
+              usageCount: 100 - index,
+            }));
 
-          setResults(fallbackMatches);
+            setResults(fallbackMatches);
+          } else {
+            setResults([]);
+          }
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -2021,6 +2294,8 @@ function PlaceAutocomplete({
     setOpen(false);
   };
 
+  const isBusMode = tripType === "bus" || tripType === "buses";
+
   return (
     <div className={`field place-autocomplete ${className || ""}`} ref={wrapperRef}>
       <label>{label}</label>
@@ -2044,15 +2319,15 @@ function PlaceAutocomplete({
       </div>
 
       {open && (
-        <div className="place-dropdown">
+        <div className={isBusMode ? "bus-place-dropdown" : "place-dropdown"}>
           {loading ? (
-            <div className="place-meta">Searching places...</div>
+            <div className={isBusMode ? "bus-place-meta" : "place-meta"}>Searching places...</div>
           ) : results.length > 0 ? (
-            results.map((item) => (
+            results.map((item, idx) => (
               <button
-                key={`${item.cityName}-${item.usageCount}`}
+                key={`${item.cityName}-${item.usageCount || idx}`}
                 type="button"
-                className="place-option"
+                className={isBusMode ? "bus-place-option" : "place-option"}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => handleSelect(item.cityName)}
               >
@@ -2060,13 +2335,27 @@ function PlaceAutocomplete({
               </button>
             ))
           ) : (
-            <div className="place-meta">No matching places found</div>
+            <div className={isBusMode ? "bus-place-meta" : "place-meta"}>No matching places found</div>
           )}
         </div>
       )}
     </div>
   );
 }
+
+const formatFlightDate = (dateStr) => {
+  if (!dateStr) return { date: "Select Date", day: "" };
+  try {
+    const dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) return { date: dateStr, day: "" };
+    const options = { day: "numeric", month: "short", year: "numeric" };
+    const formattedDate = dateObj.toLocaleDateString("en-GB", options);
+    const weekday = dateObj.toLocaleDateString("en-GB", { weekday: "long" });
+    return { date: formattedDate, day: weekday };
+  } catch (e) {
+    return { date: dateStr, day: "" };
+  }
+};
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -2094,10 +2383,10 @@ export default function HomePage() {
   const [flightDepartureDate, setFlightDepartureDate] = useState("");
   const [flightReturnDate, setFlightReturnDate] = useState("");
 
-  const [adults, setAdults] = useState(0);
+  const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
-  const [cabinClass, setCabinClass] = useState("");
+  const [cabinClass, setCabinClass] = useState("Economy");
   const [showTravellerDropdown, setShowTravellerDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const travellerFieldRef = useRef(null);
@@ -2142,6 +2431,12 @@ export default function HomePage() {
   const [isDealsDialogOpen, setIsDealsDialogOpen] = useState(false);
   const [offerForDetailPopup, setOfferForDetailPopup] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  const [selectedRtcOperator, setSelectedRtcOperator] = useState(null);
+  const [rtcSearchFrom, setRtcSearchFrom] = useState("");
+  const [rtcSearchTo, setRtcSearchTo] = useState("");
+  const [rtcSearchDate, setRtcSearchDate] = useState(() => getDateInputValue(1));
+  const [selectedBusTypes, setSelectedBusTypes] = useState([]);
 
   const [dragState, setDragState] = useState({ isDown: false, startX: 0, scrollLeft: 0 });
   const [clickPrevented, setClickPrevented] = useState(false);
@@ -2365,17 +2660,26 @@ export default function HomePage() {
       return undefined;
     }
 
-    const handleAiChatOutsideClick = (event) => {
-      if (
-        aiChatShellRef.current &&
-        !aiChatShellRef.current.contains(event.target)
-      ) {
-        setIsAiChatOpen(false);
-      }
-    };
+    const timer = setTimeout(() => {
+      const handleAiChatOutsideClick = (event) => {
+        if (
+          aiChatShellRef.current &&
+          !aiChatShellRef.current.contains(event.target)
+        ) {
+          setIsAiChatOpen(false);
+        }
+      };
 
-    document.addEventListener("mousedown", handleAiChatOutsideClick);
-    return () => document.removeEventListener("mousedown", handleAiChatOutsideClick);
+      document.addEventListener("pointerdown", handleAiChatOutsideClick);
+      document.addEventListener("mousedown", handleAiChatOutsideClick);
+
+      return () => {
+        document.removeEventListener("pointerdown", handleAiChatOutsideClick);
+        document.removeEventListener("mousedown", handleAiChatOutsideClick);
+      };
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, [isAiChatOpen]);
 
   useEffect(() => {
@@ -2799,17 +3103,52 @@ export default function HomePage() {
     setBusTo(busFrom);
   };
 
-  const openPopularBusRoutes = () => {
+  const openPopularBusRoutes = (operatorId) => {
     setActiveTab("buses");
+    const targetOperator = POPULAR_RTC_OPERATORS.find((op) => op.id === operatorId) || POPULAR_RTC_OPERATORS[0];
+    setSelectedRtcOperator(targetOperator);
+    setRtcSearchFrom(targetOperator.routes?.[0]?.from || "Bangalore");
+    setRtcSearchTo(targetOperator.routes?.[0]?.to || "Tirupathi");
+
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("tab", "buses");
+    if (targetOperator?.id) {
+      nextParams.set("rtc", targetOperator.id);
+    }
     setSearchParams(nextParams, { replace: true });
 
     window.setTimeout(() => {
       document
-        .querySelector(".hero-section")
+        .querySelector(".rtc-landing-section")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+    }, 100);
+  };
+
+  useEffect(() => {
+    const rtcParam = searchParams.get("rtc");
+    if (rtcParam) {
+      const match = POPULAR_RTC_OPERATORS.find((op) => op.id === rtcParam);
+      if (match) {
+        setSelectedRtcOperator(match);
+        setRtcSearchFrom(match.routes?.[0]?.from || "Bangalore");
+        setRtcSearchTo(match.routes?.[0]?.to || "Tirupathi");
+      }
+    }
+  }, [searchParams]);
+
+  const generateNextWeekDates = () => {
+    const dates = [];
+    const today = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const timezoneOffset = d.getTimezoneOffset() * 60000;
+      const fullDate = new Date(d.getTime() - timezoneOffset).toISOString().slice(0, 10);
+      const dayStr = d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+      const monthStr = d.toLocaleDateString("en-US", { weekday: "short" });
+      dates.push({ fullDate, dayStr, monthStr });
+    }
+    return dates;
   };
 
   const changeAdults = (delta) => {
@@ -4387,18 +4726,24 @@ export default function HomePage() {
                     role="tablist"
                     aria-label="Flight trip type"
                   >
-                    {FLIGHT_TRIP_TYPES.map((tripType) => (
-                      <button
-                        key={tripType.value}
-                        type="button"
-                        className={`trip-chip ${
-                          flightTripType === tripType.value ? "active" : ""
-                        }`}
-                        onClick={() => setFlightTripType(tripType.value)}
-                      >
-                        {tripType.label}
-                      </button>
-                    ))}
+                    {FLIGHT_TRIP_TYPES.map((tripType) => {
+                      let IconComponent = Plane;
+                      if (tripType.value === "twoway") IconComponent = ArrowLeftRight;
+                      if (tripType.value === "multicity") IconComponent = Route;
+                      return (
+                        <button
+                          key={tripType.value}
+                          type="button"
+                          className={`trip-chip ${
+                            flightTripType === tripType.value ? "active" : ""
+                          }`}
+                          onClick={() => setFlightTripType(tripType.value)}
+                        >
+                          <IconComponent size={14} />
+                          <span>{tripType.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {flightTripType === "multicity" ? (
@@ -4485,6 +4830,14 @@ export default function HomePage() {
                       <div className="multi-footer-row">
                         {travellerField}
                         {classField}
+                        <button
+                          type="button"
+                          className="search-btn flight-grid-search-btn"
+                          onClick={handleSearch}
+                        >
+                          <Search size={16} />
+                          <span>Search Flights</span>
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -4495,7 +4848,7 @@ export default function HomePage() {
                         onChange={handleFlightFromChange}
                         tripType="flight"
                         field="from"
-                        placeholder="Source"
+                        placeholder="Select Source"
                         error={flightFromError}
                         className="source-field"
                       />
@@ -4517,24 +4870,23 @@ export default function HomePage() {
                         onChange={handleFlightToChange}
                         tripType="flight"
                         field="to"
-                        placeholder="Destination"
+                        placeholder="Select Destination"
                         error={flightToError}
                         className="destination-field"
                       />
 
                       <div className="field field-with-icon departure-field" style={{ position: "relative" }}>
                         <label>Departure</label>
-                        <div className="control-wrap">
-                          <CalendarDays size={18} />
-                          <input
-                            type="text"
-                            readOnly
-                            value={toDisplayDate(flightDepartureDate)}
-                            placeholder="DD-MM-YYYY"
-                            className="field-control with-leading-icon"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => document.getElementById("flight-dep-date").showPicker?.()}
-                          />
+                        <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => document.getElementById("flight-dep-date").showPicker?.()}>
+                          <CalendarDays size={18} style={{ color: "#2563eb", flexShrink: 0 }} />
+                          <div className="date-display-wrapper">
+                            <span className="date-main-bold">
+                              {formatFlightDate(flightDepartureDate).date?.toUpperCase()}
+                            </span>
+                            <span className="date-sub-day">
+                              / {formatFlightDate(flightDepartureDate).day?.toUpperCase()}
+                            </span>
+                          </div>
                         </div>
                         <input
                           id="flight-dep-date"
@@ -4548,17 +4900,16 @@ export default function HomePage() {
                       {isFlightTwoWay && (
                         <div className="field field-with-icon return-field" style={{ position: "relative" }}>
                           <label>Return</label>
-                          <div className="control-wrap">
-                            <CalendarDays size={18} />
-                            <input
-                              type="text"
-                              readOnly
-                              value={toDisplayDate(flightReturnDate)}
-                              placeholder="DD-MM-YYYY"
-                              className="field-control with-leading-icon"
-                              style={{ cursor: "pointer" }}
-                              onClick={() => document.getElementById("flight-ret-date").showPicker?.()}
-                            />
+                          <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => document.getElementById("flight-ret-date").showPicker?.()}>
+                            <CalendarDays size={18} style={{ color: "#2563eb", flexShrink: 0 }} />
+                            <div className="date-display-wrapper">
+                              <span className="date-main-bold">
+                                {flightReturnDate ? formatFlightDate(flightReturnDate).date?.toUpperCase() : "SELECT RETURN"}
+                              </span>
+                              <span className="date-sub-day">
+                                {flightReturnDate ? `/ ${formatFlightDate(flightReturnDate).day?.toUpperCase()}` : ""}
+                              </span>
+                            </div>
                             <input
                               id="flight-ret-date"
                               type="date"
@@ -4572,6 +4923,26 @@ export default function HomePage() {
 
                       {travellerField}
                       {classField}
+                      <button
+                        type="button"
+                        className="search-btn flight-grid-search-btn"
+                        onClick={handleSearch}
+                      >
+                        <Search size={16} />
+                        <span>Search Flights</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {flightTripType !== "multicity" && (
+                    <div className="popular-searches-row">
+                      <span className="popular-label">Popular Searches:</span>
+                      <div className="popular-tags">
+                        <button type="button" onClick={() => { handleFlightFromChange("Hyderabad (HYD)"); handleFlightToChange("Chennai (MAA)"); }} className="popular-tag">Hyderabad - Chennai</button>
+                        <button type="button" onClick={() => { handleFlightFromChange("Chennai (MAA)"); handleFlightToChange("Mumbai (BOM)"); }} className="popular-tag">Chennai - Mumbai</button>
+                        <button type="button" onClick={() => { handleFlightFromChange("Hyderabad (HYD)"); handleFlightToChange("Delhi (DEL)"); }} className="popular-tag">Hyderabad - Delhi</button>
+                        <button type="button" onClick={() => { handleFlightFromChange("Chennai (MAA)"); handleFlightToChange("Dubai (DXB)"); }} className="popular-tag">Chennai - Dubai</button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -4744,14 +5115,16 @@ export default function HomePage() {
                 </div>
               )}
 
-              <button
-                type="button"
-                className="search-btn"
-                onClick={handleSearch}
-              >
-                <Search size={16} />
-                <span>Search</span>
-              </button>
+              {activeTab !== "flights" && (
+                <button
+                  type="button"
+                  className="search-btn"
+                  onClick={handleSearch}
+                >
+                  <Search size={16} />
+                  <span>Search</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -4759,133 +5132,427 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="offers-section section-shell">
-        <div className="section-header offers-header">
-          <div>
-            <span className="section-kicker">This Week</span>
-            <h2>Featured Offers</h2>
+      {/* Flight features strip exactly matching the screenshot */}
+      {activeTab === "flights" && (
+        <div className="flight-features-strip">
+          <div className="feature-card">
+            <div className="feature-icon-wrapper shield-blue">
+              <ShieldCheck size={22} className="feature-icon" />
+            </div>
+            <div className="feature-text">
+              <h4>Best Price</h4>
+              <p>Guarantee</p>
+            </div>
           </div>
-          <button
-            type="button"
-            className="section-link"
-            onClick={() => setIsDealsDialogOpen(true)}
-            disabled={featuredOffers.length === 0}
-          >
-            View all deals
-          </button>
-        </div>
 
-        <div className="offers-filter-tabs">
-          <button
-            type="button"
-            className={`offers-filter-tab ${offersFilter === "all" ? "active" : ""}`}
-            onClick={() => setOffersFilter("all")}
-          >
-            <Tag size={13} />
-            <span>All Deals</span>
-          </button>
-          <button
-            type="button"
-            className={`offers-filter-tab ${offersFilter === "flight" ? "active" : ""}`}
-            onClick={() => setOffersFilter("flight")}
-          >
-            <Plane size={13} />
-            <span>Flights</span>
-          </button>
-          <button
-            type="button"
-            className={`offers-filter-tab ${offersFilter === "bus" ? "active" : ""}`}
-            onClick={() => setOffersFilter("bus")}
-          >
-            <Bus size={13} />
-            <span>Buses</span>
-          </button>
-          <button
-            type="button"
-            className={`offers-filter-tab ${offersFilter === "hotel" ? "active" : ""}`}
-            onClick={() => setOffersFilter("hotel")}
-          >
-            <Building2 size={13} />
-            <span>Hotels</span>
-          </button>
-        </div>
+          <div className="feature-card">
+            <div className="feature-icon-wrapper plane-purple">
+              <Plane size={22} className="feature-icon" />
+            </div>
+            <div className="feature-text">
+              <h4>Easy</h4>
+              <p>Booking</p>
+            </div>
+          </div>
 
-        {featuredOffersLoading ? (
-          <div className="offers-scroll-row">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="offer-skeleton-card">
-                <div className="skeleton-thumb"></div>
-                <div className="skeleton-body">
-                  <div className="skeleton-badge"></div>
-                  <div className="skeleton-title"></div>
-                  <div className="skeleton-desc"></div>
-                  <div className="skeleton-code"></div>
-                </div>
+          <div className="feature-card">
+            <div className="feature-icon-wrapper support-blue">
+              <Headphones size={22} className="feature-icon" />
+            </div>
+            <div className="feature-text">
+              <h4>24/7</h4>
+              <p>Support</p>
+            </div>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon-wrapper secure-green">
+              <Lock size={22} className="feature-icon" />
+            </div>
+            <div className="feature-text">
+              <h4>Secure</h4>
+              <p>Payments</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section className="bus-offers-section">
+        <div className="bus-offers-banner-card">
+          <div className="bus-offers-banner-bg-graphic" />
+          <div className="bus-offers-content-shell">
+            {/* Top Header Row */}
+            <div className="bus-offers-header-row">
+              <div>
+                <span className="bus-offers-kicker">
+                  <Tag size={13} />
+                  THIS WEEK
+                </span>
+                <h2 className="bus-offers-title">Featured Offers</h2>
+                <p className="bus-offers-subtitle">
+                  Best deals on buses. Grab them before they're gone!
+                </p>
               </div>
-            ))}
-          </div>
-        ) : featuredOffersError ? (
-          <div className="offers-error">{featuredOffersError}</div>
-        ) : featuredOffers.length === 0 ? (
-          <div className="offers-empty">No featured offers available.</div>
-        ) : filteredOffers.length === 0 ? (
-          <div className="offers-empty">No featured offers available for this category.</div>
-        ) : (
-          <div className="offers-scroll-row">
-            {filteredOffers.map((offer, index) => (
-              <article
-                className={`offer-card bg-${index % 5}`}
-                key={offer.id}
-                onClick={() => setOfferForDetailPopup(offer)}
+
+              <button
+                type="button"
+                className="bus-offers-view-all"
+                onClick={() => setIsDealsDialogOpen(true)}
               >
-                <div className="offer-card-left">
-                  <span className="offer-card-badge">
-                    {offer.bookingType ? `${offer.bookingType} Offer` : "Special Offer"}
-                  </span>
-                  <h3 className="offer-card-title">{offer.title}</h3>
-                  <span className="offer-card-validity">
-                    {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                  </span>
-                  {offer.couponCode && (
-                    <div className="offer-card-coupon">
-                      <Tag size={12} className="coupon-icon" />
-                      <span className="coupon-text">{offer.couponCode}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="offer-card-right-img">
-                  <FeaturedOfferImage offer={offer} />
-                </div>
-              </article>
-            ))}
+                <span>View all deals</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+
+            {/* Category Filter Tabs Bar */}
+            <div className="bus-offers-tabs-bar">
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
+                onClick={() => setOffersFilter("all")}
+              >
+                <Tag size={13} />
+                <span>All Offers</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
+                onClick={() => setOffersFilter("flight")}
+              >
+                <Plane size={13} />
+                <span>Flights</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
+                onClick={() => setOffersFilter("bus")}
+              >
+                <Bus size={13} />
+                <span>Buses</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
+                onClick={() => setOffersFilter("hotel")}
+              >
+                <Building2 size={13} />
+                <span>Hotels</span>
+              </button>
+            </div>
+
+            {/* Cards Carousel Grid with Floating Arrows */}
+            <div className="bus-offers-cards-carousel-container">
+              <button
+                type="button"
+                className="bus-offers-arrow prev"
+                aria-label="Previous offers"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="bus-offers-scroll-grid">
+                {(filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS).slice(0, 4).map((offer, idx) => {
+                  const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
+                  const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
+                  const code = offer.couponCode || offer.title || "BUSOFFER";
+                  const badgeText = offer.badgeLabel || (idx === 1 ? "EXCLUSIVE OFFER" : idx === 2 ? "50% OFF" : "SPECIAL OFFER");
+
+                  const offerImages = [
+                    luxuryBusImg,
+                    offerGreenBusImg,
+                    offerYellowBusImg,
+                    offerBlueBusImg,
+                  ];
+                  const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl;
+                  const resolvedAdminImg = resolveFeaturedOfferImageSrc(rawAdminImg);
+                  const currentBusImg = resolvedAdminImg || offerImages[idx % offerImages.length];
+
+                  return (
+                    <article
+                      key={offer.id || idx}
+                      className={`bus-card-unit ${themeClass}`}
+                      onClick={() => setOfferForDetailPopup(offer)}
+                    >
+                      {/* Top Bar: Icon + Category */}
+                      <div className="bus-card-top-bar">
+                        <div className="bus-card-icon-badge">
+                          <Bus size={15} />
+                        </div>
+                        <span className="bus-card-cat">BUS OFFER</span>
+                      </div>
+
+                      {/* Center Info: Code & Validity */}
+                      <div className="bus-card-center">
+                        <h3 className="bus-card-code">{code}</h3>
+                        <p className="bus-card-expiry">
+                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                        </p>
+                      </div>
+
+                      {/* Bottom Badge Pill */}
+                      <div className="bus-card-bottom-bar">
+                        <span className="bus-card-tag-pill">{badgeText}</span>
+                      </div>
+
+                      {/* Top Right Starburst / Badge Ribbon */}
+                      <div className="bus-card-starburst">
+                        {badgeText}
+                      </div>
+
+                      {/* Bottom Right Luxury Bus Vehicle Image */}
+                      <img
+                        src={currentBusImg}
+                        alt="Luxury Coach Bus"
+                        className="bus-card-vehicle-graphic"
+                      />
+                    </article>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="bus-offers-arrow next"
+                aria-label="Next offers"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* Pagination Dots Bar */}
+            <div className="bus-offers-dots-bar">
+              <span className="bus-offers-dot active" />
+              <span className="bus-offers-dot" />
+              <span className="bus-offers-dot" />
+              <span className="bus-offers-dot" />
+            </div>
           </div>
-        )}
+        </div>
       </section>
 
-      <section className="insights-section section-shell">
-        <div className="insights-banner">
-          <div className="insights-copy">
-            <h2>{homeContent.insightsTitle}</h2>
-            <p>{homeContent.insightsText}</p>
-          </div>
+      {/* TRAVEL DESK SERVICES Banner Section (Matching 1st Image Reference Design) */}
+      <section className="td-services-section section-shell">
+        <div className="td-services-card">
+          <div className="td-services-body-grid">
+            {/* Left White Copy & Features Column */}
+            <div className="td-services-left-col">
+              {/* Main Headline */}
+              <h2 className="td-services-headline">
+                Your Journey. <br />
+                <span className="td-highlight-red">Our Priority.</span>
+              </h2>
 
-          <div className="insights-grid">
-            {homeContent.highlights.map((item) => {
-              const Icon = item.icon;
+              {/* Red Line Accent */}
+              <div className="td-services-underline" />
 
-              return (
-                <article key={item.id} className="insight-card">
-                  <span className="insight-icon">
-                    <Icon size={22} />
-                  </span>
-                  <div>
-                    <strong>{item.value}</strong>
-                    <p>{item.title}</p>
-                    <span>{item.text}</span>
+              {/* Subtitle Paragraph */}
+              <p className="td-services-paragraph">
+                Discover the best bus routes, compare fares, and book your tickets in just a few clicks.
+                Fast, easy, and reliable – all in one place.
+              </p>
+
+              {/* 4 Feature Rows */}
+              <div className="td-services-features-list">
+                {/* Feature 1: Smart Search */}
+                <div className="td-feature-item">
+                  <div className="td-feature-icon-box">
+                    <Search size={17} />
                   </div>
-                </article>
-              );
-            })}
+                  <div className="td-feature-text">
+                    <strong>Smart Search</strong>
+                    <p>Find buses across thousands of routes with smart filters.</p>
+                  </div>
+                </div>
+
+                {/* Feature 2: Real-time Updates */}
+                <div className="td-feature-item">
+                  <div className="td-feature-icon-box">
+                    <Clock3 size={17} />
+                  </div>
+                  <div className="td-feature-text">
+                    <strong>Real-time Updates</strong>
+                    <p>Get live timings, seat availability &amp; prices instantly.</p>
+                  </div>
+                </div>
+
+                {/* Feature 3: Best Fares */}
+                <div className="td-feature-item">
+                  <div className="td-feature-icon-box">
+                    <Ticket size={17} />
+                  </div>
+                  <div className="td-feature-text">
+                    <strong>Best Fares</strong>
+                    <p>Compare prices and choose the best deals that fit your budget.</p>
+                  </div>
+                </div>
+
+                {/* Feature 4: Safe & Secure */}
+                <div className="td-feature-item">
+                  <div className="td-feature-icon-box">
+                    <ShieldCheck size={17} />
+                  </div>
+                  <div className="td-feature-text">
+                    <strong>Safe &amp; Secure</strong>
+                    <p>Secure payments and verified bookings for peace of mind.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Actions Row */}
+              <div className="td-services-actions-row">
+                <button
+                  type="button"
+                  className="td-search-now-btn"
+                  onClick={() => openPopularBusRoutes()}
+                >
+                  <Bus size={16} />
+                  <span>Search Buses Now</span>
+                  <ChevronRight size={16} className="td-btn-arrow" />
+                </button>
+
+                <div className="td-need-help-pill">
+                  <div className="td-help-icon-circle">
+                    <Headphones size={15} />
+                  </div>
+                  <div className="td-help-meta">
+                    <strong>Need Help?</strong>
+                    <span>24/7 Customer Support</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Sunset Mountain Highway + Stats Glass Pill + Smartphone Mockup */}
+            <div
+              className="td-services-right-col"
+              style={{ backgroundImage: `url(${sunsetHighwayBg})` }}
+            >
+              {/* White Smooth Curved Background Divider */}
+              <div className="td-curved-divider-overlay" />
+
+              {/* Top Floating Glass Stats Bar (Frosted Glass Pill) */}
+              <div className="td-floating-stats-glass-bar">
+                <div className="td-glass-stat-item">
+                  <div className="td-stat-icon-circle red">
+                    <MapPin size={15} />
+                  </div>
+                  <div className="td-stat-info">
+                    <strong>5000+</strong>
+                    <span>Routes Covered</span>
+                  </div>
+                </div>
+
+                <div className="td-glass-stat-divider" />
+
+                <div className="td-glass-stat-item">
+                  <div className="td-stat-icon-circle purple">
+                    <Users size={15} />
+                  </div>
+                  <div className="td-stat-info">
+                    <strong>10L+</strong>
+                    <span>Happy Customers</span>
+                  </div>
+                </div>
+
+                <div className="td-glass-stat-divider" />
+
+                <div className="td-glass-stat-item">
+                  <div className="td-stat-icon-circle crimson">
+                    <Handshake size={15} />
+                  </div>
+                  <div className="td-stat-info">
+                    <strong>1000+</strong>
+                    <span>Trusted Partners</span>
+                  </div>
+                </div>
+
+                <div className="td-glass-stat-divider" />
+
+                <div className="td-glass-stat-item">
+                  <div className="td-stat-icon-circle dark">
+                    <Headphones size={15} />
+                  </div>
+                  <div className="td-stat-info">
+                    <strong>24/7</strong>
+                    <span>Support Available</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Highway Bus & Smartphone Composition */}
+              <div className="td-services-visual-stage">
+                {/* Luxury Coach Bus with PICK N BOOK Display Banner */}
+                <div className="td-bus-visual-wrap">
+                  <div className="td-bus-display-tag">PICK N BOOK</div>
+                  <img
+                    src={luxuryBusImg}
+                    alt="Pick N Book Luxury Bus"
+                    className="td-stage-bus-img"
+                  />
+                </div>
+
+                {/* Sleek Smartphone Mockup (Exact 1st Image App Screen) */}
+                <div className="td-phone-device-frame">
+                  <div className="td-phone-notch" />
+                  <div className="td-phone-inner-screen">
+                    <div className="td-phone-greeting">
+                      <span className="td-greeting-title">Hello, Traveller! 👋</span>
+                      <span className="td-greeting-sub">Where are you going?</span>
+                    </div>
+
+                    <div className="td-phone-field-box">
+                      <Bus size={13} className="td-field-icon" />
+                      <div className="td-field-labels">
+                        <span className="td-field-lbl">From</span>
+                        <strong>City A</strong>
+                      </div>
+                    </div>
+
+                    <div className="td-phone-field-box">
+                      <Bus size={13} className="td-field-icon" />
+                      <div className="td-field-labels">
+                        <span className="td-field-lbl">To</span>
+                        <strong>City B</strong>
+                      </div>
+                    </div>
+
+                    <div className="td-phone-field-box">
+                      <CalendarDays size={13} className="td-field-icon" />
+                      <div className="td-field-labels">
+                        <span className="td-field-lbl">Journey Date</span>
+                        <strong>25 May, 2025</strong>
+                      </div>
+                    </div>
+
+                    <button type="button" className="td-phone-main-submit-btn">
+                      Search Buses
+                    </button>
+
+                    <div className="td-phone-bottom-nav">
+                      <div className="td-nav-item active">
+                        <CalendarDays size={11} />
+                        <span>My Bookings</span>
+                      </div>
+                      <div className="td-nav-item">
+                        <Tag size={11} />
+                        <span>Offers</span>
+                      </div>
+                      <div className="td-nav-item">
+                        <Headphones size={11} />
+                        <span>Help Center</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Red Suitcase Graphic */}
+                <div className="td-stage-suitcase-graphic">
+                  <div className="td-straw-hat-decor" />
+                  <div className="td-suitcase-body" />
+                  <div className="td-plant-pot-decor" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -4950,49 +5617,7 @@ export default function HomePage() {
       {dealsDialog}
       {offerDetailDialog}
 
-      {activeTab === "buses" && (
-      <section
-        className="popular-buses-section section-shell"
-        id="popular-buses"
-      >
-        <div className="section-header">
-          <div>
-            <span className="section-kicker">Popular Buses</span>
-            <h2>RTC Bus Corporations</h2>
-          </div>
-        </div>
 
-        <div className="rtc-carousel-wrap">
-          <AutoMarquee
-            items={POPULAR_RTC_OPERATORS}
-            className="rtc-marquee"
-            duration={34}
-            renderItem={(operator) => (
-              <article
-                key={operator.id}
-                className="rtc-card"
-                style={{ backgroundImage: `url(${operator.background})` }}
-              >
-                <div className="rtc-card-overlay" />
-                <div className="rtc-card-logo">
-                  <img src={operator.logo} alt={`${operator.shortName} logo`} />
-                </div>
-                <div className="rtc-card-content">
-                  <h3>{operator.shortName}</h3>
-                  <p>{operator.name}</p>
-                  <button
-                    type="button"
-                    onClick={() => openPopularBusRoutes(operator.id)}
-                  >
-                    Book Now
-                  </button>
-                </div>
-              </article>
-            )}
-          />
-        </div>
-      </section>
-      )}
 
       {activeTab === "flights" && (
       <>
@@ -5313,31 +5938,82 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="reviews-section section-shell">
-        <div className="section-header">
-          <div>
-            <span className="section-kicker">Customer Voices</span>
-            <h2>What Travelers Say</h2>
+      {/* Upgraded What Travelers Say Testimonials Section */}
+      <section className="reviews-section upgraded-reviews-section section-shell">
+        <div className="upgraded-reviews-header">
+          <div className="upgraded-reviews-title-box">
+            <span className="upgraded-reviews-kicker">
+              <MessageSquareText size={13} />
+              REAL TRAVELER EXPERIENCES
+            </span>
+            <h2 className="upgraded-reviews-heading">What Travelers Say</h2>
+            <p className="upgraded-reviews-subtext">
+              Over 10 Lakh+ happy journeys booked with Pick N Book. Real reviews from verified passengers.
+            </p>
+          </div>
+
+          <div className="upgraded-reviews-overall-badge">
+            <div className="upgraded-rating-score-box">
+              <span className="upgraded-score-num">4.9</span>
+              <span className="upgraded-score-max">/ 5.0</span>
+            </div>
+            <div className="upgraded-stars-row">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={15} className="upgraded-star-icon" fill="#f59e0b" stroke="#f59e0b" />
+              ))}
+            </div>
+            <span className="upgraded-verified-count">Based on 50,000+ verified reviews</span>
           </div>
         </div>
 
         <AutoMarquee
           items={homeContent.reviews}
-          className="review-marquee"
-          duration={36}
-          renderItem={(review) => (
-            <article className="review-slide">
-              <div className="review-slide-top">
-                <MessageSquareText size={14} />
-                <span className="review-type">{review.type}</span>
-              </div>
-              <p>{review.comment}</p>
-              <div className="review-slide-footer">
-                <strong>{review.author}</strong>
-                <span>{review.rating}</span>
-              </div>
-            </article>
-          )}
+          className="review-marquee upgraded-review-marquee"
+          duration={38}
+          renderItem={(review) => {
+            const initials = review.author
+              ? review.author
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+              : "TR";
+
+            return (
+              <article className="review-slide upgraded-review-card">
+                <Quote size={32} className="upgraded-quote-watermark" />
+
+                {/* Top Badge & Rating */}
+                <div className="upgraded-card-top-bar">
+                  <span className="upgraded-review-type-pill">
+                    <Bus size={12} />
+                    {review.type || "BUS BOOKING"}
+                  </span>
+                  <div className="upgraded-card-stars">
+                    {[...Array(5)].map((_, idx) => (
+                      <Star key={idx} size={13} fill="#f59e0b" stroke="#f59e0b" />
+                    ))}
+                    <span className="upgraded-card-rating-num">{review.rating}</span>
+                  </div>
+                </div>
+
+                {/* Comment Text */}
+                <p className="upgraded-review-comment">"{review.comment}"</p>
+
+                {/* Author Footer */}
+                <div className="upgraded-review-footer">
+                  <div className="upgraded-author-profile">
+                    <div className="upgraded-author-avatar">{initials}</div>
+                    <div className="upgraded-author-meta">
+                      <strong className="upgraded-author-name">{review.author}</strong>
+                      <span className="upgraded-verified-tag">✓ Verified Traveler</span>
+                    </div>
+                  </div>
+                  <span className="upgraded-booking-tag">Verified Trip</span>
+                </div>
+              </article>
+            );
+          }}
         />
       </section>
 
@@ -5462,12 +6138,12 @@ export default function HomePage() {
             aria-label="Open AI chat"
             onClick={() => setIsAiChatOpen(true)}
           >
+            <span className="home-ai-help-pill">
+              <span className="home-ai-help-spark" />
+              <span>May I help you?</span>
+            </span>
             <span className="home-ai-plane-orb" aria-hidden="true">
-              <span className="home-ai-plane-rings" />
-              <ActiveAiIcon
-                className={`home-ai-active-icon ${activeTab === "flights" ? "plane" : ""}`}
-                size={24}
-              />
+              <TravelAiLogoIcon size={56} />
             </span>
           </button>
         )}
@@ -5480,16 +6156,14 @@ export default function HomePage() {
           >
             <div className="home-ai-cameo" aria-hidden="true">
               <span className="home-ai-cameo-halo" />
-              <span className="home-ai-cameo-orbit home-ai-cameo-orbit-a" />
-              <span className="home-ai-cameo-orbit home-ai-cameo-orbit-b" />
-              <span className="home-ai-cameo-core">AI</span>
+              <TravelAiLogoIcon size={36} />
             </div>
 
             <div className="home-ai-chat-head">
               <div className="home-ai-chat-head-copy">
-                <strong>AI Concierge</strong>
+                <strong>Travel AI</strong>
                 <span className="home-ai-chat-status">
-                  Static assistant preview
+                  May I help you?
                 </span>
               </div>
               <div className="home-ai-chat-head-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>

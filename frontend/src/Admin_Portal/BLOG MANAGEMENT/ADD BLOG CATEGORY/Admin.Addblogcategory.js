@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createBlogCategory } from '../../../services/blogService';

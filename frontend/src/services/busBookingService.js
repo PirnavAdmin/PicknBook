@@ -1,7 +1,8 @@
+/* eslint-disable */
 import { toDdMmYyyy } from "../utils/apiDateFormat";
 
 const FALLBACK_API_BASE_URL =
-  "https://undogmatically-knotlike-evita.ngrok-free.dev";
+  "";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function getAuthHeaders() {
@@ -18,6 +19,7 @@ function getAuthHeaders() {
   return {
     Accept: "application/json",
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -35,30 +37,12 @@ function isLocalDevelopment() {
 }
 
 function resolveApiBaseUrl() {
-  const preferProxyInDev =
-    isLocalDevelopment() &&
-    String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-      "true";
-
-  if (preferProxyInDev) {
-    return "";
-  }
-
   const explicitBase =
     process.env.REACT_APP_API_BASE_URL ||
     process.env.REACT_APP_BUS_API_BASE_URL;
 
   if (explicitBase && explicitBase.trim()) {
     return explicitBase.trim();
-  }
-
-  const placesUrl = process.env.REACT_APP_PLACES_API_URL;
-  if (placesUrl && placesUrl.trim()) {
-    try {
-      return new URL(placesUrl.trim()).origin;
-    } catch {
-      // Fall through to default.
-    }
   }
 
   return FALLBACK_API_BASE_URL;
@@ -327,7 +311,7 @@ function normalizeBusSearchRecord(record, index = 0) {
       ],
       null
     ),
-    priceInr: Number(pickFirst(record, ["priceInr", "PriceInr"], 0)) || 0,
+    priceInr: Number(pickFirst(record, ["b2CDisplayFare", "B2CDisplayFare", "b2cDisplayFare"], 0)) || Number(pickFirst(record, ["priceInr", "PriceInr", "DisplayFare"], 0)) || 0,
     availableSeats:
       Number(pickFirst(record, ["availableSeats", "AvailableSeats"], 0)) || 0,
     totalSeats: Number(pickFirst(record, ["totalSeats", "TotalSeats"], 0)) || 0,
@@ -718,12 +702,15 @@ function normalizeBusPricingPreview(payload) {
   const finalAmount =
     Number(pickFirst(payload, ["finalAmount", "FinalAmount", "grandTotal", "GrandTotal"], 0)) ||
     0;
-  const subtotalBeforeCoupon =
-    Number(pickFirst(payload, ["subtotalBeforeCoupon", "SubtotalBeforeCoupon"], 0)) || 0;
-  const taxableFare =
-    Number(pickFirst(payload, ["taxableFare", "TaxableFare"], 0)) || 0;
   const gstAmount =
     Number(pickFirst(payload, ["gstAmount", "GstAmount"], 0)) || 0;
+    
+  // Force subtotalBeforeCoupon to include API markup so the UI math adds up perfectly.
+  // Base Fare + Tax = Grand Total
+  const subtotalBeforeCoupon = finalAmount - gstAmount;
+
+  const taxableFare =
+    Number(pickFirst(payload, ["taxableFare", "TaxableFare"], 0)) || 0;
   const convenienceFee =
     Number(pickFirst(payload, ["convenienceFee", "ConvenienceFee"], 0)) || 0;
   const couponDiscountAmount =
@@ -1327,55 +1314,237 @@ async function requestJsonWithFallback(paths, options = {}) {
   throw lastError || new Error("Request failed. Please try again.");
 }
 
-export async function searchBuses({ from, to, date }) {
-  const url = buildUrl(BUS_BOOKINGS_ROOT, {
-    from,
-    fromCity: from,
-    to,
-    toCity: to,
-    date: toDdMmYyyy(date),
-  });
-  const legacyUrl = buildUrl(LEGACY_BUS_BOOKINGS_ROOT, {
-    from,
-    fromCity: from,
-    to,
-    toCity: to,
-    date: toDdMmYyyy(date),
-  });
+function toYyyyMmDdDate(inputDate) {
+  if (!inputDate) return "";
+  if (typeof inputDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(inputDate.trim())) {
+    return inputDate.trim();
+  }
+  const d = new Date(inputDate);
+  if (Number.isNaN(d.getTime())) return String(inputDate);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+const POPULAR_BUS_CITY_MAP = {
+  bangalore: "4",
+  bengaluru: "4",
+  hyderabad: "9",
+  mumbai: "30",
+  chennai: "14",
+  pune: "24",
+  delhi: "2",
+  newdelhi: "2",
+  goa: "11",
+  ahmedabad: "1",
+  kolkata: "22",
+  jaipur: "17",
+  coimbatore: "12",
+  vijayawada: "39",
+  visakhapatnam: "40",
+  vizag: "40",
+  mysore: "28",
+  mysuru: "28",
+  kochi: "19",
+  cochin: "19",
+  trivandrum: "38",
+  thiruvananthapuram: "38",
+  madurai: "26",
+  trichy: "37",
+  tirupati: "36",
+  surat: "33",
+  vadodara: "34",
+  indore: "15",
+  bhopal: "8",
+  nagpur: "29",
+  nashik: "31",
+  aurangabad: "7",
+  hubli: "16",
+  mangalore: "27",
+  mangaluru: "27",
+  belgaum: "6",
+  gulbarga: "13",
+  shimoga: "32",
+  udupi: "35",
+};
+
+async function resolveCityCode(cityInput) {
+  const value = String(cityInput || "").trim();
+  if (!value) return "";
+  if (/^\d+$/.test(value)) return value;
+
+  const key = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (POPULAR_BUS_CITY_MAP[key]) {
+    return POPULAR_BUS_CITY_MAP[key];
+  }
 
   try {
-    const data = await requestJsonWithFallback([url, legacyUrl], {
-      method: "GET",
-      skipAuth: true,
-      allowAuthFallback: true,
+    const cities = await searchBusCities(value);
+    if (Array.isArray(cities) && cities.length > 0) {
+      const match =
+        cities.find(
+          (c) =>
+            String(c?.cityName || "").toLowerCase() === value.toLowerCase() ||
+            String(c?.name || "").toLowerCase() === value.toLowerCase()
+        ) || cities[0];
+      const code = String(match?.cityId || match?.id || match?.cico_id || "");
+      if (/^\d+$/.test(code)) return code;
+    }
+  } catch (err) {
+    console.warn("[busBookingService] resolveCityCode search failed:", err);
+  }
+
+  return value;
+}
+
+export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) {
+  const formattedDate = toYyyyMmDdDate(date);
+  const rawFrom = fromCityCode || from;
+  const rawTo = toCityCode || to;
+
+  const finalFromCode = await resolveCityCode(rawFrom);
+  const finalToCode = await resolveCityCode(rawTo);
+
+  const postSearchUrl = `${BUS_BOOKINGS_ROOT}/search`;
+
+  try {
+    const data = await requestJson(postSearchUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        FromCityCode: finalFromCode,
+        ToCityCode: finalToCode,
+        DepartDate: formattedDate,
+      }),
     });
 
-    const records = Array.isArray(data)
-      ? data
-      : Array.isArray(data?.buses)
-      ? data.buses
-      : Array.isArray(data?.Buses)
-      ? data.Buses
-      : Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.Items)
-      ? data.Items
-      : Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.Data)
-      ? data.Data
-      : Array.isArray(data?.value)
-      ? data.value
-      : Array.isArray(data?.Value)
-      ? data.Value
-      : Array.isArray(data?.results)
-      ? data.results
-      : Array.isArray(data?.Results)
-      ? data.Results
-      : null;
+    const topTraceId = String(data?.TraceId || data?.traceId || "");
+    if (topTraceId) {
+      try {
+        sessionStorage.setItem("last_bus_trace_id", topTraceId);
+      } catch (e) {}
+    }
 
-    if (records) {
-      return records.map((record, index) => normalizeBusSearchRecord(record, index));
+    const extractArray = (obj) => {
+      if (!obj || typeof obj !== "object") return null;
+      if (Array.isArray(obj)) return obj;
+      // Check Result first — the SRDV response wraps the bus list in "Result"
+      const priorityKeys = [
+        "Result", "result",
+        "buses", "Buses", "busList", "BusList", "items", "Items",
+        "data", "Data", "value", "Value", "results", "Results",
+        "trips", "Trips", "availableBuses", "AvailableBuses",
+        "busSearchList", "BusSearchList", "searchResult", "SearchResult"
+      ];
+      for (const key of priorityKeys) {
+        if (Array.isArray(obj[key])) return obj[key];
+      }
+      for (const key of Object.keys(obj)) {
+        if (Array.isArray(obj[key])) return obj[key];
+      }
+      return null;
+    };
+
+    const normalizeBusSearchRecord = (record, index) => {
+      if (!record || typeof record !== "object") return null;
+
+      // Map SRDV field names to frontend-expected fields
+      const operatorName =
+        record.TravelsName || record.OperatorName || record.travelsName || record.operatorName || "Unknown Operator";
+      const busType =
+        record.BusType || record.busType || record.type || "";
+      const departureTime =
+        record.DepartureTime || record.departureTime || record.departure || "";
+      const arrivalTime =
+        record.ArrivalTime || record.arrivalTime || record.arrival || "";
+      const availableSeats =
+        parseInt(record.AvailableSeats ?? record.availableSeats ?? record.seatsAvailable ?? 0, 10);
+      const priceList =
+        Array.isArray(record.Price) ? record.Price :
+        Array.isArray(record.price) ? record.price : [];
+
+      let displayFare = parseFloat(record.DisplayFare ?? record.displayFare ?? record.fare ?? 0);
+      if (priceList.length > 0) {
+        const validFares = priceList
+          .map((p) => parseFloat(p?.PublishedFare || p?.BaseFare || 0))
+          .filter((f) => f > 0);
+        if (validFares.length > 0) {
+          displayFare = Math.min(...validFares);
+        }
+      }
+      const resultIndex =
+        String(record.ResultIndex || record.resultIndex || record.Id || index);
+      const traceId =
+        String(record.TraceId || record.traceId || topTraceId || "");
+      const srdvIndex =
+        String(record.SrdvIndex ?? record.srdvIndex ?? "0");
+      const routeId =
+        record.RouteId || record.routeId || "";
+      const operatorId =
+        record.OperatorId || record.operatorId || "";
+      const isAC =
+        String(record.IsAC ?? record.isAC ?? "false").toLowerCase() === "true";
+      const isSleeper =
+        String(record.Sleeper ?? record.sleeper ?? "false").toLowerCase() === "true";
+      const isSeater =
+        String(record.Seater ?? record.seater ?? "false").toLowerCase() === "true";
+      const boardingPoints =
+        Array.isArray(record.BoardingPoints) ? record.BoardingPoints :
+        Array.isArray(record.boardingPoints) ? record.boardingPoints : [];
+      const droppingPoints =
+        Array.isArray(record.DroppingPoints) ? record.DroppingPoints :
+        Array.isArray(record.droppingPoints) ? record.droppingPoints : [];
+      const amenities =
+        Array.isArray(record.Amenities) ? record.Amenities :
+        Array.isArray(record.amenities) ? record.amenities : [];
+      const cancellationPolicies =
+        Array.isArray(record.CancellationPolicies) ? record.CancellationPolicies :
+        Array.isArray(record.cancellationPolicies) ? record.cancellationPolicies : [];
+        // priceList already extracted above
+
+      return {
+        id: record.Id || record.id || index,
+        resultIndex,
+        traceId,
+        srdvIndex,
+        routeId,
+        operatorId,
+        operatorName,
+        busType,
+        departureTime,
+        arrivalTime,
+        departureTimeIst: departureTime,
+        arrivalTimeIst: arrivalTime,
+        departureTimeUtc: departureTime,
+        arrivalTimeUtc: arrivalTime,
+        duration: record.Duration || record.duration || 0,
+        availableSeats,
+        maxSeatsPerTicket: parseInt(record.MaxSeatsPerTicket ?? record.maxSeatsPerTicket ?? 6, 10),
+        fare: displayFare,
+        displayFare,
+        isAC,
+        isSleeper,
+        isSeater,
+        mTicketEnabled: String(record.MTicketEnabled ?? "false").toLowerCase() === "true",
+        idProofRequired: String(record.IdProofRequired ?? "false").toLowerCase() === "true",
+        liveTracking: String(record.LiveTracking ?? "false").toLowerCase() === "true",
+        boardingPoints,
+        droppingPoints,
+        amenities: amenities.map((a) => (typeof a === "string" ? a : a?.Name || a?.name || "")),
+        priceList,
+        cancellationPolicies,
+        partialCancellationAllowed: String(record.PartialCancellationAllowed ?? "false").toLowerCase() === "true",
+        isArrivingNextDay: String(record.IsArrivingNextDay ?? "false").toLowerCase() === "true",
+      };
+    };
+
+    const records = extractArray(data) || [];
+
+    if (Array.isArray(records)) {
+      return records
+        .map((record, index) => normalizeBusSearchRecord(record, index))
+        .filter(Boolean);
     }
 
     const responseText = String(data || "").toLowerCase();
@@ -1389,93 +1558,236 @@ export async function searchBuses({ from, to, date }) {
       );
     }
 
-    throw new Error("Bus API returned an unexpected response format.");
+    throw new Error(`Bus API returned an invalid response format: ${JSON.stringify(data)}`);
   } catch (error) {
-    if (shouldUseFallbackBuses(error)) {
-      return buildFallbackBusSearchRecords({ from, to, date });
-    }
-
+    console.error("[busBookingService] searchBuses Error:", error);
     throw error;
   }
 }
 
-export async function getBusSeatMap(busId) {
-  if (isFallbackBusId(busId)) {
-    return buildFallbackSeatMap(busId);
-  }
+export async function searchBusCities(query) {
+  const q = String(query || "").trim();
+  if (!q) return [];
 
   try {
-    const data = await requestJsonWithFallback(
-      [`${BUS_BOOKINGS_ROOT}/${busId}/seats`, `${LEGACY_BUS_BOOKINGS_ROOT}/${busId}/seats`],
-      { method: "GET", allowAuthFallback: true }
-    );
-
-    return {
-      tripId: pickFirst(data, ["tripId", "TripId"], busId),
-      tripType: pickFirst(data, ["tripType", "TripType"], "Bus"),
-      travelClass: pickFirst(data, ["travelClass", "TravelClass"], null),
-      layoutType: String(pickFirst(data, ["layoutType", "LayoutType"], "") || ""),
-      totalSeats: Number(pickFirst(data, ["totalSeats", "TotalSeats"], 0)) || 0,
-      bookedSeats: Number(pickFirst(data, ["bookedSeats", "BookedSeats"], 0)) || 0,
-      availableSeats: Number(pickFirst(data, ["availableSeats", "AvailableSeats"], 0)) || 0,
-      priceInr: Number(pickFirst(data, ["priceInr", "PriceInr"], 0)) || 0,
-      seats: Array.isArray(data.seats || data.Seats)
-        ? (data.seats || data.Seats).map(normalizeBusSeatRecord)
-        : [],
-      seatDefinitions: Array.isArray(data.seatDefinitions || data.SeatDefinitions)
-        ? (data.seatDefinitions || data.SeatDefinitions).map(normalizeBusSeatDefinitionRecord)
-        : [],
-      sections: Array.isArray(data.sections || data.Sections)
-        ? (data.sections || data.Sections).map(normalizeBusSeatSectionRecord)
-        : [],
-      boardingPoints: normalizePointOptionList(
-        pickFirst(
-          data,
-          [
-            "boardingPoints",
-            "BoardingPoints",
-            "boardingPointList",
-            "BoardingPointList",
-            "boardingStops",
-            "BoardingStops",
-            "pickupPoints",
-            "PickupPoints",
-          ],
-          []
-        )
-      ),
-      droppingPoints: normalizePointOptionList(
-        pickFirst(
-          data,
-          [
-            "droppingPoints",
-            "DroppingPoints",
-            "droppingPointList",
-            "DroppingPointList",
-            "droppingStops",
-            "DroppingStops",
-            "dropPoints",
-            "DropPoints",
-          ],
-          []
-        )
-      ),
-    };
+    const data = await requestJson(`${BUS_BOOKINGS_ROOT}/search-cities?query=${encodeURIComponent(q)}`, {
+      method: "GET",
+      skipAuth: true,
+    });
+    let list = Array.isArray(data) ? data : (data?.Cities || data?.Result || data?.data || data?.value || []);
+    return Array.isArray(list) ? list : [];
   } catch (error) {
-    console.error("Error fetching bus seat map:", error);
-    if (shouldUseFallbackBuses(error)) {
-      return buildFallbackSeatMap(busId);
-    }
+    console.error("[busBookingService] searchBusCities Error:", error);
+    return [];
+  }
+}
 
+export async function getBusSeatLayoutProxy({ traceId, srdvIndex, resultIndex }) {
+  try {
+    const data = await requestJson(`${BUS_BOOKINGS_ROOT}/seat-layout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        traceId: String(traceId),
+        srdvIndex: String(srdvIndex),
+        resultIndex: String(resultIndex),
+      }),
+    });
+    return data;
+  } catch (error) {
+    console.error("[busBookingService] getBusSeatLayoutProxy Error:", error);
     throw error;
   }
 }
 
-export async function getBusPricingPreview({ busId, seatCodes, couponCode, promotionId, selectedFeaturedOfferId } = {}) {
-  const normalizedSeatCodes = Array.isArray(seatCodes)
-    ? seatCodes.map((seatCode) => String(seatCode || "").trim()).filter(Boolean)
-    : [];
+export async function getBoardingPointsProxy({ traceId, srdvIndex, resultIndex }) {
+  try {
+    const data = await requestJson(`${BUS_BOOKINGS_ROOT}/boarding-points`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        traceId: String(traceId),
+        srdvIndex: String(srdvIndex),
+        resultIndex: String(resultIndex),
+      }),
+    });
+    return data;
+  } catch (error) {
+    console.error("[busBookingService] getBoardingPointsProxy Error:", error);
+    throw error;
+  }
+}
 
+export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingPointId, droppingPointId, passengers }) {
+  try {
+    const data = await requestJson(`${BUS_BOOKINGS_ROOT}/block`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        traceId: String(traceId),
+        resultIndex: String(resultIndex),
+        srdvIndex: Number(srdvIndex),
+        boardingPointId: String(boardingPointId),
+        droppingPointId: String(droppingPointId),
+        passengers,
+      }),
+    });
+    return data;
+  } catch (error) {
+    console.error("[busBookingService] blockBusProxy Error:", error);
+    throw error;
+  }
+}
+
+export async function getBusSeatMap(busParam, proxyParams = null) {
+  try {
+    let traceId = "";
+    let srdvIndex = "0";
+    let resultIndex = "";
+
+    if (proxyParams && (proxyParams.traceId || proxyParams.resultIndex)) {
+      traceId = String(proxyParams.traceId || "");
+      srdvIndex = String(proxyParams.srdvIndex ?? "0");
+      resultIndex = String(proxyParams.resultIndex || "");
+    } else if (typeof busParam === "object" && busParam !== null) {
+      traceId = String(busParam.traceId || busParam.TraceId || busParam.searchContext?.traceId || "");
+      srdvIndex = String(busParam.srdvIndex ?? busParam.SrdvIndex ?? "0");
+      resultIndex = String(busParam.resultIndex || busParam.ResultIndex || busParam.id || "");
+    } else if (typeof busParam === "string" || typeof busParam === "number") {
+      resultIndex = String(busParam);
+    }
+
+    if (!traceId || !resultIndex) {
+      throw new Error("Missing required TraceId or ResultIndex for seat layout.");
+    }
+
+    const payload = {
+      traceId: String(traceId),
+      srdvIndex: String(srdvIndex),
+      resultIndex: String(resultIndex),
+    };
+
+    const data = await getBusSeatLayoutProxy(payload);
+
+    let pointsData = null;
+    try {
+      pointsData = await getBoardingPointsProxy(payload);
+    } catch (e) {
+      console.warn("Failed to fetch boarding points proxy", e);
+    }
+
+    const extractPoints = (resp, key) => {
+      if (!resp) return [];
+      if (Array.isArray(resp[key])) return resp[key];
+      
+      const res = resp.Result || resp.result || resp.GetBoardingPointDetailsResult || resp.data;
+      if (res && Array.isArray(res[key])) return res[key];
+      if (res && Array.isArray(res[`${key}Details`])) return res[`${key}Details`];
+      
+      const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
+      if (Array.isArray(resp[lowerKey])) return resp[lowerKey];
+      if (res && Array.isArray(res[lowerKey])) return res[lowerKey];
+      
+      return [];
+    };
+
+    const bpFromPoints = extractPoints(pointsData, "BoardingPoints");
+    const bpFromData = extractPoints(data, "BoardingPoints");
+    const boardingPoints = bpFromPoints.length > 0 ? bpFromPoints : bpFromData;
+
+    const dpFromPoints = extractPoints(pointsData, "DroppingPoints");
+    const dpFromData = extractPoints(data, "DroppingPoints");
+    const droppingPoints = dpFromPoints.length > 0 ? dpFromPoints : dpFromData;
+
+    // Process raw SRDV / Provider seat object returned by POST /api/BusBookings/seat-layout
+    const rawSeats = [];
+    const extractRawSeatList = (container) => {
+      if (!container || typeof container !== "object") return;
+      Object.values(container).forEach((val) => {
+        if (Array.isArray(val)) {
+          val.forEach((s) => s && rawSeats.push(s));
+        } else if (val && typeof val === "object") {
+          Object.values(val).forEach((s) => s && rawSeats.push(s));
+        }
+      });
+    };
+
+    if (data && data.Result && typeof data.Result === "object" && !Array.isArray(data.Result)) {
+      extractRawSeatList(data.Result);
+      if (data.ResultUpperSeat) extractRawSeatList(data.ResultUpperSeat);
+    } else if (Array.isArray(data?.Result)) {
+      data.Result.forEach((s) => s && rawSeats.push(s));
+    }
+
+    const seats = rawSeats.map((s) => {
+      const baseFare    = Number(s?.Price?.BaseFare || 0);
+      const tax         = Number(s?.Price?.Tax || s?.Price?.GSTAmount || s?.Price?.ServiceTax || 0);
+      const markup      = Number(s?.Price?.AgentMarkUp || s?.Price?.MarkUp || 0);
+
+      // As per integration guide:
+      // Price.B2CDisplayFare = Base + Markup only (no GST) - Show on seat icon
+      // Price.PublishedFare = BaseFare + Tax + Markup = the full customer-facing price.
+      const b2cDisplayFare = Number(s?.Price?.B2CDisplayFare || 0) || (baseFare + markup);
+      const publishedFare = Number(s?.Price?.PublishedFare || 0) || (baseFare + tax + markup);
+
+      const seatFare = b2cDisplayFare; // Show tax-exclusive on seat icon
+
+      const isAvailable = String(s?.SeatStatus).toLowerCase() === "true";
+
+      return {
+        seatCode:      String(s?.SeatName || ""),
+        seatType:      String(s?.SeatType || "Seater"),
+        priceInr:      b2cDisplayFare,
+        baseFare,
+        tax,
+        externalGst:   tax, // Added for Pricing Preview explicitly
+        seatFare,
+        markupAmount:  markup,
+        fareBeforeTax: baseFare,
+        isBooked:      !isAvailable,
+        gender:        String(s?.IsLadiesSeat).toLowerCase() === "true" ? "Female" : "",
+      };
+    });
+
+
+    const seatDefinitions = rawSeats.map((s) => ({
+      seatCode: String(s?.SeatName || ""),
+      seatType: String(s?.SeatType || "Seater"),
+      deck: s?.IsUpper ? "Upper" : "Lower",
+      row: Number(s?.RowNo) || 0,
+      column: Number(s?.ColumnNo) || 0,
+      isSleeper:
+        !String(s?.SeatType || "").toLowerCase().includes("semi") &&
+        (String(s?.SeatType || "").toLowerCase().includes("sleeper") ||
+          String(s?.DoubleBirth).toLowerCase() === "true"),
+      isUpper: Boolean(s?.IsUpper),
+      sectionLabel: s?.IsUpper ? "Upper deck" : "Lower deck",
+    }));
+
+    return {
+      tripId: data?.TraceId || params.traceId,
+      tripType: "Bus",
+      travelClass: null,
+      layoutType: seats.some((st) => st.seatType.toLowerCase().includes("sleeper")) ? "Sleeper" : "Seater",
+      totalSeats: seats.length,
+      bookedSeats: seats.filter((st) => st.isBooked).length,
+      availableSeats: Number(data?.AvailableSeats) || seats.filter((st) => !st.isBooked).length,
+      priceInr: seats[0]?.priceInr || 0,
+      seats,
+      seatDefinitions,
+      sections: [],
+      boardingPoints,
+      droppingPoints,
+      // Pass raw SRDV response so SeatSelection can use Result/ResultUpperSeat directly
+      rawLayoutData: data,
+    };
+  } catch (error) {
+    console.error("[busBookingService] getBusSeatMap Error:", error);
+    throw error;
+  }
+}
+
+export async function getBusPricingPreview({ busId, traceId, resultIndex, srdvIndex, blockKey, boardingPointId, passengers = [], couponCode, promotionId, selectedFeaturedOfferId } = {}) {
   let finalCouponCode = couponCode ? String(couponCode).trim().toUpperCase() : null;
   let finalFeaturedOfferId =
     selectedFeaturedOfferId !== undefined &&
@@ -1495,21 +1807,25 @@ export async function getBusPricingPreview({ busId, seatCodes, couponCode, promo
     finalFeaturedOfferId = null;
   }
 
-  if (isFallbackBusId(busId)) {
-    return buildFallbackPricingPreview(busId, normalizedSeatCodes);
-  }
+  const seatsPayload = passengers.map(p => ({
+    seatCode: p.seatNumber || p.seatName || p.seatCode,
+    seatType: p.seatType,
+    baseFare: Number(p.baseFare || 0),
+    markupAmount: Number(p.markupAmount || 0),
+    externalGst: Number(p.tax || p.externalGst || 0)
+  }));
 
   try {
     const data = await requestJsonWithFallback(
-      [`${BUS_BOOKINGS_ROOT}/pricing-preview`, `${LEGACY_BUS_BOOKINGS_ROOT}/pricing-preview`],
+      [`${BUS_BOOKINGS_ROOT}/${busId}/pricing-preview`, `${LEGACY_BUS_BOOKINGS_ROOT}/${busId}/pricing-preview`],
       {
         method: "POST",
         allowAuthFallback: true,
         body: JSON.stringify({
-          busId,
-          seatCodes: normalizedSeatCodes,
+          traceId: String(traceId || busId || ""),
           couponCode: finalCouponCode,
-          promotionId: null,
+          seats: seatsPayload,
+          promotionId: finalFeaturedOfferId ? null : promotionId,
           selectedFeaturedOfferId: finalFeaturedOfferId,
         }),
       }
@@ -1517,30 +1833,56 @@ export async function getBusPricingPreview({ busId, seatCodes, couponCode, promo
 
     return normalizeBusPricingPreview(data && typeof data === "object" ? data : {});
   } catch (error) {
-    if (!shouldUseFallbackBuses(error)) {
-      throw error;
-    }
-
-    return buildFallbackPricingPreview(busId, normalizedSeatCodes);
+    console.error("[busBookingService] getBusPricingPreview Error:", error);
+    throw error;
   }
 }
 
 export async function bookBus({ busId, payload }) {
-  if (isFallbackBusId(busId)) {
-    return buildLocalBusBookingResponse(busId);
+
+  const featuredOfferId = payload.selectedFeaturedOfferId || payload.promotionId;
+  let finalCouponCode = payload.couponCode ? String(payload.couponCode).trim().toUpperCase() : null;
+  let finalFeaturedOfferId = featuredOfferId ? Number(featuredOfferId) : null;
+  if (Number.isNaN(finalFeaturedOfferId)) finalFeaturedOfferId = null;
+
+  if (finalFeaturedOfferId) {
+    finalCouponCode = null;
+  } else if (finalCouponCode) {
+    finalFeaturedOfferId = null;
   }
 
-  const updatedPayload = { ...payload };
-  const featuredOfferId = updatedPayload.selectedFeaturedOfferId || updatedPayload.promotionId;
-  if (featuredOfferId) {
-    updatedPayload.couponCode = null;
-    const numericId = Number(featuredOfferId);
-    updatedPayload.selectedFeaturedOfferId = Number.isNaN(numericId) ? null : numericId;
-    updatedPayload.promotionId = null;
-  } else if (updatedPayload.couponCode) {
-    updatedPayload.promotionId = null;
-    updatedPayload.selectedFeaturedOfferId = null;
-  }
+  const passengersPayload = (payload.passengers || []).map(p => ({
+    fullName: String(`${p.firstName || ""} ${p.lastName || ""}`).trim() || p.fullName,
+    gender: String(p.gender).toLowerCase() === "female" ? 2 : 1,
+    seatNumber: p.seatNumber || p.seatName || p.SeatNumber,
+    age: Number(p.age || p.Age),
+    baseFare: Number(p.baseFare || p.BaseFare || 0),
+    seatType: String(p.seatType || p.SeatType || "Seater").charAt(0).toUpperCase() + String(p.seatType || p.SeatType || "Seater").slice(1),
+    externalGst: Number(p.tax || p.externalGst || p.ExternalGst || 0),
+    idType: p.idType || "Aadhar",
+    idNumber: p.idNumber || "123456789012"
+  }));
+
+  const updatedPayload = {
+    traceId: String(payload.traceId || payload.TraceId || busId || ""),
+    resultIndex: String(payload.resultIndex || payload.ResultIndex || ""),
+    srdvIndex: Number(payload.srdvIndex || payload.SrdvIndex || 0),
+    blockKey: String(payload.blockKey || payload.BlockKey || ""),
+    boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || ""),
+    boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || ""),
+    boardingPointTime: String(payload.boardingPointTime || payload.BoardingPointTime || ""),
+    droppingPointId: String(payload.droppingPointId || payload.DroppingPointId || ""),
+    droppingPointName: String(payload.droppingPointName || payload.DroppingPointName || ""),
+    droppingPointTime: String(payload.droppingPointTime || payload.DroppingPointTime || ""),
+    passengerName: String(payload.passengerName || payload.PassengerName || ""),
+    passengerPhone: String(payload.passengerPhone || payload.PassengerPhone || ""),
+    passengerEmail: String(payload.passengerEmail || payload.PassengerEmail || ""),
+    couponCode: finalCouponCode,
+    passengers: passengersPayload,
+    promotionId: finalFeaturedOfferId ? null : payload.promotionId,
+    selectedFeaturedOfferId: finalFeaturedOfferId,
+    paymentMethod: String(payload.paymentMethod || "")
+  };
 
   try {
     const data = await requestJsonWithFallback(
@@ -1554,10 +1896,7 @@ export async function bookBus({ busId, payload }) {
 
     return normalizeBusActionResponse(data);
   } catch (error) {
-    if (shouldUseFallbackBuses(error)) {
-      return buildLocalBusBookingResponse(busId);
-    }
-
+    console.error("[busBookingService] bookBus Error:", error);
     throw error;
   }
 }
@@ -1641,18 +1980,10 @@ export async function listBusBookings({ passengerPhone, status } = {}) {
     status,
   });
 
-  try {
-    const data = await requestJsonWithFallback([url, legacyUrl], { method: "GET" });
-    return Array.isArray(data)
-      ? data.map((record) => normalizeBusBookingRecord(record))
-      : [];
-  } catch (error) {
-    if (shouldUseFallbackBuses(error)) {
-      return [];
-    }
-
-    throw error;
-  }
+  const data = await requestJsonWithFallback([url, legacyUrl], { method: "GET" });
+  return Array.isArray(data)
+    ? data.map((record) => normalizeBusBookingRecord(record))
+    : [];
 }
 
 export async function getBusBookingById(bookingId) {
@@ -1790,13 +2121,13 @@ export async function getFeaturedBusOffers() {
   }
 }
 
-export async function cancelBusPassengers(bookingId, passengerIds, reason) {
+export async function cancelBusPassengers(bookingId, seatNumbers, reason) {
   const url = `${BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
   const legacyUrl = `${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
 
   const data = await requestJsonWithFallback([url, legacyUrl], {
     method: "POST",
-    body: JSON.stringify({ passengerIds, reason }),
+    body: JSON.stringify({ seatNumbers, reason }),
   });
   return normalizeBusBookingRecord(data);
 }

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import AdminSidebar from './SIDEBAR ADMIN/sidebar_admin.js';

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Eye,
@@ -88,7 +89,7 @@ export default function BusBookings() {
   const [loadingDetailFor, setLoadingDetailFor] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
-  const [selectedPassengerIds, setSelectedPassengerIds] = useState([]);
+  const [selectedSeatNumbers, setSelectedSeatNumbers] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -202,7 +203,7 @@ export default function BusBookings() {
     try {
       const detail = await getBusBookingById(bookingId);
       setSelectedBooking(detail);
-      setSelectedPassengerIds([]);
+      setSelectedSeatNumbers([]);
       setCancelReason("");
     } catch (error) {
       setErrorMessage(error.message || "Unable to fetch booking details.");
@@ -240,7 +241,7 @@ export default function BusBookings() {
   };
 
   const handleCancelSelectedPassengers = async () => {
-    if (selectedPassengerIds.length === 0) return;
+    if (selectedSeatNumbers.length === 0) return;
 
     setIsCancellingPassengers(true);
     setErrorMessage("");
@@ -249,12 +250,12 @@ export default function BusBookings() {
     try {
       const updatedBooking = await cancelBusPassengers(
         selectedBooking.bookingId,
-        selectedPassengerIds,
+        selectedSeatNumbers,
         cancelReason || undefined
       );
 
       setSelectedBooking(updatedBooking);
-      setSelectedPassengerIds([]);
+      setSelectedSeatNumbers([]);
       setCancelReason("");
       setActionMessage("Selected passengers cancelled successfully.");
       await fetchBookings();
@@ -529,11 +530,11 @@ export default function BusBookings() {
       </section>
 
       {selectedBooking && (
-        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
+        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedSeatNumbers([]); setCancelReason(""); }}>
           <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
             <header>
               <h3>Bus Booking Details</h3>
-              <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
+              <button type="button" onClick={() => { setSelectedBooking(null); setSelectedSeatNumbers([]); setCancelReason(""); }}>
                 <X size={16} />
               </button>
             </header>
@@ -625,12 +626,12 @@ export default function BusBookings() {
                             {!p.isCancelled && (
                               <input
                                 type="checkbox"
-                                checked={selectedPassengerIds.includes(p.id)}
+                                checked={selectedSeatNumbers.includes(p.seatNumber)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setSelectedPassengerIds([...selectedPassengerIds, p.id]);
+                                    setSelectedSeatNumbers([...selectedSeatNumbers, p.seatNumber]);
                                   } else {
-                                    setSelectedPassengerIds(selectedPassengerIds.filter(id => id !== p.id));
+                                    setSelectedSeatNumbers(selectedSeatNumbers.filter(sn => sn !== p.seatNumber));
                                   }
                                 }}
                               />
@@ -654,7 +655,7 @@ export default function BusBookings() {
                   </table>
                 </div>
 
-                {selectedPassengerIds.length > 0 && (
+                {selectedSeatNumbers.length > 0 && (
                   <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>

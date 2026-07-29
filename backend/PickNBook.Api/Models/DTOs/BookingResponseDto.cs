@@ -77,6 +77,22 @@ public class FlightPassengerResponseDto
 
 public class CreateBusBookingRequestDto
 {
+    // SRDV Tracking
+    public string TraceId { get; set; } = string.Empty;
+    public string ResultIndex { get; set; } = string.Empty;
+    public int SrdvIndex { get; set; }
+    public string? BlockKey { get; set; }
+    
+    // User Selection
+    public string? BoardingPointId { get; set; }
+    public string? BoardingPointName { get; set; }
+    public DateTime? BoardingPointTime { get; set; }
+    
+    public string? DroppingPointId { get; set; }
+    public string? DroppingPointName { get; set; }
+    public DateTime? DroppingPointTime { get; set; }
+
+    // Existing fields
     public string PassengerName { get; set; } = string.Empty;
     public string PassengerPhone { get; set; } = string.Empty;
     public string? PassengerEmail { get; set; }
@@ -94,6 +110,9 @@ public class CreateBusPassengerDto
     public string Gender { get; set; } = string.Empty;
     public string? SeatNumber { get; set; }
     public int Age { get; set; }
+    public decimal BaseFare { get; set; } // Added for SRDV dynamic pricing
+    public string SeatType { get; set; } = string.Empty; // Added for SRDV dynamic pricing
+    public decimal ExternalGst { get; set; } // Extracted from SRDV API directly
 }
 
 public class BusPassengerResponseDto

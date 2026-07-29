@@ -1,14 +1,12 @@
-﻿namespace PickNBook.Api.Models.DTOs
+namespace PickNBook.Api.Models.DTOs
 {
-    public class BusPricingPreviewRequestDto
+
+    public class SeatPreviewDto
     {
-        public int BusId { get; set; }
-
-        public List<string> SeatCodes { get; set; } = [];
-
-        public string? CouponCode { get; set; }
-        public int? PromotionId { get; set; }
-        public int? SelectedFeaturedOfferId { get; set; }
+        public string SeatCode { get; set; } = string.Empty;
+        public decimal BaseFare { get; set; }
+        public string SeatType { get; set; } = string.Empty;
+        public decimal ExternalGst { get; set; }
     }
 
     public class BusSeatPriceBreakdownDto
@@ -22,6 +20,19 @@
         public decimal MarkupAmount { get; set; }
 
         public decimal FareBeforeTax { get; set; }
+    }
+
+    /// <summary>
+    /// Lightweight request DTO for the pricing-preview endpoint.
+    /// Does NOT require passenger names/ages — only seat pricing data from the seat layout response.
+    /// </summary>
+    public class BusPricingPreviewRequestDto
+    {
+        public string? TraceId { get; set; }
+        public string? CouponCode { get; set; }
+        public int? PromotionId { get; set; }
+        public int? SelectedFeaturedOfferId { get; set; }
+        public List<SeatPreviewDto> Seats { get; set; } = [];
     }
 
     public class BusPricingPreviewResponseDto

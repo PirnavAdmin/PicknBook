@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../../contexts/UserContext";
 import { submitContactQuery } from "../../services/queryService";

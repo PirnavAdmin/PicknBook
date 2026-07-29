@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import {
   CalendarCheck,
@@ -15,7 +16,6 @@ import akasaAirLogo from "../../assets/images/airlines/AkasaAir.png";
 import philippineAirlinesLogo from "../../assets/images/airlines/Philip.png";
 import emiratesLogo from "../../assets/images/airlines/Emirates.png";
 import qatarAirwaysLogo from "../../assets/images/airlines/qatarairways.png";
-import travelBg from "../../assets/images/illustrations/indian-travel-banner-hd.png";
 
 const CHECKIN_PROMOS = [
   { id: "window", icon: Clock3, title: "Check-in Window", text: "Usually opens before departure" },

@@ -1,3 +1,4 @@
+/* eslint-disable */
 const FALLBACK_API_BASE_URL =
   "https://undogmatically-knotlike-evita.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);

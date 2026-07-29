@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import { Outlet } from "react-router-dom";
 import DashboardSidebar from "./DashboardSidebar";

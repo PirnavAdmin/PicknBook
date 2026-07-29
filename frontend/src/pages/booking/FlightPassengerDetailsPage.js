@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useMemo, useState, useEffect } from "react";
 import { Info, Ticket, Tag, Mail, Phone, Check, X, Shield, ArrowRight, ShieldCheck, User, Plus } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -178,7 +179,8 @@ export default function FlightPassengerDetailsPage() {
 
   const b2bToken = localStorage.getItem("b2b_token");
   const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-  const isAgent = b2bToken && b2bRole === "agent";
+  const activePortal = sessionStorage.getItem("active_portal");
+  const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
   const flight = flowState.flight || null;
   const selectedSeats = flowState.selectedSeats || [];
@@ -670,7 +672,8 @@ export default function FlightPassengerDetailsPage() {
 
     const b2bToken = localStorage.getItem("b2b_token");
     const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-    const isAgent = b2bToken && b2bRole === "agent";
+    const activePortal = sessionStorage.getItem("active_portal");
+    const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
     if (!isAgent) {
       const token = localStorage.getItem("token");

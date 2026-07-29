@@ -21,12 +21,12 @@ public class BusPromotionEngineService
     }
 
     public async Task<BusPricingPreviewResponseDto> CalculateAsync(
-    int busId,
-    List<string> seatCodes,
-    string? couponCode,
-    int? promotionId,
-    int? userId = null,
-    int? selectedFeaturedOfferId = null)
+        int busId,
+        List<SeatPreviewDto> seats,
+        string? couponCode,
+        int? promotionId,
+        int? userId = null,
+         int? selectedFeaturedOfferId = null)
     {
         bool isAgent = false;
         if (userId.HasValue)
@@ -49,13 +49,6 @@ public class BusPromotionEngineService
         if (bus is null)
             throw new Exception("Bus not found.");
 
-        var seats = await _db.BusSeats
-            .AsNoTracking()
-            .Where(x =>
-                x.BusBookingId == busId &&
-                seatCodes.Contains(x.SeatCode))
-            .ToListAsync();
-
         var response =
             new BusPricingPreviewResponseDto
             {
@@ -65,15 +58,26 @@ public class BusPromotionEngineService
             };
 
         decimal subtotal = 0m;
-       
+        decimal totalExternalGst = 0m;
 
         foreach (var seat in seats)
         {
+            // Use the per-seat pricing data from SeatPreviewDto (already resolved by the controller)
+            // No fallback to generic bus.PriceInr — if seat pricing is missing, fail loudly
+            if (seat.BaseFare <= 0)
+                throw new Exception($"Seat pricing data unavailable for seat {seat.SeatCode}. Please refresh the seat layout and try again.");
+
+            var currentBaseFare = seat.BaseFare;
+            totalExternalGst += seat.ExternalGst;
+
+            var isSleeper = seat.SeatType.Contains("sleeper", StringComparison.OrdinalIgnoreCase);
+            var normalizedSeatType = isSleeper ? "Sleeper" : "Seater";
+
             var markup = await _db.BusMarkupSettings
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.Status == "Active" &&
-                    x.SeatType == seat.SeatType);
+                    x.SeatType == normalizedSeatType);
 
             decimal markupAmount = 0m;
 
@@ -83,12 +87,12 @@ public class BusPromotionEngineService
                     markup.MarkupType.Equals(
                         "Percentage",
                         StringComparison.OrdinalIgnoreCase)
-                    ? bus.PriceInr * markup.Value / 100m
+                    ? currentBaseFare * markup.Value / 100m
                     : markup.Value;
             }
 
             var fareBeforeTax =
-                bus.PriceInr + markupAmount;
+                currentBaseFare + markupAmount;
 
             subtotal += fareBeforeTax;
 
@@ -97,7 +101,7 @@ public class BusPromotionEngineService
                 {
                     SeatCode = seat.SeatCode,
                     SeatType = seat.SeatType,
-                    BaseFare = bus.PriceInr,
+                    BaseFare = currentBaseFare,
                     MarkupAmount = decimal.Round(
                         markupAmount,
                         2),
@@ -456,39 +460,20 @@ public class BusPromotionEngineService
                 2);
 
         // ========================================
-        // GST
+        // GST (EXTERNAL FROM SRDV)
         // ========================================
+        
+        // SRDV DisplayFare already includes GST. 
+        // We do not add the ExternalGst again to avoid double charging.
 
-        var gstSetting =
-            await _db.BusGstSettings
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Status == "Active" &&
-                    x.GstCategory == bus.GstCategory);
-
-        response.GstPercent =
-            gstSetting?.GstPercent ?? 0m;
-
-        response.GstAmount =
-            decimal.Round(
-                taxableFare *
-                response.GstPercent / 100m,
-                2);
+        response.GstPercent = 0m; // Not driven by local percentage anymore
+        response.GstAmount = decimal.Round(totalExternalGst, 2);
 
         // ========================================
-        // CONVENIENCE FEE
+        // CONVENIENCE FEE (Removed per requirements)
         // ========================================
 
-        var convenienceFee =
-            await _db.BusConvenienceFees
-                .AsNoTracking()
-                .Where(x => x.Status == "Active")
-                .OrderByDescending(x => x.Id)
-                .Select(x => x.FeeInr)
-                .FirstOrDefaultAsync();
-
-        response.ConvenienceFee =
-            convenienceFee;
+        response.ConvenienceFee = 0m;
 
         // ========================================
         // GRAND TOTAL
@@ -497,8 +482,7 @@ public class BusPromotionEngineService
         response.GrandTotal =
             decimal.Round(
                 taxableFare +
-                response.GstAmount +
-                convenienceFee,
+                response.GstAmount,
                 2);
         response.FinalAmount =response.GrandTotal;
 
@@ -508,7 +492,7 @@ public class BusPromotionEngineService
     private bool ValidatePromotionConditions(
         BusPromotion promotion,
         BusBooking bus,
-        List<BusSeat> seats)
+        List<SeatPreviewDto> seats)
     {
         if (promotion.Conditions == null ||
             promotion.Conditions.Count == 0)
@@ -656,7 +640,7 @@ public class BusPromotionEngineService
     private bool ValidateFeaturedOfferConditions(
         FeaturedOffer offer,
         BusBooking bus,
-        List<BusSeat> seats)
+        List<SeatPreviewDto> seats)
     {
         if (offer.Conditions == null ||
             offer.Conditions.Count == 0)

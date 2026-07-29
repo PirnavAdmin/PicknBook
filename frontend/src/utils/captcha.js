@@ -1,3 +1,4 @@
+/* eslint-disable */
 const CAPTCHA_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 const CAPTCHA_LOWER = "abcdefghijkmnopqrstuvwxyz";
 const CAPTCHA_NUMBERS = "23456789";

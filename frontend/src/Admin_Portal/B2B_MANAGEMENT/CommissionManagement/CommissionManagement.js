@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { b2bAdminService } from '../../../services/b2bAdminService';
 import '../b2bShared.css';

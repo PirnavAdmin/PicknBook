@@ -1,7 +1,7 @@
 .pnb-auth-modal-shell {
   position: fixed;
   inset: 0;
-  z-index: 2200;
+  z-index: 999999;
   display: grid;
   place-items: center;
   padding: 16px;

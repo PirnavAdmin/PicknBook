@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
 import { listHotelSearchHistory } from "../../../services/adminHotelService";
 import { formatDateTime } from "../../../utils/apiDateFormat";

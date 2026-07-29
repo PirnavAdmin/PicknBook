@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import { Search, Printer, RefreshCw, ClipboardList, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";

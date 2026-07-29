@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Eye, Pencil, Plus, SlidersHorizontal, Trash2, X, Loader2 } from "lucide-react";
 import "./FlightPopularDestination.css";

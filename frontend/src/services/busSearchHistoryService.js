@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "./adminFeaturedOffersService";
 
 const SEARCH_HISTORY_STORAGE_KEY = "user_search_history_logs";

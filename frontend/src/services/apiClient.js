@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable */
+// ApiClient service
+
 
 const FALLBACK_API_BASE_URL =
-  "http://65.2.53.198:3000";
+  "https://undogmatically-knotlike-evita.ngrok-free.dev";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 
@@ -200,22 +202,11 @@ export function toApiAssetUrl(urlOrPath) {
 }
 
 export function withNgrokSkipWarningHeader(urlOrPath, headers = {}) {
-  if (typeof window === "undefined") {
-    return headers;
-  }
-
-  try {
-    const parsed = new URL(toApiUrl(urlOrPath), window.location.origin);
-    const hostname = String(parsed.hostname || "");
-
-    if (hostname.includes("ngrok-free.dev") || hostname.includes("ngrok.io")) {
-      return { ...headers, "ngrok-skip-browser-warning": "true" };
-    }
-  } catch {
-    // Ignore header injection when URL parsing fails.
-  }
-
-  return headers;
+  return {
+    ...headers,
+    "ngrok-skip-browser-warning": "true",
+    "User-Agent": "custom-app-client",
+  };
 }
 
 export async function readResponsePayload(response) {

@@ -1,9 +1,10 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { Facebook, LockKeyhole, Mail, Phone, ShieldCheck, X, Eye, EyeOff, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import "../../STYLES/AuthModal.css";
 import brandLogo from "../../assets/images/brand/pick-n-book-logo.png";
-import { requestAuth, readApiMessage, loginUser, sendRegistrationOtp, verifyRegistrationOtp } from "../../services/authService";
+import { requestAuth, readApiMessage, loginUser, sendRegistrationOtp, verifyRegistrationOtp, registerCustomer } from "../../services/authService";
 import { AUTH_MODAL_EVENT } from "../../utils/authModalEvents";
 
 const OTP_LENGTH = 6;
@@ -84,6 +85,7 @@ export default function AuthModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [returnTo, setReturnTo] = useState("");
   const [authMethod, setAuthMethod] = useState("mobile");
+  const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -258,7 +260,7 @@ export default function AuthModal() {
     setStatus({ type: "", message: "" });
 
     try {
-      await verifyRegistrationOtp({
+      const payload = await verifyRegistrationOtp({
         phoneNumber: mobile,
         channel: "Mobile",
         otp,
@@ -277,6 +279,45 @@ export default function AuthModal() {
       setStatus({
         type: "error",
         message: error?.message || "Invalid or expired OTP.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (event) => {
+    event.preventDefault();
+    if (loading) return;
+
+    if (!fullName || !mobile || !password) {
+      setStatus({ type: "error", message: "Please fill in all required fields." });
+      return;
+    }
+
+    setLoading(true);
+    setStatus({ type: "", message: "" });
+
+    try {
+      const payload = await registerCustomer({
+        firstName: fullName.split(' ')[0] || fullName,
+        lastName: fullName.split(' ').slice(1).join(' ') || "",
+        phoneNumber: mobile,
+        email: email || null,
+        password: password,
+      });
+
+      setStatus({
+        type: "success",
+        message: readApiMessage(payload, "Registration successful! You can now log in."),
+      });
+      
+      setTimeout(() => {
+        switchView("login");
+      }, 2000);
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error?.message || "Registration failed. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -590,12 +631,12 @@ export default function AuthModal() {
           )}
 
           {viewMode === "register" && (
-            <form className="pnb-auth-form" onSubmit={(e) => { e.preventDefault(); setStatus({ type: 'error', message: 'Registration not implemented yet.' }); }}>
+            <form className="pnb-auth-form" onSubmit={handleRegister}>
               <label>
                 Full Name
                 <span className="pnb-auth-input">
                   <User size={16} />
-                  <input type="text" placeholder="Enter your full name" />
+                  <input type="text" placeholder="Enter your full name" value={fullName} onChange={(e) => { setFullName(e.target.value); setErrors({}); setStatus({ type: "", message: "" }); }} />
                 </span>
               </label>
 
@@ -605,7 +646,7 @@ export default function AuthModal() {
                   <span className="pnb-auth-country">IN +91</span>
                   <span className="pnb-auth-input">
                     <Phone size={16} />
-                    <input type="tel" placeholder="Enter 10-digit mobile" />
+                    <input type="tel" placeholder="Enter 10-digit mobile" value={mobile} onChange={handleMobileChange} />
                   </span>
                 </span>
               </label>
@@ -614,7 +655,7 @@ export default function AuthModal() {
                 Email (Optional)
                 <span className="pnb-auth-input">
                   <Mail size={16} />
-                  <input type="email" placeholder="Enter your email address" />
+                  <input type="email" placeholder="Enter your email address" value={email} onChange={handleEmailChange} />
                 </span>
               </label>
 

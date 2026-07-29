@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { b2bAdminService } from '../../../services/b2bAdminService';

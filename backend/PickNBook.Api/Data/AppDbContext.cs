@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Models;
+using PickNBook.Api.Models.Entities;
 
 namespace PickNBook.Api.Data
 {
@@ -40,7 +41,7 @@ namespace PickNBook.Api.Data
         public DbSet<FlightRouteStat> FlightRouteStats => Set<FlightRouteStat>();
         public DbSet<BusRouteStat> BusRouteStats => Set<BusRouteStat>();
         public DbSet<FlightSeat> FlightSeats => Set<FlightSeat>();
-        public DbSet<BusSeat> BusSeats => Set<BusSeat>();
+
         public DbSet<BusDiscount> BusDiscounts => Set<BusDiscount>();
         public DbSet<BusCoupon> BusCoupons => Set<BusCoupon>();
         public DbSet<BusCouponUsage> BusCouponUsages => Set<BusCouponUsage>();
@@ -64,6 +65,8 @@ namespace PickNBook.Api.Data
         public DbSet<BusPromotion> BusPromotions => Set<BusPromotion>();
         public DbSet<HotelReservation> HotelReservations => Set<HotelReservation>();
         public DbSet<BusBookingSummary> BusBookingSummaries => Set<BusBookingSummary>();
+        
+        public DbSet<BusBlockedSeatPrice> BusBlockedSeatPrices => Set<BusBlockedSeatPrice>();
 
         public DbSet<BusPromotionCondition> BusPromotionConditions => Set<BusPromotionCondition>();
 
@@ -87,6 +90,8 @@ namespace PickNBook.Api.Data
         public DbSet<HotelCoupon> HotelCoupons => Set<HotelCoupon>();
         public DbSet<HotelCouponUsage> HotelCouponUsages => Set<HotelCouponUsage>();
         public DbSet<HotelSearchLog> HotelSearchLogs => Set<HotelSearchLog>();
+        public DbSet<HotelInfoCache> HotelInfoCaches => Set<HotelInfoCache>();
+        public DbSet<HotelMarkupRule> HotelMarkupRules => Set<HotelMarkupRule>();
 
         public DbSet<Theme> Themes => Set<Theme>();
         public DbSet<ThemeConfig> ThemeConfigs => Set<ThemeConfig>();
@@ -164,6 +169,8 @@ namespace PickNBook.Api.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<HotelSearchLog>().ToTable("hotel_search_logs");
+            modelBuilder.Entity<HotelInfoCache>().ToTable("hotel_info_caches");
+            modelBuilder.Entity<HotelMarkupRule>().ToTable("hotel_markup_rules");
 
             // =============================
             // User Configuration
@@ -742,14 +749,7 @@ namespace PickNBook.Api.Data
                 entity.HasIndex(x => new { x.FlightBookingId, x.TravelClass, x.IsBooked });
             });
 
-            modelBuilder.Entity<BusSeat>(entity =>
-            {
-                entity.ToTable("bus_seats");
-                entity.HasKey(x => x.Id);
-                entity.Property(x => x.SeatCode).HasMaxLength(10).IsRequired();
-                entity.HasIndex(x => new { x.BusBookingId, x.SeatCode }).IsUnique();
-                entity.HasIndex(x => new { x.BusBookingId, x.IsBooked });
-            });
+
 
             modelBuilder.Entity<BusDiscount>(entity =>
             {

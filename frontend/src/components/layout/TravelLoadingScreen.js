@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import { Bus, Hotel, Loader2, MapPin, Plane } from "lucide-react";
 

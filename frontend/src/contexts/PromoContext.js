@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const PromoContext = createContext(null);

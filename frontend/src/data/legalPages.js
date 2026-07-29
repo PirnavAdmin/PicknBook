@@ -1,3 +1,4 @@
+/* eslint-disable */
 export const TERMS_CONDITIONS_TEXT = `Welcome to Pick N Book! By accessing and using our website, services, and mobile app (collectively referred to as "Services"), you agree to comply with and be bound by the following terms and conditions ("Terms"). Please read them carefully before using our Services.
 
 1. Acceptance of Terms

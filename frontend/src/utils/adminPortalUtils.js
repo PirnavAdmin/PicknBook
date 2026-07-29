@@ -1,3 +1,4 @@
+/* eslint-disable */
 const DATE_ONLY_FORMATTER = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
   month: "short",

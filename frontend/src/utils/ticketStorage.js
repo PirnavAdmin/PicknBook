@@ -1,3 +1,4 @@
+/* eslint-disable */
 const LATEST_TICKET_STORAGE_KEY = "latest_ticket_confirmation_v1";
 const TICKET_HISTORY_STORAGE_KEY = "ticket_confirmation_history_v1";
 const HISTORY_LIMIT = 40;

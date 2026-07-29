@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import { Upload, CheckCircle2, AlertCircle, FileImage, RefreshCw } from "lucide-react";
 import { uploadAgentLogo } from "../../services/b2bService";

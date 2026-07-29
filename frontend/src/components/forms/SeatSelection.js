@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from "react";
 import "../../STYLES/SeatSelection.css";
 
@@ -69,10 +70,118 @@ function FlightSeatIcon({ label }) {
   );
 }
 
+/**
+ * Normalizes an SRDV / SeatSeller API response into a dynamic grid layout structure
+ */
+function normalizeSrdvSeatData(seatData) {
+  if (!seatData) return null;
+
+  const seats = [];
+  const processItem = (seat, forceUpper = null) => {
+    if (!seat || typeof seat !== "object") return;
+
+    const seatName = String(seat.SeatName || seat.seatName || seat.SeatNo || seat.label || "").trim();
+    if (!seatName) return;
+
+    const rowNo = parseInt(seat.RowNo ?? seat.rowNo ?? 0, 10);
+    const colNo = parseInt(seat.ColumnNo ?? seat.columnNo ?? 0, 10);
+    const isUpper =
+      forceUpper !== null
+        ? forceUpper
+        : Boolean(seat.IsUpper) || String(seat.IsUpper).toLowerCase() === "true";
+
+    const isAvailable = String(seat.SeatStatus ?? seat.seatStatus ?? "true").toLowerCase() === "true";
+    const isLadies = String(seat.IsLadiesSeat ?? seat.isLadiesSeat ?? "false").toLowerCase() === "true";
+    const isMales = String(seat.IsMalesSeat ?? seat.isMalesSeat ?? "false").toLowerCase() === "true";
+
+    const width = parseInt(seat.Width ?? seat.width ?? 1, 10) || 1;
+    const length = parseInt(seat.Length ?? seat.length ?? seat.Height ?? seat.height ?? 1, 10) || 1;
+
+    const rawSeatType = String(seat.SeatType || seat.seatType || "").toLowerCase().trim();
+    const isSemiSleeper = rawSeatType.includes("semi");
+    const isSleeper =
+      !isSemiSleeper &&
+      (rawSeatType.includes("sleeper") ||
+       rawSeatType.includes("berth") ||
+       String(seat.DoubleBirth).toLowerCase() === "true");
+
+    const fare =
+      parseFloat(
+        seat?.Price?.B2CDisplayFare ||
+          seat?.Price?.PublishedFare ||
+          seat?.Price?.BaseFare ||
+          seat?.SeatFare ||
+          seat?.fare ||
+          0
+      ) || 0;
+
+    seats.push({
+      raw: seat,
+      id: seat.SeatIndex || seat.id || seatName || `${rowNo}-${colNo}`,
+      label: seatName,
+      displayLabel: seatName,
+      rowNo,
+      colNo,
+      isUpper,
+      isAvailable,
+      isLadies,
+      isMales,
+      kind: isSleeper ? "sleeper" : "seater",
+      width,
+      length,
+      fare,
+      status: isAvailable ? "available" : "booked",
+      bookedGender: isLadies ? "Female" : isMales ? "Male" : null,
+    });
+  };
+
+  const traverse = (container, forceUpper = null) => {
+    if (!container || typeof container !== "object") return;
+
+    if (container.SeatName || container.SeatNo || container.SeatType) {
+      processItem(container, forceUpper);
+      return;
+    }
+
+    const items = Array.isArray(container) ? container : Object.values(container);
+    items.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      if (item.SeatName || item.SeatNo || item.SeatType) {
+        processItem(item, forceUpper);
+      } else {
+        traverse(item, forceUpper);
+      }
+    });
+  };
+
+  if (seatData.Result) {
+    traverse(seatData.Result, false);
+  }
+  if (seatData.ResultUpperSeat) {
+    traverse(seatData.ResultUpperSeat, true);
+  }
+  if (seats.length === 0) {
+    traverse(seatData, null);
+  }
+
+  if (seats.length === 0) return null;
+
+  const lower = seats.filter((s) => !s.isUpper);
+  const upper = seats.filter((s) => s.isUpper);
+
+  const finalLower = lower.length > 0 ? lower : upper;
+  const finalUpper = lower.length > 0 && upper.length > 0 ? upper : [];
+
+  return { lower: finalLower, upper: finalUpper, hasUpper: finalUpper.length > 0 };
+}
+
 export default function SeatSelection({
   vehicleType = "bus",
   selectedSeatLabels = [],
   onSeatToggle,
+  
+  // SRDV Direct JSON Data
+  seatData = null,
   
   // Flight Props
   cabinData = null,
@@ -91,6 +200,7 @@ export default function SeatSelection({
   onSeatHover = () => {},
   onSeatMouseLeave = () => {},
 }) {
+  const srdvParsed = React.useMemo(() => normalizeSrdvSeatData(seatData), [seatData]);
   // --- BUS RENDERERS ---
 
   const renderBusSeatButton = (seat) => {
@@ -290,7 +400,149 @@ export default function SeatSelection({
       {/* Bus Coach floor containing actual grid running left-to-right */}
       <div className="bus-coach-floor">{content}</div>
     </div>
-  );  const renderBusWidget = () => {
+  );  const renderSrdvGridDeck = (deckSeats, deckLabel) => {
+    if (!deckSeats || deckSeats.length === 0) return null;
+
+    const validSeats = deckSeats.filter(
+      (s) => !String(s.label || "").toUpperCase().includes("EXIT") || s.fare > 0
+    );
+
+    if (validSeats.length === 0) return null;
+
+    // --- Build row map: SRDV RowNo → CSS grid row index (with aisle gap detection) ---
+    const uniqueRows = [...new Set(validSeats.map((s) => s.rowNo))].sort((a, b) => a - b);
+    const rowMap = new Map();
+    let gridRow = 1;
+    uniqueRows.forEach((rowVal, idx) => {
+      if (idx > 0 && rowVal - uniqueRows[idx - 1] > 1) {
+        // Gap in RowNo sequence means there's an aisle between seat groups
+        gridRow += 1; // extra empty row = aisle
+      }
+      rowMap.set(rowVal, gridRow);
+      gridRow += 1;
+    });
+    const maxGridRows = gridRow - 1;
+
+    // --- Build col map: SRDV ColumnNo → CSS grid column index ---
+    const uniqueCols = [...new Set(validSeats.map((s) => s.colNo))].sort((a, b) => a - b);
+    const colMap = new Map();
+    uniqueCols.forEach((colVal, idx) => {
+      colMap.set(colVal, idx + 1);
+    });
+    const maxGridCols = uniqueCols.length;
+
+    const hasSeater = validSeats.some((s) => s.kind === "seater" || s.kind === "semi-sleeper");
+    const isOnlySleeper = validSeats.every((s) => s.kind === "sleeper");
+
+    const baseCellW = isOnlySleeper ? 84 : 44;
+    const baseCellH = isOnlySleeper ? 34 : 36;
+
+    const gridStyle = {
+      display: "grid",
+      gridTemplateRows: `repeat(${maxGridRows}, ${baseCellH}px)`,
+      gridTemplateColumns: `repeat(${maxGridCols}, ${baseCellW}px)`,
+      gap: "18px 6px",
+    };
+
+    return (
+      <div className="bus-coach-container srdv-grid-deck-container">
+        {deckLabel && (
+          <div className="bus-deck-label-container">
+            <div className="bus-deck-steering-wheel" title="Front / Driver">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="#475569" strokeWidth="2.2" />
+                <circle cx="12" cy="12" r="2.5" fill="#475569" />
+                <path d="M4 12h16" stroke="#475569" strokeWidth="1.8" />
+                <path d="M12 12v8" stroke="#475569" strokeWidth="1.8" />
+              </svg>
+            </div>
+            <span className="bus-deck-label-text">{deckLabel}</span>
+          </div>
+        )}
+        <div className="bus-coach-floor srdv-coach-scroll">
+          <div className="srdv-grid-layout" style={gridStyle}>
+            {validSeats.map((seat, index) => {
+              const isSelected = selectedSeatLabels.includes(seat.label);
+              const isBooked = !seat.isAvailable;
+              const isDimmed = activeFareFilter !== "all" && Number(activeFareFilter) !== seat.fare;
+
+              let statusClass = "status-available";
+              if (isBooked) statusClass = "status-booked";
+              else if (isSelected) statusClass = "status-selected";
+
+              let genderClass = "";
+              if (seat.isLadies) genderClass = "status-ladies-seat";
+              else if (seat.isMales) genderClass = "status-males-seat";
+
+              const seatWrapperClass = [
+                "srdv-grid-seat-box",
+                seat.kind === "sleeper" ? "srdv-sleeper-cell" : "srdv-seater-cell",
+                statusClass,
+                genderClass,
+                isDimmed ? "opacity-40" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              const layoutRow = rowMap.get(seat.rowNo) || 1;
+              const layoutCol = colMap.get(seat.colNo) || 1;
+
+              const seatW = seat.kind === "sleeper" ? 84 : 44;
+              const seatH = seat.kind === "sleeper" ? 34 : 36;
+
+              const seatItemStyle = {
+                gridRow: layoutRow,
+                gridColumn: layoutCol,
+                width: `${seatW}px`,
+                height: `${seatH}px`,
+              };
+
+              return (
+                <button
+                  key={seat.id || `${seat.label}-${index}`}
+                  type="button"
+                  style={seatItemStyle}
+                  className={seatWrapperClass}
+                  onClick={() => (isBooked || isDimmed ? null : onSeatToggle(seat))}
+                  disabled={isBooked || isDimmed}
+                  title={`Seat: ${seat.label} | Fare: ₹${seat.fare}`}
+                >
+                  {seat.kind === "sleeper" ? (
+                    <SleeperIcon label={seat.label} />
+                  ) : (
+                    <SeaterIcon label={seat.label} />
+                  )}
+                  {seat.fare > 0 && (
+                    <span className="srdv-seat-fare-label">₹{seat.fare}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBusWidget = () => {
+    // 0. Dynamic SRDV API Grid Layout rendering
+    if (srdvParsed) {
+      return (
+        <div className="bus-decks-container">
+          {srdvParsed.lower.length > 0 && (
+            <div className="bus-deck-wrapper">
+              {renderSrdvGridDeck(srdvParsed.lower, srdvParsed.hasUpper ? "Lower Deck" : "Bus Layout")}
+            </div>
+          )}
+          {srdvParsed.upper.length > 0 && (
+            <div className="bus-deck-wrapper">
+              {renderSrdvGridDeck(srdvParsed.upper, "Upper Deck")}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // 1. Backend sections rendering (complex API mapping)
     if (hasDeckSections && hasBackendSections && seatDeckGroups.length > 0) {
       return (

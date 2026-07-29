@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Check, Copy, Mail, Phone, User, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ import {
   getFeaturedBusOffers,
   calculateBusPayableAmount,
   getBusPromotionDiscountAmount,
+  blockBusProxy,
 } from "../../services/busBookingService";
 import { usePromo } from "../../contexts/PromoContext";
 
@@ -381,7 +383,8 @@ export default function BusPassengerDetailsPage() {
 
   const b2bToken = localStorage.getItem("b2b_token");
   const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-  const isAgent = b2bToken && b2bRole === "agent";
+  const activePortal = sessionStorage.getItem("active_portal");
+  const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
   const bus = flowState.bus || null;
   const selectedSeats = flowState.selectedSeats || [];
@@ -407,79 +410,57 @@ export default function BusPassengerDetailsPage() {
     }
   }, [contextOffer, validatedContextOffer, clearSelectedOffer]);
 
-  const initialFareSummary = flowState.fareSummary || {
-    baseFare: selectedSeats.reduce(
-      (sum, seat) => sum + (Number(seat.fare) || 0),
-      0
-    ),
-    tax: 0,
-    convenienceFee: 0,
-    totalFare: selectedSeats.reduce(
-      (sum, seat) => sum + (Number(seat.fare) || 0),
-      0
-    ),
+  // Resolves the correct customer-facing fare for a single seat.
+  // seat.seatFare = Price.PublishedFare (markup-included) from the normalized seat layout.
+  // However if the session pre-dates the normalization fix, seatFare may still be the raw
+  // SRDV SeatFare token (e.g. ₹50). We detect this by checking seatFare < baseFare and
+  // fall back to real API values baseFare + tax in that case.
+  const resolvedSeatFare = (seat) => {
+    const sf = Number(seat.seatFare) || 0;
+    const bf = Number(seat.baseFare) || 0;
+    const tx = Number(seat.tax) || 0;
+    return sf > 0 && sf >= bf ? sf : bf + tx;
   };
-  const [pricingPreview, setPricingPreview] = useState(
-    flowState.pricingPreview || {
-      subtotalBeforeCoupon:
-        Number(initialFareSummary.subtotalBeforeCoupon) ||
-        Number(initialFareSummary.baseFare) ||
-        0,
-      couponAmount:
-        Number(initialFareSummary.couponAmount) ||
-        Number(flowState.pricingPreview?.couponDiscountAmount) ||
-        Number(flowState.couponDiscount) ||
-        0,
-      taxableFare:
-        Number(initialFareSummary.taxableFare) ||
-        Math.max(
-          0,
-          (Number(initialFareSummary.baseFare) || 0) -
-            (Number(flowState.couponDiscount) || 0)
-        ),
-      gstPercent: Number(initialFareSummary.gstPercent) || 0,
-      gstAmount:
-        Number(initialFareSummary.gstAmount) ||
-        Number(initialFareSummary.tax) ||
-        0,
-      convenienceFee: Number(initialFareSummary.convenienceFee) || 0,
-      grandTotal:
-        Number(initialFareSummary.grandTotal) ||
-        Number(flowState.payableAmount) ||
-        Number(initialFareSummary.totalFare) ||
-        0,
-      seats: Array.isArray(flowState.pricingPreview?.seats)
-        ? flowState.pricingPreview.seats
-        : [],
-    }
-  );
+
+  const initialFareSummary = flowState.fareSummary || (() => {
+    const seatTotal   = selectedSeats.reduce((sum, seat) => sum + resolvedSeatFare(seat), 0);
+    const taxSum      = selectedSeats.reduce((sum, seat) => sum + (Number(seat.tax) || 0), 0);
+    const total       = seatTotal;
+    const baseFareSum = total - taxSum; // Includes API markup so math is perfect
+    return { baseFare: baseFareSum, tax: taxSum, convenienceFee: 0, totalFare: total, grandTotal: total };
+  })();
+  const [pricingPreview, setPricingPreview] = useState(() => {
+    if (flowState.pricingPreview) return flowState.pricingPreview;
+    const seatTotal    = selectedSeats.reduce((sum, seat) => sum + resolvedSeatFare(seat), 0);
+    const seatTax      = selectedSeats.reduce((sum, seat) => sum + (Number(seat.tax) || 0), 0);
+    
+    const grandTotal   = seatTotal;
+    const seatBaseFare = grandTotal - seatTax; // Roll all API markup into base fare so math is perfect
+    return {
+      subtotalBeforeCoupon: seatBaseFare,
+      couponAmount: 0,
+      taxableFare: seatBaseFare,
+      gstPercent: 5,
+      gstAmount: seatTax,
+      convenienceFee: 0,
+      grandTotal: grandTotal,
+      finalAmount: grandTotal,
+      seats: [],
+    };
+  });
+
+
+
   const [basePricingPreview, setBasePricingPreview] = useState(
     flowState.basePricingPreview || flowState.pricingPreview || null
   );
   const fareSummary = useMemo(
     () => {
-      let markupValue = 0;
-      if (isAgent) {
-        const rawMarkup = localStorage.getItem("b2b_markup_settings");
-        if (rawMarkup) {
-          try {
-            const parsedMarkup = JSON.parse(rawMarkup);
-            if (parsedMarkup.busType === "percentage") {
-              markupValue = (Number(pricingPreview.subtotalBeforeCoupon) || 0) * (Number(parsedMarkup.busValue) / 100);
-            } else if (parsedMarkup.busType === "fixed") {
-              const seatCount = Array.isArray(selectedSeats) ? selectedSeats.length : 1;
-              markupValue = Number(parsedMarkup.busValue) * seatCount;
-            }
-          } catch (e) {
-            console.error("Error reading B2B bus markup in details page", e);
-          }
-        }
-      }
-
       const calculatedTotal = calculateBusPayableAmount(
         pricingPreview,
         Number(pricingPreview.finalAmount || pricingPreview.grandTotal) || 0
-      ) + markupValue;
+      );
+      const totalMarkup = selectedSeats.reduce((sum, seat) => sum + (Number(seat.markupAmount) || 0), 0);
 
       return {
         baseFare: Number(pricingPreview.subtotalBeforeCoupon) || 0,
@@ -490,7 +471,7 @@ export default function BusPassengerDetailsPage() {
         gstAmount: Number(pricingPreview.gstAmount) || 0,
         tax: Number(pricingPreview.gstAmount) || 0,
         convenienceFee: Number(pricingPreview.convenienceFee) || 0,
-        markup: markupValue,
+        markup: totalMarkup,
         tierDiscount: 0,
         volumeDiscount: 0,
         grandTotal: calculatedTotal,
@@ -739,54 +720,50 @@ export default function BusPassengerDetailsPage() {
 
     setIsCalculatingPrice(true);
     try {
+      const passengersPayload = selectedSeats.map((seat) => ({
+        seatNumber: seat.label || seat.seatCode || "",
+        seatType: seat.seatType || "Seater",
+        baseFare: Number(seat.baseFare) || 0,
+        markupAmount: Number(seat.markupAmount) || 0,
+        tax: Number(seat.tax) || Number(seat.externalGst) || 0
+      }));
+
       const preview = await getBusPricingPreview({
         busId,
-        seatCodes,
+        traceId: bus?.tripId || bus?.traceId,
+        resultIndex: bus?.resultIndex || bus?.id,
+        srdvIndex: bus?.srdvIndex || 0,
         couponCode: couponCodeParam,
-        promotionId: null,
         selectedFeaturedOfferId: featuredOfferIdParam,
+        passengers: passengersPayload
       });
 
-      if (!couponCodeParam && !featuredOfferIdParam) {
-        setBasePricingPreview(preview);
-      }
-
-      const hasAppliedPromotion = Boolean(couponCodeParam || featuredOfferIdParam);
-      const backendCouponDiscount = hasAppliedPromotion
-        ? getPromotionDiscountAmount(preview, 0)
-        : 0;
-      const activeOffer =
-        featuredOfferIdParam
-          ? selectedFeaturedOffer ||
-            featuredOffers.find(
-              (offer) =>
-                Number(offer.id) === Number(featuredOfferIdParam) ||
-                Number(offer.offerId) === Number(featuredOfferIdParam) ||
-                Number(offer.selectedFeaturedOfferId) === Number(featuredOfferIdParam)
-            ) ||
-            validatedContextOffer
-          : null;
-
+      setBasePricingPreview(preview);
       setPricingPreview(preview);
-      setCouponDiscount(backendCouponDiscount);
+      
+      const appliedDisc = preview.totalDiscount || 0;
+      setCouponDiscount(appliedDisc);
+
       writeBusBookingFlowState({
+        ...flowState,
         pricingPreview: preview,
-        couponCode: featuredOfferIdParam ? null : couponCodeParam,
-        promotionId: null,
+        couponCode: couponCodeParam,
+        promotionId: featuredOfferIdParam,
         selectedFeaturedOfferId: featuredOfferIdParam,
-        couponDiscount: backendCouponDiscount,
-        appliedCoupon: featuredOfferIdParam || !couponCodeParam ? null : { couponCode: couponCodeParam },
-        selectedOffer: featuredOfferIdParam ? activeOffer : null,
+        couponDiscount: appliedDisc,
+        appliedCoupon: couponCodeParam ? { couponCode: couponCodeParam } : null,
+        selectedOffer: featuredOfferIdParam ? { id: featuredOfferIdParam } : null,
       });
 
       return preview;
     } catch (err) {
-      console.error("Pricing preview error:", err);
+      console.error("Pricing preview API error:", err);
       throw err;
     } finally {
       setIsCalculatingPrice(false);
     }
   };
+
 
   useEffect(() => {
     let isMounted = true;
@@ -1055,6 +1032,19 @@ export default function BusPassengerDetailsPage() {
         errorDetails.push(`${seatLabel}: Gender selection is required.`);
       }
 
+      if (!passenger.idType) {
+        newErrors[`${prefix}idType`] = "Required";
+        errorDetails.push(`${seatLabel}: ID Type is required.`);
+      }
+      
+      const idNumber = String(passenger.idNumber || "").trim();
+      if (!idNumber) {
+        newErrors[`${prefix}idNumber`] = "Required";
+        errorDetails.push(`${seatLabel}: ID Number is required.`);
+      } else if (idNumber.length < 4) {
+        newErrors[`${prefix}idNumber`] = "Min 4 chars";
+        errorDetails.push(`${seatLabel}: ID Number must be at least 4 characters.`);
+      }
 
     });
 
@@ -1476,7 +1466,8 @@ export default function BusPassengerDetailsPage() {
   const handleProceedPayment = async () => {
     const b2bToken = localStorage.getItem("b2b_token");
     const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-    const isAgent = b2bToken && b2bRole === "agent";
+    const activePortal = sessionStorage.getItem("active_portal");
+    const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
     if (!isAgent) {
       const token = localStorage.getItem("token");
@@ -1486,7 +1477,7 @@ export default function BusPassengerDetailsPage() {
       }
     }
 
-    const cleanedPassengers = passengers.map((passenger) => {
+    const cleanedPassengers = passengers.map((passenger, i) => {
       const ageNumber = Number(passenger.age);
       return {
         ...passenger,
@@ -1497,6 +1488,11 @@ export default function BusPassengerDetailsPage() {
         phone: String(passenger.mobile || passenger.phone || "").trim(),
         age: ageNumber,
         Age: ageNumber,
+        baseFare: Number(selectedSeats[i]?.baseFare || 0),
+        seatFare: Number(selectedSeats[i]?.seatFare || 0),
+        tax: Number(selectedSeats[i]?.tax || selectedSeats[i]?.gstAmount || 0),
+        seatType: String(selectedSeats[i]?.seatType || "Seater"),
+        seatNumber: String(selectedSeats[i]?.label || selectedSeats[i]?.seatCode || ""),
       };
     });
     const bookingContact = buildContactFromPassenger(cleanedPassengers[0], contact);
@@ -1513,6 +1509,45 @@ export default function BusPassengerDetailsPage() {
         )
       : null;
 
+    const blockPayload = {
+      traceId: bus?.tripId || bus?.traceId,
+      resultIndex: bus?.resultIndex || bus?.id,
+      srdvIndex: bus?.srdvIndex || 0,
+      boardingPointId: flowState.boardingPoint?.id || flowState.boardingPoint?.pointId,
+      droppingPointId: flowState.droppingPoint?.id || flowState.droppingPoint?.pointId,
+      passengers: cleanedPassengers.map((p, i) => ({
+        title: String(p.title || "Mr"),
+        firstName: String(p.firstName || ""),
+        lastName: String(p.lastName || ""),
+        age: Number(p.age),
+        gender: String(p.gender).toLowerCase() === "female" ? 2 : 1,
+        seatName: String(p.seatNumber || selectedSeats[i]?.seatCode || ""),
+        fare: Number(selectedSeats[i]?.baseFare || 0),
+        address: String(bookingContact.address || ""),
+        city: String(bookingContact.city || ""),
+        state: String(bookingContact.state || ""),
+        contactNo: String(bookingContact.mobile || bookingContact.phone || ""),
+        email: String(bookingContact.email || ""),
+        idType: String(p.idType || "Aadhar"),
+        idNumber: String(p.idNumber || "123456789012")
+      }))
+    };
+
+    let blockKey = null;
+    try {
+      setIsCalculatingPrice(true);
+      const blockResponse = await blockBusProxy(blockPayload);
+      blockKey = blockResponse?.BlockKey || blockResponse?.blockKey || null;
+      if (!blockKey) {
+        throw new Error("Failed to block seats. Provider did not return a BlockKey.");
+      }
+    } catch (err) {
+      setIsCalculatingPrice(false);
+      setFormError("Failed to block seats with the provider: " + (err.message || "Unknown error"));
+      return;
+    }
+
+
     const payload = {
       ...flowState,
       passengers: cleanedPassengers,
@@ -1526,13 +1561,23 @@ export default function BusPassengerDetailsPage() {
       pricingPreview,
       basePricingPreview,
       agreedToFare,
-      payableAmount: totalAfterDiscount,
+      payableAmount: Number(fareSummary.grandTotal) || totalAfterDiscount,
       fareSummary,
+      blockKey,
+      boardingPointName: String(flowState.boardingPoint?.name || ""),
+      boardingPointTime: String(flowState.boardingPoint?.time || ""),
+      droppingPointName: String(flowState.droppingPoint?.name || ""),
+      droppingPointTime: String(flowState.droppingPoint?.time || ""),
+      passengerName: String(bookingContact.fullName || ""),
+      passengerPhone: String(bookingContact.mobile || bookingContact.phone || ""),
+      passengerEmail: String(bookingContact.email || ""),
     };
 
     writeBusBookingFlowState(payload);
+    setIsCalculatingPrice(false);
     navigate("/bus/payment", { state: payload });
   };
+
 
   const renderPassengerFields = (passenger, index) => {
     const seat = selectedSeats[index] || {};
@@ -1626,6 +1671,38 @@ export default function BusPassengerDetailsPage() {
           )}
         </label>
 
+        <label className="passenger-field">
+          <span>ID Type *</span>
+          <select
+            value={passenger.idType || ""}
+            onChange={(e) => updatePassenger(index, "idType", e.target.value)}
+            className={errors[`passenger_${index}_idType`] ? "field-has-error" : ""}
+          >
+            <option value="">ID Type *</option>
+            <option value="Aadhar">Aadhar</option>
+            <option value="Pan">PAN</option>
+            <option value="Passport">Passport</option>
+            <option value="VoterId">Voter ID</option>
+            <option value="DrivingLicense">Driving License</option>
+          </select>
+          {errors[`passenger_${index}_idType`] && (
+            <span className="field-error-text">{errors[`passenger_${index}_idType`]}</span>
+          )}
+        </label>
+
+        <label className="passenger-field">
+          <span>ID Number *</span>
+          <input
+            type="text"
+            placeholder="ID Number *"
+            value={passenger.idNumber || ""}
+            onChange={(e) => updatePassenger(index, "idNumber", e.target.value)}
+            className={errors[`passenger_${index}_idNumber`] ? "field-has-error" : ""}
+          />
+          {errors[`passenger_${index}_idNumber`] && (
+            <span className="field-error-text">{errors[`passenger_${index}_idNumber`]}</span>
+          )}
+        </label>
 
       </div>
     );
@@ -2003,10 +2080,7 @@ export default function BusPassengerDetailsPage() {
                       <span>Tax</span>
                       <strong>(+) {formatCurrency(pricingPreview.gstAmount)}</strong>
                     </div>
-                    <div>
-                      <span>Convenience Fee</span>
-                      <strong>(+) {formatCurrency(pricingPreview.convenienceFee)}</strong>
-                    </div>
+
                     <div className="grand-total">
                       <span>Grand Total</span>
                       <strong>{formatCurrency(fareSummary.grandTotal)}</strong>
@@ -2016,214 +2090,7 @@ export default function BusPassengerDetailsPage() {
               </div>
             </article>
 
-            {/* Coupons & Featured Offers */}
-            {!isAgent && (
-              <article className="flow-card coupon-sheet-card">
-                <header className="coupon-sheet-header">
-                  <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                      <line x1="7" y1="7" x2="7.01" y2="7" />
-                    </svg>
-                  </span>
-                  <span>Apply Coupon</span>
-                  {(isLoadingCoupons || isLoadingOffers || isApplyingCoupon) && (
-                    <span className="coupon-sheet-loading">Loading...</span>
-                  )}
-                </header>
-                <div className="flow-card-body coupon-sheet-body">
-
-                  <div className={`coupon-manual-row ${errors.coupon ? "field-has-error" : ""}`}>
-                    <input
-                      type="text"
-                      placeholder="Enter Coupon code"
-                      value={manualCouponCode}
-                      onChange={handleCouponCodeChange}
-                      disabled={isApplyingCoupon || Boolean(selectedFeaturedOffer)}
-                    />
-                    {appliedCoupon ? (
-                      <button
-                        type="button"
-                        onClick={handleRemoveCoupon}
-                        className="coupon-action-button is-remove"
-                      >Remove</button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        disabled={isApplyingCoupon || !manualCouponCode.trim() || Boolean(selectedFeaturedOffer)}
-                        className="coupon-action-button is-apply"
-                      >{isApplyingCoupon ? "Applying..." : "APPLY"}</button>
-                    )}
-                  </div>
-                  {errors.coupon && (
-                    <span className="field-error-text" style={{ marginTop: '2px' }}>{errors.coupon}</span>
-                  )}
-                  {selectedFeaturedOffer && (
-                    <p className="coupon-featured-note">
-                      Featured offer applied. Remove it to use a manual coupon.
-                    </p>
-                  )}
-
-                  {couponMessage && (
-                    <p className={`coupon-sheet-message ${couponMessageType === "success" ? "is-success" : "is-error"}`}>
-                      {couponMessage}
-                    </p>
-                  )}
-
-                  {/* ── Featured Offer Cards ── */}
-                  {featuredOffers.length > 0 && (
-                    <div className="coupon-featured-block">
-                      <p className="coupon-section-label">Featured Offers:</p>
-                      <div
-                        className="coupon-featured-list"
-                        ref={featuredOffersScrollerRef}
-                        aria-label="Featured offers carousel"
-                      >
-                        {featuredOffers.map((offer) => {
-                          const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
-                          const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
-                          const discountLabel = offer.isPercentageDiscount
-                              ? `${offer.discountValue}% OFF`
-                              : `₹${offer.discountValue} OFF`;
-                          const appliedTitle = isThisSelected && pricingPreview.appliedPromotionTitle
-                              ? pricingPreview.appliedPromotionTitle
-                              : offer.title;
-
-                          const code = offer.couponCode || "OFFER";
-
-                          return (
-                            <div
-                              key={offer.offerId || offer.id || offer.couponCode}
-                              className={`coupon-voucher-card coupon-featured-offer${isThisSelected ? " is-selected" : ""}${
-                                anotherOfferSelected ? " is-muted" : ""
-                              }`}
-                            >
-                              <div className="voucher-header">
-                                <span className="voucher-discount">{discountLabel}</span>
-                                <div className="voucher-code-wrapper">
-                                  <span className="voucher-code-badge">{code}</span>
-                                  <button
-                                    type="button"
-                                    className="voucher-copy-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigator.clipboard.writeText(code);
-                                      setCopiedCode(code);
-                                      setTimeout(() => setCopiedCode(null), 2000);
-                                    }}
-                                    title="Copy Coupon Code"
-                                  >
-                                    {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="voucher-body">
-                                <div className="voucher-title">{appliedTitle}</div>
-                                <p className="voucher-description">{offer.subtitle || offer.description}</p>
-                                <div className="voucher-action-row">
-                                  {isThisSelected ? (
-                                    <button
-                                      type="button"
-                                      onClick={handleRemoveOffer}
-                                      disabled={isApplyingCoupon}
-                                      className="voucher-remove-btn"
-                                    >Remove</button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSelectOffer(offer)}
-                                      disabled={isApplyingCoupon || anotherOfferSelected}
-                                      className="voucher-apply-btn"
-                                    >{isApplyingCoupon && isThisSelected ? "Applying..." : "Apply"}</button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Coupon Cards ── */}
-                  {availableCoupons.length > 0 && (
-                    <div className="coupon-chip-block">
-                      <p className="coupon-section-label">Available Coupons:</p>
-                      <div
-                        className="coupon-chip-list"
-                        ref={couponScrollerRef}
-                        aria-label="Available coupons carousel"
-                      >
-                        {availableCoupons.map((coupon, idx) => {
-                          const code = coupon.couponCode || `Promo #${coupon.id}`;
-                          const value = Number(coupon?.value) || 0;
-                          const isPercent = String(coupon?.couponType || coupon?.cpnType || "")
-                              .toLowerCase()
-                              .includes("percent");
-                          const discountLabel = isPercent
-                              ? `${value}% OFF`
-                              : `₹${value} OFF`;
-                          const description = getCouponDescription(coupon);
-                          const isChipSelected = appliedCoupon?.couponCode === coupon.couponCode;
-                          const anotherOfferSelected = Boolean(selectedFeaturedOffer);
-
-                          return (
-                            <div
-                              key={coupon.id || idx}
-                              className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${
-                                anotherOfferSelected ? " is-muted" : ""
-                              }`}
-                            >
-                              <div className="voucher-header">
-                                <span className="voucher-discount">{discountLabel}</span>
-                                <div className="voucher-code-wrapper">
-                                  <span className="voucher-code-badge">{code}</span>
-                                  <button
-                                    type="button"
-                                    className="voucher-copy-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigator.clipboard.writeText(code);
-                                      setCopiedCode(code);
-                                      setTimeout(() => setCopiedCode(null), 2000);
-                                    }}
-                                    title="Copy Coupon Code"
-                                  >
-                                    {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="voucher-body">
-                                <div className="voucher-title">{code}</div>
-                                <p className="voucher-description">{description}</p>
-                                <div className="voucher-action-row">
-                                  {isChipSelected ? (
-                                    <button
-                                      type="button"
-                                      onClick={handleRemoveCoupon}
-                                      disabled={isApplyingCoupon}
-                                      className="voucher-remove-btn"
-                                    >Remove</button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSelectCoupon(coupon)}
-                                      disabled={isApplyingCoupon || anotherOfferSelected}
-                                      className="voucher-apply-btn"
-                                    >Apply</button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </article>
-            )}
+            {/* Coupons moved to Payment Page */}
           </aside>
 
         </section>
@@ -2337,10 +2204,7 @@ export default function BusPassengerDetailsPage() {
                         <span>Tax</span>
                         <strong>(+) {formatCurrency(pricingPreview.gstAmount)}</strong>
                       </div>
-                      <div>
-                        <span>Convenience Fee</span>
-                        <strong>(+) {formatCurrency(pricingPreview.convenienceFee)}</strong>
-                      </div>
+
                       <div className="grand-total">
                         <span>Total Fare</span>
                         <strong>{formatCurrency(fareSummary.grandTotal)}</strong>

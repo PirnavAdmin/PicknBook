@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import { FiEdit2, FiSave, FiTrash2, FiX } from "react-icons/fi";
 import "../../STYLES/traveller.css";

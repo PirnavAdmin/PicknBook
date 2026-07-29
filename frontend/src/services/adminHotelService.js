@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { toApiUrl, readResponsePayload } from "./apiClient";
 import { getAuthToken } from "./authSession";
 

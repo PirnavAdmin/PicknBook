@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check, Mail, MapPin, Phone, X, ArrowLeft, Calendar, Tag } from "lucide-react";
+import { Check, Mail, MapPin, Phone, X, ArrowLeft, Calendar, Tag, ShieldCheck, Lock, Send, Bus, Plane, Building2, Sparkles } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -13,6 +13,58 @@ import { getActiveLayout } from "../../services/themeService";
 import { toApiAssetUrl } from "../../services/apiClient";
 import { submitContactQuery } from "../../services/queryService";
 import contactBg from "../../assets/images/contact-bg.png";
+import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
+import visaSvg from "../../assets/images/payments/visa.svg";
+import mastercardSvg from "../../assets/images/payments/mastercard.svg";
+import rupaySvg from "../../assets/images/payments/rupay.svg";
+import maestroSvg from "../../assets/images/payments/maestro.svg";
+import amexSvg from "../../assets/images/payments/amex.svg";
+
+function BlogCardCover({ src, title, category }) {
+  const [hasError, setHasError] = useState(false);
+  const rawUrl = src ? toApiAssetUrl(src) : "";
+
+  const gradients = [
+    "linear-gradient(135deg, #0284c7 0%, #2563eb 100%)",
+    "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+    "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+    "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+  ];
+
+  const categoryIndex = (category || "").length % gradients.length;
+  const gradient = gradients[categoryIndex];
+
+  if (!rawUrl || hasError) {
+    return (
+      <div style={{
+        height: "140px",
+        width: "100%",
+        background: gradient,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#ffffff",
+        padding: "16px",
+        textAlign: "center"
+      }}>
+        <Sparkles size={26} style={{ marginBottom: "6px", opacity: 0.85 }} />
+        <span style={{ fontSize: "11px", fontWeight: "800", letterSpacing: "0.06em", textTransform: "uppercase", opacity: 0.9 }}>
+          {category || "Travel Guide"}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={rawUrl}
+      alt={title || "Blog cover"}
+      onError={() => setHasError(true)}
+      style={{ width: "100%", height: "140px", objectFit: "cover" }}
+    />
+  );
+}
 
 export default function SiteFooter() {
   const [copiedContact, setCopiedContact] = useState(null);
@@ -299,82 +351,171 @@ export default function SiteFooter() {
   }
 
   return (
-    <footer className="travel-footer" style={footerStyle}>
-      <div className="footer-shell">
-        {footerConfig?.imageUrl && (
-          <div className="footer-logo-row" style={{ marginBottom: "20px", display: "flex", justifyContent: "flex-start" }}>
-            <img src={footerConfig.imageUrl} alt="Footer Logo" style={{ maxHeight: "45px", width: "auto" }} />
-          </div>
-        )}
+    <footer className="travel-footer upgraded-travel-footer" style={footerStyle}>
+      <div className="footer-shell upgraded-footer-shell">
 
-        {/* Detail Grid */}
-        <div className="footer-detail-grid">
-
-          {/* Row 1: Services */}
-          <div className="footer-detail-row">
-            <span className="footer-row-label">SERVICES</span>
-            <span className="footer-row-pipe">|</span>
-            <div className="footer-row-content">
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={(e) => handleServiceClick("flights", e)} className="footer-inline-link">Flight</button>
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={(e) => handleServiceClick("buses", e)} className="footer-inline-link">Bus</button>
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={(e) => handleServiceClick("hotels", e)} className="footer-inline-link">Hotel</button>
+        {/* Top Newsletter & Brand Header Bar */}
+        <div className="upgraded-footer-top-bar">
+          <div className="upgraded-footer-brand-info">
+            <div className="upgraded-footer-brand-logo-wrap">
+              <img
+                src={pickNBookLogo}
+                alt="Pick N Book Logo"
+                className="upgraded-footer-brand-logo-img"
+              />
             </div>
+            <p className="upgraded-footer-brand-desc">
+              India's most trusted travel platform for instant bus, flight, and hotel bookings with guaranteed low fares & 24/7 support.
+            </p>
           </div>
 
-          {/* Row 2: Quick Links */}
-          <div className="footer-detail-row">
-            <span className="footer-row-label">QUICK LINKS</span>
-            <span className="footer-row-pipe">|</span>
-            <div className="footer-row-content">
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={() => window.open("/contact", "_blank")} className="footer-inline-link">Contact Us</button>
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={() => window.open("/travel-guide", "_blank")} className="footer-inline-link">Travel Guide</button>
+          <div className="upgraded-footer-newsletter-box">
+            <div className="newsletter-text-content">
+              <span className="newsletter-kicker">
+                <Sparkles size={14} /> EXCLUSIVE TRAVEL OFFERS
+              </span>
+              <h4 className="newsletter-title">Subscribe to Get Secret Discounts</h4>
             </div>
-          </div>
-
-          {/* Row 3: Policies */}
-          <div className="footer-detail-row">
-            <span className="footer-row-label">POLICIES</span>
-            <span className="footer-row-pipe">|</span>
-            <div className="footer-row-content">
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={() => setActivePolicy("terms-conditions")} className="footer-inline-link">Terms & Conditions</button>
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={() => setActivePolicy("privacy-policy")} className="footer-inline-link">Privacy Policy</button>
-              <span className="footer-link-divider">|</span>
-              <button type="button" onClick={() => setActivePolicy("refund-cancellation-policy")} className="footer-inline-link">Refund & Cancellation Policy</button>
-            </div>
-          </div>
-
-          {/* Row 4: Get In Touch */}
-          <div className="footer-detail-row align-start">
-            <span className="footer-row-label">GET IN TOUCH</span>
-            <span className="footer-row-pipe" style={{ marginTop: "3px" }}>|</span>
-            <div className="footer-contact-block">
-              <div className="footer-contact-item">
-                <MapPin size={16} className="contact-icon" />
-                <span>Pirnav Software Solutions Private Limited, 4th Floor, Jain Sadguru Images Capital Park, Madhapur, Hyderabad,Telangana ,India ( 500081 )</span>
+            <form className="upgraded-subscribe-form" onSubmit={(e) => e.preventDefault()}>
+              <div className="subscribe-input-wrapper">
+                <Mail size={16} className="subscribe-mail-icon" />
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  required
+                  className="upgraded-subscribe-input"
+                />
               </div>
-              <div className="footer-contact-item">
+              <button type="submit" className="upgraded-subscribe-btn">
+                <span>Subscribe</span>
+                <Send size={14} />
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <hr className="upgraded-footer-divider" />
+
+        {/* 4-Column Main Links Grid */}
+        <div className="upgraded-footer-grid">
+
+          {/* Column 1: Services */}
+          <div className="upgraded-footer-col">
+            <h4 className="upgraded-col-title">
+              <Bus size={16} className="col-title-icon" />
+              Our Services
+            </h4>
+            <ul className="upgraded-footer-links">
+              <li>
+                <button type="button" onClick={(e) => handleServiceClick("buses", e)} className="upgraded-footer-link">
+                  Bus Ticket Booking
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={(e) => handleServiceClick("flights", e)} className="upgraded-footer-link">
+                  Flight Booking
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={(e) => handleServiceClick("hotels", e)} className="upgraded-footer-link">
+                  Hotel Reservations
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("/offers")} className="upgraded-footer-link">
+                  Exclusive Offers
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 2: Quick Links */}
+          <div className="upgraded-footer-col">
+            <h4 className="upgraded-col-title">
+              <Plane size={16} className="col-title-icon" />
+              Quick Links
+            </h4>
+            <ul className="upgraded-footer-links">
+              <li>
+                <button type="button" onClick={() => navigate("/contact")} className="upgraded-footer-link">
+                  Contact Us
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("/travel-guide")} className="upgraded-footer-link">
+                  Travel Guide & Blogs
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("/fetch-ticket")} className="upgraded-footer-link">
+                  Track Booking Status
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("/print-ticket")} className="upgraded-footer-link">
+                  Print / Download E-Ticket
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Policies & Security */}
+          <div className="upgraded-footer-col">
+            <h4 className="upgraded-col-title">
+              <ShieldCheck size={16} className="col-title-icon" />
+              Policies & Help
+            </h4>
+            <ul className="upgraded-footer-links">
+              <li>
+                <button type="button" onClick={() => setActivePolicy("terms-conditions")} className="upgraded-footer-link">
+                  Terms & Conditions
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => setActivePolicy("privacy-policy")} className="upgraded-footer-link">
+                  Privacy Policy
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => setActivePolicy("refund-cancellation-policy")} className="upgraded-footer-link">
+                  Refund & Cancellation Policy
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => navigate("/contact")} className="upgraded-footer-link">
+                  24/7 Support Center
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Get In Touch */}
+          <div className="upgraded-footer-col upgraded-contact-col">
+            <h4 className="upgraded-col-title">
+              <Building2 size={16} className="col-title-icon" />
+              Get In Touch
+            </h4>
+            <div className="upgraded-contact-block">
+              <div className="upgraded-contact-item">
+                <MapPin size={16} className="upgraded-contact-icon" />
+                <span>Pirnav Software Solutions Pvt Ltd, 4th Floor, Jain Sadguru Capital Park, Madhapur, Hyderabad, Telangana 500081</span>
+              </div>
+              <div className="upgraded-contact-item">
                 <button
                   type="button"
-                  className="footer-copy-phone-btn"
+                  className="upgraded-copy-phone-btn"
                   onClick={() => copyContact("+91 999-999-9999", "phone")}
                 >
-                  <Phone size={16} className="contact-icon" />
+                  <Phone size={16} className="upgraded-contact-icon" />
                   <span>+91 999-999-9999</span>
                   {copiedContact === "phone" && (
-                    <span className="footer-copy-bubble">Copied</span>
+                    <span className="upgraded-copy-bubble">Copied</span>
                   )}
                 </button>
               </div>
-              <div className="footer-contact-item">
-                <a href="mailto:contact@picknbook.in" className="footer-email-link">
-                  <Mail size={16} className="contact-icon" />
+              <div className="upgraded-contact-item">
+                <a href="mailto:contact@picknbook.in" className="upgraded-email-link">
+                  <Mail size={16} className="upgraded-contact-icon" />
                   <span>contact@picknbook.in</span>
                 </a>
               </div>
@@ -383,97 +524,44 @@ export default function SiteFooter() {
 
         </div>
 
-        {/* Separator Line */}
-        <hr className="footer-separator dashed" />
+        <hr className="upgraded-footer-divider" />
 
-        {/* Middle Section */}
-        <div className="footer-middle-section">
-
-          {/* We Accept & Apps */}
-          <div className="footer-middle-left">
-            <div className="footer-accept-block">
-              <span className="accept-title">We Accept</span>
-              <div className="accept-logos">
-                {/* MasterCard */}
-                <div className="card-logo mastercard" title="MasterCard">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
-                    alt="MasterCard"
-                    style={{ height: "25px", width: "auto", objectFit: "contain" }}
-                  />
-                </div>
-                {/* Maestro */}
-                <div className="card-logo maestro" title="Maestro">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/f/f6/Maestro_2016.svg"
-                    alt="Maestro"
-                    style={{ height: "25px", width: "auto", objectFit: "contain" }}
-                  />
-                </div>
-                {/* Visa */}
-                <div className="card-logo visa" title="Visa">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo_%282021%E2%80%93present%29.svg"
-                    alt="Visa"
-                    style={{ height: "25px", width: "auto", objectFit: "contain" }}
-                  />
-                </div>
-                {/* AMEX */}
-                <div className="card-logo amex" title="American Express">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg"
-                    alt="American Express"
-                    style={{ height: "25px", width: "auto", objectFit: "contain" }}
-                  />
-                </div>
-                {/* RuPay */}
-                <div className="card-logo rupay" title="RuPay">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/d/d1/RuPay.svg"
-                    alt="RuPay"
-                    style={{ height: "25px", width: "auto", objectFit: "contain" }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* App downloads */}
-            <div className="footer-apps-block">
-              {/* Google Play */}
-              <a href="https://play.google.com" target="_blank" rel="noopener noreferrer" className="app-badge">
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                  alt="Get it on Google Play"
-                  style={{ height: "40px", width: "auto", objectFit: "contain" }}
-                />
-              </a>
-              {/* App Store */}
-              <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer" className="app-badge">
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                  alt="Download on the App Store"
-                  style={{ height: "40px", width: "auto", objectFit: "contain" }}
-                />
-              </a>
+        {/* Bottom Bar: Payments, Apps & Copyright */}
+        <div className="upgraded-footer-bottom-bar">
+          
+          {/* We Accept & SSL Badge */}
+          <div className="upgraded-payment-group">
+            <span className="payment-label">We Accept:</span>
+            <div className="payment-logos-row">
+              <img src={mastercardSvg} alt="MasterCard" title="MasterCard" />
+              <img src={visaSvg} alt="Visa" title="Visa" />
+              <img src={rupaySvg} alt="RuPay" title="RuPay" />
+              <img src={maestroSvg} alt="Maestro" title="Maestro" />
+              <img src={amexSvg} alt="American Express" title="American Express" />
             </div>
           </div>
 
-          {/* Newsletter Subscription */}
-          <div className="footer-middle-right">
-            <form className="footer-subscribe-form" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" placeholder="Email address" required className="subscribe-input" />
-              <button type="submit" className="subscribe-btn">Subscribe</button>
-            </form>
+          {/* Apps Badges */}
+          <div className="upgraded-app-badges">
+            <a href="https://play.google.com" target="_blank" rel="noopener noreferrer" className="upgraded-app-btn">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                alt="Get it on Google Play"
+              />
+            </a>
+            <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer" className="upgraded-app-btn">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
+                alt="Download on App Store"
+              />
+            </a>
           </div>
 
-        </div>
+          {/* Copyright */}
+          <div className="upgraded-copyright-text">
+            <span>{footerConfig?.bottomLineText || "© 2026 Pick N Book. All rights reserved."}</span>
+          </div>
 
-        {/* Separator Line */}
-        <hr className="footer-separator dotted" />
-
-        {/* Copyright */}
-        <div className="footer-copyright-row">
-          <span>{footerConfig?.bottomLineText || "Copyright © 2026 All Rights Reserved"}</span>
         </div>
 
       </div>
@@ -522,15 +610,41 @@ export default function SiteFooter() {
                 </button>
               </div>
             ) : (
-              <div className="footer-policy-modal-head">
+              <div style={{
+                background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                padding: "16px 24px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderTopLeftRadius: "18px",
+                borderTopRightRadius: "18px",
+                borderBottom: "1px solid #334155"
+              }}>
                 <div>
-                  <span>{policyData.kicker}</span>
-                  <h2>{policyData.title}</h2>
+                  <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#38bdf8", letterSpacing: "0.05em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>
+                    {policyData?.kicker || "TRAVEL & POLICIES"}
+                  </span>
+                  <h2 style={{ margin: 0, color: "#ffffff", fontSize: "1.3rem", fontWeight: "800" }}>
+                    {policyData?.title || "Information"}
+                  </h2>
                 </div>
                 <button
                   type="button"
-                  className="footer-policy-close"
                   onClick={() => setActivePolicy(null)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "50%",
+                    width: "34px",
+                    height: "34px",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    display: "grid",
+                    placeItems: "center",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"}
                   aria-label="Close policy modal"
                 >
                   <X size={18} />
@@ -543,10 +657,9 @@ export default function SiteFooter() {
               style={{
                 overflowY: "auto",
                 flex: "1",
-                maxHeight: activePolicy === "contact-us" ? "calc(85vh - 60px)" : "none",
-                marginTop: activePolicy === "contact-us" ? "0" : "16px",
-                padding: activePolicy === "contact-us" ? "24px" : "0 8px 0 0",
-                background: activePolicy === "contact-us" ? "#f3f4f6" : "transparent"
+                maxHeight: "calc(85vh - 75px)",
+                padding: "24px",
+                background: "#f8fafc"
               }}
             >
               {activePolicy === "contact-us" ? (
@@ -776,59 +889,58 @@ export default function SiteFooter() {
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "6px",
-                          background: "none",
-                          border: "none",
-                          color: "#dc2626",
+                          background: "#eff6ff",
+                          border: "1px solid #dbeafe",
+                          color: "#1d4ed8",
                           cursor: "pointer",
-                          fontWeight: "600",
+                          fontWeight: "700",
                           fontSize: "13px",
-                          padding: "0",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
                           alignSelf: "flex-start"
                         }}
                       >
                         <ArrowLeft size={16} />
-                        <span>Back to Guides</span>
+                        <span>Back to Travel Guides</span>
                       </button>
 
-                      {(selectedBlog.imageUrl || selectedBlog.image) && (
-                        <img
-                          src={toApiAssetUrl(selectedBlog.imageUrl || selectedBlog.image)}
-                          alt={selectedBlog.title}
-                          style={{
-                            width: "100%",
-                            height: "200px",
-                            objectFit: "cover",
-                            borderRadius: "12px",
-                            border: "1px solid #e2e8f0"
-                          }}
+                      <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                        <BlogCardCover
+                          src={selectedBlog.imageUrl || selectedBlog.image}
+                          title={selectedBlog.title}
+                          category={selectedBlog.category}
                         />
-                      )}
+                      </div>
 
                       <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#64748b" }}>
                         {selectedBlog.category && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f1f5f9", padding: "4px 10px", borderRadius: "999px", fontWeight: "700", color: "#2563eb" }}>
                             <Tag size={12} />
                             <span>{selectedBlog.category}</span>
                           </span>
                         )}
                         {selectedBlog.createdAt && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#f1f5f9", padding: "4px 10px", borderRadius: "999px", fontWeight: "600" }}>
                             <Calendar size={12} />
                             <span>{new Date(selectedBlog.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
                           </span>
                         )}
                       </div>
 
-                      <h3 style={{ margin: "0", fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
+                      <h3 style={{ margin: "0", fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
                         {selectedBlog.title}
                       </h3>
 
                       <div
                         style={{
-                          fontSize: "13px",
+                          fontSize: "14px",
                           color: "#334155",
-                          lineHeight: "1.6",
-                          whiteSpace: "pre-wrap"
+                          lineHeight: "1.7",
+                          whiteSpace: "pre-wrap",
+                          background: "#ffffff",
+                          padding: "20px",
+                          borderRadius: "12px",
+                          border: "1px solid #e2e8f0"
                         }}
                         dangerouslySetInnerHTML={{ __html: selectedBlog.content || selectedBlog.description || "" }}
                       />
@@ -842,70 +954,69 @@ export default function SiteFooter() {
                       <span>No travel guides available. Check back soon!</span>
                     </div>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "20px" }}>
                       {blogs.map((blog) => (
-                        <div
+                        <article
                           key={blog.id || blog.slug || blog.title}
                           style={{
                             background: "#ffffff",
                             border: "1px solid #e2e8f0",
-                            borderRadius: "12px",
+                            borderRadius: "16px",
                             overflow: "hidden",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.04)",
                             display: "flex",
                             flexDirection: "column",
-                            height: "100%"
+                            height: "100%",
+                            transition: "all 0.25s ease"
                           }}
                         >
-                          {(blog.imageUrl || blog.image) && (
-                            <img
-                              src={toApiAssetUrl(blog.imageUrl || blog.image)}
-                              alt={blog.title}
-                              style={{ width: "100%", height: "120px", objectFit: "cover" }}
-                            />
-                          )}
-                          <div style={{ padding: "12px", display: "flex", flexDirection: "column", flex: "1" }}>
-                            <div style={{ display: "flex", gap: "8px", fontSize: "11px", color: "#64748b", marginBottom: "6px" }}>
-                              <span style={{ background: "#fee2e2", color: "#dc2626", padding: "2px 6px", borderRadius: "100px", fontWeight: "600" }}>
-                                {blog.category || "Guide"}
+                          <BlogCardCover
+                            src={blog.imageUrl || blog.image}
+                            title={blog.title}
+                            category={blog.category}
+                          />
+
+                          <div style={{ padding: "16px", display: "flex", flexDirection: "column", flex: "1" }}>
+                            <div style={{ display: "flex", gap: "8px", fontSize: "11px", color: "#64748b", marginBottom: "8px" }}>
+                              <span style={{ background: "#eff6ff", color: "#1d4ed8", padding: "3px 10px", borderRadius: "999px", fontWeight: "700", textTransform: "uppercase", fontSize: "0.7rem" }}>
+                                {blog.category || "Travel Guide"}
                               </span>
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>
+
+                            <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "800", color: "#0f172a", lineHeight: "1.35" }}>
                               {blog.title}
                             </h4>
-                            <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#475569", lineHeight: "1.4", flex: "1" }}>
-                              {blog.description ? (blog.description.length > 80 ? blog.description.substring(0, 80) + "..." : blog.description) : ""}
+
+                            <p style={{ margin: "0 0 16px 0", fontSize: "12.5px", color: "#64748b", lineHeight: "1.5", flex: "1" }}>
+                              {blog.description ? (blog.description.length > 85 ? blog.description.substring(0, 85) + "..." : blog.description) : "Discover top travel recommendations and tips for your journey."}
                             </p>
+
                             <button
                               type="button"
                               onClick={() => setSelectedBlog(blog)}
                               style={{
                                 width: "100%",
-                                padding: "8px",
-                                background: "#f8fafc",
-                                border: "1.5px solid #e2e8f0",
-                                borderRadius: "8px",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                color: "#0f172a",
+                                padding: "10px 14px",
+                                background: "#0f172a",
+                                border: "none",
+                                borderRadius: "10px",
+                                fontSize: "12.5px",
+                                fontWeight: "700",
+                                color: "#ffffff",
                                 cursor: "pointer",
-                                transition: "all 0.2s"
+                                transition: "all 0.2s ease"
                               }}
                               onMouseOver={(e) => {
-                                e.currentTarget.style.background = "#dc2626";
-                                e.currentTarget.style.color = "#fff";
-                                e.currentTarget.style.borderColor = "#dc2626";
+                                e.currentTarget.style.background = "#2563eb";
                               }}
                               onMouseOut={(e) => {
-                                e.currentTarget.style.background = "#f8fafc";
-                                e.currentTarget.style.color = "#0f172a";
-                                e.currentTarget.style.borderColor = "#e2e8f0";
+                                e.currentTarget.style.background = "#0f172a";
                               }}
                             >
-                              Read More
+                              Read Guide
                             </button>
                           </div>
-                        </div>
+                        </article>
                       ))}
                     </div>
                   )}

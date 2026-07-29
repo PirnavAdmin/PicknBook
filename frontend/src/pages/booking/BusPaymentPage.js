@@ -1,10 +1,14 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   bookBus,
+  getBusPricingPreview,
   calculateBusPayableAmount,
   getBusPromotionDiscountAmount,
+  listAvailableBusCoupons,
+  getFeaturedBusOffers,
 } from "../../services/busBookingService";
 import { sendBookingNotifications } from "../../services/bookingNotificationsService";
 import "../../STYLES/BusBookingFlow.css";
@@ -63,6 +67,9 @@ function buildBookingPayload(flowState) {
       gender: flowState.selectedSeatPassengers?.[seatNumber] || "Male",
       Gender: flowState.selectedSeatPassengers?.[seatNumber] || "Male",
       ...(seatNumber ? { seatNumber, SeatNumber: seatNumber } : {}),
+      BaseFare: Number(seat?.srdvBaseFare !== undefined ? seat?.srdvBaseFare : (seat?.fare || seat?.baseFare || 0)),
+      SeatType: String(seat?.kind || seat?.seatType || "Seater").charAt(0).toUpperCase() + String(seat?.kind || seat?.seatType || "Seater").slice(1),
+      ExternalGst: Number(seat?.srdvTax !== undefined ? seat?.srdvTax : (seat?.tax || 0))
     };
   });
 
@@ -96,6 +103,9 @@ function buildBookingPayload(flowState) {
               passengerGender ||
               (normalizedTitle === "mr" ? "Male" : "Female"),
             ...(seatNumber ? { seatNumber, SeatNumber: seatNumber } : {}),
+            BaseFare: Number(selectedSeats[index]?.srdvBaseFare !== undefined ? selectedSeats[index]?.srdvBaseFare : (selectedSeats[index]?.fare || selectedSeats[index]?.baseFare || 0)),
+            SeatType: String(selectedSeats[index]?.kind || selectedSeats[index]?.seatType || "Seater").charAt(0).toUpperCase() + String(selectedSeats[index]?.kind || selectedSeats[index]?.seatType || "Seater").slice(1),
+            ExternalGst: Number(selectedSeats[index]?.srdvTax !== undefined ? selectedSeats[index]?.srdvTax : (selectedSeats[index]?.tax || 0))
           };
         })
       : fallbackPassengers;
@@ -142,6 +152,11 @@ function buildBookingPayload(flowState) {
     sendSmsUpdates: Boolean(flowState.contact?.mobile),
     sendWhatsappUpdates: Boolean(flowState.contact?.whatsappUpdates),
     passengers: normalizedPassengers,
+    TraceId: String(flowState.bus?.traceId || ""),
+    ResultIndex: String(flowState.bus?.resultIndex || flowState.bus?.id || ""),
+    SrdvIndex: Number(flowState.bus?.srdvIndex || 0),
+    BoardingPointId: flowState.boardingPoint?.id ? String(flowState.boardingPoint.id) : null,
+    DroppingPointId: flowState.droppingPoint?.id ? String(flowState.droppingPoint.id) : null,
   };
 }
 
@@ -292,15 +307,16 @@ function navigateToBusPrintTicket(navigate, bookingReference, contact) {
 export default function BusPaymentPage() {
   const location = useLocation();
   const navigate = useNavigate();
-
   const persistedState = readBusBookingFlowState();
   const incomingState = location.state || {};
-  const flowState = incomingState.bus ? incomingState : persistedState || {};
+  const [flowState, setFlowState] = useState(incomingState.bus ? incomingState : persistedState || {});
 
   const bus = flowState.bus || null;
   const selectedSeats = flowState.selectedSeats || [];
   const boardingPoint = flowState.boardingPoint || null;
   const droppingPoint = flowState.droppingPoint || null;
+  const contact = flowState.contact || {};
+  const searchContext = flowState.searchContext || {};
   const passengers = flowState.passengers || [];
   const fareSummary = flowState.fareSummary || {};
   const payableAmount = calculateBusPayableAmount(
@@ -308,8 +324,48 @@ export default function BusPaymentPage() {
     flowState.payableAmount || fareSummary.grandTotal || fareSummary.totalFare || 0
   );
 
-  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  const activePortal = sessionStorage.getItem("active_portal");
+  const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
   const [agentProfile, setAgentProfile] = useState(null);
+
+  // --- Coupon & Offer States ---
+  const [manualCouponCode, setManualCouponCode] = useState(flowState.couponCode || "");
+  const [appliedCoupon, setAppliedCoupon] = useState(flowState.couponCode ? { couponCode: flowState.couponCode } : null);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponMessageType, setCouponMessageType] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+  
+  const [featuredOffers, setFeaturedOffers] = useState([]);
+  const [isLoadingOffers, setIsLoadingOffers] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
+  const [selectedFeaturedOffer, setSelectedFeaturedOffer] = useState(
+    flowState.selectedFeaturedOfferId ? { offerId: flowState.selectedFeaturedOfferId } : null
+  );
+  useEffect(() => {
+    let isMounted = true;
+    if (flowState.blockKey) {
+      getBusPricingPreview({
+        busId: bus?.id || bus?.busId,
+        traceId: bus?.tripId || bus?.traceId,
+        resultIndex: bus?.resultIndex || bus?.id,
+        srdvIndex: bus?.srdvIndex || 0,
+        blockKey: flowState.blockKey,
+        boardingPointId: flowState.boardingPoint?.id || flowState.boardingPoint?.pointId,
+        passengers: flowState.passengers,
+        couponCode: flowState.couponCode,
+        selectedFeaturedOfferId: flowState.selectedFeaturedOfferId,
+      })
+      .then(preview => {
+        if (isMounted && preview) {
+          setFlowState(prev => ({ ...prev, pricingPreview: preview }));
+        }
+      })
+      .catch(err => console.error("Error fetching pricing preview on payment mount:", err));
+    }
+    return () => { isMounted = false; };
+  }, [flowState.blockKey, bus, flowState.boardingPoint, flowState.passengers, flowState.couponCode, flowState.selectedFeaturedOfferId]);
 
   useEffect(() => {
     if (isAgent) {
@@ -359,6 +415,294 @@ export default function BusPaymentPage() {
   });
   const [paymentError, setPaymentError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isAgent) return;
+
+    setIsLoadingCoupons(true);
+    listAvailableBusCoupons()
+      .then((data) => {
+        if (isMounted) setAvailableCoupons(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => console.error("Error loading coupons:", err))
+      .finally(() => {
+        if (isMounted) setIsLoadingCoupons(false);
+      });
+
+    setIsLoadingOffers(true);
+    getFeaturedBusOffers()
+      .then((data) => {
+        if (isMounted) setFeaturedOffers(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => console.error("Error loading featured offers:", err))
+      .finally(() => {
+        if (isMounted) setIsLoadingOffers(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [isAgent]);
+
+  const fetchPricingPreview = async (overrides = {}) => {
+    return getBusPricingPreview({
+      busId: bus?.id || bus?.busId,
+      traceId: bus?.tripId || bus?.traceId,
+      resultIndex: bus?.resultIndex || bus?.id,
+      srdvIndex: bus?.srdvIndex || 0,
+      blockKey: flowState.blockKey,
+      boardingPointId: flowState.boardingPoint?.id || flowState.boardingPoint?.pointId,
+      passengers: flowState.passengers,
+      couponCode: flowState.couponCode,
+      selectedFeaturedOfferId: flowState.selectedFeaturedOfferId,
+      ...overrides
+    });
+  };
+
+  const handleCouponCodeChange = (e) => {
+    setManualCouponCode(e.target.value.toUpperCase());
+    setCouponMessage("");
+    setCouponMessageType("");
+  };
+
+  const formatCouponErrorMessage = (msg) => {
+    if (!msg) return "";
+    const lower = msg.toLowerCase();
+    if (lower.includes("invalid") || lower.includes("does not exist") || lower.includes("not found")) {
+      return "Invalid coupon code. Please check and try again.";
+    }
+    if (lower.includes("expired")) {
+      return "This coupon has expired.";
+    }
+    if (lower.includes("minimum")) {
+      return "Booking amount is too low for this coupon.";
+    }
+    if (lower.includes("already used") || lower.includes("usage limit")) {
+      return "Coupon usage limit reached.";
+    }
+    return msg;
+  };
+
+  const getPromotionDiscountAmount = (preview, fallback = 0) => {
+    if (!preview) return fallback;
+    const rawDiscount = preview.couponDiscountAmount || preview.promotionDiscountAmount || preview.discountAmount || 0;
+    return Number(rawDiscount) || fallback;
+  };
+
+  const clearSelectedOffer = () => {
+    setFlowState((prev) => ({
+      ...prev,
+      selectedFeaturedOfferId: null,
+      selectedOffer: null,
+    }));
+  };
+
+  const isSameFeaturedOffer = (selected, offer) => {
+    if (!selected || !offer) return false;
+    const sId = selected.offerId || selected.id || selected.selectedFeaturedOfferId;
+    const oId = offer.offerId || offer.id || offer.selectedFeaturedOfferId;
+    if (sId && oId && String(sId) === String(oId)) return true;
+    if (selected.couponCode && offer.couponCode && selected.couponCode === offer.couponCode) return true;
+    return false;
+  };
+
+  const applyCouponCode = async (code) => {
+    const normalized = String(code || "").trim().toUpperCase();
+    if (!normalized) {
+      setFlowState(prev => ({ ...prev, couponDiscount: 0, couponCode: null }));
+      setAppliedCoupon(null);
+      setCouponMessage("Enter a coupon code.");
+      setCouponMessageType("error");
+      return null;
+    }
+
+    setManualCouponCode(normalized);
+    clearSelectedOffer();
+    setSelectedFeaturedOffer(null);
+    setIsApplyingCoupon(true);
+    setCouponMessage("");
+    setCouponMessageType("");
+
+    try {
+      const preview = await fetchPricingPreview({ selectedFeaturedOfferId: null, couponCode: normalized });
+      const effectiveDiscount = getPromotionDiscountAmount(preview, 0);
+
+      if (effectiveDiscount <= 0) {
+        setAppliedCoupon(null);
+        setCouponMessage("Coupon could not be applied.");
+        setCouponMessageType("error");
+        return { valid: false, message: "Coupon could not be applied." };
+      }
+
+      setAppliedCoupon({ couponCode: normalized });
+      setFlowState(prev => ({
+        ...prev,
+        couponCode: normalized,
+        couponDiscount: effectiveDiscount,
+        pricingPreview: preview,
+        selectedFeaturedOfferId: null,
+      }));
+      setCouponMessage("Coupon applied successfully.");
+      setCouponMessageType("success");
+      return { valid: true, preview };
+    } catch (error) {
+      setAppliedCoupon(null);
+      setFlowState(prev => ({ ...prev, couponCode: null, couponDiscount: 0 }));
+      setCouponMessage(formatCouponErrorMessage(error.message) || "Unable to apply coupon right now.");
+      setCouponMessageType("error");
+      return null;
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleSelectCoupon = async (coupon) => {
+    setIsApplyingCoupon(true);
+    setCouponMessage("");
+    setCouponMessageType("");
+
+    try {
+      const couponCodeValue = coupon.couponCode ? String(coupon.couponCode).trim().toUpperCase() : null;
+
+      if (couponCodeValue) {
+        clearSelectedOffer();
+        setSelectedFeaturedOffer(null);
+        setManualCouponCode(couponCodeValue);
+
+        const preview = await fetchPricingPreview({ selectedFeaturedOfferId: null, couponCode: couponCodeValue });
+        const effectiveDiscount = getPromotionDiscountAmount(preview, 0);
+
+        if (effectiveDiscount <= 0) {
+          setManualCouponCode("");
+          setAppliedCoupon(null);
+          setCouponMessage("Coupon could not be applied.");
+          setCouponMessageType("error");
+          return;
+        }
+
+        setAppliedCoupon({ couponCode: couponCodeValue });
+        setFlowState(prev => ({
+          ...prev,
+          couponCode: couponCodeValue,
+          couponDiscount: effectiveDiscount,
+          pricingPreview: preview,
+          selectedFeaturedOfferId: null,
+        }));
+        setCouponMessage("Coupon applied successfully.");
+        setCouponMessageType("success");
+      } else {
+        setCouponMessage("Invalid coupon.");
+        setCouponMessageType("error");
+      }
+    } catch (error) {
+      setSelectedFeaturedOffer(null);
+      setManualCouponCode("");
+      setAppliedCoupon(null);
+      setFlowState(prev => ({ ...prev, couponCode: null, couponDiscount: 0 }));
+      setCouponMessage(formatCouponErrorMessage(error.message) || "Unable to apply coupon.");
+      setCouponMessageType("error");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleApplyCoupon = async () => applyCouponCode(manualCouponCode);
+
+  const handleRemoveCoupon = async () => {
+    setIsApplyingCoupon(true);
+    setCouponMessage("");
+    setCouponMessageType("");
+    try {
+      const preview = await fetchPricingPreview({ couponCode: null, selectedFeaturedOfferId: null });
+      setManualCouponCode("");
+      setAppliedCoupon(null);
+      setFlowState(prev => ({
+        ...prev,
+        couponCode: null,
+        couponDiscount: 0,
+        pricingPreview: preview,
+      }));
+      setCouponMessage("Coupon removed.");
+      setCouponMessageType("success");
+    } catch (error) {
+      console.error("Error removing coupon", error);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleSelectOffer = async (offer) => {
+    setIsApplyingCoupon(true);
+    setCouponMessage("");
+    setCouponMessageType("");
+
+    try {
+      const offerId = offer.offerId || offer.id;
+      const preview = await fetchPricingPreview({ selectedFeaturedOfferId: offerId, couponCode: null });
+      const effectiveDiscount = getPromotionDiscountAmount(preview, 0);
+
+      if (effectiveDiscount <= 0) {
+        setSelectedFeaturedOffer(null);
+        clearSelectedOffer();
+        setCouponMessage("Offer could not be applied.");
+        setCouponMessageType("error");
+        return;
+      }
+
+      setManualCouponCode("");
+      setAppliedCoupon(null);
+      setSelectedFeaturedOffer(offer);
+      setFlowState(prev => ({
+        ...prev,
+        couponCode: null,
+        selectedFeaturedOfferId: offerId,
+        selectedOffer: offer,
+        couponDiscount: effectiveDiscount,
+        pricingPreview: preview,
+      }));
+      setCouponMessage("Featured offer applied.");
+      setCouponMessageType("success");
+    } catch (error) {
+      setSelectedFeaturedOffer(null);
+      clearSelectedOffer();
+      setFlowState(prev => ({ ...prev, selectedFeaturedOfferId: null, couponDiscount: 0 }));
+      setCouponMessage(formatCouponErrorMessage(error.message) || "Unable to apply offer.");
+      setCouponMessageType("error");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveOffer = async () => {
+    setIsApplyingCoupon(true);
+    setCouponMessage("");
+    setCouponMessageType("");
+    try {
+      const preview = await fetchPricingPreview({ couponCode: null, selectedFeaturedOfferId: null });
+      setSelectedFeaturedOffer(null);
+      clearSelectedOffer();
+      setFlowState(prev => ({
+        ...prev,
+        selectedFeaturedOfferId: null,
+        selectedOffer: null,
+        couponDiscount: 0,
+        pricingPreview: preview,
+      }));
+      setCouponMessage("Offer removed.");
+      setCouponMessageType("success");
+    } catch (error) {
+      console.error("Error removing offer", error);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const getCouponDescription = (coupon) => {
+    if (coupon.description) return coupon.description;
+    const value = Number(coupon.value) || 0;
+    const isPercent = String(coupon.couponType || coupon.cpnType || "").toLowerCase().includes("percent");
+    if (isPercent) return `Get ${value}% off on your booking`;
+    return `Get flat ₹${value} off on your booking`;
+  };
 
   if (!bus || !boardingPoint || !droppingPoint || selectedSeats.length === 0) {
     return (
@@ -798,15 +1142,6 @@ export default function BusPaymentPage() {
                   </strong>
                 </div>
 
-                <div>
-                  <span>Convenience Fee</span>
-                  <strong>
-                    (+) {formatCurrency(
-                      flowState.pricingPreview?.convenienceFee ||
-                        fareSummary.convenienceFee
-                    )}
-                  </strong>
-                </div>
 
                 <div className="grand-total">
                   <span>Payable Amount</span>
@@ -814,6 +1149,205 @@ export default function BusPaymentPage() {
                 </div>
               </div>
             </article>
+
+            {/* Coupons & Featured Offers */}
+            {!isAgent && (
+              <article className="flow-card coupon-sheet-card" style={{ marginBottom: "1rem" }}>
+                <header className="coupon-sheet-header">
+                  <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                  </span>
+                  <span>Apply Coupon</span>
+                  {(isLoadingCoupons || isLoadingOffers || isApplyingCoupon) && (
+                    <span className="coupon-sheet-loading">Loading...</span>
+                  )}
+                </header>
+                <div className="flow-card-body coupon-sheet-body">
+
+                  <div className={`coupon-manual-row ${couponMessageType === "error" ? "field-has-error" : ""}`}>
+                    <input
+                      type="text"
+                      placeholder="Enter Coupon code"
+                      value={manualCouponCode}
+                      onChange={handleCouponCodeChange}
+                      disabled={isApplyingCoupon || Boolean(selectedFeaturedOffer)}
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="coupon-action-button is-remove"
+                      >Remove</button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={isApplyingCoupon || !manualCouponCode.trim() || Boolean(selectedFeaturedOffer)}
+                        className="coupon-action-button is-apply"
+                      >{isApplyingCoupon ? "Applying..." : "APPLY"}</button>
+                    )}
+                  </div>
+                  
+                  {selectedFeaturedOffer && (
+                    <p className="coupon-featured-note">
+                      Featured offer applied. Remove it to use a manual coupon.
+                    </p>
+                  )}
+
+                  {couponMessage && (
+                    <p className={`coupon-sheet-message ${couponMessageType === "success" ? "is-success" : "is-error"}`}>
+                      {couponMessage}
+                    </p>
+                  )}
+
+                  {/* ── Featured Offer Cards ── */}
+                  {featuredOffers.length > 0 && (
+                    <div className="coupon-featured-block">
+                      <p className="coupon-section-label">Featured Offers:</p>
+                      <div
+                        className="coupon-featured-list"
+                        aria-label="Featured offers carousel"
+                      >
+                        {featuredOffers.map((offer) => {
+                          const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
+                          const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
+                          const discountLabel = offer.isPercentageDiscount
+                              ? `${offer.discountValue}% OFF`
+                              : `₹${offer.discountValue} OFF`;
+                          const appliedTitle = isThisSelected && flowState.pricingPreview?.appliedPromotionTitle
+                              ? flowState.pricingPreview.appliedPromotionTitle
+                              : offer.title;
+
+                          const code = offer.couponCode || "OFFER";
+
+                          return (
+                            <div
+                              key={offer.offerId || offer.id || offer.couponCode}
+                              className={`coupon-voucher-card coupon-featured-offer${isThisSelected ? " is-selected" : ""}${
+                                anotherOfferSelected ? " is-muted" : ""
+                              }`}
+                            >
+                              <div className="voucher-header">
+                                <span className="voucher-discount">{discountLabel}</span>
+                                <div className="voucher-code-wrapper">
+                                  <span className="voucher-code-badge">{code}</span>
+                                  <button
+                                    type="button"
+                                    className="voucher-copy-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(code);
+                                      setCopiedCode(code);
+                                      setTimeout(() => setCopiedCode(null), 2000);
+                                    }}
+                                    title="Copy Coupon Code"
+                                  >
+                                    {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="voucher-body">
+                                <div className="voucher-title">{appliedTitle}</div>
+                                <p className="voucher-description">{offer.subtitle || offer.description}</p>
+                                <div className="voucher-action-row">
+                                  {isThisSelected ? (
+                                    <button
+                                      type="button"
+                                      onClick={handleRemoveOffer}
+                                      disabled={isApplyingCoupon}
+                                      className="voucher-remove-btn"
+                                    >Remove</button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectOffer(offer)}
+                                      disabled={isApplyingCoupon || anotherOfferSelected}
+                                      className="voucher-apply-btn"
+                                    >{isApplyingCoupon && isThisSelected ? "Applying..." : "Apply"}</button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Coupon Cards ── */}
+                  {availableCoupons.length > 0 && (
+                    <div className="coupon-chip-block">
+                      <p className="coupon-section-label">Available Coupons:</p>
+                      <div
+                        className="coupon-chip-list"
+                        aria-label="Available coupons carousel"
+                      >
+                        {availableCoupons.map((coupon, idx) => {
+                          const code = coupon.couponCode || `Promo #${coupon.id}`;
+                          const discountLabel = getCouponDescription(coupon).split(" on")[0];
+                          const description = getCouponDescription(coupon);
+                          const isChipSelected = appliedCoupon?.couponCode === coupon.couponCode;
+                          const anotherOfferSelected = Boolean(selectedFeaturedOffer);
+
+                          return (
+                            <div
+                              key={coupon.id || idx}
+                              className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${
+                                anotherOfferSelected ? " is-muted" : ""
+                              }`}
+                            >
+                              <div className="voucher-header">
+                                <span className="voucher-discount">{discountLabel}</span>
+                                <div className="voucher-code-wrapper">
+                                  <span className="voucher-code-badge">{code}</span>
+                                  <button
+                                    type="button"
+                                    className="voucher-copy-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(code);
+                                      setCopiedCode(code);
+                                      setTimeout(() => setCopiedCode(null), 2000);
+                                    }}
+                                    title="Copy Coupon Code"
+                                  >
+                                    {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="voucher-body">
+                                <div className="voucher-title">{code}</div>
+                                <p className="voucher-description">{description}</p>
+                                <div className="voucher-action-row">
+                                  {isChipSelected ? (
+                                    <button
+                                      type="button"
+                                      onClick={handleRemoveCoupon}
+                                      disabled={isApplyingCoupon}
+                                      className="voucher-remove-btn"
+                                    >Remove</button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectCoupon(coupon)}
+                                      disabled={isApplyingCoupon || anotherOfferSelected}
+                                      className="voucher-apply-btn"
+                                    >Apply</button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </article>
+            )}
 
             {paymentError && <p className="flow-error">{paymentError}</p>}
 

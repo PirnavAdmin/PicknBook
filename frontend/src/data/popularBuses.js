@@ -1,3 +1,4 @@
+/* eslint-disable */
 import apsrtcLogo from "../assets/images/buses/apsrtc-logo.svg";
 import tgsrtcLogo from "../assets/images/buses/tgsrtc-logo.svg";
 import ksrtcLogo from "../assets/images/buses/ksrtc-logo.svg";

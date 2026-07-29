@@ -37,5 +37,29 @@ namespace PickNBook.Api.Models
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CancelledAt { get; set; }
         public string? CancellationReason { get; set; }
+
+        // Guest details for SRDV API
+        public string GuestNationality { get; set; } = "IN";
+        public string? RoomTypeName { get; set; }
+
+        // SRDV Tracking Fields
+        public string? TraceId { get; set; }
+        public string? SrdvBookingId { get; set; }
+        public string? SrdvBookingResponseJson { get; set; }
+
+        // SRDV Supplier Extra Booking & Policy Fields
+        public string? ConfirmationNo { get; set; }
+        public string? InvoiceNumber { get; set; }
+        public string? RatePlanCode { get; set; }
+        public string? RoomTypeCode { get; set; }
+        public DateTime? LastCancellationDate { get; set; }
+        public string? CancellationPolicyJson { get; set; }
+
+        // SRDV Supplier Pricing & GST Breakdown
+        public decimal SrdvOfferedPrice { get; set; } = 0m;
+        public decimal SrdvGstAmount { get; set; } = 0m;
+        public decimal SrdvCgstAmount { get; set; } = 0m;
+        public decimal SrdvSgstAmount { get; set; } = 0m;
+        public decimal SrdvIgstAmount { get; set; } = 0m;
     }
 }

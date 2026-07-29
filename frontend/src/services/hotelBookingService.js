@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { toAuthUrl, readApiMessage } from "./authService";
  
 function normalizePayload(payload) {

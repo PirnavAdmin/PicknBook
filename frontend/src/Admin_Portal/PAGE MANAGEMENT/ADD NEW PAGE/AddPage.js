@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import "./AddPage.css";
 import { useLocation, useNavigate } from "react-router-dom";

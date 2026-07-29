@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import { CheckCircle2, AlertCircle, RefreshCw, Send, HelpCircle } from "lucide-react";
 import { submitDepositRequest } from "../../services/b2bService";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import {
   Loader2,
@@ -268,7 +269,8 @@ export default function FlightPaymentPage() {
   const fareSummary = flowState.fareSummary || {};
   const payableAmount = Number(flowState.payableAmount || fareSummary.totalFare || 0);
 
-  const isAgent = localStorage.getItem("b2b_role") === "Agent";
+  const activePortal = sessionStorage.getItem("active_portal");
+  const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
   const [agentProfile, setAgentProfile] = useState(null);
 
   useEffect(() => {

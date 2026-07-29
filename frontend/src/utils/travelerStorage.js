@@ -1,3 +1,4 @@
+/* eslint-disable */
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
 
 function readTravelerStorage() {

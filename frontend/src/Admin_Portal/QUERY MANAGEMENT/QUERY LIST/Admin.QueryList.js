@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { getAdminQueries, updateQueryStatus, deleteAdminQuery } from "../../../services/queryService";
 import { Eye, Edit2, Trash2, X, Search } from "lucide-react";

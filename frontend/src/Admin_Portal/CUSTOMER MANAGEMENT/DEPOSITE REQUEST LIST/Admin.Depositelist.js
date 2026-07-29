@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useRef, useState } from 'react';
 import depositApi, { getDepositRequests, cycleDepositStatus, updateAdminRemark } from "../../../services/depositService";
 

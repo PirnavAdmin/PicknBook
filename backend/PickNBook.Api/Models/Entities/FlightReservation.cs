@@ -41,5 +41,10 @@ namespace PickNBook.Api.Models
         public decimal ConvenienceFee { get; set; }
         public decimal FinalAmount { get; set; }
         public string? PricingSnapshotJson { get; set; }
+
+        // SRDV Booking Response Fields
+        public string? SrdvBookingId { get; set; }
+        public string? SrdvPnr { get; set; }
+        public string? SrdvTicketResponseJson { get; set; }
     }
 }

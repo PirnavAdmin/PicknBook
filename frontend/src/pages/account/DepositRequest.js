@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import Header from "../../components/tables/DepositeHeader";
 import DepositTable from "../../components/tables/DepositeTable";

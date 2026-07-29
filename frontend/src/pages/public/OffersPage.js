@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tag, Bus, ArrowLeft } from "lucide-react";

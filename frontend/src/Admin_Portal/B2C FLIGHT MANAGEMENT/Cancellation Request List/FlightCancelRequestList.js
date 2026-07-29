@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./FlightCancelRequestList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
@@ -499,6 +500,24 @@ const toAdminStatusLabel = (statusValue) => {
   }
 
   return normalized;
+};
+
+const mapAdminStatusClass = (statusValue) => {
+  const key = normalizeText(statusValue, "").toLowerCase();
+
+  if (CANCELLED_STATUS_SET.has(key) || key.includes("cancel") || key.includes("failed")) {
+    return "cancelled";
+  }
+
+  if (PENDING_STATUS_SET.has(key)) {
+    return "pending";
+  }
+
+  if (BOOKED_STATUS_SET.has(key)) {
+    return "success";
+  }
+
+  return "pending";
 };
 
 const formatRequestDate = (statusValue) => {

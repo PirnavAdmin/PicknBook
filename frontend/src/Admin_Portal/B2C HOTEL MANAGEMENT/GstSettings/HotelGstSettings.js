@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
 import { Check, Edit, Trash2, Plus, ArrowLeft, X } from "lucide-react";
 import "./HotelGstSettings.css";

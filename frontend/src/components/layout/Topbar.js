@@ -1,10 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
+  Bus,
+  Plane,
+  Building2,
+  Ticket,
+  HelpCircle,
+  User,
+  LogIn,
   ChevronDown,
   LayoutDashboard,
   LogOut,
-  User,
   Menu,
   X,
 } from "lucide-react";
@@ -42,7 +49,6 @@ function pickFirst(values, fallback = "") {
       }
     }
   }
-
   return fallback;
 }
 
@@ -50,8 +56,8 @@ function getAuthProfile() {
   const rawUser = localStorage.getItem("user");
   const token = localStorage.getItem("token");
   const tokenPayload = decodeJwtPayload(token);
-  let parsedUser = {};
 
+  let parsedUser = {};
   if (rawUser) {
     try {
       parsedUser = JSON.parse(rawUser) || {};
@@ -70,6 +76,7 @@ function getAuthProfile() {
     ],
     ""
   );
+
   const displayName = pickFirst(
     [
       parsedUser.firstName,
@@ -91,9 +98,9 @@ function getAuthProfile() {
 }
 
 const NAV_ITEMS = [
-  { id: "flights", label: "Flights", tab: "flights" },
-  { id: "hotels",  label: "Hotels",  tab: "hotels"  },
-  { id: "buses",   label: "Buses",   tab: "buses"   },
+  { id: "buses",   label: "Buses",   tab: "buses",   icon: Bus       },
+  { id: "flights", label: "Flights", tab: "flights", icon: Plane     },
+  { id: "hotels",  label: "Hotels",  tab: "hotels",  icon: Building2 },
 ];
 
 export default function Topbar() {
@@ -106,13 +113,12 @@ export default function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const userRole = localStorage.getItem("role");
   const isDashboard = location.pathname.startsWith("/dashboard");
   const isB2BDashboard = location.pathname.startsWith("/b2b");
   const isDashboardOrB2B = isDashboard || isB2BDashboard;
-  const dashboardLink = userRole === "Agent" ? "/b2b/dashboard" : "/dashboard";
+  const dashboardLink = "/dashboard";
   const tabParam = new URLSearchParams(location.search).get("tab");
-  const currentHomeTab = ["buses", "hotels"].includes(tabParam)
+  const currentHomeTab = ["flights", "buses", "hotels"].includes(tabParam)
     ? tabParam
     : "flights";
   const isHome = location.pathname === "/";
@@ -139,6 +145,7 @@ export default function Topbar() {
         setOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
@@ -194,7 +201,7 @@ export default function Topbar() {
   return (
     <div className="topbar-wrapper-custom" style={{ position: "sticky", top: 0, zIndex: 1000, width: "100%", display: "flex", flexDirection: "column" }}>
       <header className="topbar">
-        {/* Left Side: Hamburger + Logo */}
+        {/* Left Group: Hamburger + Logo + Nav Items (Buses, Flights, Hotels) */}
         <div className="left-group">
           <button
             type="button"
@@ -208,25 +215,66 @@ export default function Topbar() {
           <button type="button" className="brand" onClick={handleLogoClick}>
             <img className="brand-logo" src={pickNBookLogo} alt="Pick N Book" />
           </button>
+
+          <div className="nav-menu-links visible airbnb-nav-container">
+            {NAV_ITEMS.map((item) => {
+              const ItemIcon = item.icon;
+              const isActive = isHome && currentHomeTab === item.tab;
+              return (
+                <motion.button
+                  key={item.id}
+                  type="button"
+                  className={`menu-item airbnb-tab-item ${isActive ? "active" : ""}`}
+                  onClick={(e) => handleNavClick(item.tab, e)}
+                  whileHover={{ scale: 1.05, y: -1.5 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <motion.div
+                    className="tab-icon-wrap"
+                    animate={isActive ? { scale: [1, 1.2, 1], rotate: [0, -5, 0] } : { scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ItemIcon size={18} />
+                  </motion.div>
+                  <span>{item.label}</span>
+
+                  {isActive && (
+                    <motion.div
+                      className="airbnb-tab-indicator"
+                      layoutId="airbnbActiveIndicator"
+                      transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                    />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Right Side: Nav Links + Auth */}
+        {/* Right Section: Bookings + Help + Auth Buttons */}
         <div className="right-section">
-          {/* Nav tabs — slide in on scroll when on home page */}
-          <div className={`nav-menu-links ${isHome ? (scrolled ? "visible" : "hidden") : "visible"}`}>
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`menu-item ${isHome && currentHomeTab === item.tab ? "active" : ""}`}
-                onClick={(e) => handleNavClick(item.tab, e)}
-              >
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            className="topbar-nav-link"
+            onClick={() => navigate("/fetch-ticket")}
+          >
+            <Ticket size={18} />
+            <span>Fetch Ticket</span>
+          </button>
 
-          {/* Auth section */}
+          <a
+            href="#help"
+            className="topbar-nav-link"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/contact");
+            }}
+          >
+            <HelpCircle size={18} />
+            <span>Help</span>
+          </a>
+
           {authProfile.isLoggedIn ? (
             <div className="user-section" ref={dropdownRef}>
               <button
@@ -251,7 +299,7 @@ export default function Topbar() {
                   )}
 
                   {isDashboardOrB2B && (
-                    <Link to={userRole === "Agent" ? "/b2b/dashboard/my-account" : "/dashboard/my-account"} className="dropdown-item" onClick={() => setOpen(false)}>
+                    <Link to="/dashboard/my-account" className="dropdown-item" onClick={() => setOpen(false)}>
                       <User size={15} />
                       My Account
                     </Link>
@@ -267,11 +315,11 @@ export default function Topbar() {
           ) : (
             <button
               type="button"
-              className="menu-item"
+              className="topbar-login-btn"
               onClick={() => openAuthModal("login")}
             >
-              <User size={16} />
-              <span>Login/Signup</span>
+              <User size={18} />
+              <span>Login / Sign Up</span>
             </button>
           )}
         </div>

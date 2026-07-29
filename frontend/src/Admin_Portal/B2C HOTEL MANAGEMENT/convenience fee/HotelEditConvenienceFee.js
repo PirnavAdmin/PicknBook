@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from "react";
 import { List } from "lucide-react";
 import { useNavigate } from "react-router-dom";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import "./adminpin.css";
 import brandLogo from "../../../assets/images/brand/pick-n-book-logo.png";

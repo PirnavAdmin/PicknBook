@@ -13,14 +13,14 @@ public interface IFlightAnalyticsService
 
 public class FlightAnalyticsService : IFlightAnalyticsService
 {
-    private readonly IAmadeusService _amadeusService;
+    private readonly ISrdvFlightService _srdvFlightService;
     private readonly AppDbContext _context;
 
     public FlightAnalyticsService(
-        IAmadeusService amadeusService,
+        ISrdvFlightService srdvFlightService,
         AppDbContext context)
     {
-        _amadeusService = amadeusService;
+        _srdvFlightService = srdvFlightService;
         _context = context;
     }
 
@@ -29,7 +29,7 @@ public class FlightAnalyticsService : IFlightAnalyticsService
         string destination,
         decimal? budget)
     {
-        var flights = await _amadeusService.SearchFlightsAsync(
+        var flights = await _srdvFlightService.SearchFlightsAsync(
             origin,
             destination,
             DateTime.UtcNow.Date);

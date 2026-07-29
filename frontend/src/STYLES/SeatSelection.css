@@ -124,25 +124,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  border-right: 2px solid #cbd5e1; /* divider to seats */
-  padding: 2px 4px;
-  margin-right: 4px;
+  justify-content: center;
+  border-right: 2px solid #e2e8f0;
+  padding: 12px 6px;
+  margin-right: 8px;
   flex-shrink: 0;
   background-color: #f8fafc;
-  border-radius: 8px 0 0 8px;
-  min-height: 100%;
-  box-sizing: border-box;
+  border-radius: 10px 0 0 10px;
+  gap: 8px;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .bus-deck-label-text {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
-  color: #475569; /* slate-600 */
-  letter-spacing: 0.1em;
+  color: #475569;
+  letter-spacing: 0.08em;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
@@ -153,9 +152,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  margin-top: auto;
+  width: 24px;
+  height: 24px;
 }
 
 .bus-deck-steering-wheel svg {
@@ -569,3 +567,150 @@
   cursor: not-allowed !important;
   box-shadow: none !important;
 }
+
+/* SRDV Dynamic Grid CSS Rules */
+.srdv-grid-deck-container {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #dc1e26 #f1f5f9;
+}
+
+.srdv-coach-scroll {
+  overflow-x: auto;
+  padding: 8px 4px 14px;
+}
+
+.srdv-grid-layout {
+  min-width: max-content;
+  padding: 4px;
+}
+
+.srdv-grid-seat-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.srdv-seat-fare-label {
+  position: absolute;
+  bottom: -14px;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.seat-button-wrapper.status-ladies-seat .seat-body {
+  fill: #fdf2f8 !important;
+  stroke: #ec4899 !important;
+  stroke-width: 2px !important;
+}
+
+.seat-button-wrapper.status-ladies-seat .seat-headrest,
+.seat-button-wrapper.status-ladies-seat .sleeper-pillow {
+  fill: #ec4899 !important;
+}
+
+.seat-button-wrapper.status-males-seat .seat-body {
+  fill: #eff6ff !important;
+  stroke: #3b82f6 !important;
+  stroke-width: 2px !important;
+}
+
+.seat-button-wrapper.status-males-seat .seat-headrest,
+.seat-button-wrapper.status-males-seat .sleeper-pillow {
+  fill: #3b82f6 !important;
+}
+
+/* ============================================================
+   SRDV Grid Cells — used exclusively by renderSrdvGridDeck
+   These replace the old .seat-button-wrapper for SRDV layout
+   ============================================================ */
+
+.srdv-grid-seat-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.srdv-grid-seat-box:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+
+.srdv-grid-seat-box:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.srdv-grid-seat-box:disabled {
+  cursor: not-allowed;
+}
+
+/* Sleeper: wide horizontal rectangle */
+.srdv-grid-seat-box.srdv-sleeper-cell .seat-icon {
+  width: 84px;
+  height: 34px;
+}
+
+/* Seater: square */
+.srdv-grid-seat-box.srdv-seater-cell .seat-icon {
+  width: 44px;
+  height: 36px;
+}
+
+/* --- Status colours for SRDV cells --- */
+
+/* Available */
+.srdv-grid-seat-box.status-available .seat-body {
+  fill: #ffffff;
+  stroke: #cbd5e1;
+}
+.srdv-grid-seat-box.status-available .seat-headrest,
+.srdv-grid-seat-box.status-available .seat-armrest,
+.srdv-grid-seat-box.status-available .sleeper-pillow {
+  fill: #cbd5e1; stroke: #cbd5e1;
+}
+.srdv-grid-seat-box.status-available .seat-label { fill: #475569; }
+
+/* Booked */
+.srdv-grid-seat-box.status-booked .seat-body { fill: #e4e4e7; stroke: #e4e4e7; }
+.srdv-grid-seat-box.status-booked .seat-headrest,
+.srdv-grid-seat-box.status-booked .seat-armrest,
+.srdv-grid-seat-box.status-booked .sleeper-pillow { fill: #d4d4d8; stroke: #d4d4d8; }
+.srdv-grid-seat-box.status-booked .seat-label { fill: #a1a1aa; }
+
+/* Selected */
+.srdv-grid-seat-box.status-selected .seat-body { fill: #10b981; stroke: #10b981; }
+.srdv-grid-seat-box.status-selected .seat-headrest,
+.srdv-grid-seat-box.status-selected .seat-armrest,
+.srdv-grid-seat-box.status-selected .sleeper-pillow { fill: #059669; stroke: #059669; }
+.srdv-grid-seat-box.status-selected .seat-label { fill: #fff; }
+
+/* Ladies */
+.srdv-grid-seat-box.status-ladies-seat .seat-body { fill: #fdf2f8 !important; stroke: #ec4899 !important; }
+.srdv-grid-seat-box.status-ladies-seat .seat-headrest,
+.srdv-grid-seat-box.status-ladies-seat .sleeper-pillow { fill: #ec4899 !important; }
+
+/* Males */
+.srdv-grid-seat-box.status-males-seat .seat-body { fill: #eff6ff !important; stroke: #3b82f6 !important; }
+.srdv-grid-seat-box.status-males-seat .seat-headrest,
+.srdv-grid-seat-box.status-males-seat .sleeper-pillow { fill: #3b82f6 !important; }
+
+/* Dimmed */
+.srdv-grid-seat-box.opacity-40 {
+  opacity: 0.18 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
