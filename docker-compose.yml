@@ -9,6 +9,8 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: ${BACKEND_CONNECTION_STRING:?Set BACKEND_CONNECTION_STRING in .env}
+      ApplyMigrations: ${APPLY_MIGRATIONS:-false}
+      RepairMissingSchema: ${REPAIR_MISSING_SCHEMA:-false}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
       Jwt__Issuer: ${JWT_ISSUER:-PickNBookApi}
       Jwt__Audience: ${JWT_AUDIENCE:-PickNBookUsers}

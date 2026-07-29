@@ -221,22 +221,59 @@ if (app.Environment.IsDevelopment())
 }
 
 var shouldSeed = builder.Configuration.GetValue<bool>("SeedDatabase", false);
-if (shouldSeed)
+var shouldApplyMigrations = builder.Configuration.GetValue<bool>("ApplyMigrations", false);
+var shouldRepairMissingSchema = builder.Configuration.GetValue<bool>("RepairMissingSchema", false);
+if (shouldApplyMigrations || shouldRepairMissingSchema || shouldSeed)
 {
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        const int maxSeedAttempts = 3;
-        for (var attempt = 1; attempt <= maxSeedAttempts; attempt++)
+        if (shouldApplyMigrations)
         {
-            try
+            await dbContext.Database.MigrateAsync();
+        }
+
+        if (shouldRepairMissingSchema)
+        {
+            await dbContext.Database.ExecuteSqlRawAsync("""
+                CREATE TABLE IF NOT EXISTS `flight_bookings` (
+                    `Id` int NOT NULL AUTO_INCREMENT,
+                    `FlightNumber` varchar(20) NOT NULL,
+                    `Airline` varchar(120) NOT NULL,
+                    `FromCity` varchar(80) NOT NULL,
+                    `ToCity` varchar(80) NOT NULL,
+                    `DepartureTime` datetime(6) NOT NULL,
+                    `ArrivalTime` datetime(6) NOT NULL,
+                    `PriceInr` decimal(10,2) NOT NULL,
+                    `AvailableSeats` int NOT NULL,
+                    `TotalSeats` int NOT NULL,
+                    `CabinClass` varchar(30) NOT NULL,
+                    `TraceId` longtext NULL,
+                    `ResultIndex` longtext NULL,
+                    `SrdvIndex` int NULL,
+                    `IsLcc` tinyint(1) NOT NULL,
+                    `SrdvType` longtext NULL,
+                    `SegmentsJson` longtext NULL,
+                    PRIMARY KEY (`Id`),
+                    KEY `IX_flight_bookings_FromCity_ToCity_DepartureTime` (`FromCity`, `ToCity`, `DepartureTime`)
+                ) CHARACTER SET=utf8mb4;
+                """);
+        }
+
+        if (shouldSeed)
+        {
+            const int maxSeedAttempts = 3;
+            for (var attempt = 1; attempt <= maxSeedAttempts; attempt++)
             {
-                await DbSeeder.SeedAsync(dbContext);
-                break;
-            }
-            catch (Exception) when (attempt < maxSeedAttempts)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
+                try
+                {
+                    await DbSeeder.SeedAsync(dbContext);
+                    break;
+                }
+                catch (Exception) when (attempt < maxSeedAttempts)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
+                }
             }
         }
     }
