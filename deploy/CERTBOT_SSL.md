@@ -11,7 +11,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-3. Keep the frontend container/app available on host port `3000`. Host Nginx listens on public port `80` and forwards to `127.0.0.1:3000`.
+3. Keep the frontend container/app available on host port `3001`. Host Nginx listens on public port `80` and forwards to `127.0.0.1:3001`.
 
 4. After you install Certbot manually, run:
 
