@@ -11,18 +11,5 @@ namespace PickNBook.Api.Models
         public string? SeatNumber { get; set; }
         public bool IsCancelled { get; set; } = false;
         public DateTime? CancelledAtUtc { get; set; }
-
-        // V8 Passenger Details
-        public string? Title { get; set; }
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public DateTime? DateOfBirth { get; set; }
-        public string? Nationality { get; set; }
-        public string? PassportNo { get; set; }
-        public string? TicketNumber { get; set; }
-        public string? Email { get; set; }
-        public string? ContactNo { get; set; }
-        public int? PaxId { get; set; }
-        public string? TicketId { get; set; }
     }
 }

@@ -349,7 +349,7 @@ Refunds are issued to the original payment method.
             await InsertNextWeekBusSchedulesAsync(dbContext, cancellationToken);
         }
 
-        
+        await EnsureRichNextWeekFlightDataAsync(dbContext, cancellationToken);
         await EnsureSeatMapsAsync(dbContext, cancellationToken);
 
     }
@@ -357,9 +357,282 @@ Refunds are issued to the original payment method.
     private static async Task EnsureSeatMapsAsync(AppDbContext dbContext, CancellationToken cancellationToken)
     {
         // Seats are generated on-demand when accessed via APIs to preserve DB connections
-        // 
+        // await EnsureFlightSeatMapsAsync(dbContext, cancellationToken);
         // await EnsureBusSeatMapsAsync(dbContext, cancellationToken);
     }
+
+    private static async Task EnsureFlightSeatMapsAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var flightsWithoutSeats = await dbContext.FlightBookings
+            .Where(f => !dbContext.FlightSeats.Any(s => s.FlightBookingId == f.Id))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        if (flightsWithoutSeats.Count == 0)
+        {
+            return;
+        }
+
+        // Deduplicate flight list in memory
+        flightsWithoutSeats = flightsWithoutSeats.DistinctBy(f => f.Id).ToList();
+
+        var seatsToInsert = new List<FlightSeat>();
+        foreach (var flight in flightsWithoutSeats)
+        {
+            foreach (var travelClass in AllowedTravelClasses)
+            {
+                if (!ClassSeatConfig.TryGetValue(travelClass, out var totalSeats) || totalSeats <= 0)
+                {
+                    continue;
+                }
+
+                var seatCodes = BuildFlightSeatCodes(totalSeats);
+                foreach (var seatCode in seatCodes)
+                {
+                    seatsToInsert.Add(new FlightSeat
+                    {
+                        FlightBookingId = flight.Id,
+                        TravelClass = travelClass,
+                        SeatCode = seatCode,
+                        IsBooked = false
+                    });
+                }
+            }
+        }
+
+        // Deduplicate generated seats in memory
+        seatsToInsert = seatsToInsert
+            .GroupBy(s => new { s.FlightBookingId, TravelClass = s.TravelClass.Trim().ToLowerInvariant(), SeatCode = s.SeatCode.Trim().ToLowerInvariant() })
+            .Select(g => g.First())
+            .ToList();
+
+        if (seatsToInsert.Count > 0)
+        {
+            const int batchSize = 5000;
+            for (var i = 0; i < seatsToInsert.Count; i += batchSize)
+            {
+                var batch = seatsToInsert.Skip(i).Take(batchSize).ToList();
+                try
+                {
+                    await dbContext.FlightSeats.AddRangeAsync(batch, cancellationToken);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("Duplicate entry") == true || ex.Message.Contains("Duplicate entry"))
+                {
+                    dbContext.ChangeTracker.Clear();
+                    
+                    var flightIdsInBatch = batch.Select(x => x.FlightBookingId).Distinct().ToList();
+                    var existingSeats = await dbContext.FlightSeats
+                        .Where(x => flightIdsInBatch.Contains(x.FlightBookingId))
+                        .Select(x => new { x.FlightBookingId, x.TravelClass, x.SeatCode })
+                        .ToListAsync(cancellationToken);
+                        
+                    var existingSet = existingSeats
+                        .Select(x => $"{x.FlightBookingId}|{x.TravelClass.Trim()}|{x.SeatCode.Trim()}")
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                        
+                    var nonDuplicateSeats = batch
+                        .Where(x => !existingSet.Contains($"{x.FlightBookingId}|{x.TravelClass.Trim()}|{x.SeatCode.Trim()}"))
+                        .ToList();
+                        
+                    if (nonDuplicateSeats.Count > 0)
+                    {
+                        try
+                        {
+                            await dbContext.FlightSeats.AddRangeAsync(nonDuplicateSeats, cancellationToken);
+                            await dbContext.SaveChangesAsync(cancellationToken);
+                        }
+                        catch (DbUpdateException saveEx) when (saveEx.InnerException?.Message.Contains("Duplicate entry") == true || saveEx.Message.Contains("Duplicate entry"))
+                        {
+                            // Swallowing duplicate entries as they already exist in the database.
+                            dbContext.ChangeTracker.Clear();
+                        }
+                    }
+                }
+                dbContext.ChangeTracker.Clear();
+            }
+        }
+    }
+
+
+
+    private static List<string> BuildFlightSeatCodes(int totalSeats)
+    {
+        var letters = new[] { 'A', 'B', 'C', 'D', 'E', 'F' };
+        var seats = new List<string>(totalSeats);
+        for (var i = 1; i <= totalSeats; i++)
+        {
+            var row = ((i - 1) / letters.Length) + 1;
+            var letter = letters[(i - 1) % letters.Length];
+            seats.Add($"{row}{letter}");
+        }
+
+        return seats;
+    }
+
+    
+
+    private static async Task EnsureRichNextWeekFlightDataAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var (startUtc, endUtc) = NextWeekUtcRange();
+
+        var flightCountInNextWeek = await dbContext.FlightBookings
+            .CountAsync(x => x.DepartureTime >= startUtc && x.DepartureTime < endUtc, cancellationToken);
+
+        var inventoryCount = await dbContext.FlightClassInventories.CountAsync(cancellationToken);
+        var looksRichAlready = flightCountInNextWeek >= 1500 && inventoryCount >= flightCountInNextWeek * AllowedTravelClasses.Length;
+
+        if (looksRichAlready)
+        {
+            await EnsureClassInventoryForAllFlightsAsync(dbContext, cancellationToken);
+            Console.WriteLine("Rich next-week flight data already available.");
+            return;
+        }
+
+        await dbContext.FlightReservations.ExecuteDeleteAsync(cancellationToken);
+        await dbContext.FlightSeats.ExecuteDeleteAsync(cancellationToken);
+        await dbContext.FlightClassInventories.ExecuteDeleteAsync(cancellationToken);
+        await dbContext.FlightBookings.ExecuteDeleteAsync(cancellationToken);
+
+        var flights = BuildRichNextWeekFlightSeed();
+        await dbContext.FlightBookings.AddRangeAsync(flights, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var inventories = BuildClassInventories(flights);
+        await dbContext.FlightClassInventories.AddRangeAsync(inventories, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        Console.WriteLine($"Seeded {flights.Count} rows into flight_bookings.");
+        Console.WriteLine($"Seeded {inventories.Count} rows into flight_class_inventories.");
+    }
+   
+
+    private static async Task EnsureClassInventoryForAllFlightsAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var flightsWithoutInventory = await dbContext.FlightBookings
+            .Where(f => !dbContext.FlightClassInventories.Any(i => i.FlightBookingId == f.Id))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        if (flightsWithoutInventory.Count == 0)
+        {
+            return;
+        }
+
+        var toInsert = new List<FlightClassInventory>();
+        foreach (var flight in flightsWithoutInventory)
+        {
+            foreach (var travelClass in AllowedTravelClasses)
+            {
+                var total = ClassSeatConfig[travelClass];
+                toInsert.Add(new FlightClassInventory
+                {
+                    FlightBookingId = flight.Id,
+                    TravelClass = travelClass,
+                    TotalSeats = total,
+                    AvailableSeats = total,
+                    PriceInr = decimal.Round(flight.PriceInr * ClassPriceMultiplier[travelClass], 2, MidpointRounding.AwayFromZero)
+                });
+            }
+        }
+
+        if (toInsert.Count > 0)
+        {
+            await dbContext.FlightClassInventories.AddRangeAsync(toInsert, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            Console.WriteLine($"Added {toInsert.Count} missing class inventory rows.");
+        }
+    }
+
+   
+
+    private static List<FlightBooking> BuildRichNextWeekFlightSeed()
+    {
+        var cities = new[]
+        {
+            "Delhi", "Mumbai", "Bengaluru", "Chennai", "Hyderabad",
+            "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Kochi"
+        };
+
+        var airlines = new[]
+        {
+            new AirlineDef("Air India", "AI"),
+            new AirlineDef("IndiGo", "6E"),
+            new AirlineDef("Vistara", "UK"),
+            new AirlineDef("Akasa Air", "QP"),
+            new AirlineDef("SpiceJet", "SG"),
+            new AirlineDef("Air India Express", "IX")
+        };
+
+        var departureSlots = new[] { (6, 20), (12, 10), (19, 35) };
+        var flights = new List<FlightBooking>();
+
+        for (var day = 7; day <= 13; day++)
+        {
+            foreach (var fromCity in cities)
+            {
+                foreach (var toCity in cities)
+                {
+                    if (fromCity.Equals(toCity, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    foreach (var slot in departureSlots)
+                    {
+                        var key = $"{fromCity}-{toCity}-{day}-{slot.Item1}:{slot.Item2}";
+                        var hash = StableHash(key);
+                        var airline = airlines[hash % airlines.Length];
+                        var durationMinutes = 65 + (hash % 170); // 65m .. 234m
+
+                        var departure = DepartureAtUtcFromIst(day, slot.Item1, slot.Item2);
+                        var economyPrice = decimal.Round(2400m + (durationMinutes * 18m) + (hash % 1800), 2, MidpointRounding.AwayFromZero);
+                        var totalSeats = ClassSeatConfig.Values.Sum();
+
+                        flights.Add(new FlightBooking
+                        {
+                            FlightNumber = $"{airline.Code}-{100 + (hash % 900)}",
+                            Airline = airline.Name,
+                            FromCity = fromCity,
+                            ToCity = toCity,
+                            DepartureTime = departure,
+                            ArrivalTime = departure.AddMinutes(durationMinutes),
+                            PriceInr = economyPrice,
+                            AvailableSeats = totalSeats,
+                            TotalSeats = totalSeats,
+                            CabinClass = "MultiClass"
+                        });
+                    }
+                }
+            }
+        }
+
+        return flights;
+    }
+
+    private static List<FlightClassInventory> BuildClassInventories(IEnumerable<FlightBooking> flights)
+    {
+        var rows = new List<FlightClassInventory>();
+        foreach (var flight in flights)
+        {
+            foreach (var travelClass in AllowedTravelClasses)
+            {
+                var seats = ClassSeatConfig[travelClass];
+                rows.Add(new FlightClassInventory
+                {
+                    FlightBookingId = flight.Id,
+                    TravelClass = travelClass,
+                    TotalSeats = seats,
+                    AvailableSeats = seats,
+                    PriceInr = decimal.Round(flight.PriceInr * ClassPriceMultiplier[travelClass], 2, MidpointRounding.AwayFromZero)
+                });
+            }
+        }
+
+        return rows;
+    }
+
+
 
     private static List<BusBooking> BuildBusSeed()
     {
@@ -574,4 +847,3 @@ Refunds are issued to the original payment method.
 
     private sealed record AirlineDef(string Name, string Code);
 }
-

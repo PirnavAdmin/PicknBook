@@ -1585,6 +1585,62 @@ namespace PickNBook.Api.Migrations
                     b.ToTable("bus_search_logs", (string)null);
                 });
 
+            modelBuilder.Entity("PickNBook.Api.Models.CheapestFlight", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Airline")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("ArrivalDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("AvailableSeats")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("DepartureDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsLimitedSeats")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("StopsCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Origin", "Destination", "RecordedAt");
+
+                    b.ToTable("cheapestflights", (string)null);
+                });
+
             modelBuilder.Entity("PickNBook.Api.Models.CmsPage", b =>
                 {
                     b.Property<long>("Id")
@@ -1684,9 +1740,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<string>("PhoneNo")
                         .HasMaxLength(30)
                         .HasColumnType("varchar(30)");
-
-                    b.Property<string>("ReplyMessage")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -2122,12 +2175,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<DateTime>("RequestDateUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("RequestType")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvChangeRequestId")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("SupplierRemark")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
@@ -2137,6 +2184,80 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("FlightReservationId");
 
                     b.ToTable("flight_amendment_requests", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.FlightBooking", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Airline")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<DateTime>("ArrivalTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("AvailableSeats")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CabinClass")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime>("DepartureTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FlightNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("FromCity")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)");
+
+                    b.Property<bool>("IsLcc")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<decimal>("PriceInr")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("ResultIndex")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SegmentsJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("SrdvIndex")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SrdvType")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ToCity")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)");
+
+                    b.Property<int>("TotalSeats")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TraceId")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromCity", "ToCity", "DepartureTime");
+
+                    b.ToTable("flight_bookings", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FlightCancellationRequest", b =>
@@ -2200,18 +2321,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<DateTime>("RequestDateUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("SrdvBookingId")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvChangeRequestId")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvIndex")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvType")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("SupplierRemark")
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
@@ -2221,6 +2330,40 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("FlightReservationId");
 
                     b.ToTable("flight_cancellation_requests", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.FlightClassInventory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableSeats")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FlightBookingId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PriceInr")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("TotalSeats")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TravelClass")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlightBookingId", "TravelClass")
+                        .IsUnique();
+
+                    b.ToTable("flight_class_inventories", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FlightConvenienceFee", b =>
@@ -2489,10 +2632,6 @@ namespace PickNBook.Api.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
 
-                    b.Property<string>("CabinClass")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
@@ -2706,13 +2845,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<int>("Adults")
                         .HasColumnType("int");
 
-                    b.Property<string>("Airline")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("ArrivalTime")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<DateTime>("BookedAtUtc")
                         .HasColumnType("datetime(6)");
 
@@ -2721,15 +2853,9 @@ namespace PickNBook.Api.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("varchar(40)");
 
-                    b.Property<DateTime?>("CallbackReceivedAtUtc")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<decimal?>("CancellationChargeInr")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("CancellationCharges")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("CancellationReason")
                         .HasMaxLength(300)
@@ -2740,6 +2866,14 @@ namespace PickNBook.Api.Migrations
 
                     b.Property<int>("Children")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("ConvenienceFee")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("ConvenienceFeeInr")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("CouponCode")
                         .HasMaxLength(40)
@@ -2756,40 +2890,19 @@ namespace PickNBook.Api.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<DateTime>("DepartureTime")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<decimal>("DiscountAmountInr")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("FareRulesJson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FareType")
-                        .HasColumnType("longtext");
 
                     b.Property<decimal>("FinalAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<string>("FlightNumber")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FromCity")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("GdsPnr")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                    b.Property<int>("FlightBookingId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Infants")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsLcc")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<decimal>("MarkupAmount")
                         .HasPrecision(10, 2)
@@ -2798,12 +2911,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<decimal>("NetFareInr")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
-
-                    b.Property<bool>("NonRefundable")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("PartialSegmentCancellation")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("PassengerEmail")
                         .HasMaxLength(150)
@@ -2844,38 +2951,17 @@ namespace PickNBook.Api.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<string>("ResultIndex")
-                        .HasColumnType("longtext");
-
                     b.Property<int>("SeatsBooked")
                         .HasColumnType("int");
 
-                    b.Property<string>("SegmentsJson")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("SrdvBookingId")
                         .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvCallbackResponseJson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvChangeRequestId")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("SrdvIndex")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("SrdvPnr")
                         .HasColumnType("longtext");
 
                     b.Property<string>("SrdvTicketResponseJson")
                         .HasColumnType("longtext");
-
-                    b.Property<string>("SrdvType")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -2894,20 +2980,9 @@ namespace PickNBook.Api.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<string>("TicketStatus")
-                        .HasMaxLength(30)
-                        .HasColumnType("varchar(30)");
-
-                    b.Property<string>("ToCity")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<decimal>("TotalPriceInr")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("TraceId")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("TravelClass")
                         .IsRequired()
@@ -2923,6 +2998,8 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("BookingReference")
                         .IsUnique();
+
+                    b.HasIndex("FlightBookingId");
 
                     b.HasIndex("PassengerPhone");
 
@@ -2942,18 +3019,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<DateTime?>("CancelledAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("ContactNo")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("longtext");
-
                     b.Property<int>("FlightReservationId")
                         .HasColumnType("int");
 
@@ -2970,35 +3035,14 @@ namespace PickNBook.Api.Migrations
                     b.Property<bool>("IsCancelled")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("LastName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Nationality")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("PassengerType")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
-                    b.Property<string>("PassportNo")
-                        .HasColumnType("longtext");
-
-                    b.Property<int?>("PaxId")
-                        .HasColumnType("int");
-
                     b.Property<string>("SeatNumber")
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
-
-                    b.Property<string>("TicketId")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("TicketNumber")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -3062,10 +3106,6 @@ namespace PickNBook.Api.Migrations
                     b.Property<DateOnly?>("DepartDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("EndUserIp")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
                     b.Property<string>("FromCity")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -3088,10 +3128,6 @@ namespace PickNBook.Api.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
-                    b.Property<string>("TraceId")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("TripType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -3112,6 +3148,40 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("FromCity", "ToCity");
 
                     b.ToTable("flight_search_logs", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.FlightSeat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FlightBookingId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsBooked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("SeatCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("TravelClass")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlightBookingId", "TravelClass", "IsBooked");
+
+                    b.HasIndex("FlightBookingId", "TravelClass", "SeatCode")
+                        .IsUnique();
+
+                    b.ToTable("flight_seats", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.HotelCoupon", b =>
@@ -3221,60 +3291,6 @@ namespace PickNBook.Api.Migrations
                     b.ToTable("hotel_coupon_usages", (string)null);
                 });
 
-            modelBuilder.Entity("PickNBook.Api.Models.HotelMarkupRule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CityCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("HotelCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("MarkupType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<decimal>("MarkupValue")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RuleName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UserType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("hotel_markup_rules", (string)null);
-                });
-
             modelBuilder.Entity("PickNBook.Api.Models.HotelPricingSetting", b =>
                 {
                     b.Property<int>("Id")
@@ -3343,11 +3359,7 @@ namespace PickNBook.Api.Migrations
                         .HasColumnType("varchar(40)");
 
                     b.Property<decimal>("CancellationCharges")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("CancellationPolicyJson")
-                        .HasColumnType("longtext");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("CancellationReason")
                         .HasMaxLength(300)
@@ -3362,29 +3374,20 @@ namespace PickNBook.Api.Migrations
                     b.Property<DateTime>("CheckOutDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Children")
-                        .HasColumnType("int");
-
                     b.Property<string>("CityCode")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
-
-                    b.Property<string>("ConfirmationNo")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.Property<decimal>("ConvenienceFee")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("CouponCode")
-                        .HasMaxLength(40)
-                        .HasColumnType("varchar(40)");
+                        .HasColumnType("longtext");
 
                     b.Property<decimal>("CouponDiscount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -3393,6 +3396,14 @@ namespace PickNBook.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
+
+                    b.Property<decimal>("GstAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("GstPercent")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("GuestEmail")
                         .IsRequired()
@@ -3406,8 +3417,7 @@ namespace PickNBook.Api.Migrations
 
                     b.Property<string>("GuestNationality")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("GuestPhone")
                         .IsRequired()
@@ -3423,13 +3433,6 @@ namespace PickNBook.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
-
-                    b.Property<string>("InvoiceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTime?>("LastCancellationDate")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("MarkupAmount")
                         .HasPrecision(10, 2)
@@ -3452,56 +3455,19 @@ namespace PickNBook.Api.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
-                    b.Property<string>("RatePlanCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
                     b.Property<decimal>("RefundAmount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("RoomTypeCode")
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("RoomTypeName")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("Rooms")
                         .HasColumnType("int");
 
                     b.Property<string>("SrdvBookingId")
-                        .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SrdvBookingResponseJson")
-                        .HasColumnType("longtext");
-
-                    b.Property<decimal>("SrdvCgstAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SrdvGstAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SrdvIgstAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SrdvIndex")
-                        .HasColumnType("longtext");
-
-                    b.Property<decimal>("SrdvOfferedPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SrdvSgstAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SrdvType")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Status")
@@ -3514,8 +3480,7 @@ namespace PickNBook.Api.Migrations
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("TraceId")
-                        .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -3531,8 +3496,6 @@ namespace PickNBook.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("HotelId");
-
-                    b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 
@@ -4376,6 +4339,17 @@ namespace PickNBook.Api.Migrations
                     b.Navigation("FlightReservation");
                 });
 
+            modelBuilder.Entity("PickNBook.Api.Models.FlightClassInventory", b =>
+                {
+                    b.HasOne("PickNBook.Api.Models.FlightBooking", "FlightBooking")
+                        .WithMany()
+                        .HasForeignKey("FlightBookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FlightBooking");
+                });
+
             modelBuilder.Entity("PickNBook.Api.Models.FlightCouponUsage", b =>
                 {
                     b.HasOne("PickNBook.Api.Models.FlightReservation", "FlightReservation")
@@ -4426,6 +4400,17 @@ namespace PickNBook.Api.Migrations
                     b.Navigation("FlightPromotion");
 
                     b.Navigation("FlightReservation");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.FlightReservation", b =>
+                {
+                    b.HasOne("PickNBook.Api.Models.FlightBooking", "FlightBooking")
+                        .WithMany()
+                        .HasForeignKey("FlightBookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FlightBooking");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FlightReservationPassenger", b =>

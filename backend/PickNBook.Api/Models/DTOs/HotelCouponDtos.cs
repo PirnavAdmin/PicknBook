@@ -42,9 +42,11 @@ public class UpsertHotelCouponRequestDto
     [Range(0, 1000000.00)]
     public decimal MaxDiscountAmount { get; set; } = 0;
 
-    public string? StartDate { get; set; }
+    [Required]
+    public DateOnly StartDate { get; set; }
 
-    public string? ExpiryDate { get; set; }
+    [Required]
+    public DateOnly ExpiryDate { get; set; }
 
     [Range(0, 1000000)]
     public int UseLimit { get; set; } = 0;

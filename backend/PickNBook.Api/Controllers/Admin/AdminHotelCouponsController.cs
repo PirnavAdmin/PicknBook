@@ -64,8 +64,8 @@ public class AdminHotelCouponsController : AdminApiController
             Value = dto.Value,
             MinBookingAmount = dto.MinBookingAmount,
             MaxDiscountAmount = dto.MaxDiscountAmount,
-            StartDate = string.IsNullOrWhiteSpace(dto.StartDate) ? DateOnly.FromDateTime(DateTime.UtcNow) : DateOnly.FromDateTime(DateTime.Parse(dto.StartDate)),
-            ExpiryDate = string.IsNullOrWhiteSpace(dto.ExpiryDate) ? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(10)) : DateOnly.FromDateTime(DateTime.Parse(dto.ExpiryDate)),
+            StartDate = dto.StartDate,
+            ExpiryDate = dto.ExpiryDate,
             UseLimit = dto.UseLimit,
             UsedCount = 0,
             MaxUsagePerUser = dto.MaxUsagePerUser,
@@ -107,8 +107,8 @@ public class AdminHotelCouponsController : AdminApiController
         coupon.Value = dto.Value;
         coupon.MinBookingAmount = dto.MinBookingAmount;
         coupon.MaxDiscountAmount = dto.MaxDiscountAmount;
-        coupon.StartDate = string.IsNullOrWhiteSpace(dto.StartDate) ? DateOnly.FromDateTime(DateTime.UtcNow) : DateOnly.FromDateTime(DateTime.Parse(dto.StartDate));
-        coupon.ExpiryDate = string.IsNullOrWhiteSpace(dto.ExpiryDate) ? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(10)) : DateOnly.FromDateTime(DateTime.Parse(dto.ExpiryDate));
+        coupon.StartDate = dto.StartDate;
+        coupon.ExpiryDate = dto.ExpiryDate;
         coupon.UseLimit = dto.UseLimit;
         coupon.MaxUsagePerUser = dto.MaxUsagePerUser;
         coupon.Status = dto.Status;

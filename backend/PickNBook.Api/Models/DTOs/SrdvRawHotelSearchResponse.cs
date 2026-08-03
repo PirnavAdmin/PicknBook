@@ -65,7 +65,7 @@ namespace PickNBook.Api.Models.DTOs
 
         public List<SrdvRawFacility> Facilities { get; set; } = new();
         public List<SrdvRawRoomCategory> Rooms { get; set; } = new();
-        public SrdvRawPrice Price { get; set; } = new();
+        public SrdvRawPrice Price { get; set; }
     }
 
     public class SrdvRawFacility

@@ -38,7 +38,6 @@ namespace PickNBook.Api.Models
     public enum TripType
     {
         OneWay,
-        RoundTrip,
-        MultiCity
+        RoundTrip
     }
 }

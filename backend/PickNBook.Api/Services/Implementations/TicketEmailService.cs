@@ -5,7 +5,8 @@ using PickNBook.Api.Models.DTOs;
 
 namespace PickNBook.Api.Services;
 
-public class TicketEmailService : ITicketEmailService
+public class 
+    TicketEmailService : ITicketEmailService
 {
     private readonly IEmailService _emailService;
     private readonly ITicketPdfService _ticketPdfService;
@@ -56,6 +57,7 @@ public class TicketEmailService : ITicketEmailService
 
         // Fetch flight reservation, booking details, and passengers from the database
         var reservation = await _context.FlightReservations
+            .Include(r => r.FlightBooking)
             .FirstOrDefaultAsync(r => r.BookingReference == request.BookingReference);
 
         var passengersList = new List<FlightPassengerTicketDto>();
@@ -64,10 +66,10 @@ public class TicketEmailService : ITicketEmailService
 
         if (reservation != null)
         {
-            if (true)
+            if (reservation.FlightBooking != null)
             {
-                flightNumber = reservation.FlightNumber;
-                airline = reservation.Airline;
+                flightNumber = reservation.FlightBooking.FlightNumber;
+                airline = reservation.FlightBooking.Airline;
             }
 
             var dbPassengers = await _context.FlightReservationPassengers
@@ -79,8 +81,7 @@ public class TicketEmailService : ITicketEmailService
                 passengersList = dbPassengers.Select(p => new FlightPassengerTicketDto
                 {
                     FullName = p.FullName,
-                    SeatNumber = p.SeatNumber,
-                    TicketNumber = p.TicketNumber
+                    SeatNumber = p.SeatNumber
                 }).ToList();
             }
         }
@@ -250,24 +251,6 @@ public class TicketEmailService : ITicketEmailService
     </div>");
         }
 
-    var cancellationSection = string.Empty;
-    if (request.NonRefundable)
-    {
-        cancellationSection = @"
-    <div style=""background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-top: 15px;"">
-        <h4 style=""color: #991b1b; margin: 0 0 10px 0; font-size: 14px;"">Cancellation Policy</h4>
-        <p style=""color: #991b1b; font-weight: bold; font-size: 13px; margin: 0;"">This ticket is NON-REFUNDABLE.</p>
-    </div>";
-    }
-    else if (!string.IsNullOrWhiteSpace(request.CancellationCharges))
-    {
-        cancellationSection = $@"
-    <div style=""background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 15px;"">
-        <h4 style=""color: #0f2459; margin: 0 0 10px 0; font-size: 14px;"">Cancellation Policy</h4>
-        <p style=""color: #5a6578; font-size: 13px; margin: 0;"">{request.CancellationCharges}</p>
-    </div>";
-    }
-
         var body = $@"
 <div style=""font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6fa; padding: 30px 20px; max-width: 850px; margin: 0 auto; border-radius: 12px;"">
     
@@ -277,8 +260,6 @@ public class TicketEmailService : ITicketEmailService
     </div>
 
     {boardingPassesHtml}
-
-    {cancellationSection}
 
     <!-- Additional Helpful Details Box -->
     <div style=""background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(15, 36, 89, 0.04); margin-top: 15px;"">
@@ -333,7 +314,7 @@ public class TicketEmailService : ITicketEmailService
             ? string.Join(
                 "<br/>",
                 request.Passengers.Select((p, i) =>
-                    $"&nbsp;&nbsp;{i + 1}. {p.FullName} â€” Seat <b>{p.SeatNumber}</b>"))
+                    $"&nbsp;&nbsp;{i + 1}. {p.FullName} — Seat <b>{p.SeatNumber}</b>"))
             : $"Seats: {request.SeatNumber}";
 
         // =========================================
@@ -347,7 +328,7 @@ public class TicketEmailService : ITicketEmailService
             discountSection += $@"
             <p>
                 <b>Offer Discount:</b>
-                - â‚¹{request.AutoDiscountAmount:0.00}
+                - ₹{request.AutoDiscountAmount:0.00}
             </p>";
         }
 
@@ -356,7 +337,7 @@ public class TicketEmailService : ITicketEmailService
             discountSection += $@"
             <p>
                 <b>Coupon Discount:</b>
-                - â‚¹{request.CouponDiscountAmount:0.00}
+                - ₹{request.CouponDiscountAmount:0.00}
             </p>";
         }
 
@@ -367,7 +348,7 @@ public class TicketEmailService : ITicketEmailService
             discountSection = $@"
             <p>
                 <b>Discount:</b>
-                - â‚¹{request.DiscountAmount:0.00}
+                - ₹{request.DiscountAmount:0.00}
             </p>";
         }
 
@@ -379,7 +360,7 @@ public class TicketEmailService : ITicketEmailService
             ? $@"
         <p>
             <b>GST:</b>
-            â‚¹{request.GstAmount:0.00}
+            ₹{request.GstAmount:0.00}
         </p>"
             : string.Empty;
 
@@ -388,7 +369,7 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             Your bus booking is confirmed for
-            <b>{request.Origin} â†’ {request.Destination}</b>.
+            <b>{request.Origin} → {request.Destination}</b>.
         </p>
 
         <p>
@@ -418,7 +399,7 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             <b>Total Fare:</b>
-            â‚¹{request.Price:0.00}
+            ₹{request.Price:0.00}
         </p>
 
         <p>
@@ -451,7 +432,7 @@ public class TicketEmailService : ITicketEmailService
             ? string.Join(
                 "<br/>",
                 request.Passengers.Select((p, i) =>
-                    $"&nbsp;&nbsp;{i + 1}. {p.FullName} â€” Seat <b>{p.SeatNumber}</b>"))
+                    $"&nbsp;&nbsp;{i + 1}. {p.FullName} — Seat <b>{p.SeatNumber}</b>"))
             : $"Seats: {request.SeatNumber}";
 
         // =========================================
@@ -465,7 +446,7 @@ public class TicketEmailService : ITicketEmailService
             discountSection += $@"
             <p>
                 <b>Offer Discount:</b>
-                - â‚¹{request.AutoDiscountAmount:0.00}
+                - ₹{request.AutoDiscountAmount:0.00}
             </p>";
         }
 
@@ -474,7 +455,7 @@ public class TicketEmailService : ITicketEmailService
             discountSection += $@"
             <p>
                 <b>Coupon Discount:</b>
-                - â‚¹{request.CouponDiscountAmount:0.00}
+                - ₹{request.CouponDiscountAmount:0.00}
             </p>";
         }
 
@@ -485,7 +466,7 @@ public class TicketEmailService : ITicketEmailService
             discountSection = $@"
             <p>
                 <b>Discount:</b>
-                - â‚¹{request.DiscountAmount:0.00}
+                - ₹{request.DiscountAmount:0.00}
             </p>";
         }
 
@@ -498,7 +479,7 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             Your bus ticket for
-            <b>{request.Origin} â†’ {request.Destination}</b>
+            <b>{request.Origin} → {request.Destination}</b>
             has been
             <b style='color:red;'>cancelled</b>.
         </p>
@@ -515,32 +496,32 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             <b>Original Fare:</b>
-            â‚¹{request.NetFare:0.00}
+            ₹{request.NetFare:0.00}
         </p>
 
         {discountSection}
 
         <p>
             <b>GST:</b>
-            â‚¹{request.GstAmount:0.00}
+            ₹{request.GstAmount:0.00}
         </p>
 
 
 
         <p>
             <b>Total Fare:</b>
-            â‚¹{request.Price:0.00}
+            ₹{request.Price:0.00}
         </p>
 
         <p>
             <b>Refund Amount:</b>
-            â‚¹{refundAmount:0.00}
+            ₹{refundAmount:0.00}
         </p>
 
         <p>
             The refund will be processed to your
             original payment method within
-            5â€“7 working days.
+            5–7 working days.
         </p>
 
         <p>
@@ -588,11 +569,11 @@ public class TicketEmailService : ITicketEmailService
         {
             passengerLines = "<p><b>Cancelled Passengers:</b><br/>" +
                 string.Join("<br/>", request.Passengers.Select((p, i) =>
-                    $"&nbsp;&nbsp;{i + 1}. {p.FullName} â€” Seat <b>{p.SeatNumber ?? "N/A"}</b>")) + "</p>";
+                    $"&nbsp;&nbsp;{i + 1}. {p.FullName} — Seat <b>{p.SeatNumber ?? "N/A"}</b>")) + "</p>";
         }
         else
         {
-            passengerLines = $"<p><b>Passenger:</b> {request.PassengerName} â€” Seat <b>{request.SeatNumber ?? "N/A"}</b></p>";
+            passengerLines = $"<p><b>Passenger:</b> {request.PassengerName} — Seat <b>{request.SeatNumber ?? "N/A"}</b></p>";
         }
 
         var body = $@"
@@ -614,18 +595,18 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             <b>Original Fare:</b>
-            â‚¹{request.Price:0.00}
+            ₹{request.Price:0.00}
         </p>
 
         <p>
             <b>Refund Amount:</b>
-            â‚¹{refundAmount:0.00}
+            ₹{refundAmount:0.00}
         </p>
 
         <p>
             The refund will be processed to your
             original payment method within
-            5â€“7 working days.
+            5–7 working days.
         </p>
 
         <p>
@@ -718,15 +699,15 @@ public class TicketEmailService : ITicketEmailService
         <table style=""width: 100%; border-collapse: collapse; margin-bottom: 20px;"">
             <tr>
                 <td style=""width: 32%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; vertical-align: top;"">
-                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">STAY</div>
+                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">ROUTE</div>
                     <div style=""font-size: 11px; font-weight: bold; color: #0f2459;"">{reservation.HotelName} to {reservation.CityCode}</div>
                     <div style=""font-size: 9px; color: #78829b; margin-top: 4px;"">{GetRoomCategory(reservation.OfferId)}</div>
                 </td>
                 <td style=""width: 2%;""></td>
                 <td style=""width: 32%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; vertical-align: top;"">
-                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">CHECK IN</div>
+                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">DEPARTURE</div>
                     <div style=""font-size: 11px; font-weight: bold; color: #0f2459;"">{reservation.CheckInDate:dd MMM yyyy}</div>
-                    <div style=""font-size: 9px; color: #78829b; margin-top: 4px;"">Check Out: {reservation.CheckOutDate:dd MMM yyyy}</div>
+                    <div style=""font-size: 9px; color: #78829b; margin-top: 4px;"">Arrival: {reservation.CheckOutDate:dd MMM yyyy}</div>
                 </td>
                 <td style=""width: 2%;""></td>
                 <td style=""width: 32%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; vertical-align: top;"">
@@ -797,7 +778,10 @@ public class TicketEmailService : ITicketEmailService
                     <td style=""font-size: 11px; color: #78829b; padding-bottom: 6px;"">Base Fare</td>
                     <td style=""font-size: 11px; color: #0f2459; padding-bottom: 6px; text-align: right;"">INR {reservation.BasePrice:N2}</td>
                 </tr>
-
+                <tr>
+                    <td style=""font-size: 11px; color: #78829b; padding-bottom: 6px;"">Taxes</td>
+                    <td style=""font-size: 11px; color: #0f2459; padding-bottom: 6px; text-align: right;"">INR {reservation.GstAmount:N2}</td>
+                </tr>
                 <tr>
                     <td style=""font-size: 11px; color: #78829b; padding-bottom: 6px;"">Convenience Fee</td>
                     <td style=""font-size: 11px; color: #0f2459; padding-bottom: 6px; text-align: right;"">INR {reservation.ConvenienceFee:N2}</td>
@@ -859,15 +843,15 @@ public class TicketEmailService : ITicketEmailService
         <table style=""width: 100%; border-collapse: collapse; margin-bottom: 20px;"">
             <tr>
                 <td style=""width: 32%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; vertical-align: top;"">
-                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">STAY</div>
+                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">ROUTE</div>
                     <div style=""font-size: 11px; font-weight: bold; color: #0f2459;"">{reservation.HotelName} to {reservation.CityCode}</div>
                     <div style=""font-size: 9px; color: #78829b; margin-top: 4px;"">{GetRoomCategory(reservation.OfferId)}</div>
                 </td>
                 <td style=""width: 2%;""></td>
                 <td style=""width: 32%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; vertical-align: top;"">
-                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">CHECK IN</div>
+                    <div style=""font-size: 8px; font-weight: bold; color: #78829b; margin-bottom: 4px; text-transform: uppercase;"">DEPARTURE</div>
                     <div style=""font-size: 11px; font-weight: bold; color: #0f2459;"">{reservation.CheckInDate:dd MMM yyyy}</div>
-                    <div style=""font-size: 9px; color: #78829b; margin-top: 4px;"">Check Out: {reservation.CheckOutDate:dd MMM yyyy}</div>
+                    <div style=""font-size: 9px; color: #78829b; margin-top: 4px;"">Arrival: {reservation.CheckOutDate:dd MMM yyyy}</div>
                 </td>
                 <td style=""width: 2%;""></td>
                 <td style=""width: 32%; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; vertical-align: top;"">
@@ -968,6 +952,4 @@ public class TicketEmailService : ITicketEmailService
         return sb.ToString();
     }
 }
-
-
-
+

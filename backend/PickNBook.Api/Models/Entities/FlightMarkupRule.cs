@@ -10,7 +10,6 @@ namespace PickNBook.Api.Models
         public int Id { get; set; }
         public string AirlineCode { get; set; } = string.Empty; // e.g., "AI", "6E" or "*" for all
         public TripType TripType { get; set; }
-        public string CabinClass { get; set; } = "*"; // e.g., "Economy", "Business", "*" for all
         public FlightMarkupType MarkupType { get; set; }
         public decimal MarkupValue { get; set; }
         public int Priority { get; set; }

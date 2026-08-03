@@ -3,17 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
-using PickNBook.Api.Models.DTOs;        
-
-using PickNBook.Api.Services;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
+using PickNBook.Api.Models.DTOs;
 
 namespace PickNBook.Api.Controllers
 {
     [ApiController]
     [Route("api/admin/flight")]
-    public class AdminFlightController(AppDbContext dbContext, ISrdvFlightService srdvFlightService, ILogger<AdminFlightController> logger) : AdminApiController
+    public class AdminFlightController(AppDbContext dbContext) : AdminApiController
     {
         private static readonly TimeSpan IndiaOffset = TimeSpan.FromHours(5.5);
         private static readonly string[] AllowedDiscountTypes = ["Percentage", "Fixed"];
@@ -34,7 +30,7 @@ namespace PickNBook.Api.Controllers
 
             var queryable = dbContext.FlightReservations
                 .AsNoTracking()
-                
+                .Include(x => x.FlightBooking)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -52,9 +48,9 @@ namespace PickNBook.Api.Controllers
             if (journeyDate.HasValue)
             {
                 var (startUtc, endUtc) = GetUtcRangeForIstDate(journeyDate.Value);
-                queryable = queryable.Where(x => 
-                                                 x.DepartureTime >= startUtc &&
-                                                 x.DepartureTime < endUtc);
+                queryable = queryable.Where(x => x.FlightBooking != null &&
+                                                 x.FlightBooking.DepartureTime >= startUtc &&
+                                                 x.FlightBooking.DepartureTime < endUtc);
             }
 
             var bookings = await queryable
@@ -63,10 +59,10 @@ namespace PickNBook.Api.Controllers
                 .ToListAsync();
 
             var response = bookings
-                .Where(x => true)
+                .Where(x => x.FlightBooking != null)
                 .Select(x =>
                 {
-                    var flight = x;
+                    var flight = x.FlightBooking!;
                     var departIst = ToIst(flight.DepartureTime);
                     var journeyDateIst = DateOnly.FromDateTime(departIst);
                     var customerFare = x.CustomerFareInr > 0 ? x.CustomerFareInr : x.TotalPriceInr;
@@ -570,16 +566,17 @@ namespace PickNBook.Api.Controllers
             var rows = await dbContext.FlightCancellationRequests
                 .AsNoTracking()
                 .Include(x => x.FlightReservation)
+                .ThenInclude(x => x.FlightBooking)
                 .OrderByDescending(x => x.RequestDateUtc)
                 .Take(limit)
                 .ToListAsync();
 
             var response = rows
-                .Where(x => true)
+                .Where(x => x.FlightReservation?.FlightBooking != null)
                 .Select(x =>
                 {
                     var booking = x.FlightReservation!;
-                    var flight = booking;
+                    var flight = booking.FlightBooking!;
                     return new
                     {
                         x.Id,
@@ -719,16 +716,17 @@ namespace PickNBook.Api.Controllers
             var rows = await dbContext.FlightAmendmentRequests
                 .AsNoTracking()
                 .Include(x => x.FlightReservation)
+                .ThenInclude(x => x.FlightBooking)
                 .OrderByDescending(x => x.RequestDateUtc)
                 .Take(limit)
                 .ToListAsync();
 
             var response = rows
-                .Where(x => true)
+                .Where(x => x.FlightReservation?.FlightBooking != null)
                 .Select(x =>
                 {
                     var booking = x.FlightReservation!;
-                    var flight = booking;
+                    var flight = booking.FlightBooking!;
                     return new
                     {
                         x.Id,
@@ -833,7 +831,36 @@ namespace PickNBook.Api.Controllers
         [HttpGet("searches")]
         public async Task<IActionResult> GetSearchHistory([FromQuery] int limit = 200)
         {
-            return Ok(new List<object>());
+            if (limit <= 0)
+            {
+                return BadRequest("limit must be greater than 0.");
+            }
+
+            limit = Math.Min(limit, 500);
+            var rows = await dbContext.FlightSearchLogs
+                .AsNoTracking()
+                .OrderByDescending(x => x.SearchedAtUtc)
+                .Take(limit)
+                .ToListAsync();
+
+            var response = rows.Select(x => new
+            {
+                x.Id,
+                x.UserId,
+                x.UserOrGuestId,
+                x.IsGuest,
+                x.FromCity,
+                x.ToCity,
+                x.DepartDate,
+                x.ReturnDate,
+                x.TripType,
+                x.Adults,
+                x.Children,
+                x.Infants,
+                SearchedAtUtc = DateTime.SpecifyKind(x.SearchedAtUtc, DateTimeKind.Utc)
+            });
+
+            return Ok(response);
         }
 
         [HttpGet("pending-airlines")]
@@ -1428,38 +1455,6 @@ namespace PickNBook.Api.Controllers
         private static DateTime ToIst(DateTime utcDateTime)
         {
             return DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc).Add(IndiaOffset);
-        }
-
-        [HttpPost("ApiBalanceCheck")]
-        public async Task<IActionResult> ApiBalanceCheck([FromBody] ApiBalanceRequestDto request)
-        {
-            try
-            {
-                var responseRaw = await srdvFlightService.GetApiBalanceCheckRawAsync(request);
-                using var doc = JsonDocument.Parse(responseRaw);
-                return Ok(doc.RootElement.Clone());
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error getting API balance check.");
-                return StatusCode(500, new { message = "Failed to retrieve API balance check.", error = ex.Message });
-            }
-        }
-
-        [HttpPost("ApiBalanceLog")]
-        public async Task<IActionResult> ApiBalanceLog([FromBody] ApiBalanceRequestDto request)
-        {
-            try
-            {
-                var responseRaw = await srdvFlightService.GetApiBalanceLogRawAsync(request);
-                using var doc = JsonDocument.Parse(responseRaw);
-                return Ok(doc.RootElement.Clone());
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error getting API balance log.");
-                return StatusCode(500, new { message = "Failed to retrieve API balance log.", error = ex.Message });
-            }
         }
     }
 

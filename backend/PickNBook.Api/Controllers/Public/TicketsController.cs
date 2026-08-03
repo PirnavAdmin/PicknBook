@@ -131,6 +131,7 @@ public class TicketsController : BaseApiController
         async Task<List<object>> GetFlightTickets()
         {
             var bookings = await _context.FlightReservations
+                .Include(x => x.FlightBooking)
                 .Where(x =>
                     ((x.PassengerPhone ?? "").Trim() == mobile) &&
                     ((x.PassengerEmail ?? "").Trim().ToLower() == email) &&
@@ -138,8 +139,8 @@ public class TicketsController : BaseApiController
                     x.Status != "Completed" &&
                     x.Status != "Expired" &&
                     x.Status != "Failed" &&
-                    true &&
-                    x.DepartureTime > now
+                    x.FlightBooking != null &&
+                    x.FlightBooking.DepartureTime > now
                 )
                 .OrderByDescending(x => x.Id)
                 .ToListAsync();
@@ -156,9 +157,9 @@ public class TicketsController : BaseApiController
                 {
                     booking.BookingReference,
                     ticketType = "flight",
-                    fromCity = booking.FromCity,
-                    toCity = booking.ToCity,
-                    departureTime = booking.DepartureTime,
+                    fromCity = booking.FlightBooking!.FromCity,
+                    toCity = booking.FlightBooking!.ToCity,
+                    departureTime = booking.FlightBooking!.DepartureTime,
                     passengers = passengers.Select(p => new
                     {
                         p.FullName,

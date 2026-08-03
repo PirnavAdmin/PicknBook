@@ -18,13 +18,14 @@ namespace PickNBook.Api.Models
         public DateTime CheckInDate { get; set; }
         public DateTime CheckOutDate { get; set; }
         public int Adults { get; set; }
-        public int Children { get; set; }
         public int Rooms { get; set; }
         public decimal Price { get; set; }
         public decimal NetPrice { get; set; }
         public decimal MarkupAmount { get; set; }
         public decimal BasePrice { get; set; }
         public decimal ConvenienceFee { get; set; }
+        public decimal GstPercent { get; set; }
+        public decimal GstAmount { get; set; }
         public decimal TotalPrice { get; set; }
         public string? CouponCode { get; set; }
         public decimal CouponDiscount { get; set; } = 0m;
@@ -45,8 +46,6 @@ namespace PickNBook.Api.Models
         public string? TraceId { get; set; }
         public string? SrdvBookingId { get; set; }
         public string? SrdvBookingResponseJson { get; set; }
-        public string? SrdvType { get; set; }
-        public string? SrdvIndex { get; set; }
 
         // SRDV Supplier Extra Booking & Policy Fields
         public string? ConfirmationNo { get; set; }

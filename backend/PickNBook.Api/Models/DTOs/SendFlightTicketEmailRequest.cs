@@ -49,10 +49,6 @@ public class SendFlightTicketEmailRequest
 
     public string? AgentCompanyName { get; set; }
     public string? AgentLogoUrl { get; set; }
-    
-    public bool NonRefundable { get; set; }
-    public string? CancellationCharges { get; set; }
-    public string? PartialSegmentCancellation { get; set; }
 }
 
 public class FlightPassengerTicketDto
@@ -61,6 +57,4 @@ public class FlightPassengerTicketDto
     public string PassengerType { get; set; } = string.Empty;
     public string Gender { get; set; } = string.Empty;
     public string? SeatNumber { get; set; }
-    public string? TicketNumber { get; set; }
 }
-
