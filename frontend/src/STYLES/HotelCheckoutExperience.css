@@ -517,13 +517,25 @@
   border: 1px solid var(--hotel-border);
   border-radius: 18px;
   display: flex;
-  align-items: start;
+  align-items: center;
+  justify-content: flex-start;
   gap: 12px;
   background: #fff;
+  cursor: pointer;
 }
  
 .hotel-checkbox input {
-  margin-top: 3px;
+  margin: 0;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.hotel-checkbox span {
+  flex: 1;
+  text-align: left;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
  
 .hotel-reserve-rail {

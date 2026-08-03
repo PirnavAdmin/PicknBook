@@ -11,7 +11,13 @@ namespace PickNBook.Api.Services
     public interface IFlightPricingService
     {
         Task<FlightPricingBreakdownDto> CalculatePricingAsync(
-            FlightBooking flight,
+            decimal supplierBaseFare,
+            decimal supplierTaxAmount,
+            string airlineCode,
+            string airlineName,
+            string origin,
+            string destination,
+            DateTime departureDate,
             string travelClass,
             TripType tripType,
             int passengerCount,
@@ -26,6 +32,14 @@ namespace PickNBook.Api.Services
         private readonly IFlightMarkupService _markupService;
         private readonly IFlightPromotionEngine _promotionEngine;
         private readonly IUserBookingHistoryService _bookingHistoryService;
+        
+        // Caching fields for the duration of this request
+        private User? _cachedUser;
+        private bool _isUserCached = false;
+        private AgentMarkupSetting? _cachedAgentMarkup;
+        private bool _isAgentMarkupCached = false;
+        private readonly System.Collections.Generic.Dictionary<string, FlightCoupon?> _cachedCoupons = new();
+        private bool? _cachedHasPriorBooking = null;
 
         public FlightPricingService(
             AppDbContext dbContext,
@@ -40,7 +54,13 @@ namespace PickNBook.Api.Services
         }
 
         public async Task<FlightPricingBreakdownDto> CalculatePricingAsync(
-            FlightBooking flight,
+            decimal supplierBaseFare,
+            decimal supplierTaxAmount,
+            string airlineCode,
+            string airlineName,
+            string origin,
+            string destination,
+            DateTime departureDate,
             string travelClass,
             TripType tripType,
             int passengerCount,
@@ -48,41 +68,39 @@ namespace PickNBook.Api.Services
             string userId,
             int? selectedPromotionId = null)
         {
-            if (flight == null)
-            {
-                throw new ArgumentNullException(nameof(flight));
-            }
+            // 1. Calculate supplier fares
+            decimal supplierTotalFare = supplierBaseFare + supplierTaxAmount;
 
-            // 1. Get class inventory price
-            var classInventory = await _dbContext.FlightClassInventories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.FlightBookingId == flight.Id && x.TravelClass == travelClass);
-
-            decimal unitPrice = classInventory?.PriceInr ?? flight.PriceInr;
-
-            // 2. Calculate supplier fares
-            decimal supplierTotalFare = unitPrice * passengerCount;
-            decimal supplierTaxAmount = decimal.Round(supplierTotalFare * 0.12m, 2, MidpointRounding.AwayFromZero);
-            decimal supplierBaseFare = supplierTotalFare - supplierTaxAmount;
-
-            // 3. Calculate markup amount (System Markup)
+            // 2. Calculate markup amount (System Markup)
             decimal markupAmount = await _markupService.CalculateMarkupAsync(
-                flight.FlightNumber.Split('-')[0], // Extract airline code, e.g. "AI" from "AI-105"
+                airlineCode, 
                 tripType,
-                supplierTotalFare);
+                travelClass,
+                supplierBaseFare);
 
             // 3.1 Calculate Agent Markup (if user is B2B Agent)
             decimal agentMarkupAmount = 0m;
             bool isAgent = false;
             if (!string.IsNullOrEmpty(userId))
             {
-                var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == userId);
+                if (!_isUserCached)
+                {
+                    _cachedUser = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == userId);
+                    _isUserCached = true;
+                }
+                
+                var user = _cachedUser;
                 if (user != null && user.Role == AuthRoles.Agent)
                 {
                     isAgent = true;
-                    var agentMarkupRule = await _dbContext.AgentMarkupSettings
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.AgentId == user.Id && x.ServiceType == "Flight");
+                    if (!_isAgentMarkupCached)
+                    {
+                        _cachedAgentMarkup = await _dbContext.AgentMarkupSettings
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(x => x.AgentId == user.Id && x.ServiceType == "Flight");
+                        _isAgentMarkupCached = true;
+                    }
+                    var agentMarkupRule = _cachedAgentMarkup;
 
                     if (agentMarkupRule != null && agentMarkupRule.MarkupValue > 0)
                     {
@@ -92,7 +110,7 @@ namespace PickNBook.Api.Services
                         }
                         else if (string.Equals(agentMarkupRule.MarkupType, "Percentage", StringComparison.OrdinalIgnoreCase))
                         {
-                            agentMarkupAmount = supplierTotalFare * (agentMarkupRule.MarkupValue / 100m);
+                            agentMarkupAmount = supplierBaseFare * (agentMarkupRule.MarkupValue / 100m);
                         }
                     }
                 }
@@ -109,7 +127,11 @@ namespace PickNBook.Api.Services
             {
                 var promotionContext = new FlightPromotionEvaluationContext
                 {
-                    Flight = flight,
+                    AirlineCode = airlineCode,
+                    AirlineName = airlineName,
+                    Origin = origin,
+                    Destination = destination,
+                    DepartureDate = departureDate,
                     TravelClass = travelClass,
                     TripType = tripType,
                     BaseFare = fareAfterMarkup,
@@ -136,11 +158,8 @@ namespace PickNBook.Api.Services
 
             decimal fareAfterCoupon = fareAfterPromo - couponDiscount;
 
-            // 6. Apply convenience fee
-            decimal convenienceFee = await GetConvenienceFeeAsync(fareAfterMarkup, tripType);
-
-            // 7. Calculate Final Amount
-            decimal finalAmount = fareAfterCoupon + convenienceFee;
+            // 6. Calculate Final Amount
+            decimal finalAmount = fareAfterCoupon;
 
             if (finalAmount < 0)
             {
@@ -155,7 +174,7 @@ namespace PickNBook.Api.Services
                 MarkupAmount = totalMarkup,
                 PromotionDiscount = promotionDiscount,
                 CouponDiscount = couponDiscount,
-                ConvenienceFee = convenienceFee,
+                ConvenienceFee = 0m,
                 FinalAmount = decimal.Round(finalAmount, 2, MidpointRounding.AwayFromZero),
                 PromotionId = bestPromo?.Id,
                 PromotionName = bestPromo?.Name,
@@ -176,8 +195,14 @@ namespace PickNBook.Api.Services
             }
 
             var cleanCode = couponCode.Trim().ToUpperInvariant();
-            var coupon = await _dbContext.FlightCoupons
-                .FirstOrDefaultAsync(c => c.CouponCode == cleanCode && c.Status == "Active");
+            
+            if (!_cachedCoupons.TryGetValue(cleanCode, out var coupon))
+            {
+                coupon = await _dbContext.FlightCoupons
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.CouponCode == cleanCode && c.Status == "Active");
+                _cachedCoupons[cleanCode] = coupon;
+            }
 
             if (coupon == null)
             {
@@ -197,15 +222,23 @@ namespace PickNBook.Api.Services
 
             if (coupon.IsFirstTimeUserOnly)
             {
-                string? userPhone = null;
-                if (!string.IsNullOrWhiteSpace(userId) && int.TryParse(userId, out var userIntId))
+                if (!_cachedHasPriorBooking.HasValue)
                 {
-                    var userObj = await _dbContext.Users.FindAsync(userIntId);
-                    userPhone = userObj?.PhoneNumber;
-                }
+                    string? userPhone = null;
+                    if (!string.IsNullOrWhiteSpace(userId) && int.TryParse(userId, out var userIntId))
+                    {
+                        if (!_isUserCached)
+                        {
+                            _cachedUser = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userIntId);
+                            _isUserCached = true;
+                        }
+                        userPhone = _cachedUser?.PhoneNumber;
+                    }
 
-                var hasPrior = await _bookingHistoryService.HasPriorBookingAsync(userId, userPhone);
-                if (hasPrior)
+                    _cachedHasPriorBooking = await _bookingHistoryService.HasPriorBookingAsync(userId, userPhone);
+                }
+                
+                if (_cachedHasPriorBooking.Value)
                 {
                     return (0m, null, null);
                 }
@@ -225,47 +258,5 @@ namespace PickNBook.Api.Services
             return (decimal.Round(discount, 2, MidpointRounding.AwayFromZero), coupon.Id, coupon.CouponCode);
         }
 
-        private async Task<decimal> GetConvenienceFeeAsync(decimal baseFare, TripType tripType)
-        {
-            // Try trip-specific convenience fee rules first
-            var rule = await _dbContext.FlightConvenienceFeeRules
-                .FirstOrDefaultAsync(x => x.IsActive && x.TripType == tripType);
-
-            if (rule != null)
-            {
-                decimal fee = 0m;
-                if (rule.FeeType.Equals("Percentage", StringComparison.OrdinalIgnoreCase))
-                {
-                    fee = baseFare * (rule.FeeValue / 100m);
-                }
-                else
-                {
-                    fee = rule.FeeValue;
-                }
-                return decimal.Round(fee, 2, MidpointRounding.AwayFromZero);
-            }
-
-            // Fallback to legacy FlightConvenienceFee table
-            var legacyFee = await _dbContext.FlightConvenienceFees
-                .Where(x => x.Status == "Active")
-                .OrderByDescending(x => x.UpdateDateUtc)
-                .FirstOrDefaultAsync();
-
-            if (legacyFee != null)
-            {
-                decimal fee = 0m;
-                if (legacyFee.AmountType.Equals("Percentage", StringComparison.OrdinalIgnoreCase))
-                {
-                    fee = baseFare * (legacyFee.Value / 100m);
-                }
-                else
-                {
-                    fee = legacyFee.Value;
-                }
-                return decimal.Round(fee, 2, MidpointRounding.AwayFromZero);
-            }
-
-            return 0m;
-        }
     }
 }

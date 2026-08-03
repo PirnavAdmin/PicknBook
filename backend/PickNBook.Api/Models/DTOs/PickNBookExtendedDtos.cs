@@ -83,17 +83,17 @@ namespace PickNBook.Api.Models.DTOs
 
     public class BlockRoomRequestDto
     {
-        public string EndUserIp { get; set; } = "127.0.0.1";
+        public string EndUserIp { get; set; } = string.Empty;
         public string ClientId { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string TraceId { get; set; } = string.Empty;
-        public string SrdvType { get; set; } = "MixAPI";
-        public string SrdvIndex { get; set; } = "15";
+        public string SrdvType { get; set; } = string.Empty;
+        public string SrdvIndex { get; set; } = string.Empty;
         public string ResultIndex { get; set; } = string.Empty;
         public string HotelCode { get; set; } = string.Empty;
         public string HotelName { get; set; } = string.Empty;
-        public string GuestNationality { get; set; } = "IN";
+        public string GuestNationality { get; set; } = string.Empty;
         public int NoOfRooms { get; set; } = 1;
         public int ClientReferenceNo { get; set; } = 0;
         public bool IsVoucherBooking { get; set; } = false;
@@ -108,6 +108,40 @@ namespace PickNBook.Api.Models.DTOs
         public string BedTypeCode { get; set; } = string.Empty;
         public int SmokingPreference { get; set; } = 0;
         public decimal Price { get; set; } = 0m;
+        public string? CouponCode { get; set; } = string.Empty;
+    }
+
+    public class FareBreakdownDto
+    {
+        [JsonPropertyName("baseFare")]
+        public decimal BaseFare { get; set; }
+        
+        [JsonPropertyName("markup")]
+        public decimal Markup { get; set; }
+        
+        [JsonPropertyName("gst")]
+        public decimal Gst { get; set; }
+        
+        [JsonPropertyName("taxes")]
+        public decimal Taxes { get; set; }
+        
+        [JsonPropertyName("totalPaid")]
+        public decimal TotalPaid { get; set; }
+    }
+
+    public class RefundDetailsDto
+    {
+        [JsonPropertyName("bookingAmount")]
+        public decimal BookingAmount { get; set; }
+        
+        [JsonPropertyName("cancellationCharges")]
+        public decimal CancellationCharges { get; set; }
+        
+        [JsonPropertyName("refundAmount")]
+        public decimal RefundAmount { get; set; }
+        
+        [JsonPropertyName("refundStatus")]
+        public string RefundStatus { get; set; } = string.Empty;
     }
 
     public class PickNBookBookRoomResponseDto
@@ -118,32 +152,33 @@ namespace PickNBook.Api.Models.DTOs
     public class BookResultDto
     {
         public HotelSearchErrorDto Error { get; set; } = new();
-        public bool VoucherStatus { get; set; } = true;
-        public int ResponseStatus { get; set; } = 1;
-        public string TraceId { get; set; } = "12";
-        public string Status { get; set; } = "Confirmed";
-        public string HotelBookingStatus { get; set; } = "Confirmed";
+        public bool VoucherStatus { get; set; }
+        public int ResponseStatus { get; set; }
+        public string TraceId { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string HotelBookingStatus { get; set; } = string.Empty;
         public string InvoiceNumber { get; set; } = string.Empty;
-        public string ConfirmationNo { get; set; } = "TJS205701420530";
-        public string BookingRefNo { get; set; } = "TJS205701420530";
-        public int BookingId { get; set; } = 705;
+        public string ConfirmationNo { get; set; } = string.Empty;
+        public string BookingRefNo { get; set; } = string.Empty;
+        public int BookingId { get; set; }
         public bool IsPriceChanged { get; set; }
         public bool IsCancellationPolicyChanged { get; set; }
+        public FareBreakdownDto? FareBreakdown { get; set; }
     }
 
     public class HotelBookRequestDto
     {
-        public string EndUserIp { get; set; } = "127.0.0.1";
+        public string EndUserIp { get; set; } = string.Empty;
         public string ClientId { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string TraceId { get; set; } = string.Empty;
-        public string SrdvType { get; set; } = "MixAPI";
-        public string SrdvIndex { get; set; } = "15";
+        public string SrdvType { get; set; } = string.Empty;
+        public string SrdvIndex { get; set; } = string.Empty;
         public string ResultIndex { get; set; } = string.Empty;
         public string HotelCode { get; set; } = string.Empty;
         public string HotelName { get; set; } = string.Empty;
-        public string GuestNationality { get; set; } = "IN";
+        public string GuestNationality { get; set; } = string.Empty;
         public int NoOfRooms { get; set; } = 1;
         public int ClientReferenceNo { get; set; } = 0;
         public bool IsVoucherBooking { get; set; } = true;
@@ -151,14 +186,17 @@ namespace PickNBook.Api.Models.DTOs
         public List<BookRoomDetailItemDto> HotelRoomsDetails { get; set; } = new();
 
         // Flat properties for backward compatibility
-        public string GuestName { get; set; } = "John Doe";
-        public string GuestEmail { get; set; } = "guest@example.com";
-        public string GuestPhone { get; set; } = "9876543210";
+        public string GuestName { get; set; } = string.Empty;
+        public string GuestEmail { get; set; } = string.Empty;
+        public string GuestPhone { get; set; } = string.Empty;
         public string RoomIndex { get; set; } = "45srlkt1srlkt29092750";
         public string RoomTypeCode { get; set; } = "1";
         public string RoomTypeName { get; set; } = string.Empty;
         public string RatePlanCode { get; set; } = string.Empty;
         public decimal Price { get; set; } = 0m;
+        
+        public string CheckInDate { get; set; } = string.Empty;
+        public string CheckOutDate { get; set; } = string.Empty;
     }
 
     public class BookRoomDetailItemDto
@@ -187,29 +225,33 @@ namespace PickNBook.Api.Models.DTOs
         public string HotelSupplements { get; set; } = string.Empty;
         public string LastCancellationDate { get; set; } = string.Empty;
         public List<HotelRoomCancellationPolicyDto> CancellationPolicies { get; set; } = new();
-        public string BedTypeCode { get; set; } = string.Empty;
-        public string Supplements { get; set; } = string.Empty;
+        public string? BedTypeCode { get; set; }
+        public string? Supplements { get; set; }
+        
+        public decimal OfferedPrice { get; set; }
+        public decimal B2CBasePrice { get; set; }
+        public decimal B2CTotalPrice { get; set; }
     }
 
     public class HotelPassengerDto
     {
         public string Title { get; set; } = "Mr";
         public string FirstName { get; set; } = string.Empty;
-        public string MiddleName { get; set; } = string.Empty;
+        public string? MiddleName { get; set; }
         public string LastName { get; set; } = string.Empty;
         public string Phoneno { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PaxType { get; set; } = "1";
         public bool LeadPassenger { get; set; }
-        public string PassportNo { get; set; } = string.Empty;
-        public string PassportIssueDate { get; set; } = string.Empty;
-        public string PassportExpDate { get; set; } = string.Empty;
-        public string PAN { get; set; } = string.Empty;
-        public string GSTCompanyAddress { get; set; } = string.Empty;
-        public string GSTCompanyContactNumber { get; set; } = string.Empty;
-        public string GSTCompanyName { get; set; } = string.Empty;
-        public string GSTNumber { get; set; } = string.Empty;
-        public string GSTCompanyEmail { get; set; } = string.Empty;
+        public string? PassportNo { get; set; }
+        public string? PassportIssueDate { get; set; }
+        public string? PassportExpDate { get; set; }
+        public string? PAN { get; set; }
+        public string? GSTCompanyAddress { get; set; }
+        public string? GSTCompanyContactNumber { get; set; }
+        public string? GSTCompanyName { get; set; }
+        public string? GSTNumber { get; set; }
+        public string? GSTCompanyEmail { get; set; }
     }
 
     public class PickNBookHotelCancelResponseDto
@@ -227,7 +269,7 @@ namespace PickNBook.Api.Models.DTOs
         public HotelSearchErrorDto Error { get; set; } = new();
 
         [JsonPropertyName("responseStatus")]
-        public int ResponseStatus { get; set; } = 1;
+        public int ResponseStatus { get; set; } = 0;
 
         [JsonPropertyName("srdvType")]
         public string SrdvType { get; set; } = "MixAPI";
@@ -236,19 +278,33 @@ namespace PickNBook.Api.Models.DTOs
         public string SrdvIndex { get; set; } = string.Empty;
 
         [JsonPropertyName("traceId")]
-        public string TraceId { get; set; } = "12";
+        public string TraceId { get; set; } = "";
 
         [JsonPropertyName("changeRequestId")]
-        public int ChangeRequestId { get; set; } = 1234;
+        public int ChangeRequestId { get; set; } = 0;
 
         [JsonPropertyName("changeRequestStatus")]
         public int ChangeRequestStatus { get; set; } = 3;
+
+        [JsonPropertyName("refundedAmount")]
+        public decimal RefundedAmount { get; set; } = 0m;
+
+        [JsonPropertyName("cancellationCharge")]
+        public decimal CancellationCharge { get; set; } = 0m;
+
+        [JsonPropertyName("b2BMarkUp")]
+        public decimal B2BMarkUp { get; set; } = 0m;
+
+        public RefundDetailsDto? RefundDetails { get; set; }
     }
 
     public class HotelCancelRequestDto
     {
         [JsonPropertyName("bookingId")]
         public int BookingId { get; set; }
+
+        [JsonPropertyName("changeRequestId")]
+        public int ChangeRequestId { get; set; } = 0;
 
         [JsonPropertyName("requestType")]
         public int RequestType { get; set; } = 4;
@@ -289,9 +345,9 @@ namespace PickNBook.Api.Models.DTOs
     public class BlockRoomResultDto
     {
         public HotelSearchErrorDto Error { get; set; } = new();
-        public string AvailabilityType { get; set; } = "Confirm";
-        public string TraceId { get; set; } = "12";
-        public int ResponseStatus { get; set; } = 1;
+        public string AvailabilityType { get; set; } = string.Empty;
+        public string TraceId { get; set; } = string.Empty;
+        public int ResponseStatus { get; set; }
         public bool GSTAllowed { get; set; }
         public bool IsPackageDetailsMandatory { get; set; }
         public bool IsPackageFare { get; set; }
@@ -342,6 +398,9 @@ namespace PickNBook.Api.Models.DTOs
         public bool FullRefundAllowed { get; set; }
         public List<HotelRoomCancellationPolicyDto> CancellationPolicies { get; set; } = new();
         public string CancellationPolicy { get; set; } = string.Empty;
+        public decimal OfferedPrice { get; set; }
+        public decimal B2CBasePrice { get; set; }
+        public decimal B2CTotalPrice { get; set; }
         public List<string> Inclusion { get; set; } = new();
         public string BedTypeCode { get; set; } = string.Empty;
         public string Supplements { get; set; } = string.Empty;
@@ -461,10 +520,10 @@ namespace PickNBook.Api.Models.DTOs
     public class HotelRoomResultDto
     {
         public HotelSearchErrorDto Error { get; set; } = new();
-        public string SrdvType { get; set; } = "MixAPI";
+        public string SrdvType { get; set; } = string.Empty;
         public string ResultIndex { get; set; } = string.Empty;
-        public string SrdvIndex { get; set; } = "15";
-        public string TraceId { get; set; } = "12";
+        public string SrdvIndex { get; set; } = string.Empty;
+        public string TraceId { get; set; } = string.Empty;
         public bool IsPolicyPerStay { get; set; }
         public bool IsUnderCancellationAllowed { get; set; }
         public List<HotelRoomCategoryDetailsDto> HotelRoomsDetails { get; set; } = new();
@@ -513,6 +572,8 @@ namespace PickNBook.Api.Models.DTOs
         public bool FullRefundAllowed { get; set; }
         public List<HotelRoomCancellationPolicyDto> CancellationPolicies { get; set; } = new();
         public decimal OfferedPrice { get; set; }
+        public decimal B2CBasePrice { get; set; }
+        public decimal B2CTotalPrice { get; set; }
     }
 
     public class HotelRoomImageDto
@@ -554,34 +615,82 @@ namespace PickNBook.Api.Models.DTOs
     // ==========================================
     public class SrdvHotelSearchRequestDto
     {
+        [JsonPropertyName("EndUserIp")]
         public string EndUserIp { get; set; } = "127.0.0.1";
+
+        [JsonPropertyName("ClientId")]
         public string ClientId { get; set; } = string.Empty;
+
+        [JsonPropertyName("UserName")]
         public string UserName { get; set; } = string.Empty;
+
+        [JsonPropertyName("Password")]
         public string Password { get; set; } = string.Empty;
+
+        /// <summary>Check-in date in yyyy-MM-dd format</summary>
+        [JsonPropertyName("CheckInDate")]
         public string CheckInDate { get; set; } = string.Empty;
+
+        /// <summary>Check-out date in yyyy-MM-dd format</summary>
+        [JsonPropertyName("CheckOutDate")]
         public string CheckOutDate { get; set; } = string.Empty;
+
+        [JsonPropertyName("NoOfNights")]
         public string NoOfNights { get; set; } = "1";
+
+        [JsonPropertyName("BookingMode")]
         public string BookingMode { get; set; } = "5";
+
+        [JsonPropertyName("CountryCode")]
         public string CountryCode { get; set; } = "IN";
+
+        [JsonPropertyName("CityId")]
         public string CityId { get; set; } = string.Empty;
+
+        [JsonPropertyName("ResultCount")]
         public string ResultCount { get; set; } = "500";
+
+        [JsonPropertyName("PreferredCurrency")]
         public string PreferredCurrency { get; set; } = "INR";
+
+        [JsonPropertyName("GuestNationality")]
         public string GuestNationality { get; set; } = "IN";
+
+        [JsonPropertyName("RequestType")]
         public string RequestType { get; set; } = string.Empty;
+
+        [JsonPropertyName("NoOfRooms")]
         public string NoOfRooms { get; set; } = "1";
+
+        [JsonPropertyName("RoomGuests")]
         public List<RoomGuestDto> RoomGuests { get; set; } = new();
+
+        [JsonPropertyName("PreferredHotel")]
         public string PreferredHotel { get; set; } = string.Empty;
+
+        [JsonPropertyName("MaxRating")]
         public string MaxRating { get; set; } = "5";
+
+        [JsonPropertyName("MinRating")]
         public string MinRating { get; set; } = "1";
+
+        [JsonPropertyName("ReviewScore")]
         public decimal? ReviewScore { get; set; }
+
+        [JsonPropertyName("IsNearBySearchAllowed")]
         public bool IsNearBySearchAllowed { get; set; }
     }
 
     public class RoomGuestDto
     {
+        [JsonPropertyName("NoOfAdults")]
         public string NoOfAdults { get; set; } = "1";
+
+        [JsonPropertyName("NoOfChild")]
         public string NoOfChild { get; set; } = "0";
-        public List<int> ChildAge { get; set; } = new();
+
+        [JsonPropertyName("ChildAge")]
+        public List<int>? ChildAge { get; set; } = new();
     }
 
     // ==========================================
@@ -590,7 +699,7 @@ namespace PickNBook.Api.Models.DTOs
     public class PickNBookHotelSearchResponseDto
     {
         public HotelSearchErrorDto Error { get; set; } = new();
-        public object TraceId { get; set; } = 12;
+        public object TraceId { get; set; } = 0;
         public string SrdvType { get; set; } = "MixAPI";
         public string CityId { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
@@ -656,24 +765,72 @@ namespace PickNBook.Api.Models.DTOs
 
     public class HotelSearchPriceDto
     {
+        [JsonPropertyName("currencyCode")]
         public string CurrencyCode { get; set; } = "INR";
+        
+        [JsonPropertyName("roomPrice")]
         public decimal RoomPrice { get; set; }
+        
+        [JsonPropertyName("tax")]
         public decimal Tax { get; set; }
+        
+        [JsonPropertyName("extraGuestCharge")]
         public decimal ExtraGuestCharge { get; set; }
+        
+        [JsonPropertyName("childCharge")]
         public decimal ChildCharge { get; set; }
+        
+        [JsonPropertyName("otherCharges")]
         public decimal OtherCharges { get; set; }
+        
+        [JsonPropertyName("discount")]
         public decimal Discount { get; set; }
+        
+        [JsonPropertyName("couponDiscount")]
+        public decimal CouponDiscount { get; set; }
+        
+        [JsonPropertyName("publishedPrice")]
         public decimal PublishedPrice { get; set; }
+        
+        [JsonPropertyName("publishedPriceRoundedOff")]
         public decimal PublishedPriceRoundedOff { get; set; }
+        
+        [JsonPropertyName("offeredPrice")]
         public decimal OfferedPrice { get; set; }
+        
+        [JsonPropertyName("offeredPriceRoundedOff")]
         public decimal OfferedPriceRoundedOff { get; set; }
+        
+        [JsonPropertyName("agentCommission")]
         public decimal AgentCommission { get; set; }
+        
+        [JsonPropertyName("agentMarkUp")]
         public decimal AgentMarkUp { get; set; }
+        
+        [JsonPropertyName("serviceTax")]
         public decimal ServiceTax { get; set; }
+        
+        [JsonPropertyName("tcs")]
+        public decimal TCS { get; set; }
+        
+        [JsonPropertyName("tds")]
         public decimal TDS { get; set; }
+        
+        [JsonPropertyName("serviceCharge")]
         public decimal ServiceCharge { get; set; }
+        
+        [JsonPropertyName("totalGSTAmount")]
         public decimal TotalGSTAmount { get; set; }
-        public HotelSearchGstDto GST { get; set; } = new();
+
+
+        [JsonPropertyName("gst")]
+        public HotelSearchGstDto? GST { get; set; }
+
+        [JsonPropertyName("b2CBasePrice")]
+        public decimal B2CBasePrice { get; set; }
+
+        [JsonPropertyName("b2CTotalPrice")]
+        public decimal B2CTotalPrice { get; set; }
     }
 
     public class HotelSearchGstDto
@@ -760,5 +917,26 @@ namespace PickNBook.Api.Models.DTOs
 
         [JsonPropertyName("Result")]
         public System.Collections.Generic.List<BalanceLogItemDto> Result { get; set; } = new();
+    }
+    public class HotelPricingPreviewRequestDto
+    {
+        public string HotelCode { get; set; } = string.Empty;
+        public string CityCode { get; set; } = string.Empty;
+        public decimal B2CBasePrice { get; set; }
+        public decimal SrdvGstAmount { get; set; }
+        public string CouponCode { get; set; } = string.Empty;
+    }
+
+    public class HotelPricingPreviewResponseDto
+    {
+        public decimal BasePrice { get; set; }
+        public decimal SrdvGstAmount { get; set; }
+        public decimal AgentMarkup { get; set; }
+        public decimal TotalBeforeDiscount { get; set; }
+        public decimal DiscountAmount { get; set; }
+        public decimal FinalTotal { get; set; }
+        
+        public bool IsCouponValid { get; set; }
+        public string CouponMessage { get; set; } = string.Empty;
     }
 }

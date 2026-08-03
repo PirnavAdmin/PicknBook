@@ -182,7 +182,7 @@ public class AdminHotelController : AdminApiController
         {
             try
             {
-                providerCancelled = await _hotelService.CancelBookingAsync(booking.ProviderBookingId, booking.TraceId);
+                providerCancelled = await _hotelService.CancelBookingAsync(booking, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1");
             }
             catch (Exception ex)
             {

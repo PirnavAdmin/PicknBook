@@ -1,117 +1,17 @@
 /* eslint-disable */
-const HOTEL_GALLERY_SETS = [
-  [
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=900&q=80",
-  ],
-  [
-    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505873242700-f289a29e1e0f?auto=format&fit=crop&w=900&q=80",
-  ],
-  [
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1455587734955-081b22074882?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=900&q=80",
-  ],
-  [
-    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-  ],
-  [
-    "https://images.unsplash.com/photo-1522798514-97ceb8c4f1c8?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?auto=format&fit=crop&w=900&q=80",
-  ],
-  [
-    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1400&q=80",
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80",
-  ],
-];
- 
-const HOST_NAMES = [
-  "Aarav",
-  "Meera",
-  "Kabir",
-  "Sana",
-  "Ishita",
-  "Rahul",
-  "Tanya",
-  "Vihaan",
-];
- 
-const PROPERTY_LABELS = [
-  "Guest favourite stay",
-  "Boutique city stay",
-  "Design-forward suite",
-  "Family-ready apartment",
-  "Work-and-weekend home",
-  "Premium urban retreat",
-];
- 
-const HIGHLIGHT_LABELS = [
-  "Fast self check-in",
-  "Peaceful neighborhood",
-  "Great for longer stays",
-  "Loved for room comfort",
-  "Top-rated location",
-  "Clean, modern interiors",
-];
- 
-function hashString(value) {
-  const input = String(value || "hotel").trim() || "hotel";
-  let hash = 0;
- 
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
-  }
- 
-  return hash;
-}
- 
-function pickBySeed(collection, seedValue) {
-  if (!Array.isArray(collection) || collection.length === 0) {
-    return null;
-  }
- 
-  return collection[hashString(seedValue) % collection.length];
-}
- 
-export function getHotelVisuals(seedValue) {
-  const seed = String(seedValue || "hotel");
-  const gallery = pickBySeed(HOTEL_GALLERY_SETS, seed) || HOTEL_GALLERY_SETS[0];
-  const hostName = pickBySeed(HOST_NAMES, `${seed}-host`) || HOST_NAMES[0];
-  const propertyLabel = pickBySeed(PROPERTY_LABELS, `${seed}-property`) || PROPERTY_LABELS[0];
-  const highlightLabel = pickBySeed(HIGHLIGHT_LABELS, `${seed}-highlight`) || HIGHLIGHT_LABELS[0];
-  const hostYears = 2 + (hashString(`${seed}-years`) % 5);
-  const avatarHue = hashString(`${seed}-avatar`) % 360;
- 
+export function getHotelVisuals(hotelImages = []) {
+  const images = Array.isArray(hotelImages) ? hotelImages : [];
   return {
-    gallery,
-    cardImage: gallery[0],
-    thumbImage: gallery[1] || gallery[0],
-    hostName,
-    hostYears,
-    propertyLabel,
-    highlightLabel,
+    gallery: images,
+    cardImage: images[0] || null,
+    thumbImage: images[1] || images[0] || null,
+    hostName: "Hotel Host",
+    hostYears: 2,
+    propertyLabel: "Premium Stay",
+    highlightLabel: "Top-rated location",
     avatarStyle: {
-      background: `linear-gradient(135deg, hsl(${avatarHue} 80% 92%), hsl(${(avatarHue + 24) % 360} 86% 84%))`,
-      color: `hsl(${avatarHue} 54% 28%)`,
+      background: `linear-gradient(135deg, hsl(200 80% 92%), hsl(224 86% 84%))`,
+      color: `hsl(200 54% 28%)`,
     },
   };
 }

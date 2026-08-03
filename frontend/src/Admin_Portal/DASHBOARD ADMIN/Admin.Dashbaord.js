@@ -587,17 +587,7 @@ const AdminDashboard = () => {
     <div className="dash-page" style={{ padding: '0px 10px 24px' }}>
       
       {/* ─── Premium Header with toggle buttons ─── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '1.8rem', fontWeight: '800', color: 'var(--admin-text)' }}>
-            {viewMode === 'b2c' ? 'Retail Operations Dashboard' : 'B2B Agent Operations Dashboard'}
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--admin-muted)' }}>
-            {viewMode === 'b2c' 
-              ? 'Real-time retail ticket search metrics, live travel sectors, and B2C sales funnel.' 
-              : 'Agency sales performance, GDS deposits approvals, and partner network wallet assets.'}
-          </p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '6px', marginBottom: '6px', flexWrap: 'wrap', gap: '16px' }}>
         
         {/* Toggle Pills */}
         <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--admin-surface)', border: '1px solid var(--admin-border)', borderRadius: '100px', padding: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>

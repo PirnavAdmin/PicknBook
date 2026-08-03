@@ -1853,7 +1853,7 @@ export async function bookBus({ busId, payload }) {
 
   const passengersPayload = (payload.passengers || []).map(p => ({
     fullName: String(`${p.firstName || ""} ${p.lastName || ""}`).trim() || p.fullName,
-    gender: String(p.gender).toLowerCase() === "female" ? 2 : 1,
+    gender: String(p.gender).toLowerCase() === "female" ? "2" : "1",
     seatNumber: p.seatNumber || p.seatName || p.SeatNumber,
     age: Number(p.age || p.Age),
     baseFare: Number(p.baseFare || p.BaseFare || 0),
@@ -1870,10 +1870,10 @@ export async function bookBus({ busId, payload }) {
     blockKey: String(payload.blockKey || payload.BlockKey || ""),
     boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || ""),
     boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || ""),
-    boardingPointTime: String(payload.boardingPointTime || payload.BoardingPointTime || ""),
+    boardingPointTime: (payload.boardingPointTime || payload.BoardingPointTime) ? String(payload.boardingPointTime || payload.BoardingPointTime) : null,
     droppingPointId: String(payload.droppingPointId || payload.DroppingPointId || ""),
     droppingPointName: String(payload.droppingPointName || payload.DroppingPointName || ""),
-    droppingPointTime: String(payload.droppingPointTime || payload.DroppingPointTime || ""),
+    droppingPointTime: (payload.droppingPointTime || payload.DroppingPointTime) ? String(payload.droppingPointTime || payload.DroppingPointTime) : null,
     passengerName: String(payload.passengerName || payload.PassengerName || ""),
     passengerPhone: String(payload.passengerPhone || payload.PassengerPhone || ""),
     passengerEmail: String(payload.passengerEmail || payload.PassengerEmail || ""),

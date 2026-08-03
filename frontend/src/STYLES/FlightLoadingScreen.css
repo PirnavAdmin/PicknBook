@@ -1,0 +1,397 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+/* ── Fullscreen Overlay ── */
+.fls-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at 50% 35%, #ffffff 0%, #fff5f5 60%, #ffe4e6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  backdrop-filter: blur(16px);
+  animation: fls-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fls-fade-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── Main 21:9 Ultrawide Clean Luxury Card ── */
+.fls-card {
+  width: 92vw;
+  max-width: 1260px;
+  aspect-ratio: 21 / 9;
+  min-height: 480px;
+  max-height: 86vh;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow:
+    0 24px 60px rgba(220, 30, 38, 0.08),
+    0 10px 24px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(220, 30, 38, 0.12);
+  display: grid;
+  grid-template-columns: 38% 62%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Left Column: Slide Background Poster ── */
+.fls-poster-side {
+  position: relative;
+  margin: 12px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.fls-slide-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center center;
+  filter: brightness(0.9) contrast(1.05);
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.fls-slide-bg.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.fls-poster-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.45) 0%,
+    transparent 40%,
+    rgba(15, 23, 42, 0.6) 100%
+  );
+  z-index: 2;
+}
+
+/* Top Row (Welcome Pill + Carousel Dots) */
+.fls-top-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fls-welcome-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.fls-pin-icon {
+  color: #dc1e26;
+}
+
+/* Carousel Dots */
+.fls-carousel-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.fls-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fls-dot.active {
+  width: 20px;
+  background: #dc1e26;
+  box-shadow: 0 0 8px rgba(220, 30, 38, 0.6);
+}
+
+/* ── Right Column: Info & Status (Clean Ocean Cyan Theme) ── */
+.fls-right-content {
+  padding: 32px 38px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+/* Brand Logo Header & Arrow Nav Row */
+.fls-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fls-brand-logo {
+  display: flex;
+  align-items: center;
+}
+
+/* PROMINENT BRAND LOGO */
+.fls-brand-logo-img {
+  height: 58px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.fls-arrow-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fls-arrow-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b8141b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fls-arrow-btn:hover {
+  background: #dc1e26;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.25);
+  transform: scale(1.05);
+}
+
+/* Headline Wrapper & Animations */
+.fls-headline-wrapper {
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.fls-headline {
+  font-size: 2.1rem;
+  font-weight: 500;
+  color: #0f172a;
+  line-height: 1.25;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* RED ACCENTS */
+.fls-magenta {
+  font-weight: 800;
+  color: #dc1e26;
+}
+
+.fls-serif-magenta {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  color: #dc1e26;
+}
+
+.fls-slide-anim {
+  animation: flsSlideText 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes flsSlideText {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading Status Heading */
+.fls-status-heading {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+/* Progress Line Track & Flying Airplane */
+.fls-progress-container {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+
+.fls-track-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #f1f5f9;
+}
+
+.fls-track-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #f43f5e 0%, #b8141b 100%);
+  border-radius: 999px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fls-plane-head {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(220, 30, 38, 0.4));
+}
+
+/* 4 Feature Steps Indicator Row */
+.fls-steps-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.fls-step-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  opacity: 1;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.fls-slide-anim-step-0 { animation: flsStepFade 0.35s ease 0.04s both; }
+.fls-slide-anim-step-1 { animation: flsStepFade 0.35s ease 0.09s both; }
+.fls-slide-anim-step-2 { animation: flsStepFade 0.35s ease 0.14s both; }
+.fls-slide-anim-step-3 { animation: flsStepFade 0.35s ease 0.19s both; }
+
+@keyframes flsStepFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fls-step-col:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 20%;
+  bottom: 25%;
+  width: 1px;
+  background: #e2e8f0;
+}
+
+.fls-step-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #dc1e26;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  box-shadow: 0 6px 14px rgba(220, 30, 38, 0.22);
+  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+.fls-step-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.3;
+  max-width: 105px;
+}
+
+/* Dotted World Map Background Decor */
+.fls-bg-map-decor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  height: 100px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.75;
+}
+
+.fls-map-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive Styles for Smaller Devices */
+@media (max-width: 1024px) {
+  .fls-card {
+    aspect-ratio: auto;
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    min-height: auto;
+    border-radius: 24px;
+  }
+  .fls-poster-side {
+    height: 240px;
+  }
+  .fls-headline {
+    font-size: 1.75rem;
+  }
+  .fls-brand-logo-img {
+    height: 46px;
+  }
+  .fls-steps-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .fls-step-col:not(:last-child)::after {
+    display: none;
+  }
+}

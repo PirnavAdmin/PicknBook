@@ -316,7 +316,7 @@ export default function Topbar() {
             <button
               type="button"
               className="topbar-login-btn"
-              onClick={() => openAuthModal("login")}
+              onClick={() => openAuthModal("login", { returnTo: window.location.pathname + window.location.search })}
             >
               <User size={18} />
               <span>Login / Sign Up</span>

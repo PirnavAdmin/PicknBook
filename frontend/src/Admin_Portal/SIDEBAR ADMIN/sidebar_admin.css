@@ -396,32 +396,32 @@
   user-select: none;
 }
 
-/* ── Dark theme active overrides to blue ── */
+/* ── Dark theme active overrides to crimson ── */
 .admin-shell.dark-theme .ds-brand-icon {
-  background: #2563eb !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+  background: #a51c49 !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.35) !important;
 }
 
 .admin-shell.dark-theme .ds-nav-row.ds-active {
-  color: #3b82f6 !important;
-  background: rgba(37, 99, 235, 0.1) !important;
+  color: #a51c49 !important;
+  background: rgba(165, 28, 73, 0.1) !important;
 }
 
 .admin-shell.dark-theme .ds-nav-row.ds-active::before {
-  background: #2563eb !important;
+  background: #a51c49 !important;
 }
 
 .admin-shell.dark-theme .ds-icon-active {
-  background: #2563eb !important;
-  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35) !important;
+  background: #a51c49 !important;
+  box-shadow: 0 3px 8px rgba(165, 28, 73, 0.35) !important;
 }
 
 .admin-shell.dark-theme .ds-sub-row.ds-sub-active {
-  color: #3b82f6 !important;
+  color: #a51c49 !important;
 }
 
 .admin-shell.dark-theme .ds-sub-active .ds-sub-dot {
-  background: #2563eb !important;
-  border-color: #2563eb !important;
+  background: #a51c49 !important;
+  border-color: #a51c49 !important;
 }
 

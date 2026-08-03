@@ -304,19 +304,6 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
           <span className="ds-brand-name">Admin Panel</span>
         </div>
 
-        {/* Search */}
-        <div className="ds-search-wrap">
-          <svg className="ds-search-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            className="ds-search-input"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
 
         {/* Nav */}
         <nav className="ds-nav">

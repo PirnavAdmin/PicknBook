@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ArrowLeftRight,
   BedDouble,
@@ -38,6 +38,8 @@ import {
   Star,
   Quote,
 } from "lucide-react";
+import HotelSearchWidget from "../../components/HotelSearchWidget";
+import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import luxuryBusImg from "../../assets/images/buses/luxury_bus_exterior.png";
 import offerGreenBusImg from "../../assets/images/buses/offer_green_bus.svg";
 import offerYellowBusImg from "../../assets/images/buses/offer_yellow_bus.svg";
@@ -2138,211 +2140,6 @@ function FeaturedOfferImage({ offer }) {
   );
 }
 
-function PlaceAutocomplete({
-  label,
-  value,
-  onChange,
-  tripType,
-  field,
-  placeholder,
-  className,
-  error,
-}) {
-  const [inputValue, setInputValue] = useState(value || "");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef(null);
-  const requestAbortRef = useRef(null);
-
-  useEffect(() => {
-    setInputValue(value || "");
-  }, [value]);
-
-  useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
-  useEffect(() => {
-    const query = inputValue.trim();
-
-    if (!open || query.length === 0) {
-      setResults([]);
-      setLoading(false);
-
-      if (requestAbortRef.current) {
-        requestAbortRef.current.abort();
-      }
-
-      return;
-    }
-
-    const controller = new AbortController();
-
-    if (requestAbortRef.current) {
-      requestAbortRef.current.abort();
-    }
-
-    requestAbortRef.current = controller;
-
-    const timer = setTimeout(async () => {
-      setLoading(true);
-
-      try {
-        if (tripType === "bus" || tripType === "buses") {
-          const busCities = await searchBusCities(query);
-          if (controller.signal.aborted) return;
-          const normalized = (Array.isArray(busCities) ? busCities : [])
-            .map((item) => {
-              if (typeof item === "string") return { cityName: item, cityId: item, stateName: "" };
-              return {
-                cityName: item.cityName || item.CityName || item.cityNameWithState || item.name || item.description || item.label || "",
-                cityId: String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || ""),
-                stateName: item.stateName || item.StateName || "",
-              };
-            })
-            .filter((item) => item.cityName);
-          setResults(normalized);
-        } else {
-          const endpoint = new URL(PLACES_API_URL, window.location.origin);
-          endpoint.searchParams.set("query", query);
-          endpoint.searchParams.set("tripType", tripType);
-          endpoint.searchParams.set("field", field);
-          endpoint.searchParams.set("limit", "20");
-
-          const needsNgrokBypass =
-            endpoint.hostname.includes("ngrok-free.dev") ||
-            endpoint.hostname.includes("ngrok.io");
-
-          const response = await fetch(endpoint.toString(), {
-            signal: controller.signal,
-            headers: needsNgrokBypass
-              ? { "ngrok-skip-browser-warning": "true" }
-              : undefined,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Place API failed with status ${response.status}`);
-          }
-
-          const payload = await response.json();
-
-          const rawList = Array.isArray(payload)
-            ? payload
-            : Array.isArray(payload?.value)
-              ? payload.value
-              : [];
-
-          const normalized = rawList
-            .map((item) => ({
-              cityName: typeof item === "string" ? item : item?.cityName || "",
-              usageCount:
-                typeof item === "object" && item?.usageCount
-                  ? item.usageCount
-                  : 0,
-            }))
-            .filter((item) => item.cityName);
-
-          setResults(normalized);
-        }
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          if (tripType !== "bus" && tripType !== "buses") {
-            const normalizedQuery = query.toLowerCase();
-            const fallbackMatches = FALLBACK_CITIES.filter((city) =>
-              city.toLowerCase().includes(normalizedQuery),
-            ).map((cityName, index) => ({
-              cityName,
-              usageCount: 100 - index,
-            }));
-
-            setResults(fallbackMatches);
-          } else {
-            setResults([]);
-          }
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }, 220);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [inputValue, open, tripType, field]);
-
-  const handleInputChange = (event) => {
-    const nextValue = event.target.value;
-    setInputValue(nextValue);
-    onChange(nextValue);
-    setOpen(nextValue.trim().length > 0);
-  };
-
-  const handleSelect = (cityName) => {
-    setInputValue(cityName);
-    onChange(cityName);
-    setOpen(false);
-  };
-
-  const isBusMode = tripType === "bus" || tripType === "buses";
-
-  return (
-    <div className={`field place-autocomplete ${className || ""}`} ref={wrapperRef}>
-      <label>{label}</label>
-      <div className="control-wrap">
-        {tripType === "flight" ? (
-          <Plane size={18} />
-        ) : tripType === "hotel" ? (
-          <Building2 size={18} />
-        ) : (
-          <Bus size={18} />
-        )}
-        <input
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          onFocus={() => setOpen(inputValue.trim().length > 0)}
-          className="field-control place-input with-leading-icon"
-          placeholder={placeholder}
-          autoComplete="off"
-        />
-      </div>
-
-      {open && (
-        <div className={isBusMode ? "bus-place-dropdown" : "place-dropdown"}>
-          {loading ? (
-            <div className={isBusMode ? "bus-place-meta" : "place-meta"}>Searching places...</div>
-          ) : results.length > 0 ? (
-            results.map((item, idx) => (
-              <button
-                key={`${item.cityName}-${item.usageCount || idx}`}
-                type="button"
-                className={isBusMode ? "bus-place-option" : "place-option"}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => handleSelect(item.cityName)}
-              >
-                {item.cityName}
-              </button>
-            ))
-          ) : (
-            <div className={isBusMode ? "bus-place-meta" : "place-meta"}>No matching places found</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const formatFlightDate = (dateStr) => {
   if (!dateStr) return { date: "Select Date", day: "" };
   try {
@@ -2359,6 +2156,7 @@ const formatFlightDate = (dateStr) => {
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = normalizeHomeTab(searchParams.get("tab"));
 
@@ -2405,15 +2203,7 @@ export default function HomePage() {
   const [busDepartureDate, setBusDepartureDate] = useState("");
   const [busReturnDate, setBusReturnDate] = useState("");
 
-  const [hotelDestination, setHotelDestination] = useState("");
-  const [hotelDestinationError, setHotelDestinationError] = useState("");
-  const [hotelCheckInDate, setHotelCheckInDate] = useState(() => getDateInputValue(0));
-  const [hotelCheckOutDate, setHotelCheckOutDate] = useState(() => getDateInputValue(1));
-  const [hotelRooms, setHotelRooms] = useState(0);
-  const [hotelAdults, setHotelAdults] = useState(0);
-  const [hotelChildren, setHotelChildren] = useState(0);
-  const [showHotelGuestsDropdown, setShowHotelGuestsDropdown] = useState(false);
-  const hotelGuestsFieldRef = useRef(null);
+  const state = location.state || {};
 
   const [featuredOffers, setFeaturedOffers] = useState([]);
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
@@ -2631,13 +2421,6 @@ export default function HomePage() {
       }
 
       if (
-        hotelGuestsFieldRef.current &&
-        !hotelGuestsFieldRef.current.contains(event.target)
-      ) {
-        setShowHotelGuestsDropdown(false);
-      }
-
-      if (
         classFieldRef.current &&
         !classFieldRef.current.contains(event.target)
       ) {
@@ -2651,7 +2434,6 @@ export default function HomePage() {
 
   useEffect(() => {
     setShowTravellerDropdown(false);
-    setShowHotelGuestsDropdown(false);
     setShowClassDropdown(false);
   }, [activeTab, flightTripType]);
 
@@ -3033,7 +2815,7 @@ export default function HomePage() {
 
         const results = await Promise.allSettled(
           HOTEL_CITIES.map(({ code }) =>
-            searchHotels({ city: code, checkInDate: checkIn, checkOutDate: checkOut, adults: 2, rooms: 1 })
+            searchHotels({ city: code, checkInDate: checkIn, checkOutDate: checkOut, roomsConfig: [{ adults: 2, children: 0, childAges: [] }] })
           )
         );
 
@@ -3177,18 +2959,6 @@ export default function HomePage() {
     });
   };
 
-  const changeHotelRooms = (delta) => {
-    setHotelRooms((previous) => Math.min(8, Math.max(1, previous + delta)));
-  };
-
-  const changeHotelAdults = (delta) => {
-    setHotelAdults((previous) => Math.min(16, Math.max(1, previous + delta)));
-  };
-
-  const changeHotelChildren = (delta) => {
-    setHotelChildren((previous) => Math.min(8, Math.max(0, previous + delta)));
-  };
-
   const updateMultiCityLeg = (legId, field, value) => {
     setMultiCityLegs((previousLegs) =>
       previousLegs.map((leg) =>
@@ -3221,12 +2991,6 @@ export default function HomePage() {
   const isBusTwoWay = busTripType === "twoway";
   const travellerSummary = formatTravellerSummary(adults, children, infants);
   const hasTravellerSelection = Boolean(travellerSummary);
-  const hotelGuestSummary = formatHotelGuestSummary(
-    hotelRooms,
-    hotelAdults,
-    hotelChildren,
-  );
-  const hasHotelGuestSelection = Boolean(hotelGuestSummary);
 
   const navigateToFlightSearch = (flightPayload) => {
     const flightParams = new URLSearchParams();
@@ -3318,7 +3082,7 @@ export default function HomePage() {
 
     if (offer.bookingType === "hotel" || offer.bookingType === "Hotel") {
       navigateToHotelSearch({
-        destination: destination || source || "Hyderabad",
+        destination: destination || source || "",
         checkInDate: travelDate,
         checkOutDate: getDateInputValue(1),
         rooms: "1",
@@ -3403,37 +3167,8 @@ export default function HomePage() {
     }
   };
 
-  const handleHotelDestinationChange = (value) => {
-    setHotelDestination(value);
-    if (value.trim()) {
-      setHotelDestinationError("");
-    }
-  };
-
   const handleSearch = () => {
     if (activeTab === "hotels") {
-      const destinationVal = hotelDestination.trim();
-
-      if (!destinationVal) {
-        setHotelDestinationError("Destination city is required.");
-        return;
-      }
-
-      if (hotelRooms === 0 || hotelAdults === 0) {
-        alert("Please select at least 1 room and 1 adult.");
-        return;
-      }
-
-      setHotelDestinationError("");
-      navigateToHotelSearch({
-        destination: destinationVal,
-        checkInDate: hotelCheckInDate.trim(),
-        checkOutDate: hotelCheckOutDate.trim(),
-        rooms: String(hotelRooms),
-        adults: String(hotelAdults),
-        children: String(hotelChildren),
-        guests: formatHotelGuestSummary(hotelRooms, hotelAdults, hotelChildren),
-      });
       return;
     }
 
@@ -3679,102 +3414,6 @@ export default function HomePage() {
             type="button"
             className="traveller-done"
             onClick={() => setShowTravellerDropdown(false)}
-          >
-            Done
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  const hotelGuestField = (
-    <div className="field traveller-field hotel-guests-field" ref={hotelGuestsFieldRef}>
-      <label>Rooms & Guests</label>
-      <button
-        type="button"
-        className={`traveller-trigger ${showHotelGuestsDropdown ? "open" : ""}`}
-        onClick={() => setShowHotelGuestsDropdown((previous) => !previous)}
-      >
-        <span
-          className={`traveller-summary ${
-            !hasHotelGuestSelection ? "placeholder" : ""
-          }`}
-        >
-          <BedDouble size={16} />
-          <span>{hotelGuestSummary || "SELECT ROOMS & GUESTS..."}</span>
-        </span>
-        <ChevronDown
-          size={16}
-          className={`traveller-caret ${showHotelGuestsDropdown ? "open" : ""}`}
-        />
-      </button>
-
-      {showHotelGuestsDropdown && (
-        <div className="traveller-dropdown hotel-guests-dropdown">
-          <div className="counter-row">
-            <div className="counter-copy">
-              <strong>Rooms</strong>
-              <span>Hotel rooms required</span>
-            </div>
-            <div className="counter-box">
-              <button
-                type="button"
-                onClick={() => changeHotelRooms(-1)}
-                disabled={hotelRooms <= 1}
-              >
-                <Minus size={14} />
-              </button>
-              <span>{hotelRooms}</span>
-              <button type="button" onClick={() => changeHotelRooms(1)}>
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="counter-row">
-            <div className="counter-copy">
-              <strong>Adults</strong>
-              <span>12 years and above</span>
-            </div>
-            <div className="counter-box">
-              <button
-                type="button"
-                onClick={() => changeHotelAdults(-1)}
-                disabled={hotelAdults <= 1}
-              >
-                <Minus size={14} />
-              </button>
-              <span>{hotelAdults}</span>
-              <button type="button" onClick={() => changeHotelAdults(1)}>
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="counter-row">
-            <div className="counter-copy">
-              <strong>Children</strong>
-              <span>0 to 11 years</span>
-            </div>
-            <div className="counter-box">
-              <button
-                type="button"
-                onClick={() => changeHotelChildren(-1)}
-                disabled={hotelChildren <= 0}
-              >
-                <Minus size={14} />
-              </button>
-              <span>{hotelChildren}</span>
-              <button type="button" onClick={() => changeHotelChildren(1)}>
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="traveller-done"
-            onClick={() => setShowHotelGuestsDropdown(false)}
           >
             Done
           </button>
@@ -5048,82 +4687,25 @@ export default function HomePage() {
                         </div>
                       </div>
                     )}
+
+                    <button
+                      type="button"
+                      className="search-btn bus-grid-search-btn"
+                      onClick={handleSearch}
+                    >
+                      <Search size={16} />
+                      <span>Search Buses</span>
+                    </button>
                   </div>
                 </div>
               ) : (
-                <div className="booking-content hotel-booking-content">
-                  <div className="search-grid hotel-standard-grid">
-                    <PlaceAutocomplete
-                      label="Destination"
-                      value={hotelDestination}
-                      onChange={handleHotelDestinationChange}
-                      tripType="hotel"
-                      field="destination"
-                      placeholder="City or hotel area"
-                      error={hotelDestinationError}
-                      className="hotel-destination-field"
-                    />
-
-                    <div className="field field-with-icon checkin-field" style={{ position: "relative" }}>
-                      <label>Check-in</label>
-                      <div className="control-wrap">
-                        <CalendarDays size={18} />
-                        <input
-                          type="text"
-                          readOnly
-                          value={toDisplayDate(hotelCheckInDate)}
-                          placeholder="DD-MM-YYYY"
-                          className="field-control with-leading-icon"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => document.getElementById("hotel-checkin-date").showPicker?.()}
-                        />
-                      </div>
-                      <input
-                        id="hotel-checkin-date"
-                        type="date"
-                        value={hotelCheckInDate}
-                        onChange={(event) => setHotelCheckInDate(event.target.value)}
-                        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-                      />
-                    </div>
-
-                    <div className="field field-with-icon checkout-field" style={{ position: "relative" }}>
-                      <label>Check-out</label>
-                      <div className="control-wrap">
-                        <CalendarDays size={18} />
-                        <input
-                          type="text"
-                          readOnly
-                          value={toDisplayDate(hotelCheckOutDate)}
-                          placeholder="DD-MM-YYYY"
-                          className="field-control with-leading-icon"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => document.getElementById("hotel-checkout-date").showPicker?.()}
-                        />
-                      </div>
-                      <input
-                        id="hotel-checkout-date"
-                        type="date"
-                        value={hotelCheckOutDate}
-                        onChange={(event) => setHotelCheckOutDate(event.target.value)}
-                        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-                      />
-                    </div>
-
-                    {hotelGuestField}
-                  </div>
-                </div>
-              )}
-
-              {activeTab !== "flights" && (
-                <button
-                  type="button"
-                  className="search-btn"
-                  onClick={handleSearch}
-                >
-                  <Search size={16} />
-                  <span>Search</span>
-                </button>
+                <HotelSearchWidget 
+                  onSearch={navigateToHotelSearch}
+                  initialDestination={state.hotelDestination || ""}
+                  initialCheckIn={state.hotelCheckInDate || ""}
+                  initialCheckOut={state.hotelCheckOutDate || ""}
+                  initialRoomsConfig={state.hotelRoomsConfig || null}
+                />
               )}
             </div>
           </div>

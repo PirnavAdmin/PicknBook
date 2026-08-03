@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Eye,
@@ -12,7 +11,8 @@ import {
 import {
   getFlightBookingById,
   listFlightBookings,
-  cancelFlightPassengers,
+  sendChangeRequest,
+  getCancelStatus
 } from "../../services/flightBookingService";
 import "../../STYLES/FlightOpsDashboard.css";
 import { formatDateTime } from "../../utils/apiDateFormat";
@@ -141,18 +141,24 @@ export default function FlightBookings() {
     setErrorMessage("");
   };
 
-  const handleViewDetails = async (bookingId) => {
+  const handleViewDetails = async (bookingItem) => {
+    const targetBooking = typeof bookingItem === "object" ? bookingItem : null;
+    const bookingId = typeof bookingItem === "object" ? (bookingItem.bookingId || bookingItem.bookingReference) : bookingItem;
     setLoadingDetailFor(bookingId);
     setErrorMessage("");
 
     try {
       const detail = await getFlightBookingById(bookingId);
-      setSelectedBooking(detail);
+      setSelectedBooking(detail || targetBooking);
       setSelectedPassengerIds([]);
       setCancelReason("");
       setActionMessage("");
     } catch (error) {
-      setErrorMessage(error.message || "Unable to fetch booking details.");
+      if (targetBooking) {
+        setSelectedBooking(targetBooking);
+      } else {
+        setErrorMessage(error.message || "Unable to fetch booking details.");
+      }
     } finally {
       setLoadingDetailFor(null);
     }
@@ -166,16 +172,58 @@ export default function FlightBookings() {
     setActionMessage("");
 
     try {
-      const updatedBooking = await cancelFlightPassengers(
-        selectedBooking.bookingId,
-        selectedPassengerIds,
-        cancelReason || undefined
-      );
+      const ticketsToCancel = (selectedBooking.passengers || [])
+        .filter(p => selectedPassengerIds.includes(p.id))
+        .map(p => {
+          const name = p.name || p.fullName || "Passenger";
+          const parts = name.trim().split(/\s+/);
+          return { TicketId: selectedBooking.pnr || selectedBooking.bookingId, FirstName: parts[0] || "Passenger", LastName: parts.slice(1).join(" ") || "User" };
+        });
 
-      setSelectedBooking(updatedBooking);
+      if (ticketsToCancel.length === 0) {
+        throw new Error("No valid passenger details found for cancellation.");
+      }
+
+      const changeRes = await sendChangeRequest({
+        bookingId: String(selectedBooking.bookingId),
+        pnr: selectedBooking.pnr || selectedBooking.bookingId,
+        requestType: 2, // Partial Cancellation
+        cancellationType: 2, 
+        remarks: cancelReason || "User request for partial cancellation",
+        sectors: [{ Origin: selectedBooking.fromCity, Destination: selectedBooking.toCity }],
+        ticketData: ticketsToCancel,
+        srdvType: selectedBooking.srdvType || "MixAPI",
+        srdvIndex: selectedBooking.srdvIndex || "2"
+      });
+
+      if (changeRes?.error) {
+        throw new Error(changeRes.error.errorMessage || changeRes.error);
+      }
+      const changeRequestId = changeRes?.changeRequestId || changeRes?.ChangeRequestId;
+      
+      if (!changeRequestId || changeRequestId === 0) {
+        throw new Error("Change Request ID not returned by SRDV.");
+      }
+
+      let finalStatus = "Pending";
+      let attempts = 0;
+      while (attempts < 4) {
+        const statusRes = await getCancelStatus({ changeRequestId, srdvType: selectedBooking.srdvType || "MixAPI" });
+        if (statusRes?.changeRequestStatus === 3 || statusRes?.ChangeRequestStatus === 3 || statusRes?.refundStatus === "Processed") {
+          finalStatus = "Processed";
+          break;
+        }
+        if (statusRes?.error) {
+           break;
+        }
+        attempts++;
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
+      setSelectedBooking({ ...selectedBooking });
       setSelectedPassengerIds([]);
       setCancelReason("");
-      setActionMessage("Selected passengers cancelled successfully.");
+      setActionMessage(`Selected passengers cancellation requested. Status: ${finalStatus}`);
       await fetchBookings();
     } catch (error) {
       setErrorMessage(error.message || "Failed to cancel selected passengers.");
@@ -396,8 +444,8 @@ export default function FlightBookings() {
                         <button
                           type="button"
                           title="View details"
-                          onClick={() => handleViewDetails(booking.bookingId)}
-                          disabled={loadingDetailFor === booking.bookingId}
+                          onClick={() => handleViewDetails(booking)}
+                          disabled={loadingDetailFor === booking.bookingId || loadingDetailFor === booking.bookingReference}
                         >
                           {loadingDetailFor === booking.bookingId ? (
                             <Loader2 size={15} className="spin" />
@@ -482,12 +530,12 @@ export default function FlightBookings() {
             </div>
 
             {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
-              <div style={{ marginTop: 20, borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
+              <div style={{ marginTop: 20, borderTop: "1px solid #e5e7eb", paddingTop: 16, paddingLeft: 14, paddingRight: 14 }}>
                 <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#1f2a44" }}>
                   Passengers &amp; Cancellation
                 </h4>
-                <div className="ops-table-scroll" style={{ maxHeight: 200, marginBottom: 12 }}>
-                  <table className="ops-table" style={{ fontSize: 11.5 }}>
+                <div className="ops-table-scroll" style={{ maxHeight: 200, marginBottom: 12, maxWidth: "100%", overflowX: "auto" }}>
+                  <table className="ops-table" style={{ fontSize: 11.5, minWidth: "100%" }}>
                     <thead>
                       <tr>
                         <th style={{ width: 40 }}>Select</th>

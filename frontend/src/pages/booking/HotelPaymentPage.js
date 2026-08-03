@@ -4,7 +4,7 @@ import {
   ArrowLeft, CheckCircle2, Loader2, MessageSquareText, ShieldCheck, Star,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { bookHotel } from "../../services/hotelBookingService";
+import { bookHotelRoom } from "../../services/hotelBookingService";
 import { formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 import BookingTimer from "./BookingTimer";
 import "../../STYLES/HotelCheckoutExperience.css";
@@ -51,14 +51,15 @@ function buildTicketPayload(flowState, bookingResponse, paymentMethod, nights) {
   const hotel = flowState.hotel || {};
   const offer = flowState.offer || {};
   const fareSummary = flowState.fareSummary || {};
-  const reference = bookingResponse?.bookingReference || `HT-${Date.now().toString().slice(-8)}`;
+  const reference = bookingResponse?.BookResult?.ConfirmationNo || bookingResponse?.BookResult?.BookingRefNo || bookingResponse?.bookingReference || `HT-${Date.now().toString().slice(-8)}`;
+  const status = bookingResponse?.BookResult?.Status || bookingResponse?.status || "Confirmed";
   const checkInDate = offer.checkInDate ? new Date(offer.checkInDate) : new Date();
   const checkOutDate = offer.checkOutDate ? new Date(offer.checkOutDate) : new Date();
 
   return {
     ticketType: "hotel",
     bookingReference: reference,
-    status: bookingResponse?.status || "Confirmed",
+    status: status,
     providerName: hotel.name || "Hotel Stay",
     tripNumber: offer.roomCategory ? offer.roomCategory.replace(/_/g, " ") : "Room Booking",
     fromCity: hotel.name || "Hotel",
@@ -186,13 +187,137 @@ export default function HotelPaymentPage() {
     setIsSubmitting(true);
     try {
       await new Promise((resolve) => { window.setTimeout(resolve, 1200); });
-      const response = await bookHotel({
-        offerId: offer.offerId,
-        guestName: flowState.guestName,
-        guestEmail: flowState.guestEmail,
-        guestPhone: flowState.guestPhone,
+      const nameParts = (flowState.guestName || "").trim().split(" ");
+      const firstName = nameParts[0] || "Guest";
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "User";
+      const title = flowState.guestTitle || "Mr";
+
+      const roomsConfig = flowState.searchContext?.roomsConfig || [{ adults: 1, children: 0, childAges: [] }];
+      const blockedRooms = flowState.blockRoomResponse?.BlockRoomResult?.HotelRoomsDetails || 
+                           flowState.blockRoomResponse?.blockRoomResult?.hotelRoomsDetails || 
+                           flowState.blockRoomResponse?.HotelRoomsDetails || 
+                           flowState.blockRoomResponse?.hotelRoomsDetails || 
+                           [offer];
+
+      const mappedRoomsDetails = blockedRooms.map((room, roomIndex) => {
+          const config = roomsConfig[roomIndex] || { adults: 1, children: 0, childAges: [] };
+          const passengers = [];
+          
+          let isLeadSet = false;
+          
+          // Adults
+          for (let i = 0; i < config.adults; i++) {
+              passengers.push({
+                  Title: title,
+                  FirstName: i === 0 ? firstName : `Adult${i+1}`,
+                  MiddleName: "",
+                  LastName: i === 0 ? lastName : "Guest",
+                  Phoneno: flowState.guestPhone || "",
+                  Email: flowState.guestEmail || "",
+                  PaxType: "1", // Adult
+                  LeadPassenger: !isLeadSet,
+                  Age: flowState.guestAge || 26,
+                  PassportNo: flowState.guestPassportNo || "",
+                  PassportIssueDate: "1900-01-01T00:00:00",
+                  PassportExpDate: "1900-01-01T00:00:00",
+                  PAN: flowState.guestPAN || ""
+              });
+              isLeadSet = true;
+          }
+          
+          // Children
+          for (let i = 0; i < config.children; i++) {
+              const childAge = config.childAges[i] || 4;
+              passengers.push({
+                  Title: "Mstr",
+                  FirstName: `Child${i+1}`,
+                  MiddleName: "",
+                  LastName: "Guest",
+                  Phoneno: "",
+                  Email: "",
+                  PaxType: "2", // Child
+                  LeadPassenger: false,
+                  Age: childAge,
+                  PassportNo: "",
+                  PassportIssueDate: "1900-01-01T00:00:00",
+                  PassportExpDate: "1900-01-01T00:00:00",
+                  PAN: ""
+              });
+          }
+          
+          let roomPrice = 0;
+          if (typeof room.Price === 'object' && room.Price) {
+              roomPrice = Number(room.Price.OfferedPrice || room.Price.RoomPrice || 0);
+          } else if (typeof room.price === 'object' && room.price) {
+              roomPrice = Number(room.price.offeredPrice || room.price.roomPrice || room.price.b2cTotalPrice || 0);
+          } else {
+              roomPrice = Number(room.price || room.OfferedPrice || 0);
+          }
+          if (isNaN(roomPrice)) roomPrice = 0;
+          return {
+            ChildCount: room.childCount || room.ChildCount || 0,
+            RequireAllPaxDetails: room.requireAllPaxDetails || room.RequireAllPaxDetails || false,
+            RoomId: room.roomId || room.RoomId || "",
+            RoomStatus: room.roomStatus || room.RoomStatus || "Active",
+            RoomIndex: room.roomIndex || room.RoomIndex || "",
+            RoomTypeCode: room.roomTypeCode || room.RoomTypeCode || "",
+            RoomTypeName: room.roomTypeName || room.RoomTypeName || "",
+            RatePlanCode: room.ratePlanCode || room.RatePlanCode || "",
+            RatePlan: room.ratePlan || room.RatePlan || "",
+            InfoSource: room.infoSource || room.InfoSource || "",
+            SequenceNo: room.sequenceNo || room.SequenceNo || "",
+            DayRates: room.dayRates || room.DayRates || [],
+            SupplierPrice: room.supplierPrice || room.SupplierPrice || "",
+            RoomPromotion: room.roomPromotion || room.RoomPromotion || "",
+            Amenities: room.amenities || room.Amenities || [],
+            SmokingPreference: room.smokingPreference || room.SmokingPreference || "",
+            BedTypes: room.bedTypes || room.bedType || room.BedTypes || "",
+            HotelSupplements: room.hotelSupplements || room.HotelSupplements || "",
+            LastCancellationDate: room.lastCancellationDate || room.LastCancellationDate || "",
+            IsPassportMandatory: room.isPassportMandatory || room.IsPassportMandatory || false,
+            IsPANMandatory: room.isPANMandatory || room.IsPANMandatory || false,
+            FullRefundAllowed: room.fullRefundAllowed || room.FullRefundAllowed || false,
+            CancellationPolicies: room.cancellationPolicies || room.CancellationPolicies || [],
+            CancellationPolicy: room.cancellationPolicy || room.CancellationPolicy || "",
+            Inclusion: room.inclusion || room.Inclusion || [],
+            BedTypeCode: room.bedTypeCode || room.BedTypeCode || "",
+            Supplements: room.supplements || room.Supplements || "",
+            OfferedPrice: roomPrice,
+            Price: (typeof room.Price === 'object' && room.Price) ? room.Price : 
+                   (typeof room.price === 'object' && room.price) ? room.price : 
+                   {
+                     CurrencyCode: "INR",
+                     RoomPrice: roomPrice,
+                     PublishedPrice: roomPrice,
+                     PublishedPriceRoundedOff: roomPrice,
+                     OfferedPrice: roomPrice,
+                     OfferedPriceRoundedOff: roomPrice
+                   },
+            HotelPassenger: passengers
+          };
       });
-      const bookingReference = response?.bookingReference || `PNB-${Date.now().toString().slice(-8)}`;
+
+      const bookPayload = {
+        TraceId: String(flowState.blockRoomResponse?.BlockRoomResult?.TraceId || flowState.blockRoomResponse?.blockRoomResult?.traceId || flowState.blockRoomResponse?.TraceId || flowState.blockRoomResponse?.traceId || hotel?.TraceId || hotel?.traceId || ""),
+        ResultIndex: String(hotel?.ResultIndex || hotel?.resultIndex || ""),
+        SrdvType: String(hotel?.SrdvType || hotel?.srdvType || "MixAPI"),
+        SrdvIndex: String(hotel?.SrdvIndex || hotel?.srdvIndex || ""),
+        HotelCode: String(hotel?.hotelId || hotel?.hotelCode || ""),
+        HotelName: hotel?.name || "",
+        GuestNationality: "IN",
+        NoOfRooms: blockedRooms.length,
+        ClientReferenceNo: 0,
+        IsVoucherBooking: true,
+        GuestName: `${firstName} ${lastName}`,
+        GuestEmail: flowState.guestEmail || "test@test.com",
+        GuestPhone: flowState.guestPhone || "9876543210",
+        Price: Number(payableAmount || 0),
+        HotelRoomsDetails: mappedRoomsDetails,
+        EndUserIp: "192.168.10.10"
+      };
+      
+      const response = await bookHotelRoom(bookPayload);
+      const bookingReference = response?.BookResult?.ConfirmationNo || response?.BookResult?.BookingRefNo || `PNB-${Date.now().toString().slice(-8)}`;
 
       if (isAgent && agentProfile) {
         const markup = Number(flowState.fareSummary?.markup || 0);
@@ -326,7 +451,7 @@ export default function HotelPaymentPage() {
             <div className="hotel-reserve-card hotel-reserve-card--confirm">
               <div className="hotel-reserve-preview"><img src={visuals.gallery[0]} alt={hotel.name} /><div><span>{visuals.highlightLabel}</span><strong>{hotel.name}</strong><p><Star size={13} fill="currentColor" /> {Number(hotel.rating || 4.8).toFixed(1)} · {offer.roomCategory ? offer.roomCategory.replace(/_/g, " ") : "Standard room"}</p></div></div>
               <div className="hotel-confirm-summary"><div><span>Dates</span><strong>{new Date(offer.checkInDate).toLocaleDateString("en-IN")} - {new Date(offer.checkOutDate).toLocaleDateString("en-IN")}</strong></div><div><span>Guests</span><strong>{flowState.searchContext?.guests || "Primary guest"}</strong></div></div>
-              <div className="hotel-fare-breakdown"><div><span>Room base charges</span><strong>{formatCurrency(fareSummary.baseFare)}</strong></div><div><span>Taxes and fees</span><strong>{formatCurrency(fareSummary.tax)}</strong></div><div><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Convenience fee<span title="This fee covers secure payment processing and 24/7 booking support." style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, borderRadius: "50%", background: "rgba(0,0,0,0.06)", fontSize: "0.65rem", fontWeight: "bold" }}>i</span></span><strong>{formatCurrency(fareSummary.convenienceFee)}</strong></div>{Number(fareSummary.discount) > 0 && <div className="is-discount"><span>Savings</span><strong>-{formatCurrency(fareSummary.discount)}</strong></div>}<div className="hotel-fare-total"><span>Total to pay</span><strong>{formatCurrency(payableAmount)}</strong></div></div>
+              <div className="hotel-fare-breakdown"><div><span>Room base charges</span><strong>{formatCurrency(fareSummary.baseFare)}</strong></div><div><span>Taxes and GST</span><strong>{formatCurrency(fareSummary.tax)}</strong></div>{Number(fareSummary.markup) > 0 && <div><span>Markup</span><strong>{formatCurrency(fareSummary.markup)}</strong></div>}<div><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Convenience fee<span title="This fee covers secure payment processing and 24/7 booking support." style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, borderRadius: "50%", background: "rgba(0,0,0,0.06)", fontSize: "0.65rem", fontWeight: "bold" }}>i</span></span><strong>{formatCurrency(fareSummary.convenienceFee)}</strong></div>{Number(fareSummary.discount) > 0 && <div className="is-discount"><span>Savings</span><strong>-{formatCurrency(fareSummary.discount)}</strong></div>}<div className="hotel-fare-total"><span>Total to pay</span><strong>{formatCurrency(payableAmount)}</strong></div></div>
               <div className="hotel-reserve-assurance"><CheckCircle2 size={16} /><span>Once confirmed, the ticket confirmation page will use the live hotel booking response from the backend.</span></div>
             </div>
           </aside>

@@ -12,10 +12,7 @@ import {
 } from "./services/authSession";
 
 import BookingConfirmationPage from "./pages/booking/BookingConfirmationPage";
-import B2BLogin from "./B2B_Portal/AUTHENTICATIONS/login/B2BLogin";
-import B2BRegister from "./B2B_Portal/AUTHENTICATIONS/register/B2BRegister";
 import B2BDashboard from "./B2B_Portal/DASHBOARD B2B/B2BDashboard";
-import B2BForgotPassword from "./B2B_Portal/AUTHENTICATIONS/forgot-password/B2BForgotPassword";
 import B2BLayout from "./B2B_Portal/B2B LAYOUT/B2BLayout";
 import B2BBookingsReport from "./B2B_Portal/DASHBOARD B2B/B2BBookingsReport";
 import B2BLedgerStatement from "./B2B_Portal/DASHBOARD B2B/B2BLedgerStatement";
@@ -66,8 +63,6 @@ import ContactUsPage from "./pages/public/ContactUsPage";
 import BlogListPage from "./pages/public/BlogListPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
 
-import AdminLogin from "./Admin_Portal/AUTHENTICATIONS/login admin/login admin";
-import AdminPin from "./Admin_Portal/AUTHENTICATIONS/verifing/adminpin";
 import AdminLayout from "./Admin_Portal/adminlayout";
 import AdminSectionPlaceholder from "./Admin_Portal/PLACEHOLDERS/SectionPlaceholder";
 import AdminDashboard from "./Admin_Portal/DASHBOARD ADMIN/Admin.Dashbaord";
@@ -255,20 +250,20 @@ function RequireAdmin({ children }) {
     return (text === "undefined" || text === "null") ? "" : text;
   };
 
-  const adminToken = sanitize(localStorage.getItem("adminToken"));
-  const adminRole = sanitize(localStorage.getItem("adminRole"));
+  const adminToken = sanitize((localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")));
+  const adminRole = sanitize((localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole")));
 
   if (adminToken && adminRole) {
     return children;
   }
 
   // Legacy fallback if admin keys are missing but user token and user role exist:
-  const userToken = sanitize(localStorage.getItem("token"));
-  const userRole = sanitize(localStorage.getItem("role"));
+  const userToken = sanitize((localStorage.getItem("token") || sessionStorage.getItem("token")));
+  const userRole = sanitize((localStorage.getItem("role") || sessionStorage.getItem("role")));
 
   let parsedUserRole = "";
   try {
-    const userStr = localStorage.getItem("user");
+    const userStr = (localStorage.getItem("user") || sessionStorage.getItem("user"));
     if (userStr) {
       const userObj = JSON.parse(userStr);
       parsedUserRole = sanitize(userObj?.role || userObj?.Role);
@@ -293,12 +288,12 @@ function RequireAgent({ children }) {
     return (text === "undefined" || text === "null") ? "" : text;
   };
 
-  const userToken = sanitize(localStorage.getItem("b2b_token"));
-  const userRole = sanitize(localStorage.getItem("b2b_role"));
+  const userToken = sanitize((localStorage.getItem("b2b_token") || sessionStorage.getItem("b2b_token")));
+  const userRole = sanitize((localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")));
 
   let parsedUserRole = "";
   try {
-    const userStr = localStorage.getItem("b2b_user");
+    const userStr = (localStorage.getItem("b2b_user") || sessionStorage.getItem("b2b_user"));
     if (userStr) {
       const userObj = JSON.parse(userStr);
       parsedUserRole = sanitize(userObj?.role || userObj?.Role);
@@ -325,8 +320,8 @@ function BookingRouteWrapper({ element }) {
     const text = String(val ?? "").trim();
     return (text === "undefined" || text === "null") ? "" : text;
   };
-  const b2bToken = sanitize(localStorage.getItem("b2b_token"));
-  const b2bRole = sanitize(localStorage.getItem("b2b_role"));
+  const b2bToken = sanitize((localStorage.getItem("b2b_token") || sessionStorage.getItem("b2b_token")));
+  const b2bRole = sanitize((localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")));
   const activePortal = sessionStorage.getItem("active_portal") || "b2c";
   const isAgent = activePortal === "b2b" && b2bToken && b2bRole.toLowerCase() === "agent" && !isTokenExpired(b2bToken);
 
@@ -392,7 +387,7 @@ function AppContent() {
   useEffect(() => {
     const loadColors = () => {
       try {
-        const fallback = localStorage.getItem("admin_fallback_home");
+        const fallback = (localStorage.getItem("admin_fallback_home") || sessionStorage.getItem("admin_fallback_home"));
         if (fallback) {
           const theme = JSON.parse(fallback);
           const root = document.documentElement;
@@ -460,14 +455,14 @@ function AppContent() {
         // Session timeout checks for the admin portal are removed as requested.
       } else {
         // Agents use b2b_token — never apply the B2C login guard to them
-        const b2bToken = localStorage.getItem("b2b_token");
-        const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
+        const b2bToken = (localStorage.getItem("b2b_token") || sessionStorage.getItem("b2b_token"));
+        const b2bRole = ((localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")) || "").toLowerCase();
         const isLoggedInAgent = b2bToken && b2bRole === "agent";
         if (isLoggedInAgent) {
           return; // Agent is authenticated via b2b_token — no B2C check needed
         }
 
-        const token = localStorage.getItem("token");
+        const token = (localStorage.getItem("token") || sessionStorage.getItem("token"));
         if (!token && isUserProtectedPath(currentPath)) {
           openAuthModal("login", { returnTo: buildReturnTo(location) });
           navigate("/", { replace: true });
@@ -503,7 +498,7 @@ function AppContent() {
   const isB2BPath = normalizedPath.startsWith("/b2b");
   
   const activePortalStr = sessionStorage.getItem("active_portal") || "b2c";
-  const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortalStr === "b2b";  
+  const isAgent = (localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")) === "Agent" && activePortalStr === "b2b";  
   const isBookingPath =
     normalizedPath === "/web-checkin" ||
     normalizedPath === "/fetch-ticket" ||
@@ -543,9 +538,9 @@ function AppContent() {
       {!shouldHideTopbar && <Topbar />}
 
       <Routes>
-        <Route path="/b2b/login" element={<B2BLogin />} />
-        <Route path="/b2b/register" element={<B2BRegister />} />
-        <Route path="/b2b/forgot-password" element={<B2BForgotPassword />} />
+        <Route path="/b2b/login" element={<Navigate to="/login" replace />} />
+        <Route path="/b2b/register" element={<Navigate to="/register" replace />} />
+        <Route path="/b2b/forgot-password" element={<Navigate to="/forgot-password" replace />} />
         <Route path="/b2b" element={<Navigate to="/b2b/dashboard" replace />} />
         <Route
           path="/b2b/dashboard"
@@ -626,8 +621,8 @@ function AppContent() {
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/change-password" element={<ChangePassword />} />
 
-        <Route path={ADMIN_PATHS.login} element={<AdminLogin />} />
-        <Route path={ADMIN_PATHS.pin} element={<AdminPin />} />
+        <Route path={ADMIN_PATHS.login} element={<Navigate to="/login" replace />} />
+        <Route path={ADMIN_PATHS.pin} element={<Navigate to="/login" replace />} />
         <Route
           path={ADMIN_PATHS.base}
           element={

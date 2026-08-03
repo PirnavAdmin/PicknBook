@@ -4,6 +4,29 @@ import "./FlightCancelRequestList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import AdminPagination from "../../../components/AdminPagination";
 
+const safeValue = (val, fallback = "--") =>
+  val !== undefined && val !== null && val !== "" ? val : fallback;
+
+const formatRequestDate = (rawDate) => {
+  if (!rawDate) return "--";
+  const parsed = new Date(rawDate);
+  if (Number.isNaN(parsed.getTime())) return "--";
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const toNumberDate = (rawDate) => {
+  if (!rawDate) return 0;
+  const parsed = new Date(rawDate);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
@@ -23,9 +46,9 @@ const normalizeText = (value, fallback = "") => {
 };
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://paycheck-baton-overfull.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
-const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
+const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
   String(process.env.REACT_APP_API_USER_ID || "").trim() || "user_123";
 
@@ -504,50 +527,9 @@ const toAdminStatusLabel = (statusValue) => {
 
 const mapAdminStatusClass = (statusValue) => {
   const key = normalizeText(statusValue, "").toLowerCase();
-
-  if (CANCELLED_STATUS_SET.has(key) || key.includes("cancel") || key.includes("failed")) {
-    return "cancelled";
-  }
-
-  if (PENDING_STATUS_SET.has(key)) {
-    return "pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
-    return "success";
-  }
-
-  return "pending";
-};
-
-const formatRequestDate = (statusValue) => {
-  if (!statusValue) return "--";
-  const parsed = new Date(statusValue);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "--";
-  }
-
-  return parsed.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-const toNumberDate = (val) => {
-  if (!val) return 0;
-  const parsed = new Date(val).getTime();
-  return isNaN(parsed) ? 0 : parsed;
-};
-
-const safeValue = (value, fallback = "--") => {
-  if (value === undefined || value === null) return fallback;
-  const str = String(value).trim();
-  return str ? str : fallback;
+  if (key === "approved" || key === "completed" || key === "refunded") return "status-approved";
+  if (key === "rejected" || key === "cancelled") return "status-rejected";
+  return "status-pending";
 };
 
 export default function AdminFlightCancellationRequestListPage() {

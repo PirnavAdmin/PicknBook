@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
 import { Check, Download, Eye, List, Pencil, Trash2, X } from "lucide-react";
 import "./FlightCoupon.css";

@@ -51,7 +51,6 @@
 }
 
 .flight-ops-filters span,
-.ops-table th,
 .ops-modal-grid span {
   color: #7c3f2b !important;
 }
@@ -72,7 +71,11 @@
 }
 
 .ops-table thead {
-  background: var(--theme-primary-soft, #fef2f2) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
+}
+
+.ops-table th {
+  color: #ffffff !important;
 }
 
 .status-badge.success,
@@ -253,12 +256,30 @@
 
 .ops-table-scroll {
   overflow-x: auto;
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+.ops-table-scroll::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.ops-table-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--theme-primary, #dc1e26) !important;
+  border-radius: 3px !important;
+}
+
+.ops-table-scroll::-webkit-scrollbar-track {
+  background: var(--theme-primary-soft, #fef2f2) !important;
+  border-radius: 3px !important;
 }
 
 .ops-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1040px;
+  min-width: 850px;
 }
 
 .ops-table thead {
@@ -355,10 +376,29 @@
   position: fixed;
   inset: 0;
   background: rgba(11, 22, 36, 0.58);
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   z-index: 1600;
-  padding: 14px;
+  padding: 40px 14px;
+  overflow-y: auto;
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+.ops-modal-backdrop::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.ops-modal-backdrop::-webkit-scrollbar-thumb {
+  background-color: var(--theme-primary, #dc1e26) !important;
+  border-radius: 3px !important;
+}
+
+.ops-modal-backdrop::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .ops-modal {
@@ -368,6 +408,7 @@
   background: #ffffff;
   box-shadow: 0 28px 48px rgba(13, 27, 45, 0.35);
   overflow: hidden;
+  margin-bottom: 40px;
 }
 
 .ops-modal header {
@@ -486,7 +527,6 @@
 }
 
 .flight-ops-filters span,
-.ops-table th,
 .ops-modal-grid span {
   color: #7c3f2b !important;
 }
@@ -507,7 +547,7 @@
 }
 
 .ops-table thead {
-  background: var(--theme-primary-soft, #fef2f2) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
 }
 
 .status-badge.success,

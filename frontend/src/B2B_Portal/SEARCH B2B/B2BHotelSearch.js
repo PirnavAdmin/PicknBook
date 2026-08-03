@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Calendar, ArrowRight, Users } from "lucide-react";
+import { ArrowRight, Users, Trash2 } from "lucide-react";
 import B2BPlaceAutocomplete from "./B2BPlaceAutocomplete";
 import "../../STYLES/B2BLayout.css";
 
@@ -11,9 +11,44 @@ export default function B2BHotelSearch() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
 
-  const [rooms, setRooms] = useState(1);
-  const [guests, setGuests] = useState(2);
+  const [roomsConfig, setRoomsConfig] = useState([
+    { adults: 2, children: 0, childAges: [] }
+  ]);
   const [showConfigDropdown, setShowConfigDropdown] = useState(false);
+
+  const totalRooms = roomsConfig.length;
+  const totalGuests = roomsConfig.reduce((sum, r) => sum + r.adults + r.children, 0);
+
+  const addRoom = () => {
+    setRoomsConfig([...roomsConfig, { adults: 2, children: 0, childAges: [] }]);
+  };
+
+  const removeRoom = (index) => {
+    if (roomsConfig.length > 1) {
+      setRoomsConfig(roomsConfig.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateRoom = (index, field, value) => {
+    const updated = [...roomsConfig];
+    updated[index][field] = value;
+    if (field === "children") {
+      // Adjust childAges array length
+      const currentAges = updated[index].childAges;
+      if (value > currentAges.length) {
+        updated[index].childAges = [...currentAges, ...Array(value - currentAges.length).fill(4)];
+      } else if (value < currentAges.length) {
+        updated[index].childAges = currentAges.slice(0, value);
+      }
+    }
+    setRoomsConfig(updated);
+  };
+
+  const updateChildAge = (roomIndex, childIndex, age) => {
+    const updated = [...roomsConfig];
+    updated[roomIndex].childAges[childIndex] = age;
+    setRoomsConfig(updated);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -23,15 +58,13 @@ export default function B2BHotelSearch() {
       city,
       checkIn,
       checkOut,
-      rooms,
-      guests,
+      roomsConfig,
     };
 
     hotelParams.set("city", city);
     hotelParams.set("checkIn", checkIn);
     hotelParams.set("checkOut", checkOut);
-    hotelParams.set("rooms", rooms.toString());
-    hotelParams.set("guests", guests.toString());
+    hotelParams.set("rooms", JSON.stringify(roomsConfig));
 
     navigate(
       `/search/hotels?${hotelParams.toString()}`,
@@ -92,7 +125,7 @@ export default function B2BHotelSearch() {
               width: "100%"
             }}
           >
-            <span>{guests} Guest(s), {rooms} Room(s)</span>
+            <span>{totalGuests} Guest(s), {totalRooms} Room(s)</span>
             <Users size={16} style={{ color: "#6b7280" }} />
           </button>
 
@@ -100,7 +133,6 @@ export default function B2BHotelSearch() {
             <div style={{
               position: "absolute",
               top: "100%",
-              left: 0,
               right: 0,
               background: "white",
               border: "1px solid #e5e7eb",
@@ -109,27 +141,81 @@ export default function B2BHotelSearch() {
               padding: 16,
               display: "flex",
               flexDirection: "column",
-              gap: 12,
+              gap: 16,
               zIndex: 40,
               marginTop: 4,
-              width: 220
+              width: 320,
+              maxHeight: "400px",
+              overflowY: "auto"
             }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#1f2937" }}>Rooms</span>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button type="button" disabled={rooms <= 1} onClick={() => setRooms(rooms - 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>-</button>
-                  <span style={{ fontSize: "0.85rem", color: "#1f2937", width: 20, textAlign: "center" }}>{rooms}</span>
-                  <button type="button" onClick={() => setRooms(rooms + 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>+</button>
+              {roomsConfig.map((room, rIndex) => (
+                <div key={rIndex} style={{ paddingBottom: 12, borderBottom: "1px solid #f3f4f6" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#1f2937" }}>Room {rIndex + 1}</span>
+                    {roomsConfig.length > 1 && (
+                      <button type="button" onClick={() => removeRoom(rIndex)} style={{ color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: "0.85rem", color: "#4b5563" }}>Adults</span>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button type="button" disabled={room.adults <= 1} onClick={() => updateRoom(rIndex, "adults", room.adults - 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>-</button>
+                      <span style={{ fontSize: "0.85rem", color: "#1f2937", width: 20, textAlign: "center" }}>{room.adults}</span>
+                      <button type="button" onClick={() => updateRoom(rIndex, "adults", room.adults + 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>+</button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.85rem", color: "#4b5563" }}>Children</span>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button type="button" disabled={room.children <= 0} onClick={() => updateRoom(rIndex, "children", room.children - 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>-</button>
+                      <span style={{ fontSize: "0.85rem", color: "#1f2937", width: 20, textAlign: "center" }}>{room.children}</span>
+                      <button type="button" onClick={() => updateRoom(rIndex, "children", room.children + 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>+</button>
+                    </div>
+                  </div>
+
+                  {room.children > 0 && (
+                    <div style={{ marginTop: 12, padding: 8, background: "#f9fafb", borderRadius: 6 }}>
+                      <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: "0 0 8px 0" }}>Ages of children (Mandatory)</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {room.childAges.map((age, cIndex) => (
+                          <select 
+                            key={cIndex}
+                            value={age}
+                            onChange={(e) => updateChildAge(rIndex, cIndex, Number(e.target.value))}
+                            style={{ padding: 6, borderRadius: 4, border: "1px solid #d1d5db", fontSize: "0.8rem" }}
+                          >
+                            {[...Array(12).keys()].map(a => (
+                              <option key={a + 1} value={a + 1}>{a + 1} years</option>
+                            ))}
+                          </select>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#1f2937" }}>Guests</span>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button type="button" disabled={guests <= 1} onClick={() => setGuests(guests - 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>-</button>
-                  <span style={{ fontSize: "0.85rem", color: "#1f2937", width: 20, textAlign: "center" }}>{guests}</span>
-                  <button type="button" onClick={() => setGuests(guests + 1)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid #d1d5db" }}>+</button>
-                </div>
-              </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addRoom}
+                style={{
+                  color: "var(--b2b-accent)",
+                  background: "transparent",
+                  border: "1px dashed var(--b2b-accent)",
+                  fontSize: "0.85rem",
+                  padding: "8px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: 500
+                }}
+              >
+                + Add another room
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShowConfigDropdown(false)}
@@ -137,10 +223,9 @@ export default function B2BHotelSearch() {
                 style={{
                   background: "var(--b2b-accent)",
                   color: "white",
-                  fontSize: "0.75rem",
-                  padding: "6px 12px",
+                  fontSize: "0.85rem",
+                  padding: "8px 12px",
                   width: "100%",
-                  marginTop: 8
                 }}
               >
                 Done

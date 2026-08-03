@@ -1,14 +1,14 @@
 public class FlightOfferDto
 {
-    public string Airline { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
+    public string Airline { get; set; } = string.Empty;
+    public string Origin { get; set; } = string.Empty;
+    public string Destination { get; set; } = string.Empty;
 
     public DateTime DepartureTime { get; set; }
     public DateTime ArrivalTime { get; set; }
 
     public decimal Price { get; set; }
-    public string Currency { get; set; }
+    public string Currency { get; set; } = string.Empty;
 
     public int AvailableSeats { get; set; }
     public bool IsLimitedSeats { get; set; }
@@ -30,7 +30,7 @@ public class FlightOfferDto
     // SRDV Tracking Fields
     public string? TraceId { get; set; }
     public string? ResultIndex { get; set; }
-    public int? SrdvIndex { get; set; }
+    public string? SrdvIndex { get; set; }
     public bool IsLcc { get; set; }
     public string? SrdvType { get; set; }
     public string? SegmentsJson { get; set; }

@@ -132,24 +132,40 @@ export default function HotelBookings() {
     setSelectedBooking(booking);
   };
 
-  const triggerCancelBooking = (bookingId) => {
-    setCancelModalBookingId(bookingId);
+  const triggerCancelBooking = (booking) => {
+    setCancelModalBookingId(booking);
     setIsCancelModalOpen(true);
   };
 
   const handleCancelBooking = async (reason) => {
-    const bookingId = cancelModalBookingId;
-    if (!bookingId) return;
     setIsCancelModalOpen(false);
+    
+    const booking = cancelModalBookingId;
+    if (!booking) return;
 
-    setCancellingBookingId(bookingId);
+    let actualId = booking.id || booking.Id || booking.bookingId;
+    if (!actualId) {
+      setErrorMessage("Unable to find booking ID to cancel.");
+      setCancelModalBookingId(null);
+      return;
+    }
+
+    // The backend `my-bookings` DTO returns `BookingId` as a string like "bk-24".
+    // We need to strip the prefix and send the raw integer ID to `CancelRoom`.
+    if (typeof actualId === 'string' && actualId.startsWith('bk-')) {
+      actualId = parseInt(actualId.replace('bk-', ''), 10);
+    } else if (typeof actualId === 'string') {
+      actualId = parseInt(actualId.replace(/\D/g, ''), 10);
+    }
+
+    setCancellingBookingId(actualId);
     setErrorMessage("");
     setActionMessage("");
 
     try {
-      const result = await cancelHotelBooking(bookingId, reason || undefined);
+      const result = await cancelHotelBooking(booking, reason || undefined);
       setActionMessage(
-        `Hotel Booking ${result.bookingReference || bookingId} cancelled successfully.`
+        `Hotel Booking ${result.bookingReference || actualId} cancelled successfully.`
       );
       await fetchBookings();
     } catch (error) {
@@ -285,7 +301,7 @@ export default function HotelBookings() {
                 const visuals = getHotelVisuals(booking.hotelId || booking.hotelName || "hotel");
                 const isCancelled = String(booking.status || "").toLowerCase().includes("cancel");
                 return (
-                  <article key={booking.bookingId} className="hotel-booking-card">
+                  <article key={booking.id} className="hotel-booking-card">
                     <div className="hotel-booking-media">
                       <img src={visuals.cardImage} alt={booking.hotelName} />
                       <span className={`hotel-booking-badge hotel-booking-badge--${getStatusClassName(booking.status)}`}>
@@ -325,10 +341,10 @@ export default function HotelBookings() {
                           <button
                             type="button"
                             title="Cancel booking"
-                            onClick={() => triggerCancelBooking(booking.bookingId)}
-                            disabled={isCancelled || cancellingBookingId === booking.bookingId}
+                            onClick={() => triggerCancelBooking(booking)}
+                            disabled={isCancelled || cancellingBookingId === (booking.id || booking.Id || booking.bookingId)}
                           >
-                            {cancellingBookingId === booking.bookingId ? (
+                            {cancellingBookingId === (booking.id || booking.Id || booking.bookingId) ? (
                               <Loader2 size={16} className="hotel-spin" />
                             ) : (
                               <XCircle size={16} />
@@ -404,7 +420,7 @@ export default function HotelBookings() {
           }}
           onConfirm={handleCancelBooking}
           title="Cancel Hotel Reservation"
-          message="Are you sure you want to cancel this hotel reservation?"
+          message="Are you sure you want to cancel this hotel reservation? WARNING: Hotel cancellation policies will apply. Refunds are subject to the provider's terms and conditions, and you may incur cancellation charges."
         />
       </div>
     </main>

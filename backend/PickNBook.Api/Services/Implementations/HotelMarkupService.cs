@@ -11,6 +11,11 @@ namespace PickNBook.Api.Services
     public interface IHotelMarkupService
     {
         Task<decimal> CalculateMarkupAsync(decimal supplierBasePrice, string? cityCode = null, string? hotelCode = null, string userType = "B2C");
+        Task<(decimal CouponDiscount, int? CouponId, string? CouponCode)> CalculateCouponDiscountAsync(
+            string? couponCode,
+            decimal totalBaseFare,
+            string userId,
+            bool isAgent);
     }
 
     public class HotelMarkupService : IHotelMarkupService
@@ -76,6 +81,80 @@ namespace PickNBook.Api.Services
             }
 
             return decimal.Round(markupAmount, 2, MidpointRounding.AwayFromZero);
+        }
+
+        public async Task<(decimal CouponDiscount, int? CouponId, string? CouponCode)> CalculateCouponDiscountAsync(
+            string? couponCode,
+            decimal totalBaseFare,
+            string userId,
+            bool isAgent)
+        {
+            if (isAgent || string.IsNullOrWhiteSpace(couponCode))
+            {
+                return (0m, null, null);
+            }
+
+            var cleanCode = couponCode.Trim().ToUpperInvariant();
+
+            var coupon = await _cache.GetOrCreateAsync($"HotelCoupon_{cleanCode}", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                return await _dbContext.HotelCoupons
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.CouponCode == cleanCode && c.Status == "Active");
+            });
+
+            if (coupon == null)
+            {
+                return (0m, null, null);
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(5.5));
+            if (coupon.StartDate > today || coupon.ExpiryDate < today)
+            {
+                return (0m, null, null);
+            }
+
+            if (coupon.UseLimit > 0 && coupon.UsedCount >= coupon.UseLimit)
+            {
+                return (0m, null, null);
+            }
+            
+            if (totalBaseFare < coupon.MinBookingAmount)
+            {
+                return (0m, null, null);
+            }
+
+            if (coupon.IsFirstTimeUserOnly)
+            {
+                bool hasPriorBooking = false;
+                if (!string.IsNullOrWhiteSpace(userId) && int.TryParse(userId, out var userIntId))
+                {
+                    hasPriorBooking = await _dbContext.HotelReservations.AsNoTracking().AnyAsync(r => r.UserId == userId);
+                }
+                
+                if (hasPriorBooking)
+                {
+                    return (0m, null, null);
+                }
+            }
+
+            decimal discount = 0m;
+            if (coupon.CouponType.Equals("Percentage", StringComparison.OrdinalIgnoreCase))
+            {
+                discount = totalBaseFare * (coupon.Value / 100m);
+                if (coupon.MaxDiscountAmount > 0 && discount > coupon.MaxDiscountAmount)
+                {
+                    discount = coupon.MaxDiscountAmount;
+                }
+            }
+            else
+            {
+                discount = coupon.Value;
+            }
+
+            discount = Math.Min(discount, totalBaseFare);
+            return (decimal.Round(discount, 2, MidpointRounding.AwayFromZero), coupon.Id, coupon.CouponCode);
         }
     }
 }

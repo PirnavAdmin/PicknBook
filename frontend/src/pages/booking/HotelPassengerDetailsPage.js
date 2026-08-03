@@ -7,7 +7,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate } from "../../utils/apiDateFormat";
 import { openAuthModal } from "../../utils/authModalEvents";
 import { isTokenExpired } from "../../services/authSession";
-import { getOfferDetails } from "../../services/hotelBookingService";
+import { blockRoom, getHotelInfo, getHotelRoom } from "../../services/hotelBookingService";
 import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 import BookingTimer from "./BookingTimer";
@@ -20,43 +20,6 @@ const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(String(email || "").trim()
 const isValidMobile = (mobile) => String(mobile || "").replace(/\D/g, "").length >= 10 && String(mobile || "").replace(/\D/g, "").length <= 13;
 const readQueryValue = (params, key, fallback = "") => String(params.get(key) ?? "").trim() || fallback;
 
-const CATEGORY_IMAGES = {
-  "Rooms": [
-    "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80"
-  ],
-  "Property Views": [
-    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1455587734955-081b22074882?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80"
-  ],
-  "Facilities": [
-    "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1519690889869-e49694ae041e?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1596178065887-1198b6148b2b?auto=format&fit=crop&w=800&q=80"
-  ],
-  "Dining": [
-    "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1543007630-9710e4a00a20?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80"
-  ],
-  "Nearby Attractions": [
-    "https://images.unsplash.com/photo-1477587458883-471a5ed94245?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=800&q=80"
-  ]
-};
 
 function parseHotelFromSearch(params) {
   const hotelId = readQueryValue(params, "hotelId");
@@ -105,12 +68,20 @@ export default function HotelPassengerDetailsPage() {
 
   const [hotel, setHotel] = useState(() => incomingState.hotel || parseHotelFromSearch(searchParams));
   const [offer, setOffer] = useState(() => incomingState.offer || null);
+  
+
   const initialOfferId = readQueryValue(searchParams, "offerId");
   const searchContext = useMemo(() => incomingState.searchContext || parseSearchContext(searchParams), [incomingState.searchContext, searchParams]);
   const [offerLoadError, setOfferLoadError] = useState("");
   const [isLoadingOffer, setIsLoadingOffer] = useState(Boolean(!incomingState.offer && initialOfferId));
   const [selectingOfferId, setSelectingOfferId] = useState("");
+  const [selectedMultiRooms, setSelectedMultiRooms] = useState([]);
+  const roomsCount = searchContext?.roomsConfig ? searchContext.roomsConfig.length : 1;
   const [guestName, setGuestName] = useState(incomingState.guestName || "");
+  const [guestTitle, setGuestTitle] = useState(incomingState.guestTitle || "Mr");
+  const [guestAge, setGuestAge] = useState(incomingState.guestAge || 26);
+  const [guestPAN, setGuestPAN] = useState(incomingState.guestPAN || "");
+  const [guestPassportNo, setGuestPassportNo] = useState(incomingState.guestPassportNo || "");
   const [guestEmail, setGuestEmail] = useState(incomingState.guestEmail || "");
   const [guestPhone, setGuestPhone] = useState(incomingState.guestPhone || "");
   const [isExistingGuest, setIsExistingGuest] = useState(false);
@@ -121,6 +92,19 @@ export default function HotelPassengerDetailsPage() {
   const [formError, setFormError] = useState("");
   const [errors, setErrors] = useState({});
   const [activeImageTab, setActiveImageTab] = useState("All");
+  
+  // Validation Flags from blockRoom
+  const [isPANMandatory, setIsPANMandatory] = useState(incomingState.isPANMandatory || false);
+  const [isPassportMandatory, setIsPassportMandatory] = useState(incomingState.isPassportMandatory || false);
+  
+  // Storing original block room response
+  const [blockRoomResponse, setBlockRoomResponse] = useState(incomingState.blockRoomResponse || null);
+
+  // Coupon State
+  const [couponCode, setCouponCode] = useState(incomingState.couponCode || "");
+  const [couponSuccess, setCouponSuccess] = useState(incomingState.couponSuccess || "");
+  const [couponError, setCouponError] = useState(incomingState.couponError || "");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const checkInDate = offer?.checkInDate || searchContext?.checkInDate || "";
   const checkOutDate = offer?.checkOutDate || searchContext?.checkOutDate || "";
@@ -137,51 +121,101 @@ export default function HotelPassengerDetailsPage() {
     return visuals.gallery;
   }, [hotel?.images, visuals.gallery]);
 
-  const displayedImages = useMemo(() => {
-    if (activeImageTab === "All") {
-      return [
-        CATEGORY_IMAGES["Property Views"][0],
-        CATEGORY_IMAGES["Rooms"][0],
-        CATEGORY_IMAGES["Dining"][0],
-        CATEGORY_IMAGES["Facilities"][0],
-        CATEGORY_IMAGES["Nearby Attractions"][0]
-      ];
-    }
-    return CATEGORY_IMAGES[activeImageTab] || gallery;
-  }, [activeImageTab, gallery]);
+  const displayedImages = gallery;
 
   const stayFacts = useMemo(() => buildStayFacts(hotel || {}, offer || {}, searchContext || {}), [hotel, offer, searchContext]);
   const stayHighlights = useMemo(() => buildStayHighlights(hotel || {}, offer || {}, nights), [hotel, offer, nights]);
 
   useEffect(() => {
     let isMounted = true;
-    async function loadOfferDetails() {
-      if (offer || !initialOfferId) { setIsLoadingOffer(false); return; }
+    async function fetchRoomsAndInfo() {
+      if (!hotel?.hotelId) { setIsLoadingOffer(false); return; }
+      // If we already have the actual API room offers, we can skip fetching again to prevent loops
+      if (hotel.offers?.length > 0 && hotel.offers[0]?.RatePlanCode) {
+          setIsLoadingOffer(false); 
+          return;
+      }
+      
       setIsLoadingOffer(true);
       try {
-        const offerDetails = await getOfferDetails(initialOfferId);
-        if (!isMounted) return;
-        setOffer(offerDetails);
-        setHotel((current) => current || {
-          hotelId: offerDetails?.hotelId || readQueryValue(searchParams, "hotelId"),
-          name: offerDetails?.hotelName || readQueryValue(searchParams, "hotelName", "Hotel stay"),
-          city: offerDetails?.cityCode || readQueryValue(searchParams, "hotelCity"),
-          area: readQueryValue(searchParams, "hotelArea"),
-          address: offerDetails?.address || readQueryValue(searchParams, "hotelAddress"),
-          rating: Number(readQueryValue(searchParams, "hotelRating")) || 0,
-          tag: readQueryValue(searchParams, "hotelTag"),
-          amenities: readQueryValue(searchParams, "hotelAmenities").split("|").map((item) => item.trim()).filter(Boolean),
-          offers: [],
-        });
+        const infoPayload = {
+          TraceId: String(hotel.TraceId || hotel.traceId || ""),
+          ResultIndex: String(hotel.ResultIndex || hotel.resultIndex || ""),
+          SrdvType: String(hotel.SrdvType || hotel.srdvType || "MixAPI"),
+          SrdvIndex: String(hotel.SrdvIndex || hotel.srdvIndex || ""),
+          HotelCode: String(hotel.hotelId || hotel.hotelCode || ""),
+          EndUserIp: "192.168.10.10"
+        };
+        
+        // 1. Get Hotel Info
+        const info = await getHotelInfo(infoPayload);
+        const fetchedHotelCode = info?.HotelDetails?.HotelCode || hotel.hotelId;
+        
+        if (info?.HotelDetails) {
+            setHotel(current => ({
+                ...current,
+                images: info.HotelDetails.Images || current.images,
+                latitude: info.HotelDetails.Latitude || current.latitude,
+                longitude: info.HotelDetails.Longitude || current.longitude,
+                address: info.HotelDetails.Address || current.address,
+                amenities: info.HotelDetails.HotelFacilities || current.amenities,
+                hotelId: fetchedHotelCode
+            }));
+        }
+        
+        // 2. Get Hotel Rooms
+        const roomPayload = { ...infoPayload, HotelCode: fetchedHotelCode };
+        const roomsResult = await getHotelRoom(roomPayload);
+        
+        const hotelRoomResult = roomsResult?.getHotelRoomResult || roomsResult?.GetHotelRoomResult || roomsResult?.HotelRoomResult || {};
+        const hotelRoomsDetails = hotelRoomResult?.hotelRoomsDetails || hotelRoomResult?.HotelRoomsDetails;
+
+        if (hotelRoomsDetails && Array.isArray(hotelRoomsDetails)) {
+            const allRooms = [];
+            hotelRoomsDetails.forEach((category) => {
+                const catName = category.categoryName || category.CategoryName || "";
+                if (category.rooms || category.Rooms) {
+                    const catRooms = category.rooms || category.Rooms;
+                    if (Array.isArray(catRooms)) {
+                        catRooms.forEach(r => allRooms.push({ ...r, _categoryName: catName }));
+                    }
+                } else {
+                    allRooms.push({ ...category, _categoryName: catName });
+                }
+            });
+
+            if (allRooms.length > 0) {
+                setHotel(current => ({
+                    ...current,
+                    offers: allRooms.map((r, i) => {
+                        const priceObj = r.price || r.Price || {};
+                        const cancelPolicies = r.cancellationPolicies || r.CancellationPolicies || [];
+                        return {
+                            ...r,
+                            offerId: r.roomId || r.RatePlanCode || `room-${i}`,
+                            price: priceObj.offeredPriceRoundedOff || priceObj.OfferedPriceRoundedOff || priceObj.publishedPriceRoundedOff || priceObj.PublishedPriceRoundedOff || (typeof priceObj === 'number' ? priceObj : 0),
+                            currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
+                            roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
+                            cancellationPolicy: cancelPolicies?.[0]?.charge || cancelPolicies?.[0]?.Charge ? `Charge: ${cancelPolicies[0].charge || cancelPolicies[0].Charge}` : "Refundable thresholds apply",
+                            bedType: r.bedTypes || r.BedTypes || "Double",
+                            isPANMandatory: hotelRoomResult.isPANMandatory || hotelRoomResult.IsPANMandatory || r.isPANMandatory || false,
+                            isPassportMandatory: hotelRoomResult.isPassportMandatory || hotelRoomResult.IsPassportMandatory || r.isPassportMandatory || false
+                        };
+                    })
+                }));
+            }
+        } else if (!roomsResult) {
+            throw new Error("Unable to fetch room availability from the live API.");
+        }
       } catch (err) {
         if (isMounted) setOfferLoadError(err.message || "Unable to reload stay details from the backend.");
       } finally {
         if (isMounted) setIsLoadingOffer(false);
       }
     }
-    loadOfferDetails();
+    fetchRoomsAndInfo();
     return () => { isMounted = false; };
-  }, [offer, initialOfferId, searchParams]);
+  }, [hotel?.hotelId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -198,61 +232,176 @@ export default function HotelPassengerDetailsPage() {
         offer,
         searchContext,
         guestName,
+        guestTitle,
+        guestAge,
+        guestPAN,
+        guestPassportNo,
         guestEmail,
         guestPhone,
         agreedToTerms,
+        isPANMandatory,
+        isPassportMandatory,
+        blockRoomResponse,
       });
     }
-  }, [hotel, offer, searchContext, guestName, guestEmail, guestPhone, agreedToTerms]);
+  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse]);
 
-  const handleSelectOffer = async (selectedRoomOffer) => {
-    setSelectingOfferId(selectedRoomOffer.offerId);
+  const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
+    const newSelection = [...selectedMultiRooms, roomOffer];
+    
+    if (newSelection.length < roomsCount) {
+        setSelectedMultiRooms(newSelection);
+        return; // wait for next room selection
+    }
+
+    setSelectingOfferId(roomOffer.offerId);
     setOfferLoadError("");
     try {
-      const offerDetails = await getOfferDetails(selectedRoomOffer.offerId);
+      const blockPayload = {
+        TraceId: String(hotel?.TraceId || hotel?.traceId || ""),
+        ResultIndex: String(hotel?.ResultIndex || hotel?.resultIndex || ""),
+        SrdvType: String(hotel?.SrdvType || hotel?.srdvType || "MixAPI"),
+        SrdvIndex: String(hotel?.SrdvIndex || hotel?.srdvIndex || ""),
+        HotelCode: String(hotel?.hotelId || hotel?.hotelCode || ""),
+        HotelName: hotel?.name || "",
+        GuestNationality: "IN",
+        NoOfRooms: roomsCount,
+        ClientReferenceNo: 0,
+        IsVoucherBooking: true,
+        EndUserIp: "192.168.10.10",
+        CouponCode: couponToApply || "",
+        HotelRoomsDetails: newSelection.map(room => {
+          const roomPrice = Number(room.price || room.Price?.OfferedPrice || 0);
+          return {
+            ChildCount: room.childCount || 0,
+            RequireAllPaxDetails: room.requireAllPaxDetails || false,
+            RoomId: room.roomId || "",
+            RoomStatus: room.roomStatus || "Active",
+            RoomIndex: room.roomIndex || "",
+            RoomTypeCode: room.roomTypeCode || "",
+            RoomTypeName: room.roomTypeName || "",
+            RatePlanCode: room.ratePlanCode || "",
+            RatePlan: room.ratePlan || "",
+            InfoSource: room.infoSource || "",
+            SequenceNo: room.sequenceNo || "",
+            DayRates: room.dayRates || [],
+            SupplierPrice: room.supplierPrice || "",
+            RoomPromotion: room.roomPromotion || "",
+            Amenities: room.amenities || [],
+            SmokingPreference: room.smokingPreference || "",
+            BedTypes: room.bedTypes || room.bedType || "",
+            HotelSupplements: room.hotelSupplements || "",
+            LastCancellationDate: room.lastCancellationDate || "",
+            IsPassportMandatory: room.isPassportMandatory || false,
+            IsPANMandatory: room.isPANMandatory || false,
+            FullRefundAllowed: room.fullRefundAllowed || false,
+            CancellationPolicies: room.cancellationPolicies || [],
+            CancellationPolicy: room.cancellationPolicy || "",
+            Inclusion: room.inclusion || [],
+            BedTypeCode: room.bedTypeCode || "",
+            Supplements: room.supplements || "",
+            OfferedPrice: roomPrice,
+            Price: {
+              CurrencyCode: "INR",
+              RoomPrice: roomPrice,
+              PublishedPrice: roomPrice,
+              PublishedPriceRoundedOff: roomPrice,
+              OfferedPrice: roomPrice,
+              OfferedPriceRoundedOff: roomPrice
+            }
+          };
+        })
+      };
+      
+      const blockResp = await blockRoom(blockPayload);
+
+      if (blockResp?.BlockRoomResult?.Error?.ErrorCode === 0 || blockResp?.BlockRoomResult?.IsPriceChanged || blockResp?.blockRoomResult?.error?.errorCode === 0 || blockResp?.blockRoomResult?.isPriceChanged) {
+          // If price changed or success
+          const blockedRoom = blockResp?.BlockRoomResult?.HotelRoomsDetails?.[0] || blockResp?.blockRoomResult?.hotelRoomsDetails?.[0] || {};
+          setIsPANMandatory(blockResp?.BlockRoomResult?.IsPANMandatory || blockResp?.blockRoomResult?.isPANMandatory || blockedRoom.isPANMandatory || false);
+          setIsPassportMandatory(blockResp?.BlockRoomResult?.IsPassportMandatory || blockResp?.blockRoomResult?.isPassportMandatory || blockedRoom.isPassportMandatory || false);
+          setBlockRoomResponse(blockResp);
+      } else if (blockResp?.HotelRoomsDetails?.[0] || blockResp?.hotelRoomsDetails?.[0]) {
+          const blockedRoom = blockResp?.HotelRoomsDetails?.[0] || blockResp?.hotelRoomsDetails?.[0] || {};
+          setIsPANMandatory(blockedRoom.isPANMandatory || false);
+          setIsPassportMandatory(blockedRoom.isPassportMandatory || false);
+          setBlockRoomResponse(blockResp);
+      }
+      
+      // Since we don't have getOfferDetails anymore, use the blocked room info or selected room offer directly
       setOffer({
-        ...selectedRoomOffer,
-        ...offerDetails,
-        checkInDate: offerDetails?.checkInDate || selectedRoomOffer.checkInDate || checkInDate,
-        checkOutDate: offerDetails?.checkOutDate || selectedRoomOffer.checkOutDate || checkOutDate,
+        ...roomOffer,
+        checkInDate: roomOffer.checkInDate || checkInDate,
+        checkOutDate: roomOffer.checkOutDate || checkOutDate,
       });
     } catch (err) {
-      setOfferLoadError(err.message || "Failed to validate room availability. Please choose another room.");
+      setOfferLoadError(err.message || "Unable to hold the selected rooms.");
+      setSelectedMultiRooms([]); // reset on error
     } finally {
       setSelectingOfferId("");
     }
   };
 
-  const basePrice = Number(offer?.price || 0) * nights;
-  const tax = Math.round(basePrice * 0.12);
-  const convenienceFee = 150;
+  const blockedRooms = blockRoomResponse?.BlockRoomResult?.HotelRoomsDetails || 
+                       blockRoomResponse?.blockRoomResult?.hotelRoomsDetails || 
+                       blockRoomResponse?.HotelRoomsDetails || 
+                       blockRoomResponse?.hotelRoomsDetails || [];
+  
+  let basePrice = 0;
+  let tax = 0;
+  let convenienceFee = 0;
+  let markupValue = 0;
+  let couponDiscount = 0;
+  let finalPayable = 0;
 
-  const markupValue = (() => {
-    let val = 0;
-    const rawMarkup = localStorage.getItem("b2b_markup_settings");
-    if (rawMarkup) {
-      try {
-        const parsedMarkup = JSON.parse(rawMarkup);
-        if (parsedMarkup.hotelType === "percentage") {
-          val = basePrice * (Number(parsedMarkup.hotelValue) / 100);
-        } else if (parsedMarkup.hotelType === "fixed") {
-          val = Number(parsedMarkup.hotelValue) * Number(searchContext?.rooms || 1);
-        }
-      } catch (e) {
-        console.error("Error reading B2B hotel markup", e);
-      }
-    }
-    return val;
-  })();
-
-  // B2B Discounts (Removed as requested)
-  const tierDiscount = 0;
-  const volumeDiscount = 0;
   const activePortal = sessionStorage.getItem("active_portal");
   const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
 
-  const wholesalePrice = basePrice + tax + convenienceFee;
-  const finalPayable = isAgent ? (wholesalePrice + markupValue) : (basePrice + tax + convenienceFee + markupValue);
+  if (blockedRooms.length > 0) {
+      blockedRooms.forEach(room => {
+          const price = room.Price || room.price || {};
+          let roomBase = Number(price.RoomPrice ?? price.roomPrice ?? price.PublishedPrice ?? price.publishedPrice ?? 0);
+          let roomTax = Number(price.Tax ?? price.tax ?? price.TotalGSTAmount ?? price.totalGSTAmount ?? 0);
+          let roomMarkup = Number(price.AgentMarkUp ?? price.agentMarkUp ?? price.agentMarkup ?? 0);
+          
+          if (!isAgent) {
+              roomBase = Number(price.b2CBasePrice ?? price.b2cBasePrice ?? (roomBase + roomMarkup));
+              roomMarkup = 0;
+          }
+          
+          basePrice += roomBase;
+          tax += roomTax;
+          markupValue += roomMarkup;
+          couponDiscount += Number(price.CouponDiscount ?? price.couponDiscount ?? 0);
+          convenienceFee += Number(price.ConvenienceFee ?? price.convenienceFee ?? 0);
+          
+          const rawTotal = price.b2CTotalPrice ?? price.b2cTotalPrice ?? price.OfferedPrice ?? price.offeredPrice ?? price.PublishedPrice ?? price.publishedPrice ?? 0;
+          finalPayable += Number(rawTotal);
+      });
+  } else {
+      // Fallback if no block room response yet, use offer price (base)
+      basePrice = selectedMultiRooms.reduce((sum, r) => sum + (Number(r.price) || 0), 0) * nights;
+      finalPayable = basePrice;
+  }
+
+  // Fallback for manual markup if backend didn't provide AgentMarkUp and user is not an agent
+  if (markupValue === 0 && !isAgent) {
+      const rawMarkup = localStorage.getItem("b2b_markup_settings");
+      if (rawMarkup) {
+          try {
+              const parsedMarkup = JSON.parse(rawMarkup);
+              if (parsedMarkup.hotelType === "percentage") {
+                  markupValue = basePrice * (Number(parsedMarkup.hotelValue) / 100);
+              } else if (parsedMarkup.hotelType === "fixed") {
+                  markupValue = Number(parsedMarkup.hotelValue) * Number(roomsCount);
+              }
+              finalPayable += markupValue; // Add to final payable if calculated manually
+          } catch (e) {}
+      }
+  }
+
+  const tierDiscount = 0;
+  const volumeDiscount = 0;
 
   const selectExistingTraveler = (travelerId) => {
     setSelectedTravelerId(travelerId);
@@ -270,6 +419,16 @@ export default function HotelPassengerDetailsPage() {
     else if (!isValidEmail(guestEmail)) nextErrors.guestEmail = "Enter a valid email address.";
     if (!guestPhone.trim()) nextErrors.guestPhone = "Please enter a mobile number.";
     else if (!isValidMobile(guestPhone)) nextErrors.guestPhone = "Enter a valid mobile number.";
+    
+    if (isPANMandatory) {
+        if (!guestPAN.trim()) nextErrors.guestPAN = "PAN Card is mandatory for this booking.";
+        else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(guestPAN)) nextErrors.guestPAN = "Enter a valid PAN Card (e.g. ABCDE1234F).";
+    }
+    
+    if (isPassportMandatory) {
+        if (!guestPassportNo.trim()) nextErrors.guestPassportNo = "Passport details are mandatory for this booking.";
+    }
+
     if (!agreedToTerms) nextErrors.agreedToTerms = "Please accept the booking terms.";
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -278,9 +437,50 @@ export default function HotelPassengerDetailsPage() {
   const handleContinue = () => {
     if (!validateForm()) { setFormError("Please correct the highlighted guest details before continuing."); return; }
     const token = isAgent ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
-    if (!token || isTokenExpired(token)) { openAuthModal("login"); return; }
+    if (!token || isTokenExpired(token)) { 
+      openAuthModal("login", { returnTo: window.location.pathname + window.location.search }); 
+      return; 
+    }
     setFormError("");
-    navigate("/hotel/payment", { state: { hotel, offer, searchContext, guestName: guestName.trim(), guestEmail: guestEmail.trim(), guestPhone: guestPhone.trim(), agreedToTerms, payableAmount: finalPayable, fareSummary: { baseFare: basePrice, tax, convenienceFee, markup: markupValue, tierDiscount, volumeDiscount, totalFare: finalPayable } } });
+    navigate("/hotel/payment", { state: { hotel, offer, searchContext, blockRoomResponse, guestName: guestName.trim(), guestEmail: guestEmail.trim(), guestPhone: guestPhone.trim(), agreedToTerms, payableAmount: finalPayable, fareSummary: { baseFare: basePrice, tax, convenienceFee, markup: markupValue, couponDiscount, tierDiscount, volumeDiscount, totalFare: finalPayable } } });
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    setCouponSuccess("");
+    try {
+      const uppercaseCode = couponCode.trim().toUpperCase();
+      // Wait for re-selection with the new coupon code to re-trigger blockRoom
+      await handleSelectOffer(offer, uppercaseCode);
+      
+      // Look at the new block room response to verify coupon success
+      setCouponCode(uppercaseCode);
+      // We rely on the React state update loop to populate couponDiscount, 
+      // but if the API returns blockRoomResponse with couponDiscount > 0 on the next render, it's successful.
+      // We can also just set a generic success message.
+      setCouponSuccess(`Coupon "${uppercaseCode}" applied! Check the breakdown below.`);
+    } catch (err) {
+      setCouponError(err.message || "Failed to apply coupon.");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    setCouponCode("");
+    setCouponSuccess("");
+    setCouponError("");
+    setIsApplyingCoupon(true);
+    try {
+      // Re-block room without coupon
+      await handleSelectOffer(offer, "");
+    } catch (err) {
+      console.error("Error removing coupon", err);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
   };
 
   if (!hotel) {
@@ -361,9 +561,34 @@ export default function HotelPassengerDetailsPage() {
                   <div className="hotel-mode-switch"><button type="button" className={isExistingGuest ? "is-active" : ""} onClick={() => { setIsExistingGuest(true); setSelectedTravelerId(""); setGuestName(""); setGuestEmail(""); setGuestPhone(""); }}>Existing traveler</button><button type="button" className={!isExistingGuest ? "is-active" : ""} onClick={() => { setIsExistingGuest(false); setSelectedTravelerId(""); setGuestName(""); setGuestEmail(""); setGuestPhone(""); }}>Add new guest</button></div>
                   {isExistingGuest && <div className="hotel-traveler-picker"><label htmlFor="hotel-existing-traveler">Saved traveler</label><select id="hotel-existing-traveler" value={selectedTravelerId} onChange={(event) => selectExistingTraveler(event.target.value)}><option value="">Select an existing traveler</option>{savedTravelers.map((traveler) => <option key={traveler.id} value={String(traveler.id)}>{[traveler.title, traveler.firstName, traveler.lastName].filter(Boolean).join(" ")}</option>)}</select>{travelerLoadError && <p className="hotel-helper hotel-helper--warning">{travelerLoadError}</p>}</div>}
                   <div className="hotel-form-grid">
+                    <label className="hotel-field">
+                        <span>Title</span>
+                        <select value={guestTitle} onChange={(e) => setGuestTitle(e.target.value)}>
+                            <option value="Mr">Mr</option>
+                            <option value="Mrs">Mrs</option>
+                            <option value="Ms">Ms</option>
+                            <option value="Mstr">Mstr (Male Child)</option>
+                            <option value="Miss">Miss (Female Child)</option>
+                        </select>
+                    </label>
                     <label className="hotel-field"><span>Primary guest name</span><input type="text" value={guestName} onChange={(event) => { setGuestName(event.target.value); setErrors((current) => { const next = { ...current }; delete next.guestName; return next; }); }} placeholder="Full name as per ID" className={errors.guestName ? "is-error" : ""} />{errors.guestName && <small>{errors.guestName}</small>}</label>
                     <label className="hotel-field"><span>Email address</span><input type="email" value={guestEmail} onChange={(event) => { setGuestEmail(event.target.value); setErrors((current) => { const next = { ...current }; delete next.guestEmail; return next; }); }} placeholder="name@example.com" className={errors.guestEmail ? "is-error" : ""} />{errors.guestEmail && <small>{errors.guestEmail}</small>}</label>
                     <label className="hotel-field"><span>Mobile number</span><input type="text" value={guestPhone} onChange={(event) => { setGuestPhone(event.target.value); setErrors((current) => { const next = { ...current }; delete next.guestPhone; return next; }); }} placeholder="10-digit mobile number" className={errors.guestPhone ? "is-error" : ""} />{errors.guestPhone && <small>{errors.guestPhone}</small>}</label>
+                    
+                    {isPANMandatory && (
+                        <label className="hotel-field">
+                            <span>PAN Card (Mandatory)</span>
+                            <input type="text" value={guestPAN} onChange={(event) => { setGuestPAN(event.target.value.toUpperCase()); setErrors((current) => { const next = { ...current }; delete next.guestPAN; return next; }); }} placeholder="ABCDE1234F" className={errors.guestPAN ? "is-error" : ""} />
+                            {errors.guestPAN && <small>{errors.guestPAN}</small>}
+                        </label>
+                    )}
+                    {isPassportMandatory && (
+                        <label className="hotel-field">
+                            <span>Passport No (Mandatory)</span>
+                            <input type="text" value={guestPassportNo} onChange={(event) => { setGuestPassportNo(event.target.value.toUpperCase()); setErrors((current) => { const next = { ...current }; delete next.guestPassportNo; return next; }); }} placeholder="Passport Number" className={errors.guestPassportNo ? "is-error" : ""} />
+                            {errors.guestPassportNo && <small>{errors.guestPassportNo}</small>}
+                        </label>
+                    )}
                   </div>
                 </section>
                 <section className="hotel-panel hotel-policy-panel"><div className="hotel-section-heading"><h2>Before you continue</h2><p>Review the booking acknowledgement and confirm the primary guest details are correct.</p></div><div className="hotel-policy-list"><div><ShieldCheck size={18} /><span>{offer.cancellationPolicy || "Cancellation and booking policy will apply to the selected offer."}</span></div><div><Clock3 size={18} /><span>Pricing remains synced with the backend preview while you are on this page.</span></div><div><UserRound size={18} /><span>The primary guest should match the ID shown during hotel check-in.</span></div></div><label className={`hotel-checkbox${errors.agreedToTerms ? " is-error" : ""}`}><input type="checkbox" checked={agreedToTerms} onChange={(event) => { setAgreedToTerms(event.target.checked); setErrors((current) => { const next = { ...current }; delete next.agreedToTerms; return next; }); }} /><span>I agree to the hotel booking policy, guest rules, and cancellation terms for this stay.</span></label>{errors.agreedToTerms && <p className="hotel-helper hotel-helper--error">{errors.agreedToTerms}</p>}{formError && <p className="hotel-helper hotel-helper--error">{formError}</p>}</section>
@@ -372,19 +597,24 @@ export default function HotelPassengerDetailsPage() {
               <section className="hotel-panel hotel-rooms-selection">
                 <div className="hotel-section-heading">
                   <h2>Available rooms & rates</h2>
-                  <p>Select a room type to begin your reservation. Rates are live and sourced directly from the API.</p>
+                  <p>
+                    {roomsCount > 1 
+                      ? `Select Room ${selectedMultiRooms.length + 1} of ${roomsCount} to begin your reservation.` 
+                      : `Select a room type to begin your reservation. Rates are live and sourced directly from the API.`}
+                  </p>
                 </div>
                 {offerLoadError && <div className="hotel-helper hotel-helper--error" style={{ marginBottom: 16 }}>{offerLoadError}</div>}
                 <div className="hotel-rooms-list">
                   {hotel.offers && hotel.offers.length > 0 ? (
                     hotel.offers.map((roomOffer, roomIndex) => {
                       const isSelectingThis = selectingOfferId === roomOffer.offerId;
-                      const roomImgList = CATEGORY_IMAGES["Rooms"];
-                      const roomImg = roomImgList[roomIndex % roomImgList.length];
+                      const roomImg = hotel.images && hotel.images.length > 0 
+                        ? hotel.images[roomIndex % hotel.images.length] 
+                        : null;
                       return (
                         <div key={roomOffer.offerId} className="hotel-room-card-option">
                           <div className="hotel-room-img-col">
-                            <img src={roomImg} alt={roomOffer.roomCategory || "Room"} />
+                            {roomImg ? <img src={roomImg} alt={roomOffer.roomCategory || "Room"} /> : <div style={{ background: "#e5e7eb", width: "100%", height: "100%", minHeight: "150px" }}></div>}
                           </div>
                           <div className="hotel-room-details">
                             <span className="hotel-room-pill">Room option</span>
@@ -394,7 +624,11 @@ export default function HotelPassengerDetailsPage() {
                             </p>
                             <div className="hotel-room-meta-tags">
                               <span><BedDouble size={12} style={{ marginRight: 4 }} /> {roomOffer.bedType || "Double"} bed</span>
-                              <span>{roomOffer.cancellationPolicy || "Cancellation policy applies"}</span>
+                              <span style={roomOffer.cancellationPolicy?.includes("Charge") ? { color: "#d32f2f", backgroundColor: "#ffebee" } : {}}>
+                                {roomOffer.cancellationPolicy?.includes("Charge") 
+                                  ? roomOffer.cancellationPolicy.replace("Charge: ", "Cancellation Fee: ₹") 
+                                  : (roomOffer.cancellationPolicy || "Cancellation policy applies")}
+                              </span>
                             </div>
                           </div>
                           <div className="hotel-room-action-price">
@@ -464,15 +698,69 @@ export default function HotelPassengerDetailsPage() {
                     <strong>{offer.bedType || "Double"} bed</strong>
                   </div>
                 </div>
-                <div className="hotel-fare-breakdown">
-                  <div>
-                    <span>Room charges ({formatNightLabel(nights)})</span>
-                    <strong>{formatCurrency(basePrice)}</strong>
+
+                <div className="hotel-fare-breakdown" style={{ marginTop: 16 }}>
+                  <div style={{ paddingBottom: 16, borderBottom: "1px solid var(--hotel-border)", marginBottom: 16 }}>
+                    <h4 style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>Coupons & Offers</h4>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <input 
+                        type="text" 
+                        placeholder="Enter coupon code" 
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        disabled={isApplyingCoupon}
+                        style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "0.85rem", textTransform: "uppercase" }}
+                      />
+                      {couponDiscount > 0 ? (
+                        <button type="button" onClick={handleRemoveCoupon} disabled={isApplyingCoupon} style={{ padding: "8px 16px", borderRadius: "8px", background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb", fontWeight: "600", cursor: "pointer", fontSize: "0.85rem" }}>
+                          Remove
+                        </button>
+                      ) : (
+                        <button type="button" onClick={handleApplyCoupon} disabled={isApplyingCoupon || !couponCode.trim()} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--hotel-ink)", color: "#fff", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "0.85rem" }}>
+                          {isApplyingCoupon ? <Loader2 size={14} className="spin" /> : "Apply"}
+                        </button>
+                      )}
+                    </div>
+                    {couponError && <p style={{ color: "var(--hotel-rose)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponError}</p>}
+                    {couponSuccess && <p style={{ color: "#0c5132", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponSuccess}</p>}
                   </div>
-                  <div>
-                    <span>Taxes and GST (12%)</span>
-                    <strong>{formatCurrency(tax)}</strong>
-                  </div>
+
+                  {isAgent ? (
+                    <>
+                      <div>
+                        <span>Net Room charges ({formatNightLabel(nights)})</span>
+                        <strong>{formatCurrency(basePrice)}</strong>
+                      </div>
+                      <div>
+                        <span>Taxes and GST (12%)</span>
+                        <strong>{formatCurrency(tax)}</strong>
+                      </div>
+                      {Number(markupValue) > 0 && (
+                        <div style={{ color: "var(--hotel-primary)", fontWeight: 600 }}>
+                          <span>Agent Markup (Profit)</span>
+                          <strong>{formatCurrency(markupValue)}</strong>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <span>Room charges ({formatNightLabel(nights)})</span>
+                        <strong>{formatCurrency(basePrice)}</strong>
+                      </div>
+                      <div>
+                        <span>Taxes and GST (12%)</span>
+                        <strong>{formatCurrency(tax)}</strong>
+                      </div>
+                    </>
+                  )}
+                  
+                  {Number(couponDiscount) > 0 && (
+                    <div style={{ color: "#0c5132", fontWeight: 600 }}>
+                      <span>Coupon Discount</span>
+                      <strong>-{formatCurrency(couponDiscount)}</strong>
+                    </div>
+                  )}
                   <div>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                       Convenience fee
@@ -481,7 +769,7 @@ export default function HotelPassengerDetailsPage() {
                     <strong>{formatCurrency(convenienceFee)}</strong>
                   </div>
                   <div className="hotel-fare-total" style={{ borderTop: "1px solid var(--hotel-border)", paddingTop: 12 }}>
-                    <span>Total before payment</span>
+                    <span>Total Payable {isAgent ? "(Customer Price)" : ""}</span>
                     <strong>{formatCurrency(finalPayable)}</strong>
                   </div>
                 </div>

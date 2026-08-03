@@ -23,6 +23,11 @@ namespace PickNBook.Api.Services
         private readonly IMemoryCache _cache;
         private readonly IServiceScopeFactory _scopeFactory;
         
+        private string ClientId => !string.IsNullOrEmpty(_settings.BusClientId) ? _settings.BusClientId : _settings.ClientId;
+        private string UserName => !string.IsNullOrEmpty(_settings.BusUserName) ? _settings.BusUserName : _settings.UserName;
+        private string Password => !string.IsNullOrEmpty(_settings.BusPassword) ? _settings.BusPassword : _settings.Password;
+        private string ApiToken => !string.IsNullOrEmpty(_settings.BusApiToken) ? _settings.BusApiToken : _settings.ApiToken;
+
         private string? _tokenId;
         private DateTime _tokenExpiry;
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
@@ -124,21 +129,21 @@ namespace PickNBook.Api.Services
         public SrdvBusService(HttpClient httpClient, IOptions<SrdvSettings> settings, IMemoryCache cache, IServiceScopeFactory scopeFactory)
         {
             _httpClient = httpClient;
-            _httpClient.Timeout = TimeSpan.FromSeconds(60);
+            _httpClient.Timeout = TimeSpan.FromSeconds(180); // Increased from 60s to handle slow responses
             _settings = settings.Value;
             _cache = cache;
             _scopeFactory = scopeFactory;
 
-            if (!string.IsNullOrEmpty(_settings.ApiToken))
+            if (!string.IsNullOrEmpty(ApiToken))
             {
                 _httpClient.DefaultRequestHeaders.Remove("Api-Token");
-                _httpClient.DefaultRequestHeaders.Add("Api-Token", _settings.ApiToken);
+                _httpClient.DefaultRequestHeaders.Add("Api-Token", ApiToken);
             }
         }
 
         public Task<string> AuthenticateAsync()
         {
-            return Task.FromResult(_settings.ApiToken);
+            return Task.FromResult(ApiToken);
         }
 
         public Task<List<BusCityDto>> SearchBusCitiesAsync(string query)
@@ -167,9 +172,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 FromCityCode = request.FromCityCode,
                 ToCityCode = request.ToCityCode,
                 DepartDate = request.DepartDate
@@ -192,9 +197,9 @@ namespace PickNBook.Api.Services
 
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 FromCityCode = fromCode,
                 ToCityCode = toCode,
                 DepartDate = journeyDate
@@ -291,9 +296,9 @@ namespace PickNBook.Api.Services
             var blockRequestBody = new
             {
                 EndUserIp = "127.0.0.1",
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = request.TraceId,
                 SrdvIndex = request.SrdvIndex.ToString(),
                 ResultIndex = request.ResultIndex,
@@ -394,9 +399,9 @@ namespace PickNBook.Api.Services
             var bookRequestBody = new
             {
                 EndUserIp = "127.0.0.1",
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = request.TraceId,
                 SrdvIndex = request.SrdvIndex.ToString(),
                 ResultIndex = request.ResultIndex,
@@ -464,9 +469,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = traceId,
                 SrdvIndex = srdvIndex.ToString(),
                 ResultIndex = resultIndex
@@ -518,9 +523,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = traceId,
                 SrdvIndex = srdvIndex.ToString(),
                 ResultIndex = resultIndex
@@ -616,9 +621,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = traceId,
                 SrdvIndex = srdvIndex.ToString(),
                 ResultIndex = resultIndex
@@ -634,9 +639,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = request.TraceId,
                 SrdvIndex = request.SrdvIndex,
                 ResultIndex = request.ResultIndex
@@ -650,9 +655,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 TraceId = request.TraceId,
                 SrdvIndex = request.SrdvIndex,
                 ResultIndex = request.ResultIndex
@@ -666,9 +671,9 @@ namespace PickNBook.Api.Services
         {
             var requestBody = new
             {
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password,
                 EndUserIp = "127.0.0.1",
                 TraceId = traceId,
                 SeatName = seatName,
@@ -706,9 +711,9 @@ namespace PickNBook.Api.Services
             var requestBody = new
             {
                 EndUserIp = "127.0.0.1",
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password
             };
 
             var response = await _httpClient.PostAsJsonAsync($"{_settings.BusBaseUrl}/Balance", requestBody, _jsonOptions);
@@ -720,9 +725,9 @@ namespace PickNBook.Api.Services
             var requestBody = new
             {
                 EndUserIp = "127.0.0.1",
-                ClientId = _settings.ClientId,
-                UserName = _settings.UserName,
-                Password = _settings.Password
+                ClientId = ClientId,
+                UserName = UserName,
+                Password = Password
             };
 
             var response = await _httpClient.PostAsJsonAsync($"{_settings.BusBaseUrl}/BalanceLog", requestBody, _jsonOptions);

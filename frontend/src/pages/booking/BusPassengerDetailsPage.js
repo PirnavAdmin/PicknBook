@@ -1472,7 +1472,7 @@ export default function BusPassengerDetailsPage() {
     if (!isAgent) {
       const token = localStorage.getItem("token");
       if (!token || isTokenExpired(token)) {
-        openAuthModal("login");
+        openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
         return;
       }
     }
@@ -1520,7 +1520,7 @@ export default function BusPassengerDetailsPage() {
         firstName: String(p.firstName || ""),
         lastName: String(p.lastName || ""),
         age: Number(p.age),
-        gender: String(p.gender).toLowerCase() === "female" ? 2 : 1,
+        gender: String(p.gender).toLowerCase() === "female" ? "2" : "1",
         seatName: String(p.seatNumber || selectedSeats[i]?.seatCode || ""),
         fare: Number(selectedSeats[i]?.baseFare || 0),
         address: String(bookingContact.address || ""),

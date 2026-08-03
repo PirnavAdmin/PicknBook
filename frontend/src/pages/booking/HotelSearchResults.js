@@ -2,7 +2,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   BedDouble,
+  Building2,
   CalendarRange,
+  Check,
   Heart,
   Loader2,
   MapPin,
@@ -15,12 +17,22 @@ import {
   Users,
   Navigation,
   Map,
+  Trees,
+  Home,
+  BellRing,
+  Building,
+  Briefcase,
+  Umbrella,
+  Coffee,
+  Wifi,
+  Car,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
 import { searchHotels, getOfferDetails } from "../../services/hotelBookingService";
 import { buildStayFacts, getHotelVisuals } from "./hotelPresentation";
 import HotelInteractiveMap from "./HotelInteractiveMap";
+import HotelSearchWidget from "../../components/HotelSearchWidget";
 import "../../STYLES/HotelSearchResults.css";
  
 const HOTEL_COLLECTIONS = [
@@ -86,20 +98,42 @@ export default function HotelSearchResults() {
   const navigate = useNavigate();
   const state = location.state || {};
  
-  const destination = readValue(searchParams, state, "destination", "Hyderabad");
-  const checkInDate = readValue(searchParams, state, "checkInDate", getDefaultDateString(0));
-  const checkOutDate = readValue(searchParams, state, "checkOutDate", getDefaultDateString(1));
-  const rooms = readValue(searchParams, state, "rooms", "1");
-  const adults = readValue(searchParams, state, "adults", "2");
-  const guests = readValue(
-    searchParams,
-    state,
-    "guests",
-    `${rooms} Room${Number(rooms) > 1 ? "s" : ""}, ${adults} Adult${Number(adults) > 1 ? "s" : ""}`,
-  );
+  const destination = readValue(searchParams, state, "destination") || readValue(searchParams, state, "city") || "";
+  const checkInDate = readValue(searchParams, state, "checkInDate") || readValue(searchParams, state, "checkIn") || getDefaultDateString(0);
+  const checkOutDate = readValue(searchParams, state, "checkOutDate") || readValue(searchParams, state, "checkOut") || getDefaultDateString(1);
+  
+  const rawRooms = readValue(searchParams, state, "rooms");
+  let roomsConfig = state?.roomsConfig || null;
+  if (!roomsConfig && rawRooms) {
+    try {
+      const parsed = JSON.parse(rawRooms);
+      if (Array.isArray(parsed)) roomsConfig = parsed;
+    } catch {
+      // it was just a number
+    }
+  }
+
+  const roomsCount = roomsConfig ? roomsConfig.length : (Number(rawRooms) || 1);
+  const guestsCount = roomsConfig 
+    ? roomsConfig.reduce((sum, r) => sum + (Number(r.adults)||0) + (Number(r.children)||0), 0)
+    : (Number(readValue(searchParams, state, "guests") || readValue(searchParams, state, "adults")) || 2);
+    
+  const guests = `${roomsCount} Room${roomsCount > 1 ? "s" : ""}, ${guestsCount} Guest${guestsCount > 1 ? "s" : ""}`;
  
   const [sortKey, setSortKey] = useState("recommended");
   const [collectionKey, setCollectionKey] = useState("all");
+  const [isModifying, setIsModifying] = useState(false);
+
+  const handleModifySearch = (params) => {
+    const urlParams = new URLSearchParams();
+    urlParams.set("destination", params.destination);
+    urlParams.set("checkInDate", params.checkInDate);
+    urlParams.set("checkOutDate", params.checkOutDate);
+    urlParams.set("rooms", params.rooms);
+    urlParams.set("guests", params.guests);
+    navigate({ pathname: "/hotel/search", search: urlParams.toString() }, { state: params });
+    setIsModifying(false);
+  };
   const [apiHotels, setApiHotels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -111,8 +145,15 @@ export default function HotelSearchResults() {
   const [selectedRatings, setSelectedRatings] = useState([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState(["hotels"]);
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const handleTogglePropertyType = (typeId) => {
+    setSelectedPropertyTypes((prev) =>
+      prev.includes(typeId) ? prev.filter((t) => t !== typeId) : [...prev, typeId]
+    );
+  };
 
   const handleTogglePaymentPref = (pref) => {
     setSelectedPaymentPrefs((prev) =>
@@ -182,8 +223,7 @@ export default function HotelSearchResults() {
           city: destination,
           checkInDate,
           checkOutDate,
-          adults: Number(adults) || 2,
-          rooms: Number(rooms) || 1,
+          roomsConfig
         });
  
         if (isCurrent) {
@@ -204,25 +244,36 @@ export default function HotelSearchResults() {
     return () => {
       isCurrent = false;
     };
-  }, [destination, checkInDate, checkOutDate, adults, rooms]);
+  }, [destination, checkInDate, checkOutDate, roomsConfig]);
  
   const hotels = useMemo(() => {
     return [...apiHotels]
       .map((hotelRecord, index) => {
-        const firstOffer = hotelRecord.offers?.[0] || {};
-        const basePrice = Number(firstOffer.price || 0);
-        const hotelName = hotelRecord.name || "Hotel stay";
-        const visuals = getHotelVisuals(`${hotelRecord.hotelId || hotelName}-${destination}-${index}`);
-        const rating = Number(hotelRecord.rating || 4.6) || 4.6;
+        const hotelName = hotelRecord.hotelName || hotelRecord.name || "Hotel stay";
+        const basePrice = Number(hotelRecord.price?.offeredPrice || hotelRecord.price?.b2CBasePrice || 0);
+        const visuals = getHotelVisuals(`${hotelRecord.hotelCode || hotelRecord.hotelId || hotelName}-${destination}-${index}`);
+        const rating = Number(hotelRecord.starRating || hotelRecord.rating || 4.6) || 4.6;
         const reviewCount = 36 + ((index + 1) * 17) % 112;
-        const apiImage = hotelRecord.images && hotelRecord.images.length > 0 ? hotelRecord.images[0] : null;
+        const apiImage = hotelRecord.hotelPicture || (hotelRecord.images && hotelRecord.images.length > 0 ? hotelRecord.images[0] : null);
+        
+        // Build a mock offer structure from the TBO price and facilities since the UI expects 'offers'
+        const mockOffer = {
+          price: basePrice,
+          cancellationPolicy: hotelRecord.hotelPolicy || "Flexible plans available on select rooms.",
+        };
+        const mappedOffers = [mockOffer];
+
         return {
-          id: hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`,
-          hotelId: hotelRecord.hotelId,
+          id: hotelRecord.hotelCode || hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`,
+          hotelId: hotelRecord.hotelCode || hotelRecord.hotelId,
+          TraceId: hotelRecord.traceId || hotelRecord.TraceId,
+          ResultIndex: hotelRecord.resultIndex || hotelRecord.ResultIndex,
+          SrdvType: hotelRecord.srdvType || hotelRecord.SrdvType || "Single",
+          SrdvIndex: hotelRecord.srdvIndex || hotelRecord.SrdvIndex,
           name: hotelName,
-          city: hotelRecord.cityCode || destination,
+          city: hotelRecord.city || hotelRecord.cityCode || destination,
           area: getHotelLocality(hotelRecord),
-          address: hotelRecord.address || destination,
+          address: hotelRecord.hotelAddress || hotelRecord.address || destination,
           rating,
           reviewCount,
           tag:
@@ -230,20 +281,22 @@ export default function HotelSearchResults() {
             (rating >= 4.8 ? "Guest favourite" : rating >= 4.5 ? "Popular with city travelers" : "Value pick"),
           price: basePrice,
           oldPrice: Math.round(basePrice * 1.18),
-          amenities: Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : ["Wi-Fi", "Breakfast", "Room service"],
-          note: firstOffer.cancellationPolicy || "Flexible plans available on select rooms.",
-          offers: hotelRecord.offers || [],
+          amenities: hotelRecord.facilities && hotelRecord.facilities.length > 0 && hotelRecord.facilities[0].facilitiesNames
+            ? hotelRecord.facilities[0].facilitiesNames 
+            : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : ["Wi-Fi", "Breakfast", "Room service"]),
+          note: mockOffer.cancellationPolicy,
+          offers: mappedOffers,
           image: apiImage || visuals.cardImage,
           thumbImage: apiImage || visuals.thumbImage,
-          images: hotelRecord.images || [],
+          images: hotelRecord.hotelPicture ? [hotelRecord.hotelPicture] : (hotelRecord.images || []),
           latitude: Number(hotelRecord.latitude || hotelRecord.Latitude || 0),
           longitude: Number(hotelRecord.longitude || hotelRecord.Longitude || 0),
           propertyLabel: visuals.propertyLabel,
           highlightLabel: visuals.highlightLabel,
           facts: buildStayFacts(
-            { city: hotelRecord.cityCode || destination },
-            firstOffer,
-            { adults, rooms },
+            { city: hotelRecord.city || hotelRecord.cityCode || destination },
+            mockOffer,
+            { adults: guestsCount, rooms: roomsCount },
           ),
         };
       })
@@ -292,6 +345,22 @@ export default function HotelSearchResults() {
           if (!matchesAllPrefs) {
             return false;
           }
+        }
+
+        if (selectedPropertyTypes.length > 0 && !(selectedPropertyTypes.length === 1 && selectedPropertyTypes[0] === "hotels")) {
+          const matchProperty = selectedPropertyTypes.some((type) => {
+            if (type === "hotels") return !/resort|villa|apartment|boutique|home/i.test(hotelRecord.name || "");
+            if (type === "resorts") return /resort/i.test(hotelRecord.name || "");
+            if (type === "villas") return /villa/i.test(hotelRecord.name || "");
+            if (type === "apartments") return /apartment/i.test(hotelRecord.name || "");
+            if (type === "boutique") return /boutique/i.test(hotelRecord.name || "");
+            if (type === "serviced") return /serviced/i.test(hotelRecord.name || "");
+            if (type === "vacation") return /vacation|home/i.test(hotelRecord.name || "");
+            if (type === "business") return /business/i.test(hotelRecord.name || "");
+            if (type === "beach") return /beach/i.test(hotelRecord.name || "");
+            return false;
+          });
+          if (!matchProperty) return false;
         }
 
         if (selectedLocalities.length > 0) {
@@ -347,7 +416,7 @@ export default function HotelSearchResults() {
 
         return right.rating * 100 - right.price / 100 - (left.rating * 100 - left.price / 100);
       });
-  }, [apiHotels, adults, collectionKey, destination, rooms, sortKey, selectedPaymentPrefs, selectedLocalities, selectedRatings, selectedPriceRanges, selectedAmenities]);
+  }, [apiHotels, collectionKey, destination, sortKey, selectedPaymentPrefs, selectedLocalities, selectedRatings, selectedPriceRanges, selectedAmenities]);
  
   const toggleSavedStay = (hotelId) => {
     setSavedStayIds((current) =>
@@ -369,14 +438,17 @@ export default function HotelSearchResults() {
         amenities: hotel.amenities,
         offers: hotel.offers,
         images: hotel.images,
+        TraceId: hotel.TraceId,
+        ResultIndex: hotel.ResultIndex,
+        SrdvType: hotel.SrdvType,
+        SrdvIndex: hotel.SrdvIndex,
       },
       offer: null,
       searchContext: {
         destination,
         checkInDate,
         checkOutDate,
-        adults,
-        rooms,
+        roomsConfig,
         guests,
       },
     };
@@ -409,72 +481,156 @@ export default function HotelSearchResults() {
  
   return (
     <main className="hotel-discover-page">
-      <div className="hotel-discover-shell">
-        <section className="hotel-discover-hero">
-          <div className="hotel-hero-wallpaper">
-            <video
-              className="hotel-hero-wallpaper-video"
-              autoPlay
-              loop
-              muted
-              playsInline
-              poster="/hotel_poster.png"
-            >
-              <source src="/hotel_bg.mp4" type="video/mp4" />
-            </video>
-            <div className="hotel-hero-wallpaper-overlay" />
-          </div>
- 
+      <section className="hotel-discover-hero">
+        <div className="hotel-hero-wallpaper">
+          <video
+            className="hotel-hero-wallpaper-video"
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="/hotel_poster.png"
+          >
+            <source src="/hotel_bg.mp4" type="video/mp4" />
+          </video>
+          <div className="hotel-hero-wallpaper-overlay" />
+        </div>
+
+        <div className="hero-content-wrapper">
           <div className="hotel-discover-copy">
-            <span className="hotel-discover-kicker">Hotel booking, reimagined</span>
-            <h1>
-              <span className="hotel-hero-highlight">Discover city</span> stays that feel easier to compare.
+            <span className="hotel-discover-kicker" style={{ display: "inline-flex", alignItems: "center", background: "rgba(0,0,0,0.5)", border: "1px solid #dc1e26", padding: "4px 12px", borderRadius: "20px", color: "#fff", fontSize: "0.75rem", letterSpacing: "1px", textTransform: "uppercase" }}><Star size={12} fill="#eab308" color="#eab308" style={{ marginRight: 6 }} /> HOTEL BOOKING, REIMAGINED</span>
+            <h1 style={{ whiteSpace: "nowrap" }}>
+              Discover city stays that feel <span className="hotel-hero-highlight">easier to compare.</span>
             </h1>
+            <p>Find the perfect stay at the best price.<br/>Compare, choose & book with confidence.</p>
           </div>
- 
-          <div className="hotel-discover-searchbar">
-            <div className="hotel-discover-searchcell">
-              <MapPin size={16} />
-              <div>
-                <span>Stay destination</span>
-                <strong>{destination}</strong>
-              </div>
+
+          {isModifying ? (
+            <div className="inline-modify-container" style={{ padding: 0 }}>
+              <HotelSearchWidget
+                isInline={true}
+                initialDestination={destination}
+                initialCheckIn={checkInDate}
+                initialCheckOut={checkOutDate}
+                initialRoomsConfig={roomsConfig}
+                onSearch={handleModifySearch}
+              />
             </div>
-            <div className="hotel-discover-searchcell">
-              <CalendarRange size={16} />
-              <div>
-                <span>Timeline</span>
-                <strong>
-                  {toDisplayDate(checkInDate) || "Select"} - {toDisplayDate(checkOutDate) || "dates"}
-                </strong>
+          ) : (
+            <div className="hotel-discover-searchbar" style={{ background: "rgba(255, 255, 255, 0.6)", backdropFilter: "blur(20px)", borderRadius: "40px", padding: "12px 16px", border: "1px solid rgba(255,255,255,0.4)", boxShadow: "0 10px 40px rgba(0,0,0,0.2)" }}>
+              <div className="hotel-discover-searchcell">
+                <MapPin size={20} color="#dc1e26" />
+                <div>
+                  <span style={{ color: "#333", fontWeight: 700 }}>STAY DESTINATION</span>
+                  <strong style={{ fontSize: "1.1rem" }}>{destination}</strong>
+                  <span style={{ fontSize: "0.8rem", color: "#666" }}>Enter city, area or hotel</span>
+                </div>
               </div>
-            </div>
-            <div className="hotel-discover-searchcell">
-              <Users size={16} />
-              <div>
-                <span>Guests</span>
-                <strong>{guests}</strong>
+              <div className="hotel-discover-searchcell" style={{ borderLeft: "1px solid rgba(0,0,0,0.1)", paddingLeft: "24px" }}>
+                <CalendarRange size={20} color="#dc1e26" />
+                <div>
+                  <span style={{ color: "#333", fontWeight: 700 }}>TIMELINE</span>
+                  <strong style={{ fontSize: "1.1rem" }}>
+                    {toDisplayDate(checkInDate) || "Select"} - {toDisplayDate(checkOutDate) || "dates"}
+                  </strong>
+                  <span style={{ fontSize: "0.8rem", color: "#666" }}>2 Nights</span>
+                </div>
               </div>
+              <div className="hotel-discover-searchcell" style={{ borderLeft: "1px solid rgba(0,0,0,0.1)", paddingLeft: "24px" }}>
+                <Users size={20} color="#dc1e26" />
+                <div>
+                  <span style={{ color: "#333", fontWeight: 700 }}>GUESTS</span>
+                  <strong style={{ fontSize: "1.1rem" }}>{guests}</strong>
+                  <span style={{ fontSize: "0.8rem", color: "#666" }}>Rooms & Guests</span>
+                </div>
+              </div>
+              <button type="button" className="hotel-discover-searchbutton" onClick={() => setIsModifying(true)} style={{ borderRadius: "32px", padding: "0 32px", height: "56px", fontSize: "1.1rem", background: "linear-gradient(135deg, #dc1e26, #991b1b)", boxShadow: "0 4px 15px rgba(220, 30, 38, 0.4)" }}>
+                <Search size={20} />
+                <span>Search Hotels</span>
+              </button>
             </div>
-            <button type="button" className="hotel-discover-searchbutton" onClick={() => navigate("/?tab=hotels")}>
-              <Search size={17} />
-              <span>Modify</span>
-            </button>
+          )}
+
+          <div className="hotel-property-types-row" style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap", justifyContent: "flex-start" }}>
+            {[
+              { id: "hotels", label: "Hotels", icon: Building2, color: "#ef4444" },
+              { id: "resorts", label: "Resorts", icon: Trees, color: "#0ea5e9" },
+              { id: "villas", label: "Villas", icon: Home, color: "#eab308" },
+              { id: "apartments", label: "Apartments", icon: BedDouble, color: "#6366f1" },
+              { id: "boutique", label: "Boutique Hotels", icon: BellRing, color: "#a855f7" },
+              { id: "serviced", label: "Serviced Apartments", icon: Building, color: "#06b6d4" },
+              { id: "vacation", label: "Vacation Homes", icon: Home, color: "#10b981" },
+              { id: "business", label: "Business Hotels", icon: Briefcase, color: "#6366f1" },
+              { id: "beach", label: "Beach Resorts", icon: Umbrella, color: "#f59e0b" },
+            ].map((type) => {
+              const IconComp = type.icon;
+              const isActive = selectedPropertyTypes.includes(type.id);
+              return (
+                <div 
+                  key={type.id} 
+                  className="property-type-card" 
+                  onClick={() => handleTogglePropertyType(type.id)}
+                  style={{
+                    border: `1.5px solid ${isActive ? type.color : 'rgba(255,255,255,0.2)'}`,
+                    boxShadow: isActive ? `0 0 15px ${type.color}40, inset 0 0 10px ${type.color}30` : "none",
+                    cursor: "pointer"
+                  }}
+                >
+                  <IconComp size={22} color={isActive ? type.color : 'rgba(255,255,255,0.5)'} />
+                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isActive ? '#fff' : 'rgba(255,255,255,0.7)' }}>{type.label}</span>
+                </div>
+              );
+            })}
           </div>
  
           <div className="hotel-discover-toolbar">
             <div className="hotel-collection-row">
-              {HOTEL_COLLECTIONS.map((collection) => (
-                <button
-                  key={collection.id}
-                  type="button"
-                  className={`hotel-collection-chip${collectionKey === collection.id ? " is-active" : ""}`}
-                  onClick={() => setCollectionKey(collection.id)}
-                >
-                  {collection.id === "all" ? <Sparkles size={14} /> : <ShieldCheck size={14} />}
-                  <span>{collection.label}</span>
-                </button>
-              ))}
+              {[
+                { id: "best-price", label: "Best Price", icon: Star, color: "#eab308" },
+                { id: "verified", label: "Verified Stays", icon: ShieldCheck, color: "#f8fafc" },
+                { id: "breakfast", label: "Breakfast Included", icon: Coffee, color: "#f8fafc" },
+                { id: "wifi", label: "Free WiFi", icon: Wifi, color: "#f8fafc" },
+                { id: "parking", label: "Free Parking", icon: Car, color: "#f8fafc" },
+              ].map((pill) => {
+                const IconComp = pill.icon;
+                let isActive = false;
+                if (pill.id === "best-price") isActive = sortKey === "price";
+                if (pill.id === "verified") isActive = collectionKey === "guest-favourite";
+                if (pill.id === "breakfast") isActive = selectedAmenities.includes("Breakfast");
+                if (pill.id === "wifi") isActive = selectedAmenities.includes("WiFi");
+                if (pill.id === "parking") isActive = selectedAmenities.includes("Parking");
+
+                const handlePillClick = () => {
+                  if (pill.id === "best-price") setSortKey(isActive ? "recommended" : "price");
+                  if (pill.id === "verified") setCollectionKey(isActive ? "all" : "guest-favourite");
+                  if (pill.id === "breakfast") handleToggleAmenity("Breakfast");
+                  if (pill.id === "wifi") handleToggleAmenity("WiFi");
+                  if (pill.id === "parking") handleToggleAmenity("Parking");
+                };
+
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    className="property-type-card"
+                    onClick={handlePillClick}
+                    style={{ 
+                      flexDirection: "row", 
+                      padding: "8px 16px", 
+                      borderRadius: "20px", 
+                      minWidth: "auto", 
+                      fontSize: "0.85rem", 
+                      gap: "8px", 
+                      border: `1px solid ${isActive ? pill.color : 'rgba(255,255,255,0.2)'}`,
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      cursor: "pointer"
+                    }}
+                  >
+                    <IconComp size={16} color={isActive ? pill.color : 'rgba(255,255,255,0.7)'} fill={pill.id === "best-price" ? pill.color : "none"} />
+                    <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.7)' }}>{pill.label}</span>
+                  </button>
+                );
+              })}
             </div>
  
             <div className="hotel-sort-container">
@@ -653,8 +809,10 @@ export default function HotelSearchResults() {
               )}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
+      <div className="hotel-discover-shell">
         {actionError && <div className="hotel-inline-alert hotel-inline-alert--error">{actionError}</div>}
 
         <div className="hotel-discover-results-container">
@@ -715,7 +873,36 @@ export default function HotelSearchResults() {
                     style={{ cursor: "pointer" }}
                   >
                     <div className="hotel-stay-media">
-                      <img src={hotel.image} alt={hotel.name} />
+                      {hotel.image ? (
+                        <img 
+                          src={hotel.image} 
+                          alt={hotel.name} 
+                          referrerPolicy="no-referrer" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            if (e.currentTarget.nextSibling) {
+                              e.currentTarget.nextSibling.style.display = "flex";
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="hotel-stay-placeholder" 
+                        style={{ 
+                          display: hotel.image ? "none" : "flex",
+                          width: "100%",
+                          height: "100%",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexDirection: "column",
+                          gap: "8px",
+                          background: "linear-gradient(135deg, #0f172a, #1e293b)",
+                          color: "#94a3b8"
+                        }}
+                      >
+                        <Building2 size={36} color="#60a5fa" />
+                        <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#cbd5e1" }}>Verified Stay</span>
+                      </div>
                       <div className="hotel-stay-badges">
                         <span className="hotel-stay-badge">{hotel.tag}</span>
                         <span className="hotel-stay-badge hotel-stay-badge--light">{hotel.highlightLabel}</span>

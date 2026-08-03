@@ -72,7 +72,7 @@ export default function B2BPlaceAutocomplete({
       try {
         const endpoint = new URL(PLACES_API_URL, window.location.origin);
         endpoint.searchParams.set("query", query);
-        endpoint.searchParams.set("tripType", tripType);
+        endpoint.searchParams.set("tripType", tripType === "hotel" ? "all" : tripType);
         endpoint.searchParams.set("field", field);
         endpoint.searchParams.set("limit", "20");
 

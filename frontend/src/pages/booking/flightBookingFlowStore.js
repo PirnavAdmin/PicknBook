@@ -1,4 +1,3 @@
-/* eslint-disable */
 const FLIGHT_BOOKING_FLOW_STORAGE_KEY = "flight_booking_flow_state_v1";
 
 function readRawState() {
@@ -47,7 +46,29 @@ export function clearFlightBookingFlowState() {
 
   try {
     window.sessionStorage.removeItem(FLIGHT_BOOKING_FLOW_STORAGE_KEY);
+    window.sessionStorage.removeItem("BookingResponse");
+    window.sessionStorage.removeItem("last_completed_booking_ref");
+    window.sessionStorage.removeItem("last_booking_trace_id");
   } catch {
     // Ignore storage errors in private mode or restricted environments.
   }
+}
+
+// ─── Explicit Helpers for SRDV Flow ───────────────────────────────────────
+
+export function getSrdvFlightState() {
+  const state = readFlightBookingFlowState() || {};
+  return {
+    TraceId: state.TraceId || "",
+    ResultIndex: state.ResultIndex || "",
+    SrdvType: state.SrdvType || "",
+    SrdvIndex: state.SrdvIndex || "",
+    PNR: state.PNR || "",
+    BookingId: state.BookingId || "",
+    IsLcc: state.IsLcc || false,
+  };
+}
+
+export function setSrdvFlightState(updates) {
+  writeFlightBookingFlowState(updates);
 }

@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./FlightBookingList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
@@ -23,9 +22,9 @@ const normalizeText = (value, fallback = "") => {
 };
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://paycheck-baton-overfull.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
-const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
+const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
   String(process.env.REACT_APP_API_USER_ID || "").trim() || "user_123";
 
@@ -470,23 +469,66 @@ async function requestJson(urlOrPath, options = {}) {
 }
 
 async function listAdminFlightBookings({ passengerPhone, status } = {}) {
-  const url = buildUrl("/api/admin/flight/bookings", {
-    passengerPhone,
-    status,
+  const candidateEndpoints = [
+    "/api/SrdvFlightApi/bookings",
+    "/api/flight/srdv/bookings",
+    "/api/FlightBookings/bookings",
+    "/api/admin/flight/bookings",
+    "/api/FlightBookings",
+    "/api/flight/bookings"
+  ];
+
+  let fetchedList = [];
+
+  for (const endpoint of candidateEndpoints) {
+    const url = buildUrl(endpoint, {
+      passengerPhone,
+      status,
+    });
+
+    try {
+      const data = await requestJson(url, { method: "GET" });
+      const rawList = Array.isArray(data) ? data : (data?.data || data?.results || data?.items || data?.bookings || []);
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        fetchedList = rawList.map((record) => normalizeFlightBookingRecord(record));
+        break;
+      }
+    } catch (error) {
+      // try next candidate endpoint
+    }
+  }
+
+  // Merge locally cached flight tickets from localStorage so recent bookings appear in Admin immediately
+  const localBookings = [];
+  const localKeys = ["my_flight_bookings", "user_flight_tickets", "mock_tickets", "stored_tickets", "latest_ticket", "pnb_flight_bookings"];
+  localKeys.forEach((key) => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const list = Array.isArray(parsed) ? parsed : [parsed];
+      list.forEach((t) => {
+        if (!t || typeof t !== "object") return;
+        const isFlight = t.ticketType === "flight" || t.fromCity || t.toCity || t.providerName?.toLowerCase().includes("flight") || t.airline;
+        if (!isFlight) return;
+        localBookings.push(normalizeFlightBookingRecord(t));
+      });
+    } catch (e) {}
   });
 
-  try {
-    const data = await requestJson(url, { method: "GET" });
-    return Array.isArray(data)
-      ? data.map((record) => normalizeFlightBookingRecord(record))
-      : [];
-  } catch (error) {
-    if (shouldUseFallbackFlightBookings(error)) {
-      return [];
+  const mergedMap = new Map();
+  fetchedList.forEach((b) => {
+    const key = String(b.bookingReference || b.bookingId || "").trim().toLowerCase();
+    if (key) mergedMap.set(key, b);
+  });
+  localBookings.forEach((b) => {
+    const key = String(b.bookingReference || b.bookingId || "").trim().toLowerCase();
+    if (key && !mergedMap.has(key)) {
+      mergedMap.set(key, b);
     }
+  });
 
-    throw error;
-  }
+  return Array.from(mergedMap.values());
 }
 
 const parseNumber = (value, fallback = 0) => {

@@ -159,6 +159,11 @@ function isApiAssetOrigin(urlValue) {
 
   try {
     const assetUrl = new URL(urlValue);
+    const hostname = assetUrl.hostname.toLowerCase();
+    if (hostname.includes("ngrok-free.dev") || hostname.includes("ngrok.io")) {
+      return true;
+    }
+
     const assetOrigins = [
       resolveApiBaseUrl(),
       process.env.REACT_APP_API_PROXY_TARGET,
@@ -202,28 +207,11 @@ export function toApiAssetUrl(urlOrPath) {
 }
 
 export function withNgrokSkipWarningHeader(urlOrPath, headers = {}) {
-  const nextHeaders = {
+  return {
     ...headers,
+    "ngrok-skip-browser-warning": "true",
     "User-Agent": "custom-app-client",
   };
-
-  try {
-    const parsed = new URL(
-      toApiUrl(urlOrPath),
-      typeof window !== "undefined" ? window.location.origin : undefined
-    );
-
-    if (
-      parsed.hostname.includes("ngrok-free.dev") ||
-      parsed.hostname.includes("ngrok.io")
-    ) {
-      nextHeaders["ngrok-skip-browser-warning"] = "true";
-    }
-  } catch {
-    // Keep the request usable for relative URLs and non-browser contexts.
-  }
-
-  return nextHeaders;
 }
 
 export async function readResponsePayload(response) {

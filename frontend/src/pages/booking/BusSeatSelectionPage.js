@@ -1108,7 +1108,7 @@ export default function BusSeatSelectionPage({
     if (!isAgent) {
       const token = localStorage.getItem("token");
       if (!token || isTokenExpired(token)) {
-        openAuthModal("login");
+        openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
         return;
       }
     }

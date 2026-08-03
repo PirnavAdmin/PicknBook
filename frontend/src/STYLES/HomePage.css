@@ -509,6 +509,29 @@
 .bus-standard-grid .departure-field   { grid-column: 4; grid-row: 1; }
 .bus-standard-grid.two-way .return-field { grid-column: 5; grid-row: 1; }
 
+.bus-standard-grid .bus-grid-search-btn {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  height: 48px;
+  border-radius: 8px;
+  background: #dc1e26;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.bus-standard-grid .bus-grid-search-btn:hover {
+  background: #b8141b;
+}
+
 /* ─── Multi-city ──────────────────────────────────────────────────────────── */
 .multi-city-list {
   display: flex;
@@ -4491,6 +4514,14 @@ select.field-control option {
   .bus-standard-grid .departure-field   { grid-column: 3 !important; grid-row: 1 !important; }
   .bus-standard-grid.two-way .return-field { grid-column: 4 !important; grid-row: 1 !important; }
 
+  .bus-standard-grid .bus-grid-search-btn {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    border-radius: 0 0 16px 16px !important;
+    margin-top: 0 !important;
+  }
+
   /* Divider line borders between cells on Desktop */
   .search-panel .field,
   .search-panel .place-autocomplete,
@@ -4609,6 +4640,12 @@ select.field-control option {
   .bus-standard-grid .destination-field { grid-column: 2 !important; grid-row: 1 !important; }
   .bus-standard-grid .departure-field   { grid-column: 3 !important; grid-row: 1 !important; }
   .bus-standard-grid.two-way .return-field { grid-column: 4 !important; grid-row: 1 !important; }
+
+  .bus-standard-grid .bus-grid-search-btn {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    border-radius: 0 0 16px 16px !important;
+  }
 
   /* Cell borders for Flights (2-row grid) */
   .standard-grid .field,
@@ -6102,26 +6139,32 @@ select.field-control option {
 
 .hotel-standard-grid {
   display: grid !important;
-  grid-template-columns: minmax(240px, 1.35fr) minmax(170px, 0.9fr) minmax(170px, 0.9fr) minmax(230px, 1.1fr) !important;
-  gap: 8px !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
   align-items: stretch !important;
   width: 100% !important;
 }
 
 .hotel-standard-grid .hotel-destination-field {
-  grid-column: 1 !important;
+  grid-column: 1 / -1 !important;
 }
 
 .hotel-standard-grid .checkin-field {
-  grid-column: 2 !important;
+  grid-column: 1 !important;
 }
 
 .hotel-standard-grid .checkout-field {
-  grid-column: 3 !important;
+  grid-column: 2 !important;
 }
 
 .hotel-standard-grid .hotel-guests-field {
-  grid-column: 4 !important;
+  grid-column: 1 !important;
+}
+
+.hotel-standard-grid .search-btn {
+  grid-column: 2 !important;
+  height: 100% !important;
+  margin-top: 0 !important;
 }
 
 .hotel-booking-content .hotel-guests-dropdown {
@@ -7320,7 +7363,7 @@ button:focus-visible {
   }
 
   /* ── 16b. Dropdowns open upwards to prevent bottom viewport overflow ── */
-  .hero-grid .search-panel .traveller-dropdown {
+  .hero-grid .search-panel .traveller-dropdown:not(.hotel-guests-dropdown) {
     top: auto !important;
     bottom: calc(100% + 6px) !important;
     box-shadow: 0 -10px 24px rgba(18, 28, 41, 0.15) !important;
@@ -7558,9 +7601,9 @@ button:focus-visible {
 }
 
 .homepage-flights .search-panel .trip-switch .trip-chip.active {
-  background: #0f52ba !important;
+  background: #dc1e26 !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 6px rgba(15, 82, 186, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(220, 30, 38, 0.25) !important;
 }
 
 .homepage-flights .search-panel .trip-switch .trip-chip.active svg {
@@ -7794,8 +7837,8 @@ button:focus-visible {
   min-height: 36px !important;
   margin-top: 2px !important;
   border-radius: 8px !important;
-  background: #0f52ba !important;
-  box-shadow: 0 3px 10px rgba(15, 82, 186, 0.22) !important;
+  background: #dc1e26 !important;
+  box-shadow: 0 3px 10px rgba(220, 30, 38, 0.22) !important;
   color: #ffffff !important;
   font-size: 12.5px !important;
   font-weight: 700 !important;
@@ -7810,8 +7853,8 @@ button:focus-visible {
 }
 
 .homepage-flights .search-panel .search-btn:hover {
-  background: #0d47a1 !important;
-  box-shadow: 0 4px 14px rgba(15, 82, 186, 0.3) !important;
+  background: #b8141b !important;
+  box-shadow: 0 4px 14px rgba(220, 30, 38, 0.3) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -7845,7 +7888,7 @@ button:focus-visible {
 .homepage-flights .search-panel .control-wrap svg,
 .homepage-flights .search-panel .traveller-summary svg,
 .homepage-flights .search-panel .traveller-caret {
-  color: #2563eb !important;
+  color: #dc1e26 !important;
 }
 
 /* Swap Button */
@@ -7855,7 +7898,7 @@ button:focus-visible {
   border-radius: 50% !important;
   width: 24px !important;
   height: 24px !important;
-  color: #2563eb !important;
+  color: #dc1e26 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -7940,8 +7983,8 @@ button:focus-visible {
   min-height: 36px !important;
   margin-top: 2px !important;
   border-radius: 7px !important;
-  background: #0f52ba !important;
-  box-shadow: 0 3px 8px rgba(15, 82, 186, 0.2) !important;
+  background: #dc1e26 !important;
+  box-shadow: 0 3px 8px rgba(220, 30, 38, 0.2) !important;
   color: #ffffff !important;
   font-size: 12px !important;
   font-weight: 700 !important;
@@ -7953,8 +7996,8 @@ button:focus-visible {
 }
 
 .homepage-flights .hero-grid .search-panel .search-btn.flight-grid-search-btn:hover {
-  background: #0d47a1 !important;
-  box-shadow: 0 4px 12px rgba(15, 82, 186, 0.3) !important;
+  background: #b8141b !important;
+  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
   transform: translateY(-1px) !important;
 }
 

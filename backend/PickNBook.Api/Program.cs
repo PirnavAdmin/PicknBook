@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.HttpOverrides;
 //using Npgsql;
 using PickNBook.Api.Data;
 using PickNBook.Api.Middleware;
@@ -123,26 +122,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-            return;
-        }
-
-        policy.SetIsOriginAllowed(_ => true)
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
-});
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders =
-        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
 });
 
 // ---------------- JWT AUTH ----------------
@@ -170,7 +153,11 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddOutputCache();
 
 // ---------------- SWAGGER + JWT BUTTON ----------------
@@ -201,6 +188,17 @@ builder.Services.AddSwaggerGen(options =>
             new string[] {}
         }
     });
+
+    // Include XML comments for Swagger descriptions and examples
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
+    // Render CheckInDate/CheckOutDate as date pickers in Swagger UI
+    options.SchemaFilter<PickNBook.Api.Models.Config.DateFormatSchemaFilter>();
 });
 
 var app = builder.Build();
@@ -211,69 +209,34 @@ app.UseMiddleware<RequestProfilingMiddleware>();
 
 // ---------------- MIDDLEWARE ----------------
 
-app.UseForwardedHeaders();
-
+// Enable Swagger in all environments
 app.UseSwagger();
-app.UseSwaggerUI();
-
-if (app.Environment.IsDevelopment())
+app.UseSwaggerUI(c =>
 {
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "PickNBook API v1");
+    c.RoutePrefix = "swagger";
+    c.ConfigObject.AdditionalItems.Add("syntaxHighlight", false);
+    c.DefaultModelsExpandDepth(-1);
+    c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+});
 
 var shouldSeed = builder.Configuration.GetValue<bool>("SeedDatabase", false);
-var shouldApplyMigrations = builder.Configuration.GetValue<bool>("ApplyMigrations", false);
-var shouldRepairMissingSchema = builder.Configuration.GetValue<bool>("RepairMissingSchema", false);
-if (shouldApplyMigrations || shouldRepairMissingSchema || shouldSeed)
+if (shouldSeed)
 {
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (shouldApplyMigrations)
+        const int maxSeedAttempts = 3;
+        for (var attempt = 1; attempt <= maxSeedAttempts; attempt++)
         {
-            await dbContext.Database.MigrateAsync();
-        }
-
-        if (shouldRepairMissingSchema)
-        {
-            await dbContext.Database.ExecuteSqlRawAsync("""
-                CREATE TABLE IF NOT EXISTS `flight_bookings` (
-                    `Id` int NOT NULL AUTO_INCREMENT,
-                    `FlightNumber` varchar(20) NOT NULL,
-                    `Airline` varchar(120) NOT NULL,
-                    `FromCity` varchar(80) NOT NULL,
-                    `ToCity` varchar(80) NOT NULL,
-                    `DepartureTime` datetime(6) NOT NULL,
-                    `ArrivalTime` datetime(6) NOT NULL,
-                    `PriceInr` decimal(10,2) NOT NULL,
-                    `AvailableSeats` int NOT NULL,
-                    `TotalSeats` int NOT NULL,
-                    `CabinClass` varchar(30) NOT NULL,
-                    `TraceId` longtext NULL,
-                    `ResultIndex` longtext NULL,
-                    `SrdvIndex` int NULL,
-                    `IsLcc` tinyint(1) NOT NULL,
-                    `SrdvType` longtext NULL,
-                    `SegmentsJson` longtext NULL,
-                    PRIMARY KEY (`Id`),
-                    KEY `IX_flight_bookings_FromCity_ToCity_DepartureTime` (`FromCity`, `ToCity`, `DepartureTime`)
-                ) CHARACTER SET=utf8mb4;
-                """);
-        }
-
-        if (shouldSeed)
-        {
-            const int maxSeedAttempts = 3;
-            for (var attempt = 1; attempt <= maxSeedAttempts; attempt++)
+            try
             {
-                try
-                {
-                    await DbSeeder.SeedAsync(dbContext);
-                    break;
-                }
-                catch (Exception) when (attempt < maxSeedAttempts)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
-                }
+                await DbSeeder.SeedAsync(dbContext);
+                break;
+            }
+            catch (Exception) when (attempt < maxSeedAttempts)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
             }
         }
     }

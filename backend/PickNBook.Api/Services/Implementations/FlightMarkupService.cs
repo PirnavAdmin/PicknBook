@@ -9,19 +9,22 @@ namespace PickNBook.Api.Services
 {
     public interface IFlightMarkupService
     {
-        Task<decimal> CalculateMarkupAsync(string airlineCode, TripType tripType, decimal supplierFare);
+        Task<decimal> CalculateMarkupAsync(string airlineCode, TripType tripType, string cabinClass, decimal supplierBaseFare);
     }
 
     public class FlightMarkupService : IFlightMarkupService
     {
         private readonly AppDbContext _dbContext;
+        
+        // Cache all rules for the duration of this request
+        private List<FlightMarkupRule>? _cachedRules;
 
         public FlightMarkupService(AppDbContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        public async Task<decimal> CalculateMarkupAsync(string airlineCode, TripType tripType, decimal supplierFare)
+        public async Task<decimal> CalculateMarkupAsync(string airlineCode, TripType tripType, string cabinClass, decimal supplierBaseFare)
         {
             if (string.IsNullOrWhiteSpace(airlineCode))
             {
@@ -29,14 +32,22 @@ namespace PickNBook.Api.Services
             }
 
             var cleanAirlineCode = airlineCode.Trim().ToUpperInvariant();
+            var cleanCabinClass = (string.IsNullOrWhiteSpace(cabinClass) ? "*" : cabinClass.Trim());
 
-            // Fetch active rules that match either the specific airline or wildcard '*', and match the trip type
-            var rules = await _dbContext.FlightMarkupRules
-                .Where(x => x.IsActive && 
-                            x.TripType == tripType && 
-                            (x.AirlineCode == cleanAirlineCode || x.AirlineCode == "*"))
+            if (_cachedRules == null)
+            {
+                _cachedRules = await _dbContext.FlightMarkupRules
+                    .AsNoTracking()
+                    .Where(x => x.IsActive)
+                    .ToListAsync();
+            }
+
+            var rules = _cachedRules
+                .Where(x => x.TripType == tripType && 
+                            (x.AirlineCode == cleanAirlineCode || x.AirlineCode == "*") &&
+                            (string.Equals(x.CabinClass, cleanCabinClass, StringComparison.OrdinalIgnoreCase) || x.CabinClass == "*"))
                 .OrderByDescending(x => x.Priority)
-                .ToListAsync();
+                .ToList();
 
             if (rules.Count == 0)
             {
@@ -44,7 +55,11 @@ namespace PickNBook.Api.Services
             }
 
             // Prefer specific airline match first, fallback to wildcard '*'
-            var rule = rules.FirstOrDefault(x => x.AirlineCode == cleanAirlineCode) ?? rules.First();
+            // Also prefer specific cabin class match over wildcard
+            var rule = rules
+                .OrderByDescending(x => x.AirlineCode != "*")
+                .ThenByDescending(x => x.CabinClass != "*")
+                .First();
 
             decimal markupAmount = 0m;
             if (rule.MarkupType == FlightMarkupType.Flat)
@@ -53,7 +68,7 @@ namespace PickNBook.Api.Services
             }
             else if (rule.MarkupType == FlightMarkupType.Percentage)
             {
-                markupAmount = supplierFare * (rule.MarkupValue / 100m);
+                markupAmount = supplierBaseFare * (rule.MarkupValue / 100m);
             }
 
             return decimal.Round(markupAmount, 2, MidpointRounding.AwayFromZero);

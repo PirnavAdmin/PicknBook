@@ -97,6 +97,8 @@ export default function AuthModal() {
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState("login"); // 'login', 'register', 'forgot-password'
   const [showPassword, setShowPassword] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
+  const [adminChallengeId, setAdminChallengeId] = useState("");
 
   useEffect(() => {
     if (!isOpen || !otpSent || timeLeft <= 0) return;
@@ -126,6 +128,15 @@ export default function AuthModal() {
       setIsOpen(true);
       setStatus({ type: "", message: "" });
       setErrors({});
+      setMobile("");
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setOtp("");
+      setOtpSent(false);
+      setTimeLeft(0);
+      setViewMode("login");
+      setAuthMethod("mobile");
     };
 
     window.addEventListener(AUTH_MODAL_EVENT, handleOpen);
@@ -155,6 +166,7 @@ export default function AuthModal() {
     setOtp("");
     setTimeLeft(0);
     setViewMode("login");
+    setAdminChallengeId("");
   };
 
   const completeLogin = (message) => {
@@ -162,9 +174,19 @@ export default function AuthModal() {
     setStatus({ type: "success", message });
     window.setTimeout(() => {
       closeModal();
-      if (returnTo) {
-        window.history.replaceState(null, "", returnTo);
-        window.dispatchEvent(new PopStateEvent("popstate"));
+      
+      const role = (localStorage.getItem("role") || sessionStorage.getItem("role")) || "";
+      const isAgent = role === "Agent" || role === "B2B";
+      const isAdmin = role === "Admin";
+
+      if (isAdmin) {
+        window.location.href = "/admin";
+      } else if (isAgent) {
+        window.location.href = "/b2b/dashboard";
+      } else if (returnTo) {
+        window.location.href = returnTo;
+      } else {
+        window.location.href = "/";
       }
     }, 450);
   };
@@ -208,6 +230,7 @@ export default function AuthModal() {
     setStatus({ type: "", message: "" });
     setOtpSent(false);
     setTimeLeft(0);
+    setAdminChallengeId("");
   };
 
   const sendOtp = async (event) => {
@@ -266,10 +289,11 @@ export default function AuthModal() {
         otp,
       });
 
+      const storage = keepSignedIn ? localStorage : sessionStorage;
       const guestUser = buildGuestUserFromMobile(mobile);
-      localStorage.setItem("user", JSON.stringify(guestUser));
-      localStorage.setItem("userId", guestUser.userId);
-      localStorage.setItem("token", "otp-verified-session");
+      storage.setItem("user", JSON.stringify(guestUser));
+      storage.setItem("userId", guestUser.userId);
+      storage.setItem("token", "otp-verified-session");
       localStorage.removeItem("role");
       localStorage.removeItem("challengeId");
       sessionStorage.removeItem("role");
@@ -285,12 +309,22 @@ export default function AuthModal() {
     }
   };
 
-  const handleRegister = async (event) => {
-    event.preventDefault();
+  const sendRegisterOtp = async (event) => {
+    if (event) event.preventDefault();
     if (loading) return;
 
-    if (!fullName || !mobile || !password) {
+    if (!fullName || !mobile || !email || !password) {
       setStatus({ type: "error", message: "Please fill in all required fields." });
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      setErrors({ mobile: "Enter a valid 10-digit mobile number" });
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setErrors({ email: "Enter a valid email address" });
       return;
     }
 
@@ -298,11 +332,55 @@ export default function AuthModal() {
     setStatus({ type: "", message: "" });
 
     try {
+      const payload = await sendRegistrationOtp({
+        email: email,
+        channel: "Email",
+      });
+
+      setOtpSent(true);
+      setOtp("");
+      setTimeLeft(300);
+      setViewMode("register-otp");
+      setStatus({
+        type: "success",
+        message: readApiMessage(payload, "OTP sent to your email address."),
+      });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error?.message || "Failed to send OTP. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (event) => {
+    event.preventDefault();
+    if (loading) return;
+
+    if (!/^\d{6}$/.test(otp)) {
+      setErrors({ otp: "Enter the 6-digit OTP" });
+      return;
+    }
+
+    setLoading(true);
+    setStatus({ type: "", message: "" });
+
+    try {
+      // 1. Verify OTP first (Email)
+      await verifyRegistrationOtp({
+        email: email,
+        channel: "Email",
+        otp,
+      });
+
+      // 2. Complete Registration
       const payload = await registerCustomer({
         firstName: fullName.split(' ')[0] || fullName,
         lastName: fullName.split(' ').slice(1).join(' ') || "",
         phoneNumber: mobile,
-        email: email || null,
+        email: email,
         password: password,
       });
 
@@ -312,12 +390,13 @@ export default function AuthModal() {
       });
       
       setTimeout(() => {
-        switchView("login");
+        setOtpSent(false);
+        setViewMode("login");
       }, 2000);
     } catch (error) {
       setStatus({
         type: "error",
-        message: error?.message || "Registration failed. Please try again.",
+        message: error?.message || "Invalid OTP or Registration failed.",
       });
     } finally {
       setLoading(false);
@@ -327,6 +406,43 @@ export default function AuthModal() {
   const loginWithEmail = async (event) => {
     event.preventDefault();
     if (loading) return;
+
+    if (adminChallengeId) {
+      if (!otp) {
+        setErrors({ otp: "Enter the OTP" });
+        return;
+      }
+      setLoading(true);
+      setStatus({ type: "", message: "" });
+      try {
+        const data = await requestAuth("/api/Auth/admin/login/verify-otp", {
+          method: "POST",
+          body: JSON.stringify({
+            challengeId: adminChallengeId,
+            otp: otp,
+          }),
+        }, "Invalid OTP");
+
+        const rawToken = data?.token || data?.Token || data?.tokenString || data?.data?.token || "";
+        const rawRole = data?.role || data?.Role || data?.data?.role || "admin";
+        const rawName = data?.name || data?.fullName || data?.email || data?.data?.name || "Admin";
+
+        const storage = keepSignedIn ? localStorage : sessionStorage;
+        storage.setItem("adminToken", rawToken);
+        storage.setItem("adminRole", rawRole);
+        storage.setItem("adminName", rawName);
+        storage.setItem("role", "Admin");
+        localStorage.removeItem("challengeId");
+        sessionStorage.removeItem("challengeId");
+
+        completeLogin("Admin login successful.");
+      } catch (error) {
+        setStatus({ type: "error", message: error?.message || "Invalid OTP" });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     const trimmedEmail = email.trim();
     const nextErrors = {};
@@ -355,23 +471,57 @@ export default function AuthModal() {
 
       const token = extractToken(payload);
       const user = buildUserFromEmailLogin(payload, trimmedEmail);
+      const userRole = user.role || "Customer";
+      const roleLower = userRole.toLowerCase();
+      const storage = keepSignedIn ? localStorage : sessionStorage;
 
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("userId", user.userId);
-      localStorage.setItem("role", user.role || "Customer");
-      if (token) {
-        localStorage.setItem("token", token);
+      if (roleLower === "agent" || roleLower === "b2b") {
+        storage.setItem("b2b_user", JSON.stringify(user));
+        storage.setItem("b2b_userId", user.userId);
+        storage.setItem("b2b_role", "Agent");
+        if (token) storage.setItem("b2b_token", token);
+        storage.setItem("role", "Agent");
+      } else if (roleLower === "admin") {
+        storage.setItem("adminRole", "admin");
+        if (token) storage.setItem("adminToken", token);
+        storage.setItem("role", "Admin");
       } else {
-        localStorage.removeItem("token");
+        storage.setItem("user", JSON.stringify(user));
+        storage.setItem("userId", user.userId);
+        storage.setItem("role", userRole);
+        if (token) {
+          storage.setItem("token", token);
+        } else {
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+        }
       }
+
       localStorage.removeItem("challengeId");
       sessionStorage.removeItem("challengeId");
 
       completeLogin(readApiMessage(payload, "Login successful."));
     } catch (error) {
+      const errorMsg = String(error?.message || "");
+      if (errorMsg.toLowerCase().includes("admin") || errorMsg.toLowerCase().includes("otp")) {
+        try {
+          const data = await requestAuth("/api/Auth/admin/login/request-otp", {
+            method: "POST",
+            body: JSON.stringify({ email: trimmedEmail, password })
+          }, "Admin login failed");
+          setAdminChallengeId(data.challengeId || data.ChallengeId);
+          setOtp("");
+          setStatus({ type: "success", message: "Admin OTP sent to your email." });
+          return;
+        } catch (adminErr) {
+          setStatus({ type: "error", message: adminErr?.message || "Admin login failed." });
+          return;
+        }
+      }
+      
       setStatus({
         type: "error",
-        message: error?.message || "Invalid email or password.",
+        message: errorMsg || "Invalid email or password.",
       });
     } finally {
       setLoading(false);
@@ -415,18 +565,10 @@ export default function AuthModal() {
             <X size={20} />
           </button>
 
-          <div className="pnb-auth-secure">
-            <ShieldCheck size={13} />
-            <span>
-              {viewMode === "login" && "SECURE ACCESS"}
-              {viewMode === "register" && "SECURE REGISTRATION"}
-              {viewMode === "forgot-password" && "RESET PASSWORD"}
-            </span>
-          </div>
-
           <h2>
             {viewMode === "login" && "Login to PickNBook"}
             {viewMode === "register" && "Create your account"}
+            {viewMode === "register-otp" && "Verify OTP"}
             {viewMode === "forgot-password" && "Forgot Password?"}
           </h2>
           <p className="pnb-auth-copy">
@@ -436,7 +578,12 @@ export default function AuthModal() {
                 : "Enter your mobile number. New users can continue with OTP automatically."
             )}
             {viewMode === "register" && "Register to enjoy a seamless booking experience."}
-            {viewMode === "forgot-password" && "No worries! Enter your mobile number and we'll send you an OTP to reset your password."}
+            {viewMode === "register-otp" && "Please enter the OTP sent to your registration channel."}
+            {viewMode === "forgot-password" && (
+              authMethod === "mobile" 
+                ? "No worries! Enter your mobile number and we'll send you an OTP to reset your password." 
+                : "No worries! Enter your email address and we'll send you a link to reset your password."
+            )}
           </p>
 
           {status.message && (
@@ -449,46 +596,94 @@ export default function AuthModal() {
             <>
               {authMethod === "email" ? (
                 <form className="pnb-auth-form" onSubmit={loginWithEmail}>
-                  <label>
-                    Email
-                    <span className="pnb-auth-input">
-                      <Mail size={16} />
-                      <input
-                        type="email"
-                        placeholder="Enter email address"
-                        value={email}
-                        onChange={handleEmailChange}
-                        autoComplete="email"
-                      />
-                    </span>
-                    {errors.email && <small>{errors.email}</small>}
-                  </label>
+                  {!adminChallengeId ? (
+                    <>
+                      <label>
+                        Email
+                        <span className="pnb-auth-input">
+                          <Mail size={16} />
+                          <input
+                            type="email"
+                            placeholder="Enter email address"
+                            value={email}
+                            onChange={handleEmailChange}
+                            autoComplete="off"
+                          />
+                        </span>
+                        {errors.email && <small>{errors.email}</small>}
+                      </label>
 
-                  <label>
-                    Password
-                    <span className="pnb-auth-input">
-                      <LockKeyhole size={16} />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter password"
-                        value={password}
-                        onChange={handlePasswordChange}
-                        autoComplete="current-password"
-                      />
+                      <label>
+                        Password
+                        <span className="pnb-auth-input">
+                          <LockKeyhole size={16} />
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter password"
+                            value={password}
+                            onChange={handlePasswordChange}
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="pnb-auth-eye-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </span>
+                        {errors.password && <small>{errors.password}</small>}
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <label>
+                        Admin Verification OTP
+                        <span className="pnb-auth-input">
+                          <ShieldCheck size={16} />
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Enter OTP sent to your email"
+                            value={otp}
+                            onChange={handleOtpChange}
+                            autoComplete="one-time-code"
+                          />
+                        </span>
+                        {errors.otp && <small>{errors.otp}</small>}
+                      </label>
+                      
                       <button
                         type="button"
-                        className="pnb-auth-eye-btn"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="pnb-auth-text-action"
+                        onClick={() => {
+                           setAdminChallengeId("");
+                           setOtp("");
+                           setStatus({ type: "", message: "" });
+                        }}
+                        style={{ marginTop: "-8px", marginBottom: "16px", alignSelf: "flex-start", padding: 0 }}
                       >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        Cancel admin login
                       </button>
-                    </span>
-                    {errors.password && <small>{errors.password}</small>}
-                  </label>
+                    </>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', justifyContent: 'flex-start' }}>
+                    <input 
+                      type="checkbox" 
+                      id="keepSignedInEmail" 
+                      checked={keepSignedIn} 
+                      onChange={(e) => setKeepSignedIn(e.target.checked)} 
+                      style={{ cursor: 'pointer', width: 'auto', margin: 0 }}
+                    />
+                    <label htmlFor="keepSignedInEmail" style={{ margin: 0, fontSize: '0.9rem', color: '#4b5563', cursor: 'pointer', fontWeight: 400, display: 'inline', width: 'auto', whiteSpace: 'nowrap' }}>
+                      Keep me signed in
+                    </label>
+                  </div>
 
                   <button type="submit" className="pnb-auth-primary" disabled={loading}>
-                    {loading ? "Please wait..." : "Login with email"}
+                    {loading ? "Please wait..." : (adminChallengeId ? "Verify & Login" : "Login with email")}
                   </button>
                 </form>
               ) : (
@@ -551,6 +746,19 @@ export default function AuthModal() {
                       </div>
                     </>
                   )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', justifyContent: 'flex-start' }}>
+                    <input 
+                      type="checkbox" 
+                      id="keepSignedInMobile" 
+                      checked={keepSignedIn} 
+                      onChange={(e) => setKeepSignedIn(e.target.checked)} 
+                      style={{ cursor: 'pointer', width: 'auto', margin: 0 }}
+                    />
+                    <label htmlFor="keepSignedInMobile" style={{ margin: 0, fontSize: '0.9rem', color: '#4b5563', cursor: 'pointer', fontWeight: 400, display: 'inline', width: 'auto', whiteSpace: 'nowrap' }}>
+                      Keep me signed in
+                    </label>
+                  </div>
 
                   <button type="submit" className="pnb-auth-primary" disabled={loading || (otpSent && timeLeft === 0)}>
                     {loading ? "Please wait..." : otpSent ? "Verify & Continue" : "Continue"}
@@ -622,16 +830,11 @@ export default function AuthModal() {
                   Forgot Password?
                 </button>
               </div>
-
-              <div className="pnb-auth-footer-note">
-                <ShieldCheck size={14} />
-                Your data is safe and secure with us.
-              </div>
             </>
           )}
 
           {viewMode === "register" && (
-            <form className="pnb-auth-form" onSubmit={handleRegister}>
+            <form className="pnb-auth-form" onSubmit={sendRegisterOtp}>
               <label>
                 Full Name
                 <span className="pnb-auth-input">
@@ -649,14 +852,16 @@ export default function AuthModal() {
                     <input type="tel" placeholder="Enter 10-digit mobile" value={mobile} onChange={handleMobileChange} />
                   </span>
                 </span>
+                {errors.mobile && <small style={{ color: "red", fontSize: "0.75rem" }}>{errors.mobile}</small>}
               </label>
 
               <label>
-                Email (Optional)
+                Email Address
                 <span className="pnb-auth-input">
                   <Mail size={16} />
                   <input type="email" placeholder="Enter your email address" value={email} onChange={handleEmailChange} />
                 </span>
+                {errors.email && <small style={{ color: "red", fontSize: "0.75rem" }}>{errors.email}</small>}
               </label>
 
               <label>
@@ -685,14 +890,14 @@ export default function AuthModal() {
                 <span className="pnb-auth-check-item is-valid"><span className="check-icon">✓</span> 1 special char</span>
               </div>
 
-              <div className="pnb-auth-secondary-grid" style={{ marginBottom: "12px" }}>
-                <button type="button" className="pnb-auth-back-link" onClick={() => switchView("login")} style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
+              <div className="pnb-auth-secondary-grid" style={{ marginBottom: "12px", marginTop: "16px" }}>
+                <button type="button" className="pnb-auth-back-link" onClick={() => switchView("login")} style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", cursor: "pointer", background: "#fff" }}>
                   Back to Login
                 </button>
               </div>
 
-              <button type="submit" className="pnb-auth-primary">
-                Register
+              <button type="submit" className="pnb-auth-primary" disabled={loading}>
+                {loading ? "Please wait..." : "Send OTP"}
               </button>
               <div className="pnb-auth-terms">
                 By continuing, you agree to our <a href="#">Terms & Privacy Policy</a>
@@ -700,37 +905,116 @@ export default function AuthModal() {
             </form>
           )}
 
-          {viewMode === "forgot-password" && (
-            <form className="pnb-auth-form" onSubmit={(e) => { e.preventDefault(); setStatus({ type: 'error', message: 'Password reset not implemented yet.' }); }}>
+          {viewMode === "register-otp" && (
+            <form className="pnb-auth-form" onSubmit={handleRegister}>
+              <div style={{ textAlign: "center", marginBottom: "16px" }}>
+                <h3 style={{ margin: "0 0 6px 0", color: "#333", fontSize: "1.1rem" }}>Verify OTP</h3>
+                <p style={{ margin: 0, color: "#666", fontSize: "0.85rem", lineHeight: "1.4" }}>
+                  An OTP has been sent to your email address: <strong>{email}</strong>
+                </p>
+              </div>
+
               <label>
-                Mobile Number
-                <span className="pnb-auth-phone-row">
-                  <span className="pnb-auth-country">IN +91</span>
-                  <span className="pnb-auth-input">
-                    <Phone size={16} />
-                    <input type="tel" placeholder="Enter 10-digit mobile" />
-                  </span>
+                Enter OTP
+                <span className="pnb-auth-input">
+                  <ShieldCheck size={16} />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={handleOtpChange}
+                    autoComplete="one-time-code"
+                  />
                 </span>
+                {errors.otp && <small style={{ color: "red", fontSize: "0.75rem" }}>{errors.otp}</small>}
               </label>
 
+              <div className="travel-auth-register" style={{ marginTop: "8px", marginBottom: "16px" }}>
+                {timeLeft > 0 ? (
+                  <p className="travel-otp-timer-text" style={{ margin: 0, fontSize: "0.85rem", color: "#666" }}>
+                    OTP will expire in <span className="travel-otp-timer-highlight" style={{ fontWeight: "600", color: "#a51c49" }}>{formatTime(timeLeft)}</span>
+                  </p>
+                ) : (
+                  <p className="travel-otp-resend-text" style={{ margin: 0, color: "#a51c49", fontWeight: "700", fontSize: "0.85rem" }}>
+                    OTP expired.{" "}
+                    <button
+                      type="button"
+                      className="pnb-auth-text-action"
+                      style={{ margin: 0, padding: 0, display: "inline", textDecoration: "underline", background: "none", border: "none", color: "#a51c49", cursor: "pointer", fontWeight: "700" }}
+                      onClick={sendRegisterOtp}
+                      disabled={loading}
+                    >
+                      Resend OTP
+                    </button>
+                  </p>
+                )}
+              </div>
+
+              <button type="submit" className="pnb-auth-primary" disabled={loading || timeLeft === 0}>
+                {loading ? "Please wait..." : "Verify & Register"}
+              </button>
+
+              <div className="pnb-auth-secondary-grid" style={{ marginTop: "12px", marginBottom: "8px" }}>
+                <button
+                  type="button"
+                  className="pnb-auth-back-link"
+                  onClick={() => { setViewMode("register"); setOtpSent(false); }}
+                  style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", cursor: "pointer", background: "#fff" }}
+                >
+                  Back to Edit Details
+                </button>
+              </div>
+            </form>
+          )}
+
+          {viewMode === "forgot-password" && (
+            <form className="pnb-auth-form" onSubmit={(e) => { e.preventDefault(); setStatus({ type: 'error', message: 'Password reset not implemented yet.' }); }}>
+              {authMethod === "mobile" ? (
+                <label>
+                  Mobile Number
+                  <span className="pnb-auth-phone-row">
+                    <span className="pnb-auth-country">IN +91</span>
+                    <span className="pnb-auth-input">
+                      <Phone size={16} />
+                      <input type="tel" placeholder="Enter 10-digit mobile" />
+                    </span>
+                  </span>
+                </label>
+              ) : (
+                <label>
+                  Email Address
+                  <span className="pnb-auth-input">
+                    <Mail size={16} />
+                    <input type="email" placeholder="Enter your email address" />
+                  </span>
+                </label>
+              )}
+
               <button type="submit" className="pnb-auth-primary" style={{ marginTop: '10px' }}>
-                Send OTP
+                {authMethod === "mobile" ? "Send OTP" : "Send Reset Link"}
               </button>
 
               <div className="pnb-auth-divider">
                 <span>OR</span>
               </div>
 
-              <div className="pnb-auth-secondary-grid">
+              <div className="pnb-auth-secondary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                {authMethod === "mobile" ? (
+                  <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchAuthMethod("email")}>
+                    <Mail size={16} /> Use Email
+                  </button>
+                ) : (
+                  <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchAuthMethod("mobile")}>
+                    <Phone size={16} /> Use Mobile
+                  </button>
+                )}
                 <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchView("register")}>
-                  <User size={16} /> Register
-                </button>
-                <button type="button" className="pnb-auth-secondary-btn" onClick={() => switchView("register")}>
-                  <User size={16} /> Sign Up
+                  <User size={16} /> Create Account
                 </button>
               </div>
 
-              <button type="button" className="pnb-auth-back-link" onClick={() => switchView("login")}>
+              <button type="button" className="pnb-auth-back-link" onClick={() => switchView("login")} style={{ width: "100%", padding: "8px", marginTop: "4px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
                 &larr; Back to Login
               </button>
             </form>

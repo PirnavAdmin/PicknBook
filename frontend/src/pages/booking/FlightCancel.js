@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Eye,
@@ -11,7 +10,9 @@ import {
   XCircle,
 } from "lucide-react";
 import {
-  cancelFlightBooking,
+  getCancellationCharges,
+  sendChangeRequest,
+  getCancelStatus,
   getFlightBookingById,
   listFlightBookings,
 } from "../../services/flightBookingService";
@@ -56,6 +57,7 @@ export default function FlightCancelRequest() {
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
+  const [cancelModalMessage, setCancelModalMessage] = useState("Are you sure you want to cancel this ticket?");
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -135,9 +137,36 @@ export default function FlightCancelRequest() {
     }
   };
 
-  const triggerCancelBooking = (bookingId) => {
-    setCancelModalBookingId(bookingId);
-    setIsCancelModalOpen(true);
+  const triggerCancelBooking = async (bookingId) => {
+    try {
+      setIsLoading(true);
+      const detail = await getFlightBookingById(bookingId);
+      
+      const chargeRes = await getCancellationCharges({
+        bookingId: String(detail.bookingId || bookingId),
+        pnr: detail.pnr || bookingId,
+        requestType: 1, 
+        srdvType: detail.srdvType || "MixAPI",
+        srdvIndex: detail.srdvIndex || "2"
+      });
+
+      let msg = "Are you sure you want to cancel this ticket?";
+      if (chargeRes && (chargeRes.cancellationCharge !== undefined || chargeRes.CancellationCharge !== undefined)) {
+         const charge = chargeRes.cancellationCharge ?? chargeRes.CancellationCharge;
+         const refund = chargeRes.refundedAmount ?? chargeRes.RefundedAmount ?? 0;
+         msg = `Cancellation Charge: INR ${charge}. Refundable Amount: INR ${refund}. Are you sure you want to proceed?`;
+      } else if (chargeRes && chargeRes.error) {
+         msg = `Warning: ${chargeRes.error.errorMessage || chargeRes.error}. Proceed with cancellation anyway?`;
+      }
+      
+      setCancelModalMessage(msg);
+      setCancelModalBookingId(bookingId);
+      setIsCancelModalOpen(true);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to fetch cancellation charges.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancelBooking = async (reason) => {
@@ -150,10 +179,49 @@ export default function FlightCancelRequest() {
     setActionMessage("");
 
     try {
-      const result = await cancelFlightBooking(bookingId, reason || undefined);
-      setActionMessage(
-        `Booking ${result.bookingReference || bookingId} cancelled successfully.`
-      );
+      const detail = await getFlightBookingById(bookingId);
+      const changeRes = await sendChangeRequest({
+        bookingId: String(detail.bookingId || bookingId),
+        pnr: detail.pnr || bookingId,
+        requestType: 1,
+        cancellationType: 1,
+        remarks: reason || "User request",
+        sectors: [{ Origin: detail.fromCity, Destination: detail.toCity }],
+        ticketData: (detail.passengers || []).map((p) => {
+          const name = p.name || p.fullName || "Passenger";
+          const parts = name.trim().split(/\s+/);
+          return { TicketId: detail.pnr || bookingId, FirstName: parts[0] || "Passenger", LastName: parts.slice(1).join(" ") || "User" };
+        }),
+        srdvType: detail.srdvType || "MixAPI",
+        srdvIndex: detail.srdvIndex || "2"
+      });
+
+      if (changeRes?.error) {
+        throw new Error(changeRes.error.errorMessage || changeRes.error);
+      }
+      const changeRequestId = changeRes?.changeRequestId || changeRes?.ChangeRequestId;
+      
+      if (!changeRequestId || changeRequestId === 0) {
+        throw new Error("Change Request ID not returned by SRDV.");
+      }
+
+      // Loop status
+      let finalStatus = "Pending";
+      let attempts = 0;
+      while (attempts < 4) {
+        const statusRes = await getCancelStatus({ changeRequestId, srdvType: detail.srdvType || "MixAPI" });
+        if (statusRes?.changeRequestStatus === 3 || statusRes?.ChangeRequestStatus === 3 || statusRes?.refundStatus === "Processed") {
+          finalStatus = "Processed";
+          break;
+        }
+        if (statusRes?.error) {
+           break;
+        }
+        attempts++;
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      
+      setActionMessage(`Cancellation requested. Status: ${finalStatus}.`);
       await fetchBookings();
     } catch (error) {
       setErrorMessage(error.message || "Unable to cancel booking.");
@@ -422,15 +490,11 @@ export default function FlightCancelRequest() {
       )}
       <CancellationModal
         isOpen={isCancelModalOpen}
-        onClose={() => {
-          setIsCancelModalOpen(false);
-          setCancelModalBookingId(null);
-        }}
+        onClose={() => setIsCancelModalOpen(false)}
         onConfirm={handleCancelBooking}
-        title="Cancel Flight Ticket"
-        message="Are you sure you want to cancel this ticket?"
+        title="Confirm Cancellation"
+        message={cancelModalMessage}
       />
     </div>
   );
 }
-

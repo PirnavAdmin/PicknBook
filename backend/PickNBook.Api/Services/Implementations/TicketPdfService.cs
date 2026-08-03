@@ -916,7 +916,7 @@ public class TicketPdfService : ITicketPdfService
         var r1 = new XRect(left, y, cardW, rowH);
         gfx.DrawRectangle(lightGreyBrush, r1);
         gfx.DrawRectangle(borderPen, r1);
-        gfx.DrawString("ROUTE", fontCardTitle, greyBrush, new XRect(left + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
+        gfx.DrawString("STAY", fontCardTitle, greyBrush, new XRect(left + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
         gfx.DrawString($"{reservation.HotelName} to {reservation.CityCode}", fontCardValue, navyBrush, new XRect(left + 12, y + 22, cardW - 24, 14), XStringFormats.TopLeft);
         gfx.DrawString(GetRoomCategory(reservation.OfferId), fontCardSub, greyBrush, new XRect(left + 12, y + 40, cardW - 24, 12), XStringFormats.TopLeft);
 
@@ -925,9 +925,9 @@ public class TicketPdfService : ITicketPdfService
         var r2 = new XRect(x2, y, cardW, rowH);
         gfx.DrawRectangle(lightGreyBrush, r2);
         gfx.DrawRectangle(borderPen, r2);
-        gfx.DrawString("DEPARTURE", fontCardTitle, greyBrush, new XRect(x2 + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
+        gfx.DrawString("CHECK IN", fontCardTitle, greyBrush, new XRect(x2 + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
         gfx.DrawString(reservation.CheckInDate.ToString("dd MMM yyyy"), fontCardValue, navyBrush, new XRect(x2 + 12, y + 22, cardW - 24, 14), XStringFormats.TopLeft);
-        gfx.DrawString($"Arrival: {reservation.CheckOutDate.ToString("dd MMM yyyy")}", fontCardSub, greyBrush, new XRect(x2 + 12, y + 40, cardW - 24, 12), XStringFormats.TopLeft);
+        gfx.DrawString($"Check Out: {reservation.CheckOutDate.ToString("dd MMM yyyy")}", fontCardSub, greyBrush, new XRect(x2 + 12, y + 40, cardW - 24, 12), XStringFormats.TopLeft);
 
         // Status Card
         double x3 = x2 + cardW + 10;
@@ -1072,7 +1072,6 @@ public class TicketPdfService : ITicketPdfService
         else
         {
             priceFieldsList.Add(("Base Fare", $"INR {reservation.BasePrice:N2}"));
-            priceFieldsList.Add(("Taxes", $"INR {reservation.GstAmount:N2}"));
             priceFieldsList.Add(("Convenience Fee", $"INR {reservation.ConvenienceFee:N2}"));
             priceFieldsList.Add(("Discount", $"INR {reservation.CouponDiscount:N2}"));
         }
@@ -1171,4 +1170,5 @@ public class TicketPdfService : ITicketPdfService
         }
     }
 }
+
 
