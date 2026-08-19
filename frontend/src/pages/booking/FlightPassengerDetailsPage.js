@@ -371,6 +371,51 @@ export default function FlightPassengerDetailsPage() {
     return (!isDomFrom || !isDomTo) || Boolean(fareQuoteData?.isPassportRequiredAtBook);
   }, [flight, searchContext, fareQuoteData]);
 
+  const preservedFareSummary = flowState.fareSummary || {};
+  let fqObj = fareQuoteData;
+  if (!fqObj && typeof window !== "undefined") {
+    try {
+      const rawFq = window.sessionStorage.getItem("last_fare_quote") || window.sessionStorage.getItem("FareQuote");
+      if (rawFq) fqObj = JSON.parse(rawFq);
+    } catch (e) { }
+  }
+  const fqResults = fqObj?.results || fqObj?.Results || fqObj?.rawResponse?.Results || fqObj?.rawResponse?.Response?.Results || {};
+  const fqFare = fqResults?.Fare || fqObj?.fare || {};
+
+  const preservedTotal = Number(
+    (fqResults?.B2CFinalFare ??
+      fqResults?.B2CPublishedFare ??
+      fqResults?.OfferedFare ??
+      fqFare?.PublishedFare ??
+      fqFare?.OfferedFare ??
+      preservedFareSummary.totalFare) || 0
+  ) || (Number(preservedFareSummary.baseFare || 0) + Number(preservedFareSummary.tax || 0));
+
+  const baseFare = Number(
+    (fqResults?.DisplayBaseFare ??
+      fqResults?.B2CBaseFare ??
+      fqResults?.BaseFare ??
+      fqFare?.BaseFare ??
+      preservedFareSummary.baseFare) || 0
+  );
+
+  const markup = Number(preservedFareSummary.markup || 0);
+  const convenienceFee = Number(preservedFareSummary.convenienceFee || 0);
+  const displayBaseFare = baseFare + markup;
+
+  const rawTax = Number(
+    (fqResults?.DisplayTax ??
+      fqResults?.B2CTax ??
+      fqResults?.Tax ??
+      fqFare?.Tax ??
+      preservedFareSummary.tax) || 0
+  );
+
+  const displayTax = (preservedTotal > 0 && displayBaseFare > 0)
+    ? Math.max(0, preservedTotal - convenienceFee - displayBaseFare)
+    : rawTax;
+  const tax = displayTax;
+
   useEffect(() => {
     let isCurrent = true;
     async function runFareQuote() {
@@ -661,6 +706,22 @@ export default function FlightPassengerDetailsPage() {
     setCouponSuccess("");
     try {
       const passengerCount = travellers.adults + travellers.children;
+      const appliedCoupon = code || couponCode || null;
+      const couponDiscountAmount = pricingBreakdown?.couponDiscount || flowState.couponDiscount || 0;
+      const finalFareSummary = {
+        baseFare,
+        seatSurcharge: flowState.fareSummary?.seatSurcharge || 0,
+        mealFee: flowState.fareSummary?.mealFee || 0,
+        baggageFee: flowState.fareSummary?.baggageFee || 0,
+        tax,
+        markup,
+        convenienceFee,
+        discount: pricingBreakdown
+          ? (Number(pricingBreakdown.promotionDiscount || 0) + Number(pricingBreakdown.couponDiscount || 0))
+          : (flowState.fareSummary?.discount || 0),
+        totalFare: preservedTotal
+      };
+
       const payload = {
         flightId: flight.id,
         flight: flight,
@@ -786,51 +847,6 @@ export default function FlightPassengerDetailsPage() {
       return copy;
     });
   };
-
-  const preservedFareSummary = flowState.fareSummary || {};
-  let fqObj = fareQuoteData;
-  if (!fqObj && typeof window !== "undefined") {
-    try {
-      const rawFq = window.sessionStorage.getItem("last_fare_quote") || window.sessionStorage.getItem("FareQuote");
-      if (rawFq) fqObj = JSON.parse(rawFq);
-    } catch (e) { }
-  }
-  const fqResults = fqObj?.results || fqObj?.Results || fqObj?.rawResponse?.Results || fqObj?.rawResponse?.Response?.Results || {};
-  const fqFare = fqResults?.Fare || fqObj?.fare || {};
-
-  const preservedTotal = Number(
-    (fqResults?.B2CFinalFare ??
-      fqResults?.B2CPublishedFare ??
-      fqResults?.OfferedFare ??
-      fqFare?.PublishedFare ??
-      fqFare?.OfferedFare ??
-      preservedFareSummary.totalFare) || 0
-  ) || (Number(preservedFareSummary.baseFare || 0) + Number(preservedFareSummary.tax || 0));
-
-  const baseFare = Number(
-    (fqResults?.DisplayBaseFare ??
-      fqResults?.B2CBaseFare ??
-      fqResults?.BaseFare ??
-      fqFare?.BaseFare ??
-      preservedFareSummary.baseFare) || 0
-  );
-
-  const markup = Number(preservedFareSummary.markup || 0);
-  const convenienceFee = Number(preservedFareSummary.convenienceFee || 0);
-  const displayBaseFare = baseFare + markup;
-
-  const rawTax = Number(
-    (fqResults?.DisplayTax ??
-      fqResults?.B2CTax ??
-      fqResults?.Tax ??
-      fqFare?.Tax ??
-      preservedFareSummary.tax) || 0
-  );
-
-  const displayTax = (preservedTotal > 0 && displayBaseFare > 0)
-    ? Math.max(0, preservedTotal - convenienceFee - displayBaseFare)
-    : rawTax;
-  const tax = displayTax;
 
   const totalDiscount = pricingBreakdown
     ? Number(pricingBreakdown.promotionDiscount || 0) +
