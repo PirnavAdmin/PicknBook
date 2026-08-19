@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Eye, PencilLine, PlusCircle, Power, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";

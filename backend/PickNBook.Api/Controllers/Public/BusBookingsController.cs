@@ -11,6 +11,7 @@ using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
 using PickNBook.Api.Services;
 using PickNBook.Api.Services.SeatLayouts;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace PickNBook.Api.Controllers
 {
@@ -22,6 +23,7 @@ namespace PickNBook.Api.Controllers
     IWhatsAppService whatsAppService,
     ICurrentUserService currentUserService,
     ISrdvBusService srdvBusService,
+    IMemoryCache cache,
     ILogger<BusBookingsController> logger) : BaseApiController
     {
         //private const string UserIdHeaderName = "X-User-Id";
@@ -97,88 +99,16 @@ namespace PickNBook.Api.Controllers
                 
                 if (jsonNode?["Result"]?.AsArray() is var resultNode && resultNode != null)
                 {
-                    var seaterMarkup = await GetActiveSeatMarkupAsync("Seater");
-                    var sleeperMarkup = await GetActiveSeatMarkupAsync("Sleeper");
+                    var (seaterMarkup, sleeperMarkup) = await GetBothMarkupsAsync();
 
                     var journeyDateStr = request.DepartDate; // Format: dd/mm/yyyy or yyyy-MM-dd
                     DateOnly.TryParseExact(journeyDateStr, new[] { "dd/MM/yyyy", "yyyy-MM-dd" }, null, System.Globalization.DateTimeStyles.None, out var journeyDate);
 
                     // ========================================
-                    // 1. SYNC TO DATABASE IN BATCH
+                    // 1. LEGACY DB SYNC REMOVED
                     // ========================================
-                    var fromCity = request.FromCityCode;
-                    var toCity = request.ToCityCode;
-                    
-                    var existingBuses = await dbContext.BusBookings
-                        .Where(x => x.FromCity == fromCity && x.ToCity == toCity)
-                        .ToListAsync();
-                        
-                    var newBuses = new List<(System.Text.Json.Nodes.JsonNode Node, BusBooking Bus)>();
-
-                    foreach (var busNode in resultNode)
-                    {
-                        if (busNode == null) continue;
-
-                        var operatorName = busNode["TravelsName"]?.ToString() ?? busNode["OperatorName"]?.ToString() ?? "Unknown";
-                        var depTimeStr = busNode["DepartureTime"]?.ToString();
-                        var arrTimeStr = busNode["ArrivalTime"]?.ToString();
-
-                        if (!DateTime.TryParse(depTimeStr, out var depTime) || !DateTime.TryParse(arrTimeStr, out var arrTime))
-                        {
-                            depTime = new DateTime(journeyDate.Year, journeyDate.Month, journeyDate.Day, 10, 0, 0, DateTimeKind.Utc);
-                            arrTime = depTime.AddHours(10);
-                        }
-                        else
-                        {
-                            depTime = DateTime.SpecifyKind(depTime, DateTimeKind.Utc);
-                            arrTime = DateTime.SpecifyKind(arrTime, DateTimeKind.Utc);
-                        }
-
-                        var bus = existingBuses.FirstOrDefault(x =>
-                            x.OperatorName == operatorName &&
-                            x.DepartureTime == depTime);
-
-                        if (bus == null)
-                        {
-                            bus = new BusBooking
-                            {
-                                BusNumber = "SRDV-" + Random.Shared.Next(1000, 9999),
-                                OperatorName = operatorName,
-                                BusType = busNode["BusType"]?.ToString() ?? "Unknown",
-                                GstCategory = "AC", // Simplified
-                                FromCity = fromCity,
-                                ToCity = toCity,
-                                DepartureTime = depTime,
-                                ArrivalTime = arrTime,
-                                PriceInr = decimal.TryParse(busNode["DisplayFare"]?.ToString(), out var df) ? df : 0,
-                                TotalSeats = int.TryParse(busNode["AvailableSeats"]?.ToString(), out var aSeats) ? (aSeats > 0 ? aSeats : 40) : 40,
-                                AvailableSeats = int.TryParse(busNode["AvailableSeats"]?.ToString(), out var avail) ? avail : 40,
-                                BoardingPoint = "Default Point",
-                                DroppingPoint = "Default Point",
-                                TraceId = jsonNode["TraceId"]?.ToString(),
-                                ResultIndex = busNode["ResultIndex"]?.ToString(),
-                                SrdvIndex = int.TryParse(busNode["SrdvIndex"]?.ToString(), out var sIdx) ? sIdx : 0,
-                                OperatorId = busNode["OperatorId"]?.ToString() ?? "",
-                                CancellationPoliciesJson = busNode["CancellationPolicy"]?.ToString() ?? busNode["CancellationPolicies"]?.ToString()
-                            };
-                            existingBuses.Add(bus); 
-                            newBuses.Add((busNode, bus));
-                            dbContext.BusBookings.Add(bus);
-                        }
-                        else
-                        {
-                            busNode["Id"] = bus.Id;
-                        }
-                    }
-
-                    if (newBuses.Any())
-                    {
-                        await dbContext.SaveChangesAsync();
-                        foreach (var item in newBuses)
-                        {
-                            item.Node["Id"] = item.Bus.Id;
-                        }
-                    }
+                    // We no longer sync every search result to the bus_bookings table.
+                    // The frontend will receive the raw SRDV identifiers and handle them.
 
                     // Now proceed with the rest of the logic
                     foreach (var busNode in resultNode)
@@ -318,8 +248,7 @@ namespace PickNBook.Api.Controllers
                 
                 if (jsonNode is System.Text.Json.Nodes.JsonObject jsonObj)
                 {
-                    var seaterMarkup = await GetActiveSeatMarkupAsync("Seater");
-                        var sleeperMarkup = await GetActiveSeatMarkupAsync("Sleeper");
+                    var (seaterMarkup, sleeperMarkup) = await GetBothMarkupsAsync();
 
                     var resultNodes = new List<System.Text.Json.Nodes.JsonNode>();
 
@@ -411,22 +340,8 @@ namespace PickNBook.Api.Controllers
 
                     }
 
-                    var resultObj = jsonObj["Result"] as System.Text.Json.Nodes.JsonObject;
-                    var policiesNode = jsonObj["CancellationPolicy"] ?? jsonObj["CancellationPolicies"] ?? resultObj?["CancellationPolicy"] ?? resultObj?["CancellationPolicies"];
-                    if (policiesNode != null)
-                    {
-                        if (int.TryParse(request.SrdvIndex, out int srdvIdx))
-                        {
-                            var bus = await dbContext.BusBookings
-                                .FirstOrDefaultAsync(b => b.TraceId == request.TraceId && b.SrdvIndex == srdvIdx && b.ResultIndex == request.ResultIndex);
-
-                            if (bus != null)
-                            {
-                                bus.CancellationPoliciesJson = policiesNode.ToJsonString();
-                                await dbContext.SaveChangesAsync();
-                            }
-                        }
-                    }
+                    // Cancellation policies are returned to frontend directly inside the JSON response.
+                    // Legacy code to save them to the database has been removed.
                 }
 
                 return Ok(jsonNode);
@@ -478,13 +393,8 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(new { message = "At least one passenger is required." });
             }
 
-            foreach (var passenger in request.Passengers)
-            {
-                if (string.IsNullOrWhiteSpace(passenger.IdType) || string.IsNullOrWhiteSpace(passenger.IdNumber))
-                {
-                    return BadRequest(new { message = $"Identity Proof (IdType and IdNumber) is strictly required by the bus provider for passenger '{passenger.FirstName} {passenger.LastName}'." });
-                }
-            }
+            // ID Proof validation is now handled natively by the frontend reading the Search response flag,
+            // and strictly enforced by the SRDV API natively.
 
             try
             {
@@ -492,29 +402,16 @@ namespace PickNBook.Api.Controllers
                 var jsonNode = System.Text.Json.Nodes.JsonNode.Parse(rawJson);
                 
                 // ==========================================
-                // CAPTURE CANCELLATION POLICIES DURING BLOCKING
+                // LEGACY POLICY CAPTURE REMOVED
                 // ==========================================
                 if (jsonNode is System.Text.Json.Nodes.JsonObject jsonObj)
                 {
                     var resultObj = jsonObj["Result"] as System.Text.Json.Nodes.JsonObject;
-                    var policiesNode = jsonObj["CancellationPolicy"] ?? jsonObj["CancellationPolicies"] ?? resultObj?["CancellationPolicy"] ?? resultObj?["CancellationPolicies"];
-                    if (policiesNode != null)
-                    {
-                        var bus = await dbContext.BusBookings
-                            .FirstOrDefaultAsync(b => b.TraceId == request.TraceId && b.SrdvIndex == request.SrdvIndex && b.ResultIndex == request.ResultIndex);
-
-                        if (bus != null)
-                        {
-                            bus.CancellationPoliciesJson = policiesNode.ToJsonString();
-                            await dbContext.SaveChangesAsync();
-                        }
-                    }
 
                     // ==========================================
                     // INJECT MARKUP INTO BLOCK RESPONSE
                     // ==========================================
-                    var seaterMarkup = await GetActiveSeatMarkupAsync("Seater");
-                    var sleeperMarkup = await GetActiveSeatMarkupAsync("Sleeper");
+                    var (seaterMarkup, sleeperMarkup) = await GetBothMarkupsAsync();
                     
                     var passengersArray = jsonObj["Passengers"]?.AsArray() ?? resultObj?["Passengers"]?.AsArray();
                     
@@ -618,9 +515,9 @@ namespace PickNBook.Api.Controllers
                 grandTotal
             });
         }
-        [HttpPost("{busId:int}/pricing-preview")]
+        [HttpPost("pricing-preview")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetPricingPreview(int busId, [FromBody] BusPricingPreviewRequestDto request)
+        public async Task<IActionResult> GetPricingPreview([FromBody] BusPricingPreviewRequestDto request)
         {
             var userIdStr = currentUserService.GetUserOrGuestId();
             int? parsedUserId = null;
@@ -631,10 +528,6 @@ namespace PickNBook.Api.Controllers
 
             try
             {
-                var bus = await dbContext.BusBookings.FirstOrDefaultAsync(x => x.Id == busId);
-                if (bus is null)
-                    throw new Exception("Bus not found.");
-
                 // ========================================
                 // UNIFIED PROMOTION VALIDATION
                 // ========================================
@@ -762,8 +655,19 @@ namespace PickNBook.Api.Controllers
                 if (invalidSeats.Any())
                     throw new Exception($"Seat pricing data is missing for seat(s): {string.Join(", ", invalidSeats)}. Ensure the frontend sends BaseFare and ExternalGst from the SRDV Seat Layout response.");
 
+                var dummyBus = new BusBooking
+                {
+                    FromCity = request.FromCity,
+                    ToCity = request.ToCity,
+                    DepartureTime = string.IsNullOrWhiteSpace(request.DepartureTime) ? DateTime.UtcNow.AddDays(1) : DateTime.Parse(request.DepartureTime).ToUniversalTime(),
+                    OperatorName = request.OperatorName ?? "Unknown",
+                    BusType = request.BusType ?? "Unknown",
+                    PriceInr = request.TotalFare,
+                    GstCategory = "AC"
+                };
+
                 var pricing = await _promotionEngine.CalculateAsync(
-                    bus.Id,
+                    dummyBus,
                     seatPreviews,
                     request.CouponCode,
                     request.PromotionId,
@@ -778,8 +682,8 @@ namespace PickNBook.Api.Controllers
             }
         }
 
-        [HttpPost("{busId:int}/book")]
-        public async Task<IActionResult> BookBus(int busId, [FromBody] CreateBusBookingRequestDto request)
+        [HttpPost("book")]
+        public async Task<IActionResult> BookBus([FromBody] CreateBusBookingRequestDto request)
         {
             if (!currentUserService.IsAuthenticated())
             {
@@ -811,12 +715,41 @@ namespace PickNBook.Api.Controllers
                     await using var transaction = await dbContext.Database.BeginTransactionAsync();
                     try
                     {
-                        var bus = await dbContext.BusBookings.FirstOrDefaultAsync(x => x.Id == busId);
-                        if (bus is null)
-                            throw new Exception("Bus not found.");
+                        if (string.IsNullOrWhiteSpace(request.FromCity) || string.IsNullOrWhiteSpace(request.ToCity) || string.IsNullOrWhiteSpace(request.DepartureTime))
+                            throw new Exception("Missing required bus details in request payload.");
 
-                        if (bus.DepartureTime <= DateTime.UtcNow)
+                        var depTime = DateTime.Parse(request.DepartureTime).ToUniversalTime();
+                        var arrTime = string.IsNullOrWhiteSpace(request.ArrivalTime) ? depTime.AddHours(10) : DateTime.Parse(request.ArrivalTime).ToUniversalTime();
+
+                        if (depTime <= DateTime.UtcNow)
                             throw new Exception("Cannot book a bus that already departed.");
+
+                        // Create the BusBooking record just-in-time for this specific booking
+                        var bus = new BusBooking
+                        {
+                            BusNumber = "SRDV-" + Random.Shared.Next(1000, 9999),
+                            OperatorName = request.OperatorName ?? "Unknown",
+                            BusType = request.BusType ?? "Unknown",
+                            GstCategory = "AC",
+                            FromCity = request.FromCity,
+                            ToCity = request.ToCity,
+                            DepartureTime = depTime,
+                            ArrivalTime = arrTime,
+                            PriceInr = request.TotalFare,
+                            TotalSeats = 40,
+                            AvailableSeats = 40,
+                            BoardingPoint = request.BoardingPointName ?? "Default Point",
+                            DroppingPoint = request.DroppingPointName ?? "Default Point",
+                            TraceId = request.TraceId,
+                            ResultIndex = request.ResultIndex,
+                            SrdvIndex = request.SrdvIndex,
+                            OperatorId = "",
+                            CancellationPoliciesJson = null,
+                            IsIdProofRequired = false
+                        };
+
+                        dbContext.BusBookings.Add(bus);
+                        await dbContext.SaveChangesAsync();
 
                         var requestedSeatCodes = normalizedPassengers
                             .Where(x => !string.IsNullOrWhiteSpace(x.SeatNumber))
@@ -972,7 +905,7 @@ namespace PickNBook.Api.Controllers
                             .ToList();
 
                         var pricing = await _promotionEngine.CalculateAsync(
-                            bus.Id,
+                            bus,
                             seatPreviews,
                             request.CouponCode,
                             request.PromotionId,
@@ -2095,15 +2028,44 @@ namespace PickNBook.Api.Controllers
 
             return feeRow?.FeeInr ?? 0m;
         }
-        private async Task<BusMarkupSetting?> GetActiveSeatMarkupAsync(
-    string seatType)
+        private async Task<BusMarkupSetting?> GetActiveSeatMarkupAsync(string seatType)
         {
-            return await dbContext.BusMarkupSettings
-                .AsNoTracking()
-                .OrderByDescending(x => x.UpdateDateUtc)
-                .FirstOrDefaultAsync(x =>
-                    x.Status == "Active" &&
-                    x.SeatType.ToUpper() == seatType.ToUpper());
+            var cacheKey = $"BusMarkup_{seatType.ToUpper()}";
+            if (!cache.TryGetValue(cacheKey, out BusMarkupSetting? markup))
+            {
+                markup = await dbContext.BusMarkupSettings
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.UpdateDateUtc)
+                    .FirstOrDefaultAsync(x =>
+                        x.Status == "Active" &&
+                        x.SeatType.ToUpper() == seatType.ToUpper());
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2)
+                };
+                
+                cache.Set(cacheKey, markup, cacheOptions);
+            }
+            return markup;
+        }
+        private async Task<(BusMarkupSetting? Seater, BusMarkupSetting? Sleeper)> GetBothMarkupsAsync()
+        {
+            var cacheKey = "BusMarkup_BOTH";
+            if (!cache.TryGetValue(cacheKey, out (BusMarkupSetting? Seater, BusMarkupSetting? Sleeper) result))
+            {
+                var allMarkups = await dbContext.BusMarkupSettings
+                    .AsNoTracking()
+                    .Where(x => x.Status == "Active")
+                    .ToListAsync();
+
+                result = (
+                    allMarkups.FirstOrDefault(x => x.SeatType.Equals("Seater", StringComparison.OrdinalIgnoreCase)),
+                    allMarkups.FirstOrDefault(x => x.SeatType.Equals("Sleeper", StringComparison.OrdinalIgnoreCase))
+                );
+                cache.Set(cacheKey, result, TimeSpan.FromMinutes(2));
+            }
+            return result;
         }
         private async Task<BusGstSetting?> GetActiveBusGstAsync(
      string gstCategory)

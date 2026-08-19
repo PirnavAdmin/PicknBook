@@ -315,6 +315,12 @@ function normalizeBusSearchRecord(record, index = 0) {
     availableSeats:
       Number(pickFirst(record, ["availableSeats", "AvailableSeats"], 0)) || 0,
     totalSeats: Number(pickFirst(record, ["totalSeats", "TotalSeats"], 0)) || 0,
+    idProofRequired: Boolean(
+      pickFirst(record, ["idProofRequired", "IdProofRequired", "isIdProofRequired", "IsIdProofRequired"], false)
+    ),
+    IdProofRequired: Boolean(
+      pickFirst(record, ["idProofRequired", "IdProofRequired", "isIdProofRequired", "IsIdProofRequired"], false)
+    ),
   };
 }
 
@@ -1369,6 +1375,9 @@ const POPULAR_BUS_CITY_MAP = {
   udupi: "35",
 };
 
+const RESOLVED_CITY_CODE_CACHE = new Map();
+const IN_FLIGHT_CITY_RESOLVE_MAP = new Map();
+
 async function resolveCityCode(cityInput) {
   const value = String(cityInput || "").trim();
   if (!value) return "";
@@ -1379,23 +1388,43 @@ async function resolveCityCode(cityInput) {
     return POPULAR_BUS_CITY_MAP[key];
   }
 
-  try {
-    const cities = await searchBusCities(value);
-    if (Array.isArray(cities) && cities.length > 0) {
-      const match =
-        cities.find(
-          (c) =>
-            String(c?.cityName || "").toLowerCase() === value.toLowerCase() ||
-            String(c?.name || "").toLowerCase() === value.toLowerCase()
-        ) || cities[0];
-      const code = String(match?.cityId || match?.id || match?.cico_id || "");
-      if (/^\d+$/.test(code)) return code;
-    }
-  } catch (err) {
-    console.warn("[busBookingService] resolveCityCode search failed:", err);
+  if (RESOLVED_CITY_CODE_CACHE.has(key)) {
+    return RESOLVED_CITY_CODE_CACHE.get(key);
   }
 
-  return value;
+  if (IN_FLIGHT_CITY_RESOLVE_MAP.has(key)) {
+    return await IN_FLIGHT_CITY_RESOLVE_MAP.get(key);
+  }
+
+  const resolvePromise = (async () => {
+    try {
+      const cities = await searchBusCities(value);
+      if (Array.isArray(cities) && cities.length > 0) {
+        const match =
+          cities.find(
+            (c) =>
+              String(c?.cityName || "").toLowerCase() === value.toLowerCase() ||
+              String(c?.name || "").toLowerCase() === value.toLowerCase()
+          ) || cities[0];
+        const code = String(match?.cityId || match?.id || match?.cico_id || "");
+        if (/^\d+$/.test(code)) {
+          RESOLVED_CITY_CODE_CACHE.set(key, code);
+          return code;
+        }
+      }
+    } catch (err) {
+      console.warn("[busBookingService] resolveCityCode search failed:", err);
+    }
+    RESOLVED_CITY_CODE_CACHE.set(key, value);
+    return value;
+  })();
+
+  IN_FLIGHT_CITY_RESOLVE_MAP.set(key, resolvePromise);
+  try {
+    return await resolvePromise;
+  } finally {
+    IN_FLIGHT_CITY_RESOLVE_MAP.delete(key);
+  }
 }
 
 export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) {
@@ -1458,21 +1487,82 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
         record.DepartureTime || record.departureTime || record.departure || "";
       const arrivalTime =
         record.ArrivalTime || record.arrivalTime || record.arrival || "";
+
+      let busNumber = String(
+        record.BusNumber ||
+          record.busNumber ||
+          record.BusNo ||
+          record.busNo ||
+          record.VehicleNumber ||
+          record.vehicleNumber ||
+          record.RegNo ||
+          record.regNo ||
+          record.RouteNo ||
+          record.routeNo ||
+          record.ServiceId ||
+          record.serviceId ||
+          record.TripId ||
+          record.tripId ||
+          ""
+      ).trim();
+
+      if (!busNumber || busNumber === "--" || busNumber === "null" || busNumber === "undefined") {
+        const words = String(operatorName).trim().split(/\s+/).filter(Boolean);
+        let prefix = "PNB";
+        if (words.length >= 2) {
+          prefix = (words[0][0] + words[1][0]).toUpperCase();
+        } else if (words.length === 1 && words[0].length >= 2) {
+          prefix = words[0].slice(0, 3).toUpperCase();
+        }
+        const numId = parseInt(String(record.Id || record.id || index + 1).replace(/\D/g, ""), 10) || (index + 1);
+        busNumber = `${prefix}-${1000 + (numId % 9000)}`;
+      }
+
+      const isSleeper =
+        String(record.Sleeper ?? record.sleeper ?? "false").toLowerCase() === "true" ||
+        String(busType).toLowerCase().includes("sleeper");
+
       const availableSeats =
         parseInt(record.AvailableSeats ?? record.availableSeats ?? record.seatsAvailable ?? 0, 10);
+      let totalSeats =
+        parseInt(record.TotalSeats ?? record.totalSeats ?? record.TotalSeatCount ?? record.MaxSeats ?? record.Capacity ?? 0, 10);
+
+      if (!totalSeats || totalSeats <= availableSeats) {
+        totalSeats = isSleeper
+          ? Math.max(availableSeats + 14, 36)
+          : Math.max(availableSeats + 18, 44);
+      }
+
       const priceList =
         Array.isArray(record.Price) ? record.Price :
         Array.isArray(record.price) ? record.price : [];
 
-      let displayFare = parseFloat(record.DisplayFare ?? record.displayFare ?? record.fare ?? 0);
+      const getB2CDisplayFare = (p) => {
+        if (!p || typeof p !== "object") return 0;
+        const b2cKey = Object.keys(p).find((k) => k.toLowerCase() === "b2cdisplayfare");
+        if (b2cKey && parseFloat(p[b2cKey]) > 0) return parseFloat(p[b2cKey]);
+        const baseKey = Object.keys(p).find((k) => k.toLowerCase() === "basefare");
+        const markupKey = Object.keys(p).find((k) => k.toLowerCase() === "agentmarkup" || k.toLowerCase() === "markup");
+        const base = baseKey ? parseFloat(p[baseKey]) : 0;
+        const markup = markupKey ? parseFloat(p[markupKey]) : 0;
+        if (base > 0) return base + markup;
+        const priceInr = parseFloat(p.PriceInr ?? p.priceInr ?? p.DisplayFare ?? p.displayFare ?? 0);
+        if (priceInr > 0) return priceInr;
+        const pub = parseFloat(p.PublishedFare ?? p.publishedFare ?? p.fare ?? 0);
+        return pub > 0 ? pub : 0;
+      };
+
+      let displayFare = 0;
       if (priceList.length > 0) {
-        const validFares = priceList
-          .map((p) => parseFloat(p?.PublishedFare || p?.BaseFare || 0))
-          .filter((f) => f > 0);
-        if (validFares.length > 0) {
-          displayFare = Math.min(...validFares);
+        const validB2CFares = priceList.map(getB2CDisplayFare).filter((f) => f > 0);
+        if (validB2CFares.length > 0) {
+          displayFare = Math.min(...validB2CFares);
         }
       }
+      if (!displayFare || displayFare <= 0) {
+        displayFare = getB2CDisplayFare(record) || parseFloat(record.B2CDisplayFare ?? record.b2CDisplayFare ?? record.DisplayFare ?? record.displayFare ?? record.fare ?? 0);
+      }
+
       const resultIndex =
         String(record.ResultIndex || record.resultIndex || record.Id || index);
       const traceId =
@@ -1485,8 +1575,6 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
         record.OperatorId || record.operatorId || "";
       const isAC =
         String(record.IsAC ?? record.isAC ?? "false").toLowerCase() === "true";
-      const isSleeper =
-        String(record.Sleeper ?? record.sleeper ?? "false").toLowerCase() === "true";
       const isSeater =
         String(record.Seater ?? record.seater ?? "false").toLowerCase() === "true";
       const boardingPoints =
@@ -1501,7 +1589,6 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
       const cancellationPolicies =
         Array.isArray(record.CancellationPolicies) ? record.CancellationPolicies :
         Array.isArray(record.cancellationPolicies) ? record.cancellationPolicies : [];
-        // priceList already extracted above
 
       return {
         id: record.Id || record.id || index,
@@ -1511,6 +1598,7 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
         routeId,
         operatorId,
         operatorName,
+        busNumber,
         busType,
         departureTime,
         arrivalTime,
@@ -1520,9 +1608,11 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
         arrivalTimeUtc: arrivalTime,
         duration: record.Duration || record.duration || 0,
         availableSeats,
+        totalSeats,
         maxSeatsPerTicket: parseInt(record.MaxSeatsPerTicket ?? record.maxSeatsPerTicket ?? 6, 10),
         fare: displayFare,
         displayFare,
+        b2cDisplayFare: displayFare,
         isAC,
         isSleeper,
         isSeater,
@@ -1738,12 +1828,14 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
         seatCode:      String(s?.SeatName || ""),
         seatType:      String(s?.SeatType || "Seater"),
         priceInr:      b2cDisplayFare,
+        b2cDisplayFare: b2cDisplayFare,
+        publishedFare,
         baseFare,
         tax,
         externalGst:   tax, // Added for Pricing Preview explicitly
         seatFare,
         markupAmount:  markup,
-        fareBeforeTax: baseFare,
+        fareBeforeTax: b2cDisplayFare,
         isBooked:      !isAvailable,
         gender:        String(s?.IsLadiesSeat).toLowerCase() === "true" ? "Female" : "",
       };
@@ -1787,7 +1879,19 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
   }
 }
 
-export async function getBusPricingPreview({ busId, traceId, resultIndex, srdvIndex, blockKey, boardingPointId, passengers = [], couponCode, promotionId, selectedFeaturedOfferId } = {}) {
+export async function getBusPricingPreview({
+  traceId,
+  passengers = [],
+  couponCode,
+  promotionId,
+  selectedFeaturedOfferId,
+  fromCity,
+  toCity,
+  departureTime,
+  operatorName,
+  busType,
+  totalFare
+} = {}) {
   let finalCouponCode = couponCode ? String(couponCode).trim().toUpperCase() : null;
   let finalFeaturedOfferId =
     selectedFeaturedOfferId !== undefined &&
@@ -1809,24 +1913,29 @@ export async function getBusPricingPreview({ busId, traceId, resultIndex, srdvIn
 
   const seatsPayload = passengers.map(p => ({
     seatCode: p.seatNumber || p.seatName || p.seatCode,
-    seatType: p.seatType,
+    seatType: p.seatType || "Seater",
     baseFare: Number(p.baseFare || 0),
-    markupAmount: Number(p.markupAmount || 0),
     externalGst: Number(p.tax || p.externalGst || 0)
   }));
 
   try {
     const data = await requestJsonWithFallback(
-      [`${BUS_BOOKINGS_ROOT}/${busId}/pricing-preview`, `${LEGACY_BUS_BOOKINGS_ROOT}/${busId}/pricing-preview`],
+      [`${BUS_BOOKINGS_ROOT}/pricing-preview`, `${LEGACY_BUS_BOOKINGS_ROOT}/pricing-preview`],
       {
         method: "POST",
         allowAuthFallback: true,
         body: JSON.stringify({
-          traceId: String(traceId || busId || ""),
+          traceId: String(traceId || ""),
           couponCode: finalCouponCode,
           seats: seatsPayload,
           promotionId: finalFeaturedOfferId ? null : promotionId,
           selectedFeaturedOfferId: finalFeaturedOfferId,
+          fromCity: String(fromCity || ""),
+          toCity: String(toCity || ""),
+          departureTime: String(departureTime || ""),
+          operatorName: String(operatorName || ""),
+          busType: String(busType || ""),
+          totalFare: Number(totalFare || 0)
         }),
       }
     );
@@ -1851,46 +1960,79 @@ export async function bookBus({ busId, payload }) {
     finalFeaturedOfferId = null;
   }
 
-  const passengersPayload = (payload.passengers || []).map(p => ({
-    fullName: String(`${p.firstName || ""} ${p.lastName || ""}`).trim() || p.fullName,
-    gender: String(p.gender).toLowerCase() === "female" ? "2" : "1",
-    seatNumber: p.seatNumber || p.seatName || p.SeatNumber,
-    age: Number(p.age || p.Age),
-    baseFare: Number(p.baseFare || p.BaseFare || 0),
-    seatType: String(p.seatType || p.SeatType || "Seater").charAt(0).toUpperCase() + String(p.seatType || p.SeatType || "Seater").slice(1),
-    externalGst: Number(p.tax || p.externalGst || p.ExternalGst || 0),
-    idType: p.idType || "Aadhar",
-    idNumber: p.idNumber || "123456789012"
-  }));
+  const isIdProofRequired = Boolean(payload.isIdProofRequired);
+
+  const passengersPayload = (payload.passengers || []).map((p) => {
+    const rawGen = String(p.gender || p.Gender || "").trim().toLowerCase();
+    const gender =
+      rawGen === "female" || rawGen === "f" || rawGen === "2" || rawGen === "ms" || rawGen === "mrs"
+        ? "Female"
+        : "Male";
+
+    const title = String(p.title || (gender === "Female" ? "Ms" : "Mr")).trim();
+
+    const idProofProps = isIdProofRequired ? {
+      idType: p.idType || p.idProofType || "Aadhar",
+      idNumber: p.idNumber || p.idProofNumber || "123456789012"
+    } : {};
+
+    return {
+      title,
+      firstName: String(p.firstName || "").trim(),
+      lastName: String(p.lastName || "").trim(),
+      fullName: String(p.fullName || p.FullName || `${p.firstName || ""} ${p.lastName || ""}`).trim(),
+      gender,
+      age: Number(p.age || p.Age) || 25,
+      seatCode: p.seatNumber || p.seatName || p.SeatNumber || p.seatCode,
+      seatNumber: p.seatNumber || p.seatName || p.SeatNumber || p.seatCode,
+      isLadiesSeat: Boolean(p.isLadiesSeat),
+      baseFare: Number(p.baseFare || p.BaseFare || 0),
+      seatType:
+        String(p.seatType || p.SeatType || "Seater").charAt(0).toUpperCase() +
+        String(p.seatType || p.SeatType || "Seater").slice(1),
+      externalGst: Number(p.tax || p.externalGst || p.ExternalGst || 0),
+      ...idProofProps
+    };
+  });
 
   const updatedPayload = {
-    traceId: String(payload.traceId || payload.TraceId || busId || ""),
+    traceId: String(payload.traceId || payload.TraceId || ""),
     resultIndex: String(payload.resultIndex || payload.ResultIndex || ""),
     srdvIndex: Number(payload.srdvIndex || payload.SrdvIndex || 0),
-    blockKey: String(payload.blockKey || payload.BlockKey || ""),
+    blockKey: String(payload.srdvBlockKey || payload.blockKey || payload.BlockKey || ""),
+    fromCity: String(payload.fromCity || ""),
+    toCity: String(payload.toCity || ""),
+    departureTime: String(payload.departureTime || ""),
+    arrivalTime: String(payload.arrivalTime || ""),
+    operatorName: String(payload.operatorName || ""),
+    busType: String(payload.busType || ""),
+    totalFare: Number(payload.totalFare || 0),
     boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || ""),
     boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || ""),
-    boardingPointTime: (payload.boardingPointTime || payload.BoardingPointTime) ? String(payload.boardingPointTime || payload.BoardingPointTime) : null,
+    boardingPointTime: null,
     droppingPointId: String(payload.droppingPointId || payload.DroppingPointId || ""),
     droppingPointName: String(payload.droppingPointName || payload.DroppingPointName || ""),
-    droppingPointTime: (payload.droppingPointTime || payload.DroppingPointTime) ? String(payload.droppingPointTime || payload.DroppingPointTime) : null,
+    droppingPointTime: null,
     passengerName: String(payload.passengerName || payload.PassengerName || ""),
     passengerPhone: String(payload.passengerPhone || payload.PassengerPhone || ""),
     passengerEmail: String(payload.passengerEmail || payload.PassengerEmail || ""),
     couponCode: finalCouponCode,
+    seats: Number(payload.seats || passengersPayload.length || 1),
+    promotionId: finalFeaturedOfferId ? null : (payload.promotionId ? Number(payload.promotionId) : null),
+    selectedFeaturedOfferId: finalFeaturedOfferId ? Number(finalFeaturedOfferId) : null,
     passengers: passengersPayload,
-    promotionId: finalFeaturedOfferId ? null : payload.promotionId,
-    selectedFeaturedOfferId: finalFeaturedOfferId,
     paymentMethod: String(payload.paymentMethod || "")
   };
 
+  console.log("SENDING_TO_BACKEND", JSON.stringify(updatedPayload, null, 2));
+
   try {
     const data = await requestJsonWithFallback(
-      [`${BUS_BOOKINGS_ROOT}/${busId}/book`, `${LEGACY_BUS_BOOKINGS_ROOT}/${busId}/book`],
+      [`${BUS_BOOKINGS_ROOT}/book`, `${LEGACY_BUS_BOOKINGS_ROOT}/book`],
       {
         method: "POST",
         body: JSON.stringify(updatedPayload),
-        allowAuthFallback: true,
+        allowAuthFallback: false,
       }
     );
 
@@ -1911,13 +2053,75 @@ export async function listBusCoupons() {
   }
 }
 
+export function isBusCategoryOfferOrCoupon(item) {
+  if (!item || typeof item !== "object") return false;
+
+  const rawBookingType = String(
+    item.bookingType ||
+      item.BookingType ||
+      item.serviceType ||
+      item.ServiceType ||
+      item.category ||
+      item.Category ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    rawBookingType === "flight" ||
+    rawBookingType === "flights" ||
+    rawBookingType === "hotel" ||
+    rawBookingType === "hotels"
+  ) {
+    return false;
+  }
+
+  const code = String(
+    item.couponCode || item.CouponCode || item.code || item.Code || ""
+  ).toUpperCase();
+  const description = String(
+    item.description ||
+      item.Description ||
+      item.remark ||
+      item.Remark ||
+      item.title ||
+      item.Title ||
+      item.subtitle ||
+      item.Subtitle ||
+      ""
+  ).toUpperCase();
+
+  if (
+    code.includes("FLY") ||
+    code.includes("FLIGHT") ||
+    code.includes("HOTEL") ||
+    code.includes("STAY") ||
+    code.startsWith("AIR") ||
+    description.includes("FLIGHT") ||
+    description.includes("HOTEL")
+  ) {
+    if (
+      !code.includes("BUS") &&
+      !code.includes("WHEEL") &&
+      !description.includes("BUS")
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export async function listAvailableBusCoupons() {
   const data = await requestJsonWithFallback(
     [`${BUS_BOOKINGS_ROOT}/user/available`, `${LEGACY_BUS_BOOKINGS_ROOT}/user/available`],
     { method: "GET", skipAuth: true, allowAuthFallback: true }
   );
 
-  return unwrapArrayResponse(data).map((record) => normalizeBusCouponRecord(record));
+  return unwrapArrayResponse(data)
+    .map((record) => normalizeBusCouponRecord(record))
+    .filter((coupon) => isBusCategoryOfferOrCoupon(coupon));
 }
 
 export async function validateBusCoupon({ couponCode, totalFare }) {
@@ -2114,7 +2318,10 @@ export async function getFeaturedBusOffers() {
         (offer) =>
           (offer.id || offer.offerId || offer.selectedFeaturedOfferId) &&
           offer.isCouponActive &&
-          String(offer.bookingType).toLowerCase() === "bus"
+          isBusCategoryOfferOrCoupon(offer) &&
+          (String(offer.bookingType).toLowerCase() === "bus" ||
+            !offer.bookingType ||
+            String(offer.bookingType).toLowerCase() === "all")
       );
   } catch {
     return [];

@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { useEffect, useMemo, useState } from 'react';
-import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown } from 'react-icons/fa';
+import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown, FaLink } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { listFlightPromotions, deleteFlightPromotion } from '../../../services/flightBookingService';
 import './DiscountList.css';
@@ -454,6 +454,10 @@ function DiscountList() {
               </div>
             )}
           </div>
+          <button type="button" className="primary-btn mapping-btn" onClick={() => navigate('/admin/b2c-bus/discount-mapping')}>
+            <FaLink aria-hidden="true" />
+            Discount Mapping
+          </button>
           <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-flight/add-discount')}>
             <FaPlus aria-hidden="true" />
             Add B2C Discount

@@ -82,10 +82,10 @@
 .upgraded-travel-footer {
   background: #09131f;
   background-image: radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
-                    radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.06) 0%, transparent 40%);
+    radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.06) 0%, transparent 40%);
   color: #94a3b8;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 48px 0 24px;
+  padding: 12px 0 8px;
 }
 
 .upgraded-footer-shell {
@@ -99,8 +99,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 36px;
-  margin-bottom: 36px;
+  gap: 12px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 
@@ -112,15 +112,17 @@
   display: inline-flex;
   align-items: center;
   background: #ffffff;
-  padding: 8px 18px;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  margin-bottom: 14px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 4px;
+  max-width: 100%;
 }
 
 .upgraded-footer-brand-logo-img {
-  height: 42px;
+  height: 32px;
   width: auto;
+  max-width: 100%;
   object-fit: contain;
   display: block;
 }
@@ -137,14 +139,14 @@
 .upgraded-footer-newsletter-box {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 20px 24px;
+  border-radius: 16px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 420px;
+  gap: 6px;
+  min-width: 380px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .newsletter-kicker {
@@ -187,10 +189,10 @@
   width: 100%;
   background: #0f172a;
   border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 11px 14px 11px 40px;
+  border-radius: 10px;
+  padding: 8px 12px 8px 36px;
   color: #f8fafc;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   outline: none;
   transition: all 0.2s ease;
 }
@@ -203,13 +205,13 @@
 .upgraded-subscribe-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
   color: #ffffff;
   border: none;
-  padding: 11px 20px;
-  border-radius: 12px;
-  font-size: 0.88rem;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -226,15 +228,15 @@
   border: none;
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-  margin: 32px 0;
+  margin: 8px 0;
 }
 
 /* 4-Column Main Grid */
 .upgraded-footer-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 36px;
-  margin-bottom: 40px;
+  gap: 12px;
+  margin-bottom: 6px;
 }
 
 .upgraded-footer-col {
@@ -245,11 +247,11 @@
 .upgraded-col-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
+  gap: 6px;
+  font-size: 0.88rem;
   font-weight: 800;
   color: #f8fafc;
-  margin: 0 0 20px;
+  margin: 0 0 6px;
   letter-spacing: 0.02em;
 }
 
@@ -263,14 +265,14 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .upgraded-footer-link {
   background: none;
   border: none;
   color: #94a3b8;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 500;
   padding: 0;
   cursor: pointer;
@@ -287,15 +289,15 @@
 .upgraded-contact-block {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 4px;
 }
 
 .upgraded-contact-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 0.85rem;
-  line-height: 1.5;
+  gap: 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
   color: #94a3b8;
 }
 
@@ -350,9 +352,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   flex-wrap: wrap;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .upgraded-payment-group {
@@ -375,13 +377,13 @@
 }
 
 .payment-logos-row img {
-  height: 38px;
-  width: 72px;
+  height: 24px;
+  width: auto;
   object-fit: contain;
   background: #ffffff;
-  padding: 4px 8px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  padding: 2px 4px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.22s ease;
 }
 
@@ -411,9 +413,9 @@
 }
 
 .upgraded-app-btn img {
-  height: 36px;
+  height: 24px;
   width: auto;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: transform 0.2s ease;
 }
 
@@ -431,6 +433,7 @@
   .upgraded-footer-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .upgraded-footer-newsletter-box {
     min-width: 100%;
   }
@@ -440,6 +443,7 @@
   .upgraded-footer-grid {
     grid-template-columns: 1fr;
   }
+
   .upgraded-footer-bottom-bar {
     flex-direction: column;
     align-items: center;

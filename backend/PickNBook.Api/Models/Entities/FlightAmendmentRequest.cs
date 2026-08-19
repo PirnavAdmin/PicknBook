@@ -1,4 +1,4 @@
-﻿namespace PickNBook.Api.Models
+namespace PickNBook.Api.Models
 {
     public class FlightAmendmentRequest
     {
@@ -10,5 +10,9 @@
         public string? SupplierRemark { get; set; }
         public string? CustomerRemark { get; set; }
         public string? AdminRemark { get; set; }
+
+        // SRDV V8 Tracking
+        public string? SrdvChangeRequestId { get; set; }
+        public string? RequestType { get; set; }
     }
 }

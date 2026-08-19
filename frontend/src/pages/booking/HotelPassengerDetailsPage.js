@@ -11,6 +11,7 @@ import { blockRoom, getHotelInfo, getHotelRoom } from "../../services/hotelBooki
 import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 import BookingTimer from "./BookingTimer";
+import HotelDetail from "./HotelDetail";
 import "../../STYLES/HotelCheckoutExperience.css";
 import { readHotelBookingFlowState, writeHotelBookingFlowState } from "./hotelBookingFlowStore";
 
@@ -19,6 +20,14 @@ const calculateNights = (inDate, outDate) => (!inDate || !outDate ? 1 : Math.cei
 const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(String(email || "").trim());
 const isValidMobile = (mobile) => String(mobile || "").replace(/\D/g, "").length >= 10 && String(mobile || "").replace(/\D/g, "").length <= 13;
 const readQueryValue = (params, key, fallback = "") => String(params.get(key) ?? "").trim() || fallback;
+const toTitleCase = (str) => {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 
 function parseHotelFromSearch(params) {
@@ -36,6 +45,131 @@ function parseHotelFromSearch(params) {
     amenities: readQueryValue(params, "hotelAmenities").split("|").map((item) => item.trim()).filter(Boolean),
     offers: [],
   };
+}
+
+function HotelDetailsPremiumLoader() {
+  const [statusIdx, setStatusIdx] = useState(0);
+  const statuses = [
+    "Contacting properties for real-time rates...",
+    "Verifying room availability...",
+    "Securing exclusive PickNBook discounts...",
+    "Initializing checkout workflow...",
+    "Polishing layout templates..."
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStatusIdx((prev) => (prev + 1) % statuses.length);
+    }, 1500);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hotel-details-premium-loader" style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 30px",
+      background: "rgba(255, 255, 255, 0.9)",
+      backdropFilter: "blur(20px)",
+      border: "1px solid rgba(255, 255, 255, 0.5)",
+      borderRadius: "24px",
+      boxShadow: "0 20px 50px rgba(0,0,0,0.06)",
+      maxWidth: "500px",
+      width: "100%",
+      margin: "40px auto",
+      textAlign: "center"
+    }}>
+      {/* Animated glowing loader ring */}
+      <div style={{ position: "relative", width: "80px", height: "80px", marginBottom: "24px" }}>
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderRadius: "50%",
+          border: "4px solid #f1f5f9",
+          borderTopColor: "#dc1e26",
+          animation: "hotel-spin 1s linear infinite"
+        }} />
+        <div style={{
+          position: "absolute",
+          top: "-6px",
+          left: "-6px",
+          right: "-6px",
+          bottom: "-6px",
+          borderRadius: "50%",
+          border: "4px solid transparent",
+          borderBottomColor: "#991b1b",
+          opacity: 0.6,
+          animation: "hotel-spin 1.8s linear infinite reverse"
+        }} />
+      </div>
+
+      <h3 style={{
+        fontFamily: "'Outfit', sans-serif",
+        fontSize: "1.3rem",
+        fontWeight: 700,
+        color: "#0f172a",
+        margin: "0 0 8px 0"
+      }}>
+        Loading Stay Details
+      </h3>
+
+      <div style={{
+        height: "20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        marginBottom: "20px"
+      }}>
+        <p style={{
+          fontSize: "0.9rem",
+          color: "#64748b",
+          margin: 0,
+          animation: "hotel-slide-up 0.5s ease-out"
+        }} key={statusIdx}>
+          {statuses[statusIdx]}
+        </p>
+      </div>
+
+      {/* Progress Bar indicator */}
+      <div style={{
+        width: "100%",
+        height: "4px",
+        background: "#e2e8f0",
+        borderRadius: "2px",
+        overflow: "hidden"
+      }}>
+        <div style={{
+          width: "70%",
+          height: "100%",
+          background: "linear-gradient(90deg, #dc1e26, #991b1b)",
+          borderRadius: "2px",
+          animation: "hotel-pulse-progress 2s ease-in-out infinite"
+        }} />
+      </div>
+
+      <style>{`
+        @keyframes hotel-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes hotel-slide-up {
+          0% { transform: translateY(15px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes hotel-pulse-progress {
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(50%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 function parseSearchContext(params) {
@@ -77,14 +211,157 @@ export default function HotelPassengerDetailsPage() {
   const [selectingOfferId, setSelectingOfferId] = useState("");
   const [selectedMultiRooms, setSelectedMultiRooms] = useState([]);
   const roomsCount = searchContext?.roomsConfig ? searchContext.roomsConfig.length : 1;
-  const [guestName, setGuestName] = useState(incomingState.guestName || "");
-  const [guestTitle, setGuestTitle] = useState(incomingState.guestTitle || "Mr");
-  const [guestAge, setGuestAge] = useState(incomingState.guestAge || 26);
-  const [guestPAN, setGuestPAN] = useState(incomingState.guestPAN || "");
-  const [guestPassportNo, setGuestPassportNo] = useState(incomingState.guestPassportNo || "");
-  const [guestEmail, setGuestEmail] = useState(incomingState.guestEmail || "");
-  const [guestPhone, setGuestPhone] = useState(incomingState.guestPhone || "");
+  const [currentStep, setCurrentStep] = useState(1);
+  const [specialRequests, setSpecialRequests] = useState([]);
+  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
+
+  // Parse roomsConfig and guest counts
+  const roomsConfig = useMemo(() => {
+    const raw = searchContext?.roomsConfig || searchContext?.rooms;
+    if (raw && typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (Array.isArray(raw)) return raw;
+    return null;
+  }, [searchContext]);
+
+  const totalAdults = useMemo(() => {
+    if (roomsConfig && Array.isArray(roomsConfig)) {
+      return roomsConfig.reduce((sum, r) => sum + (Number(r.adults) || 0), 0);
+    }
+    return Number(searchContext?.adults || 1);
+  }, [searchContext, roomsConfig]);
+
+  const totalChildren = useMemo(() => {
+    if (roomsConfig && Array.isArray(roomsConfig)) {
+      return roomsConfig.reduce((sum, r) => sum + (Number(r.children) || 0), 0);
+    }
+    return Number(searchContext?.children || 0);
+  }, [searchContext, roomsConfig]);
+
+  const [guests, setGuests] = useState(() => {
+    let initAdults = 1;
+    let initChildren = 0;
+    
+    const rawSearch = incomingState.searchContext || parseSearchContext(searchParams);
+    const raw = rawSearch?.roomsConfig || rawSearch?.rooms;
+    let parsedRooms = null;
+    if (raw && typeof raw === "string") {
+      try { parsedRooms = JSON.parse(raw); } catch(e){}
+    } else if (Array.isArray(raw)) {
+      parsedRooms = raw;
+    }
+    
+    if (parsedRooms && Array.isArray(parsedRooms)) {
+      initAdults = parsedRooms.reduce((sum, r) => sum + (Number(r.adults) || 0), 0);
+      initChildren = parsedRooms.reduce((sum, r) => sum + (Number(r.children) || 0), 0);
+    } else {
+      initAdults = Number(rawSearch?.adults || 1);
+      initChildren = Number(rawSearch?.children || 0);
+    }
+
+    const list = [];
+    list.push({
+      index: 0,
+      type: "adult",
+      title: incomingState.guestTitle || "",
+      fullName: incomingState.guestName || "",
+      age: incomingState.guestAge || "",
+      gender: "",
+      nationality: "India",
+      idProofType: "Aadhaar",
+      idProofNumber: "",
+      email: incomingState.guestEmail || "",
+      mobile: incomingState.guestPhone || "",
+      pan: incomingState.guestPAN || "",
+    });
+    for (let i = 1; i < initAdults; i++) {
+      list.push({
+        index: i,
+        type: "adult",
+        title: "",
+        fullName: "",
+        age: "",
+        gender: "",
+        nationality: "India",
+        idProofType: "Aadhaar",
+        idProofNumber: "",
+        email: "",
+        mobile: "",
+        pan: "",
+      });
+    }
+    for (let i = 0; i < initChildren; i++) {
+      list.push({
+        index: initAdults + i,
+        type: "child",
+        title: "Mstr",
+        fullName: "",
+        age: "",
+        gender: "",
+        nationality: "India",
+        idProofType: "Aadhaar",
+        idProofNumber: "",
+        email: "",
+        mobile: "",
+        pan: "",
+      });
+    }
+    return list;
+  });
+
+  const updateGuest = (index, field, value) => {
+    setFormError("");
+    setGuests((current) => {
+      const next = [...current];
+      let updated = { ...next[index], [field]: value };
+      if (field === "fullName") {
+        const cleanVal = String(value || "").trim();
+        const parts = cleanVal.split(/\s+/);
+        updated.firstName = toTitleCase(parts[0] || "");
+        updated.lastName = toTitleCase(parts.slice(1).join(" ") || "");
+        updated.fullName = toTitleCase(cleanVal);
+      }
+      next[index] = updated;
+      return next;
+    });
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[`guest_${index}_${field}`];
+      delete next[`guest_${index}_firstName`];
+      delete next[`guest_${index}_lastName`];
+      return next;
+    });
+  };
+
+  const applyTravellerToGuest = (traveler, index) => {
+    setGuests((current) => {
+      const next = [...current];
+      const fName = toTitleCase(traveler.firstName || "");
+      const lName = toTitleCase(traveler.lastName || "");
+      next[index] = {
+        ...next[index],
+        title: traveler.title || "Mr",
+        firstName: fName,
+        lastName: lName,
+        fullName: `${fName} ${lName}`.trim(),
+        age: traveler.age || "",
+        gender: traveler.gender || "Male",
+        email: traveler.email || "",
+        mobile: traveler.mobile || traveler.phone || "",
+      };
+      return next;
+    });
+  };
+
   const [isExistingGuest, setIsExistingGuest] = useState(false);
+  const [agreedToAll, setAgreedToAll] = useState(false);
+  const [showReqPopup, setShowReqPopup] = useState(false);
   const [selectedTravelerId, setSelectedTravelerId] = useState("");
   const [savedTravelers, setSavedTravelers] = useState([]);
   const [travelerLoadError, setTravelerLoadError] = useState("");
@@ -106,6 +383,52 @@ export default function HotelPassengerDetailsPage() {
   const [couponError, setCouponError] = useState(incomingState.couponError || "");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
+  const [showChildAgeAlert, setShowChildAgeAlert] = useState(false);
+  const [alertChildIndex, setAlertChildIndex] = useState(null);
+
+  const [rulePets, setRulePets] = useState(false);
+  const [ruleFood, setRuleFood] = useState(false);
+  const [rulePolicy, setRulePolicy] = useState(false);
+  const [ruleSmoking, setRuleSmoking] = useState(false);
+  const [expandedGuestIndex, setExpandedGuestIndex] = useState(null);
+
+  const handleChildAgeChange = (index, val) => {
+    const numericAge = parseInt(val, 10);
+    updateGuest(index, "age", val);
+    if (!isNaN(numericAge) && numericAge > 11) {
+      setAlertChildIndex(index);
+      setShowChildAgeAlert(true);
+    }
+  };
+
+  const handleNameChange = (index, field, value) => {
+    setGuests((current) => {
+      const next = [...current];
+      const updatedGuest = { ...next[index], [field]: value };
+      const fName = field === "firstName" ? value : (updatedGuest.firstName || "");
+      const lName = field === "lastName" ? value : (updatedGuest.lastName || "");
+      updatedGuest.fullName = `${fName} ${lName}`.trim();
+      next[index] = updatedGuest;
+      return next;
+    });
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[`guest_${index}_firstName`];
+      delete next[`guest_${index}_lastName`];
+      delete next[`guest_${index}_fullName`];
+      return next;
+    });
+  };
+
+  // Compatibility getters/setters for legacy code
+  const guestName = guests[0]?.fullName || "";
+  const guestTitle = guests[0]?.title || "";
+  const guestAge = guests[0]?.age || "";
+  const guestPAN = guests[0]?.pan || "";
+  const guestPassportNo = "";
+  const guestEmail = guests[0]?.email || "";
+  const guestPhone = guests[0]?.mobile || "";
+
   const checkInDate = offer?.checkInDate || searchContext?.checkInDate || "";
   const checkOutDate = offer?.checkOutDate || searchContext?.checkOutDate || "";
   const nights = useMemo(() => calculateNights(checkInDate, checkOutDate), [checkInDate, checkOutDate]);
@@ -121,7 +444,52 @@ export default function HotelPassengerDetailsPage() {
     return visuals.gallery;
   }, [hotel?.images, visuals.gallery]);
 
-  const displayedImages = gallery;
+  const displayedImages = useMemo(() => {
+    const rawImages = hotel?.images && hotel.images.length > 0 ? hotel.images : gallery;
+    const tab = activeImageTab;
+    if (!rawImages || rawImages.length === 0) return [];
+    
+    const hasCategoryObj = rawImages[0] && typeof rawImages[0] === "object" && (rawImages[0].Category || rawImages[0].category || rawImages[0].Caption || rawImages[0].caption);
+    
+    if (hasCategoryObj) {
+      const filtered = rawImages.filter(img => {
+        const cat = String(img.Category || img.category || img.Caption || img.caption || "").toLowerCase();
+        if (tab === "All") return true;
+        if (tab === "Rooms") return cat.includes("room") || cat.includes("bed") || cat.includes("deluxe") || cat.includes("suite") || cat.includes("interior");
+        if (tab === "Property Views") return cat.includes("view") || cat.includes("exterior") || cat.includes("garden") || cat.includes("landscape");
+        if (tab === "Facilities") return cat.includes("facility") || cat.includes("pool") || cat.includes("gym") || cat.includes("lobby") || cat.includes("spa") || cat.includes("parking");
+        if (tab === "Dining") return cat.includes("dining") || cat.includes("restaurant") || cat.includes("food") || cat.includes("breakfast") || cat.includes("bar");
+        if (tab === "Nearby Attractions") return cat.includes("attraction") || cat.includes("nearby") || cat.includes("city") || cat.includes("location");
+        return false;
+      }).map(img => img.ImageUrl || img.imageUrl || img.Url || img.url || img);
+      
+      if (filtered.length > 0) return filtered;
+    }
+
+    const urlStrings = rawImages.map(img => typeof img === "object" ? (img.ImageUrl || img.imageUrl || img.Url || img.url || "") : String(img)).filter(Boolean);
+
+    if (tab === "All") return urlStrings;
+
+    const filtered = urlStrings.filter(url => {
+      const lower = url.toLowerCase();
+      if (tab === "Rooms") return lower.includes("room") || lower.includes("bed") || lower.includes("deluxe") || lower.includes("suite") || lower.includes("bedroom") || lower.includes("interior");
+      if (tab === "Property Views") return lower.includes("view") || lower.includes("exterior") || lower.includes("garden") || lower.includes("terrace") || lower.includes("building");
+      if (tab === "Facilities") return lower.includes("pool") || lower.includes("gym") || lower.includes("lobby") || lower.includes("spa") || lower.includes("facility") || lower.includes("fitness") || lower.includes("reception");
+      if (tab === "Dining") return lower.includes("dining") || lower.includes("restaurant") || lower.includes("food") || lower.includes("breakfast") || lower.includes("bar") || lower.includes("cafe");
+      if (tab === "Nearby Attractions") return lower.includes("attraction") || lower.includes("nearby") || lower.includes("city") || lower.includes("map") || lower.includes("street");
+      return false;
+    });
+
+    if (filtered.length === 0) {
+      const tabIndex = ["All", "Rooms", "Property Views", "Facilities", "Dining", "Nearby Attractions"].indexOf(tab);
+      if (tabIndex > 0 && urlStrings.length > 0) {
+        const offset = tabIndex % urlStrings.length;
+        return [...urlStrings.slice(offset), ...urlStrings.slice(0, offset)];
+      }
+    }
+
+    return filtered.length > 0 ? filtered : urlStrings;
+  }, [hotel?.images, gallery, activeImageTab]);
 
   const stayFacts = useMemo(() => buildStayFacts(hotel || {}, offer || {}, searchContext || {}), [hotel, offer, searchContext]);
   const stayHighlights = useMemo(() => buildStayHighlights(hotel || {}, offer || {}, nights), [hotel, offer, nights]);
@@ -247,6 +615,14 @@ export default function HotelPassengerDetailsPage() {
   }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse]);
 
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
+    const activePortal = sessionStorage.getItem("active_portal");
+    const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
+    const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
+    if (!token || isTokenExpired(token)) {
+      openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
+      return;
+    }
+
     const newSelection = [...selectedMultiRooms, roomOffer];
     
     if (newSelection.length < roomsCount) {
@@ -356,6 +732,8 @@ export default function HotelPassengerDetailsPage() {
 
   const activePortal = sessionStorage.getItem("active_portal");
   const isAgent = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
+  const tokenVal = isAgent ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
+  const hasValidToken = !!(tokenVal && !isTokenExpired(tokenVal));
 
   if (blockedRooms.length > 0) {
       blockedRooms.forEach(room => {
@@ -402,49 +780,152 @@ export default function HotelPassengerDetailsPage() {
 
   const tierDiscount = 0;
   const volumeDiscount = 0;
+  const isPrimaryAdultValid = useMemo(() => {
+    const primary = guests[0];
+    if (!primary) return false;
+    const fullNameOk = !!primary.fullName?.trim();
+    const ageOk = !!primary.age && Number(primary.age) >= 18;
+    const genderOk = !!primary.gender;
+    const emailOk = !!primary.email?.trim() && isValidEmail(primary.email);
+    const phoneOk = !!primary.mobile?.trim() && isValidMobile(primary.mobile);
+    const panOk = !isPANMandatory || (!!primary.pan?.trim() && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(primary.pan.toUpperCase()));
+    return fullNameOk && ageOk && genderOk && emailOk && phoneOk && panOk;
+  }, [guests, isPANMandatory]);
 
   const selectExistingTraveler = (travelerId) => {
     setSelectedTravelerId(travelerId);
     const found = savedTravelers.find((traveler) => String(traveler.id) === travelerId);
-    if (!travelerId || !found) { if (!travelerId) { setGuestName(""); setGuestEmail(""); setGuestPhone(""); } return; }
-    setGuestName([found.title, found.firstName, found.lastName].filter(Boolean).join(" "));
-    setGuestEmail(found.email || "");
-    setGuestPhone(found.mobile || found.phone || "");
+    if (!travelerId || !found) return;
+    applyTravellerToGuest(found, 0);
   };
 
   const validateForm = () => {
     const nextErrors = {};
-    if (!guestName.trim()) nextErrors.guestName = "Please enter the primary guest name.";
-    if (!guestEmail.trim()) nextErrors.guestEmail = "Please enter an email address.";
-    else if (!isValidEmail(guestEmail)) nextErrors.guestEmail = "Enter a valid email address.";
-    if (!guestPhone.trim()) nextErrors.guestPhone = "Please enter a mobile number.";
-    else if (!isValidMobile(guestPhone)) nextErrors.guestPhone = "Enter a valid mobile number.";
     
-    if (isPANMandatory) {
-        if (!guestPAN.trim()) nextErrors.guestPAN = "PAN Card is mandatory for this booking.";
-        else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(guestPAN)) nextErrors.guestPAN = "Enter a valid PAN Card (e.g. ABCDE1234F).";
+    // Primary Adult
+    const primary = guests[0];
+    if (!primary) return false;
+
+    if (!primary.fullName?.trim()) {
+      nextErrors.guest_0_fullName = "Full name is required.";
     }
-    
-    if (isPassportMandatory) {
-        if (!guestPassportNo.trim()) nextErrors.guestPassportNo = "Passport details are mandatory for this booking.";
+    if (!primary.age) {
+      nextErrors.guest_0_age = "Please enter age.";
+    } else if (Number(primary.age) < 18) {
+      nextErrors.guest_0_age = "Primary guest must be 18 years or older.";
+    }
+    if (!primary.gender) {
+      nextErrors.guest_0_gender = "Please select gender.";
+    }
+    if (!primary.email?.trim()) {
+      nextErrors.guest_0_email = "Please enter email.";
+    } else if (!isValidEmail(primary.email)) {
+      nextErrors.guest_0_email = "Enter a valid email.";
+    }
+    if (!primary.mobile?.trim()) {
+      nextErrors.guest_0_mobile = "Please enter phone number.";
+    } else if (!isValidMobile(primary.mobile)) {
+      nextErrors.guest_0_mobile = "Enter a valid mobile.";
     }
 
-    if (!agreedToTerms) nextErrors.agreedToTerms = "Please accept the booking terms.";
+    if (isPANMandatory) {
+      if (!primary.pan?.trim()) {
+        nextErrors.guest_0_pan = "PAN Card is mandatory for this booking.";
+      } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(primary.pan.toUpperCase())) {
+        nextErrors.guest_0_pan = "Enter a valid PAN Card (e.g. ABCDE1234F).";
+      }
+    }
+
+    // Co-Travelers validation (mandatory for children, optional for additional adults)
+    guests.forEach((guest, idx) => {
+      if (idx > 0) {
+        if (guest.type === "child") {
+          if (!guest.title) {
+            nextErrors[`guest_${idx}_title`] = "Select title.";
+          }
+          if (!guest.fullName?.trim()) {
+            nextErrors[`guest_${idx}_fullName`] = "Full name is required.";
+          }
+          if (!guest.age) {
+            nextErrors[`guest_${idx}_age`] = "Enter child age.";
+          }
+        } else {
+          if (guest.firstName?.trim() || guest.lastName?.trim()) {
+            if (!guest.title) {
+              nextErrors[`guest_${idx}_title`] = "Select title.";
+            }
+            if (!guest.fullName?.trim()) {
+              nextErrors[`guest_${idx}_fullName`] = "Full name is required.";
+            }
+            if (!guest.age) {
+              nextErrors[`guest_${idx}_age`] = "Enter age.";
+            }
+            if (!guest.gender) {
+              nextErrors[`guest_${idx}_gender`] = "Select gender.";
+            }
+          }
+        }
+      }
+    });
+
+    if (!agreedToAll) {
+      nextErrors.agreedToAll = "Please review selection and check the agreement box to proceed.";
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
   const handleContinue = () => {
-    if (!validateForm()) { setFormError("Please correct the highlighted guest details before continuing."); return; }
+    if (!validateForm()) { 
+      setFormError("Please correct the highlighted guest details."); 
+      return; 
+    }
     const token = isAgent ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
     if (!token || isTokenExpired(token)) { 
+      alert("Login is mandatory to proceed to payment. Opening login window.");
       openAuthModal("login", { returnTo: window.location.pathname + window.location.search }); 
       return; 
     }
-    setFormError("");
-    navigate("/hotel/payment", { state: { hotel, offer, searchContext, blockRoomResponse, guestName: guestName.trim(), guestEmail: guestEmail.trim(), guestPhone: guestPhone.trim(), agreedToTerms, payableAmount: finalPayable, fareSummary: { baseFare: basePrice, tax, convenienceFee, markup: markupValue, couponDiscount, tierDiscount, volumeDiscount, totalFare: finalPayable } } });
-  };
+    const hotelImg = hotel?.image || hotel?.cardImage || (Array.isArray(hotel?.images) ? hotel.images[0] : null) || offer?.image || null;
+    const hotelImgs = Array.isArray(hotel?.images) && hotel.images.length > 0 ? hotel.images : (hotelImg ? [hotelImg] : []);
 
+    const activeCheckIn = offer?.checkInDate || checkInDate || searchContext?.checkInDate || hotel?.checkInDate;
+    const activeCheckOut = offer?.checkOutDate || checkOutDate || searchContext?.checkOutDate || hotel?.checkOutDate;
+
+    const payloadState = { 
+      hotel, 
+      offer, 
+      hotelImage: hotelImg,
+      hotelImages: hotelImgs,
+      checkInDate: activeCheckIn,
+      checkOutDate: activeCheckOut,
+      searchContext, 
+      guestTitle: guests[0]?.title || "Mr",
+      guestName: guests[0]?.fullName?.trim() || "Primary Guest", 
+      guestEmail: guests[0]?.email?.trim() || "", 
+      guestPhone: guests[0]?.mobile?.trim() || "", 
+      guestAge: guests[0]?.age || 26,
+      guestPAN: guests[0]?.pan || "",
+      guests, 
+      agreedToTerms, 
+      blockRoomResponse,
+      payableAmount: finalPayable, 
+      fareSummary: { 
+        baseFare: basePrice, 
+        tax, 
+        convenienceFee, 
+        markup: markupValue, 
+        couponDiscount, 
+        tierDiscount: 0, 
+        volumeDiscount: 0, 
+        totalFare: finalPayable 
+      } 
+    };
+
+    writeHotelBookingFlowState(payloadState);
+    navigate("/hotel/payment", { state: payloadState });
+  };
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     setIsApplyingCoupon(true);
@@ -488,341 +969,846 @@ export default function HotelPassengerDetailsPage() {
   }
 
   if (isLoadingOffer) {
-    return <main className="hotel-checkout-page"><div className="hotel-checkout-shell hotel-checkout-shell--empty"><section className="hotel-checkout-empty"><div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Loader2 className="hotel-spin" size={32} /></div><h2>Loading stay details</h2><p>Loading stay details from the backend...</p></section></div></main>;
+    return (
+      <main className="hotel-checkout-page">
+        <div className="hotel-checkout-shell hotel-checkout-shell--empty">
+          <section className="hotel-checkout-empty" style={{ background: "transparent", border: "none", boxShadow: "none", padding: 0 }}>
+            <HotelDetailsPremiumLoader />
+          </section>
+        </div>
+      </main>
+    );
   }
 
-  const guestSummary = searchContext?.guests || buildGuestSummary(searchContext || {});
-  const stayLocation = hotel.address || [hotel.area, hotel.city].filter(Boolean).join(", ");
+  const handleSetCurrentStep = (step) => {
+    if (step === 2) {
+      const activePortal = sessionStorage.getItem("active_portal");
+      const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
+      const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
+        return;
+      }
+    }
+    setCurrentStep(step);
+  };
 
+  const guestSummary = `${roomsCount} Room${roomsCount > 1 ? "s" : ""}, ${totalAdults} Adult${totalAdults > 1 ? "s" : ""}${totalChildren > 0 ? `, ${totalChildren} Child${totalChildren > 1 ? "ren" : ""}` : ""}`;
+  const stayLocation = hotel.address || [hotel.area, hotel.city].filter(Boolean).join(", ");
   return (
     <main className="hotel-checkout-page">
-      <BookingTimer />
+      <BookingTimer hideBanner={true} />
       <div className="hotel-checkout-shell">
-        <button type="button" className="hotel-back-link" onClick={() => navigate("/search/hotels")}><ArrowLeft size={16} />Back to stays</button>
-        <div className="hotel-checkout-stepper" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          <div className="step-item is-completed" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: 700, color: "#137a3b" }}>
-            <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#edfdf3", display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #137a3b" }}>✓</span>
-            <span>1. Choose stay</span>
-          </div>
-          <div style={{ color: "var(--hotel-muted)", fontSize: "0.8rem" }}>➔</div>
-          <div className="step-item is-active" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: 800, color: "var(--hotel-rose-deep)" }}>
-            <span style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(255, 56, 92, 0.05)", display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1.5px solid var(--hotel-rose)" }}>2</span>
-            <span>2. Guest & Room Details</span>
-          </div>
-          <div style={{ color: "var(--hotel-muted)", fontSize: "0.8rem" }}>➔</div>
-          <div className="step-item" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: 500, color: "var(--hotel-muted)" }}>
-            <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#ffffff", display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--hotel-border)" }}>3</span>
-            <span>3. Secure Payment</span>
-          </div>
-        </div>
-        <div className="hotel-category-tabs">
-          {["All", "Rooms", "Property Views", "Facilities", "Dining", "Nearby Attractions"].map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={`hotel-category-tab-btn${activeImageTab === tab ? " is-active" : ""}`}
-              onClick={() => setActiveImageTab(tab)}
+        
+        {/* Top bar: Breadcrumbs on the left, Timer on the right */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", width: "100%", flexWrap: "wrap", gap: "10px" }}>
+          {/* Breadcrumbs trail */}
+          <div className="hotel-breadcrumbs" style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "0.82rem", color: "var(--hotel-muted)", margin: 0 }}>
+            <span onClick={() => navigate("/")} style={{ cursor: "pointer" }}>Search</span>
+            <span>&gt;</span>
+            <span onClick={() => navigate("/search/hotels")} style={{ cursor: "pointer" }}>Hotel</span>
+            <span>&gt;</span>
+            <span 
+              onClick={() => {
+                if (currentStep === 2) {
+                  setCurrentStep(1);
+                  setOffer(null);
+                }
+              }} 
+              style={{ cursor: currentStep === 2 ? "pointer" : "default", fontWeight: currentStep === 1 ? 700 : 500, color: currentStep === 1 ? "var(--hotel-ink)" : "inherit" }}
             >
-              {tab}
-            </button>
-          ))}
-        </div>
-        <section className="hotel-gallery-hero"><div className="hotel-gallery-primary"><img src={displayedImages[0]} alt={hotel.name} /></div><div className="hotel-gallery-grid">{displayedImages.slice(1, 5).map((image, index) => <div key={`${image}-${index}`} className="hotel-gallery-thumb"><img src={image} alt={`${hotel.name} view ${index + 2}`} /></div>)}</div></section>
-        <div className="hotel-checkout-layout">
-          <div className="hotel-checkout-main">
-            <section className="hotel-panel hotel-panel--headline">
-              <div className="hotel-panel-kicker"><Home size={14} /><span>{visuals.propertyLabel}</span></div>
-              <h1>{hotel.name}</h1>
-              <div className="hotel-meta-line"><span><Star size={14} fill="currentColor" />{Number(hotel.rating || 4.8).toFixed(1)}</span><span><MapPin size={14} />{stayLocation}</span><span><CalendarDays size={14} />{formatNightLabel(nights)}</span></div>
-              <div className="hotel-chip-row">{stayFacts.map((fact) => <span key={fact}>{fact}</span>)}</div>
-            </section>
-            <section className="hotel-panel hotel-host-panel"><div className="hotel-host-avatar" style={visuals.avatarStyle}>{visuals.hostName.slice(0, 1)}</div><div className="hotel-host-copy"><h2>Hosted by {visuals.hostName}</h2><p>Superhost style service · {visuals.hostYears} years hosting · Curated for short city stays.</p></div></section>
-            <section className="hotel-panel"><div className="hotel-section-heading"><h2>What makes this stay feel easy</h2><p>These highlights are built from the live hotel record and details.</p></div><div className="hotel-highlight-list">{stayHighlights.map((highlight) => <article key={highlight.title} className="hotel-highlight-item"><span className="hotel-highlight-icon"><Sparkles size={16} /></span><div><strong>{highlight.title}</strong><p>{highlight.text}</p></div></article>)}</div></section>
+              Hotel Details
+            </span>
+            {currentStep === 2 && (
+              <>
+                <span>&gt;</span>
+                <span style={{ fontWeight: 700, color: "var(--hotel-ink)" }}>Passenger Details</span>
+              </>
+            )}
+          </div>
 
-            {offer && (
-              <section className="hotel-panel" style={{ borderLeft: "4px solid var(--hotel-rose)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          {/* Compact Timer Container */}
+          <BookingTimer mode="compact" />
+        </div>
+
+        {currentStep === 1 ? (
+          <HotelDetail
+            hotel={hotel}
+            offer={offer}
+            roomsCount={roomsCount}
+            selectedMultiRooms={selectedMultiRooms}
+            selectingOfferId={selectingOfferId}
+            handleSelectOffer={handleSelectOffer}
+            formatCurrency={formatCurrency}
+            formatNightLabel={formatNightLabel}
+            toDisplayDate={toDisplayDate}
+            checkInDate={checkInDate}
+            checkOutDate={checkOutDate}
+            guestSummary={guestSummary}
+            basePrice={basePrice}
+            tax={tax}
+            finalPayable={finalPayable}
+            convenienceFee={convenienceFee}
+            setCurrentStep={handleSetCurrentStep}
+            gallery={gallery}
+            activeImageTab={activeImageTab}
+            setActiveImageTab={setActiveImageTab}
+            displayedImages={displayedImages}
+            stayLocation={stayLocation}
+            stayFacts={stayFacts}
+            stayHighlights={stayHighlights}
+            visuals={visuals}
+            nights={nights}
+          />
+        ) : (
+          <div className="hotel-checkout-layout">
+            
+            {/* Left Column Content */}
+            <div className="hotel-checkout-main">
+              {/* Hotel Summary Card (Search Result Style) */}
+              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "20px", padding: "16px", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "20px", background: "#fff", marginBottom: "24px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
+                <div style={{ width: "100%", height: "110px", borderRadius: "14px", overflow: "hidden" }}>
+                  <img src={gallery[0]} alt={hotel.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <div>
-                    <span className="hotel-panel-kicker" style={{ background: "rgba(255, 56, 92, 0.05)", border: "1px solid rgba(255, 56, 92, 0.2)" }}>Selected room option</span>
-                    <h3 style={{ margin: "8px 0 4px", fontSize: "1.2rem", fontWeight: 700 }}>{offer.roomCategory ? offer.roomCategory.replace(/_/g, " ") : "Standard Room"}</h3>
-                    <p style={{ margin: 0, color: "var(--hotel-muted)", fontSize: "0.9rem" }}>
-                      Bed type: {offer.bedType || "Double"} bed &middot; {offer.cancellationPolicy || "Cancellation policy applies"}
+                    <span style={{ 
+                      textTransform: "uppercase", 
+                      fontSize: "0.62rem", 
+                      fontWeight: 800, 
+                      color: "var(--hotel-rose)", 
+                      background: "rgba(220,30,38,0.05)", 
+                      padding: "3px 8px", 
+                      borderRadius: "4px", 
+                      display: "inline-block", 
+                      letterSpacing: "0.5px",
+                      marginBottom: "6px"
+                    }}>
+                      {visuals.propertyLabel || "PREMIUM STAY"}
+                    </span>
+                    <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>{hotel.name}</h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.78rem", color: "var(--hotel-muted)", marginTop: "4px" }}>
+                      {hotel.rating > 0 && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                          <span style={{ color: "#ffb000" }}>★</span> <strong>{Number(hotel.rating).toFixed(1)}</strong>
+                        </span>
+                      )}
+                      <span>📍 {stayLocation}</span>
+                      <span>📅 {formatNightLabel(nights)}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "8px" }}>
+                    {stayFacts.map((fact) => (
+                      <span key={fact} style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: "6px", background: "rgba(0,0,0,0.03)", color: "var(--hotel-ink)" }}>
+                        {fact}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Primary Guest Form Card */}
+              <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                <div className="form-title-section" style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "14px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Primary Guest Details</h3>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "0.82rem", color: "var(--hotel-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ color: "#10b981" }}>🛡️</span> Booking confirmation and payment receipt will be sent to this guest.
                     </p>
                   </div>
-                  <button type="button" className="hotel-secondary-button" onClick={() => setOffer(null)}>Change room</button>
+                  <span className="form-title-badge">Primary Guest</span>
                 </div>
-              </section>
-            )}
 
-            {offer ? (
-              <>
-                <section className="hotel-panel">
-                  <div className="hotel-section-heading"><h2>Guest details</h2><p>Use a saved traveler from your backend profile, or enter a new primary guest for this stay.</p></div>
-                  <div className="hotel-mode-switch"><button type="button" className={isExistingGuest ? "is-active" : ""} onClick={() => { setIsExistingGuest(true); setSelectedTravelerId(""); setGuestName(""); setGuestEmail(""); setGuestPhone(""); }}>Existing traveler</button><button type="button" className={!isExistingGuest ? "is-active" : ""} onClick={() => { setIsExistingGuest(false); setSelectedTravelerId(""); setGuestName(""); setGuestEmail(""); setGuestPhone(""); }}>Add new guest</button></div>
-                  {isExistingGuest && <div className="hotel-traveler-picker"><label htmlFor="hotel-existing-traveler">Saved traveler</label><select id="hotel-existing-traveler" value={selectedTravelerId} onChange={(event) => selectExistingTraveler(event.target.value)}><option value="">Select an existing traveler</option>{savedTravelers.map((traveler) => <option key={traveler.id} value={String(traveler.id)}>{[traveler.title, traveler.firstName, traveler.lastName].filter(Boolean).join(" ")}</option>)}</select>{travelerLoadError && <p className="hotel-helper hotel-helper--warning">{travelerLoadError}</p>}</div>}
-                  <div className="hotel-form-grid">
-                    <label className="hotel-field">
-                        <span>Title</span>
-                        <select value={guestTitle} onChange={(e) => setGuestTitle(e.target.value)}>
-                            <option value="Mr">Mr</option>
-                            <option value="Mrs">Mrs</option>
-                            <option value="Ms">Ms</option>
-                            <option value="Mstr">Mstr (Male Child)</option>
-                            <option value="Miss">Miss (Female Child)</option>
-                        </select>
-                    </label>
-                    <label className="hotel-field"><span>Primary guest name</span><input type="text" value={guestName} onChange={(event) => { setGuestName(event.target.value); setErrors((current) => { const next = { ...current }; delete next.guestName; return next; }); }} placeholder="Full name as per ID" className={errors.guestName ? "is-error" : ""} />{errors.guestName && <small>{errors.guestName}</small>}</label>
-                    <label className="hotel-field"><span>Email address</span><input type="email" value={guestEmail} onChange={(event) => { setGuestEmail(event.target.value); setErrors((current) => { const next = { ...current }; delete next.guestEmail; return next; }); }} placeholder="name@example.com" className={errors.guestEmail ? "is-error" : ""} />{errors.guestEmail && <small>{errors.guestEmail}</small>}</label>
-                    <label className="hotel-field"><span>Mobile number</span><input type="text" value={guestPhone} onChange={(event) => { setGuestPhone(event.target.value); setErrors((current) => { const next = { ...current }; delete next.guestPhone; return next; }); }} placeholder="10-digit mobile number" className={errors.guestPhone ? "is-error" : ""} />{errors.guestPhone && <small>{errors.guestPhone}</small>}</label>
-                    
-                    {isPANMandatory && (
-                        <label className="hotel-field">
-                            <span>PAN Card (Mandatory)</span>
-                            <input type="text" value={guestPAN} onChange={(event) => { setGuestPAN(event.target.value.toUpperCase()); setErrors((current) => { const next = { ...current }; delete next.guestPAN; return next; }); }} placeholder="ABCDE1234F" className={errors.guestPAN ? "is-error" : ""} />
-                            {errors.guestPAN && <small>{errors.guestPAN}</small>}
-                        </label>
-                    )}
-                    {isPassportMandatory && (
-                        <label className="hotel-field">
-                            <span>Passport No (Mandatory)</span>
-                            <input type="text" value={guestPassportNo} onChange={(event) => { setGuestPassportNo(event.target.value.toUpperCase()); setErrors((current) => { const next = { ...current }; delete next.guestPassportNo; return next; }); }} placeholder="Passport Number" className={errors.guestPassportNo ? "is-error" : ""} />
-                            {errors.guestPassportNo && <small>{errors.guestPassportNo}</small>}
-                        </label>
+                {/* Dynamic counts summary panel if multiple rooms are selected */}
+                {roomsCount > 1 && (
+                  <div style={{ display: "flex", gap: "12px", background: "#f8fafc", padding: "10px 12px", borderRadius: "10px", border: "1px solid rgba(220,30,38,0.08)", marginBottom: "16px", fontSize: "0.8rem", color: "var(--hotel-ink)", alignItems: "center" }}>
+                    <span>👥 <strong>Guest Count for {roomsCount} Rooms:</strong></span>
+                    <span style={{ background: "#fff", padding: "2px 8px", borderRadius: "6px", border: "1px solid rgba(0,0,0,0.04)" }}><strong>Adults:</strong> {totalAdults}</span>
+                    {totalChildren > 0 && (
+                      <span style={{ background: "#fff", padding: "2px 8px", borderRadius: "6px", border: "1px solid rgba(0,0,0,0.04)" }}><strong>Children:</strong> {totalChildren}</span>
                     )}
                   </div>
-                </section>
-                <section className="hotel-panel hotel-policy-panel"><div className="hotel-section-heading"><h2>Before you continue</h2><p>Review the booking acknowledgement and confirm the primary guest details are correct.</p></div><div className="hotel-policy-list"><div><ShieldCheck size={18} /><span>{offer.cancellationPolicy || "Cancellation and booking policy will apply to the selected offer."}</span></div><div><Clock3 size={18} /><span>Pricing remains synced with the backend preview while you are on this page.</span></div><div><UserRound size={18} /><span>The primary guest should match the ID shown during hotel check-in.</span></div></div><label className={`hotel-checkbox${errors.agreedToTerms ? " is-error" : ""}`}><input type="checkbox" checked={agreedToTerms} onChange={(event) => { setAgreedToTerms(event.target.checked); setErrors((current) => { const next = { ...current }; delete next.agreedToTerms; return next; }); }} /><span>I agree to the hotel booking policy, guest rules, and cancellation terms for this stay.</span></label>{errors.agreedToTerms && <p className="hotel-helper hotel-helper--error">{errors.agreedToTerms}</p>}{formError && <p className="hotel-helper hotel-helper--error">{formError}</p>}</section>
-              </>
-            ) : (
-              <section className="hotel-panel hotel-rooms-selection">
-                <div className="hotel-section-heading">
-                  <h2>Available rooms & rates</h2>
-                  <p>
-                    {roomsCount > 1 
-                      ? `Select Room ${selectedMultiRooms.length + 1} of ${roomsCount} to begin your reservation.` 
-                      : `Select a room type to begin your reservation. Rates are live and sourced directly from the API.`}
-                  </p>
+                )}
+
+                {/* Checkbox selector container for saved profiles */}
+                <div style={{ marginBottom: "10px", padding: "6px 10px", background: "#f8fafc", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.04)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", fontWeight: 600, color: "var(--hotel-ink)", cursor: "pointer", margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isExistingGuest} 
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsExistingGuest(checked);
+                        if (!checked) {
+                          setSelectedTravelerId("");
+                          selectExistingTraveler("");
+                        }
+                      }}
+                    />
+                    <span>Book using a saved traveler profile</span>
+                  </label>
+                  
+                  {isExistingGuest && (
+                    <div className="hotel-traveler-picker" style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                      <select 
+                        id="hotel-existing-traveler" 
+                        value={selectedTravelerId} 
+                        onChange={(event) => selectExistingTraveler(event.target.value)} 
+                        style={{ height: "28px", padding: "2px 6px", borderRadius: "6px", border: "1px solid #cbd5e1", width: "100%", maxWidth: "260px", fontSize: "0.76rem" }}
+                      >
+                        <option value="">Choose profile</option>
+                        {savedTravelers.map((traveler) => (
+                          <option key={traveler.id} value={String(traveler.id)}>
+                            {[traveler.title, traveler.firstName, traveler.lastName].filter(Boolean).join(" ")}
+                          </option>
+                        ))}
+                      </select>
+                      {travelerLoadError && <p className="hotel-helper hotel-helper--warning" style={{ margin: 0, color: "red", fontSize: "0.72rem" }}>{travelerLoadError}</p>}
+                    </div>
+                  )}
                 </div>
-                {offerLoadError && <div className="hotel-helper hotel-helper--error" style={{ marginBottom: 16 }}>{offerLoadError}</div>}
-                <div className="hotel-rooms-list">
-                  {hotel.offers && hotel.offers.length > 0 ? (
-                    hotel.offers.map((roomOffer, roomIndex) => {
-                      const isSelectingThis = selectingOfferId === roomOffer.offerId;
-                      const roomImg = hotel.images && hotel.images.length > 0 
-                        ? hotel.images[roomIndex % hotel.images.length] 
-                        : null;
-                      return (
-                        <div key={roomOffer.offerId} className="hotel-room-card-option">
-                          <div className="hotel-room-img-col">
-                            {roomImg ? <img src={roomImg} alt={roomOffer.roomCategory || "Room"} /> : <div style={{ background: "#e5e7eb", width: "100%", height: "100%", minHeight: "150px" }}></div>}
-                          </div>
-                          <div className="hotel-room-details">
-                            <span className="hotel-room-pill">Room option</span>
-                            <h3>{roomOffer.roomCategory ? roomOffer.roomCategory.replace(/_/g, " ") : "Standard Room"}</h3>
-                            <p className="hotel-room-desc">
-                              {roomOffer.roomDescription || "A comfortable, spacious room prepared with standard travel amenities."}
-                            </p>
-                            <div className="hotel-room-meta-tags">
-                              <span><BedDouble size={12} style={{ marginRight: 4 }} /> {roomOffer.bedType || "Double"} bed</span>
-                              <span style={roomOffer.cancellationPolicy?.includes("Charge") ? { color: "#d32f2f", backgroundColor: "#ffebee" } : {}}>
-                                {roomOffer.cancellationPolicy?.includes("Charge") 
-                                  ? roomOffer.cancellationPolicy.replace("Charge: ", "Cancellation Fee: ₹") 
-                                  : (roomOffer.cancellationPolicy || "Cancellation policy applies")}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="hotel-room-action-price">
-                            <div className="hotel-room-price-val">
-                              <strong>{formatCurrency(roomOffer.price)}</strong>
-                              <span>night</span>
-                            </div>
-                            <button
-                              type="button"
-                              className="hotel-primary-button hotel-room-select-btn"
-                              onClick={() => handleSelectOffer(roomOffer)}
-                              disabled={selectingOfferId !== ""}
+
+                <div className="guest-form-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "16px" }}>
+                  {/* Title */}
+                  <div className="floating-field" style={{ gridColumn: "span 1" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Title <span style={{ color: "red" }}>*</span></label>
+                    <select
+                      value={guests[0]?.title || ""}
+                      onChange={(e) => updateGuest(0, "title", e.target.value)}
+                      className={errors.guest_0_title ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                    >
+                      <option value="">Select</option>
+                      <option value="Mr">Mr.</option>
+                      <option value="Ms">Ms.</option>
+                      <option value="Mrs">Mrs.</option>
+                      <option value="Dr">Dr.</option>
+                    </select>
+                    {errors.guest_0_title && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_title}</span>}
+                  </div>
+
+                  {/* Full Name */}
+                  <div className="floating-field" style={{ gridColumn: "span 3" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Full Name <span style={{ color: "red" }}>*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Enter full name"
+                      value={guests[0]?.fullName || ""}
+                      onChange={(e) => updateGuest(0, "fullName", e.target.value)}
+                      className={errors.guest_0_fullName ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", textTransform: "capitalize" }}
+                    />
+                    {errors.guest_0_fullName && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_fullName}</span>}
+                  </div>
+
+                  {/* Gender */}
+                  <div className="floating-field" style={{ gridColumn: "span 1" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Gender <span style={{ color: "red" }}>*</span></label>
+                    <select
+                      value={guests[0]?.gender || "Male"}
+                      onChange={(e) => updateGuest(0, "gender", e.target.value)}
+                      className={errors.guest_0_gender ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {errors.guest_0_gender && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_gender}</span>}
+                  </div>
+
+                  {/* Age */}
+                  <div className="floating-field" style={{ gridColumn: "span 1" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Age <span style={{ color: "red" }}>*</span></label>
+                    <input
+                      type="number"
+                      placeholder="Age"
+                      value={guests[0]?.age || ""}
+                      onChange={(e) => updateGuest(0, "age", e.target.value)}
+                      className={errors.guest_0_age ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                    />
+                    {errors.guest_0_age && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_age}</span>}
+                  </div>
+
+                  {/* Email */}
+                  <div className="floating-field" style={{ gridColumn: "span 2" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Email Address <span style={{ color: "red" }}>*</span></label>
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={guests[0]?.email || ""}
+                      onChange={(e) => updateGuest(0, "email", e.target.value)}
+                      className={errors.guest_0_email ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                    />
+                    {errors.guest_0_email && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_email}</span>}
+                  </div>
+
+                  {/* Mobile */}
+                  <div className="floating-field" style={{ gridColumn: "span 2" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Mobile Number <span style={{ color: "red" }}>*</span></label>
+                    <input
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={guests[0]?.mobile || ""}
+                      onChange={(e) => updateGuest(0, "mobile", e.target.value)}
+                      className={errors.guest_0_mobile ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                    />
+                    {errors.guest_0_mobile && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_mobile}</span>}
+                  </div>
+
+                  {/* PAN Card */}
+                  <div className="floating-field" style={{ gridColumn: "span 2" }}>
+                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>PAN Number {isPANMandatory ? <span style={{ color: "red" }}>*</span> : null}</label>
+                    <input
+                      type="text"
+                      placeholder="PAN Card Number (e.g. ABCDE1234F)"
+                      value={guests[0]?.pan || ""}
+                      onChange={(e) => updateGuest(0, "pan", e.target.value.toUpperCase())}
+                      className={errors.guest_0_pan ? "is-error" : ""}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", textTransform: "uppercase" }}
+                    />
+                    {errors.guest_0_pan && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_pan}</span>}
+                  </div>
+                </div>
+              </section>
+
+              {/* Optional Co-Traveler Details Accordions */}
+              {guests.length > 1 && (
+                <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                  <h3 style={{ margin: "0 0 16px 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Other Guest Details</h3>
+                  {guests.slice(1).map((guest, index) => {
+                    const actualIdx = index + 1;
+                    return (
+                      <div key={guest.index} style={{ border: "1px solid #f1f5f9", borderRadius: "12px", padding: "16px", marginBottom: "12px", background: "#fcfdfe" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                          <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--hotel-ink)" }}>
+                            Traveler #{actualIdx + 1} ({guest.type === "adult" ? "Adult" : "Child"})
+                          </span>
+                          <span style={{ fontSize: "0.7rem", color: guest.type === "child" ? "var(--hotel-rose)" : "#64748b", background: guest.type === "child" ? "rgba(220,30,38,0.05)" : "#f1f5f9", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>
+                            {guest.type === "child" ? "Mandatory" : "Optional"}
+                          </span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: guest.type === "child" ? "100px 1.5fr 1fr" : "100px 1.5fr 1fr 1fr", gap: "12px" }}>
+                          <div>
+                            <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
+                              Title {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
+                            </label>
+                            <select
+                              value={guest.title || ""}
+                              onChange={(e) => updateGuest(actualIdx, "title", e.target.value)}
+                              style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_title`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
                             >
-                              {isSelectingThis ? (
+                              <option value="">Select</option>
+                              {guest.type === "child" ? (
                                 <>
-                                  <Loader2 size={13} className="hotel-spin" />
-                                  Checking...
+                                  <option value="Mstr">Mstr</option>
+                                  <option value="Miss">Miss</option>
                                 </>
                               ) : (
-                                "Choose room"
+                                <>
+                                  <option value="Mr">Mr.</option>
+                                  <option value="Mrs">Mrs.</option>
+                                  <option value="Ms">Ms.</option>
+                                </>
                               )}
-                            </button>
+                            </select>
                           </div>
+                          <div>
+                            <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
+                              Full Name {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Name"
+                              value={guest.fullName || ""}
+                              onChange={(e) => updateGuest(actualIdx, "fullName", e.target.value)}
+                              style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_fullName`] ? "1.5px solid red" : "1px solid #cbd5e1", textTransform: "capitalize" }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
+                              Age {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="Age"
+                              value={guest.age || ""}
+                              onChange={(e) => {
+                                if (guest.type === "child") {
+                                  handleChildAgeChange(actualIdx, e.target.value);
+                                } else {
+                                  updateGuest(actualIdx, "age", e.target.value);
+                                }
+                              }}
+                              style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_age`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
+                            />
+                          </div>
+                          {guest.type === "adult" && (
+                            <div>
+                              <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>Gender</label>
+                              <select
+                                value={guest.gender || "Male"}
+                                onChange={(e) => updateGuest(actualIdx, "gender", e.target.value)}
+                                style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                              >
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                              </select>
+                            </div>
+                          )}
                         </div>
-                      );
-                    })
-                  ) : (
-                    <div className="hotel-room-empty">
-                      <p>No active rooms returned for the selected dates. Please search for different dates.</p>
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })}
+                </section>
+              )}
+
+              {/* Special Requests Grid */}
+              <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                <h3 style={{ margin: "0 0 4px 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Special Requests (Optional)</h3>
+                <p style={{ margin: "0 0 16px 0", fontSize: "0.8rem", color: "var(--hotel-muted)" }}>Select preferences to share with the hotel host. Requests are subject to availability.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                  {["Smoking Room", "Non-Smoking Room", "Large Bed", "Twin Beds", "Late Check-in", "Early Check-in", "High Floor", "Quiet Room", "Wheelchair Accessible"].map((req) => {
+                    const isSelected = specialRequests.includes(req);
+                    return (
+                      <button
+                        type="button"
+                        key={req}
+                        onClick={() => {
+                          setSpecialRequests((prev) => 
+                            prev.includes(req) ? prev.filter((r) => r !== req) : [...prev, req]
+                          );
+                        }}
+                        className={`special-request-pill ${isSelected ? "is-selected" : ""}`}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          border: isSelected ? "1.5px solid var(--hotel-rose)" : "1px solid #e2e8f0",
+                          background: isSelected ? "rgba(220,30,38,0.03)" : "#fff",
+                          color: isSelected ? "var(--hotel-rose)" : "var(--hotel-ink)",
+                          fontWeight: 600,
+                          fontSize: "0.8rem",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <span>{req}</span>
+                        {isSelected && <span style={{ fontSize: "0.85rem", color: "var(--hotel-rose)" }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ marginTop: "16px" }}>
+                  <label htmlFor="hotel-additional-notes" style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--hotel-ink)", display: "block", marginBottom: "6px" }}>Any other requests or comments?</label>
+                  <textarea
+                    id="hotel-additional-notes"
+                    placeholder="Enter special instructions or requests..."
+                    value={additionalNotes}
+                    onChange={(e) => setAdditionalNotes(e.target.value)}
+                    style={{ width: "100%", height: "80px", borderRadius: "10px", border: "1px solid #cbd5e1", padding: "10px", fontSize: "0.85rem", resize: "none" }}
+                  />
                 </div>
               </section>
-            )}
-          </div>
 
-          {offer ? (
-            <aside className="hotel-reserve-rail">
-              <div className="hotel-reserve-card">
-                <div className="hotel-reserve-preview">
-                  <img src={gallery[1] || gallery[0]} alt={hotel.name} />
-                  <div>
-                    <span>{visuals.highlightLabel}</span>
-                    <strong>{hotel.name}</strong>
-                    <p>{offer.roomCategory ? offer.roomCategory.replace(/_/g, " ") : "Standard room"}</p>
+              {/* Review Selection Container */}
+              <section className="hotel-panel" style={{ padding: "20px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "20px" }}>
+                <h3 style={{ margin: "0 0 12px 0", fontSize: "1rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Review Stay & Guest Details</h3>
+                
+                <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "12px", fontSize: "0.82rem", color: "var(--hotel-muted)", display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px", border: "1px solid rgba(0,0,0,0.03)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>🏨 <strong>Hotel:</strong></span>
+                    <span style={{ color: "var(--hotel-ink)", fontWeight: 700 }}>{hotel.name}</span>
                   </div>
-                </div>
-                <div className="hotel-reserve-price">
-                  <strong>{formatCurrency(offer.price)}</strong>
-                  <span>per night before taxes</span>
-                </div>
-                <div className="hotel-reserve-facts">
-                  <div>
-                    <span>Check-in</span>
-                    <strong>{toDisplayDate(String(checkInDate).split("T")[0])}</strong>
-                  </div>
-                  <div>
-                    <span>Check-out</span>
-                    <strong>{toDisplayDate(String(checkOutDate).split("T")[0])}</strong>
-                  </div>
-                  <div>
-                    <span>Guests</span>
-                    <strong>{guestSummary}</strong>
-                  </div>
-                  <div>
-                    <span>Room</span>
-                    <strong>{offer.bedType || "Double"} bed</strong>
-                  </div>
-                </div>
-
-                <div className="hotel-fare-breakdown" style={{ marginTop: 16 }}>
-                  <div style={{ paddingBottom: 16, borderBottom: "1px solid var(--hotel-border)", marginBottom: 16 }}>
-                    <h4 style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>Coupons & Offers</h4>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <input 
-                        type="text" 
-                        placeholder="Enter coupon code" 
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        disabled={isApplyingCoupon}
-                        style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "0.85rem", textTransform: "uppercase" }}
-                      />
-                      {couponDiscount > 0 ? (
-                        <button type="button" onClick={handleRemoveCoupon} disabled={isApplyingCoupon} style={{ padding: "8px 16px", borderRadius: "8px", background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb", fontWeight: "600", cursor: "pointer", fontSize: "0.85rem" }}>
-                          Remove
-                        </button>
-                      ) : (
-                        <button type="button" onClick={handleApplyCoupon} disabled={isApplyingCoupon || !couponCode.trim()} style={{ padding: "8px 16px", borderRadius: "8px", background: "var(--hotel-ink)", color: "#fff", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "0.85rem" }}>
-                          {isApplyingCoupon ? <Loader2 size={14} className="spin" /> : "Apply"}
-                        </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <span>🛏️ <strong>Selected Room:</strong></span>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={{ display: "block", color: "var(--hotel-ink)", fontWeight: 700 }}>
+                        {offer?.roomCategory ? offer.roomCategory.split(",")[0].trim().replace(/_/g, " ") : "Standard Room"}
+                      </span>
+                      {offer?.roomCategory && offer.roomCategory.includes(",") && (
+                        <span style={{ display: "block", fontSize: "0.74rem", color: "var(--hotel-muted)", marginTop: "2px" }}>
+                          {offer.roomCategory.split(",").slice(1).join(", ").trim().replace(/_/g, " ")}
+                        </span>
                       )}
                     </div>
-                    {couponError && <p style={{ color: "var(--hotel-rose)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponError}</p>}
-                    {couponSuccess && <p style={{ color: "#0c5132", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponSuccess}</p>}
                   </div>
-
-                  {isAgent ? (
-                    <>
-                      <div>
-                        <span>Net Room charges ({formatNightLabel(nights)})</span>
-                        <strong>{formatCurrency(basePrice)}</strong>
-                      </div>
-                      <div>
-                        <span>Taxes and GST (12%)</span>
-                        <strong>{formatCurrency(tax)}</strong>
-                      </div>
-                      {Number(markupValue) > 0 && (
-                        <div style={{ color: "var(--hotel-primary)", fontWeight: 600 }}>
-                          <span>Agent Markup (Profit)</span>
-                          <strong>{formatCurrency(markupValue)}</strong>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <span>Room charges ({formatNightLabel(nights)})</span>
-                        <strong>{formatCurrency(basePrice)}</strong>
-                      </div>
-                      <div>
-                        <span>Taxes and GST (12%)</span>
-                        <strong>{formatCurrency(tax)}</strong>
-                      </div>
-                    </>
-                  )}
-                  
-                  {Number(couponDiscount) > 0 && (
-                    <div style={{ color: "#0c5132", fontWeight: 600 }}>
-                      <span>Coupon Discount</span>
-                      <strong>-{formatCurrency(couponDiscount)}</strong>
-                    </div>
-                  )}
-                  <div>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                      Convenience fee
-                      <span title="This fee covers secure payment processing and 24/7 booking support." style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, borderRadius: "50%", background: "rgba(0,0,0,0.06)", fontSize: "0.65rem", fontWeight: "bold" }}>i</span>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>📅 <strong>Stay Period:</strong></span>
+                    <span style={{ color: "var(--hotel-ink)", fontWeight: 700 }}>
+                      {checkInDate ? toDisplayDate(String(checkInDate).split("T")[0]) : ""} to {checkOutDate ? toDisplayDate(String(checkOutDate).split("T")[0]) : ""} ({nights} {nights > 1 ? "Nights" : "Night"})
                     </span>
-                    <strong>{formatCurrency(convenienceFee)}</strong>
                   </div>
-                  <div className="hotel-fare-total" style={{ borderTop: "1px solid var(--hotel-border)", paddingTop: 12 }}>
-                    <span>Total Payable {isAgent ? "(Customer Price)" : ""}</span>
-                    <strong>{formatCurrency(finalPayable)}</strong>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>👤 <strong>Primary Guest:</strong></span>
+                    <span style={{ color: "var(--hotel-ink)", fontWeight: 700 }}>
+                      {guests[0]?.fullName ? `${guests[0].title || "Mr."} ${guests[0].fullName}` : "(Awaiting guest details)"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "10px", marginTop: "4px" }}>
+                    <span>💰 <strong>Total Amount:</strong></span>
+                    <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(finalPayable)}</strong>
                   </div>
                 </div>
-                <div className="hotel-reserve-actions" style={{ display: "grid", gap: 10, marginTop: 18 }}>
-                  <button type="button" className="hotel-primary-button" onClick={handleContinue}>
-                    Continue to payment
-                  </button>
-                  <button type="button" className="hotel-tertiary-link" onClick={() => navigate("/search/hotels")}>
-                    Change hotel search
-                  </button>
-                </div>
-                <div className="hotel-reserve-assurance" style={{ marginTop: 18, padding: "14px 16px", borderRadius: 18, color: "#0c5132", background: "#edfdf3", display: "flex", alignItems: "center", gap: 8 }}>
-                  <CheckCircle2 size={16} />
-                  <span>Your booking details stay synced to the backend pricing preview while you review this page.</span>
+
+                {specialRequests.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", background: "#f8fafc", padding: "10px 14px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.03)", fontSize: "0.82rem" }}>
+                    <span 
+                      style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--hotel-muted)" }}
+                      onClick={() => setShowReqPopup(true)}
+                    >
+                      ✨ <strong style={{ textDecoration: "underline", color: "var(--hotel-ink)" }}>Special Requests:</strong>
+                    </span>
+                    <span style={{ color: "var(--hotel-ink)", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>{specialRequests.slice(0, 2).join(", ")}</span>
+                      {specialRequests.length > 2 && (
+                        <button 
+                          type="button"
+                          onClick={() => setShowReqPopup(true)}
+                          style={{
+                            background: "rgba(220, 30, 38, 0.08)",
+                            border: "1px solid rgba(220, 30, 38, 0.15)",
+                            color: "var(--hotel-rose)",
+                            padding: "2px 8px",
+                            borderRadius: "6px",
+                            fontSize: "0.74rem",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            marginLeft: "4px"
+                          }}
+                        >
+                          +{specialRequests.length - 2} more
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                <label className={`hotel-checkbox ${errors.agreedToAll ? "is-error" : ""}`} style={{ display: "flex", alignItems: "flex-start", gap: "10px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "var(--hotel-ink)", margin: 0 }}>
+                  <input 
+                    type="checkbox" 
+                    checked={agreedToAll} 
+                    onChange={(event) => {
+                      setAgreedToAll(event.target.checked);
+                      setErrors((current) => { const next = { ...current }; delete next.agreedToAll; return next; });
+                      setFormError("");
+                    }} 
+                  />
+                  <span>
+                    I have reviewed my hotel selection and guest info, verify they are correct, and agree to the hotel booking policy, guest rules, and cancellation terms (
+                    <span style={{ color: "var(--hotel-rose)", fontWeight: 700 }}>
+                      {offer?.cancellationPolicy || "Standard cancellation terms apply"}
+                    </span>
+                    ) for this stay.
+                  </span>
+                </label>
+                {errors.agreedToAll && <p style={{ margin: "4px 0 0 0", color: "red", fontSize: "0.74rem" }}>{errors.agreedToAll}</p>}
+                {formError && <p className="hotel-helper hotel-helper--error" style={{ margin: "8px 0 0 0", color: "red", fontSize: "0.78rem" }}>{formError}</p>}
+              </section>
+
+              {/* Bottom Actions Row */}
+              <div className="booking-action-buttons-row" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  {agreedToAll && (
+                    <button
+                      type="button"
+                      className="hotel-primary-button"
+                      style={{ minHeight: "44px", padding: "0 22px", borderRadius: "12px", fontWeight: 700, background: "var(--hotel-rose)" }}
+                      onClick={handleContinue}
+                    >
+                      Continue to Payment →
+                    </button>
+                  )}
+                  {!hasValidToken && agreedToAll && (
+                    <span style={{ fontSize: "0.72rem", color: "var(--hotel-rose)", marginTop: "4px", fontWeight: 600 }}>
+                      * Login mandatory to pay
+                    </span>
+                  )}
                 </div>
               </div>
-            </aside>
-          ) : (
-            <aside className="hotel-reserve-rail">
-              <div className="hotel-reserve-card" style={{ padding: "24px", border: "1px solid rgba(15, 23, 42, 0.06)", borderRadius: 30, background: "var(--hotel-surface)", boxShadow: "var(--hotel-shadow)" }}>
-                <div style={{ textAlign: "center", padding: "24px 10px" }}>
-                  <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🛋️</div>
-                  <h3 style={{ fontFamily: "Fraunces, Georgia, serif", fontSize: "1.25rem", margin: "0 0 8px" }}>Select a room option</h3>
-                  <p style={{ color: "var(--hotel-muted)", fontSize: "0.88rem", lineHeight: 1.5, margin: 0 }}>
-                    Choose one of the available rooms in the list to calculate pricing and proceed to passenger details.
-                  </p>
+            </div>
+
+            {/* Right Column Booking Sidebar */}
+            <aside className="hotel-reserve-rail" style={{ position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Booking Summary Card */}
+              <div className="hotel-reserve-card hotel-your-stay-card" style={{ background: "var(--hotel-surface)", borderRadius: "24px", border: "1px solid var(--hotel-border)", padding: "24px", boxShadow: "var(--hotel-shadow)" }}>
+                <div className="hotel-your-stay-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "16px" }}>
+                  <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Booking Summary</h3>
                 </div>
+
+                {offer && (
+                  <>
+                    {/* Hotel Mini details */}
+                    <div style={{ display: "grid", gridTemplateColumns: "70px 1fr", gap: "12px", marginBottom: "16px" }}>
+                      <img 
+                        src={gallery[0]} 
+                        alt={hotel.name} 
+                        style={{ width: "70px", height: "70px", borderRadius: "12px", objectFit: "cover" }} 
+                      />
+                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                        <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "var(--hotel-ink)", lineHeight: "1.3" }}>{hotel.name}</h4>
+                        {hotel.rating > 0 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "0.8rem", margin: "4px 0" }}>
+                            <span style={{ color: "#f59e0b" }}>★</span>
+                            <strong style={{ color: "var(--hotel-ink)" }}>{Number(hotel.rating).toFixed(1)}</strong>
+                          </div>
+                        )}
+                        <span style={{ fontSize: "0.78rem", color: "var(--hotel-muted)" }}>📍 {hotel.city || hotel.area || "Location"}</span>
+                      </div>
+                    </div>
+
+                    {/* Stay Dates Grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.04)", marginBottom: "16px", position: "relative" }}>
+                      <div style={{ borderRight: "1px solid rgba(0,0,0,0.06)", paddingRight: "8px" }}>
+                        <span style={{ display: "block", fontSize: "0.68rem", color: "var(--hotel-muted)", fontWeight: 700, textTransform: "uppercase" }}>Check-in</span>
+                        <strong style={{ display: "block", fontSize: "0.85rem", color: "var(--hotel-ink)", marginTop: "4px" }}>
+                          {checkInDate ? toDisplayDate(String(checkInDate).split("T")[0]) : ""}
+                        </strong>
+                      </div>
+                      <div style={{ paddingLeft: "8px" }}>
+                        <span style={{ display: "block", fontSize: "0.68rem", color: "var(--hotel-muted)", fontWeight: 700, textTransform: "uppercase" }}>Check-out</span>
+                        <strong style={{ display: "block", fontSize: "0.85rem", color: "var(--hotel-ink)", marginTop: "4px" }}>
+                          {checkOutDate ? toDisplayDate(String(checkOutDate).split("T")[0]) : ""}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Guest Summary & Room Type info */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "14px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+                        <span style={{ color: "var(--hotel-muted)" }}>Stay Length</span>
+                        <strong style={{ color: "var(--hotel-ink)" }}>{formatNightLabel(nights)}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+                        <span style={{ color: "var(--hotel-muted)" }}>Guests &amp; Rooms</span>
+                        <strong style={{ color: "var(--hotel-ink)" }}>{guestSummary}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: "0.85rem" }}>
+                        <span style={{ color: "var(--hotel-muted)" }}>Selected Room</span>
+                        <div style={{ textAlign: "right" }}>
+                          <strong style={{ display: "block", color: "var(--hotel-ink)" }}>
+                            {offer.roomCategory ? offer.roomCategory.split(",")[0].trim().replace(/_/g, " ") : "Standard Room"}
+                          </strong>
+                          {offer.roomCategory && offer.roomCategory.includes(",") && (
+                            <span style={{ display: "block", fontSize: "0.74rem", color: "var(--hotel-muted)", marginTop: "2px" }}>
+                              {offer.roomCategory.split(",").slice(1).join(", ").trim().replace(/_/g, " ")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="hotel-fare-breakdown" style={{ display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "14px" }}>
+                      <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
+                        <span>Room base charges</span>
+                        <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(basePrice)}</strong>
+                      </div>
+                      <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
+                        <span>Taxes and GST (12%)</span>
+                        <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(tax)}</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                      <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Total Price</span>
+                      <strong style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981" }}>{formatCurrency(finalPayable)}</strong>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Need Help Card */}
+              <div className="hotel-reserve-card need-help-card" style={{ padding: "20px", borderRadius: "20px", border: "1px solid var(--hotel-border)", background: "#fff", boxShadow: "var(--hotel-shadow)" }}>
+                <h3 style={{ margin: "0 0 10px 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--hotel-ink)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>📞</span> Need Help?
+                </h3>
+                <p style={{ margin: "0 0 14px 0", fontSize: "0.82rem", color: "var(--hotel-muted)", lineHeight: 1.5 }}>
+                  Our customer experience specialists are available 24/7 to help you with your booking.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
+                    <span>📱</span> <strong>+91 98765 43210</strong>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
+                    <span>✉️</span> <strong>support@picknbook.com</strong>
+                  </div>
+                </div>
+                <button 
+                  type="button" 
+                  style={{
+                    width: "100%",
+                    background: "none",
+                    border: "1px solid var(--hotel-rose)",
+                    color: "var(--hotel-rose)",
+                    borderRadius: "10px",
+                    padding: "10px 0",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onClick={() => navigate("/contact")}
+                >
+                  Contact Us
+                </button>
+              </div>
+
             </aside>
-          )}
-        </div>
+
+          </div>
+        )}
+
       </div>
-      {offer && (
-        <div className="hotel-mobile-sticky-cta" style={{
+
+      {showChildAgeAlert && (
+        <div style={{
           position: "fixed",
-          bottom: 0,
+          top: 0,
           left: 0,
           right: 0,
-          background: "#ffffff",
-          borderTop: "1px solid rgba(220, 30, 38, 0.15)",
-          padding: "12px 20px",
-          justifyContent: "space-between",
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          justifyContent: "center",
           alignItems: "center",
-          zIndex: 1000,
-          boxShadow: "0 -10px 30px rgba(0, 0, 0, 0.08)",
+          zIndex: 9999,
+          animation: "fadeIn 0.2s ease"
         }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", fontWeight: 700 }}>Total Payable</span>
-            <strong style={{ fontSize: "1.25rem", color: "var(--hotel-ink)", fontWeight: 800 }}>{formatCurrency(finalPayable)}</strong>
+          <div style={{
+            background: "#fff",
+            borderRadius: "20px",
+            width: "90%",
+            maxWidth: "450px",
+            padding: "28px",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+            textAlign: "center"
+          }}>
+            <div style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background: "#fee2e2",
+              color: "#ef4444",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "1.8rem",
+              margin: "0 auto 16px auto"
+            }}>
+              ⚠️
+            </div>
+            <h3 style={{ margin: "0 0 10px 0", fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>
+              Passenger is Considered an Adult
+            </h3>
+            <p style={{ margin: "0 0 24px 0", fontSize: "0.85rem", color: "var(--hotel-muted)", lineHeight: "1.5" }}>
+              A child aged 12 or above is classified as an adult passenger. Please return to the search filters to search for this stay with the correct adult guest count.
+            </p>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowChildAgeAlert(false);
+                  if (alertChildIndex !== null) {
+                    updateGuest(alertChildIndex, "age", ""); // Clear the invalid age
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  height: "44px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  background: "#fff",
+                  color: "#475569",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontSize: "0.88rem"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowChildAgeAlert(false);
+                  navigate("/");
+                }}
+                style={{
+                  flex: 1,
+                  height: "44px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "var(--hotel-rose)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontSize: "0.88rem"
+                }}
+              >
+                Go to Search
+              </button>
+            </div>
           </div>
-          <button type="button" className="hotel-primary-button" style={{ minHeight: 44, padding: "0 22px", fontSize: "0.9rem" }} onClick={handleContinue}>
-            Continue
-          </button>
+        </div>
+      )}
+
+      {showReqPopup && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999,
+          animation: "fadeIn 0.2s ease"
+        }} onClick={() => setShowReqPopup(false)}>
+          <div style={{
+            background: "#fff",
+            borderRadius: "20px",
+            width: "90%",
+            maxWidth: "400px",
+            padding: "24px",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)"
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 800, color: "var(--hotel-rose)", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "10px" }}>
+              Selected Special Requests
+            </h3>
+            <ul style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
+              {specialRequests.map((req) => (
+                <li key={req} style={{ fontWeight: 600 }}>✓ {req}</li>
+              ))}
+            </ul>
+            <button 
+              type="button" 
+              onClick={() => setShowReqPopup(false)}
+              style={{
+                marginTop: "20px",
+                width: "100%",
+                height: "40px",
+                borderRadius: "10px",
+                background: "var(--hotel-rose)",
+                color: "#fff",
+                border: "none",
+                fontWeight: 700,
+                cursor: "pointer",
+                fontSize: "0.88rem"
+              }}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </main>

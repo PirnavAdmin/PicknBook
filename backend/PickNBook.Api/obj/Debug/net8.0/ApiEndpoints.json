@@ -1756,6 +1756,38 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.AdminFlightController",
+    "Method": "ApiBalanceCheck",
+    "RelativePath": "api/admin/flight/ApiBalanceCheck",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.ApiBalanceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminFlightController",
+    "Method": "ApiBalanceLog",
+    "RelativePath": "api/admin/flight/ApiBalanceLog",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.ApiBalanceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminFlightController",
     "Method": "GetBookingList",
     "RelativePath": "api/admin/flight/bookings",
     "HttpMethod": "GET",
@@ -3951,47 +3983,11 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
-    "Method": "BookBus",
-    "RelativePath": "api/BusBookings/{busId}/book",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
     "Parameters": [
       {
-        "Name": "busId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.CreateBusBookingRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
-    "Method": "GetPricingPreview",
-    "RelativePath": "api/BusBookings/{busId}/pricing-preview",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "busId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.BusPricingPreviewRequestDto",
-        "IsRequired": true
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4023,6 +4019,22 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BusBoardingPointsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "BookBus",
+    "RelativePath": "api/BusBookings/book",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CreateBusBookingRequestDto",
         "IsRequired": true
       }
     ],
@@ -4145,6 +4157,22 @@
         "Name": "baseFare",
         "Type": "System.Decimal",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetPricingPreview",
+    "RelativePath": "api/BusBookings/pricing-preview",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusPricingPreviewRequestDto",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -4551,6 +4579,27 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.CustomersController",
+    "Method": "UpdateCustomer",
+    "RelativePath": "api/Customers/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CreateCustomerRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.CustomersController",
     "Method": "DeleteCustomer",
     "RelativePath": "api/Customers/{id}",
     "HttpMethod": "DELETE",
@@ -4692,255 +4741,260 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "SearchFlights",
-    "RelativePath": "api/FlightBookings",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "fromCity",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "toCity",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "date",
-        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "travelClass",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "tripType",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "returnDate",
-        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "from",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "to",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "class",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "adults",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "children",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "infants",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "BookFlight",
-    "RelativePath": "api/FlightBookings/{flightId}/book",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "flightId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.CreateFlightBookingRequestDto",
-        "IsRequired": true
-      },
-      {
-        "Name": "tripType",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "GetFlightSeatMap",
-    "RelativePath": "api/FlightBookings/{flightId}/seats",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "flightId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "travelClass",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "GetAllFlightBookings",
-    "RelativePath": "api/FlightBookings/admin/bookings",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "passengerPhone",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "status",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "GetFlightBookings",
-    "RelativePath": "api/FlightBookings/bookings",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "passengerPhone",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "status",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "userId",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "GetFlightBookingById",
-    "RelativePath": "api/FlightBookings/bookings/{bookingId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "bookingId",
-        "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "CancelFlightBooking",
-    "RelativePath": "api/FlightBookings/bookings/{bookingId}/cancel",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "bookingId",
-        "Type": "System.String",
-        "IsRequired": true
-      },
-      {
-        "Name": "reason",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "CancelFlightPassengers",
-    "RelativePath": "api/FlightBookings/bookings/{bookingId}/cancel-passengers",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "bookingId",
-        "Type": "System.String",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.CancelPassengersRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "GetHotRoutes",
-    "RelativePath": "api/FlightBookings/hot-routes",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "metric",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.FlightBookingsController",
-    "Method": "GetPricingPreview",
-    "RelativePath": "api/FlightBookings/pricing-preview",
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "FareQuote",
+    "RelativePath": "api/flight/srdv/FareQuote",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.FlightPricingPreviewRequestDto",
+        "Type": "PickNBook.Api.Models.DTOs.AirFareRuleRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "FareRule",
+    "RelativePath": "api/flight/srdv/FareRule",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.AirFareRuleRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "BookingCallback",
+    "RelativePath": "api/flight/srdv/flight_callback",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SrdvBookingCallbackRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "PickNBook.Api.Models.DTOs.SrdvBookingCallbackResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetApiBalanceCheck",
+    "RelativePath": "api/flight/srdv/GetApiBalanceCheck",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.ApiBalanceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetApiBalanceLog",
+    "RelativePath": "api/flight/srdv/GetApiBalanceLog",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.ApiBalanceRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCalendarFare",
+    "RelativePath": "api/flight/srdv/GetCalendarFare",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CalendarFareRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancellationCharges",
+    "RelativePath": "api/flight/srdv/GetCancellationCharges",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.GetCancellationChargesRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancelStatus",
+    "RelativePath": "api/flight/srdv/GetCancelStatus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.GetCancelStatusRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "HoldGDS",
+    "RelativePath": "api/flight/srdv/HoldGDS",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HoldGDSRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "MyBookings",
+    "RelativePath": "api/flight/srdv/my-bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "Search",
+    "RelativePath": "api/flight/srdv/Search",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.AirSearchRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SeatMap",
+    "RelativePath": "api/flight/srdv/SeatMap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.AirFareRuleRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SendChangeRequest",
+    "RelativePath": "api/flight/srdv/SendChangeRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SendChangeRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SSR",
+    "RelativePath": "api/flight/srdv/SSR",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.AirFareRuleRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "TicketGDS",
+    "RelativePath": "api/flight/srdv/TicketGDS",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.TicketGDSRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "TicketLCC",
+    "RelativePath": "api/flight/srdv/TicketLCC",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.TicketLCCRequestDto",
         "IsRequired": true
       }
     ],
@@ -5041,6 +5095,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "Book",
+    "RelativePath": "api/Hotels/book",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookingRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "Cancel",
     "RelativePath": "api/Hotels/bookings/{bookingId}/cancel",
     "HttpMethod": "POST",
@@ -5118,7 +5188,7 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
-    "Method": "Book",
+    "Method": "PostBookRoom",
     "RelativePath": "api/Hotels/BookRoom",
     "HttpMethod": "POST",
     "IsController": true,
@@ -5126,7 +5196,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.HotelBookingRequestDto",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookRequestDto",
         "IsRequired": true
       }
     ],
@@ -5146,6 +5216,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetActiveCoupons",
+    "RelativePath": "api/Hotels/coupons/active",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -5336,6 +5416,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PricingPreview",
+    "RelativePath": "api/Hotels/pricing-preview",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelPricingPreviewRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "GetHotelRooms",
     "RelativePath": "api/Hotels/rooms",
     "HttpMethod": "GET",
@@ -5354,6 +5450,16 @@
       },
       {
         "Name": "hotelCode",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "srdvIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "endUserIp",
         "Type": "System.String",
         "IsRequired": false
       }

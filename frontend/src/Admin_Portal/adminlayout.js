@@ -18,6 +18,130 @@ function AdminLayout() {
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
+  useEffect(() => {
+    const classifyButtons = () => {
+      const buttons = document.querySelectorAll('.admin-shell button, .admin-shell a.btn, .admin-shell input[type="button"], .admin-shell input[type="submit"]');
+      buttons.forEach(btn => {
+        const text = (btn.textContent || btn.value || '').trim().toLowerCase();
+        
+        // Remove existing classification classes
+        btn.classList.remove(
+          'btn-add', 'btn-search', 'btn-filter', 'btn-export', 'btn-reset',
+          'btn-clear', 'btn-cancel', 'btn-total', 'btn-pending-booking',
+          'btn-completed-booking', 'btn-pending', 'btn-replied', 'btn-resolved',
+          'btn-profit', 'btn-view', 'btn-total-records', 'btn-clear-filter'
+        );
+
+        if (text.includes('clear filter') || text.includes('clear filters')) {
+          btn.classList.add('btn-clear-filter');
+        } else if (text.includes('pending booking')) {
+          btn.classList.add('btn-pending-booking');
+        } else if (text.includes('completed booking')) {
+          btn.classList.add('btn-completed-booking');
+        } else if (text.includes('profit')) {
+          btn.classList.add('btn-profit');
+        } else if (text.includes('view') || text.includes('details') || text.includes('show')) {
+          btn.classList.add('btn-view');
+        } else if (text.includes('add') || text.includes('generate') || text.includes('create') || text.includes('new')) {
+          btn.classList.add('btn-add');
+        } else if (text.includes('search') || text.includes('find')) {
+          btn.classList.add('btn-search');
+        } else if (text.includes('filter') || text.includes('hide filter')) {
+          btn.classList.add('btn-filter');
+        } else if (text.includes('export') || text.includes('download')) {
+          btn.classList.add('btn-export');
+        } else if (text.includes('reset')) {
+          btn.classList.add('btn-reset');
+        } else if (text.includes('clear')) {
+          btn.classList.add('btn-clear');
+        } else if (text.includes('cancel') || text.includes('close')) {
+          btn.classList.add('btn-cancel');
+        } else if (text.includes('total records') || text.includes('record count')) {
+          btn.classList.add('btn-total-records');
+        } else if (text.includes('total')) {
+          btn.classList.add('btn-total');
+        } else if (text.includes('pending')) {
+          btn.classList.add('btn-pending');
+        } else if (text.includes('replied')) {
+          btn.classList.add('btn-replied');
+        } else if (text.includes('resolved') || text.includes('success') || text.includes('completed') || text.includes('paid')) {
+          btn.classList.add('btn-resolved');
+        }
+      });
+
+      // Classify action icons and status cells
+      const actionableElements = document.querySelectorAll('.admin-shell button, .admin-shell a, .admin-shell span, .admin-shell .action-btn');
+      actionableElements.forEach(el => {
+        const title = (el.getAttribute('title') || '').toLowerCase();
+        const className = el.className || '';
+        let text = (el.textContent || '').trim().toLowerCase();
+        
+        // Normalize text by removing all leading checkmark and cross symbols if present
+        text = text.replace(/^[✓✗✔✘\s]+/g, '').trim();
+
+        el.classList.remove('action-icon-view', 'action-icon-edit', 'action-icon-delete', 'status-active-badge', 'status-inactive-badge');
+
+        if (title.includes('view') || title.includes('detail') || className.includes('view-btn')) {
+          el.classList.add('action-icon-view');
+        } else if (title.includes('edit') || title.includes('update') || className.includes('edit-btn')) {
+          el.classList.add('action-icon-edit');
+        } else if (title.includes('delete') || title.includes('remove') || className.includes('delete-btn')) {
+          el.classList.add('action-icon-delete');
+        }
+
+        const isStatusText = ['active', 'inactive', 'deactive', 'completed', 'pending', 'cancelled', 'failed', 'replied', 'resolved', 'paid'].includes(text);
+        if (className.includes('status') || className.includes('badge') || isStatusText) {
+          // Skip if this element is nested inside another status/badge element to avoid duplicate matching
+          if (el.parentElement && el.parentElement.closest('.status-active-badge, .status-inactive-badge, .status, .badge, [class*="status-badge"], [class*="status-pill"], [class*="status-toggle"], [class*="badge-"]')) {
+            return;
+          }
+
+          // Clean up any existing status symbol spans to prevent duplicate symbols accumulation
+          el.querySelectorAll('.symbol-badge-indicator').forEach(child => child.remove());
+
+          const hasSvgIcon = el.querySelector('svg') !== null;
+
+          if (text === 'active' || text === 'completed' || text === 'success' || text === 'replied' || text === 'resolved' || text === 'paid') {
+            el.classList.add('status-active-badge');
+            if (!hasSvgIcon) {
+              const symbolSpan = document.createElement('span');
+              symbolSpan.className = 'symbol-badge-indicator';
+              symbolSpan.style.marginRight = '4px';
+              symbolSpan.style.fontWeight = 'bold';
+              symbolSpan.textContent = '✓';
+              el.insertBefore(symbolSpan, el.firstChild);
+            }
+          } else if (text === 'inactive' || text === 'deactive' || text === 'pending' || text === 'cancelled' || text === 'failed') {
+            el.classList.add('status-inactive-badge');
+            if (!hasSvgIcon) {
+              const symbolSpan = document.createElement('span');
+              symbolSpan.className = 'symbol-badge-indicator';
+              symbolSpan.style.marginRight = '4px';
+              symbolSpan.style.fontWeight = 'bold';
+              symbolSpan.textContent = '✗';
+              el.insertBefore(symbolSpan, el.firstChild);
+            }
+          }
+        }
+      });
+    };
+
+    let observer;
+    const runClassificationSafe = () => {
+      if (observer) observer.disconnect();
+      classifyButtons();
+      if (observer) observer.observe(document.body, { childList: true, subtree: true });
+    };
+
+    runClassificationSafe();
+    observer = new MutationObserver(runClassificationSafe);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      if (observer) observer.disconnect();
+    };
+  }, [location.pathname]);
+
   return (
     <div className={`admin-shell ${theme}-theme`} style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
       

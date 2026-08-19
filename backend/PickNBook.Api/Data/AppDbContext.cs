@@ -16,7 +16,6 @@ namespace PickNBook.Api.Data
         // =============================
         public DbSet<User> Users { get; set; }
         public DbSet<OTP> OTPs { get; set; }
-        public DbSet<CheapestFlight> CheapestFlights { get; set; }
         public DbSet<FeaturedOffer> FeaturedOffers { get; set; }
         public DbSet<CouponRedemption> CouponRedemptions { get; set; }
         public DbSet<OfferSubscriber> OfferSubscribers { get; set; }
@@ -30,18 +29,15 @@ namespace PickNBook.Api.Data
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<DepositRequest> DepositRequests { get; set; }
         public DbSet<ContactQuery> ContactQueries { get; set; }
-        public DbSet<FlightBooking> FlightBookings => Set<FlightBooking>();
-        public DbSet<FlightClassInventory> FlightClassInventories => Set<FlightClassInventory>();
         public DbSet<BusBooking> BusBookings => Set<BusBooking>();
         public DbSet<FlightReservation> FlightReservations => Set<FlightReservation>();
+        public DbSet<FlightReservationSegment> FlightReservationSegments => Set<FlightReservationSegment>();
         public DbSet<BusReservation> BusReservations => Set<BusReservation>();
         public DbSet<BusReservationPassenger> BusReservationPassengers => Set<BusReservationPassenger>();
         public DbSet<FlightReservationPassenger> FlightReservationPassengers => Set<FlightReservationPassenger>();
         public DbSet<Traveler> Travelers => Set<Traveler>();
         public DbSet<FlightRouteStat> FlightRouteStats => Set<FlightRouteStat>();
         public DbSet<BusRouteStat> BusRouteStats => Set<BusRouteStat>();
-        public DbSet<FlightSeat> FlightSeats => Set<FlightSeat>();
-
         public DbSet<BusDiscount> BusDiscounts => Set<BusDiscount>();
         public DbSet<BusCoupon> BusCoupons => Set<BusCoupon>();
         public DbSet<BusCouponUsage> BusCouponUsages => Set<BusCouponUsage>();
@@ -134,7 +130,6 @@ namespace PickNBook.Api.Data
             // =============================
             modelBuilder.Entity<User>().ToTable("users");
             modelBuilder.Entity<OTP>().ToTable("otps");
-            modelBuilder.Entity<CheapestFlight>().ToTable("cheapestflights");
             modelBuilder.Entity<FeaturedOffer>().ToTable("featuredoffers");
             modelBuilder.Entity<CouponRedemption>().ToTable("couponredemptions");
             modelBuilder.Entity<OfferSubscriber>().ToTable("offersubscribers");
@@ -170,7 +165,31 @@ namespace PickNBook.Api.Data
 
             modelBuilder.Entity<HotelSearchLog>().ToTable("hotel_search_logs");
             modelBuilder.Entity<HotelInfoCache>().ToTable("hotel_info_caches");
-            modelBuilder.Entity<HotelMarkupRule>().ToTable("hotel_markup_rules");
+
+            modelBuilder.Entity<HotelMarkupRule>(entity =>
+            {
+                entity.ToTable("hotel_markup_rules");
+                entity.Property(x => x.RuleName).HasMaxLength(150).IsRequired();
+                entity.Property(x => x.CityCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.HotelCode).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.UserType).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.MarkupType).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.MarkupValue).HasPrecision(12, 2).IsRequired();
+            });
+
+            modelBuilder.Entity<HotelReservation>(entity =>
+            {
+                entity.ToTable("hotel_reservations");
+                entity.Property(x => x.SrdvOfferedPrice).HasPrecision(18, 2);
+                entity.Property(x => x.SrdvGstAmount).HasPrecision(18, 2);
+                entity.Property(x => x.SrdvCgstAmount).HasPrecision(18, 2);
+                entity.Property(x => x.SrdvSgstAmount).HasPrecision(18, 2);
+                entity.Property(x => x.SrdvIgstAmount).HasPrecision(18, 2);
+                entity.Property(x => x.ConfirmationNo).HasMaxLength(100);
+                entity.Property(x => x.InvoiceNumber).HasMaxLength(100);
+                entity.Property(x => x.RatePlanCode).HasMaxLength(100);
+                entity.Property(x => x.RoomTypeCode).HasMaxLength(150);
+            });
 
             // =============================
             // User Configuration
@@ -237,20 +256,6 @@ namespace PickNBook.Api.Data
 
             modelBuilder.Entity<OTP>()
                 .HasIndex(o => o.ChallengeId);
-
-            // =============================
-            // CheapestFlight Configuration
-            // =============================
-            modelBuilder.Entity<CheapestFlight>()
-                .HasIndex(x => new { x.Origin, x.Destination, x.RecordedAt });
-
-            modelBuilder.Entity<CheapestFlight>()
-                .Property(x => x.Price)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<CheapestFlight>().Property(x => x.DepartureDate);
-            modelBuilder.Entity<CheapestFlight>().Property(x => x.ArrivalDate);
-            modelBuilder.Entity<CheapestFlight>().Property(x => x.RecordedAt);
 
             // =============================
             // FeaturedOffer Configuration
@@ -562,19 +567,6 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.UpdatedAtUtc).IsRequired();
             });
 
-            modelBuilder.Entity<FlightBooking>(entity =>
-            {
-                entity.ToTable("flight_bookings");
-                entity.HasKey(x => x.Id);
-                entity.Property(x => x.FlightNumber).HasMaxLength(20).IsRequired();
-                entity.Property(x => x.Airline).HasMaxLength(120).IsRequired();
-                entity.Property(x => x.FromCity).HasMaxLength(80).IsRequired();
-                entity.Property(x => x.ToCity).HasMaxLength(80).IsRequired();
-                entity.Property(x => x.CabinClass).HasMaxLength(30).IsRequired();
-                entity.Property(x => x.PriceInr).HasPrecision(10, 2);
-                entity.HasIndex(x => new { x.FromCity, x.ToCity, x.DepartureTime });
-            });
-
             modelBuilder.Entity<BusBooking>(entity =>
             {
                 entity.ToTable("bus_bookings");
@@ -588,19 +580,6 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.DroppingPoint).HasMaxLength(120).IsRequired();
                 entity.Property(x => x.PriceInr).HasPrecision(10, 2);
                 entity.HasIndex(x => new { x.BusNumber, x.FromCity, x.ToCity, x.DepartureTime }).IsUnique();
-            });
-
-            modelBuilder.Entity<FlightClassInventory>(entity =>
-            {
-                entity.ToTable("flight_class_inventories");
-                entity.HasKey(x => x.Id);
-                entity.Property(x => x.TravelClass).HasMaxLength(30).IsRequired();
-                entity.Property(x => x.PriceInr).HasPrecision(10, 2);
-                entity.HasIndex(x => new { x.FlightBookingId, x.TravelClass }).IsUnique();
-                entity.HasOne(x => x.FlightBooking)
-                    .WithMany()
-                    .HasForeignKey(x => x.FlightBookingId)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<FlightReservation>(entity =>
@@ -622,7 +601,6 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.CustomerFareInr).HasPrecision(10, 2);
                 entity.Property(x => x.NetFareInr).HasPrecision(10, 2);
                 entity.Property(x => x.DiscountAmountInr).HasPrecision(10, 2);
-                entity.Property(x => x.ConvenienceFeeInr).HasPrecision(10, 2);
                 entity.Property(x => x.CouponCode).HasMaxLength(40);
                 entity.Property(x => x.SupplierBaseFare).HasPrecision(10, 2);
                 entity.Property(x => x.SupplierTaxAmount).HasPrecision(10, 2);
@@ -631,15 +609,36 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.PromotionName).HasMaxLength(120);
                 entity.Property(x => x.PromotionDiscount).HasPrecision(10, 2);
                 entity.Property(x => x.CouponDiscount).HasPrecision(10, 2);
-                entity.Property(x => x.ConvenienceFee).HasPrecision(10, 2);
                 entity.Property(x => x.FinalAmount).HasPrecision(10, 2);
+                entity.Property(x => x.GdsPnr).HasMaxLength(20);
+                entity.Property(x => x.TicketStatus).HasMaxLength(30);
+                entity.Property(x => x.SrdvChangeRequestId).HasMaxLength(50);
+                entity.Property(x => x.SrdvType).HasMaxLength(50);
+                entity.Property(x => x.SrdvIndex).HasMaxLength(100);
                 entity.HasIndex(x => x.BookingReference).IsUnique();
                 entity.HasIndex(x => x.UserId);
                 entity.HasIndex(x => x.PassengerPhone);
-                entity.HasOne(x => x.FlightBooking)
-                    .WithMany()
-                    .HasForeignKey(x => x.FlightBookingId)
-                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<FlightReservationSegment>(entity =>
+            {
+                entity.ToTable("flight_reservation_segments");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Status).HasMaxLength(40).IsRequired().HasDefaultValue("Booked");
+                entity.Property(x => x.Airline).HasMaxLength(80).IsRequired();
+                entity.Property(x => x.FlightNumber).HasMaxLength(40).IsRequired();
+                entity.Property(x => x.FromCity).HasMaxLength(80).IsRequired();
+                entity.Property(x => x.ToCity).HasMaxLength(80).IsRequired();
+                entity.Property(x => x.Pnr).HasMaxLength(20);
+                entity.Property(x => x.Baggage).HasMaxLength(150);
+                entity.Property(x => x.CabinBaggage).HasMaxLength(150);
+                
+                entity.HasIndex(x => x.FlightReservationId);
+                
+                entity.HasOne(x => x.FlightReservation)
+                    .WithMany(x => x.Segments)
+                    .HasForeignKey(x => x.FlightReservationId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<BusReservation>(entity =>
@@ -690,6 +689,7 @@ namespace PickNBook.Api.Data
             {
                 entity.ToTable("flight_reservation_passengers");
                 entity.HasKey(x => x.Id);
+                entity.Property(x => x.Status).HasMaxLength(40).IsRequired().HasDefaultValue("Booked");
                 entity.Property(x => x.FullName).HasMaxLength(120).IsRequired();
                 entity.Property(x => x.PassengerType).HasMaxLength(20).IsRequired();
                 entity.Property(x => x.Gender).HasMaxLength(20).IsRequired();
@@ -738,19 +738,6 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.ToCity).HasMaxLength(80).IsRequired();
                 entity.HasIndex(x => new { x.FromCity, x.ToCity }).IsUnique();
             });
-
-            modelBuilder.Entity<FlightSeat>(entity =>
-            {
-                entity.ToTable("flight_seats");
-                entity.HasKey(x => x.Id);
-                entity.Property(x => x.TravelClass).HasMaxLength(30).IsRequired();
-                entity.Property(x => x.SeatCode).HasMaxLength(10).IsRequired();
-                entity.HasIndex(x => new { x.FlightBookingId, x.TravelClass, x.SeatCode }).IsUnique();
-                entity.HasIndex(x => new { x.FlightBookingId, x.TravelClass, x.IsBooked });
-            });
-
-
-
             modelBuilder.Entity<BusDiscount>(entity =>
             {
                 entity.ToTable("bus_discounts");
@@ -760,6 +747,10 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.UpdatedBy).HasMaxLength(120).IsRequired();
                 entity.Property(x => x.Remark).HasMaxLength(300);
                 entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            });
+            modelBuilder.Entity<BusBlockedSeatPrice>(entity =>
+            {
+                entity.HasIndex(x => x.TraceId);
             });
 
             modelBuilder.Entity<BusCoupon>(entity =>
@@ -1014,13 +1005,20 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.MarkupAmount).HasPrecision(10, 2);
                 entity.Property(x => x.BasePrice).HasPrecision(10, 2);
                 entity.Property(x => x.ConvenienceFee).HasPrecision(10, 2);
-                entity.Property(x => x.GstPercent).HasPrecision(10, 2);
-                entity.Property(x => x.GstAmount).HasPrecision(10, 2);
                 entity.Property(x => x.TotalPrice).HasPrecision(10, 2);
+                entity.Property(x => x.CancellationCharges).HasPrecision(10, 2);
+                entity.Property(x => x.RefundAmount).HasPrecision(10, 2);
+                entity.Property(x => x.CouponDiscount).HasPrecision(10, 2);
+                entity.Property(x => x.CouponCode).HasMaxLength(40);
+                entity.Property(x => x.TraceId).HasMaxLength(80);
+                entity.Property(x => x.SrdvBookingId).HasMaxLength(80);
+                entity.Property(x => x.GuestNationality).HasMaxLength(10).IsRequired();
+                entity.Property(x => x.RoomTypeName).HasMaxLength(200);
                 entity.Property(x => x.Currency).HasMaxLength(10).IsRequired();
                 entity.HasIndex(x => x.BookingReference).IsUnique();
                 entity.HasIndex(x => x.UserId);
                 entity.HasIndex(x => x.HotelId);
+                entity.HasIndex(x => x.Status);
             });
 
             modelBuilder.Entity<HotelPricingSetting>(entity =>
@@ -1029,9 +1027,6 @@ namespace PickNBook.Api.Data
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.MarkupType).HasMaxLength(20).IsRequired();
                 entity.Property(x => x.MarkupValue).HasPrecision(10, 2);
-                entity.Property(x => x.ConvenienceFeeType).HasMaxLength(20).IsRequired();
-                entity.Property(x => x.ConvenienceFeeValue).HasPrecision(10, 2);
-                entity.Property(x => x.GstPercent).HasPrecision(10, 2);
             });
 
             modelBuilder.Entity<FlightPromotion>(entity =>
@@ -1083,6 +1078,18 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.TripType).HasConversion<string>().HasMaxLength(20).IsRequired();
                 entity.Property(x => x.MarkupType).HasConversion<string>().HasMaxLength(20).IsRequired();
                 entity.Property(x => x.MarkupValue).HasPrecision(10, 2);
+            });
+
+            modelBuilder.Entity<HotelMarkupRule>(entity =>
+            {
+                entity.ToTable("hotel_markup_rules");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.RuleName).HasMaxLength(150).IsRequired();
+                entity.Property(x => x.CityCode).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.HotelCode).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.UserType).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.MarkupType).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.MarkupValue).HasPrecision(12, 2);
             });
 
             modelBuilder.Entity<FlightConvenienceFeeRule>(entity =>

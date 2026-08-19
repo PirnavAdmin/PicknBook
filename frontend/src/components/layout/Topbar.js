@@ -18,7 +18,7 @@ import {
 import '../../STYLES/Topbar.css';
 import { clearAuthSession } from "../../services/authSession";
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
-import { openAuthModal } from "../../utils/authModalEvents";
+
 
 function decodeJwtPayload(token) {
   if (!token || typeof token !== "string") {
@@ -120,7 +120,7 @@ export default function Topbar() {
   const tabParam = new URLSearchParams(location.search).get("tab");
   const currentHomeTab = ["flights", "buses", "hotels"].includes(tabParam)
     ? tabParam
-    : "flights";
+    : "buses";
   const isHome = location.pathname === "/";
 
   const syncAuthState = () => {
@@ -172,7 +172,7 @@ export default function Topbar() {
 
   const handleLogoClick = (e) => {
     e.preventDefault();
-    navigate("/");
+    navigate("/?tab=buses");
     window.setTimeout(() => {
       const rootEl = document.getElementById("root");
       if (rootEl) rootEl.scrollTo({ top: 0, behavior: "smooth" });
@@ -316,7 +316,10 @@ export default function Topbar() {
             <button
               type="button"
               className="topbar-login-btn"
-              onClick={() => openAuthModal("login", { returnTo: window.location.pathname + window.location.search })}
+              onClick={() => {
+                const returnTo = window.location.pathname + window.location.search;
+                navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+              }}
             >
               <User size={18} />
               <span>Login / Sign Up</span>

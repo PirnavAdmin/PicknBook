@@ -29,7 +29,8 @@ public class BookingNotificationService(
                 Price = request.Price,
                 Currency = request.Currency,
                 StopsCount = request.StopsCount,
-                DurationMinutes = request.DurationMinutes
+                DurationMinutes = request.DurationMinutes,
+                Segments = request.Segments
             };
 
             await ticketEmailService.SendFlightTicketAsync(flightRequest);

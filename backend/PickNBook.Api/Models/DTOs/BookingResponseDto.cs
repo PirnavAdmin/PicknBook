@@ -92,6 +92,15 @@ public class CreateBusBookingRequestDto
     public string? DroppingPointName { get; set; }
     public DateTime? DroppingPointTime { get; set; }
 
+    // Bus Details (required for DB creation since bus_bookings caching is removed)
+    public string FromCity { get; set; } = string.Empty;
+    public string ToCity { get; set; } = string.Empty;
+    public string DepartureTime { get; set; } = string.Empty;
+    public string? ArrivalTime { get; set; }
+    public string? OperatorName { get; set; }
+    public string? BusType { get; set; }
+    public decimal TotalFare { get; set; }
+
     // Existing fields
     public string PassengerName { get; set; } = string.Empty;
     public string PassengerPhone { get; set; } = string.Empty;

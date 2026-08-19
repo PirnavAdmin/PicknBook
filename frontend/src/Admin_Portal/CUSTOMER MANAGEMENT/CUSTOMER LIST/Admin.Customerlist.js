@@ -1,8 +1,10 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Filter, X, Plus, Download, Eye, Pencil, Trash2, Wallet } from 'lucide-react';
 import { getCustomers, toggleCustomerStatus, toggleWalletStatus, addWalletBalance, resetWalletBalance, deleteCustomer } from "../../../services/customerService";
 import { setStoredValue } from '../../../utils/adminPortalStorage';
+import AdminDynamicModal from '../../../components/AdminDynamicModal';
 
 function CustomerList() {
     const navigate = useNavigate();
@@ -22,6 +24,49 @@ function CustomerList() {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [openMenu, setOpenMenu] = useState({ id: null, type: null });
     const [toast, setToast] = useState(null);
+
+    // Reusable popup modal state
+    const [modalState, setModalState] = useState({ isOpen: false, mode: null, data: null });
+
+    const customerSchema = React.useMemo(() => [
+        { name: 'customerName', label: 'Customer Name', type: 'text', required: true },
+        { name: 'emailId', label: 'Email Address', type: 'text', required: true },
+        { name: 'mobile', label: 'Mobile Number', type: 'text', required: true },
+        { name: 'status', label: 'Account Status', type: 'select', options: ['Active', 'Inactive'] },
+        { name: 'walletStatus', label: 'Wallet Status', type: 'select', options: ['Active', 'Inactive'] },
+        { name: 'walletBalance', label: 'Wallet Balance', type: 'number' },
+    ], []);
+
+    const handleSaveCustomer = async (updatedData) => {
+        try {
+            await updateCustomer(modalState.data.id, {
+                CustomerName: updatedData.customerName,
+                EmailId: updatedData.emailId,
+                Mobile: updatedData.mobile,
+                Status: updatedData.status,
+                WalletStatus: updatedData.walletStatus,
+                WalletBalance: Number(updatedData.walletBalance) || 0,
+            });
+            showToast('Customer updated successfully.', 'success');
+            setModalState({ isOpen: false, mode: null, data: null });
+            fetchCustomers();
+        } catch (error) {
+            console.error("Failed to update customer:", error);
+            showToast(error.response?.data?.message || "Failed to update customer.", "error");
+        }
+    };
+
+    const handleDeleteCustomerConfirm = async () => {
+        try {
+            await deleteCustomer(modalState.data.id);
+            showToast('Customer removed.', 'info');
+            setModalState({ isOpen: false, mode: null, data: null });
+            fetchCustomers();
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+            showToast("Failed to delete customer.", "error");
+        }
+    };
 
     const showToast = (message, tone = 'info') => {
         if (toastTimerRef.current) {
@@ -286,18 +331,20 @@ function CustomerList() {
             margin: 0,
         },
         addBtn: {
-            padding: '10px 16px',
-            background: '#A51C49',
+            height: '54px',
+            padding: '0 24px',
+            background: '#D81B60',
             color: '#ffffff',
-            border: '1px solid #A51C49',
-            borderRadius: '8px',
+            border: 'none',
+            borderRadius: '12px',
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: '.25s ease',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            fontSize: '0.9rem',
+            fontSize: '17px',
+            boxShadow: '0 6px 18px rgba(0,0,0,.08)',
         },
 
         statsBar: {
@@ -348,31 +395,33 @@ function CustomerList() {
             flexWrap: 'wrap',
         },
         button: {
-            padding: '10px 16px',
-            borderRadius: '6px',
+            height: '54px',
+            padding: '0 24px',
+            borderRadius: '12px',
             border: '1px solid transparent',
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: '.25s ease',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            fontSize: '0.85rem',
+            fontSize: '17px',
+            boxShadow: '0 6px 18px rgba(0,0,0,.08)',
         },
         filterBtn: {
-            background: 'var(--primary)',
+            background: '#2563EB',
             color: '#ffffff',
-            borderColor: 'var(--primary)',
+            border: 'none',
         },
         clearBtn: {
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            borderColor: 'var(--border)',
+            background: '#ffffff',
+            color: '#64748B',
+            border: '1px solid #E2E8F0',
         },
         exportBtn: {
-            background: 'var(--success)',
+            background: '#10B981',
             color: '#ffffff',
-            borderColor: 'var(--success)',
+            border: 'none',
         },
         tableWrapper: {
             background: 'var(--panel)',
@@ -381,6 +430,7 @@ function CustomerList() {
             boxShadow: 'var(--shadow-sm)',
             overflow: 'hidden',
             overflowX: 'auto',
+            minHeight: '300px',
         },
         table: {
             width: '100%',
@@ -395,13 +445,13 @@ function CustomerList() {
             top: 0,
         },
         th: {
-            padding: '12px 14px',
+            padding: '16px 14px',
             textAlign: 'left',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)',
             whiteSpace: 'nowrap',
         },
         td: {
-            padding: '12px 14px',
+            padding: '16px 14px',
             borderBottom: '1px solid var(--border)',
             color: 'var(--text-primary)',
         },
@@ -414,7 +464,11 @@ function CustomerList() {
             minWidth: '50px',
         },
         statusBadge: {
-            display: 'inline-block',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+            whiteSpace: 'nowrap',
             padding: '6px 10px',
             borderRadius: '6px',
             fontWeight: 600,
@@ -551,7 +605,8 @@ function CustomerList() {
             borderRadius: '10px',
             boxShadow: 'var(--shadow-sm)',
             zIndex: 10,
-            minWidth: '170px',
+            minWidth: '190px',
+            width: 'max-content',
             padding: '6px',
         },
         menuItem: {
@@ -727,21 +782,18 @@ function CustomerList() {
                             type="button"
                             style={styles.addBtn}
                             onClick={() => navigate('/admin/customer-management/add-new-customer')}
-                             onMouseEnter={(e) => {
-                                e.target.style.background = '#851237';
-                                e.target.style.borderColor = '#851237';
-                                e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 4px 12px rgba(165, 28, 73, 0.2)';
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#C2185B';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,.15)';
                             }}
                             onMouseLeave={(e) => {
-                                e.target.style.background = '#A51C49';
-                                e.target.style.color = '#ffffff';
-                                e.target.style.borderColor = '#A51C49';
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = 'none';
+                                e.currentTarget.style.background = '#D81B60';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,.08)';
                             }}
                         >
-                            + Add Customer
+                            <Plus size={18} /> Add Customer
                         </button>
                     </div>
 
@@ -751,6 +803,7 @@ function CustomerList() {
                     <div style={styles.statsBar}>
                         <button
                             type="button"
+                            className="admin-stat-badge active"
                             style={{ ...styles.statBadge, ...styles.statActive }}
                             onClick={handleActiveStat}
                             onMouseEnter={(e) => {
@@ -765,6 +818,7 @@ function CustomerList() {
                         </button>
                         <button
                             type="button"
+                            className="admin-stat-badge inactive"
                             style={{ ...styles.statBadge, ...styles.statInactive }}
                             onClick={handleInactiveStat}
                             onMouseEnter={(e) => {
@@ -779,6 +833,7 @@ function CustomerList() {
                         </button>
                         <button
                             type="button"
+                            className="admin-stat-badge total"
                             style={{ ...styles.statBadge, ...styles.statTotal }}
                             onClick={handleTotalStat}
                             onMouseEnter={(e) => {
@@ -792,6 +847,7 @@ function CustomerList() {
                         </button>
                         <button
                             type="button"
+                            className="admin-stat-badge wallet"
                             style={{ ...styles.statBadge, ...styles.statWallet }}
                             onClick={handleWalletStat}
                             onMouseEnter={(e) => {
@@ -824,48 +880,35 @@ function CustomerList() {
                             <button
                                 style={{ ...styles.button, ...styles.filterBtn }}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--primary-strong)';
-                                    e.target.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.background = '#1D4ED8';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,.15)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--primary)';
-                                    e.target.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.background = '#2563EB';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,.08)';
                                 }}
                                 onClick={() => setFilterOpen(!filterOpen)}
                             >
-                                Filter
+                                <Filter size={18} /> Filter
                             </button>
-                            <button
-                                style={{ ...styles.button, ...styles.clearBtn }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--primary)';
-                                    e.target.style.color = '#ffffff';
-                                    e.target.style.borderColor = 'var(--primary)';
-                                    e.target.style.transform = 'translateY(-2px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--panel)';
-                                    e.target.style.color = 'var(--text-primary)';
-                                    e.target.style.borderColor = 'var(--border)';
-                                    e.target.style.transform = 'translateY(0)';
-                                }}
-                                onClick={handleClearFilters}
-                            >
-                                Clear Filter
-                            </button>
+
                             <button
                                 style={{ ...styles.button, ...styles.exportBtn }}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = 'rgba(30, 142, 62, 0.85)';
-                                    e.target.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.background = '#059669';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,.15)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--success)';
-                                    e.target.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.background = '#10B981';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,.08)';
                                 }}
                                 onClick={handleExport}
                             >
-                                Export
+                                <Download size={18} /> Export
                             </button>
                         </div>
                     </div>
@@ -924,46 +967,17 @@ function CustomerList() {
                     </div>
                 )}
 
-                {selectedCustomer && (
-                    <div style={styles.detailCard}>
-                        <div style={styles.detailHeader}>
-                            <div style={styles.detailTitle}>Customer Details</div>
-                            <button
-                                type="button"
-                                style={styles.secondaryBtn}
-                                onClick={() => setSelectedCustomer(null)}
-                            >
-                                Close
-                            </button>
-                        </div>
-                        <div style={styles.detailGrid}>
-                            <div>
-                                <div style={styles.detailLabel}>Customer</div>
-                                <div style={styles.detailValue}>{selectedCustomer.customerName}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Email</div>
-                                <div style={styles.detailValue}>{selectedCustomer.emailId}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Mobile</div>
-                                <div style={styles.detailValue}>{selectedCustomer.mobile}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Status</div>
-                                <div style={styles.detailValue}>{selectedCustomer.status}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Wallet Status</div>
-                                <div style={styles.detailValue}>{selectedCustomer.walletStatus}</div>
-                            </div>
-                            <div>
-                                <div style={styles.detailLabel}>Wallet Balance</div>
-                                <div style={styles.detailValue}>Rs. {selectedCustomer.walletBalance}</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Reusable Dynamic Modal System */}
+                <AdminDynamicModal
+                    isOpen={modalState.isOpen}
+                    mode={modalState.mode}
+                    moduleName="Customer"
+                    data={modalState.data}
+                    schema={customerSchema}
+                    onClose={() => setModalState({ isOpen: false, mode: null, data: null })}
+                    onSave={handleSaveCustomer}
+                    onDelete={handleDeleteCustomerConfirm}
+                />
 
                 {/* Table */}
                 <div style={styles.tableWrapper}>
@@ -973,16 +987,15 @@ function CustomerList() {
                         <table style={styles.table}>
                             <thead style={styles.thead}>
                                 <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>Status</th>
+                                    <th style={{ ...styles.th, textAlign: 'center' }}>ID</th>
+                                    <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
                                     <th style={styles.th}>Customer Name</th>
                                     <th style={styles.th}>Email ID</th>
                                     <th style={styles.th}>Mobile</th>
-                                    <th style={styles.th}>Wallet Status</th>
-                                    <th style={styles.th}>Wallet Bal.</th>
-                                    <th style={styles.th}>Action</th>
-                                    <th style={styles.th}>Finance</th>
-                                    <th style={styles.th}>Search</th>
+                                    <th style={{ ...styles.th, textAlign: 'center' }}>Wallet Status</th>
+                                    <th style={{ ...styles.th, textAlign: 'center' }}>Wallet Bal.</th>
+                                    <th className="action-col" style={{ ...styles.th, textAlign: 'center' }}>Action</th>
+                                    <th style={{ ...styles.th, textAlign: 'center' }}>Finance</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -997,11 +1010,11 @@ function CustomerList() {
                                             e.currentTarget.style.background = 'transparent';
                                         }}
                                     >
-                                        <td style={{ ...styles.td, ...styles.idBadge }}>{customer.id}</td>
-                                        <td style={styles.td}>
+                                        <td style={{ ...styles.td, ...styles.idBadge, textAlign: 'center', verticalAlign: 'middle' }}>{customer.id}</td>
+                                        <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
                                             <button
                                                 type="button"
-                                                style={getStatusBadgeStyle(customer.status)}
+                                                style={{ ...getStatusBadgeStyle(customer.status), margin: '0 auto' }}
                                                 onClick={() => handleToggleStatus(customer.id)}
                                                 onMouseEnter={(e) => {
                                                     e.target.style.opacity = '0.85';
@@ -1013,13 +1026,13 @@ function CustomerList() {
                                                 {customer.status}
                                             </button>
                                         </td>
-                                        <td style={styles.td}>{customer.customerName}</td>
-                                        <td style={styles.td}>{customer.emailId}</td>
-                                        <td style={styles.td}>{customer.mobile}</td>
-                                        <td style={styles.td}>
+                                        <td style={{ ...styles.td, verticalAlign: 'middle' }}>{customer.customerName}</td>
+                                        <td style={{ ...styles.td, verticalAlign: 'middle' }}>{customer.emailId}</td>
+                                        <td style={{ ...styles.td, verticalAlign: 'middle' }}>{customer.mobile}</td>
+                                        <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
                                             <button
                                                 type="button"
-                                                style={getStatusBadgeStyle(customer.walletStatus)}
+                                                style={{ ...getStatusBadgeStyle(customer.walletStatus), margin: '0 auto' }}
                                                 onClick={() => handleToggleWalletStatus(customer.id)}
                                                 onMouseEnter={(e) => {
                                                     e.target.style.opacity = '0.85';
@@ -1031,119 +1044,71 @@ function CustomerList() {
                                                 {customer.walletStatus}
                                             </button>
                                         </td>
-                                        <td style={styles.td}>Rs. {customer.walletBalance}</td>
-                                        <td style={styles.td}>
-                                            <div style={styles.menuWrapper}>
+                                        <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle', fontWeight: 600 }}>Rs. {customer.walletBalance}</td>
+                                        <td className="action-col" style={{ verticalAlign: 'middle' }}>
+                                            <div className="admin-actions-cell-row">
                                                 <button
                                                     type="button"
-                                                    style={{ ...styles.actionBtn, ...styles.dropdownBtn }}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.borderColor = 'var(--primary)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.borderColor = 'var(--border)';
-                                                    }}
-                                                    onClick={() => toggleMenu(customer.id, 'action')}
+                                                    className="admin-action-btn view"
+                                                    title="View Details"
+                                                    onClick={() => setModalState({ isOpen: true, mode: 'view', data: customer })}
                                                 >
-                                                    Action
+                                                    <Eye size={18} />
                                                 </button>
-                                                {openMenu.id === customer.id && openMenu.type === 'action' && (
-                                                    <div style={styles.menu}>
-                                                        <button
-                                                            type="button"
-                                                            style={styles.menuItem}
-                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
-                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
-                                                            onClick={() => handleEditCustomer(customer.id)}
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            style={styles.menuItem}
-                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
-                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
-                                                            onClick={() => handleViewDetails(customer)}
-                                                        >
-                                                            View
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            style={{ ...styles.menuItem, ...styles.menuItemDanger }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.background = 'rgba(217, 48, 37, 0.08)';
-                                                            }}
-                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
-                                                            onClick={() => handleRemoveCustomer(customer.id)}
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="admin-action-btn edit"
+                                                    title="Edit Customer"
+                                                    onClick={() => setModalState({ isOpen: true, mode: 'edit', data: customer })}
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="admin-action-btn delete"
+                                                    title="Delete Customer"
+                                                    onClick={() => setModalState({ isOpen: true, mode: 'delete', data: customer })}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
                                             </div>
                                         </td>
-                                        <td style={styles.td}>
+                                        <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                                             <div style={styles.menuWrapper}>
                                                 <button
                                                     type="button"
-                                                    style={{ ...styles.actionBtn, ...styles.financeBtn }}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.borderColor = 'var(--primary)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.borderColor = 'var(--border)';
-                                                    }}
+                                                    className="admin-action-btn finance"
+                                                    title="Finance Options"
                                                     onClick={() => toggleMenu(customer.id, 'finance')}
                                                 >
-                                                    Finance
+                                                    <Wallet size={18} />
                                                 </button>
                                                 {openMenu.id === customer.id && openMenu.type === 'finance' && (
-                                                    <div style={styles.menu}>
+                                                    <div style={{ ...styles.menu, right: 0, left: 'auto' }}>
                                                         <button
                                                             type="button"
-                                                            style={styles.menuItem}
-                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
-                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
-                                                            onClick={() => handleAddBalance(customer.id)}
+                                                            className="admin-menu-item"
+                                                            onClick={() => { handleAddBalance(customer.id); closeMenu(); }}
                                                         >
                                                             Add Balance
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            style={styles.menuItem}
-                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
-                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
-                                                            onClick={() => handleResetBalance(customer.id)}
+                                                            className="admin-menu-item"
+                                                            onClick={() => { handleResetBalance(customer.id); closeMenu(); }}
                                                         >
                                                             Reset Balance
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            style={styles.menuItem}
-                                                            onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
-                                                            onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
-                                                            onClick={() => handleToggleWalletStatus(customer.id)}
+                                                            className="admin-menu-item"
+                                                            onClick={() => { handleToggleWalletStatus(customer.id); closeMenu(); }}
                                                         >
                                                             Toggle Wallet Status
                                                         </button>
                                                     </div>
                                                 )}
                                             </div>
-                                        </td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={{ ...styles.actionBtn, ...styles.detailsBtn }}
-                                                onMouseEnter={(e) => {
-                                                    e.target.style.background = 'rgba(74, 15, 26, 0.12)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.background = 'var(--surface-soft)';
-                                                }}
-                                                onClick={() => handleLogin(customer)}
-                                            >
-                                                Search
-                                            </button>
                                         </td>
                                     </tr>
                                 ))}

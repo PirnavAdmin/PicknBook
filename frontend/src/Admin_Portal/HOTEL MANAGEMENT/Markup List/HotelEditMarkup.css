@@ -58,7 +58,7 @@
 
 .hml-edit-grid {
   display: grid;
-  grid-template-columns: 1.2fr 2fr 1fr 2fr;
+  grid-template-columns: 1.2fr 2.8fr;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -77,21 +77,17 @@
 
 .hml-edit-field {
   min-height: 50px;
-  border-right: 1px solid #e2e8f0;
   border-bottom: 1px solid #f1f5f9;
   display: inline-flex;
   align-items: center;
   padding: 0 10px;
-}
-.hml-edit-field:nth-child(4n) {
-  border-right: 0;
 }
 
 .hml-edit-field input,
 .hml-edit-field select {
   width: 100%;
   min-height: 38px;
-  border: 1px solid #d93025;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: #ffffff;
   color: #1e293b;

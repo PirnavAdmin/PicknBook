@@ -135,6 +135,18 @@
   text-transform: uppercase;
 }
 
+.pb-type-pill.flight-badge {
+  background: #2563eb !important;
+}
+
+.pb-type-pill.hotel-badge {
+  background: #059669 !important;
+}
+
+.pb-type-pill.bus-badge {
+  background: #dc1e26 !important;
+}
+
 .pb-select-main strong {
   color: #071b3d;
   font-size: 0.9rem;

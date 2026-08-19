@@ -2,23 +2,70 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.HttpOverrides;
 //using Npgsql;
 using PickNBook.Api.Data;
 using PickNBook.Api.Middleware;
 using PickNBook.Api.Models;
 using PickNBook.Api.Services;
 using System.Text;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) // Ignore noisy system logs
+    .WriteTo.Console() // Console gets everything
+    .WriteTo.Logger(lc => lc
+        // Only capture our specific Bus loggers into the file
+        .Filter.ByIncludingOnly(evt => 
+            evt.Properties.TryGetValue("SourceContext", out var ctx) && 
+            (ctx.ToString().Contains("BusRequestLoggingMiddleware") || 
+             ctx.ToString().Contains("SrdvBusLoggingHandler")))
+        .WriteTo.File("Logs/bus-api-.txt", rollingInterval: RollingInterval.Day)
+    )
+    .WriteTo.Logger(lc => lc
+        // Only capture our specific Flight loggers into the file
+        .Filter.ByIncludingOnly(evt => 
+            evt.Properties.TryGetValue("SourceContext", out var ctx) && 
+            (ctx.ToString().Contains("FlightRequestLoggingMiddleware") || 
+             ctx.ToString().Contains("SrdvFlightLoggingHandler")))
+        .WriteTo.File("Logs/flight-api-.txt", rollingInterval: RollingInterval.Day)
+    )
+    .WriteTo.Logger(lc => lc
+        // A dedicated file just for your current testing session so it's easy to find
+        .Filter.ByIncludingOnly(evt => 
+            evt.Properties.TryGetValue("SourceContext", out var ctx) && 
+            (ctx.ToString().Contains("FlightRequestLoggingMiddleware") || 
+             ctx.ToString().Contains("SrdvFlightLoggingHandler")))
+        .WriteTo.File("Logs/test-session-logs.txt", rollingInterval: RollingInterval.Infinite)
+    )
+    .WriteTo.Logger(lc => lc
+        // Only capture our specific Hotel loggers into the file
+        .Filter.ByIncludingOnly(evt => 
+            evt.Properties.TryGetValue("SourceContext", out var ctx) && 
+            (ctx.ToString().Contains("HotelRequestLoggingMiddleware") || 
+             ctx.ToString().Contains("SrdvHotelLoggingHandler")))
+        .WriteTo.File("Logs/hotel-api-.txt", rollingInterval: RollingInterval.Day)
+    )
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // ---------------- SERVICES ----------------
 builder.Services.Configure<PickNBook.Api.Models.Config.SrdvSettings>(
     builder.Configuration.GetSection("Srdv"));
 
-builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>();
-builder.Services.AddHttpClient<IHotelService, SrdvHotelService>();
-builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>();
+builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
+builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>()
+    .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
+builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
+builder.Services.AddHttpClient<IHotelService, SrdvHotelService>()
+    .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
+builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
+builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>()
+    .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
 
 builder.Services.AddHttpClient("TicketEmailApi", client =>
 {
@@ -123,26 +170,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-            return;
-        }
-
-        policy.SetIsOriginAllowed(_ => true)
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
-});
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders =
-        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
 });
 
 // ---------------- JWT AUTH ----------------
@@ -170,7 +201,14 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<PickNBook.Api.Filters.InjectClientIpAttribute>();
+})
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddOutputCache();
 
 // ---------------- SWAGGER + JWT BUTTON ----------------
@@ -201,79 +239,77 @@ builder.Services.AddSwaggerGen(options =>
             new string[] {}
         }
     });
+
+    // Include XML comments for Swagger descriptions and examples
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
+    // Render CheckInDate/CheckOutDate as date pickers in Swagger UI
+    options.SchemaFilter<PickNBook.Api.Models.Config.DateFormatSchemaFilter>();
 });
 
 var app = builder.Build();
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 app.UseMiddleware<RequestProfilingMiddleware>();
 
+// Custom Bus User Flow Logging Middleware
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/BusBookings", StringComparison.OrdinalIgnoreCase), appBuilder =>
+{
+    appBuilder.UseMiddleware<PickNBook.Api.Middleware.BusRequestLoggingMiddleware>();
+});
+
+// Custom Flight User Flow Logging Middleware
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/flight", StringComparison.OrdinalIgnoreCase), appBuilder =>
+{
+    appBuilder.UseMiddleware<PickNBook.Api.Middleware.FlightRequestLoggingMiddleware>();
+});
+
+// Custom Hotel User Flow Logging Middleware
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/hotels", StringComparison.OrdinalIgnoreCase), appBuilder =>
+{
+    appBuilder.UseMiddleware<PickNBook.Api.Middleware.HotelRequestLoggingMiddleware>();
+});
 
 // ---------------- MIDDLEWARE ----------------
 
-app.UseForwardedHeaders();
-
+// Enable Swagger in all environments
 app.UseSwagger();
-app.UseSwaggerUI();
-
-if (app.Environment.IsDevelopment())
+app.UseSwaggerUI(c =>
 {
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "PickNBook API v1");
+    c.RoutePrefix = "swagger";
+    c.ConfigObject.AdditionalItems.Add("syntaxHighlight", false);
+    c.DefaultModelsExpandDepth(-1);
+    c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+});
 
 var shouldSeed = builder.Configuration.GetValue<bool>("SeedDatabase", false);
-var shouldApplyMigrations = builder.Configuration.GetValue<bool>("ApplyMigrations", false);
-var shouldRepairMissingSchema = builder.Configuration.GetValue<bool>("RepairMissingSchema", false);
-if (shouldApplyMigrations || shouldRepairMissingSchema || shouldSeed)
+if (shouldSeed)
 {
     using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (shouldApplyMigrations)
+        const int maxSeedAttempts = 3;
+        for (var attempt = 1; attempt <= maxSeedAttempts; attempt++)
         {
-            await dbContext.Database.MigrateAsync();
-        }
-
-        if (shouldRepairMissingSchema)
-        {
-            await dbContext.Database.ExecuteSqlRawAsync("""
-                CREATE TABLE IF NOT EXISTS `flight_bookings` (
-                    `Id` int NOT NULL AUTO_INCREMENT,
-                    `FlightNumber` varchar(20) NOT NULL,
-                    `Airline` varchar(120) NOT NULL,
-                    `FromCity` varchar(80) NOT NULL,
-                    `ToCity` varchar(80) NOT NULL,
-                    `DepartureTime` datetime(6) NOT NULL,
-                    `ArrivalTime` datetime(6) NOT NULL,
-                    `PriceInr` decimal(10,2) NOT NULL,
-                    `AvailableSeats` int NOT NULL,
-                    `TotalSeats` int NOT NULL,
-                    `CabinClass` varchar(30) NOT NULL,
-                    `TraceId` longtext NULL,
-                    `ResultIndex` longtext NULL,
-                    `SrdvIndex` int NULL,
-                    `IsLcc` tinyint(1) NOT NULL,
-                    `SrdvType` longtext NULL,
-                    `SegmentsJson` longtext NULL,
-                    PRIMARY KEY (`Id`),
-                    KEY `IX_flight_bookings_FromCity_ToCity_DepartureTime` (`FromCity`, `ToCity`, `DepartureTime`)
-                ) CHARACTER SET=utf8mb4;
-                """);
-        }
-
-        if (shouldSeed)
-        {
-            const int maxSeedAttempts = 3;
-            for (var attempt = 1; attempt <= maxSeedAttempts; attempt++)
+            try
             {
-                try
-                {
-                    await DbSeeder.SeedAsync(dbContext);
-                    break;
-                }
-                catch (Exception) when (attempt < maxSeedAttempts)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
-                }
+                await DbSeeder.SeedAsync(dbContext);
+                break;
+            }
+            catch (Exception) when (attempt < maxSeedAttempts)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
             }
         }
     }
@@ -296,6 +332,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 
 

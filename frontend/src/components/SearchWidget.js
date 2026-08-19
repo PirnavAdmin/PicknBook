@@ -98,7 +98,7 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
   const wrapperRef = useRef(null);
   const requestAbortRef = useRef(null);
 
-  useEffect(() => { setInputValue(value || ""); }, [value]);
+  useEffect(() => { setInputValue((prev) => (prev !== (value || "") ? (value || "") : prev)); }, [value]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -111,8 +111,8 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
   useEffect(() => {
     const query = inputValue.trim();
     if (!open || query.length === 0) {
-      setResults([]);
-      setLoading(false);
+      setResults((prev) => (prev.length === 0 ? prev : []));
+      setLoading((prev) => (prev ? false : prev));
       if (requestAbortRef.current) requestAbortRef.current.abort();
       return;
     }
@@ -156,10 +156,10 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
         }
       } catch (err) {
         if (err.name !== "AbortError") {
-          setResults([]);
+          setResults((prev) => (prev.length === 0 ? prev : []));
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setLoading((prev) => (prev ? false : prev));
       }
     }, 220);
 
@@ -169,7 +169,9 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
   const handleInputChange = (e) => {
     const v = e.target.value;
     setInputValue(v);
-    onChange(v);
+    if (typeof onChange === "function") {
+      onChange(v);
+    }
     setOpen(v.trim().length > 0);
   };
 
@@ -643,13 +645,6 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
           {/* ── Buses ── */}
           {activeTab === "buses" && (
             <div className="booking-content">
-              <div className="trip-switch" role="tablist">
-                {BUS_TRIP_TYPES.map((t) => (
-                  <button key={t.value} type="button" className={`trip-chip ${busTripType === t.value ? "active" : ""}`} onClick={() => setBusTripType(t.value)}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
               <div className={`search-grid bus-standard-grid ${isBusTwoWay ? "two-way" : "one-way"}`}>
                 <PlaceAutocomplete label="Source" value={busFrom} onChange={handleBusFromChange} tripType="bus" field="from" placeholder="Source" error={busFromError} className="source-field" />
                 <div className="swap-field">

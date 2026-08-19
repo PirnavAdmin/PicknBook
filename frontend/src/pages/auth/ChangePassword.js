@@ -8,7 +8,7 @@ import { readApiMessage, requestAuth } from "../../services/authService";
 import { validatePasswordNoSpaces } from "../../utils/authValidation";
 import DashboardSidebar from "../../components/layout/DashboardSidebar";
 import brandLogo from "../../assets/images/brand/pick-n-book-logo.png";
-import { openAuthModal } from "../../utils/authModalEvents";
+
 
 function ChangePassword() {
   const navigate = useNavigate();
@@ -25,8 +25,7 @@ function ChangePassword() {
   const [loading, setLoading] = useState(false);
 
   const openLoginPopup = () => {
-    openAuthModal("login");
-    navigate("/", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   useEffect(() => {

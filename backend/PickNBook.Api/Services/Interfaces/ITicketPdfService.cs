@@ -5,7 +5,7 @@ namespace PickNBook.Api.Services;
 
 public interface ITicketPdfService
 {
-    byte[] GenerateFlightTicketPdf(SendFlightTicketEmailRequest request);
+    List<(string FileName, byte[] Content)> GenerateFlightTicketPdf(SendFlightTicketEmailRequest request);
     byte[] GenerateBusTicketPdf(SendBusTicketEmailRequest request);
     byte[] GenerateHotelTicketPdf(HotelReservation reservation);
 }

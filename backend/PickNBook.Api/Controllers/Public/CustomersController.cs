@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,11 +17,13 @@ public class CustomersController : AdminApiController
 {
     private readonly AppDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IEmailService _emailService;
 
-    public CustomersController(AppDbContext context, IPasswordHasher<User> passwordHasher)
+    public CustomersController(AppDbContext context, IPasswordHasher<User> passwordHasher, IEmailService emailService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -162,6 +165,70 @@ public class CustomersController : AdminApiController
         });
     }
 
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CreateCustomerRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var customer = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.Role == AuthRoles.User);
+        if (customer == null)
+        {
+            return NotFound("Customer not found.");
+        }
+
+        var emailClean = request.Email.Trim().ToLowerInvariant();
+        var phoneClean = request.Mobile.Trim();
+
+        // Check unique constraints (exclude current user)
+        var emailExists = await _context.Users.AnyAsync(x => x.Email.ToLower() == emailClean && x.Id != id);
+        if (emailExists)
+        {
+            return BadRequest("Email ID is already registered to another user.");
+        }
+
+        var phoneExists = await _context.Users.AnyAsync(x => x.PhoneNumber == phoneClean && x.Id != id);
+        if (phoneExists)
+        {
+            return BadRequest("Mobile number is already registered to another user.");
+        }
+
+        customer.FirstName = request.FirstName.Trim();
+        customer.LastName = request.LastName.Trim();
+        customer.Email = emailClean;
+        customer.PhoneNumber = phoneClean;
+        customer.Status = request.Status;
+        customer.WalletStatus = request.WalletStatus;
+        customer.AltMobile = request.AltMobile?.Trim();
+        customer.Gender = request.Gender;
+        customer.Address = request.Address?.Trim();
+        customer.City = request.City?.Trim();
+        customer.State = request.State?.Trim();
+        customer.Country = request.Country?.Trim();
+        customer.Pincode = request.Pincode?.Trim();
+        customer.Remark = request.Remark?.Trim();
+        customer.AadharNumber = request.AadharNumber?.Trim();
+        customer.PanNumber = request.PanNumber?.Trim();
+        customer.PanName = request.PanName?.Trim();
+        customer.RefferedBy = request.RefferedBy?.Trim();
+        customer.LoginId = string.IsNullOrWhiteSpace(request.LoginId) ? emailClean : request.LoginId.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            customer.PasswordHash = _passwordHasher.HashPassword(customer, request.Password);
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Customer updated successfully.",
+            customerId = customer.Id
+        });
+    }
+
     [HttpPut("{id:int}/status")]
     public async Task<IActionResult> ToggleStatus(int id)
     {
@@ -173,6 +240,13 @@ public class CustomersController : AdminApiController
 
         customer.Status = string.Equals(customer.Status, "Active", StringComparison.OrdinalIgnoreCase) ? "Inactive" : "Active";
         await _context.SaveChangesAsync();
+
+        string subject = customer.Status == "Active" ? "Account Activated" : "Account Suspended";
+        string body = customer.Status == "Active" 
+            ? $"Hello {customer.FirstName},<br><br>Welcome back! Your PickNBook account has been activated."
+            : $"Hello {customer.FirstName},<br><br>Notice: Your PickNBook account has been temporarily suspended. Please contact support for more information.";
+        
+        await _emailService.SendEmailAsync(customer.Email, subject, body);
 
         return Ok(new { message = "Customer status updated successfully.", status = customer.Status });
     }
@@ -188,6 +262,13 @@ public class CustomersController : AdminApiController
 
         customer.WalletStatus = string.Equals(customer.WalletStatus, "Active", StringComparison.OrdinalIgnoreCase) ? "Inactive" : "Active";
         await _context.SaveChangesAsync();
+
+        string subject = customer.WalletStatus == "Active" ? "Wallet Activated" : "Wallet Suspended";
+        string body = customer.WalletStatus == "Active" 
+            ? $"Hello {customer.FirstName},<br><br>Your PickNBook wallet has been activated."
+            : $"Hello {customer.FirstName},<br><br>Notice: Your PickNBook wallet has been temporarily suspended.";
+        
+        await _emailService.SendEmailAsync(customer.Email, subject, body);
 
         return Ok(new { message = "Wallet status updated successfully.", walletStatus = customer.WalletStatus });
     }
@@ -209,6 +290,11 @@ public class CustomersController : AdminApiController
         customer.WalletBalance += request.Amount;
         customer.WalletStatus = "Active"; // Ensure wallet is Active when balance is added
         await _context.SaveChangesAsync();
+
+        string subject = "Wallet Balance Added";
+        string body = $"Hello {customer.FirstName},<br><br>An amount of ₹{request.Amount} has been added to your PickNBook wallet.<br>Your updated wallet balance is ₹{customer.WalletBalance}.";
+        
+        await _emailService.SendEmailAsync(customer.Email, subject, body);
 
         return Ok(new { message = "Wallet balance updated successfully.", walletBalance = customer.WalletBalance });
     }

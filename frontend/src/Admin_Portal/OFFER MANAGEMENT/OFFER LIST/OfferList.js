@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Filter, Pencil, Plus, RefreshCw, Trash2, X, ZoomIn, Sliders } from "lucide-react";
+import { Check, Filter, Pencil, Plus, RefreshCw, Trash2, X, Eye, Sliders } from "lucide-react";
 import "./OfferList.css";
 import {
   getAdminFeaturedOffers,
@@ -14,6 +14,7 @@ import {
 } from "../../../services/adminFeaturedOffersService";
 import { toApiUrl } from "../../../services/apiClient";
 import AdminPagination from "../../../components/AdminPagination";
+import AdminDynamicModal from "../../../components/AdminDynamicModal";
 
 const BOOKING_TYPE_OPTIONS = [
   { value: "Bus", label: "Bus" },
@@ -231,6 +232,69 @@ export default function AdminOfferListPage({ onAddOffer }) {
   const [deleteOffer, setDeleteOffer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Reusable popup modal state
+  const [modalState, setModalState] = useState({ isOpen: false, mode: null, data: null });
+
+  const offerSchema = useMemo(() => [
+    { name: "title", label: "Offer Title", type: "text", required: true },
+    { name: "offerCode", label: "Offer Code", type: "text", required: true },
+    { name: "bookingType", label: "Booking Type", type: "select", options: BOOKING_TYPE_OPTIONS, required: true },
+    { name: "isActive", label: "Is Active", type: "boolean" },
+    { name: "displayOrder", label: "Display Order", type: "number" },
+    { name: "startDateUtc", label: "Start Date", type: "datetime-local" },
+    { name: "endDateUtc", label: "End Date", type: "datetime-local" },
+    { name: "discountType", label: "Discount Type", type: "select", options: ["Flat", "Percentage"] },
+    { name: "discountValue", label: "Discount Value", type: "number" },
+    { name: "minBookingAmount", label: "Min Booking Amount (INR)", type: "number" },
+    { name: "maxDiscountAmount", label: "Max Discount Amount (INR)", type: "number" },
+    { name: "maxUsage", label: "Max Usage", type: "number" },
+    { name: "imageUrl", label: "Image", type: "image" },
+    { name: "shortDescription", label: "Short Description", type: "textarea" },
+    { name: "longDescription", label: "Long Description", type: "textarea" },
+  ], []);
+
+  const handleSaveOffer = async (updatedData) => {
+    try {
+      const formValues = {
+        title: updatedData.title,
+        bookingType: updatedData.bookingType,
+        isActive: updatedData.isActive,
+        offerCode: updatedData.offerCode,
+        displayOrder: updatedData.displayOrder,
+        shortDescription: updatedData.shortDescription,
+        longDescription: updatedData.longDescription,
+        startDateUtc: updatedData.startDateUtc,
+        endDateUtc: updatedData.endDateUtc,
+        discountType: updatedData.discountType,
+        discountValue: updatedData.discountValue,
+        maxDiscountAmount: updatedData.maxDiscountAmount,
+        minBookingAmount: updatedData.minBookingAmount,
+        maxUsage: updatedData.maxUsage,
+        couponUsedCount: modalState.data.couponUsedCount || 0,
+      };
+
+      const fileToUpload = updatedData.imageUrl instanceof File ? updatedData.imageUrl : null;
+      const formData = buildOfferFormData(formValues, fileToUpload);
+      await updateAdminFeaturedOffer(modalState.data.id, formData);
+      setModalState({ isOpen: false, mode: null, data: null });
+      await loadOffers();
+    } catch (requestError) {
+      console.error("Failed to update offer", requestError);
+      setError(requestError.message || "Failed to update offer.");
+    }
+  };
+
+  const handleDeleteOfferConfirm = async () => {
+    try {
+      await deleteAdminFeaturedOffer(modalState.data.id);
+      setModalState({ isOpen: false, mode: null, data: null });
+      await loadOffers();
+    } catch (requestError) {
+      console.error("Failed to delete offer", requestError);
+      setError(requestError.message || "Failed to delete offer.");
+    }
+  };
 
   // Condition Management State
   const [conditionsOffer, setConditionsOffer] = useState(null);
@@ -635,117 +699,6 @@ export default function AdminOfferListPage({ onAddOffer }) {
 
   return (
     <>
-      {detailsOffer ? (
-        <section className="flight-markup-panel offer-details-page" style={{ padding: "28px 32px" }}>
-          <header className="flight-markup-toolbar offer-details-toolbar">
-            <div className="flight-markup-title">
-              <h1>
-                <strong>View Offer Details</strong>
-              </h1>
-            </div>
-
-            <button
-              type="button"
-              className="offer-details-close-btn"
-              onClick={() => setDetailsOffer(null)}
-            >
-              Close Tab
-            </button>
-          </header>
-
-          <section className="offer-details-shell">
-            <div className="offer-details-section">
-              <div className="offer-details-section-bar">
-                <span>Basic Details</span>
-              </div>
-
-              <div className="offer-details-grid">
-                <div className="offer-details-label">ID</div>
-                <div className="offer-details-value">
-                  {detailsOffer.id} ({formatStatusLabel(detailsOffer.isActive)})
-                </div>
-
-                <div className="offer-details-label">Offer Name</div>
-                <div className="offer-details-value">{detailsOffer.title || "--"}</div>
-
-                <div className="offer-details-label">Booking Type</div>
-                <div className="offer-details-value">{formatBookingType(detailsOffer.bookingType)}</div>
-
-                <div className="offer-details-label">Display Order</div>
-                <div className="offer-details-value">{detailsOffer.displayOrder ?? "--"}</div>
-
-                <div className="offer-details-label">Offer Starts</div>
-                <div className="offer-details-value">{formatDateTime(detailsOffer.startDateUtc)}</div>
-
-                <div className="offer-details-label">Offer Ends</div>
-                <div className="offer-details-value">{formatDateTime(detailsOffer.endDateUtc)}</div>
-
-                <div className="offer-details-label">Discount</div>
-                <div className="offer-details-value">
-                  {detailsOffer.discountValue ? (
-                    <span>
-                      {detailsOffer.discountValue} {detailsOffer.isPercentageDiscount ? "%" : "INR"}
-                    </span>
-                  ) : "--"}
-                </div>
-
-                <div className="offer-details-label">Max Usage</div>
-                <div className="offer-details-value">{detailsOffer.maxUsage || "--"}</div>
-
-                <div className="offer-details-label">Min Booking Amount</div>
-                <div className="offer-details-value">
-                  {detailsOffer.minBookingAmount !== null && detailsOffer.minBookingAmount !== undefined ? `${detailsOffer.minBookingAmount} INR` : "--"}
-                </div>
-
-                <div className="offer-details-label">Used Count</div>
-                <div className="offer-details-value">{detailsOffer.couponUsedCount || 0}</div>
-
-                <div className="offer-details-label">Image</div>
-                <div className="offer-details-value">
-                  {detailsOffer.imageUrl ? (
-                    <button
-                      type="button"
-                      className="offer-details-image-btn"
-                      onClick={() => setImageOffer(detailsOffer)}
-                    >
-                      View Full Image
-                    </button>
-                  ) : (
-                    "--"
-                  )}
-                </div>
-
-                <div className="offer-details-label">Image Path</div>
-                <div className="offer-details-value offer-details-link">
-                  {detailsOffer.imageUrl || "--"}
-                </div>
-
-                <div className="offer-details-label">Created</div>
-                <div className="offer-details-value">{formatDateTime(detailsOffer.createdAtUtc)}</div>
-
-                <div className="offer-details-label">Updated</div>
-                <div className="offer-details-value">{formatDateTime(detailsOffer.updatedAtUtc)}</div>
-              </div>
-            </div>
-
-            <div className="offer-details-section">
-              <div className="offer-details-section-bar">
-                <span>Short Description (Subtitle)</span>
-              </div>
-              <div className="offer-details-copy">{detailsOffer.shortDescription || "--"}</div>
-            </div>
-
-            <div className="offer-details-section">
-              <div className="offer-details-section-bar">
-                <span>Long Description (Description)</span>
-              </div>
-              <div className="offer-details-copy offer-details-long-copy">
-                {detailsOffer.longDescription || "--"}
-              </div>
-            </div>
-          </section>
-        </section>
-      ) : (
         <section className="flight-markup-panel" style={{ padding: "16px 24px" }}>
           <header className="flight-markup-toolbar">
             <div className="flight-markup-title">
@@ -760,14 +713,6 @@ export default function AdminOfferListPage({ onAddOffer }) {
               >
                 <Filter size={16} />
                 <span>Filter</span>
-              </button>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={handleClearFilters}>
-                <X size={16} />
-                <span>Clear Filter</span>
-              </button>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={loadOffers}>
-                <RefreshCw size={16} />
-                <span>Refresh</span>
               </button>
               {onAddOffer && (
                 <button type="button" className="admin-markup-coupon-btn generate" onClick={onAddOffer}>
@@ -847,76 +792,80 @@ export default function AdminOfferListPage({ onAddOffer }) {
                 ) : (
                   paginatedOffers.map((offer, index) => (
                     <tr key={offer.id}>
-                      <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                      <td>{formatDateTime(offer.endDateUtc)}</td>
-                      <td>
+                      <td style={{ textAlign: "center", verticalAlign: "middle" }}>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td style={{ verticalAlign: "middle" }}>{formatDateTime(offer.endDateUtc)}</td>
+                      <td style={{ textAlign: "center", verticalAlign: "middle" }}>
                         {offer.imageUrl ? (
                           <div className="offer-list-thumbnail-box">
                             <img
                               src={toApiUrl(offer.imageUrl)}
                               alt={offer.title}
                               className="offer-list-thumbnail"
-                              onClick={() => setImageOffer(offer)}
+                              onClick={() => setModalState({ isOpen: true, mode: "view", data: offer })}
                             />
                           </div>
                         ) : (
-                          <span className="offer-list-no-image">No Image</span>
+                          <div className="offer-list-thumbnail-box" style={{ borderStyle: 'dashed', opacity: 0.6, background: '#f8fafc', cursor: 'default' }}>
+                            <span className="offer-list-no-image" style={{ fontStyle: 'normal', fontWeight: 600, fontSize: '0.72rem', color: '#94a3b8' }}>No Image</span>
+                          </div>
                         )}
                       </td>
-                      <td>{offer.title}</td>
-                      <td>{formatBookingType(offer.bookingType)}</td>
-                      <td>
+                      <td style={{ fontWeight: 600, verticalAlign: "middle" }}>{offer.title}</td>
+                      <td style={{ textAlign: "center", verticalAlign: "middle" }}>{formatBookingType(offer.bookingType)}</td>
+                      <td style={{ textAlign: "center", verticalAlign: "middle" }}>
                         <button
                           type="button"
-                          className={`markup-status-toggle ${offer.isActive ? "active" : "inactive"}`}
+                          className={`status-active-badge ${
+                            offer.isActive ? "active" : "inactive"
+                          }`}
                           onClick={() => handleToggleStatus(offer)}
-                          disabled={busyId === offer.id}
                           aria-label={`Set offer ${offer.id} status to ${offer.isActive ? "inactive" : "active"
                             }`}
+                          style={{ margin: "0 auto", display: "inline-flex", alignItems: "center", gap: "6px" }}
                         >
                           {offer.isActive ? <Check size={14} /> : <X size={14} />}
                           <span>{formatStatusLabel(offer.isActive)}</span>
                         </button>
                       </td>
-                      <td className="action-col">
-                        <div className="markup-action-group" aria-label="Offer actions">
+                      <td className="action-col" style={{ verticalAlign: "middle" }}>
+                        <div className="admin-actions-cell-row">
                           <button
                             type="button"
-                            className="offer-details-trigger"
-                            title="Zoom In"
+                            className="admin-action-btn view"
+                            title="View Details"
                             aria-label={`Open details for ${offer.title}`}
-                            onClick={() => setDetailsOffer(offer)}
+                            onClick={() => setModalState({ isOpen: true, mode: "view", data: offer })}
                           >
-                            <ZoomIn size={14} />
+                            <Eye size={18} />
                           </button>
                           <button
                             type="button"
-                            className="offer-conditions-trigger"
+                            className="admin-action-btn conditions"
                             title="Manage Conditions"
                             aria-label={`Manage conditions for ${offer.title}`}
                             onClick={() => openConditionsModal(offer)}
-                            style={{ color: "#3b82f6" }}
                           >
-                            <Sliders size={14} />
+                            <Sliders size={18} />
                           </button>
                           <button
                             type="button"
+                            className="admin-action-btn edit"
                             title="Edit"
                             aria-label={`Edit ${offer.title}`}
-                            onClick={() => openEditModal(offer)}
+                            onClick={() => setModalState({ isOpen: true, mode: "edit", data: offer })}
                             disabled={busyId === offer.id}
                           >
-                            <Pencil size={14} />
+                            <Pencil size={18} />
                           </button>
                           <button
                             type="button"
+                            className="admin-action-btn delete"
                             title="Delete"
                             aria-label={`Delete ${offer.title}`}
-                            className="danger"
-                            onClick={() => setDeleteOffer(offer)}
+                            onClick={() => setModalState({ isOpen: true, mode: "delete", data: offer })}
                             disabled={busyId === offer.id}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </td>
@@ -937,288 +886,18 @@ export default function AdminOfferListPage({ onAddOffer }) {
             </div>
           </section>
         </section>
-      )}
 
-      {imageOffer && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setImageOffer(null)}>
-          <section
-            className="admin-markup-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Offer image preview"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header>
-              <h2>Offer Image Preview</h2>
-              <button type="button" onClick={() => setImageOffer(null)} aria-label="Close image preview">
-                <X size={16} />
-              </button>
-            </header>
-
-            <div className="flight-route-image-body">
-              <img src={toApiUrl(imageOffer.imageUrl)} alt={imageOffer.title} />
-            </div>
-          </section>
-        </div>
-      )}
-
-      {editOffer && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setEditOffer(null)}>
-          <section
-            className="admin-markup-modal fullscreen"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Edit offer"
-            onClick={(event) => event.stopPropagation()}
-            style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}
-          >
-            <header>
-              <h2>Edit Offer</h2>
-              <button type="button" onClick={() => setEditOffer(null)} aria-label="Close edit offer">
-                <X size={16} />
-              </button>
-            </header>
-
-            <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-              <div className="admin-markup-form-grid">
-                <label className="wide">
-                  <span>Offer Name (Title) *</span>
-                  <input
-                    type="text"
-                    value={editForm.title}
-                    onChange={(event) => setEditForm((previous) => ({ ...previous, title: event.target.value }))}
-                    required
-                  />
-                </label>
-
-                <label>
-                  <span>Booking Type *</span>
-                  <select
-                    value={editForm.bookingType}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({ ...previous, bookingType: event.target.value }))
-                    }
-                    required
-                  >
-                    {BOOKING_TYPE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  <span>Status</span>
-                  <select
-                    value={editForm.isActive ? "active" : "inactive"}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({
-                        ...previous,
-                        isActive: event.target.value === "active",
-                      }))
-                    }
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </label>
-
-                <label>
-                  <span>Display Order</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editForm.displayOrder}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({ ...previous, displayOrder: event.target.value }))
-                    }
-                    placeholder="e.g. 1"
-                  />
-                </label>
-
-                <label>
-                  <span>Offer Starts</span>
-                  <input
-                    type="datetime-local"
-                    value={editForm.startDateUtc}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({
-                        ...previous,
-                        startDateUtc: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label>
-                  <span>Offer Ends</span>
-                  <input
-                    type="datetime-local"
-                    value={editForm.endDateUtc}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({
-                        ...previous,
-                        endDateUtc: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label>
-                  <span>Discount Type</span>
-                  <select
-                    value={editForm.discountType}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({
-                        ...previous,
-                        discountType: event.target.value,
-                        isPercentageDiscount: event.target.value === "Percentage",
-                      }))
-                    }
-                  >
-                    <option value="Flat">Flat Discount</option>
-                    <option value="Percentage">Percentage Discount</option>
-                  </select>
-                </label>
-
-                <label>
-                  <span>Discount Value</span>
-                  <input
-                    type="number"
-                    value={editForm.discountValue}
-                    onChange={(event) => setEditForm((previous) => ({ ...previous, discountValue: event.target.value }))}
-                    placeholder="e.g. 50 or 500"
-                  />
-                </label>
-
-                <label>
-                  <span>Min Booking Amount (INR)</span>
-                  <input
-                    type="number"
-                    value={editForm.minBookingAmount}
-                    onChange={(event) => setEditForm((previous) => ({ ...previous, minBookingAmount: event.target.value }))}
-                    placeholder="e.g. 500"
-                  />
-                </label>
-
-                <label>
-                  <span>Max Discount Amount (INR)</span>
-                  <input
-                    type="number"
-                    value={editForm.maxDiscountAmount}
-                    onChange={(event) => setEditForm((previous) => ({ ...previous, maxDiscountAmount: event.target.value }))}
-                    placeholder="e.g. 150"
-                  />
-                </label>
-
-                <label>
-                  <span>Max Usage</span>
-                  <input
-                    type="number"
-                    value={editForm.maxUsage}
-                    onChange={(event) => setEditForm((previous) => ({ ...previous, maxUsage: event.target.value }))}
-                    placeholder="e.g. 500"
-                  />
-                </label>
-
-                <label className="wide">
-                  <span>Image Upload</span>
-                  <div className="offer-edit-file-uploader">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => {
-                        if (event.target.files && event.target.files[0]) {
-                          setSelectedFile(event.target.files[0]);
-                        }
-                      }}
-                    />
-                    {editForm.imageUrl && (
-                      <div className="offer-edit-current-image">
-                        <span>Current image:</span>
-                        <img src={toApiUrl(editForm.imageUrl)} alt="Current Offer" />
-                      </div>
-                    )}
-                  </div>
-                </label>
-
-                <label className="wide">
-                  <span>Short Description (Subtitle)</span>
-                  <textarea
-                    value={editForm.shortDescription}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({
-                        ...previous,
-                        shortDescription: event.target.value,
-                      }))
-                    }
-                    placeholder="Brief summary shown in the user portal card"
-                  />
-                </label>
-
-                <label className="wide">
-                  <span>Long Description (Description)</span>
-                  <textarea
-                    value={editForm.longDescription}
-                    onChange={(event) =>
-                      setEditForm((previous) => ({
-                        ...previous,
-                        longDescription: event.target.value,
-                      }))
-                    }
-                    placeholder="Full terms and conditions"
-                    style={{ minHeight: "140px" }}
-                  />
-                </label>
-              </div>
-
-              {editError && <p className="admin-markup-form-error">{editError}</p>}
-            </div>
-
-            <div className="admin-markup-modal-actions">
-              <button type="button" className="secondary" onClick={() => setEditOffer(null)}>
-                Cancel
-              </button>
-              <button type="button" className="primary" onClick={handleEditSave} disabled={busyId === editOffer.id}>
-                Save Changes
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {deleteOffer && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setDeleteOffer(null)}>
-          <section
-            className="admin-markup-modal small"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Delete offer"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header>
-              <h2>Delete Offer</h2>
-              <button type="button" onClick={() => setDeleteOffer(null)} aria-label="Close delete offer">
-                <X size={16} />
-              </button>
-            </header>
-
-            <p className="admin-markup-delete-copy">
-              Are you sure you want to delete <strong>{deleteOffer.title}</strong>?
-            </p>
-
-            <div className="admin-markup-modal-actions">
-              <button type="button" className="secondary" onClick={() => setDeleteOffer(null)}>
-                Cancel
-              </button>
-              <button type="button" className="danger" onClick={handleDeleteConfirm} disabled={busyId === deleteOffer.id}>
-                Delete
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
+      {/* Reusable Dynamic Modal System */}
+      <AdminDynamicModal
+          isOpen={modalState.isOpen}
+          mode={modalState.mode}
+          moduleName="Offer"
+          data={modalState.data}
+          schema={offerSchema}
+          onClose={() => setModalState({ isOpen: false, mode: null, data: null })}
+          onSave={handleSaveOffer}
+          onDelete={handleDeleteOfferConfirm}
+      />
 
       {conditionsOffer && (
         <div className="admin-markup-modal-backdrop" onClick={() => setConditionsOffer(null)}>

@@ -636,6 +636,15 @@ function SleeperSeat({ label }) {
   );
 }
 
+// Helper to remove redundant reporting time and phone number from address
+const formatPointAddress = (address) => {
+  if (!address) return "";
+  let clean = address.split(/Reporting Time/i)[0];
+  clean = clean.split(/ph\s*no/i)[0];
+  clean = clean.split(/Phone\s*no/i)[0];
+  return clean.trim();
+};
+
 export default function BusSeatSelectionPage({
   embedded = false,
   embeddedState = null,
@@ -1108,7 +1117,7 @@ export default function BusSeatSelectionPage({
     if (!isAgent) {
       const token = localStorage.getItem("token");
       if (!token || isTokenExpired(token)) {
-        openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
+        openAuthModal("login");
         return;
       }
     }
@@ -1694,7 +1703,7 @@ export default function BusSeatSelectionPage({
                       <i />
                       <div>
                         <strong>{point.name}</strong>
-                        <span>{point.address}</span>
+                        <span>{formatPointAddress(point.address)}</span>
                       </div>
                       <small>
                         <Clock3 size={14} />

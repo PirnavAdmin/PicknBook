@@ -237,24 +237,21 @@
 
 /* ── Icon box ── */
 .ds-nav-icon {
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   color: inherit;
+  border-radius: 7px;
 }
 
 /* Active icon: red box */
 .ds-icon-active {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
   background: #a51c49;
   color: #ffffff !important;
   box-shadow: 0 3px 8px rgba(229, 57, 53, 0.35);
-  flex-shrink: 0;
 }
 
 /* ── Label — FULL text, no truncation ── */
@@ -424,4 +421,20 @@
   background: #a51c49 !important;
   border-color: #a51c49 !important;
 }
+
+/* Sidebar nav row sub-labels */
+.ds-nav-sublabel {
+  font-size: 0.62rem;
+  font-weight: 400;
+  margin-top: 2px;
+  color: #64748b;
+  display: block;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.admin-shell.dark-theme .ds-nav-sublabel {
+  color: #94a3b8;
+}
+
 

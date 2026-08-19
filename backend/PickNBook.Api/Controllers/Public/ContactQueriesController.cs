@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,10 +14,12 @@ namespace PickNBook.Api.Controllers
     public class ContactQueriesController : BaseApiController
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public ContactQueriesController(AppDbContext context)
+        public ContactQueriesController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         // POST: api/contactqueries
@@ -100,11 +103,45 @@ namespace PickNBook.Api.Controllers
             }
 
             query.Status = request.Status.Trim();
+            query.ReplyMessage = request.ReplyMessage?.Trim();
             query.UpdatedAtUtc = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            return Ok(query);
+            if ((query.Status == "Resolved" || query.Status == "Replied") && !string.IsNullOrWhiteSpace(query.ReplyMessage))
+            {
+                var subject = $"[{query.Status}] Support Ticket #{query.Id} - {query.Subject}";
+                var body = $@"Hello {query.Name},
+
+The support team has reviewed and updated your query.
+
+---
+Query Details:
+- Ticket ID: #{query.Id}
+- Subject: {query.Subject}
+Your Original Message:
+""{query.Message}""
+
+Resolution Status: {query.Status}
+
+Our Update / Reply:
+""{query.ReplyMessage}""
+---
+
+If you have any further questions or if the problem persists, please reply to this email.
+
+Best regards,
+Support & Resolutions Team";
+
+                await _emailService.SendEmailAsync(query.Email, subject, body);
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Query updated and reply sent successfully.",
+                data = query
+            });
         }
 
         // DELETE: api/contactqueries/admin/{id}

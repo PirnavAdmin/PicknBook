@@ -590,38 +590,44 @@ const AdminDashboard = () => {
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '6px', marginBottom: '6px', flexWrap: 'wrap', gap: '16px' }}>
         
         {/* Toggle Pills */}
-        <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--admin-surface)', border: '1px solid var(--admin-border)', borderRadius: '100px', padding: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', gap: '6px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '100px', padding: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
           <button
             onClick={() => setViewMode('b2c')}
             style={{
               border: 'none',
-              background: viewMode === 'b2c' ? '#1e75ff' : 'none',
-              color: viewMode === 'b2c' ? '#ffffff' : 'var(--admin-text)',
+              background: viewMode === 'b2c' ? '#1e75ff' : 'transparent',
+              color: viewMode === 'b2c' ? '#ffffff' : '#000000',
               padding: '8px 18px',
               borderRadius: '100px',
               fontSize: '0.82rem',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'all 0.2s ease-in-out'
+              transition: 'all 0.2s ease-in-out',
+              boxShadow: viewMode === 'b2c' ? '0 2px 6px rgba(30,117,255,0.3)' : 'none'
             }}
           >
-            🌐 B2C Retail
+            <span style={{ color: viewMode === 'b2c' ? '#ffffff' : '#000000', fontWeight: '700' }}>
+              🌐 B2C Retail
+            </span>
           </button>
           <button
             onClick={() => setViewMode('b2b')}
             style={{
               border: 'none',
-              background: viewMode === 'b2b' ? '#1e75ff' : 'none',
-              color: viewMode === 'b2b' ? '#ffffff' : 'var(--admin-text)',
+              background: viewMode === 'b2b' ? '#1e75ff' : 'transparent',
+              color: viewMode === 'b2b' ? '#ffffff' : '#000000',
               padding: '8px 18px',
               borderRadius: '100px',
               fontSize: '0.82rem',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'all 0.2s ease-in-out'
+              transition: 'all 0.2s ease-in-out',
+              boxShadow: viewMode === 'b2b' ? '0 2px 6px rgba(30,117,255,0.3)' : 'none'
             }}
           >
-            💼 B2B Agents
+            <span style={{ color: viewMode === 'b2b' ? '#ffffff' : '#000000', fontWeight: '700' }}>
+              💼 B2B Retail
+            </span>
           </button>
         </div>
       </div>

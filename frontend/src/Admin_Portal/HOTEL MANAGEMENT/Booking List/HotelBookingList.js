@@ -240,7 +240,7 @@ export default function HotelBookingList() {
               <th>Hotel Property</th>
               <th>Guest Details</th>
               <th>Stay Dates</th>
-              <th>Rooms / Adults</th>
+              <th>Rooms / Guests</th>
               <th>Total Paid</th>
               <th>Status</th>
               <th>Booked At</th>
@@ -257,28 +257,39 @@ export default function HotelBookingList() {
                 <td colSpan="9" className="hbl-empty">No reservations found.</td>
               </tr>
             ) : (
-              paginatedBookings.map((b) => (
-                <tr key={b.bookingId}>
-                  <td>
-                    <strong className="hbl-id">{b.bookingReference}</strong>
-                    <div style={{ fontSize: "11px", color: "#64748b" }}>ID: {b.bookingId}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{b.hotelName}</div>
-                    <div style={{ fontSize: "11px", color: "#64748b" }}>City: {b.cityCode}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 500 }}>{b.guestName}</div>
-                    <div style={{ fontSize: "11px", color: "#64748b" }}>{b.guestPhone} | {b.guestEmail}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontSize: "13px" }}>
-                      {b.checkInDate} to {b.checkOutDate}
-                    </div>
-                  </td>
-                  <td>
-                    {b.rooms} Room{b.rooms > 1 ? "s" : ""} / {b.adults} Guest{b.adults > 1 ? "s" : ""}
-                  </td>
+              paginatedBookings.map((b) => {
+                const roomsCount = Number(b.rooms || b.noOfRooms || b.roomCount || 1);
+                const adultsCount = Number(b.adults || b.noOfAdults || b.adultCount || 1);
+                const childrenCount = Number(b.children || b.childCount || b.noOfChild || b.noOfChildren || b.childrenCount || 0);
+
+                const occupancyStr = b.guestsSummary 
+                  ? b.guestsSummary 
+                  : (typeof b.guests === "string" && b.guests.includes("Room")) 
+                    ? b.guests 
+                    : `${roomsCount} Room${roomsCount > 1 ? "s" : ""} / ${adultsCount} Adult${adultsCount > 1 ? "s" : ""}${childrenCount > 0 ? `, ${childrenCount} Child${childrenCount > 1 ? "ren" : ""}` : ""}`;
+
+                return (
+                  <tr key={b.bookingId}>
+                    <td>
+                      <strong className="hbl-id">{b.bookingReference}</strong>
+                      <div style={{ fontSize: "11px", color: "#64748b" }}>ID: {b.bookingId}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{b.hotelName}</div>
+                      <div style={{ fontSize: "11px", color: "#64748b" }}>City: {b.cityCode}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>{b.guestName}</div>
+                      <div style={{ fontSize: "11px", color: "#64748b" }}>{b.guestPhone} | {b.guestEmail}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: "13px" }}>
+                        {b.checkInDate} to {b.checkOutDate}
+                      </div>
+                    </td>
+                    <td>
+                      {occupancyStr}
+                    </td>
                   <td className="hbl-amount">{formatCurrency(b.totalPrice)}</td>
                   <td>
                     <span className={getStatusBadgeClass(b.status)}>{b.status}</span>
@@ -298,7 +309,8 @@ export default function HotelBookingList() {
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

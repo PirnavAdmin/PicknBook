@@ -408,7 +408,7 @@ export default function B2BLayout({ children, bookingFlow = false }) {
         <main
           className="b2b-main-content"
           style={bookingFlow ? {
-            background: "var(--theme-page, #f4f6f8)",
+            background: "#ffffff",
             padding: 0,
             overflowX: "hidden",
             display: "flex",

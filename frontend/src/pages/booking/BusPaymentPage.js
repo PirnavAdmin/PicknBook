@@ -9,6 +9,7 @@ import {
   getBusPromotionDiscountAmount,
   listAvailableBusCoupons,
   getFeaturedBusOffers,
+  isBusCategoryOfferOrCoupon,
 } from "../../services/busBookingService";
 import { sendBookingNotifications } from "../../services/bookingNotificationsService";
 import "../../STYLES/BusBookingFlow.css";
@@ -152,11 +153,25 @@ function buildBookingPayload(flowState) {
     sendSmsUpdates: Boolean(flowState.contact?.mobile),
     sendWhatsappUpdates: Boolean(flowState.contact?.whatsappUpdates),
     passengers: normalizedPassengers,
-    TraceId: String(flowState.bus?.traceId || ""),
-    ResultIndex: String(flowState.bus?.resultIndex || flowState.bus?.id || ""),
-    SrdvIndex: Number(flowState.bus?.srdvIndex || 0),
+    routeId: String(flowState.bus?.routeId || ""),
+    traceId: String(flowState.bus?.traceId || ""),
+    resultIndex: String(flowState.bus?.resultIndex || flowState.bus?.id || ""),
+    srdvIndex: Number(flowState.bus?.srdvIndex || 0),
+    srdvBlockKey: String(flowState.blockKey || ""),
+    fromCity: String(flowState.bus?.fromCity || flowState.searchContext?.fromCity?.name || flowState.searchContext?.fromCity || ""),
+    toCity: String(flowState.bus?.toCity || flowState.searchContext?.toCity?.name || flowState.searchContext?.toCity || ""),
+    departureTime: String(flowState.bus?.departureTimeUtc || flowState.bus?.departureTimeIst || flowState.bus?.departureTime || ""),
+    arrivalTime: String(flowState.bus?.arrivalTimeUtc || flowState.bus?.arrivalTimeIst || flowState.bus?.arrivalTime || ""),
+    operatorName: String(flowState.bus?.operatorName || ""),
+    busType: String(flowState.bus?.busType || ""),
+    isIdProofRequired: Boolean(flowState.bus?.idProofRequired || flowState.bus?.IdProofRequired || flowState.bus?.isIdProofRequired || flowState.bus?.IsIdProofRequired),
+    totalFare: Number(flowState.bus?.priceInr || flowState.bus?.displayFare || flowState.bus?.fare || 0),
     BoardingPointId: flowState.boardingPoint?.id ? String(flowState.boardingPoint.id) : null,
+    boardingPointName: String(flowState.boardingPoint?.name || flowState.boardingPointName || ""),
+    boardingPointTime: flowState.boardingPoint?.time ? String(flowState.boardingPoint.time) : null,
     DroppingPointId: flowState.droppingPoint?.id ? String(flowState.droppingPoint.id) : null,
+    droppingPointName: String(flowState.droppingPoint?.name || flowState.droppingPointName || ""),
+    droppingPointTime: flowState.droppingPoint?.time ? String(flowState.droppingPoint.time) : null,
   };
 }
 
@@ -347,15 +362,16 @@ export default function BusPaymentPage() {
     let isMounted = true;
     if (flowState.blockKey) {
       getBusPricingPreview({
-        busId: bus?.id || bus?.busId,
         traceId: bus?.tripId || bus?.traceId,
-        resultIndex: bus?.resultIndex || bus?.id,
-        srdvIndex: bus?.srdvIndex || 0,
-        blockKey: flowState.blockKey,
-        boardingPointId: flowState.boardingPoint?.id || flowState.boardingPoint?.pointId,
         passengers: flowState.passengers,
         couponCode: flowState.couponCode,
         selectedFeaturedOfferId: flowState.selectedFeaturedOfferId,
+        fromCity: bus?.fromCity || flowState.searchContext?.fromCity?.name || flowState.searchContext?.fromCity,
+        toCity: bus?.toCity || flowState.searchContext?.toCity?.name || flowState.searchContext?.toCity,
+        departureTime: bus?.departureTimeUtc || bus?.departureTimeIst || bus?.departureTime,
+        operatorName: bus?.operatorName,
+        busType: bus?.busType,
+        totalFare: bus?.priceInr || bus?.displayFare || bus?.fare,
       })
       .then(preview => {
         if (isMounted && preview) {
@@ -423,7 +439,10 @@ export default function BusPaymentPage() {
     setIsLoadingCoupons(true);
     listAvailableBusCoupons()
       .then((data) => {
-        if (isMounted) setAvailableCoupons(Array.isArray(data) ? data : []);
+        if (isMounted) {
+          const busCoupons = Array.isArray(data) ? data.filter((c) => isBusCategoryOfferOrCoupon(c)) : [];
+          setAvailableCoupons(busCoupons);
+        }
       })
       .catch((err) => console.error("Error loading coupons:", err))
       .finally(() => {
@@ -433,7 +452,10 @@ export default function BusPaymentPage() {
     setIsLoadingOffers(true);
     getFeaturedBusOffers()
       .then((data) => {
-        if (isMounted) setFeaturedOffers(Array.isArray(data) ? data : []);
+        if (isMounted) {
+          const busOffers = Array.isArray(data) ? data.filter((o) => isBusCategoryOfferOrCoupon(o)) : [];
+          setFeaturedOffers(busOffers);
+        }
       })
       .catch((err) => console.error("Error loading featured offers:", err))
       .finally(() => {

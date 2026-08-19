@@ -1,9 +1,9 @@
-﻿using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Models.DTOs;
 
 namespace PickNBook.Api.Services
 {
     public interface IBookingHistoryService
     {
-        Task<List<BookingHistoryDto>> GetBookingHistoryAsync(string userId);
+        Task<List<BookingHistoryDto>> GetBookingHistoryAsync(string userId, string? type = null);
     }
 }

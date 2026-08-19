@@ -57,5 +57,37 @@ namespace PickNBook.Api.Services
             _context.AgentLedgerEntries.Add(ledgerEntry);
             await _context.SaveChangesAsync();
         }
+        public async Task CreditWalletForRefundAsync(int agentId, decimal amount, string bookingReference, string serviceType, string description)
+        {
+            var agent = await _context.Users.FirstOrDefaultAsync(x => x.Id == agentId);
+            if (agent == null)
+            {
+                throw new Exception("Agent not found.");
+            }
+
+            if (!string.Equals(agent.Role, AuthRoles.Agent, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("User is not an authorized agent.");
+            }
+
+            // Credit balance
+            agent.WalletBalance += amount;
+
+            // Save ledger entry
+            var ledgerEntry = new AgentLedgerEntry
+            {
+                AgentId = agentId,
+                TransactionType = "Refund",
+                ReferenceId = bookingReference,
+                DebitAmount = 0m,
+                CreditAmount = amount,
+                RunningBalance = agent.WalletBalance,
+                Description = description,
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            _context.AgentLedgerEntries.Add(ledgerEntry);
+            await _context.SaveChangesAsync();
+        }
     }
 }

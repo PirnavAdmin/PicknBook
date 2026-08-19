@@ -50,6 +50,13 @@ namespace PickNBook.Api.Models.DTOs
         public int SrdvIndex { get; set; }
         public string BoardingPointId { get; set; } = string.Empty;
         public string DroppingPointId { get; set; } = string.Empty;
+        public string FromCity { get; set; } = string.Empty;
+        public string ToCity { get; set; } = string.Empty;
+        public string DepartureTime { get; set; } = string.Empty;
+        public string ArrivalTime { get; set; } = string.Empty;
+        public string OperatorName { get; set; } = string.Empty;
+        public string BusType { get; set; } = string.Empty;
+        public decimal TotalFare { get; set; }
         public List<SrdvBusPassengerDto> Passengers { get; set; } = new();
     }
 

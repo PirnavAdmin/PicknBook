@@ -25,5 +25,7 @@ namespace PickNBook.Api.Models
         public string? OperatorId { get; set; }
         
         public string? CancellationPoliciesJson { get; set; }
+        
+        public bool IsIdProofRequired { get; set; }
     }
 }

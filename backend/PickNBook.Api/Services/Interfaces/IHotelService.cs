@@ -1,4 +1,5 @@
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -32,13 +33,13 @@ namespace PickNBook.Api.Services
             string guestPhone,
             string userId);
 
-        Task<bool> CancelBookingAsync(string providerBookingId, string traceId);
+        Task<bool> CancelBookingAsync(HotelReservation reservation, string endUserIp);
         Task<PickNBookBalanceResponseDto> GetApiBalanceAsync();
         Task<PickNBookBalanceLogResponseDto> GetApiBalanceLogAsync();
         Task<PickNBookHotelInfoResponseDto> GetHotelInfoAsync(HotelInfoRequestDto request);
         Task<PickNBookHotelInfoResponseDto> GetHotelInfoAsync(string traceId, string resultIndex, string hotelCode);
         Task<PickNBookHotelRoomResponseDto> GetHotelRoomAsync(HotelRoomRequestDto request);
-        Task<PickNBookHotelRoomResponseDto> GetHotelRoomAsync(string traceId, string resultIndex, string hotelCode);
+        Task<PickNBookHotelRoomResponseDto> GetHotelRoomAsync(string traceId, string resultIndex, string hotelCode, string srdvIndex, string endUserIp);
         Task<PickNBookBlockRoomResponseDto> BlockRoomAsync(BlockRoomRequestDto request);
         Task<PickNBookBookRoomResponseDto> BookRoomAsync(HotelBookRequestDto request);
         Task<SendChangeResponseDto> CancelRoomAsync(HotelCancelRequestDto request);

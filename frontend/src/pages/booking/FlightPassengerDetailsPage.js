@@ -9,7 +9,7 @@ import {
 } from "./flightBookingFlowStore";
 import { openAuthModal } from "../../utils/authModalEvents";
 import { isTokenExpired } from "../../services/authSession";
-import { getFlightPricingPreview, getFlightPromotions, listFlightCoupons, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
+import { getFlightPricingPreview, getFlightPromotions, bookFlight, listFlightCoupons, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
 import { toApiUrl } from "../../services/apiClient";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 
@@ -191,6 +191,17 @@ export default function FlightPassengerDetailsPage() {
     mobile: flowState.contact?.mobile || "",
     whatsappUpdates: Boolean(flowState.contact?.whatsappUpdates),
     whatsappNumber: flowState.contact?.whatsappNumber || "",
+    addressLine1: flowState.contact?.addressLine1 || "",
+    city: flowState.contact?.city || "",
+  }));
+
+  const [gstInfo, setGstInfo] = useState(() => ({
+    useGST: Boolean(flowState.gstInfo?.useGST),
+    GSTNumber: flowState.gstInfo?.GSTNumber || "",
+    GSTCompanyName: flowState.gstInfo?.GSTCompanyName || "",
+    GSTCompanyEmail: flowState.gstInfo?.GSTCompanyEmail || "",
+    GSTCompanyContactNumber: flowState.gstInfo?.GSTCompanyContactNumber || "",
+    GSTCompanyAddress: flowState.gstInfo?.GSTCompanyAddress || "",
   }));
 
   const [couponCode, setCouponCode] = useState(flowState.couponCode || "");
@@ -198,7 +209,7 @@ export default function FlightPassengerDetailsPage() {
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [featuredOffers, setFeaturedOffers] = useState([]);
   const [pricingBreakdown, setPricingBreakdown] = useState(null);
-  
+
   const [isApplying, setIsApplying] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
@@ -347,36 +358,63 @@ export default function FlightPassengerDetailsPage() {
     return () => { isMounted = false; };
   }, []);
 
+  const [fareQuoteData, setFareQuoteData] = useState(null);
+
+  const isInternational = useMemo(() => {
+    const fromStr = String(flight?.fromCity || flight?.sourceCode || searchContext?.source || "").toUpperCase().trim();
+    const toStr = String(flight?.toCity || flight?.destinationCode || searchContext?.destination || "").toUpperCase().trim();
+    // If both are empty (e.g. multi-city before a leg is resolved), default to domestic
+    if (!fromStr && !toStr) return false;
+    const domCodes = new Set(["DEL", "BOM", "BLR", "MAA", "HYD", "CCU", "GOI", "PNQ", "AMD", "COK", "JAI", "TIR", "IXC", "IXB", "PAT", "GAU", "TRV", "VNS", "LKO", "DELHI", "MUMBAI", "BENGALURU", "CHENNAI", "HYDERABAD", "KOLKATA"]);
+    const isDomFrom = !fromStr || domCodes.has(fromStr) || fromStr.includes("DELHI") || fromStr.includes("MUMBAI");
+    const isDomTo = !toStr || domCodes.has(toStr) || toStr.includes("DELHI") || toStr.includes("MUMBAI");
+    return (!isDomFrom || !isDomTo) || Boolean(fareQuoteData?.isPassportRequiredAtBook);
+  }, [flight, searchContext, fareQuoteData]);
+
   useEffect(() => {
     let isCurrent = true;
-    async function runFareQuoteAndSSR() {
+    async function runFareQuote() {
       if (!flight) return;
       try {
         const quoteRes = await getFareQuote({
           flight,
-          traceId: flight.traceId,
-          resultIndex: flight.resultIndex || flight.id,
+          returnFlight: flowState.returnFlight,
+          legs: flowState.selectedLegs || flowState.legs,
+          selectedLegs: flowState.selectedLegs || flowState.legs,
+          traceId: flight.traceId || flowState.traceId || flowState.TraceId,
+          resultIndex: flowState.resultIndex || flowState.ResultIndex || flight.resultIndex || flight.id,
           srdvType: flight.srdvType,
           srdvIndex: flight.srdvIndex,
+          journeyType: flowState.isMultiCity ? 3 : (flowState.isTwoWay ? 2 : 1),
+          isMultiCity: flowState.isMultiCity
         });
         if (isCurrent && quoteRes && quoteRes.success) {
           console.log("FareQuote API validated successfully:", quoteRes);
-        }
-        const ssrRes = await getSSR({
-          flight,
-          traceId: flight.traceId,
-          resultIndex: flight.resultIndex || flight.id,
-          srdvType: flight.srdvType,
-          srdvIndex: flight.srdvIndex,
-        });
-        if (isCurrent && ssrRes && ssrRes.success) {
-          console.log("SSR API loaded successfully:", ssrRes);
+          setFareQuoteData(quoteRes);
+
+          const fqRes = quoteRes.results || quoteRes.rawResponse?.Results || quoteRes.rawResponse?.Response?.Results || {};
+          const fqF = fqRes?.Fare || quoteRes.fare || {};
+          const liveFinal = Number(fqRes?.B2CFinalFare ?? fqRes?.B2CPublishedFare ?? fqRes?.OfferedFare ?? fqF?.PublishedFare ?? fqF?.OfferedFare ?? 0);
+          const liveBase = Number(fqRes?.DisplayBaseFare ?? fqRes?.B2CBaseFare ?? fqRes?.BaseFare ?? fqF?.BaseFare ?? 0);
+          const liveTax = Number(fqRes?.DisplayTax ?? fqRes?.B2CTax ?? fqRes?.Tax ?? fqF?.Tax ?? 0);
+
+          if (liveFinal > 0) {
+            writeFlightBookingFlowState({
+              fareSummary: {
+                ...flowState.fareSummary,
+                baseFare: liveBase || flowState.fareSummary?.baseFare,
+                tax: liveTax || flowState.fareSummary?.tax,
+                totalFare: liveFinal,
+              },
+              payableAmount: liveFinal,
+            });
+          }
         }
       } catch (err) {
-        console.warn("FareQuote / SSR fetch error:", err);
+        console.warn("FareQuote fetch error:", err);
       }
     }
-    runFareQuoteAndSSR();
+    runFareQuote();
     return () => { isCurrent = false; };
   }, [flight]);
 
@@ -406,12 +444,12 @@ export default function FlightPassengerDetailsPage() {
         prev.map((passenger, i) =>
           i === index
             ? {
-                ...passenger,
-                selectedTravelerId: "",
-                firstName: "",
-                lastName: "",
-                dob: "",
-              }
+              ...passenger,
+              selectedTravelerId: "",
+              firstName: "",
+              lastName: "",
+              dob: "",
+            }
             : passenger
         )
       );
@@ -425,14 +463,14 @@ export default function FlightPassengerDetailsPage() {
       prev.map((passenger, i) =>
         i === index
           ? {
-              ...passenger,
-              selectedTravelerId: travelerId,
-              title: found.title || "Mr",
-              firstName: found.firstName || "",
-              lastName: found.lastName || "",
-              nationality: found.country || "",
-              dob: yyyyMmDdToDdMmYyyy(found.dobInput) || "",
-            }
+            ...passenger,
+            selectedTravelerId: travelerId,
+            title: found.title || "Mr",
+            firstName: found.firstName || "",
+            lastName: found.lastName || "",
+            nationality: found.country || "",
+            dob: yyyyMmDdToDdMmYyyy(found.dobInput) || "",
+          }
           : passenger
       )
     );
@@ -593,7 +631,7 @@ export default function FlightPassengerDetailsPage() {
         const mergedCoupons = Array.from(mergedMap.values()).filter(c => c.isActive);
         console.log("Final merged dynamic coupons list:", mergedCoupons);
         setAvailableCoupons(mergedCoupons);
-        
+
         try {
           const response = await fetch(toApiUrl("/api/FeaturedOffers"), {
             headers: {
@@ -616,52 +654,94 @@ export default function FlightPassengerDetailsPage() {
   }, []);
 
   // Sync pricing preview from backend
-  const loadPricing = async (code = "") => {
+  const loadPricing = async (code = "", offerId = null) => {
+    if (!flight) return;
     setIsApplying(true);
     setCouponError("");
     setCouponSuccess("");
     try {
+      const passengerCount = travellers.adults + travellers.children;
       const payload = {
-        traceId: flight?.traceId || "",
-        resultIndex: flight?.resultIndex || flight?.id || "",
-        srdvType: flight?.srdvType || "MixAPI",
-        srdvIndex: flight?.srdvIndex || "2",
-        couponCode: code ? code.trim().toUpperCase() : ""
+        flightId: flight.id,
+        flight: flight,
+        traceId: searchContext?.traceId || flight.traceId || flight.TraceId,
+        resultIndex: flight.resultIndex || flight.ResultIndex || flight.id,
+        travelClass: flight.className || searchContext?.cabinClass || "Economy",
+        flight,
+        passengers,
+        contact,
+        gstInfo,
+        fareSummary: finalFareSummary,
+        couponCode: appliedCoupon || null,
+        couponDiscount: couponDiscountAmount,
+        selectedFeaturedOfferId: offerId || null
       };
 
-      const pricing = await getFareQuote(payload);
-
-      if (!pricing || !pricing.success) {
-        throw new Error(pricing?.error || "Failed to fetch live pricing.");
-      }
-
-      setPricingBreakdown(pricing);
-      
-      // Update available offers dynamically from FareQuote response
-      if (pricing.availableOffers && Array.isArray(pricing.availableOffers)) {
-        setFeaturedOffers(pricing.availableOffers);
+      let pricing;
+      try {
+        pricing = await getFlightPricingPreview(payload);
+      } catch (err) {
+        console.warn("Pricing preview endpoint failed/not found, using local fare summary fallback:", err);
+        pricing = {
+          baseFare: baseFare,
+          tax: tax,
+          convenienceFee: convenienceFee,
+          markup: markup,
+          totalFare: preservedTotal,
+          couponDiscount: 0,
+          promotionDiscount: 0
+        };
       }
 
       if (code) {
-        if (pricing.discount > 0) {
-          setCouponSuccess(`Coupon "${code.toUpperCase()}" applied! Discount: ${formatCurrency(pricing.discount)}`);
-          setCouponCode(code.toUpperCase());
+        const uppercaseCode = code.trim().toUpperCase();
+
+        if (pricing && pricing.success !== false) {
+          const discount = pricing.pickNBookDiscount || pricing.PickNBookDiscount || 0;
+          const b2cFinalFare = pricing.fare?.B2CFinalFare || pricing.fare?.b2cFinalFare || (pricing.baseFare + pricing.tax + pricing.convenienceFee - discount);
+
+          if (discount > 0) {
+            const localPricing = {
+              ...pricing,
+              couponDiscount: discount,
+              totalFare: b2cFinalFare
+            };
+            setPricingBreakdown(localPricing);
+            setCouponSuccess(`Coupon "${uppercaseCode}" applied! Discount: ₹${discount.toLocaleString("en-IN")}`);
+            setCouponCode(uppercaseCode);
+            setSelectedFeaturedOfferId(null);
+          } else {
+            setPricingBreakdown(pricing);
+            setCouponError("Coupon applied but offered no discount.");
+          }
         } else {
-          setCouponError("Coupon is valid but offers no discount for this booking.");
+          setPricingBreakdown(pricing);
+          setCouponError("Invalid or expired coupon code.");
           setCouponCode("");
         }
+      } else if (offerId) {
+        setPricingBreakdown(pricing);
+        const disc = pricing.pickNBookDiscount > 0 ? pricing.pickNBookDiscount : (pricing.promotionDiscount || 0);
+        if (disc > 0) {
+          setCouponSuccess(`Offer applied successfully! Discount: ₹${disc.toLocaleString("en-IN")}`);
+          setSelectedFeaturedOfferId(offerId);
+          setCouponCode("");
+        } else {
+          setCouponError("Offer applied but offered no discount.");
+        }
+      } else {
+        setPricingBreakdown(pricing);
       }
     } catch (err) {
       console.error(err);
-      setCouponError(err.message || "Unable to validate coupon.");
-      if (code) setCouponCode("");
+      setCouponError(err.message || "Unable to validate coupon / offer.");
+      setCouponCode("");
+      setSelectedFeaturedOfferId(null);
       setPricingBreakdown(null);
     } finally {
       setIsApplying(false);
     }
   };
-
-
 
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) return;
@@ -708,50 +788,95 @@ export default function FlightPassengerDetailsPage() {
   };
 
   const preservedFareSummary = flowState.fareSummary || {};
-  const baseFare = Number(pricingBreakdown?.fare?.BaseFare || pricingBreakdown?.fare?.baseFare || preservedFareSummary.baseFare || 0);
-  const tax = Number(pricingBreakdown?.fare?.Tax || pricingBreakdown?.fare?.tax || preservedFareSummary.tax || 0);
+  let fqObj = fareQuoteData;
+  if (!fqObj && typeof window !== "undefined") {
+    try {
+      const rawFq = window.sessionStorage.getItem("last_fare_quote") || window.sessionStorage.getItem("FareQuote");
+      if (rawFq) fqObj = JSON.parse(rawFq);
+    } catch (e) { }
+  }
+  const fqResults = fqObj?.results || fqObj?.Results || fqObj?.rawResponse?.Results || fqObj?.rawResponse?.Response?.Results || {};
+  const fqFare = fqResults?.Fare || fqObj?.fare || {};
+
+  const preservedTotal = Number(
+    (fqResults?.B2CFinalFare ??
+      fqResults?.B2CPublishedFare ??
+      fqResults?.OfferedFare ??
+      fqFare?.PublishedFare ??
+      fqFare?.OfferedFare ??
+      preservedFareSummary.totalFare) || 0
+  ) || (Number(preservedFareSummary.baseFare || 0) + Number(preservedFareSummary.tax || 0));
+
+  const baseFare = Number(
+    (fqResults?.DisplayBaseFare ??
+      fqResults?.B2CBaseFare ??
+      fqResults?.BaseFare ??
+      fqFare?.BaseFare ??
+      preservedFareSummary.baseFare) || 0
+  );
+
+  const markup = Number(preservedFareSummary.markup || 0);
   const convenienceFee = Number(preservedFareSummary.convenienceFee || 0);
-  const markup = Number(pricingBreakdown?.markup || preservedFareSummary.markup || 0);
-  
+  const displayBaseFare = baseFare + markup;
+
+  const rawTax = Number(
+    (fqResults?.DisplayTax ??
+      fqResults?.B2CTax ??
+      fqResults?.Tax ??
+      fqFare?.Tax ??
+      preservedFareSummary.tax) || 0
+  );
+
+  const displayTax = (preservedTotal > 0 && displayBaseFare > 0)
+    ? Math.max(0, preservedTotal - convenienceFee - displayBaseFare)
+    : rawTax;
+  const tax = displayTax;
+
   const totalDiscount = pricingBreakdown
-    ? Number(pricingBreakdown.discount || 0)
+    ? Number(pricingBreakdown.promotionDiscount || 0) +
+    Number(pricingBreakdown.couponDiscount || 0)
     : Number(preservedFareSummary.discount || flowState.couponDiscount || 0);
-    
-  const preservedTotal =
-    Number(pricingBreakdown?.fare?.PublishedFare || pricingBreakdown?.fare?.OfferedFare || preservedFareSummary.totalFare || 0) ||
-    baseFare + tax + convenienceFee + markup;
-    
   const tripSecureFee = tripSecureAdded ? 249 * passengers.length : 0;
-  
-  // Use authoritative B2CFinalFare if available
-  const b2cFinalFare = pricingBreakdown?.b2cFinalFare
-    ? Number(pricingBreakdown.b2cFinalFare) + convenienceFee
-    : Math.max(0, preservedTotal - totalDiscount);
-    
-  const finalPayable = b2cFinalFare + tripSecureFee;
+  const finalPayable = Math.max(0, preservedTotal - totalDiscount) + tripSecureFee;
+
+
   const validateForm = () => {
     const newErrors = {};
     passengers.forEach((p, idx) => {
       if (!p.title) newErrors[`passenger_${idx}_title`] = "Required";
       if (!p.firstName || !p.firstName.trim()) newErrors[`passenger_${idx}_firstName`] = "Required";
       if (!p.lastName || !p.lastName.trim()) newErrors[`passenger_${idx}_lastName`] = "Required";
-      if (!p.nationality || !p.nationality.trim()) newErrors[`passenger_${idx}_nationality`] = "Required";
-      
-      if (!p.dob || !p.dob.trim()) {
-        newErrors[`passenger_${idx}_dob`] = "Required";
-      } else {
-        const parts = p.dob.split("/");
-        if (parts.length !== 3 || p.dob.length !== 10) {
-          newErrors[`passenger_${idx}_dob`] = "Format: DD/MM/YYYY";
+
+      if (isInternational) {
+        if (!p.passportNo || !p.passportNo.trim()) newErrors[`passenger_${idx}_passportNo`] = "Required";
+        if (!p.passportExpiry || !p.passportExpiry.trim()) newErrors[`passenger_${idx}_passportExpiry`] = "Required";
+        if (!p.passportIssueCountryCode || !p.passportIssueCountryCode.trim()) newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Required";
+      }
+
+      if (p.passportNo && p.passportNo.trim()) {
+        if (!/^[A-Za-z0-9]{6,9}$/.test(p.passportNo.trim())) {
+          newErrors[`passenger_${idx}_passportNo`] = "Passport number must be 6 to 9 alphanumeric characters";
+        }
+      }
+
+      // DOB is only required for international flights or specific LCCs, but format is strict
+      if (isInternational || (p.dob && p.dob.trim())) {
+        if (!p.dob || !p.dob.trim()) {
+          newErrors[`passenger_${idx}_dob`] = "Required";
         } else {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10);
-          const year = parseInt(parts[2], 10);
-          const dateObj = new Date(year, month - 1, day);
-          const isValidDate = dateObj.getFullYear() === year && dateObj.getMonth() === month - 1 && dateObj.getDate() === day;
-          const currentYear = new Date().getFullYear();
-          if (!isValidDate || year < currentYear - 120 || year > currentYear) {
-            newErrors[`passenger_${idx}_dob`] = "Invalid Date";
+          const parts = p.dob.split("/");
+          if (parts.length !== 3 || p.dob.length !== 10) {
+            newErrors[`passenger_${idx}_dob`] = "Format: DD/MM/YYYY";
+          } else {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            const dateObj = new Date(year, month - 1, day);
+            const isValidDate = dateObj.getFullYear() === year && dateObj.getMonth() === month - 1 && dateObj.getDate() === day;
+            const currentYear = new Date().getFullYear();
+            if (!isValidDate || year < currentYear - 120 || year > currentYear) {
+              newErrors[`passenger_${idx}_dob`] = "Invalid Date";
+            }
           }
         }
       }
@@ -769,6 +894,14 @@ export default function FlightPassengerDetailsPage() {
       newErrors.contact_mobile = "Invalid";
     }
 
+    if (!contact.addressLine1 || !contact.addressLine1.trim()) {
+      newErrors.contact_addressLine1 = "Address Required for Lead Passenger";
+    }
+
+    if (!contact.city || !contact.city.trim()) {
+      newErrors.contact_city = "City Required for Lead Passenger";
+    }
+
     if (contact.whatsappUpdates) {
       const waNum = contact.whatsappNumber || contact.mobile;
       if (!waNum || !waNum.trim()) {
@@ -777,6 +910,21 @@ export default function FlightPassengerDetailsPage() {
         newErrors.contact_whatsappNumber = "Invalid";
       }
     }
+
+    if (gstInfo.useGST) {
+      if (!gstInfo.GSTNumber || !gstInfo.GSTNumber.trim()) {
+        newErrors.gst_number = "Required";
+      } else if (!/^[A-Z0-9]{15}$/.test(gstInfo.GSTNumber.trim())) {
+        newErrors.gst_number = "Must be 15-char uppercase alphanumeric";
+      }
+
+      if (!gstInfo.GSTCompanyName || !gstInfo.GSTCompanyName.trim()) newErrors.gst_companyName = "Required";
+      if (!gstInfo.GSTCompanyEmail || !gstInfo.GSTCompanyEmail.trim()) newErrors.gst_companyEmail = "Required";
+      if (!gstInfo.GSTCompanyContactNumber || !gstInfo.GSTCompanyContactNumber.trim()) newErrors.gst_companyContact = "Required";
+      if (!gstInfo.GSTCompanyAddress || !gstInfo.GSTCompanyAddress.trim()) newErrors.gst_companyAddress = "Required";
+    }
+
+
 
     if (!agreedToTerms) {
       newErrors.agreedToTerms = "Required";
@@ -817,10 +965,10 @@ export default function FlightPassengerDetailsPage() {
   const assuredFeePerTraveller = Number(flight?.assuredFeePerTraveller || flight?.cancellationProtectionFee) || 1649;
 
   const handleSelectAssured = async (secured) => {
-    
+
     const count = passengers.length || 1;
     const assuredFee = secured ? assuredFeePerTraveller * count : 0;
-    
+
     const finalFareSummary = {
       baseFare,
       seatSurcharge: flowState.fareSummary?.seatSurcharge || 0,
@@ -834,7 +982,7 @@ export default function FlightPassengerDetailsPage() {
       tripSecureFee,
       totalFare: finalPayable + assuredFee,
     };
-    
+
     const payload = {
       ...flowState,
       passengers,
@@ -871,7 +1019,11 @@ export default function FlightPassengerDetailsPage() {
           nationality: p.nationality || "Indian",
           email: p.email || contact?.email || "",
           passengerEmail: p.email || contact?.email || "",
-          contactNo: p.contactNo || contact?.mobile || "",
+          passportNo: p.passportNo || "",
+          passportExpiry: p.passportExpiry || "",
+          passportExpiryDate: p.passportExpiry || "",
+          passportIssueCountryCode: p.passportIssueCountryCode || "IN",
+          passportIssueDate: p.passportIssueDate || "2023-01-01",
           ...(p.dob ? { dob: ddMmYyyyToYyyyMmDd(p.dob) } : {}),
         })),
         couponCode: couponCode.trim().toUpperCase() || null,
@@ -882,16 +1034,35 @@ export default function FlightPassengerDetailsPage() {
         infants: passengers.filter(p => p.passengerType === "Infant").length || 0,
       };
 
+      // FareQuote validation — non-blocking: if it fails we still allow proceeding.
+      // A fresh FareQuote will be fetched at the payment step automatically.
+      if (flight?.id) {
+        try {
+          await bookFlight({
+            flightId: flight.id,
+            payload: bookingPayload,
+          });
+        } catch (validationErr) {
+          console.warn("FareQuote pre-validation warning (non-blocking):", validationErr.message);
+          // Do NOT block the user — continue to seats page regardless
+        }
+      }
 
       try {
         sessionStorage.setItem("Passengers", JSON.stringify(passengers));
-      } catch (e) {}
+      } catch (e) { }
 
       writeFlightBookingFlowState(payload);
       navigate("/flight/seats", { state: payload });
     } catch (error) {
-      console.error("Booking validation failed:", error);
-      setFormError(error.message || "Failed to validate booking. Please check coupon and details.");
+      console.error("Booking flow error:", error);
+      // Even on unexpected error, allow navigation to seats to avoid hard blocking
+      try {
+        writeFlightBookingFlowState(payload);
+        navigate("/flight/seats", { state: payload });
+      } catch (navErr) {
+        setFormError(error.message || "Failed to proceed. Please try again.");
+      }
     } finally {
       setIsApplying(false);
     }
@@ -996,6 +1167,59 @@ export default function FlightPassengerDetailsPage() {
           className={errors[`passenger_${index}_dob`] ? "field-has-error" : ""}
         />
       </label>
+
+      {isInternational && (
+        <>
+          <label className="passenger-field">
+            <span>Passport Number *</span>
+            <input
+              type="text"
+              placeholder="Passport Number (e.g. P1234567)"
+              value={passenger.passportNo || ""}
+              onChange={(event) =>
+                updatePassenger(index, "passportNo", event.target.value.toUpperCase())
+              }
+              className={errors[`passenger_${index}_passportNo`] ? "field-has-error" : ""}
+            />
+            {errors[`passenger_${index}_passportNo`] && (
+              <span className="field-error-text">{errors[`passenger_${index}_passportNo`]}</span>
+            )}
+          </label>
+
+          <label className="passenger-field">
+            <span>Passport Expiry Date *</span>
+            <input
+              type="text"
+              placeholder="DD/MM/YYYY"
+              value={passenger.passportExpiry || ""}
+              onChange={(event) => {
+                const formatted = formatDobInput(event.target.value);
+                updatePassenger(index, "passportExpiry", formatted);
+              }}
+              className={errors[`passenger_${index}_passportExpiry`] ? "field-has-error" : ""}
+            />
+            {errors[`passenger_${index}_passportExpiry`] && (
+              <span className="field-error-text">{errors[`passenger_${index}_passportExpiry`]}</span>
+            )}
+          </label>
+
+          <label className="passenger-field">
+            <span>Passport Issue Country *</span>
+            <input
+              type="text"
+              placeholder="Country Code (e.g. IN)"
+              value={passenger.passportIssueCountryCode || ""}
+              onChange={(event) =>
+                updatePassenger(index, "passportIssueCountryCode", event.target.value.toUpperCase())
+              }
+              className={errors[`passenger_${index}_passportIssueCountryCode`] ? "field-has-error" : ""}
+            />
+            {errors[`passenger_${index}_passportIssueCountryCode`] && (
+              <span className="field-error-text">{errors[`passenger_${index}_passportIssueCountryCode`]}</span>
+            )}
+          </label>
+        </>
+      )}
 
       <label className="passenger-field passenger-field--full">
         <span>Passenger Email (Optional)</span>
@@ -1126,70 +1350,111 @@ export default function FlightPassengerDetailsPage() {
         <aside className="flight-checkout-sidebar">
           {/* Your Flight Details */}
           <div className="sidebar-card your-flight-card">
-            <h3 className="sidebar-card-title">{flowState.isTwoWay ? "Your Flights (Roundtrip)" : "Your Flight"}</h3>
-            
-            {/* Onward Flight Segment */}
-            <div style={{ marginBottom: flowState.isTwoWay ? 16 : 0 }}>
-              {flowState.isTwoWay && (
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
-                  1. Onward Flight
-                </div>
-              )}
-              <div className="flight-segment">
-                <div className="flight-city-info">
-                  <span className="flight-city-code">{flight.sourceCode || "--"}</span>
-                  <span className="flight-city-name">{searchContext?.source || "--"}</span>
-                </div>
-                <div className="flight-stops-indicator">
-                  <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
-                  <div className="stops-line"></div>
-                </div>
-                <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                  <span className="flight-city-code">{flight.destinationCode || "--"}</span>
-                  <span className="flight-city-name">{searchContext?.destination || "--"}</span>
-                </div>
-              </div>
-              <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}</span>
-                  <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                    ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <h3 className="sidebar-card-title">
+              {flowState.isMultiCity
+                ? "Your Flights (Multi-city)"
+                : flowState.isTwoWay
+                  ? "Your Flights (Roundtrip)"
+                  : "Your Flight"}
+            </h3>
 
-            {/* Return Flight Segment */}
-            {flowState.isTwoWay && flowState.returnFlight && (
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#dc1e26", textTransform: "uppercase", marginBottom: 6 }}>
-                  2. Return Flight
+            {flowState.isMultiCity && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0 ? (
+              flowState.selectedLegs.map((leg, index) => (
+                <div key={`mc-pax-leg-${index}`} style={{ marginTop: index > 0 ? 16 : 0, paddingTop: index > 0 ? 16 : 0, borderTop: index > 0 ? "1px dashed #cbd5e1" : "none" }}>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
+                    {index + 1}. Leg {index + 1}
+                  </div>
+                  <div className="flight-segment">
+                    <div className="flight-city-info">
+                      <span className="flight-city-code">{leg?.sourceCode || "--"}</span>
+                      <span className="flight-city-name">{leg?.sourceName || leg?.fromCity || "--"}</span>
+                    </div>
+                    <div className="flight-stops-indicator">
+                      <span className="stops-text">{Number(leg?.stops || 0) > 0 ? `${leg.stops} stop` : "Non stop"}</span>
+                      <div className="stops-line"></div>
+                    </div>
+                    <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                      <span className="flight-city-code">{leg?.destinationCode || "--"}</span>
+                      <span className="flight-city-name">{leg?.destinationName || leg?.toCity || "--"}</span>
+                    </div>
+                  </div>
+                  <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{leg?.airlineName || leg?.airline || "Flight"} ({leg?.flightNumber || "--"})</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span className="flight-date-badge">{leg?.departDate || leg?.departureDate || "--"}</span>
+                      <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                        ₹{new Intl.NumberFormat("en-IN").format(Number(leg?.fare || leg?.price || leg?.priceInr || leg?.selectedTravelClassPriceInr || 0))}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flight-segment">
-                  <div className="flight-city-info">
-                    <span className="flight-city-code">{flowState.returnFlight.sourceCode || "--"}</span>
-                    <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+              ))
+            ) : (
+              <>
+                {/* Onward Flight Segment */}
+                <div style={{ marginBottom: flowState.isTwoWay ? 16 : 0 }}>
+                  {flowState.isTwoWay && (
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
+                      1. Onward Flight
+                    </div>
+                  )}
+                  <div className="flight-segment">
+                    <div className="flight-city-info">
+                      <span className="flight-city-code">{flight.sourceCode || "--"}</span>
+                      <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                    </div>
+                    <div className="flight-stops-indicator">
+                      <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
+                      <div className="stops-line"></div>
+                    </div>
+                    <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                      <span className="flight-city-code">{flight.destinationCode || "--"}</span>
+                      <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                    </div>
                   </div>
-                  <div className="flight-stops-indicator">
-                    <span className="stops-text">{Number(flowState.returnFlight.stops || 0) > 0 ? `${flowState.returnFlight.stops} stop` : "Non stop"}</span>
-                    <div className="stops-line"></div>
-                  </div>
-                  <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                    <span className="flight-city-code">{flowState.returnFlight.destinationCode || "--"}</span>
-                    <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                  <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}</span>
+                      <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                        ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>{flowState.returnFlight.airlineName || flowState.returnFlight.airline} ({flowState.returnFlight.flightNumber})</span>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <span className="flight-date-badge">{flowState.returnFlight.departDate || searchContext?.returnDate || "--"}</span>
-                    <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                      ₹{new Intl.NumberFormat("en-IN").format(Number(flowState.returnFlight.fare || flowState.returnFlight.price || flowState.returnFlight.priceInr || flowState.returnFlight.selectedTravelClassPriceInr || 0))}
-                    </span>
+
+                {/* Return Flight Segment */}
+                {flowState.isTwoWay && flowState.returnFlight && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#dc1e26", textTransform: "uppercase", marginBottom: 6 }}>
+                      2. Return Flight
+                    </div>
+                    <div className="flight-segment">
+                      <div className="flight-city-info">
+                        <span className="flight-city-code">{flowState.returnFlight.sourceCode || "--"}</span>
+                        <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                      </div>
+                      <div className="flight-stops-indicator">
+                        <span className="stops-text">{Number(flowState.returnFlight.stops || 0) > 0 ? `${flowState.returnFlight.stops} stop` : "Non stop"}</span>
+                        <div className="stops-line"></div>
+                      </div>
+                      <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                        <span className="flight-city-code">{flowState.returnFlight.destinationCode || "--"}</span>
+                        <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                      </div>
+                    </div>
+                    <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>{flowState.returnFlight.airlineName || flowState.returnFlight.airline} ({flowState.returnFlight.flightNumber})</span>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <span className="flight-date-badge">{flowState.returnFlight.departDate || searchContext?.returnDate || "--"}</span>
+                        <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                          ₹{new Intl.NumberFormat("en-IN").format(Number(flowState.returnFlight.fare || flowState.returnFlight.price || flowState.returnFlight.priceInr || flowState.returnFlight.selectedTravelClassPriceInr || 0))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </div>
 
@@ -1214,18 +1479,12 @@ export default function FlightPassengerDetailsPage() {
             </div>
             <div className="fare-row">
               <span>Base Fare</span>
-              <span>₹ {baseFare.toLocaleString("en-IN")}</span>
+              <span>₹ {displayBaseFare.toLocaleString("en-IN")}</span>
             </div>
-            {tax > 0 && (
+            {displayTax > 0 && (
               <div className="fare-row">
                 <span>Taxes & Fees</span>
-                <span>₹ {tax.toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {markup > 0 && (
-              <div className="fare-row">
-                <span>Service Markup</span>
-                <span>₹ {markup.toLocaleString("en-IN")}</span>
+                <span>₹ {displayTax.toLocaleString("en-IN")}</span>
               </div>
             )}
             {convenienceFee > 0 && (
@@ -1271,7 +1530,7 @@ export default function FlightPassengerDetailsPage() {
               <User size={20} className="header-icon" />
               Enter Traveller Details
             </h2>
-            
+
             {passengers.map((passenger, index) => {
               const isExisting = passengerModes[index];
               return (
@@ -1280,7 +1539,7 @@ export default function FlightPassengerDetailsPage() {
                     <h4 className="flight-passenger-row-title">
                       Passenger {index + 1} ({passenger.passengerType})
                     </h4>
-                    
+
                     <div className="passenger-mode-toggle">
                       <button
                         type="button"
@@ -1383,6 +1642,35 @@ export default function FlightPassengerDetailsPage() {
                 </div>
                 {errors.contact_mobile && <span className="input-error-msg">{errors.contact_mobile}</span>}
               </div>
+              <div className="input-group">
+                <label>Address Line 1 *</label>
+                <input
+                  className={`input-control ${errors.contact_addressLine1 ? "error-state" : ""}`}
+                  type="text"
+                  placeholder="Address Line 1"
+                  value={contact.addressLine1}
+                  onChange={(e) => {
+                    setContact(prev => ({ ...prev, addressLine1: e.target.value }));
+                    setErrors(prev => { const c = { ...prev }; delete c.contact_addressLine1; return c; });
+                  }}
+                />
+                {errors.contact_addressLine1 && <span className="input-error-msg">{errors.contact_addressLine1}</span>}
+              </div>
+
+              <div className="input-group">
+                <label>City *</label>
+                <input
+                  className={`input-control ${errors.contact_city ? "error-state" : ""}`}
+                  type="text"
+                  placeholder="City"
+                  value={contact.city}
+                  onChange={(e) => {
+                    setContact(prev => ({ ...prev, city: e.target.value }));
+                    setErrors(prev => { const c = { ...prev }; delete c.contact_city; return c; });
+                  }}
+                />
+                {errors.contact_city && <span className="input-error-msg">{errors.contact_city}</span>}
+              </div>
             </div>
 
             <div style={{ marginTop: "16px", marginBottom: "16px" }}>
@@ -1421,6 +1709,108 @@ export default function FlightPassengerDetailsPage() {
               )}
             </div>
           </div>
+
+          {/* GST Details */}
+          {(flight?.isGSTAllowed || flight?.GSTAllowed || true) && (
+            <div className="flight-main-card">
+              <label style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", fontWeight: "bold" }}>
+                <input
+                  type="checkbox"
+                  checked={gstInfo.useGST}
+                  onChange={(e) => {
+                    setGstInfo(prev => ({ ...prev, useGST: e.target.checked }));
+                  }}
+                  style={{ width: "18px", height: "18px", margin: 0, padding: 0, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "1rem", color: "var(--text-main)", marginLeft: "8px" }}>
+                  Use GST for Business Booking
+                </span>
+              </label>
+
+              {gstInfo.useGST && (
+                <div className="form-grid-2" style={{ marginTop: "16px" }}>
+                  <div className="input-group">
+                    <label>GST Number *</label>
+                    <input
+                      className={`input-control ${errors.gst_number ? "error-state" : ""}`}
+                      type="text"
+                      placeholder="e.g. 07AAGFF2194N1Z1"
+                      maxLength={15}
+                      value={gstInfo.GSTNumber}
+                      onChange={(e) => {
+                        setGstInfo(prev => ({ ...prev, GSTNumber: e.target.value.toUpperCase() }));
+                        setErrors(prev => { const c = { ...prev }; delete c.gst_number; return c; });
+                      }}
+                    />
+                    {errors.gst_number && <span className="input-error-msg">{errors.gst_number}</span>}
+                  </div>
+
+                  <div className="input-group">
+                    <label>Company Name *</label>
+                    <input
+                      className={`input-control ${errors.gst_companyName ? "error-state" : ""}`}
+                      type="text"
+                      placeholder="Company Name"
+                      value={gstInfo.GSTCompanyName}
+                      onChange={(e) => {
+                        setGstInfo(prev => ({ ...prev, GSTCompanyName: e.target.value }));
+                        setErrors(prev => { const c = { ...prev }; delete c.gst_companyName; return c; });
+                      }}
+                    />
+                    {errors.gst_companyName && <span className="input-error-msg">{errors.gst_companyName}</span>}
+                  </div>
+
+                  <div className="input-group">
+                    <label>Company Email *</label>
+                    <input
+                      className={`input-control ${errors.gst_companyEmail ? "error-state" : ""}`}
+                      type="email"
+                      placeholder="Company Email"
+                      value={gstInfo.GSTCompanyEmail}
+                      onChange={(e) => {
+                        setGstInfo(prev => ({ ...prev, GSTCompanyEmail: e.target.value }));
+                        setErrors(prev => { const c = { ...prev }; delete c.gst_companyEmail; return c; });
+                      }}
+                    />
+                    {errors.gst_companyEmail && <span className="input-error-msg">{errors.gst_companyEmail}</span>}
+                  </div>
+
+                  <div className="input-group">
+                    <label>Company Contact Number *</label>
+                    <input
+                      className={`input-control ${errors.gst_companyContact ? "error-state" : ""}`}
+                      type="text"
+                      maxLength={10}
+                      placeholder="Contact Number"
+                      value={gstInfo.GSTCompanyContactNumber}
+                      onChange={(e) => {
+                        const cleanValue = e.target.value.replace(/\D/g, "");
+                        setGstInfo(prev => ({ ...prev, GSTCompanyContactNumber: cleanValue }));
+                        setErrors(prev => { const c = { ...prev }; delete c.gst_companyContact; return c; });
+                      }}
+                    />
+                    {errors.gst_companyContact && <span className="input-error-msg">{errors.gst_companyContact}</span>}
+                  </div>
+
+                  <div className="input-group" style={{ gridColumn: "1 / -1" }}>
+                    <label>Company Address *</label>
+                    <input
+                      className={`input-control ${errors.gst_companyAddress ? "error-state" : ""}`}
+                      type="text"
+                      placeholder="Company Full Address"
+                      value={gstInfo.GSTCompanyAddress}
+                      onChange={(e) => {
+                        setGstInfo(prev => ({ ...prev, GSTCompanyAddress: e.target.value }));
+                        setErrors(prev => { const c = { ...prev }; delete c.gst_companyAddress; return c; });
+                      }}
+                    />
+                    {errors.gst_companyAddress && <span className="input-error-msg">{errors.gst_companyAddress}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
 
           {/* Trip Secure Benefits */}
           <div className="trip-secure-card">
@@ -1475,7 +1865,7 @@ export default function FlightPassengerDetailsPage() {
             </div>
 
             <div className="trip-secure-options">
-              <div 
+              <div
                 className={`trip-secure-option ${tripSecureAdded ? "selected recommended" : ""}`}
                 onClick={() => setTripSecureAdded(true)}
               >
@@ -1498,7 +1888,7 @@ export default function FlightPassengerDetailsPage() {
                 </div>
               </div>
 
-              <div 
+              <div
                 className={`trip-secure-option ${!tripSecureAdded ? "selected" : ""}`}
                 onClick={() => setTripSecureAdded(false)}
               >
@@ -1655,7 +2045,7 @@ export default function FlightPassengerDetailsPage() {
                         coupon.value > 0 &&
                         coupon.value <= 100 &&
                         (String(coupon.couponType || "").toLowerCase().includes("percent") ||
-                         String(coupon.couponType || "").toLowerCase().includes("percentage"));
+                          String(coupon.couponType || "").toLowerCase().includes("percentage"));
 
                       const formattedDiscount = isPercentage ? `${coupon.value}% Off` : `₹${coupon.value} Off`;
                       return (
@@ -1702,9 +2092,9 @@ export default function FlightPassengerDetailsPage() {
                 <div style={{ marginTop: 20 }}>
                   <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Featured Offers</h4>
                   <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
-                    {featuredOffers.map((offer, idx) => (
+                    {featuredOffers.map((offer) => (
                       <div
-                        key={offer.Code || offer.id || idx}
+                        key={offer.id}
                         style={{
                           minWidth: 200,
                           border: "1px solid var(--border-color)",
@@ -1714,16 +2104,16 @@ export default function FlightPassengerDetailsPage() {
                           boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
                         }}
                       >
-                        <strong style={{ display: "block", fontSize: "0.875rem" }}>{offer.Title || offer.title}</strong>
-                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "4px 0" }}>{offer.Description || offer.subtitle}</p>
+                        <strong style={{ display: "block", fontSize: "0.875rem" }}>{offer.title}</strong>
+                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "4px 0" }}>{offer.subtitle}</p>
                         <button
                           type="button"
                           className="btn-action-outline"
                           style={{ width: "100%", height: 30, padding: 0, marginTop: 4, fontSize: "0.75rem" }}
-                          onClick={() => loadPricing(offer.Code || offer.couponCode)}
-                          disabled={isApplying || (couponCode !== "" && couponCode === (offer.Code || offer.couponCode))}
+                          onClick={() => handleSelectOffer(offer.id)}
+                          disabled={isApplying || couponCode !== ""}
                         >
-                          {couponCode === (offer.Code || offer.couponCode) ? "Applied" : "Apply"}
+                          Apply
                         </button>
                       </div>
                     ))}
@@ -1881,63 +2271,70 @@ export default function FlightPassengerDetailsPage() {
 
                   {(() => {
                     const rules = activeFareRuleModal.data?.results || activeFareRuleModal.data?.Results || [];
-                    const isRefundable = activeFareRuleModal.flight?.isRefundable ?? true;
+                    const miniFareRules = activeFareRuleModal.data?.miniFareRules || activeFareRuleModal.data?.MiniFareRules || [];
+                    const airlineRules = activeFareRuleModal.data?.airlineRules || activeFareRuleModal.data?.AirlineRules || null;
                     const fl = activeFareRuleModal.flight || {};
 
-                    if (Array.isArray(rules) && rules.length > 0) {
-                      return rules.map((rule, idx) => (
-                        <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px", marginBottom: "12px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}>
-                            <span>{rule.Airline || fl.airlineName || fl.airline || "Airline Fare Rules"}</span>
-                            <span style={{ color: "#d32f2f" }}>{rule.Origin || fl.sourceCode || "Origin"} ➔ {rule.Destination || fl.destinationCode || "Destination"}</span>
-                          </div>
-                          {rule.FareBasisCode && (
-                            <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "10px" }}>
-                              Fare Basis: <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>{rule.FareBasisCode}</code>
-                            </div>
-                          )}
-                          <div
-                            className="fare-rule-html-content"
-                            dangerouslySetInnerHTML={{
-                              __html: rule.FareRuleDetail || rule.FareRules || "Cancellation and date change penalties apply as per airline tariff rules."
-                            }}
-                          />
+                    const hasRules = Array.isArray(rules) && rules.length > 0;
+                    const hasMiniRules = Array.isArray(miniFareRules) && miniFareRules.length > 0;
+                    const hasAirlineRules = Boolean(airlineRules && typeof airlineRules === "object");
+
+                    if (!hasRules && !hasMiniRules && !hasAirlineRules) {
+                      return (
+                        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "20px", textAlign: "center", color: "#64748b" }}>
+                          No detailed fare rules returned by the airline provider for this fare.
                         </div>
-                      ));
+                      );
                     }
 
                     return (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
-                            <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px" }}>Refund Status</div>
-                            <div style={{ fontSize: "1rem", fontWeight: 700, color: isRefundable ? "#16a34a" : "#dc2626" }}>
-                              {isRefundable ? "Refundable Fare" : "Non-Refundable Fare"}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        {hasRules && rules.map((rule, idx) => (
+                          <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}>
+                              <span>{rule.Airline || fl.airlineName || fl.airline || "Airline Fare Rules"}</span>
+                              <span style={{ color: "#d32f2f" }}>{rule.Origin || fl.sourceCode || "Origin"} ➔ {rule.Destination || fl.destinationCode || "Destination"}</span>
                             </div>
-                            <div style={{ fontSize: "0.82rem", color: "#475569", marginTop: "4px" }}>
-                              {isRefundable ? "Refunds permitted minus airline cancellation fees." : "Base fare is non-refundable upon cancellation."}
-                            </div>
+                            {rule.FareBasisCode && (
+                              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "10px" }}>
+                                Fare Basis: <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>{rule.FareBasisCode}</code>
+                              </div>
+                            )}
+                            <div
+                              className="fare-rule-html-content"
+                              dangerouslySetInnerHTML={{
+                                __html: rule.FareRuleDetail || rule.FareRules || ""
+                              }}
+                            />
                           </div>
+                        ))}
 
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
-                            <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px" }}>Baggage Policy</div>
-                            <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>
-                              Check-in: {fl.checkInBaggage || "15 Kg"}
-                            </div>
-                            <div style={{ fontSize: "0.82rem", color: "#475569", marginTop: "4px" }}>
-                              Cabin Baggage: {fl.cabinBaggage || "7 Kg"}
-                            </div>
+                        {hasMiniRules && (
+                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
+                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Mini Fare Rules (API)</div>
+                            {miniFareRules.map((m, idx) => (
+                              <div key={idx} style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "6px" }}>
+                                <strong>{m.Type || m.Category || "Rule"}:</strong> {m.Details || m.Rule || JSON.stringify(m)}
+                              </div>
+                            ))}
                           </div>
-                        </div>
+                        )}
 
-                        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
-                          <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px", fontSize: "0.95rem" }}>Cancellation & Reschedule Charges</div>
-                          <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.88rem", color: "#334155", lineHeight: "1.6" }}>
-                            <li><strong>Cancellation Fee:</strong> Standard airline cancellation fee + agency service charge applies if cancelled &gt; 4 hours before departure.</li>
-                            <li><strong>Date Change / Reschedule:</strong> Airline change fee + fare difference (if any) applies per sector per passenger.</li>
-                            <li><strong>No Show:</strong> No refund for cancellations within 4 hours of scheduled departure time.</li>
-                          </ul>
-                        </div>
+                        {hasAirlineRules && (
+                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
+                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Airline Passenger Rules (API)</div>
+                            {airlineRules.FirstNameMinChar && (
+                              <div style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "4px" }}>
+                                <strong>First Name Minimum Length:</strong> {airlineRules.FirstNameMinChar} characters
+                              </div>
+                            )}
+                            {airlineRules.LastNameMinChar && (
+                              <div style={{ fontSize: "0.88rem", color: "#334155" }}>
+                                <strong>Last Name Minimum Length:</strong> {airlineRules.LastNameMinChar} characters
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}

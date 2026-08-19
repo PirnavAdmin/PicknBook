@@ -32,15 +32,20 @@ namespace PickNBook.Api.Models.DTOs
         public string? CouponCode { get; set; }
         public int? PromotionId { get; set; }
         public int? SelectedFeaturedOfferId { get; set; }
+        
+        // Bus Details (required for Promotion Validation)
+        public string FromCity { get; set; } = string.Empty;
+        public string ToCity { get; set; } = string.Empty;
+        public string DepartureTime { get; set; } = string.Empty;
+        public string? OperatorName { get; set; }
+        public string? BusType { get; set; }
+        public decimal TotalFare { get; set; }
+        
         public List<SeatPreviewDto> Seats { get; set; } = [];
     }
 
     public class BusPricingPreviewResponseDto
     {
-        public int BusId { get; set; }
-
-        public string GstCategory { get; set; } = string.Empty;
-
         public decimal SubtotalBeforeCoupon { get; set; }
         public decimal CouponAmount { get; set; }
         public decimal TaxableFare { get; set; }

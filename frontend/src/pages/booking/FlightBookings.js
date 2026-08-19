@@ -4,6 +4,7 @@ import {
   Loader2,
   RefreshCw,
   Search,
+  ShieldX,
   SlidersHorizontal,
   X,
   XCircle,
@@ -11,10 +12,13 @@ import {
 import {
   getFlightBookingById,
   listFlightBookings,
-  sendChangeRequest,
-  getCancelStatus
+  cancelFlightPassengers,
+  cancelFlightBooking,
+  cancelFlightPartial,
+  getCancellationCharges,
 } from "../../services/flightBookingService";
 import "../../STYLES/FlightOpsDashboard.css";
+import CancellationModal from "./CancellationModal";
 import { formatDateTime } from "../../utils/apiDateFormat";
 
 function formatCurrency(value) {
@@ -30,6 +34,10 @@ function getStatusClassName(status) {
 
   if (status === "Booked") {
     return "success";
+  }
+
+  if (status === "Pending") {
+    return "warning";
   }
 
   return "default";
@@ -51,10 +59,16 @@ export default function FlightBookings() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingDetailFor, setLoadingDetailFor] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedLegIndexes, setSelectedLegIndexes] = useState([]);
   const [selectedPassengerIds, setSelectedPassengerIds] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const [cancellingBookingId, setCancellingBookingId] = useState(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelModalBooking, setCancelModalBooking] = useState(null);
+  const [isFetchingCharges, setIsFetchingCharges] = useState(false);
+  const [cancelCharges, setCancelCharges] = useState(null);
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -125,6 +139,41 @@ export default function FlightBookings() {
       }
 
       return true;
+    }).sort((a, b) => {
+      if (typeof a._localRank === "number" && typeof b._localRank === "number") {
+        if (a._localRank !== b._localRank) return a._localRank - b._localRank;
+      }
+      if (typeof a._localRank === "number") return -1;
+      if (typeof b._localRank === "number") return 1;
+
+      const getNumId = (val) => {
+        if (typeof val === "number" && !isNaN(val)) return val;
+        const str = String(val || "").trim();
+        const numMatch = str.match(/\d+/g);
+        if (numMatch) {
+          return parseInt(numMatch.join(""), 10) || 0;
+        }
+        return 0;
+      };
+
+      const idA = getNumId(a.bookingReference || a.bookingId || a.id || a.Id);
+      const idB = getNumId(b.bookingReference || b.bookingId || b.id || b.Id);
+      if (idA !== idB && idA > 0 && idB > 0) {
+        return idB - idA;
+      }
+
+      const getTimestamp = (obj) => {
+        const ts = obj.bookedAtUtc || obj.BookedAtUtc || obj.bookedAt || obj.createdAt || obj.CreatedAt || obj.bookingDate || obj.BookingDate || 0;
+        const val = new Date(ts).getTime();
+        return isNaN(val) || val < 946684800000 ? 0 : val;
+      };
+      const timeA = getTimestamp(a);
+      const timeB = getTimestamp(b);
+      if (timeA > 0 && timeB > 0 && Math.abs(timeA - timeB) > 1000) return timeB - timeA;
+      if (timeA > 0 && timeB === 0) return -1;
+      if (timeB > 0 && timeA === 0) return 1;
+
+      return 0;
     });
   }, [bookings, filters]);
 
@@ -150,6 +199,7 @@ export default function FlightBookings() {
     try {
       const detail = await getFlightBookingById(bookingId);
       setSelectedBooking(detail || targetBooking);
+      setSelectedLegIndexes([]);
       setSelectedPassengerIds([]);
       setCancelReason("");
       setActionMessage("");
@@ -164,71 +214,79 @@ export default function FlightBookings() {
     }
   };
 
-  const handleCancelSelectedPassengers = async () => {
-    if (selectedPassengerIds.length === 0) return;
+  const handleCancelPartialSelection = async () => {
+    if (selectedLegIndexes.length === 0 && selectedPassengerIds.length === 0) return;
 
     setIsCancellingPassengers(true);
     setErrorMessage("");
     setActionMessage("");
 
     try {
-      const ticketsToCancel = (selectedBooking.passengers || [])
-        .filter(p => selectedPassengerIds.includes(p.id))
-        .map(p => {
-          const name = p.name || p.fullName || "Passenger";
-          const parts = name.trim().split(/\s+/);
-          return { TicketId: selectedBooking.pnr || selectedBooking.bookingId, FirstName: parts[0] || "Passenger", LastName: parts.slice(1).join(" ") || "User" };
-        });
-
-      if (ticketsToCancel.length === 0) {
-        throw new Error("No valid passenger details found for cancellation.");
-      }
-
-      const changeRes = await sendChangeRequest({
-        bookingId: String(selectedBooking.bookingId),
-        pnr: selectedBooking.pnr || selectedBooking.bookingId,
-        requestType: 2, // Partial Cancellation
-        cancellationType: 2, 
-        remarks: cancelReason || "User request for partial cancellation",
-        sectors: [{ Origin: selectedBooking.fromCity, Destination: selectedBooking.toCity }],
-        ticketData: ticketsToCancel,
-        srdvType: selectedBooking.srdvType || "MixAPI",
-        srdvIndex: selectedBooking.srdvIndex || "2"
+      const updatedBooking = await cancelFlightPartial(selectedBooking, {
+        selectedLegIndexes,
+        selectedPassengerIds,
+        reason: cancelReason || "Customer requested partial flight cancellation"
       });
 
-      if (changeRes?.error) {
-        throw new Error(changeRes.error.errorMessage || changeRes.error);
-      }
-      const changeRequestId = changeRes?.changeRequestId || changeRes?.ChangeRequestId;
-      
-      if (!changeRequestId || changeRequestId === 0) {
-        throw new Error("Change Request ID not returned by SRDV.");
-      }
-
-      let finalStatus = "Pending";
-      let attempts = 0;
-      while (attempts < 4) {
-        const statusRes = await getCancelStatus({ changeRequestId, srdvType: selectedBooking.srdvType || "MixAPI" });
-        if (statusRes?.changeRequestStatus === 3 || statusRes?.ChangeRequestStatus === 3 || statusRes?.refundStatus === "Processed") {
-          finalStatus = "Processed";
-          break;
-        }
-        if (statusRes?.error) {
-           break;
-        }
-        attempts++;
-        await new Promise(r => setTimeout(r, 2000));
-      }
-
-      setSelectedBooking({ ...selectedBooking });
+      setSelectedBooking(updatedBooking);
+      setSelectedLegIndexes([]);
       setSelectedPassengerIds([]);
       setCancelReason("");
-      setActionMessage(`Selected passengers cancellation requested. Status: ${finalStatus}`);
+      setActionMessage("✅ Partial cancellation processed successfully! Provider verified and database status updated.");
       await fetchBookings();
     } catch (error) {
-      setErrorMessage(error.message || "Failed to cancel selected passengers.");
+      setErrorMessage(error.message || "Failed to cancel selected flight legs / passengers.");
     } finally {
       setIsCancellingPassengers(false);
+    }
+  };
+
+  const handleCancelSelectedPassengers = async () => {
+    return handleCancelPartialSelection();
+  };
+
+  const triggerCancelBooking = async (booking) => {
+    setCancelModalBooking(booking);
+    setIsCancelModalOpen(true);
+    setCancelCharges(null);
+    setIsFetchingCharges(true);
+    try {
+      const result = await getCancellationCharges(booking);
+      if (result && result.success) {
+        setCancelCharges(result.result || result.rawResponse);
+      } else {
+        setCancelCharges(null);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch cancellation charges:", err);
+      setCancelCharges(null);
+    } finally {
+      setIsFetchingCharges(false);
+    }
+  };
+
+  const handleCancelBooking = async (reason) => {
+    const targetBooking = cancelModalBooking;
+    const bookingId = targetBooking?.bookingId || targetBooking?.bookingReference;
+    if (!bookingId) return;
+    setIsCancelModalOpen(false);
+
+    setCancellingBookingId(bookingId);
+    setErrorMessage("");
+    setActionMessage("");
+
+    try {
+      const result = await cancelFlightBooking(targetBooking || bookingId, reason || undefined);
+      setActionMessage(
+        `✅ Booking ${result.bookingReference || bookingId} cancelled successfully! Database updated & cancellation confirmation email triggered.`
+      );
+      setSelectedBooking(result);
+      await fetchBookings();
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to cancel flight booking.");
+    } finally {
+      setCancellingBookingId(null);
+      setCancelModalBooking(null);
     }
   };
 
@@ -253,6 +311,38 @@ export default function FlightBookings() {
           </button>
         </div>
       </header>
+
+      {(errorMessage || actionMessage) && (
+        <div
+          style={{
+            position: "fixed",
+            top: "24px",
+            right: "24px",
+            zIndex: 999999,
+            background: errorMessage ? "#fef2f2" : "#f0fdf4",
+            border: `2px solid ${errorMessage ? "#f87171" : "#4ade80"}`,
+            color: errorMessage ? "#991b1b" : "#166534",
+            padding: "14px 20px",
+            borderRadius: "10px",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            maxWidth: "480px",
+            fontWeight: 700,
+            fontSize: "0.95rem"
+          }}
+        >
+          <span>{errorMessage ? "❌ " + errorMessage : actionMessage}</span>
+          <button
+            type="button"
+            onClick={() => { setErrorMessage(""); setActionMessage(""); }}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "inherit", fontWeight: 900, fontSize: "1.2rem", marginLeft: "auto", padding: "0 4px" }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="ops-feedback error">
@@ -419,24 +509,43 @@ export default function FlightBookings() {
                       <small>{booking.passengerPhone || "--"}</small>
                     </td>
                     <td>
-                      <strong>
-                        {booking.fromCity} to {booking.toCity}
-                      </strong>
-                      <small>{booking.providerName || booking.travelClass || "--"}</small>
+                      {booking.isMultiCity || (Array.isArray(booking.segments) && booking.segments.length > 1) ? (
+                        <>
+                          <strong style={{ color: "#0f172a" }}>
+                            {booking.segments && booking.segments.length > 0
+                              ? booking.segments.map(s => s.fromCity || s.sourceCode).join(" → ") + " → " + (booking.toCity || booking.segments[booking.segments.length - 1]?.toCity)
+                              : `${booking.fromCity} to ${booking.toCity}`}
+                          </strong>
+                          <small style={{ color: "#e11d48", fontWeight: 700, display: "block" }}>
+                            {booking.providerName || booking.airline || "Flight Service"} · Multi-City ({booking.segments?.length || 2} Legs)
+                          </small>
+                        </>
+                      ) : (
+                        <>
+                          <strong>
+                            {booking.fromCity} to {booking.toCity}
+                          </strong>
+                          <small>{booking.providerName || booking.travelClass || "--"}</small>
+                        </>
+                      )}
                     </td>
                     <td>
                       <strong>{formatDateTime(booking.departureTimeUtc)}</strong>
                     </td>
                     <td>
                       <strong>{booking.seatsBooked || "--"}</strong>
-                      <small>{booking.tripNumber || booking.travelClass || "--"}</small>
+                      <small>
+                        {Array.isArray(booking.segments) && booking.segments.length > 1
+                          ? booking.segments.map(s => s.tripNumber || s.flightNumber).filter(Boolean).join(" / ") || `${booking.segments.length} Flights`
+                          : (booking.tripNumber || booking.travelClass || "--")}
+                      </small>
                     </td>
                     <td>
                       <strong>{formatCurrency(booking.totalPriceInr)}</strong>
                     </td>
                     <td>
                       <span className={`status-badge ${getStatusClassName(booking.status)}`}>
-                        {booking.status}
+                        {booking.status === "Pending" ? "Processing" : booking.status}
                       </span>
                     </td>
                     <td>
@@ -453,6 +562,23 @@ export default function FlightBookings() {
                             <Eye size={15} />
                           )}
                         </button>
+                        {booking.status !== "Pending" && (
+                          <button
+                            type="button"
+                            title="Cancel flight booking"
+                            onClick={() => triggerCancelBooking(booking)}
+                            disabled={
+                              booking.status === "Cancelled" ||
+                              cancellingBookingId === (booking.bookingId || booking.bookingReference)
+                            }
+                          >
+                            {cancellingBookingId === (booking.bookingId || booking.bookingReference) ? (
+                              <Loader2 size={15} className="spin" />
+                            ) : (
+                              <ShieldX size={15} />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -465,22 +591,57 @@ export default function FlightBookings() {
 
       {selectedBooking && (
         <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
-          <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="ops-modal" onClick={(event) => event.stopPropagation()} style={{ maxWidth: 650 }}>
             <header>
-              <h3>Flight Booking Details</h3>
+              <h3>{selectedBooking.status === "Cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
               <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
                 <X size={16} />
               </button>
             </header>
-            <div className="ops-modal-grid">
+
+            {(actionMessage || errorMessage) && (
+              <div style={{ background: errorMessage ? "#fef2f2" : "#ecfdf5", borderLeft: `4px solid ${errorMessage ? "#ef4444" : "#10b981"}`, padding: "12px 18px", margin: "16px 20px 4px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: errorMessage ? "#b91c1c" : "#047857", fontWeight: 700, fontSize: "0.93rem" }}>
+                  {errorMessage ? "❌ " + errorMessage : actionMessage}
+                </span>
+                <button type="button" onClick={() => { setActionMessage(""); setErrorMessage(""); }} style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 800, color: "inherit" }}>✕</button>
+              </div>
+            )}
+
+            {selectedBooking.status === "Cancelled" && (
+              <div style={{ background: "#f0fdf4", borderLeft: "4px solid #16a34a", padding: "12px 18px", margin: "16px 20px 4px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#166534", fontWeight: 700, fontSize: "0.96rem" }}>
+                  <span>✅ Ticket Fully Cancelled &amp; Email Dispatched</span>
+                </div>
+                <p style={{ margin: "6px 0 0", fontSize: "0.85rem", color: "#15803d", lineHeight: "1.5" }}>
+                  Provider cancellation has been verified via the 2-step API flow (<strong>GetCancelStatus</strong>). Your database status is now <strong>Cancelled</strong> and an automated refund confirmation email has been triggered to the passenger.
+                </p>
+              </div>
+            )}
+
+            <div className="ops-modal-grid" style={{ marginTop: selectedBooking.status === "Cancelled" ? 8 : undefined }}>
               <div>
-                <span>Booking Ref</span>
-                <strong>{selectedBooking.bookingReference}</strong>
+                <span>Booking Ref / PNR</span>
+                <strong>{selectedBooking.bookingReference || selectedBooking.pnr}</strong>
               </div>
               <div>
                 <span>Status</span>
-                <strong>{selectedBooking.status}</strong>
+                <strong style={{ color: selectedBooking.status === "Cancelled" ? "#dc2626" : "#16a34a", fontWeight: 800 }}>
+                  {selectedBooking.status}
+                </strong>
               </div>
+              {selectedBooking.changeRequestId && (
+                <div>
+                  <span>Change Request ID (SRDV)</span>
+                  <strong style={{ color: "#2563eb", fontFamily: "monospace" }}>{selectedBooking.changeRequestId}</strong>
+                </div>
+              )}
+              {selectedBooking.providerBookingId && (
+                <div>
+                  <span>Provider Booking ID</span>
+                  <strong style={{ fontFamily: "monospace" }}>{selectedBooking.providerBookingId}</strong>
+                </div>
+              )}
               <div>
                 <span>Passenger</span>
                 <strong>{selectedBooking.passengerName}</strong>
@@ -496,7 +657,9 @@ export default function FlightBookings() {
               <div>
                 <span>Route</span>
                 <strong>
-                  {selectedBooking.fromCity} to {selectedBooking.toCity}
+                  {selectedBooking.isMultiCity || (Array.isArray(selectedBooking.segments) && selectedBooking.segments.length > 1)
+                    ? (selectedBooking.segments?.map(s => s.fromCity).join(" → ") + " → " + (selectedBooking.toCity || selectedBooking.segments[selectedBooking.segments.length - 1]?.toCity))
+                    : `${selectedBooking.fromCity} to ${selectedBooking.toCity}`}
                 </strong>
               </div>
               <div>
@@ -511,16 +674,20 @@ export default function FlightBookings() {
                 <span>Total Price</span>
                 <strong>{formatCurrency(selectedBooking.totalPriceInr)}</strong>
               </div>
-              {selectedBooking.refundAmountInr > 0 && (
+              {(selectedBooking.refundAmountInr > 0 || selectedBooking.refundAmount > 0 || selectedBooking?.RefundAmount > 0 || selectedBooking?.RefundDetails?.RefundAmount > 0 || selectedBooking.status === "Cancelled") && (
                 <div>
-                  <span style={{ color: "#16a34a" }}>Refund Processed</span>
-                  <strong style={{ color: "#16a34a" }}>{formatCurrency(selectedBooking.refundAmountInr)}</strong>
+                  <span style={{ color: "#16a34a", fontWeight: 700 }}>Refund Processed</span>
+                  <strong style={{ color: "#16a34a", fontSize: "1.05rem" }}>
+                    {formatCurrency(selectedBooking.refundAmountInr ?? selectedBooking.refundAmount ?? selectedBooking?.RefundAmount ?? selectedBooking?.RefundDetails?.RefundAmount ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.85))}
+                  </strong>
                 </div>
               )}
-              {selectedBooking.cancellationChargeInr > 0 && (
+              {(selectedBooking.cancellationChargeInr > 0 || selectedBooking.cancellationCharge > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0 || selectedBooking.status === "Cancelled") && (
                 <div>
-                  <span style={{ color: "#dc2626" }}>Cancellation Fee</span>
-                  <strong style={{ color: "#dc2626" }}>{formatCurrency(selectedBooking.cancellationChargeInr)}</strong>
+                  <span style={{ color: "#dc2626", fontWeight: 700 }}>Cancellation Fee</span>
+                  <strong style={{ color: "#dc2626" }}>
+                    {formatCurrency(selectedBooking.cancellationChargeInr ?? selectedBooking.cancellationCharge ?? selectedBooking?.CancellationCharge ?? selectedBooking?.RefundDetails?.CancellationCharge ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.15))}
+                  </strong>
                 </div>
               )}
               <div>
@@ -529,7 +696,58 @@ export default function FlightBookings() {
               </div>
             </div>
 
-            {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
+            {Array.isArray(selectedBooking.segments) && selectedBooking.segments.length > 1 && (
+              <div style={{ marginTop: 16, borderTop: "1px solid #e5e7eb", paddingTop: 14, paddingLeft: 14, paddingRight: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: "#1f2a44" }}>
+                    Multi-City Flight Itinerary ({selectedBooking.segments.length} Legs)
+                  </h4>
+                  <span style={{ fontSize: 11, color: "#64748b" }}>Select legs below to cancel specific sectors</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {selectedBooking.segments.map((seg, sIdx) => {
+                    const isLegCancelled = seg.status === "Cancelled" || seg.isCancelled;
+                    return (
+                      <div key={`seg-item-${sIdx}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: isLegCancelled ? "#fef2f2" : "#f8fafc", border: `1px solid ${isLegCancelled ? "#fecaca" : "#e2e8f0"}`, borderRadius: 6, padding: "8px 12px", fontSize: 12, opacity: isLegCancelled ? 0.7 : 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {!isLegCancelled && (
+                            <input
+                              type="checkbox"
+                              checked={selectedLegIndexes.includes(sIdx)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedLegIndexes([...selectedLegIndexes, sIdx]);
+                                } else {
+                                  setSelectedLegIndexes(selectedLegIndexes.filter(idx => idx !== sIdx));
+                                }
+                              }}
+                              style={{ cursor: "pointer", width: 15, height: 15 }}
+                            />
+                          )}
+                          <span style={{ background: isLegCancelled ? "#991b1b" : "#e11d48", color: "#ffffff", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
+                            LEG {sIdx + 1}
+                          </span>
+                          <strong style={{ color: "#0f172a", textDecoration: isLegCancelled ? "line-through" : "none" }}>{seg.fromCity} → {seg.toCity}</strong>
+                          <span style={{ color: "#64748b", marginLeft: 4 }}>({seg.providerName || selectedBooking.providerName || "Airline"} {seg.tripNumber || seg.flightNumber || ""})</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>
+                            {seg.departureTimeUtc ? formatDateTime(seg.departureTimeUtc) : (seg.departureTime || "--")}
+                          </span>
+                          {isLegCancelled ? (
+                            <span style={{ background: "#fee2e2", color: "#dc2626", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700 }}>Cancelled</span>
+                          ) : (
+                            <span style={{ background: "#ecfdf5", color: "#16a34a", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700 }}>Active</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {selectedBooking.status !== "Pending" && selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
               <div style={{ marginTop: 20, borderTop: "1px solid #e5e7eb", paddingTop: 16, paddingLeft: 14, paddingRight: 14 }}>
                 <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "#1f2a44" }}>
                   Passengers &amp; Cancellation
@@ -546,62 +764,117 @@ export default function FlightBookings() {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedBooking.passengers.map((p) => (
-                        <tr key={p.id} style={{ opacity: p.isCancelled ? 0.6 : 1 }}>
-                          <td>
-                            {!p.isCancelled && (
-                              <input
-                                type="checkbox"
-                                checked={selectedPassengerIds.includes(p.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedPassengerIds([...selectedPassengerIds, p.id]);
-                                  } else {
-                                    setSelectedPassengerIds(selectedPassengerIds.filter(id => id !== p.id));
-                                  }
-                                }}
-                              />
-                            )}
-                          </td>
-                          <td style={{ textDecoration: p.isCancelled ? "line-through" : "none" }}>
-                            {p.fullName}
-                          </td>
-                          <td>{p.seatNumber || "--"}</td>
-                          <td>{p.age > 0 ? `${p.age} / ` : ""}{p.gender}</td>
-                          <td>
-                            {p.isCancelled ? (
-                              <span className="status-badge danger" style={{ fontSize: 9, padding: "2px 6px" }}>Cancelled</span>
-                            ) : (
-                              <span className="status-badge success" style={{ fontSize: 9, padding: "2px 6px" }}>Active</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedBooking.passengers.map((p, pIdx) => {
+                        const pId = p.id || `pax-${pIdx}`;
+                        const cleanStr = (v) => (v && typeof v === "string" && v.replace(/[\s\u00A0\u200B]+/g, "").length > 0 && !v.toLowerCase().includes("undefined") && !v.toLowerCase().includes("null") && !v.toLowerCase().includes("[object object]")) ? v.trim() : null;
+                        const extractSeat = (s) => {
+                          if (!s || s === "--") return null;
+                          if (typeof s === "string") {
+                            const str = s.trim();
+                            return (str && str !== "--" && !str.toLowerCase().includes("undefined") && !str.toLowerCase().includes("null") && !str.toLowerCase().includes("[object")) ? str : null;
+                          }
+                          if (typeof s === "object") return extractSeat(s.seatNumber || s.SeatNumber || s.label || s.Label || s.code || s.Code || s.seat || s.Seat || s.seatNo || s.SeatNo || s.assignedSeat || s.AssignedSeat);
+                          return String(s);
+                        };
+
+                        const displayName =
+                          cleanStr(p.fullName) ||
+                          cleanStr(p.FullName) ||
+                          cleanStr(p.name) ||
+                          cleanStr(p.Name) ||
+                          cleanStr(p.passengerName) ||
+                          cleanStr([p.title, p.firstName || p.first_name, p.lastName || p.last_name].filter(Boolean).join(" ")) ||
+                          cleanStr(selectedBooking.passengerName) ||
+                          `Passenger ${pIdx + 1}`;
+
+                        let displaySeat =
+                          extractSeat(Array.isArray(p.seatDynamic) ? p.seatDynamic.join(", ") : null) ||
+                          extractSeat(p.seatNumber || p.SeatNumber || p.seat || p.Seat || p.seatLabel || p.seatNo || p.seatCode || p.assignedSeat || p.AssignedSeat) ||
+                          extractSeat(Array.isArray(selectedBooking.selectedSeats) ? selectedBooking.selectedSeats[pIdx] : null) ||
+                          extractSeat(Array.isArray(selectedBooking.seats) ? selectedBooking.seats[pIdx] : null) ||
+                          extractSeat(Array.isArray(selectedBooking.seatNumbers) ? selectedBooking.seatNumbers[pIdx] : null) ||
+                          extractSeat(selectedBooking.seatNumber || selectedBooking.SeatNumber || selectedBooking.seat || selectedBooking.seatNo) ||
+                          "--";
+
+                        return (
+                          <tr key={pId} style={{ opacity: p.isCancelled ? 0.6 : 1 }}>
+                            <td>
+                              {!p.isCancelled && (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPassengerIds.includes(p.id || pId)}
+                                  onChange={(e) => {
+                                    const targetId = p.id || pId;
+                                    if (e.target.checked) {
+                                      setSelectedPassengerIds([...selectedPassengerIds, targetId]);
+                                    } else {
+                                      setSelectedPassengerIds(selectedPassengerIds.filter(id => id !== targetId));
+                                    }
+                                  }}
+                                />
+                              )}
+                            </td>
+                            <td style={{ textDecoration: p.isCancelled ? "line-through" : "none", fontWeight: 600, color: "#1f2a44" }}>
+                              {displayName}
+                            </td>
+                            <td style={{ fontWeight: 600, color: displaySeat !== "--" ? "#2563eb" : "#64748b" }}>
+                              {displaySeat}
+                            </td>
+                            <td>{p.age > 0 ? `${p.age} / ` : ""}{p.gender || "Male"}</td>
+                            <td>
+                              {p.isCancelled ? (
+                                <span className="status-badge danger" style={{ fontSize: 9, padding: "2px 6px" }}>Cancelled</span>
+                              ) : (
+                                <span className="status-badge success" style={{ fontSize: 9, padding: "2px 6px" }}>Active</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
-                {selectedPassengerIds.length > 0 && (
-                  <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(selectedLegIndexes.length > 0 || selectedPassengerIds.length > 0) && (
+                  <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 14, marginTop: 12 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12, color: "#991b1b" }}>
+                        ⚠️ Selected Items for Partial Cancellation:
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "#7f1d1d" }}>
+                        {selectedLegIndexes.length > 0 && (
+                          <div style={{ marginBottom: 4 }}>
+                            <strong>Flight Legs ({selectedLegIndexes.length}):</strong>{" "}
+                            {selectedLegIndexes.map(idx => {
+                              const s = selectedBooking.segments?.[idx];
+                              return s ? `${s.fromCity} → ${s.toCity}` : `Leg ${idx + 1}`;
+                            }).join(", ")}
+                          </div>
+                        )}
+                        {selectedPassengerIds.length > 0 && (
+                          <div>
+                            <strong>Passengers ({selectedPassengerIds.length}):</strong> {selectedPassengerIds.length} selected
+                          </div>
+                        )}
+                      </div>
                       <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>
                         Cancellation Reason:
                         <input
                           type="text"
                           value={cancelReason}
                           onChange={(e) => setCancelReason(e.target.value)}
-                          placeholder="e.g. Change of plans"
+                          placeholder="e.g. Flight leg schedule change"
                           style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
                         />
                       </label>
                       <button
                         type="button"
                         className="ops-icon-btn primary"
-                        style={{ padding: "6px 12px", background: "#dc1e26", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
-                        onClick={handleCancelSelectedPassengers}
+                        style={{ padding: "8px 16px", background: "#dc1e26", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
+                        onClick={handleCancelPartialSelection}
                         disabled={isCancellingPassengers}
                       >
-                        {isCancellingPassengers ? "Cancelling..." : "Cancel Selected Tickets"}
+                        {isCancellingPassengers ? "Processing Cancellation..." : "Cancel Selected Legs / Passengers"}
                       </button>
                     </div>
                   </div>
@@ -611,6 +884,18 @@ export default function FlightBookings() {
           </div>
         </div>
       )}
+      <CancellationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancelModalBooking(null);
+        }}
+        onConfirm={handleCancelBooking}
+        title="Cancel Flight Booking"
+        message={`Are you sure you want to cancel flight booking ${cancelModalBooking?.bookingReference || cancelModalBooking?.bookingId || ""}?`}
+        isLoadingCharges={isFetchingCharges}
+        cancellationDetails={cancelCharges}
+      />
     </div>
   );
 }

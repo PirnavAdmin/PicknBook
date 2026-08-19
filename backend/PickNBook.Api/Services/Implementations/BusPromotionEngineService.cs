@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Models.Entities;
 
 namespace PickNBook.Api.Services;
 
@@ -10,29 +12,34 @@ public class BusPromotionEngineService
 {
     private readonly AppDbContext _db;
     private readonly IUserBookingHistoryService _bookingHistoryService;
+    private readonly IMemoryCache _cache;
 
     private static readonly TimeSpan IndiaOffset =
         TimeSpan.FromHours(5.5);
 
-    public BusPromotionEngineService(AppDbContext db, IUserBookingHistoryService bookingHistoryService)
+    public BusPromotionEngineService(AppDbContext db, IUserBookingHistoryService bookingHistoryService, IMemoryCache cache)
     {
         _db = db;
         _bookingHistoryService = bookingHistoryService;
+        _cache = cache;
     }
 
     public async Task<BusPricingPreviewResponseDto> CalculateAsync(
-        int busId,
+        BusBooking bus,
         List<SeatPreviewDto> seats,
         string? couponCode,
         int? promotionId,
         int? userId = null,
          int? selectedFeaturedOfferId = null)
     {
+        User? userObj = null;
+        string? userPhone = null;
         bool isAgent = false;
         if (userId.HasValue)
         {
-            var userObj = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value);
+            userObj = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value);
             isAgent = (userObj != null && userObj.Role == AuthRoles.Agent);
+            userPhone = userObj?.PhoneNumber;
         }
 
         if (isAgent)
@@ -42,23 +49,19 @@ public class BusPromotionEngineService
             selectedFeaturedOfferId = null;
         }
 
-        var bus = await _db.BusBookings
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == busId);
-
-        if (bus is null)
-            throw new Exception("Bus not found.");
-
         var response =
             new BusPricingPreviewResponseDto
             {
-                BusId = bus.Id,
-                GstCategory = bus.GstCategory,
                 CouponAllowed = true
             };
 
         decimal subtotal = 0m;
         decimal totalExternalGst = 0m;
+
+        var allMarkups = await _db.BusMarkupSettings
+            .AsNoTracking()
+            .Where(x => x.Status == "Active")
+            .ToListAsync();
 
         foreach (var seat in seats)
         {
@@ -73,11 +76,8 @@ public class BusPromotionEngineService
             var isSleeper = seat.SeatType.Contains("sleeper", StringComparison.OrdinalIgnoreCase);
             var normalizedSeatType = isSleeper ? "Sleeper" : "Seater";
 
-            var markup = await _db.BusMarkupSettings
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Status == "Active" &&
-                    x.SeatType == normalizedSeatType);
+            var markup = allMarkups.FirstOrDefault(x =>
+                x.SeatType.Equals(normalizedSeatType, StringComparison.OrdinalIgnoreCase));
 
             decimal markupAmount = 0m;
 
@@ -140,15 +140,22 @@ public class BusPromotionEngineService
 
         decimal bestAutoDiscount = 0m;
         var promoNowUtc = DateTime.UtcNow;
-        var autoPromotions = await _db.BusPromotions
-            .Include(x => x.Conditions)
-          .Where(x =>
-    x.IsActive &&
-    x.IsAutoApply &&
-    (!x.StartDateUtc.HasValue || x.StartDateUtc <= promoNowUtc) &&
-    (!x.EndDateUtc.HasValue || x.EndDateUtc >= promoNowUtc))
-            .OrderByDescending(x => x.Priority)
-            .ToListAsync();
+        if (!_cache.TryGetValue("BusAutoPromotions", out List<BusPromotion>? allAutoPromotions))
+        {
+            allAutoPromotions = await _db.BusPromotions
+                .Include(x => x.Conditions)
+                .AsNoTracking()
+                .Where(x => x.IsActive && x.IsAutoApply)
+                .OrderByDescending(x => x.Priority)
+                .ToListAsync();
+            _cache.Set("BusAutoPromotions", allAutoPromotions, TimeSpan.FromMinutes(5));
+        }
+
+        var autoPromotions = allAutoPromotions!
+            .Where(x =>
+                (!x.StartDateUtc.HasValue || x.StartDateUtc <= promoNowUtc) &&
+                (!x.EndDateUtc.HasValue || x.EndDateUtc >= promoNowUtc))
+            .ToList();
 
         foreach (var promo in autoPromotions)
         {
@@ -168,13 +175,6 @@ public class BusPromotionEngineService
 
             if (promo.IsFirstTimeUserOnly)
             {
-                string? userPhone = null;
-                if (userId.HasValue)
-                {
-                    var userObj = await _db.Users.FindAsync(userId.Value);
-                    userPhone = userObj?.PhoneNumber;
-                }
-
                 var hasPrior = await _bookingHistoryService.HasPriorBookingAsync(userId?.ToString() ?? string.Empty, userPhone);
                 if (hasPrior)
                 {
@@ -338,13 +338,6 @@ public class BusPromotionEngineService
             {
                 if (manualPromotion.IsFirstTimeUserOnly)
                 {
-                    string? userPhone = null;
-                    if (userId.HasValue)
-                    {
-                        var userObj = await _db.Users.FindAsync(userId.Value);
-                        userPhone = userObj?.PhoneNumber;
-                    }
-
                     var hasPrior = await _bookingHistoryService.HasPriorBookingAsync(userId?.ToString() ?? string.Empty, userPhone);
                     if (hasPrior)
                     {

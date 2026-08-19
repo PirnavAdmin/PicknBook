@@ -36,7 +36,7 @@ export default function B2BPlaceAutocomplete({
   const requestAbortRef = useRef(null);
 
   useEffect(() => {
-    setInputValue(value || "");
+    setInputValue((prev) => (prev !== (value || "") ? (value || "") : prev));
   }, [value]);
 
   useEffect(() => {
@@ -53,8 +53,8 @@ export default function B2BPlaceAutocomplete({
     const query = inputValue.trim();
 
     if (!open || query.length === 0) {
-      setResults([]);
-      setLoading(false);
+      setResults((prev) => (prev.length === 0 ? prev : []));
+      setLoading((prev) => (prev ? false : prev));
       if (requestAbortRef.current) {
         requestAbortRef.current.abort();
       }
@@ -119,7 +119,7 @@ export default function B2BPlaceAutocomplete({
         }
       } finally {
         if (!controller.signal.aborted) {
-          setLoading(false);
+          setLoading((prev) => (prev ? false : prev));
         }
       }
     }, 220);
@@ -133,7 +133,9 @@ export default function B2BPlaceAutocomplete({
   const handleInputChange = (event) => {
     const nextValue = event.target.value;
     setInputValue(nextValue);
-    onChange(nextValue);
+    if (typeof onChange === "function") {
+      onChange(nextValue);
+    }
     setOpen(nextValue.trim().length > 0);
   };
 

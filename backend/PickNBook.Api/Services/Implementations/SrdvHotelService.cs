@@ -29,7 +29,7 @@ namespace PickNBook.Api.Services
         public SrdvHotelService(HttpClient httpClient, IOptions<SrdvSettings> settings, IMemoryCache cache, IServiceProvider serviceProvider, ILogger<SrdvHotelService>? logger = null)
         {
             _httpClient = httpClient;
-            _httpClient.Timeout = TimeSpan.FromSeconds(60);
+            _httpClient.Timeout = TimeSpan.FromSeconds(180); // Increased from 60s to handle slow responses
             _settings = settings.Value;
             _cache = cache;
             _serviceProvider = serviceProvider;
@@ -238,40 +238,43 @@ namespace PickNBook.Api.Services
                             }
                         }
 
-                        if (hotel.Price != null)
+                        var rawPrice = hotel.Price;
+                        if (rawPrice != null)
                         {
                             item.Price = new HotelSearchPriceDto
                             {
-                                CurrencyCode = hotel.Price.CurrencyCode,
-                                RoomPrice = hotel.Price.RoomPrice,
-                                Tax = hotel.Price.Tax,
-                                ExtraGuestCharge = hotel.Price.ExtraGuestCharge,
-                                ChildCharge = hotel.Price.ChildCharge,
-                                OtherCharges = hotel.Price.OtherCharges,
-                                Discount = hotel.Price.Discount,
-                                PublishedPrice = hotel.Price.PublishedPrice,
-                                PublishedPriceRoundedOff = hotel.Price.PublishedPriceRoundedOff,
-                                OfferedPrice = hotel.Price.OfferedPrice,
-                                OfferedPriceRoundedOff = hotel.Price.OfferedPriceRoundedOff,
-                                ServiceTax = hotel.Price.ServiceTax,
-                                TDS = hotel.Price.TDS,
-                                ServiceCharge = hotel.Price.ServiceCharge,
-                                TotalGSTAmount = hotel.Price.TotalGSTAmount
+                                CurrencyCode = rawPrice.CurrencyCode,
+                                RoomPrice = rawPrice.RoomPrice,
+                                Tax = rawPrice.Tax,
+                                ExtraGuestCharge = rawPrice.ExtraGuestCharge,
+                                ChildCharge = rawPrice.ChildCharge,
+                                OtherCharges = rawPrice.OtherCharges,
+                                Discount = rawPrice.Discount,
+                                PublishedPrice = rawPrice.PublishedPrice,
+                                PublishedPriceRoundedOff = rawPrice.PublishedPriceRoundedOff,
+                                OfferedPrice = rawPrice.OfferedPrice,
+                                OfferedPriceRoundedOff = rawPrice.OfferedPriceRoundedOff,
+                                ServiceTax = rawPrice.ServiceTax,
+                                TDS = rawPrice.TDS,
+                                ServiceCharge = rawPrice.ServiceCharge,
+                                TotalGSTAmount = rawPrice.TotalGSTAmount,
+                                B2CTotalPrice = rawPrice.OfferedPrice,
+                                B2CBasePrice = Math.Max(0m, rawPrice.OfferedPrice - rawPrice.TotalGSTAmount)
                             };
                             
-                            if (hotel.Price.GST != null)
+                            if (rawPrice.GST != null)
                             {
                                 item.Price.GST = new HotelSearchGstDto
                                 {
-                                    CGSTAmount = hotel.Price.GST.CGSTAmount,
-                                    CGSTRate = hotel.Price.GST.CGSTRate,
-                                    CessAmount = hotel.Price.GST.CessAmount,
-                                    CessRate = hotel.Price.GST.CessRate,
-                                    IGSTAmount = hotel.Price.GST.IGSTAmount,
-                                    IGSTRate = hotel.Price.GST.IGSTRate,
-                                    SGSTAmount = hotel.Price.GST.SGSTAmount,
-                                    SGSTRate = hotel.Price.GST.SGSTRate,
-                                    TaxableAmount = hotel.Price.GST.TaxableAmount
+                                    CGSTAmount = rawPrice.GST.CGSTAmount,
+                                    CGSTRate = rawPrice.GST.CGSTRate,
+                                    CessAmount = rawPrice.GST.CessAmount,
+                                    CessRate = rawPrice.GST.CessRate,
+                                    IGSTAmount = rawPrice.GST.IGSTAmount,
+                                    IGSTRate = rawPrice.GST.IGSTRate,
+                                    SGSTAmount = rawPrice.GST.SGSTAmount,
+                                    SGSTRate = rawPrice.GST.SGSTRate,
+                                    TaxableAmount = rawPrice.GST.TaxableAmount
                                 };
                             }
                         }
@@ -584,16 +587,19 @@ namespace PickNBook.Api.Services
             };
         }
 
-        public async Task<bool> CancelBookingAsync(string providerBookingId, string traceId)
+        public async Task<bool> CancelBookingAsync(HotelReservation reservation, string endUserIp)
         {
             int bookingIdVal = 0;
-            int.TryParse(providerBookingId, out bookingIdVal);
+            int.TryParse(reservation.ProviderBookingId, out bookingIdVal);
             var req = new HotelCancelRequestDto
             {
                 BookingId = bookingIdVal,
-                TraceId = traceId,
+                TraceId = reservation.TraceId,
                 Remarks = "Cancellation requested by client",
-                RequestType = 4, BookingMode = 5, SrdvType = "MixAPI", SrdvIndex = "15"
+                RequestType = 4, BookingMode = 5, 
+                SrdvType = reservation.SrdvType ?? string.Empty, 
+                SrdvIndex = reservation.SrdvIndex ?? string.Empty,
+                EndUserIp = !string.IsNullOrWhiteSpace(endUserIp) ? endUserIp : "127.0.0.1"
             };
             var resDto = await CancelRoomAsync(req);
             return resDto.ResponseStatus == 1;
@@ -710,9 +716,7 @@ namespace PickNBook.Api.Services
             if (string.IsNullOrWhiteSpace(request.ClientId)) request.ClientId = _settings.ClientId;
             if (string.IsNullOrWhiteSpace(request.UserName)) request.UserName = _settings.UserName;
             if (string.IsNullOrWhiteSpace(request.Password)) request.Password = _settings.Password;
-            if (string.IsNullOrWhiteSpace(request.EndUserIp)) request.EndUserIp = "127.0.0.1";
-            if (string.IsNullOrWhiteSpace(request.SrdvType)) request.SrdvType = "MixAPI";
-            if (string.IsNullOrWhiteSpace(request.SrdvIndex)) request.SrdvIndex = "15";
+
 
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -935,41 +939,48 @@ namespace PickNBook.Api.Services
                     // Upsert to DB
                     if (!string.IsNullOrWhiteSpace(hd.HotelCode) && hd.HotelCode != "None")
                     {
-                        var entity = cachedInfo ?? new HotelInfoCache { HotelCode = hd.HotelCode };
-                        entity.HotelName = hd.HotelName;
-                        entity.StarRating = hd.StarRating;
-                        entity.HotelURL = hd.HotelURL;
-                        entity.HotelPicture = hd.HotelPicture;
-                        entity.Address = hd.Address;
-                        entity.City = hd.City;
-                        entity.State = hd.State;
-                        entity.PinCode = hd.PinCode;
-                        entity.CountryName = hd.CountryName;
-                        entity.HotelContactNo = hd.HotelContactNo;
-                        entity.FaxNumber = hd.FaxNumber;
-                        entity.Email = hd.Email;
-                        entity.Latitude = hd.Latitude;
-                        entity.Longitude = hd.Longitude;
-                        entity.OtherDetails = hd.OtherDetails;
-                        entity.HotelPolicy = hd.HotelPolicy;
-                        entity.SpecialInstructions = hd.SpecialInstructions;
-                        entity.RoomData = hd.RoomData;
-                        entity.RoomFacilities = hd.RoomFacilities;
-                        entity.Services = hd.Services;
-
-                        entity.DescriptionJson = JsonSerializer.Serialize(hd.Description);
-                        entity.PolicyAndInstructionJson = JsonSerializer.Serialize(hd.PolicyAndInstruction);
-                        entity.AttractionsJson = JsonSerializer.Serialize(hd.Attractions);
-                        entity.HotelFacilitiesJson = JsonSerializer.Serialize(hd.HotelFacilities);
-                        entity.ImagesJson = JsonSerializer.Serialize(hd.Images);
-                        
-                        entity.LastUpdated = DateTime.UtcNow;
-
-                        if (cachedInfo == null)
+                        try
                         {
-                            dbContext.HotelInfoCaches.Add(entity);
+                            var entity = cachedInfo ?? new HotelInfoCache { HotelCode = hd.HotelCode };
+                            entity.HotelName = hd.HotelName;
+                            entity.StarRating = hd.StarRating;
+                            entity.HotelURL = hd.HotelURL;
+                            entity.HotelPicture = hd.HotelPicture;
+                            entity.Address = hd.Address;
+                            entity.City = hd.City;
+                            entity.State = hd.State;
+                            entity.PinCode = hd.PinCode;
+                            entity.CountryName = hd.CountryName;
+                            entity.HotelContactNo = hd.HotelContactNo;
+                            entity.FaxNumber = hd.FaxNumber;
+                            entity.Email = hd.Email;
+                            entity.Latitude = hd.Latitude;
+                            entity.Longitude = hd.Longitude;
+                            entity.OtherDetails = hd.OtherDetails;
+                            entity.HotelPolicy = hd.HotelPolicy;
+                            entity.SpecialInstructions = hd.SpecialInstructions;
+                            entity.RoomData = hd.RoomData;
+                            entity.RoomFacilities = hd.RoomFacilities;
+                            entity.Services = hd.Services;
+
+                            entity.DescriptionJson = JsonSerializer.Serialize(hd.Description);
+                            entity.PolicyAndInstructionJson = JsonSerializer.Serialize(hd.PolicyAndInstruction);
+                            entity.AttractionsJson = JsonSerializer.Serialize(hd.Attractions);
+                            entity.HotelFacilitiesJson = JsonSerializer.Serialize(hd.HotelFacilities);
+                            entity.ImagesJson = JsonSerializer.Serialize(hd.Images);
+                            
+                            entity.LastUpdated = DateTime.UtcNow;
+
+                            if (cachedInfo == null)
+                            {
+                                dbContext.HotelInfoCaches.Add(entity);
+                            }
+                            await dbContext.SaveChangesAsync();
                         }
-                        await dbContext.SaveChangesAsync();
+                        catch (Exception dbEx)
+                        {
+                            _logger?.LogWarning(dbEx, "Failed to cache HotelInfo for HotelCode {HotelCode}", hd.HotelCode);
+                        }
                     }
                 }
 
@@ -982,13 +993,15 @@ namespace PickNBook.Api.Services
         }
 
 
-        public async Task<PickNBookHotelRoomResponseDto> GetHotelRoomAsync(string traceId, string resultIndex, string hotelCode)
+        public async Task<PickNBookHotelRoomResponseDto> GetHotelRoomAsync(string traceId, string resultIndex, string hotelCode, string srdvIndex, string endUserIp)
         {
             return await GetHotelRoomAsync(new HotelRoomRequestDto
             {
                 TraceId = traceId,
                 ResultIndex = resultIndex,
-                HotelCode = hotelCode
+                HotelCode = hotelCode,
+                SrdvIndex = srdvIndex,
+                EndUserIp = endUserIp
             });
         }
 
@@ -1001,9 +1014,7 @@ namespace PickNBook.Api.Services
                 if (string.IsNullOrWhiteSpace(request.ClientId)) request.ClientId = _settings.ClientId;
                 if (string.IsNullOrWhiteSpace(request.UserName)) request.UserName = _settings.UserName;
                 if (string.IsNullOrWhiteSpace(request.Password)) request.Password = _settings.Password;
-                if (string.IsNullOrWhiteSpace(request.EndUserIp)) request.EndUserIp = "127.0.0.1";
-                if (string.IsNullOrWhiteSpace(request.SrdvType)) request.SrdvType = "MixAPI";
-                if (string.IsNullOrWhiteSpace(request.SrdvIndex)) request.SrdvIndex = "15";
+
 
                 var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/GetHotelRoom", request);
                 response.EnsureSuccessStatusCode();
@@ -1225,6 +1236,7 @@ namespace PickNBook.Api.Services
 
                         if (prProp.TryGetProperty("GST", out var gstProp) && gstProp.ValueKind == JsonValueKind.Object)
                         {
+                            if (pr.GST == null) pr.GST = new HotelSearchGstDto();
                             if (gstProp.TryGetProperty("CGSTAmount", out var cgsta) && cgsta.ValueKind == JsonValueKind.Number) pr.GST.CGSTAmount = cgsta.GetDecimal();
                             if (gstProp.TryGetProperty("CGSTRate", out var cgstr) && cgstr.ValueKind == JsonValueKind.Number) pr.GST.CGSTRate = cgstr.GetDecimal();
                             if (gstProp.TryGetProperty("CessAmount", out var cessa) && cessa.ValueKind == JsonValueKind.Number) pr.GST.CessAmount = cessa.GetDecimal();
@@ -1361,6 +1373,8 @@ namespace PickNBook.Api.Services
                             {
                                 await ApplyMarkupAndGstAsync(markupService, rm.Price, null, request.HotelCode, "B2C");
                                 rm.OfferedPrice = rm.Price.OfferedPrice;
+                                rm.B2CBasePrice = rm.Price.B2CBasePrice;
+                                rm.B2CTotalPrice = rm.Price.B2CTotalPrice;
                             }
                         }
                     }
@@ -1382,99 +1396,24 @@ namespace PickNBook.Api.Services
             try
             {
                 var cleanTraceId = request.TraceId?.TrimEnd('.') ?? "";
-                
-                // If HotelRoomsDetails is not provided, fetch them using GetHotelRoom
-                if (request.HotelRoomsDetails == null || request.HotelRoomsDetails.Count == 0)
-                {
-                    var roomRes = await GetHotelRoomAsync(cleanTraceId, request.ResultIndex, request.HotelCode);
-                    if (roomRes?.GetHotelRoomResult?.HotelRoomsDetails != null && roomRes.GetHotelRoomResult.HotelRoomsDetails.Count > 0)
-                    {
-                        var firstCategory = roomRes.GetHotelRoomResult.HotelRoomsDetails.FirstOrDefault();
-                        var firstRoom = firstCategory?.Rooms?.FirstOrDefault();
-                        
-                        if (firstRoom != null)
-                        {
-                            request.HotelRoomsDetails = new List<BlockRoomDetailItemDto>
-                            {
-                                new BlockRoomDetailItemDto
-                                {
-                                    RoomIndex = firstRoom.RoomIndex,
-                                    RoomTypeCode = firstRoom.RoomTypeCode,
-                                    RoomTypeName = firstRoom.RoomTypeName,
-                                    RatePlanCode = firstRoom.RatePlanCode,
-                                    BedTypeCode = firstRoom.BedTypes,
-                                    SmokingPreference = request.SmokingPreference.ToString(),
-                                    Price = firstRoom.Price
-                                }
-                            };
-                        }
-                    }
-                }
-
                 var blockReq = new
                 {
-                    EndUserIp = !string.IsNullOrWhiteSpace(request.EndUserIp) ? request.EndUserIp : "127.0.0.1",
+                    EndUserIp = request.EndUserIp,
                     ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
                     UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
                     Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password,
                     TokenId = "",
                     TraceId = int.TryParse(cleanTraceId, out var tid) ? (object)tid : cleanTraceId,
-                    SrdvType = !string.IsNullOrWhiteSpace(request.SrdvType) ? request.SrdvType : "MixAPI",
-                    SrdvIndex = !string.IsNullOrWhiteSpace(request.SrdvIndex) ? request.SrdvIndex : "15",
+                    SrdvType = request.SrdvType,
+                    SrdvIndex = request.SrdvIndex,
                     ResultIndex = int.TryParse(request.ResultIndex, out var ri) ? (object)ri : request.ResultIndex,
                     HotelCode = request.HotelCode,
                     HotelName = request.HotelName,
-                    GuestNationality = !string.IsNullOrWhiteSpace(request.GuestNationality) ? request.GuestNationality : "IN",
+                    GuestNationality = request.GuestNationality,
                     NoOfRooms = request.NoOfRooms > 0 ? request.NoOfRooms : 1,
                     ClientReferenceNo = request.ClientReferenceNo,
                     IsVoucherBooking = request.IsVoucherBooking,
-                    HotelRoomsDetails = request.HotelRoomsDetails != null && request.HotelRoomsDetails.Count > 0 ?
-                        (object)request.HotelRoomsDetails :
-                        new[]
-                        {
-                            new
-                            {
-                                RoomIndex = int.TryParse(request.RoomIndex, out var rIdx) ? (object)rIdx : request.RoomIndex,
-                                RoomTypeCode = string.IsNullOrWhiteSpace(request.RoomTypeCode) ? "Standard" : request.RoomTypeCode,
-                                RoomTypeName = string.IsNullOrWhiteSpace(request.RoomTypeName) ? "Standard Room" : request.RoomTypeName,
-                                RatePlanCode = string.IsNullOrWhiteSpace(request.RatePlanCode) ? "1" : request.RatePlanCode,
-                                BedTypeCode = string.IsNullOrWhiteSpace(request.BedTypeCode) ? null : request.BedTypeCode,
-                                SmokingPreference = request.SmokingPreference,
-                                Supplements = null as object[],
-                                Price = new
-                                {
-                                    CurrencyCode = "INR",
-                                    RoomPrice = request.Price,
-                                    Tax = 0,
-                                    ExtraGuestCharge = 0,
-                                    ChildCharge = 0,
-                                    OtherCharges = 0,
-                                    Discount = 0,
-                                    PublishedPrice = request.Price,
-                                    PublishedPriceRoundedOff = request.Price,
-                                    OfferedPrice = request.Price,
-                                    OfferedPriceRoundedOff = request.Price,
-                                    AgentCommission = 0,
-                                    AgentMarkUp = 0,
-                                    ServiceTax = 0,
-                                    TDS = 0,
-                                    ServiceCharge = 0,
-                                    TotalGSTAmount = 0,
-                                    GST = new
-                                    {
-                                        CGSTAmount = 0,
-                                        CGSTRate = 0,
-                                        CessAmount = 0,
-                                        CessRate = 0,
-                                        IGSTAmount = 0,
-                                        IGSTRate = 0,
-                                        SGSTAmount = 0,
-                                        SGSTRate = 0,
-                                        TaxableAmount = 0
-                                    }
-                                }
-                            }
-                        }
+                    HotelRoomsDetails = request.HotelRoomsDetails
                 };
 
                 var jsonStr = JsonSerializer.Serialize(blockReq, new JsonSerializerOptions { PropertyNamingPolicy = null });
@@ -1635,6 +1574,7 @@ namespace PickNBook.Api.Services
 
                             if (prProp.TryGetProperty("GST", out var gstProp) && gstProp.ValueKind == JsonValueKind.Object)
                             {
+                                if (pr.GST == null) pr.GST = new HotelSearchGstDto();
                                 if (gstProp.TryGetProperty("CGSTAmount", out var cgsta) && cgsta.ValueKind == JsonValueKind.Number) pr.GST.CGSTAmount = cgsta.GetDecimal();
                                 if (gstProp.TryGetProperty("CGSTRate", out var cgstr) && cgstr.ValueKind == JsonValueKind.Number) pr.GST.CGSTRate = cgstr.GetDecimal();
                                 if (gstProp.TryGetProperty("CessAmount", out var cessa) && cessa.ValueKind == JsonValueKind.Number) pr.GST.CessAmount = cessa.GetDecimal();
@@ -1655,14 +1595,19 @@ namespace PickNBook.Api.Services
                 var markupService = scope.ServiceProvider.GetRequiredService<IHotelMarkupService>();
                 if (markupService != null)
                 {
+                    decimal totalBaseFare = 0m;
                     foreach (var rm in resDto.HotelRoomsDetails)
                     {
                         if (rm.Price != null)
                         {
                             await ApplyMarkupAndGstAsync(markupService, rm.Price, null, request.HotelCode, "B2C");
+                            rm.OfferedPrice = rm.Price.OfferedPrice;
+                            rm.B2CBasePrice = rm.Price.B2CBasePrice;
+                            rm.B2CTotalPrice = rm.Price.B2CTotalPrice;
                         }
                     }
                 }
+                
                 if (responseDto.BlockRoomResult != null && responseDto.BlockRoomResult.Error.ErrorCode == 0)
                 {
                     _cache.Set($"block_{request.ResultIndex}", responseDto, TimeSpan.FromMinutes(30));
@@ -1703,109 +1648,68 @@ namespace PickNBook.Api.Services
 
                 var payload = new
                 {
-                    EndUserIp = !string.IsNullOrWhiteSpace(request.EndUserIp) ? request.EndUserIp : "127.0.0.1",
+                    EndUserIp = request.EndUserIp,
                     ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
                     UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
                     Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password,
                     TokenId = "",
                     TraceId = int.TryParse(request.TraceId, out var tid) ? (object)tid : request.TraceId,
-                    SrdvType = !string.IsNullOrWhiteSpace(request.SrdvType) ? request.SrdvType : "MixAPI",
-                    SrdvIndex = !string.IsNullOrWhiteSpace(request.SrdvIndex) ? request.SrdvIndex : "15",
+                    SrdvType = request.SrdvType,
+                    SrdvIndex = request.SrdvIndex,
                     ResultIndex = resultIndexVal != 0 ? (object)resultIndexVal : request.ResultIndex,
                     HotelCode = request.HotelCode,
                     HotelName = request.HotelName,
-                    GuestNationality = !string.IsNullOrWhiteSpace(request.GuestNationality) ? request.GuestNationality : "IN",
+                    GuestNationality = request.GuestNationality,
                     NoOfRooms = (request.NoOfRooms <= 0 ? 1 : request.NoOfRooms).ToString(),
                     ClientReferenceNo = request.ClientReferenceNo,
                     IsVoucherBooking = request.IsVoucherBooking,
                     PAN = leadPaxPan ?? "",
-                    HotelRoomsDetails = request.HotelRoomsDetails != null && request.HotelRoomsDetails.Count > 0 ?
-                        (object)request.HotelRoomsDetails.Select(room => new
+                    HotelRoomsDetails = request.HotelRoomsDetails.Select(room => new
+                    {
+                        room.ChildCount,
+                        room.RequireAllPaxDetails,
+                        room.RoomId,
+                        room.RoomStatus,
+                        room.RoomIndex,
+                        room.RoomTypeCode,
+                        room.RoomTypeName,
+                        room.RatePlanCode,
+                        room.RatePlan,
+                        room.InfoSource,
+                        DayRates = room.DayRates != null ? (object)room.DayRates.Select(d => new { d.Amount, d.Date }).ToList() : new object[] { },
+                        room.SupplierPrice,
+                        room.Price,
+                        PAN = leadPaxPan ?? "",
+                        HotelPassenger = room.HotelPassenger != null ? (object)room.HotelPassenger.Select(p => new
                         {
-                            room.ChildCount,
-                            room.RequireAllPaxDetails,
-                            room.RoomId,
-                            room.RoomStatus,
-                            room.RoomIndex,
-                            room.RoomTypeCode,
-                            room.RoomTypeName,
-                            room.RatePlanCode,
-                            room.RatePlan,
-                            room.InfoSource,
-                            DayRates = room.DayRates != null ? (object)room.DayRates.Select(d => new { d.Amount, d.Date }).ToList() : new object[] { },
-                            room.SupplierPrice,
-                            room.Price,
-                            PAN = leadPaxPan ?? "",
-                            HotelPassenger = room.HotelPassenger != null ? (object)room.HotelPassenger.Select(p => new
-                            {
-                                Title = NormalizeTitle(p.Title),
-                                p.FirstName,
-                                MiddleName = string.IsNullOrWhiteSpace(p.MiddleName) ? null : p.MiddleName,
-                                p.LastName,
-                                p.Phoneno,
-                                p.Email,
-                                p.PaxType,
-                                p.LeadPassenger,
-                                PassportNo = string.IsNullOrWhiteSpace(p.PassportNo) ? null : p.PassportNo,
-                                PassportIssueDate = string.IsNullOrWhiteSpace(p.PassportIssueDate) ? null : p.PassportIssueDate,
-                                PassportExpDate = string.IsNullOrWhiteSpace(p.PassportExpDate) ? null : p.PassportExpDate,
-                                PAN = !string.IsNullOrWhiteSpace(p.PAN) ? p.PAN : (leadPaxPan ?? ""),
-                                GSTCompanyAddress = string.IsNullOrWhiteSpace(p.GSTCompanyAddress) ? null : p.GSTCompanyAddress,
-                                GSTCompanyContactNumber = string.IsNullOrWhiteSpace(p.GSTCompanyContactNumber) ? null : p.GSTCompanyContactNumber,
-                                GSTCompanyName = string.IsNullOrWhiteSpace(p.GSTCompanyName) ? null : p.GSTCompanyName,
-                                GSTNumber = string.IsNullOrWhiteSpace(p.GSTNumber) ? null : p.GSTNumber,
-                                GSTCompanyEmail = string.IsNullOrWhiteSpace(p.GSTCompanyEmail) ? null : p.GSTCompanyEmail
-                            }).ToList() : new object[] { },
-                            room.RoomPromotion,
-                            Amenities = room.Amenities != null ? (object)room.Amenities.Select(a => new { a.Name, a.FontAwesome, a.IcoFont }).ToList() : new object[] { },
-                            room.SmokingPreference,
-                            room.BedTypes,
-                            room.HotelSupplements,
-                            room.LastCancellationDate,
-                            CancellationPolicies = room.CancellationPolicies != null ? (object)room.CancellationPolicies.Select(cp => new { cp.Charge, cp.ChargeType, cp.Currency, cp.FromDate, cp.ToDate }).ToList() : new object[] { },
-                            room.BedTypeCode,
-                            room.Supplements
-                        }).ToList() :
-                        new[]
-                        {
-                            new
-                            {
-                                ChildCount = 0, RequireAllPaxDetails = false,
-                                RoomId = int.TryParse(request.RoomIndex, out var rmId) ? (object)rmId : request.RoomIndex,
-                                RoomStatus = "Active",
-                                RoomIndex = int.TryParse(request.RoomIndex, out var riVal) ? (object)riVal : request.RoomIndex,
-                                RoomTypeCode = request.RoomTypeCode, RoomTypeName = request.RoomTypeName,
-                                RatePlan = request.RatePlanCode, RatePlanCode = request.RatePlanCode,
-                                InfoSource = "", SequenceNo = "", DayRates = new object[] { }, SupplierPrice = "",
-                                Price = new
-                                {
-                                    CurrencyCode = "INR", RoomPrice = request.Price,
-                                    Tax = 0m, ExtraGuestCharge = 0m, ChildCharge = 0m, OtherCharges = 0m,
-                                    Discount = 0m, PublishedPrice = request.Price, PublishedPriceRoundedOff = request.Price,
-                                    OfferedPrice = request.Price, OfferedPriceRoundedOff = request.Price,
-                                    AgentCommission = 0m, AgentMarkUp = 0m, ServiceTax = 0m, TDS = 0m,
-                                    ServiceCharge = 0m, TotalGSTAmount = 0m,
-                                    GST = new { CGSTAmount = 0m, CGSTRate = 0m, CessAmount = 0m, CessRate = 0m,
-                                                IGSTAmount = 0m, IGSTRate = 0m, SGSTAmount = 0m, SGSTRate = 0m, TaxableAmount = 0m }
-                                },
-                                PAN = leadPaxPan ?? "",
-                                HotelPassenger = new[]
-                                {
-                                    new
-                                    {
-                                        Title = "Mr", FirstName = firstName, MiddleName = (string?)null, LastName = lastName,
-                                        Phoneno = request.GuestPhone, Email = request.GuestEmail, PaxType = "1", LeadPassenger = true,
-                                        PassportNo = (string?)null, PassportIssueDate = (string?)null, PassportExpDate = (string?)null,
-                                        PAN = leadPaxPan ?? "", 
-                                        GSTCompanyAddress = (string?)null, GSTCompanyContactNumber = (string?)null,
-                                        GSTCompanyName = (string?)null, GSTNumber = (string?)null, GSTCompanyEmail = (string?)null
-                                    }
-                                },
-                                RoomPromotion = "", Amenities = new object[] { }, SmokingPreference = "0",
-                                BedTypes = "Standard", HotelSupplements = "ROOM ONLY", LastCancellationDate = "",
-                                CancellationPolicies = new object[] { }, BedTypeCode = (string?)null, Supplements = (string?)null
-                            }
-                        }
+                            Title = NormalizeTitle(p.Title),
+                            p.FirstName,
+                            MiddleName = string.IsNullOrWhiteSpace(p.MiddleName) ? null : p.MiddleName,
+                            p.LastName,
+                            p.Phoneno,
+                            p.Email,
+                            p.PaxType,
+                            p.LeadPassenger,
+                            PassportNo = string.IsNullOrWhiteSpace(p.PassportNo) ? null : p.PassportNo,
+                            PassportIssueDate = string.IsNullOrWhiteSpace(p.PassportIssueDate) ? null : p.PassportIssueDate,
+                            PassportExpDate = string.IsNullOrWhiteSpace(p.PassportExpDate) ? null : p.PassportExpDate,
+                            PAN = !string.IsNullOrWhiteSpace(p.PAN) ? p.PAN : (leadPaxPan ?? ""),
+                            GSTCompanyAddress = string.IsNullOrWhiteSpace(p.GSTCompanyAddress) ? null : p.GSTCompanyAddress,
+                            GSTCompanyContactNumber = string.IsNullOrWhiteSpace(p.GSTCompanyContactNumber) ? null : p.GSTCompanyContactNumber,
+                            GSTCompanyName = string.IsNullOrWhiteSpace(p.GSTCompanyName) ? null : p.GSTCompanyName,
+                            GSTNumber = string.IsNullOrWhiteSpace(p.GSTNumber) ? null : p.GSTNumber,
+                            GSTCompanyEmail = string.IsNullOrWhiteSpace(p.GSTCompanyEmail) ? null : p.GSTCompanyEmail
+                        }).ToList() : new object[] { },
+                        room.RoomPromotion,
+                        Amenities = room.Amenities != null ? (object)room.Amenities.Select(a => new { a.Name, a.FontAwesome, a.IcoFont }).ToList() : new object[] { },
+                        room.SmokingPreference,
+                        room.BedTypes,
+                        room.HotelSupplements,
+                        room.LastCancellationDate,
+                        CancellationPolicies = room.CancellationPolicies != null ? (object)room.CancellationPolicies.Select(cp => new { cp.Charge, cp.ChargeType, cp.Currency, cp.FromDate, cp.ToDate }).ToList() : new object[] { },
+                        room.BedTypeCode,
+                        room.Supplements
+                    }).ToList()
                 };
 
                 var jsonOptions = new JsonSerializerOptions
@@ -1934,6 +1838,7 @@ namespace PickNBook.Api.Services
                 var payload = new
                 {
                     BookingId = request.BookingId,
+                    ChangeRequestId = request.ChangeRequestId > 0 ? request.ChangeRequestId : 0,
                     RequestType = request.RequestType <= 0 ? 4 : request.RequestType,
                     BookingMode = request.BookingMode <= 0 ? 5 : request.BookingMode,
                     Remarks = !string.IsNullOrWhiteSpace(request.Remarks) ? request.Remarks : "Hotel Cancellation Request",
@@ -1996,13 +1901,14 @@ namespace PickNBook.Api.Services
                     return resDto;
                 }
 
-                if (target.TryGetProperty("ResponseStatus", out var rsProp) && rsProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.ResponseStatus = rsProp.GetInt32();
-                if (target.TryGetProperty("SrdvType", out var stProp)) resDto.SrdvType = stProp.GetString() ?? (request.SrdvType ?? "MixAPI");
-                if (target.TryGetProperty("SrdvIndex", out var siProp)) resDto.SrdvIndex = siProp.GetString() ?? (request.SrdvIndex ?? "");
-                if (target.TryGetProperty("TraceId", out var tidProp)) resDto.TraceId = tidProp.ValueKind == System.Text.Json.JsonValueKind.Number ? tidProp.GetRawText() : (tidProp.GetString() ?? request.TraceId);
-                if (target.TryGetProperty("ChangeRequestId", out var cridProp) && cridProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.ChangeRequestId = cridProp.GetInt32();
-                if (target.TryGetProperty("ChangeRequestStatus", out var crsProp) && crsProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.ChangeRequestStatus = crsProp.GetInt32();
-
+                if ((target.TryGetProperty("ResponseStatus", out var rsProp) || target.TryGetProperty("responseStatus", out rsProp)) && rsProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.ResponseStatus = rsProp.GetInt32();
+                if (target.TryGetProperty("SrdvType", out var stProp) || target.TryGetProperty("srdvType", out stProp)) resDto.SrdvType = stProp.GetString() ?? (request.SrdvType ?? "MixAPI");
+                if (target.TryGetProperty("SrdvIndex", out var siProp) || target.TryGetProperty("srdvIndex", out siProp)) resDto.SrdvIndex = siProp.GetString() ?? (request.SrdvIndex ?? "");
+                if (target.TryGetProperty("TraceId", out var tidProp) || target.TryGetProperty("traceId", out tidProp)) resDto.TraceId = tidProp.ValueKind == System.Text.Json.JsonValueKind.Number ? tidProp.GetRawText() : (tidProp.GetString() ?? request.TraceId);
+                if ((target.TryGetProperty("ChangeRequestId", out var cridProp) || target.TryGetProperty("changeRequestId", out cridProp)) && cridProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.ChangeRequestId = cridProp.GetInt32();
+                if ((target.TryGetProperty("ChangeRequestStatus", out var crsProp) || target.TryGetProperty("changeRequestStatus", out crsProp)) && crsProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.ChangeRequestStatus = crsProp.GetInt32();
+                if ((target.TryGetProperty("RefundedAmount", out var refProp) || target.TryGetProperty("refundedAmount", out refProp)) && refProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.RefundedAmount = refProp.GetDecimal();
+                if ((target.TryGetProperty("CancellationCharge", out var canProp) || target.TryGetProperty("cancellationCharge", out canProp)) && canProp.ValueKind == System.Text.Json.JsonValueKind.Number) resDto.CancellationCharge = canProp.GetDecimal();
                 return resDto;
             }
             catch (Exception ex)
@@ -2206,19 +2112,20 @@ namespace PickNBook.Api.Services
 
             decimal markup = await markupService.CalculateMarkupAsync(supplierBase, cityId, hotelCode, userType);
             
+            if (markup >= 0)
+            {
+                price.AgentMarkUp = markup;
+                
+                price.B2CTotalPrice = price.OfferedPrice + markup;
+                price.B2CBasePrice = Math.Max(0m, price.B2CTotalPrice - price.TotalGSTAmount);
+            }
+            
             if (markup > 0)
             {
-                decimal gstOnMarkup = Math.Round(markup * 0.18m, 2);
-                
-                price.AgentMarkUp = markup;
-                price.OfferedPrice += (markup + gstOnMarkup);
+                price.OfferedPrice += markup;
                 price.OfferedPriceRoundedOff = Math.Round(price.OfferedPrice);
-                price.PublishedPrice += (markup + gstOnMarkup);
+                price.PublishedPrice += markup;
                 price.PublishedPriceRoundedOff = Math.Round(price.PublishedPrice);
-                
-                price.TotalGSTAmount += gstOnMarkup;
-                if (price.GST == null) price.GST = new HotelSearchGstDto();
-                price.GST.IGSTAmount += gstOnMarkup;
             }
         }
     }

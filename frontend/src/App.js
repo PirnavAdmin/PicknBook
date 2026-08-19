@@ -1,6 +1,6 @@
 /* eslint-disable */
 // Trigger HMR
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import { UserProvider } from "./contexts/UserContext";
@@ -24,7 +24,7 @@ import B2BPrintTicket from "./B2B_Portal/DASHBOARD B2B/B2BPrintTicket";
 
 import Topbar from "./components/layout/Topbar";
 import SiteFooter from "./components/layout/SiteFooter";
-import AuthModal from "./components/auth/AuthModal";
+import AuthPage from "./pages/auth/AuthPage";
 import HomePage from "./pages/public/HomePage";
 import PrintTicketPage from "./pages/public/PrintTicketPage";
 import FetchTicket from "./pages/public/FetchTicket";
@@ -43,13 +43,6 @@ import BusCancel from "./pages/booking/BusCancel";
 import AccountStatement from "./pages/account/AccountStatement";
 import EditProfile from "./pages/account/EditProfile";
 import FlightSearchResults from "./pages/booking/FlightSearchResults";
-import BusSearchResults from "./pages/booking/BusSearchResults";
-import HotelSearchResults from "./pages/booking/HotelSearchResults";
-import HotelPassengerDetailsPage from "./pages/booking/HotelPassengerDetailsPage";
-import HotelPaymentPage from "./pages/booking/HotelPaymentPage";
-import BusSeatSelectionPage from "./pages/booking/BusSeatSelectionPage";
-import BusPassengerDetailsPage from "./pages/booking/BusPassengerDetailsPage";
-import BusPaymentPage from "./pages/booking/BusPaymentPage";
 import FlightSeatSelectionPage from "./pages/booking/FlightSeatSelectionPage";
 import FlightPassengerDetailsPage from "./pages/booking/FlightPassengerDetailsPage";
 import FlightPaymentPage from "./pages/booking/FlightPaymentPage";
@@ -98,6 +91,8 @@ import FlightRemarkEditList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Remark Li
 import FlightAmendmentsList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Amendments List/FlightAmendmentsList";
 import FlightSearchHistory from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Flight Search History/FlightSearchHistory";
 import PendingAirlinesList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Pending Airline List/PendingAirlinesList";
+
+
 import PendingAirlinesEditList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Pending Airline List/PendingAirlinesEditList";
 import FlightAllowedFareType from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Allowed Fare type/FlightAllowedFareType";
 import AirlineWebCheckLink from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Airline Web Check Link/AirlineWebCheckLink";
@@ -123,7 +118,7 @@ import AdminOfferListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER LIST/Offer
 import AdminAddOfferPage from "./Admin_Portal/OFFER MANAGEMENT/ADD NEW OFFER/AddOffer";
 import AdminOfferCategoryListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER CATEGORY LIST/OfferCategoryList";
 import AdminAddOfferCategoryPage from "./Admin_Portal/OFFER MANAGEMENT/ADD OFFER CATEGORY/AddOfferCategory";
-import { openAuthModal } from "./utils/authModalEvents";
+
 import PaymentSettings from "./Admin_Portal/PAYMENT MANAGEMENT/Payment Settings/payment Settings";
 import AdminBlogList from "./Admin_Portal/BLOG MANAGEMENT/Blog List/Admin.Bloglist";
 import AdminAddBlog from "./Admin_Portal/BLOG MANAGEMENT/ADD BLOG/Admin.Addblog";
@@ -155,6 +150,15 @@ import AgentManagement from "./Admin_Portal/B2B_MANAGEMENT/AgentManagement/Agent
 import AgentBookings from "./Admin_Portal/B2B_MANAGEMENT/AgentBookings/AgentBookings";
 import B2CFooterTheme from "./Admin_Portal/THEME MANAGEMENT/B2CFooterTheme";
 import "./STYLES/AtlasTheme.css";
+
+import BusSearchResults from "./pages/booking/BusSearchResults";
+import BusSeatSelectionPage from "./pages/booking/BusSeatSelectionPage";
+import BusPassengerDetailsPage from "./pages/booking/BusPassengerDetailsPage";
+import BusPaymentPage from "./pages/booking/BusPaymentPage";
+
+import HotelSearchResults from "./pages/booking/HotelSearchResults";
+import HotelPassengerDetailsPage from "./pages/booking/HotelPassengerDetailsPage";
+import HotelPaymentPage from "./pages/booking/HotelPaymentPage";
 
 const ADMIN_PATHS = {
   base: "/admin",
@@ -373,11 +377,16 @@ function AdminOfferCategoryAddRoute() {
 }
 
 function AuthPopupRedirect({ mode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
-    openAuthModal(mode);
-  }, [mode]);
-
-  return <Navigate to="/" replace />;
+    // Redirect to the full auth page, preserving returnTo if any
+    const params = new URLSearchParams(location.search);
+    const returnTo = params.get("returnTo") || "";
+    const query = returnTo ? `?mode=${mode}&returnTo=${encodeURIComponent(returnTo)}` : `?mode=${mode}`;
+    navigate(`/login${query}`, { replace: true });
+  }, []);
+  return null;
 }
 
 function AppContent() {
@@ -464,16 +473,16 @@ function AppContent() {
 
         const token = (localStorage.getItem("token") || sessionStorage.getItem("token"));
         if (!token && isUserProtectedPath(currentPath)) {
-          openAuthModal("login", { returnTo: buildReturnTo(location) });
-          navigate("/", { replace: true });
+          const returnTo = encodeURIComponent(buildReturnTo(location));
+          navigate(`/login?returnTo=${returnTo}`, { replace: true });
           return;
         }
 
         if (token && isTokenExpired(token)) {
           clearExpiredUserCredentials();
           if (isUserProtectedPath(currentPath)) {
-            openAuthModal("login", { returnTo: buildReturnTo(location) });
-            navigate("/", { replace: true });
+            const returnTo = encodeURIComponent(buildReturnTo(location));
+            navigate(`/login?returnTo=${returnTo}`, { replace: true });
           }
         }
       }
@@ -569,10 +578,10 @@ function AppContent() {
           <Route path="*" element={<B2BDashboard />} />
         </Route>
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<AuthPopupRedirect mode="login" />} />
-        <Route path="/register" element={<AuthPopupRedirect mode="login" />} />
-        <Route path="/verify" element={<AuthPopupRedirect mode="login" />} />
-        <Route path="/forgot-password" element={<AuthPopupRedirect mode="login" />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage />} />
+        <Route path="/verify" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<AuthPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/online/:slug" element={<LegalPage />} />
         <Route path="/legal/:slug" element={<LegalPage />} />
@@ -827,7 +836,7 @@ function AppContent() {
       </Routes>
 
       {shouldShowFooter && <SiteFooter />}
-      <AuthModal />
+
     </>
   );
 }

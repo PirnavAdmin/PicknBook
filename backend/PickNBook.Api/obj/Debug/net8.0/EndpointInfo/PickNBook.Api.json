@@ -3290,6 +3290,68 @@
         }
       }
     },
+    "/api/admin/flight/ApiBalanceCheck": {
+      "post": {
+        "tags": [
+          "AdminFlight"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/flight/ApiBalanceLog": {
+      "post": {
+        "tags": [
+          "AdminFlight"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/admin/flight-convenience-fee-rules": {
       "get": {
         "tags": [
@@ -5868,6 +5930,15 @@
         "tags": [
           "Bookings"
         ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -6091,21 +6162,10 @@
         "deprecated": true
       }
     },
-    "/api/BusBookings/{busId}/pricing-preview": {
+    "/api/BusBookings/pricing-preview": {
       "post": {
         "tags": [
           "BusBookings"
-        ],
-        "parameters": [
-          {
-            "name": "busId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
         ],
         "requestBody": {
           "content": {
@@ -6133,21 +6193,10 @@
         }
       }
     },
-    "/api/BusBookings/{busId}/book": {
+    "/api/BusBookings/book": {
       "post": {
         "tags": [
           "BusBookings"
-        ],
-        "parameters": [
-          {
-            "name": "busId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
         ],
         "requestBody": {
           "content": {
@@ -6809,6 +6858,69 @@
         }
       }
     },
+    "/api/Customers/{id}": {
+      "put": {
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Customers/{id}/status": {
       "put": {
         "tags": [
@@ -6899,29 +7011,6 @@
     },
     "/api/Customers/{id}/wallet/reset": {
       "post": {
-        "tags": [
-          "Customers"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/Customers/{id}": {
-      "delete": {
         "tags": [
           "Customers"
         ],
@@ -7128,401 +7217,6 @@
                 "file": {
                   "style": "form"
                 }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings": {
-      "get": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "fromCity",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "toCity",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "date",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date"
-            }
-          },
-          {
-            "name": "travelClass",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tripType",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnDate",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date"
-            }
-          },
-          {
-            "name": "from",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "class",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "adults",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "children",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0
-            }
-          },
-          {
-            "name": "infants",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/hot-routes": {
-      "get": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "metric",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": "score"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/pricing-preview": {
-      "post": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FlightPricingPreviewRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FlightPricingPreviewRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/FlightPricingPreviewRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/{flightId}/seats": {
-      "get": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "flightId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "travelClass",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": "Economy"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/{flightId}/book": {
-      "post": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "flightId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "tripType",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": "OneWay"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlightBookingRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlightBookingRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlightBookingRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/bookings": {
-      "get": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "passengerPhone",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "userId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/admin/bookings": {
-      "get": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "passengerPhone",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/bookings/{bookingId}": {
-      "get": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "bookingId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/bookings/{bookingId}/cancel": {
-      "post": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "bookingId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "reason",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightBookings/bookings/{bookingId}/cancel-passengers": {
-      "post": {
-        "tags": [
-          "FlightBookings"
-        ],
-        "parameters": [
-          {
-            "name": "bookingId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelPassengersRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelPassengersRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelPassengersRequestDto"
               }
             }
           }
@@ -7856,6 +7550,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "srdvIndex",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endUserIp",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7988,6 +7696,37 @@
         }
       }
     },
+    "/api/Hotels/BookRoom": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Hotels/bookRoom": {
       "get": {
         "tags": [
@@ -8028,7 +7767,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "John Doe"
+              "default": ""
             }
           },
           {
@@ -8036,7 +7775,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "guest@example.com"
+              "default": ""
             }
           },
           {
@@ -8044,7 +7783,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "9876543210"
+              "default": ""
             }
           },
           {
@@ -8135,7 +7874,7 @@
         }
       }
     },
-    "/api/Hotels/BookRoom": {
+    "/api/Hotels/book": {
       "post": {
         "tags": [
           "Hotels"
@@ -8199,6 +7938,49 @@
               "type": "string"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/pricing-preview": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelPricingPreviewRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelPricingPreviewRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelPricingPreviewRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/coupons/active": {
+      "get": {
+        "tags": [
+          "Hotels"
         ],
         "responses": {
           "200": {
@@ -8553,6 +8335,500 @@
       "get": {
         "tags": [
           "PublicTheme"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/Search": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirSearchRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirSearchRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirSearchRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/GetCalendarFare": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarFareRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarFareRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarFareRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/FareRule": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/FareQuote": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/SSR": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/SeatMap": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/TicketLCC": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketLCCRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketLCCRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketLCCRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/HoldGDS": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldGDSRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldGDSRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldGDSRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/TicketGDS": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketGDSRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketGDSRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketGDSRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/SendChangeRequest": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendChangeRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendChangeRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendChangeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/GetCancelStatus": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCancelStatusRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCancelStatusRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCancelStatusRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/GetCancellationCharges": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCancellationChargesRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCancellationChargesRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCancellationChargesRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/GetApiBalanceCheck": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/GetApiBalanceLog": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiBalanceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/flight_callback": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvBookingCallbackRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvBookingCallbackRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvBookingCallbackRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SrdvBookingCallbackResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SrdvBookingCallbackResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SrdvBookingCallbackResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/my-bookings": {
+      "get": {
+        "tags": [
+          "SrdvFlightApi"
         ],
         "responses": {
           "200": {
@@ -9653,6 +9929,151 @@
         },
         "additionalProperties": false
       },
+      "AirFareRuleRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "AdultCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ChildCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "InfantCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AirSearchRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "AdultCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ChildCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "InfantCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "DirectFlight": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AirSearchSegmentDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AirSearchSegmentDto": {
+        "type": "object",
+        "properties": {
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
+          },
+          "FlightCabinClass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "PreferredDepartureTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "PreferredArrivalTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "AirlineRequestDto": {
         "type": "object",
         "properties": {
@@ -9687,6 +10108,32 @@
             "nullable": true
           },
           "url": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiBalanceRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
             "type": "string",
             "nullable": true
           }
@@ -9928,6 +10375,18 @@
             "type": "string",
             "nullable": true
           },
+          "offeredPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "b2CBasePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "b2CTotalPrice": {
+            "type": "number",
+            "format": "double"
+          },
           "inclusion": {
             "type": "array",
             "items": {
@@ -10036,6 +10495,130 @@
             "format": "int32"
           },
           "price": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BookRoomDetailItemDto": {
+        "type": "object",
+        "properties": {
+          "childCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requireAllPaxDetails": {
+            "type": "boolean"
+          },
+          "roomId": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomTypeCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomTypeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ratePlanCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "ratePlan": {
+            "type": "string",
+            "nullable": true
+          },
+          "infoSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "sequenceNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "dayRates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HotelRoomDayRateDto"
+            },
+            "nullable": true
+          },
+          "supplierPrice": {
+            "type": "string",
+            "nullable": true
+          },
+          "price": {
+            "$ref": "#/components/schemas/HotelSearchPriceDto"
+          },
+          "hotelPassenger": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HotelPassengerDto"
+            },
+            "nullable": true
+          },
+          "roomPromotion": {
+            "type": "string",
+            "nullable": true
+          },
+          "amenities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HotelRoomAmenityDto"
+            },
+            "nullable": true
+          },
+          "smokingPreference": {
+            "type": "string",
+            "nullable": true
+          },
+          "bedTypes": {
+            "type": "string",
+            "nullable": true
+          },
+          "hotelSupplements": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastCancellationDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancellationPolicies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HotelRoomCancellationPolicyDto"
+            },
+            "nullable": true
+          },
+          "bedTypeCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplements": {
+            "type": "string",
+            "nullable": true
+          },
+          "offeredPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "b2CBasePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "b2CTotalPrice": {
             "type": "number",
             "format": "double"
           }
@@ -10273,6 +10856,30 @@
             "format": "int32",
             "nullable": true
           },
+          "fromCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "toCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "departureTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "busType": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalFare": {
+            "type": "number",
+            "format": "double"
+          },
           "seats": {
             "type": "array",
             "items": {
@@ -10319,6 +10926,77 @@
         },
         "additionalProperties": false
       },
+      "CalendarFareRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Sources": {
+            "type": "string",
+            "nullable": true
+          },
+          "FareType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarFareSegmentDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CalendarFareSegmentDto": {
+        "type": "object",
+        "properties": {
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
+          },
+          "FlightCabinClass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "PreferredDepartureTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "PreferredArrivalTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "CancelPassengersRequestDto": {
         "type": "object",
         "properties": {
@@ -10345,6 +11023,38 @@
             "nullable": true
           },
           "newPassword": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChangeRequestSectorDto": {
+        "type": "object",
+        "properties": {
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChangeRequestTicketDataDto": {
+        "type": "object",
+        "properties": {
+          "TicketId": {
+            "type": "string",
+            "nullable": true
+          },
+          "FirstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "LastName": {
             "type": "string",
             "nullable": true
           }
@@ -10421,6 +11131,34 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "fromCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "toCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "departureTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "arrivalTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "busType": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalFare": {
+            "type": "number",
+            "format": "double"
           },
           "passengerName": {
             "type": "string",
@@ -10650,65 +11388,6 @@
         },
         "additionalProperties": false
       },
-      "CreateFlightBookingRequestDto": {
-        "type": "object",
-        "properties": {
-          "passengerName": {
-            "type": "string",
-            "nullable": true
-          },
-          "passengerPhone": {
-            "type": "string",
-            "nullable": true
-          },
-          "passengerEmail": {
-            "type": "string",
-            "nullable": true
-          },
-          "couponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "selectedPromotionId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "selectedFeaturedOfferId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "adults": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "children": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "infants": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "travelClass": {
-            "type": "string",
-            "nullable": true
-          },
-          "passengers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateFlightPassengerDto"
-            },
-            "nullable": true
-          },
-          "paymentMethod": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "CreateFlightConvenienceFeeRuleDto": {
         "type": "object",
         "properties": {
@@ -10761,6 +11440,10 @@
           "tripType": {
             "$ref": "#/components/schemas/TripType"
           },
+          "cabinClass": {
+            "type": "string",
+            "nullable": true
+          },
           "markupType": {
             "$ref": "#/components/schemas/FlightMarkupType"
           },
@@ -10774,32 +11457,6 @@
           },
           "isActive": {
             "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "CreateFlightPassengerDto": {
-        "type": "object",
-        "properties": {
-          "fullName": {
-            "type": "string",
-            "nullable": true
-          },
-          "passengerType": {
-            "type": "string",
-            "nullable": true
-          },
-          "gender": {
-            "type": "string",
-            "nullable": true
-          },
-          "nationality": {
-            "type": "string",
-            "nullable": true
-          },
-          "dob": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10900,7 +11557,6 @@
       },
       "CreateHotelPricingSettingDto": {
         "required": [
-          "convenienceFeeType",
           "markupType"
         ],
         "type": "object",
@@ -10912,23 +11568,6 @@
           },
           "markupValue": {
             "maximum": 1000000,
-            "minimum": 0,
-            "type": "number",
-            "format": "double"
-          },
-          "convenienceFeeType": {
-            "minLength": 1,
-            "pattern": "^(Flat|Percentage)$",
-            "type": "string"
-          },
-          "convenienceFeeValue": {
-            "maximum": 1000000,
-            "minimum": 0,
-            "type": "number",
-            "format": "double"
-          },
-          "gstPercent": {
-            "maximum": 100,
             "minimum": 0,
             "type": "number",
             "format": "double"
@@ -11233,36 +11872,13 @@
           "seatNumber": {
             "type": "string",
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "FlightPricingPreviewRequestDto": {
-        "type": "object",
-        "properties": {
-          "flightId": {
+          },
+          "ticketNumber": {
             "type": "string",
             "nullable": true
           },
-          "travelClass": {
+          "status": {
             "type": "string",
-            "nullable": true
-          },
-          "tripType": {
-            "type": "string",
-            "nullable": true
-          },
-          "passengerCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "couponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "selectedFeaturedOfferId": {
-            "type": "integer",
-            "format": "int32",
             "nullable": true
           }
         },
@@ -11301,6 +11917,44 @@
             "nullable": true
           },
           "remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightTicketSegmentDto": {
+        "type": "object",
+        "properties": {
+          "airline": {
+            "type": "string",
+            "nullable": true
+          },
+          "flightNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "fromCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "toCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "departureTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "arrivalTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pnr": {
             "type": "string",
             "nullable": true
           },
@@ -11399,6 +12053,253 @@
         },
         "additionalProperties": false
       },
+      "GetCancelStatusRequestDto": {
+        "type": "object",
+        "properties": {
+          "UserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "ChangeRequestId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetCancellationChargesRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "RequestType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HoldGDSRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HotelBookRequestDto": {
+        "type": "object",
+        "properties": {
+          "endUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "srdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "srdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "resultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "hotelCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "hotelName": {
+            "type": "string",
+            "nullable": true
+          },
+          "couponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "guestNationality": {
+            "type": "string",
+            "nullable": true
+          },
+          "noOfRooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clientReferenceNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isVoucherBooking": {
+            "type": "boolean"
+          },
+          "hotelRoomsDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookRoomDetailItemDto"
+            },
+            "nullable": true
+          },
+          "guestName": {
+            "type": "string",
+            "nullable": true
+          },
+          "guestEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "guestPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomTypeCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "roomTypeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ratePlanCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "checkInDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-01"
+          },
+          "checkOutDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-05"
+          }
+        },
+        "additionalProperties": false
+      },
       "HotelBookingRequestDto": {
         "required": [
           "guestEmail",
@@ -11456,11 +12357,15 @@
           },
           "checkInDate": {
             "type": "string",
-            "nullable": true
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-01"
           },
           "checkOutDate": {
             "type": "string",
-            "nullable": true
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-05"
           },
           "rooms": {
             "type": "integer",
@@ -11483,6 +12388,10 @@
         "type": "object",
         "properties": {
           "bookingId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changeRequestId": {
             "type": "integer",
             "format": "int32"
           },
@@ -11565,6 +12474,105 @@
             "nullable": true
           },
           "HotelCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HotelPassengerDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "middleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneno": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "paxType": {
+            "type": "string",
+            "nullable": true
+          },
+          "leadPassenger": {
+            "type": "boolean"
+          },
+          "passportNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "passportIssueDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "passportExpDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "pan": {
+            "type": "string",
+            "nullable": true
+          },
+          "gstCompanyAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "gstCompanyContactNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "gstCompanyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "gstNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "gstCompanyEmail": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HotelPricingPreviewRequestDto": {
+        "type": "object",
+        "properties": {
+          "hotelCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "cityCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "b2CBasePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "srdvGstAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "couponCode": {
             "type": "string",
             "nullable": true
           }
@@ -11744,6 +12752,10 @@
             "type": "number",
             "format": "double"
           },
+          "couponDiscount": {
+            "type": "number",
+            "format": "double"
+          },
           "publishedPrice": {
             "type": "number",
             "format": "double"
@@ -11772,6 +12784,10 @@
             "type": "number",
             "format": "double"
           },
+          "tcs": {
+            "type": "number",
+            "format": "double"
+          },
           "tds": {
             "type": "number",
             "format": "double"
@@ -11786,6 +12802,329 @@
           },
           "gst": {
             "$ref": "#/components/schemas/HotelSearchGstDto"
+          },
+          "b2CBasePrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "b2CTotalPrice": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LCCBaggageDto": {
+        "type": "object",
+        "properties": {
+          "AirlineCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "FlightNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "WayType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Code": {
+            "type": "string",
+            "nullable": true
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "Weight": {
+            "type": "string",
+            "nullable": true
+          },
+          "Currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "Price": {
+            "type": "number",
+            "format": "double"
+          },
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LCCMealDynamicDto": {
+        "type": "object",
+        "properties": {
+          "AirlineCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "FlightNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "WayType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Code": {
+            "type": "string",
+            "nullable": true
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "AirlineDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "Quantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "Currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "Price": {
+            "type": "number",
+            "format": "double"
+          },
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LCCPassengerDto": {
+        "type": "object",
+        "properties": {
+          "Title": {
+            "type": "string",
+            "nullable": true
+          },
+          "FirstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "LastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "MiddleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "PaxType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "DateOfBirth": {
+            "type": "string",
+            "nullable": true
+          },
+          "Gender": {
+            "type": "string",
+            "nullable": true
+          },
+          "PassportNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "PassportExpiry": {
+            "type": "string",
+            "nullable": true
+          },
+          "PassportIssueDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "PassportIssueCountryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "DocumentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "DocumentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "AddressLine1": {
+            "type": "string",
+            "nullable": true
+          },
+          "City": {
+            "type": "string",
+            "nullable": true
+          },
+          "CountryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "CountryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "CellCountryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "ContactNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "Email": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsLeadPax": {
+            "type": "boolean"
+          },
+          "GSTCompanyAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "GSTCompanyContactNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "GSTCompanyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "GSTNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "GSTCompanyEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "Fare": {
+            "$ref": "#/components/schemas/LCCPassengerFareDto"
+          },
+          "Baggage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCBaggageDto"
+            },
+            "nullable": true
+          },
+          "MealDynamic": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCMealDynamicDto"
+            },
+            "nullable": true
+          },
+          "Seat": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCSeatDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LCCPassengerFareDto": {
+        "type": "object",
+        "properties": {
+          "Currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "BaseFare": {
+            "type": "number",
+            "format": "double"
+          },
+          "Tax": {
+            "type": "number",
+            "format": "double"
+          },
+          "TransactionFee": {
+            "type": "number",
+            "format": "double"
+          },
+          "YQTax": {
+            "type": "number",
+            "format": "double"
+          },
+          "OtherCharges": {
+            "type": "number",
+            "format": "double"
+          },
+          "AdditionalTxnFeeOfrd": {
+            "type": "number",
+            "format": "double"
+          },
+          "AdditionalTxnFeePub": {
+            "type": "number",
+            "format": "double"
+          },
+          "AirTransFee": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LCCSeatDto": {
+        "type": "object",
+        "properties": {
+          "AirlineCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "FlightNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "SeatNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsBooked": {
+            "type": "boolean"
+          },
+          "IsLegroom": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "IsAisle": {
+            "type": "boolean"
+          },
+          "Amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "Code": {
+            "type": "string",
+            "nullable": true
+          },
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11896,15 +13235,15 @@
       "RoomGuestDto": {
         "type": "object",
         "properties": {
-          "noOfAdults": {
+          "NoOfAdults": {
             "type": "string",
             "nullable": true
           },
-          "noOfChild": {
+          "NoOfChild": {
             "type": "string",
             "nullable": true
           },
-          "childAge": {
+          "ChildAge": {
             "type": "array",
             "items": {
               "type": "integer",
@@ -11933,6 +13272,70 @@
           "externalGst": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SendChangeRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "BookingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "RequestType": {
+            "type": "string",
+            "nullable": true
+          },
+          "CancellationType": {
+            "type": "string",
+            "nullable": true
+          },
+          "Remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "Sectors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestSectorDto"
+            },
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TicketData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestTicketDataDto"
+            },
+            "nullable": true
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12024,12 +13427,47 @@
             },
             "nullable": true
           },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlightTicketSegmentDto"
+            },
+            "nullable": true
+          },
           "agentCompanyName": {
             "type": "string",
             "nullable": true
           },
           "agentLogoUrl": {
             "type": "string",
+            "nullable": true
+          },
+          "nonRefundable": {
+            "type": "boolean"
+          },
+          "cancellationCharges": {
+            "type": "string",
+            "nullable": true
+          },
+          "partialSegmentCancellation": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPartialCancellation": {
+            "type": "boolean"
+          },
+          "cancelledPassengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlightPassengerTicketDto"
+            },
+            "nullable": true
+          },
+          "cancelledSegments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlightTicketSegmentDto"
+            },
             "nullable": true
           }
         },
@@ -12051,6 +13489,68 @@
           "channel": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SrdvBookingCallbackRequestDto": {
+        "type": "object",
+        "properties": {
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "BookingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "GdsPNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "Status": {
+            "type": "string",
+            "nullable": true
+          },
+          "Remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SrdvCallbackPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SrdvBookingCallbackResponseDto": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "$ref": "#/components/schemas/SrdvCallbackErrorDto"
           }
         },
         "additionalProperties": false
@@ -12077,6 +13577,34 @@
           "droppingPointId": {
             "type": "string",
             "nullable": true
+          },
+          "fromCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "toCity": {
+            "type": "string",
+            "nullable": true
+          },
+          "departureTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "arrivalTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "operatorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "busType": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalFare": {
+            "type": "number",
+            "format": "double"
           },
           "passengers": {
             "type": "array",
@@ -12170,94 +13698,134 @@
         },
         "additionalProperties": false
       },
+      "SrdvCallbackErrorDto": {
+        "type": "object",
+        "properties": {
+          "ErrorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "ErrorMessage": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SrdvCallbackPassengerDto": {
+        "type": "object",
+        "properties": {
+          "Title": {
+            "type": "string",
+            "nullable": true
+          },
+          "FirstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "LastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "TicketNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SrdvHotelSearchRequestDto": {
         "type": "object",
         "properties": {
-          "endUserIp": {
+          "EndUserIp": {
             "type": "string",
             "nullable": true
           },
-          "clientId": {
+          "ClientId": {
             "type": "string",
             "nullable": true
           },
-          "userName": {
+          "UserName": {
             "type": "string",
             "nullable": true
           },
-          "password": {
+          "Password": {
             "type": "string",
             "nullable": true
           },
-          "checkInDate": {
+          "CheckInDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-01"
+          },
+          "CheckOutDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-05"
+          },
+          "NoOfNights": {
             "type": "string",
             "nullable": true
           },
-          "checkOutDate": {
+          "BookingMode": {
             "type": "string",
             "nullable": true
           },
-          "noOfNights": {
+          "CountryCode": {
             "type": "string",
             "nullable": true
           },
-          "bookingMode": {
+          "CityId": {
             "type": "string",
             "nullable": true
           },
-          "countryCode": {
+          "ResultCount": {
             "type": "string",
             "nullable": true
           },
-          "cityId": {
+          "PreferredCurrency": {
             "type": "string",
             "nullable": true
           },
-          "resultCount": {
+          "GuestNationality": {
             "type": "string",
             "nullable": true
           },
-          "preferredCurrency": {
+          "RequestType": {
             "type": "string",
             "nullable": true
           },
-          "guestNationality": {
+          "NoOfRooms": {
             "type": "string",
             "nullable": true
           },
-          "requestType": {
-            "type": "string",
-            "nullable": true
-          },
-          "noOfRooms": {
-            "type": "string",
-            "nullable": true
-          },
-          "roomGuests": {
+          "RoomGuests": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RoomGuestDto"
             },
             "nullable": true
           },
-          "preferredHotel": {
+          "PreferredHotel": {
             "type": "string",
             "nullable": true
           },
-          "maxRating": {
+          "MaxRating": {
             "type": "string",
             "nullable": true
           },
-          "minRating": {
+          "MinRating": {
             "type": "string",
             "nullable": true
           },
-          "reviewScore": {
+          "ReviewScore": {
             "type": "number",
             "format": "double",
             "nullable": true
           },
-          "isNearBySearchAllowed": {
+          "IsNearBySearchAllowed": {
             "type": "boolean"
           }
         },
@@ -12312,10 +13880,140 @@
         },
         "additionalProperties": false
       },
+      "TicketGDSRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "BookingId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TicketLCCRequestDto": {
+        "type": "object",
+        "properties": {
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "ClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ApiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "TripType": {
         "enum": [
           0,
-          1
+          1,
+          2
         ],
         "type": "integer",
         "format": "int32"
@@ -12440,6 +14138,10 @@
           "status": {
             "type": "string",
             "nullable": true
+          },
+          "replyMessage": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12483,6 +14185,10 @@
           },
           "tripType": {
             "$ref": "#/components/schemas/TripType"
+          },
+          "cabinClass": {
+            "type": "string",
+            "nullable": true
           },
           "markupType": {
             "$ref": "#/components/schemas/FlightMarkupType"
@@ -12597,7 +14303,6 @@
       },
       "UpdateHotelPricingSettingDto": {
         "required": [
-          "convenienceFeeType",
           "markupType"
         ],
         "type": "object",
@@ -12609,23 +14314,6 @@
           },
           "markupValue": {
             "maximum": 1000000,
-            "minimum": 0,
-            "type": "number",
-            "format": "double"
-          },
-          "convenienceFeeType": {
-            "minLength": 1,
-            "pattern": "^(Flat|Percentage)$",
-            "type": "string"
-          },
-          "convenienceFeeValue": {
-            "maximum": 1000000,
-            "minimum": 0,
-            "type": "number",
-            "format": "double"
-          },
-          "gstPercent": {
-            "maximum": 100,
             "minimum": 0,
             "type": "number",
             "format": "double"
@@ -12650,8 +14338,6 @@
         "required": [
           "couponCode",
           "couponType",
-          "expiryDate",
-          "startDate",
           "status",
           "value"
         ],
@@ -12687,11 +14373,11 @@
           },
           "startDate": {
             "type": "string",
-            "format": "date"
+            "nullable": true
           },
           "expiryDate": {
             "type": "string",
-            "format": "date"
+            "nullable": true
           },
           "useLimit": {
             "maximum": 1000000,

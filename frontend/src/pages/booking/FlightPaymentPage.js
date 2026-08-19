@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Loader2,
   X,
@@ -9,7 +9,7 @@ import {
   Plane
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ticketLCC, holdGDS, ticketGDS, extractSrdvPnrAndBookingId, getFareRule, listFlightBookings, searchFlights } from "../../services/flightBookingService";
+import { bookFlight, getFareRule, listFlightBookings, searchFlights, getFareQuote } from "../../services/flightBookingService";
 import { sendBookingNotifications } from "../../services/bookingNotificationsService";
 import "../../STYLES/FlightBookingFlow.css";
 import BookingTimer from "./BookingTimer";
@@ -75,25 +75,30 @@ function ddMmYyyyToYyyyMmDd(val) {
   return `${match[3]}-${match[2]}-${match[1]}`;
 }
 
-function mapPassengersForApi(passengers, contact = null) {
+function mapPassengersForApi(passengers) {
   return (Array.isArray(passengers) ? passengers : []).map((passenger, index) => {
     const seatNumber = passenger.seatNumber || passenger.seatLabel || passenger.SeatNumber || "";
     return {
-    ...passenger,
-    fullName: `${passenger.title || ""} ${passenger.firstName || ""} ${passenger.lastName || ""}`
-      .replace(/\s+/g, " ")
-      .trim() || `Passenger ${index + 1}`,
-    title: passenger.title || passenger.Title || "Mr",
-    firstName: passenger.firstName || passenger.FirstName || "",
-    lastName: passenger.lastName || passenger.LastName || "",
-    passengerType: passenger.passengerType || "Adult",
-    gender: passenger.gender || "Male",
-    nationality: passenger.nationality || "Indian",
-    email: passenger.email || passenger.Email || contact?.email || "",
-    contactNo: passenger.contactNo || passenger.ContactNo || contact?.mobile || "",
-    ...(passenger.dob ? { dob: ddMmYyyyToYyyyMmDd(passenger.dob) } : {}),
-    ...(seatNumber ? { seatNumber } : {}),
-  };
+      ...passenger,
+      fullName: `${passenger.title || ""} ${passenger.firstName || ""} ${passenger.lastName || ""}`
+        .replace(/\s+/g, " ")
+        .trim() || `Passenger ${index + 1}`,
+      title: passenger.title || passenger.Title || "Mr",
+      firstName: passenger.firstName || passenger.FirstName || "",
+      lastName: passenger.lastName || passenger.LastName || "",
+      passengerType: passenger.passengerType || "Adult",
+      gender: passenger.gender || "Male",
+      nationality: passenger.nationality || "IN",
+      email: passenger.email || passenger.Email || "",
+      contactNo: passenger.contactNo || passenger.ContactNo || "",
+      passportNo: passenger.passportNo || passenger.PassportNo || "",
+      passportExpiry: passenger.passportExpiry || passenger.PassportExpiry || passenger.passportExpiryDate || "",
+      passportExpiryDate: passenger.passportExpiryDate || passenger.passportExpiry || passenger.PassportExpiry || "",
+      passportIssueDate: passenger.passportIssueDate || passenger.PassportIssueDate || "2023-01-01",
+      passportIssueCountryCode: passenger.passportIssueCountryCode || passenger.PassportIssueCountryCode || "IN",
+      ...(passenger.dob ? { dob: ddMmYyyyToYyyyMmDd(passenger.dob) } : {}),
+      ...(seatNumber ? { seatNumber } : {}),
+    };
   });
 }
 
@@ -114,12 +119,58 @@ function buildFlightBookingPayload(flowState) {
   const selectedSeats = Array.isArray(flowState.selectedSeats) ? flowState.selectedSeats : [];
   const selectedMeal = flowState.selectedMeal || null;
   const selectedBaggage = flowState.selectedBaggage || null;
-  const passengers = mapPassengersForApi((flowState.passengers || []).map((passenger, index) => ({
-    ...passenger,
-    seatCode: passenger.seatCode || selectedSeats[index]?.code || "",
-    baggage: passenger.baggage || (selectedBaggage ? [selectedBaggage] : []),
-    mealDynamic: passenger.mealDynamic || (selectedMeal ? [selectedMeal] : []),
-  })), flowState.contact);
+  const flight = flowState.flight || {};
+
+  // Normalize a seat object to the exact schema SRDV TicketLCC requires.
+  // The C# backend model deserializes FlightNumber, AirlineCode, Origin, Destination.
+  // If any are missing/empty, SRDV throws "Invalid seat ssr data".
+  const selectedLegs = Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0
+    ? flowState.selectedLegs
+    : [flowState.flight, flowState.returnFlight].filter(Boolean);
+
+  const normalizeSeatForPayload = (s, legHint) => {
+    if (!s || typeof s !== 'object') return null;
+    const code = String(s.Code || s.code || s.SeatNumber || s.seatNumber || "").trim();
+    if (!code) return null; // Drop seats with no Code — they are from generated fallback layouts
+    const airlineCode = String(s.AirlineCode || s.airlineCode || legHint?.airlineCode || legHint?.AirlineCode || legHint?.airline || flight.airlineCode || flight.airline || "6E").trim();
+    const flightNum = String(s.AirlineNumber || s.FlightNumber || s.flightNumber || s.airlineNumber || legHint?.flightNumber || legHint?.FlightNumber || flight.flightNumber || "").replace(/\D/g, "") || (flight.flightNumber || "101");
+    const origin = String(s.Origin || s.origin || legHint?.sourceCode || legHint?.fromCity || legHint?.origin || flight.sourceCode || flight.fromCity || "DEL").toUpperCase().trim();
+    const destination = String(s.Destination || s.destination || legHint?.destinationCode || legHint?.toCity || legHint?.destination || flight.destinationCode || flight.toCity || "BOM").toUpperCase().trim();
+    return {
+      ...s,
+      Code: code,
+      SeatNumber: String(s.SeatNumber || s.seatNumber || code).trim(),
+      AirlineCode: airlineCode,
+      FlightNumber: flightNum,
+      AirlineNumber: flightNum,
+      Origin: origin,
+      Destination: destination,
+      Amount: Number(s.Amount ?? s.amount ?? 0),
+      IsBooked: true,
+      IsAisle: Boolean(s.IsAisle ?? s.isAisle ?? false),
+      IsLegroom: Boolean(s.IsLegroom ?? s.isLegroom ?? false),
+    };
+  };
+
+  const passengers = mapPassengersForApi((flowState.passengers || []).map((passenger, index) => {
+    // Normalize seatDynamic — drop any seat without a valid Code (fallback/generated layout seats)
+    const rawSeatDynamic = Array.isArray(passenger.seatDynamic) ? passenger.seatDynamic : [];
+    const normalizedSeatDynamic = rawSeatDynamic
+      .map((s, legIdx) => normalizeSeatForPayload(s, selectedLegs[legIdx]))
+      .filter(Boolean);
+
+    // Also try the legacy selectedSeats[index].code path
+    const legacySeatCode = passenger.seatCode || selectedSeats[index]?.code || "";
+
+    return {
+      ...passenger,
+      seatCode: legacySeatCode,
+      seatDynamic: normalizedSeatDynamic,
+      baggage: passenger.baggageDynamic || passenger.baggage || (selectedBaggage ? [selectedBaggage] : []),
+      mealDynamic: passenger.mealDynamic || (selectedMeal ? [selectedMeal] : []),
+    };
+  }));
+
   const rawClass =
     flowState.flight?.selectedTravelClass ||
     flowState.flight?.className ||
@@ -131,7 +182,14 @@ function buildFlightBookingPayload(flowState) {
   const infants = (flowState.passengers || []).filter(p => p.passengerType === "Infant").length;
 
   return {
-    flight: flowState.flight || null,
+    flight: {
+      ...(flowState.flight || {}),
+      passengerPhone: String(flowState.contact?.mobile || "").trim(),
+      passengerEmail: String(flowState.contact?.email || "").trim(),
+      contactPhone: String(flowState.contact?.mobile || "").trim(),
+      contactEmail: String(flowState.contact?.email || "").trim(),
+      contact: flowState.contact || {},
+    },
     passengerName: passengers[0]?.fullName || "Passenger",
     passengerPhone: String(flowState.contact?.mobile || "").trim(),
     passengerEmail: String(flowState.contact?.email || "").trim(),
@@ -143,6 +201,9 @@ function buildFlightBookingPayload(flowState) {
     adults: adults || 1,
     children: children || 0,
     infants: infants || 0,
+    isMultiCity: Boolean(flowState.isMultiCity),
+    selectedLegs: selectedLegs,
+    contact: flowState.contact || {},
   };
 }
 
@@ -206,58 +267,193 @@ function buildTicketPayload(flowState, bookingResponse, paymentMethod, mode = "l
   const bookedAtRaw = bookingResponse?.bookedAtUtc || new Date().toISOString();
 
   const fromCity = isReturn
-    ? (flightObj.sourceCode || flightObj.source || flightObj.fromCity || flowState.searchContext?.destination || "MAA")
-    : (flowState.searchContext?.source || flightObj.sourceCode || flightObj.source || flightObj.fromCity || bookingResponse?.fromCity || "DEL");
+    ? (flightObj.sourceName || flightObj.fromCity || flightObj.sourceCode || flightObj.source || flowState.searchContext?.destination || "")
+    : (flowState.searchContext?.source || flightObj.sourceName || flightObj.fromCity || flightObj.sourceCode || flightObj.source || bookingResponse?.fromCity || "");
 
   const toCity = isReturn
-    ? (flightObj.destinationCode || flightObj.destination || flightObj.toCity || flowState.searchContext?.source || "DEL")
-    : (flowState.searchContext?.destination || flightObj.destinationCode || flightObj.destination || flightObj.toCity || bookingResponse?.toCity || "MAA");
+    ? (flightObj.destinationName || flightObj.toCity || flightObj.destinationCode || flightObj.destination || flowState.searchContext?.source || "")
+    : (flowState.searchContext?.destination || flightObj.destinationName || flightObj.toCity || flightObj.destinationCode || flightObj.destination || bookingResponse?.toCity || "");
 
   const providerName = isReturn
     ? (flightObj.airlineName || flightObj.airline || "Flight Service")
     : (bookingResponse?.providerName || flightObj.airlineName || flightObj.airline || "Flight Service");
 
   const tripNumber = isReturn
-    ? (flightObj.flightNumber || "QP-1102")
-    : (bookingResponse?.tripNumber || bookingResponse?.flightNumber || flightObj.flightNumber || "--");
+    ? (flightObj.flightNumber || flightObj.tripNumber || flightObj.AirlineNumber || flightObj.FlightNumber || "--")
+    : (bookingResponse?.tripNumber || bookingResponse?.flightNumber || flightObj.flightNumber || flightObj.tripNumber || "--");
+
+  const returnPnr =
+    bookingResponse?.returnPnr ||
+    bookingResponse?.returnPNR ||
+    bookingResponse?.ticketLccResponse?.rawResponse?.Response?.ReturnPNR ||
+    "";
+
+  const backendFare =
+    bookingResponse?.backendFare ||
+    bookingResponse?.itinerary?.Fare ||
+    bookingResponse?.ticketLccResponse?.rawResponse?.Response?.FlightItinerary?.Fare ||
+    bookingResponse?.rawResponse?.Response?.FlightItinerary?.Fare ||
+    {};
+
+  const rawItinSegments =
+    (Array.isArray(bookingResponse?.segments) && bookingResponse.segments.length > 0) ? bookingResponse.segments :
+    (Array.isArray(bookingResponse?.itinerary?.Segments) && bookingResponse.itinerary.Segments.length > 0) ? bookingResponse.itinerary.Segments :
+    (Array.isArray(bookingResponse?.ticketLccResponse?.rawResponse?.Response?.FlightItinerary?.Segments) && bookingResponse.ticketLccResponse.rawResponse.Response.FlightItinerary.Segments.length > 0) ? bookingResponse.ticketLccResponse.rawResponse.Response.FlightItinerary.Segments :
+    (Array.isArray(bookingResponse?.rawResponse?.Response?.FlightItinerary?.Segments) && bookingResponse.rawResponse.Response.FlightItinerary.Segments.length > 0) ? bookingResponse.rawResponse.Response.FlightItinerary.Segments :
+    [];
+
+  let multiCityTickets = [];
+  if (rawItinSegments.length > 1) {
+    // API returned multiple confirmed flight segments (e.g. multi-city or connecting flights)
+    multiCityTickets = rawItinSegments.slice(1).map((seg, sliceIndex) => {
+      const index = sliceIndex + 1;
+      const legAirCode = seg.Airline?.AirlineCode || seg.airline?.airlineCode || "";
+      const legAirNum = seg.Airline?.FlightNumber || seg.airline?.flightNumber || "";
+      const legFlNum = legAirCode && legAirNum ? `${legAirCode} ${legAirNum}` : (legAirNum || legAirCode || "--");
+      const legFromCity = seg.Origin?.CityName || seg.Origin?.AirportName || seg.Origin?.AirportCode || "Origin";
+      const legToCity = seg.Destination?.CityName || seg.Destination?.AirportName || seg.Destination?.AirportCode || "Destination";
+      const legFromCode = seg.Origin?.AirportCode || seg.Origin?.Code || "";
+      const legToCode = seg.Destination?.AirportCode || seg.Destination?.Code || "";
+
+      return {
+        ticketType: "flight",
+        bookingReference: bookingReference,
+        pnr: bookingReference,
+        status: "Booked",
+        providerName: seg.Airline?.AirlineName || seg.Airline?.AirlineCode || "Airline",
+        tripNumber: legFlNum,
+        flightNumber: legFlNum,
+        fromCity: legFromCity,
+        toCity: legToCity,
+        fromCityCode: legFromCode,
+        toCityCode: legToCode,
+        sourceCode: legFromCode,
+        destinationCode: legToCode,
+        departureTime: seg.DepTime || departureTimeRaw,
+        arrivalTime: seg.ArrTime || arrivalTimeRaw,
+        terminal: seg.Origin?.Terminal || "",
+        destinationTerminal: seg.Destination?.Terminal || "",
+        gate: seg.Origin?.Terminal || "TBA",
+        baggage: seg.Baggage || "15 Kg",
+        cabinBaggage: seg.CabinBaggage || "7 Kg",
+        duration: seg.Duration ? `${Math.floor(seg.Duration / 60)}h ${seg.Duration % 60}m` : "--",
+        passengers: passengers.map((p) => {
+          const dyn = Array.isArray(p.seatDynamic) ? p.seatDynamic[index] : null;
+          const sNo = typeof dyn === "string" ? dyn : (dyn?.SeatNumber || dyn?.Code || dyn?.label);
+          return {
+            name: `${p.title || ""} ${p.firstName || ""} ${p.lastName || ""}`.trim() || p.name || "Passenger",
+            passengerType: p.passengerType || "Adult",
+            seat: sNo || "--",
+          };
+        }),
+        isMultiCityLeg: true,
+        legIndex: index,
+      };
+    });
+  } else if (flowState.isMultiCity && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 1) {
+    multiCityTickets = flowState.selectedLegs.slice(1).map((leg, sliceIndex) => {
+      const index = sliceIndex + 1;
+      return {
+        ticketType: "flight",
+        bookingReference: bookingReference,
+        pnr: bookingReference,
+        status: "Booked",
+        providerName: leg.airlineName || leg.airline || flightObj.airline || "Airline",
+        tripNumber: leg.flightNumber || flightObj.flightNumber || "--",
+        flightNumber: leg.flightNumber || flightObj.flightNumber || "--",
+        fromCity: leg.sourceName || leg.fromCity || leg.sourceCode || "Origin",
+        toCity: leg.destinationName || leg.toCity || leg.destinationCode || "Destination",
+        fromCityCode: leg.sourceCode || "",
+        toCityCode: leg.destinationCode || "",
+        sourceCode: leg.sourceCode || "",
+        destinationCode: leg.destinationCode || "",
+        departureTime: leg.departDate || leg.departureDate || departureTimeRaw,
+        passengers: passengers.map((p) => {
+          const dyn = Array.isArray(p.seatDynamic) ? p.seatDynamic[index] : null;
+          const sNo = typeof dyn === "string" ? dyn : (dyn?.SeatNumber || dyn?.Code || dyn?.label);
+          return {
+            name: `${p.title || ""} ${p.firstName || ""} ${p.lastName || ""}`.trim() || p.name || "Passenger",
+            passengerType: p.passengerType || "Adult",
+            seat: sNo || "--",
+          };
+        }),
+        isMultiCityLeg: true,
+        legIndex: index,
+      };
+    });
+  }
+
+  // Primary Ticket (Leg 1 / Segment 0) details
+  const seg0 = rawItinSegments[0] || null;
+  const firstLeg = flowState.isMultiCity && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0
+    ? flowState.selectedLegs[0]
+    : null;
+
+  const seg0AirCode = seg0?.Airline?.AirlineCode || "";
+  const seg0AirNum = seg0?.Airline?.FlightNumber || "";
+  const seg0FlNum = seg0AirCode && seg0AirNum ? `${seg0AirCode} ${seg0AirNum}` : (seg0AirNum || seg0AirCode || "");
+
+  const resolvedFromCity = seg0?.Origin?.CityName || (firstLeg ? (firstLeg.sourceName || firstLeg.fromCity || firstLeg.sourceCode) : fromCity);
+  const resolvedToCity = seg0?.Destination?.CityName || (firstLeg ? (firstLeg.destinationName || firstLeg.toCity || firstLeg.destinationCode) : toCity);
+  const resolvedFromCityCode = seg0?.Origin?.AirportCode || (firstLeg ? firstLeg.sourceCode : "") || "";
+  const resolvedToCityCode = seg0?.Destination?.AirportCode || (firstLeg ? firstLeg.destinationCode : "") || "";
+  const resolvedProvider = seg0?.Airline?.AirlineName || (firstLeg ? (firstLeg.airlineName || firstLeg.airline) : providerName);
+  const resolvedTripNumber = seg0FlNum || (firstLeg ? firstLeg.flightNumber : tripNumber);
+  const resolvedDepartureTime = seg0?.DepTime || departureTimeRaw;
+  const resolvedArrivalTime = seg0?.ArrTime || arrivalTimeRaw;
+  const resolvedTerminal = seg0?.Origin?.Terminal || "";
 
   return {
     ticketType: "flight",
     bookingReference,
+    pnr: bookingReference,
+    returnPnr,
+    returnPNR: returnPnr,
     status: bookingResponse?.status || "Booked",
-    providerName,
-    tripNumber,
-    fromCity,
-    toCity,
-    departureTime: formatDisplayDateTime(departureTimeRaw) || departureTimeRaw,
-    arrivalTime: formatDisplayDateTime(arrivalTimeRaw) || arrivalTimeRaw,
+    providerName: resolvedProvider || providerName,
+    tripNumber: resolvedTripNumber || tripNumber,
+    fromCity: resolvedFromCity,
+    toCity: resolvedToCity,
+    fromCityCode: resolvedFromCityCode,
+    toCityCode: resolvedToCityCode,
+    sourceCode: resolvedFromCityCode,
+    destinationCode: resolvedToCityCode,
+    terminal: resolvedTerminal,
+    gate: resolvedTerminal || "TBA",
+    departureTime: formatDisplayDateTime(resolvedDepartureTime) || resolvedDepartureTime,
+    arrivalTime: formatDisplayDateTime(resolvedArrivalTime) || resolvedArrivalTime,
     duration: flightObj.duration || "--",
     bookedAt: bookedAtRaw,
     passengers:
       apiPassengers.length > 0
         ? apiPassengers.map((passenger, index) => {
-            const originalPassenger = passengers[index] || {};
-            return {
-              name: passenger.fullName || `Passenger ${index + 1}`,
-              passengerType: passenger.passengerType || originalPassenger.passengerType || "Adult",
-              seat: isReturn ? (originalPassenger.returnSeatLabel || passenger.seatNumber || originalPassenger.seatLabel || "") : (passenger.seatNumber || originalPassenger.seatLabel || ""),
-              gender: passenger.gender || originalPassenger.gender || "Male",
-              title: passenger.title || originalPassenger.title || "",
-            };
-          })
+          const originalPassenger = passengers[index] || {};
+          return {
+            name: passenger.fullName || `Passenger ${index + 1}`,
+            passengerType: passenger.passengerType || originalPassenger.passengerType || "Adult",
+            seat: originalPassenger.seatDynamic?.[isReturn ? 1 : 0]?.SeatNumber || originalPassenger.seatDynamic?.[isReturn ? 1 : 0]?.Code || originalPassenger.seatDynamic?.[isReturn ? 1 : 0]?.label || (isReturn ? (originalPassenger.returnSeatLabel || passenger.seatNumber || originalPassenger.seatLabel || "") : (passenger.seatNumber || originalPassenger.seatLabel || "")),
+            gender: passenger.gender || originalPassenger.gender || "Male",
+            title: passenger.title || originalPassenger.title || "",
+            ticketNumber: passenger.ticketNumber || passenger.ticketId || "",
+            passportNo: passenger.passportNo || originalPassenger.passportNo || "",
+            passportExpiry: passenger.passportExpiry || originalPassenger.passportExpiry || "",
+          };
+        })
         : passengers.map((passenger) => ({
-            name: `${passenger.title || ""} ${passenger.firstName || ""} ${passenger.lastName || ""}`
-              .replace(/\s+/g, " ")
-              .trim(),
-            passengerType: passenger.passengerType || "Adult",
-            seat: isReturn ? (passenger.returnSeatLabel || passenger.seatLabel || "") : (passenger.seatLabel || ""),
-            gender: passenger.gender || "Male",
-            title: passenger.title || "",
-          })),
+          name: `${passenger.title || ""} ${passenger.firstName || ""} ${passenger.lastName || ""}`
+            .replace(/\s+/g, " ")
+            .trim(),
+          passengerType: passenger.passengerType || "Adult",
+          seat: passenger.seatDynamic?.[isReturn ? 1 : 0]?.SeatNumber || passenger.seatDynamic?.[isReturn ? 1 : 0]?.Code || passenger.seatDynamic?.[isReturn ? 1 : 0]?.label || (isReturn ? (passenger.returnSeatLabel || passenger.seatLabel || "") : (passenger.seatLabel || "")),
+          gender: passenger.gender || "Male",
+          title: passenger.title || "",
+          passportNo: passenger.passportNo || "",
+          passportExpiry: passenger.passportExpiry || "",
+        })),
     seats:
       apiSeatAssignments.length > 0
         ? apiSeatAssignments
-        : selectedSeats.map((seat) => seat.label || seat),
+        : passengers.map(p => p.seatDynamic?.[isReturn ? 1 : 0]?.SeatNumber || p.seatDynamic?.[isReturn ? 1 : 0]?.Code || p.seatDynamic?.[isReturn ? 1 : 0]?.label || p.seatLabel || "").filter(Boolean),
     contact: flowState.contact || {},
     userId: String(flowState.contact?.userId || localStorage.getItem("userId") || "123"),
     userEmail: String(flowState.contact?.email || "").trim(),
@@ -269,33 +465,46 @@ function buildTicketPayload(flowState, bookingResponse, paymentMethod, mode = "l
         : "Passenger"),
     passengerPhone: String(flowState.contact?.mobile || "").trim(),
     passengerEmail: String(flowState.contact?.email || "").trim(),
-    totalPriceInr: Number(flowState.payableAmount || fareSummary.totalFare || 0),
+    totalPriceInr: Number(backendFare.PublishedFare || backendFare.OfferedFare || flowState.payableAmount || fareSummary.totalFare || 0),
     departureTimeUtc: departureTimeRaw,
     arrivalTimeUtc: arrivalTimeRaw,
     bookedAtUtc: bookedAtRaw,
-    pnr: bookingReference,
-    bookingId: bookingResponse?.bookingId || bookingResponse?.BookingId || bookingReference,
+    bookingId: bookingReference,
     paymentMethod:
       paymentMethod === "agent_wallet"
         ? "Agent Wallet"
         : (PAYMENT_METHODS.find((method) => method.id === paymentMethod)?.label || paymentMethod),
     fare: {
-      baseFare: Number(fareSummary.baseFare || 0),
-      tax: Number(fareSummary.tax || 0),
+      baseFare: Number(backendFare.BaseFare || fareSummary.baseFare || 0),
+      tax: Number(backendFare.Tax || fareSummary.tax || 0),
+      seatCharges: Number(backendFare.TotalSeatCharges || fareSummary.seatSurcharge || 0),
+      otherCharges: Number(backendFare.OtherCharges || 0),
+      mealCharges: Number(backendFare.TotalMealCharges || fareSummary.mealFee || 0),
+      baggageCharges: Number(backendFare.TotalBaggageCharges || fareSummary.baggageFee || 0),
       convenienceFee: Number(fareSummary.convenienceFee || 0),
       discount: Number(flowState.couponDiscount || fareSummary.discount || 0),
-      totalFare: Number(flowState.payableAmount || fareSummary.totalFare || 0),
+      totalFare: Number(backendFare.PublishedFare || backendFare.OfferedFare || flowState.payableAmount || fareSummary.totalFare || 0),
+      offeredFare: Number(backendFare.OfferedFare || backendFare.PublishedFare || flowState.payableAmount || fareSummary.totalFare || 0),
+      publishedFare: Number(backendFare.PublishedFare || backendFare.OfferedFare || flowState.payableAmount || fareSummary.totalFare || 0),
+      currency: backendFare.Currency || "INR",
       tripSecureFee: Number(fareSummary.tripSecureFee || 0),
       travelAssistanceFee: Number(fareSummary.travelAssistanceFee || 0),
       zeroCancellationFee: Number(fareSummary.zeroCancellationFee || 0),
     },
-    totalPaid: Number(flowState.payableAmount || fareSummary.totalFare || 0),
+    totalPaid: Number(backendFare.PublishedFare || backendFare.OfferedFare || flowState.payableAmount || fareSummary.totalFare || 0),
     notifications: {
       email: "Queued",
       sms: "Queued",
       whatsapp: flowState.contact?.whatsappUpdates ? "Queued" : "Skipped",
     },
     mode,
+    selectedLegs: flowState.selectedLegs || [],
+    isMultiCity: Boolean(flowState.isMultiCity),
+    multiCityTickets,
+    traceId: bookingResponse?.traceId || bookingResponse?.TraceId || bookingResponse?.ticketLccResponse?.traceId || bookingResponse?.ticketLccResponse?.rawResponse?.TraceId || bookingResponse?.rawResponse?.TraceId || flowState?.flight?.traceId || sessionStorage.getItem("last_booking_trace_id") || sessionStorage.getItem("flight_trace_id") || localStorage.getItem("last_booking_trace_id") || "",
+    TraceId: bookingResponse?.traceId || bookingResponse?.TraceId || bookingResponse?.ticketLccResponse?.traceId || bookingResponse?.ticketLccResponse?.rawResponse?.TraceId || bookingResponse?.rawResponse?.TraceId || flowState?.flight?.traceId || sessionStorage.getItem("last_booking_trace_id") || sessionStorage.getItem("flight_trace_id") || localStorage.getItem("last_booking_trace_id") || "",
+    ticketLccResponse: bookingResponse?.ticketLccResponse || null,
+    rawResponse: bookingResponse?.rawResponse || null
   };
 }
 
@@ -305,13 +514,52 @@ export default function FlightPaymentPage() {
 
   const persistedState = readFlightBookingFlowState();
   const incomingState = location.state || {};
-  const flowState = incomingState.flight ? incomingState : persistedState || {};
+
+  const flowState = useMemo(() => {
+    let fqObj = null;
+    if (typeof window !== "undefined") {
+      try {
+        const rawFq = window.sessionStorage.getItem("last_fare_quote") || window.sessionStorage.getItem("FareQuote");
+        if (rawFq) fqObj = JSON.parse(rawFq);
+      } catch (e) { }
+    }
+
+    const fqRes = fqObj?.results || fqObj?.Results || fqObj?.rawResponse?.Results || fqObj?.rawResponse?.Response?.Results || {};
+    const fqFare = fqRes?.Fare || fqObj?.fare || {};
+
+    const liveTotal = Number(fqRes?.B2CFinalFare ?? fqRes?.B2CPublishedFare ?? fqRes?.OfferedFare ?? fqFare?.PublishedFare ?? fqFare?.OfferedFare ?? 0);
+    const liveBase = Number(fqRes?.DisplayBaseFare ?? fqRes?.B2CBaseFare ?? fqRes?.BaseFare ?? fqFare?.BaseFare ?? 0);
+    const liveTax = Number(fqRes?.DisplayTax ?? fqRes?.B2CTax ?? fqRes?.Tax ?? fqFare?.Tax ?? 0);
+
+    const mergedSummary = {
+      ...(incomingState?.fareSummary || {}),
+      ...(persistedState?.fareSummary || {}),
+    };
+
+    if (liveTotal > 0) {
+      mergedSummary.totalFare = liveTotal;
+      if (liveBase > 0) mergedSummary.baseFare = liveBase;
+      if (liveTax > 0) mergedSummary.tax = liveTax;
+    }
+
+    const finalPayable = liveTotal > 0 ? liveTotal : (persistedState?.payableAmount || incomingState?.payableAmount || mergedSummary.totalFare || 0);
+
+    return {
+      ...incomingState,
+      ...persistedState,
+      fareSummary: mergedSummary,
+      payableAmount: finalPayable,
+    };
+  }, [incomingState, persistedState]);
 
   const flight = flowState.flight || null;
   const passengers = flowState.passengers || [];
   const selectedSeats = flowState.selectedSeats || [];
   const fareSummary = flowState.fareSummary || {};
   const payableAmount = Number(flowState.payableAmount || fareSummary.totalFare || 0);
+
+  const displayBaseFare = Number(fareSummary.baseFare || 0);
+  const displayTax = Number(fareSummary.tax || 0);
 
   const isAgent = localStorage.getItem("b2b_role") === "Agent" && !localStorage.getItem("token");
   const [agentProfile, setAgentProfile] = useState(null);
@@ -477,6 +725,9 @@ export default function FlightPaymentPage() {
     );
   }
   const handlePayNow = async () => {
+    // Guard: drop if a booking is already in flight (prevents double-click / React Strict Mode duplicates)
+    if (isSubmitting) return;
+
     if (selectedMethod === "agent_wallet") {
       const balance = Number(agentProfile?.walletBalance ?? 0);
       const markup = Number(flowState.fareSummary?.markup || 0);
@@ -504,69 +755,200 @@ export default function FlightPaymentPage() {
 
       let response = null;
       try {
-        const traceId = flight?.traceId || flight?.TraceId || sessionStorage.getItem("last_booking_trace_id") || sessionStorage.getItem("flight_trace_id") || "";
-        const resultIndex = flight?.resultIndex || flight?.ResultIndex || flight?.id || "";
-        
-        let storedSelectedFlight = {};
-        try { storedSelectedFlight = JSON.parse(sessionStorage.getItem("SelectedFlight")||"{}"); } catch(e){}
-        const isLcc = flight?.isLcc ?? flight?.IsLcc ?? storedSelectedFlight?.IsLCC ?? true;
-        const srdvType = flight?.srdvType || flight?.SrdvType || "MixAPI";
-        const srdvIndex = flight?.srdvIndex || flight?.SrdvIndex || "2";
+        response = await bookFlight({
+          flightId: flight?.id || "flight-1",
+          payload: buildFlightBookingPayload(flowState),
+        });
 
-        const baseFare = flowState.fareSummary?.baseFare || 0;
-        const tax = flowState.fareSummary?.tax || 0;
-        const passengers = flowState.passengers || [];
-        const contactNo = flowState.contact?.mobile || formValues?.passengerPhone || "";
-
-        if (isLcc) {
-          const lccResponse = await ticketLCC({ traceId, resultIndex, srdvType, srdvIndex, passengers, baseFare, tax, flight, contactNo, couponCode: flowState.couponCode });
-          if (!lccResponse || (lccResponse.error && !lccResponse.success)) {
-            throw new Error(lccResponse?.error || "TicketLCC request failed.");
-          }
-          const extracted = extractSrdvPnrAndBookingId(lccResponse?.rawResponse || lccResponse);
-          response = {
-            ...lccResponse,
-            pnr: extracted.pnr || lccResponse.pnr || lccResponse.bookingId,
-            bookingReference: extracted.pnr || lccResponse.pnr || lccResponse.bookingId,
-            bookingId: extracted.bookingId || lccResponse.bookingId,
-            status: "Confirmed"
-          };
-        } else {
-          const holdResponse = await holdGDS({ traceId, resultIndex, srdvType, srdvIndex, passengers, baseFare, tax, flight, contactNo, couponCode: flowState.couponCode });
-          if (holdResponse?.error) {
-             throw new Error(holdResponse?.error || "HoldGDS request failed.");
-          }
-          const { pnr, bookingId } = extractSrdvPnrAndBookingId(holdResponse?.rawResponse || holdResponse);
-          if (!pnr || !bookingId) {
-             throw new Error("HoldGDS succeeded but did not return a valid PNR.");
-          }
-          const gdsResponse = await ticketGDS({ traceId, resultIndex, srdvType, srdvIndex, pnr, bookingId, couponCode: flowState.couponCode });
-          if (!gdsResponse || (gdsResponse.error && !gdsResponse.success)) {
-             throw new Error(gdsResponse?.error || "TicketGDS request failed.");
-          }
-          const gdsExtracted = extractSrdvPnrAndBookingId(gdsResponse?.rawResponse || gdsResponse);
-          response = {
-            ...gdsResponse,
-            pnr: gdsExtracted.pnr || pnr,
-            bookingReference: gdsExtracted.pnr || pnr,
-            bookingId: gdsExtracted.bookingId || bookingId,
-            status: "Confirmed"
-          };
-        }
-
+        // Store booking reference in sessionStorage immediately after success
+        // so retries can recover it if the user accidentally re-submits
         if (response?.bookingReference || response?.pnr) {
           try {
             const bookingRef = response.bookingReference || response.pnr;
             sessionStorage.setItem("last_completed_booking_ref", bookingRef);
-            sessionStorage.setItem("last_booking_trace_id", String(traceId || ""));
-          } catch {}
+            sessionStorage.setItem("last_booking_trace_id", String(flight?.traceId || ""));
+          } catch { }
         }
       } catch (bookErr) {
-        console.error("Booking API Error from SRDV Backend:", bookErr);
-        const displayMsg = String(bookErr?.message || "Booking failed. Please verify passenger details and try again.");
-        setPaymentError(displayMsg);
-        setIsSubmitting(false);
-        return;
+        console.error("bookFlight API Error from SRDV Backend:", bookErr);
+        const rawMsg = String(bookErr?.message || "");
+
+        // Detect SRDV ErrorCode 2 / Stale Session errors:
+        // "Booking Confirm Fare Data Not Found", "Ticket Request already done", "Session expired", etc.
+        const rawMsgLower = rawMsg.toLowerCase();
+        const isAlreadyDone =
+          rawMsgLower.includes("already done") ||
+          rawMsgLower.includes("ticket request already");
+
+        const isFareExpired =
+          rawMsgLower.includes("fare data not found") ||
+          rawMsgLower.includes("confirm fare") ||
+          rawMsgLower.includes("session expired") ||
+          rawMsgLower.includes("traceid") ||
+          rawMsgLower.includes("no data found") ||
+          rawMsgLower.includes("invalid traceid");
+
+        const isSeatMismatch =
+          rawMsgLower.includes("invalid seat") ||
+          rawMsgLower.includes("seat ssr") ||
+          rawMsgLower.includes("seat code mapping");
+
+        if (isSeatMismatch) {
+          setPaymentError("Booking failed: Seat code mapping issue with the provider. Please clear your selection and try again.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (isAlreadyDone) {
+          // 1. Check if we have any completed ticket stored in session or local storage
+          let storedTicket = null;
+          try {
+            const rawLatest = localStorage.getItem("latest_ticket");
+            if (rawLatest) storedTicket = JSON.parse(rawLatest);
+          } catch (e) { }
+
+          const storedRef = sessionStorage.getItem("last_completed_booking_ref") || storedTicket?.bookingReference || storedTicket?.pnr;
+
+          // Verify that the stored ticket belongs to the current passenger and route
+          const currentFrom = String(flight?.sourceCode || flight?.fromCity || flowState.searchContext?.source || "").trim().toUpperCase();
+          const currentTo = String(flight?.destinationCode || flight?.toCity || flowState.searchContext?.destination || "").trim().toUpperCase();
+          const storedFrom = String(storedTicket?.fromCity || "").trim().toUpperCase();
+          const storedTo = String(storedTicket?.toCity || "").trim().toUpperCase();
+
+          const currentPax = String(flowState.passengers?.[0]?.firstName || "").trim().toLowerCase();
+          const storedPax = String(storedTicket?.passengerName || storedTicket?.passengers?.[0]?.name || "").trim().toLowerCase();
+
+          const isMatchingTicket =
+            storedTicket &&
+            (currentFrom === storedFrom || storedFrom.includes(currentFrom) || currentFrom.includes(storedFrom)) &&
+            (currentTo === storedTo || storedTo.includes(currentTo) || currentTo.includes(storedTo)) &&
+            storedPax.includes(currentPax);
+
+          if (storedRef && isMatchingTicket) {
+            console.info("Recovering already-completed booking:", storedRef);
+            const recoveryResponse = {
+              bookingReference: storedRef,
+              pnr: storedRef,
+              status: "Confirmed",
+            };
+            const recoveryTicket = storedTicket || buildTicketPayload(flowState, recoveryResponse, selectedMethod, "live");
+            sessionStorage.removeItem("last_completed_booking_ref");
+            sessionStorage.removeItem("last_booking_trace_id");
+            sessionStorage.removeItem("booking_session_expiry");
+            clearFlightBookingFlowState();
+            navigate("/ticket/confirmation", {
+              state: { ...recoveryTicket, isTwoWay: false, onwardTicket: recoveryTicket, returnTicket: null },
+              replace: true,
+            });
+            return;
+          }
+        }
+
+        if (isAlreadyDone) {
+          // The booking was already submitted once. We couldn't recover the stored ticket,
+          // which means the confirmation page may have already been shown.
+          // NEVER retry bookFlight here — it will cause a guaranteed duplicate.
+          setPaymentError(
+            "This booking was already processed by the airline. Please check 'My Bookings' for your ticket, or contact support."
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (isFareExpired) {
+          // Stale or locked TraceId detected from SRDV.
+          // Automatically fetch a fresh TraceId via searchFlights + getFareQuote and retry bookFlight seamlessly!
+          console.info("Stale session/TraceId detected from SRDV, attempting automatic search & fare quote refresh...");
+          try {
+            // Clear cached FareQuote
+            try { sessionStorage.removeItem("last_fare_quote"); sessionStorage.removeItem("FareQuote"); } catch { }
+
+            const searchContext = flowState.searchContext || {};
+            const isMultiCity = Boolean(flowState.isMultiCity || searchContext.tripType === "multicity");
+            const fromCity = flight?.sourceCode || flight?.fromCity || searchContext.source || "DEL";
+            const toCity = flight?.destinationCode || flight?.toCity || searchContext.destination || "BOM";
+            const depDate = flight?.departDate || flight?.departureDate || searchContext.departureDate || new Date().toISOString().split("T")[0];
+
+            const freshSearchResults = await searchFlights({
+              from: fromCity,
+              to: toCity,
+              date: depDate,
+              returnDate: searchContext.returnDate,
+              tripType: isMultiCity ? "multicity" : (searchContext.tripType || "oneway"),
+              travelClass: searchContext.cabinClass || flight?.selectedTravelClass || "Economy",
+              adults: searchContext.adults || 1,
+              children: searchContext.children || 0,
+              infants: searchContext.infants || 0,
+              legs: flowState.selectedLegs || searchContext.legs
+            });
+
+            const freshList = Array.isArray(freshSearchResults)
+              ? freshSearchResults
+              : (freshSearchResults?.onward || freshSearchResults?.legs?.[0] || []);
+
+            const freshFlight = freshList[0] || flight;
+            const freshTraceId = freshSearchResults?.traceId || freshSearchResults?.TraceId || freshFlight?.traceId || freshFlight?.TraceId || "";
+            const freshResultIndex = freshFlight?.resultIndex || freshFlight?.ResultIndex || freshFlight?.id || "";
+
+            if (freshTraceId) {
+              console.info("Obtained fresh TraceId from auto-search:", freshTraceId);
+
+              // 1. Explicitly invoke getFareQuote to register Fare Session on SRDV supplier server
+              try {
+                await getFareQuote({
+                  ...freshFlight,
+                  traceId: freshTraceId,
+                  resultIndex: freshResultIndex,
+                  selectedLegs: flowState.selectedLegs
+                });
+              } catch (fqErr) {
+                console.warn("getFareQuote auto-refresh returned error, proceeding to bookFlight:", fqErr);
+              }
+
+              // 2. Update flowState with fresh TraceId & ResultIndex
+              flowState.flight = {
+                ...freshFlight,
+                traceId: freshTraceId,
+                TraceId: freshTraceId,
+                resultIndex: freshResultIndex,
+                ResultIndex: freshResultIndex,
+              };
+              flowState.traceId = freshTraceId;
+              flowState.TraceId = freshTraceId;
+              sessionStorage.setItem("flight_trace_id", freshTraceId);
+              sessionStorage.setItem("last_booking_trace_id", freshTraceId);
+
+              // 3. Retry booking with fresh TraceId and active FareQuote session!
+              const retryResponse = await bookFlight({
+                flightId: freshFlight?.id || flight?.id || "flight-1",
+                payload: buildFlightBookingPayload(flowState),
+              });
+
+              if (retryResponse?.bookingReference || retryResponse?.pnr) {
+                sessionStorage.setItem("last_completed_booking_ref", retryResponse.bookingReference || retryResponse.pnr);
+              }
+
+              response = retryResponse;
+              // Proceed smoothly to payment completion below!
+            } else {
+              throw new Error("Unable to obtain fresh TraceId.");
+            }
+          } catch (refreshErr) {
+            console.error("Auto-refresh TraceId failed:", refreshErr);
+            setPaymentError(
+              refreshErr.message?.includes("TicketLCC") || refreshErr.message?.includes("SRDV")
+                ? refreshErr.message
+                : "Your flight session expired. Please go back to Flight Search to select a fresh flight."
+            );
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+          const displayMsg = rawMsg || "Booking failed. Please verify passenger details and try again.";
+          setPaymentError(displayMsg);
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Strict Response Payload Verification:
@@ -597,7 +979,7 @@ export default function FlightPaymentPage() {
         const wholesalePrice = payableAmount - markup - tierDiscount - volumeDiscount;
         const updatedBalance = Number(agentProfile.walletBalance) - Number(wholesalePrice);
         const updatedProfile = { ...agentProfile, walletBalance: updatedBalance };
-        
+
         if (localStorage.getItem("b2b_user")) {
           localStorage.setItem("b2b_user", JSON.stringify(updatedProfile));
         }
@@ -615,19 +997,26 @@ export default function FlightPaymentPage() {
       try {
         const userStr = localStorage.getItem("user") || localStorage.getItem("b2b_user");
         if (userStr) currentUser = JSON.parse(userStr);
-      } catch {}
+      } catch { }
 
       ticketPayload.userId = currentUser?.id || currentUser?.userId || "";
       ticketPayload.userEmail = currentUser?.email || flowState.contact?.email || "";
       ticketPayload.userMobile = currentUser?.mobile || currentUser?.phone || flowState.contact?.mobile || "";
 
       let returnTicketPayload = null;
+      let multiCityTickets = [];
+
       if (flowState.isTwoWay && flowState.returnFlight) {
         const returnFlight = flowState.returnFlight;
         const returnFlowState = {
           ...flowState,
           flight: returnFlight,
           isReturnFlight: true,
+          passengers: Array.isArray(flowState.passengers) ? flowState.passengers.map(p => ({
+            ...p,
+            seatLabel: "",
+            seatDynamic: p.seatDynamic || []
+          })) : [],
           searchContext: {
             ...flowState.searchContext,
             source: flowState.searchContext?.destination || returnFlight.sourceCode,
@@ -635,46 +1024,40 @@ export default function FlightPaymentPage() {
             departureDate: flowState.searchContext?.returnDate || returnFlight.departDate
           }
         };
+        // Skip redundant bookFlight call for LCC Round Trips because the first bookFlight call
+        // already submitted the combined ResultIndex ("1,2") and booked both legs!
+        const returnResponse = response;
 
-        try {
-          let returnResponse = null;
-          const retTraceId = returnFlight?.traceId || returnFlight?.TraceId || "";
-          const retResultIndex = returnFlight?.resultIndex || returnFlight?.ResultIndex || returnFlight?.id || "";
-          const retIsLcc = Boolean(returnFlight?.isLcc || returnFlight?.IsLcc || returnFlight?.IsLCC || true);
-          const retSrdvType = returnFlight?.srdvType || returnFlight?.SrdvType || "MixAPI";
-          const retSrdvIndex = returnFlight?.srdvIndex || returnFlight?.SrdvIndex || "2";
-          
-          if (retIsLcc) {
-            const lccRet = await ticketLCC({ traceId: retTraceId, resultIndex: retResultIndex, srdvType: retSrdvType, srdvIndex: retSrdvIndex, passengers: flowState.passengers || [], baseFare: flowState.fareSummary?.baseFare || 0, tax: flowState.fareSummary?.tax || 0, flight: returnFlight, contactNo: flowState.contact?.mobile || formValues?.passengerPhone || "", couponCode: flowState.couponCode });
-            if (!lccRet || (lccRet.error && !lccRet.success)) throw new Error(lccRet?.error || "Return TicketLCC failed");
-            const ext = extractSrdvPnrAndBookingId(lccRet?.rawResponse || lccRet);
-            returnResponse = { ...lccRet, pnr: ext.pnr || lccRet.pnr || lccRet.bookingId, bookingReference: ext.pnr || lccRet.pnr || lccRet.bookingId, bookingId: ext.bookingId || lccRet.bookingId, status: "Confirmed" };
-          } else {
-            const holdRet = await holdGDS({ traceId: retTraceId, resultIndex: retResultIndex, srdvType: retSrdvType, srdvIndex: retSrdvIndex, passengers: flowState.passengers || [], baseFare: flowState.fareSummary?.baseFare || 0, tax: flowState.fareSummary?.tax || 0, flight: returnFlight, contactNo: flowState.contact?.mobile || formValues?.passengerPhone || "", couponCode: flowState.couponCode });
-            if (holdRet?.error) throw new Error(holdRet?.error || "Return HoldGDS failed");
-            const { pnr, bookingId } = extractSrdvPnrAndBookingId(holdRet?.rawResponse || holdRet);
-            if (!pnr || !bookingId) throw new Error("Return HoldGDS failed to return PNR");
-            const gdsRet = await ticketGDS({ traceId: retTraceId, resultIndex: retResultIndex, srdvType: retSrdvType, srdvIndex: retSrdvIndex, pnr, bookingId, couponCode: flowState.couponCode });
-            if (!gdsRet || (gdsRet.error && !gdsRet.success)) throw new Error(gdsRet?.error || "Return TicketGDS failed");
-            const extGds = extractSrdvPnrAndBookingId(gdsRet?.rawResponse || gdsRet);
-            returnResponse = { ...gdsRet, pnr: extGds.pnr || pnr, bookingReference: extGds.pnr || pnr, bookingId: extGds.bookingId || bookingId, status: "Confirmed" };
-          }
+        const respStatusRet = returnResponse?.responseStatus ?? returnResponse?.ResponseStatus ?? returnResponse?.rawResponse?.ResponseStatus ?? null;
+        const errObjRet = returnResponse?.Error || returnResponse?.error || returnResponse?.rawResponse?.Error || returnResponse?.rawResponse?.Response?.Error;
+        const errCodeRet = errObjRet?.ErrorCode !== undefined && errObjRet?.ErrorCode !== null ? String(errObjRet.ErrorCode) : "0";
 
-          returnTicketPayload = buildTicketPayload(
-            returnFlowState,
-            returnResponse,
-            selectedMethod,
-            "live"
-          );
-        } catch (returnErr) {
-          console.error("Return flight booking API failed:", returnErr);
-          throw new Error("Return flight booking failed: " + (returnErr.message || "Unknown error"));
+        const isReturnConfirmed =
+          Boolean(returnResponse?.bookingReference || returnResponse?.pnr || returnResponse?.bookingId) ||
+          respStatusRet === 1 ||
+          respStatusRet === "1" ||
+          errCodeRet === "0" ||
+          errCodeRet === "000" ||
+          errCodeRet === "";
+
+        if (!returnResponse || !isReturnConfirmed) {
+          const returnErrorMsg = errObjRet?.ErrorMessage || returnResponse?.error || "Return flight booking failed on supplier system.";
+          throw new Error(`Return Flight Booking Error: ${returnErrorMsg}`);
         }
+
+        returnTicketPayload = buildTicketPayload(
+          returnFlowState,
+          returnResponse,
+          selectedMethod,
+          "live"
+        );
 
         returnTicketPayload.userId = ticketPayload.userId;
         returnTicketPayload.userEmail = ticketPayload.userEmail;
         returnTicketPayload.userMobile = ticketPayload.userMobile;
         returnTicketPayload.isReturnFlight = true;
+      } else if (flowState.isMultiCity && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0) {
+        multiCityTickets = ticketPayload.multiCityTickets || [];
       }
 
       const notificationStatus = await sendBookingNotifications({
@@ -688,6 +1071,15 @@ export default function FlightPaymentPage() {
       });
       ticketPayload.notifications = notificationStatus;
 
+      const confirmationState = {
+        ...ticketPayload,
+        isTwoWay: Boolean(returnTicketPayload),
+        isMultiCity: flowState.isMultiCity,
+        onwardTicket: ticketPayload,
+        returnTicket: returnTicketPayload,
+        multiCityTickets: multiCityTickets,
+      };
+
       try {
         const ticketKeys = ["mock_tickets", "my_flight_bookings", "user_flight_tickets", "stored_tickets"];
         ticketKeys.forEach((key) => {
@@ -698,12 +1090,25 @@ export default function FlightPaymentPage() {
               if (returnTicketPayload) {
                 existing.unshift(returnTicketPayload);
               }
+              if (flowState.isMultiCity && Array.isArray(flowState.selectedLegs)) {
+                ticketPayload.isMultiCity = true;
+                ticketPayload.tripType = "multicity";
+                ticketPayload.segments = flowState.selectedLegs.map((leg, idx) => ({
+                  legIndex: idx + 1,
+                  fromCity: leg.sourceName || leg.fromCity || leg.sourceCode,
+                  toCity: leg.destinationName || leg.toCity || leg.destinationCode,
+                  providerName: leg.airlineName || leg.airline || ticketPayload.providerName,
+                  tripNumber: leg.flightNumber || ticketPayload.tripNumber,
+                  departureTimeUtc: leg.departDate || leg.departureDate || ticketPayload.departureTimeUtc,
+                  status: "Booked"
+                }));
+              }
               existing.unshift(ticketPayload);
               localStorage.setItem(key, JSON.stringify(existing));
             }
-          } catch {}
+          } catch { }
         });
-        localStorage.setItem("latest_ticket", JSON.stringify(ticketPayload));
+        localStorage.setItem("latest_ticket", JSON.stringify(confirmationState));
       } catch (e) {
         console.error("Error saving flight booking to local caches:", e);
       }
@@ -716,16 +1121,9 @@ export default function FlightPaymentPage() {
       sessionStorage.removeItem("booking_session_expiry");
       clearFlightBookingFlowState();
 
-      const confirmationState = {
-        ...ticketPayload,
-        isTwoWay: Boolean(returnTicketPayload),
-        onwardTicket: ticketPayload,
-        returnTicket: returnTicketPayload,
-      };
-
       try {
         sessionStorage.setItem("BookingResponse", JSON.stringify(confirmationState));
-      } catch (e) {}
+      } catch (e) { }
 
       navigate("/ticket/confirmation", { state: confirmationState, replace: true });
     } catch (error) {
@@ -770,70 +1168,111 @@ export default function FlightPaymentPage() {
         <aside className="flight-checkout-sidebar">
           {/* Your Flight Details */}
           <div className="sidebar-card your-flight-card">
-            <h3 className="sidebar-card-title">{flowState.isTwoWay ? "Your Flights (Roundtrip)" : "Your Flight"}</h3>
-            
-            {/* Onward Flight Segment */}
-            <div style={{ marginBottom: flowState.isTwoWay ? 16 : 0 }}>
-              {flowState.isTwoWay && (
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
-                  1. Onward Flight
-                </div>
-              )}
-              <div className="flight-segment">
-                <div className="flight-city-info">
-                  <span className="flight-city-code">{flight.sourceCode || "--"}</span>
-                  <span className="flight-city-name">{flowState.searchContext?.source || "--"}</span>
-                </div>
-                <div className="flight-stops-indicator">
-                  <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
-                  <div className="stops-line"></div>
-                </div>
-                <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                  <span className="flight-city-code">{flight.destinationCode || "--"}</span>
-                  <span className="flight-city-name">{flowState.searchContext?.destination || "--"}</span>
-                </div>
-              </div>
-              <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <span className="flight-date-badge">{flight.departDate || flowState.searchContext?.departureDate || "--"}</span>
-                  <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                    ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <h3 className="sidebar-card-title">
+              {flowState.isMultiCity
+                ? "Your Flights (Multi-city)"
+                : flowState.isTwoWay
+                  ? "Your Flights (Roundtrip)"
+                  : "Your Flight"}
+            </h3>
 
-            {/* Return Flight Segment */}
-            {flowState.isTwoWay && flowState.returnFlight && (
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#dc1e26", textTransform: "uppercase", marginBottom: 6 }}>
-                  2. Return Flight
+            {flowState.isMultiCity && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0 ? (
+              flowState.selectedLegs.map((leg, index) => (
+                <div key={`mc-pay-leg-${index}`} style={{ marginTop: index > 0 ? 16 : 0, paddingTop: index > 0 ? 16 : 0, borderTop: index > 0 ? "1px dashed #cbd5e1" : "none" }}>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
+                    {index + 1}. Leg {index + 1}
+                  </div>
+                  <div className="flight-segment">
+                    <div className="flight-city-info">
+                      <span className="flight-city-code">{leg?.sourceCode || "--"}</span>
+                      <span className="flight-city-name">{leg?.sourceName || leg?.fromCity || "--"}</span>
+                    </div>
+                    <div className="flight-stops-indicator">
+                      <span className="stops-text">{Number(leg?.stops || 0) > 0 ? `${leg.stops} stop` : "Non stop"}</span>
+                      <div className="stops-line"></div>
+                    </div>
+                    <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                      <span className="flight-city-code">{leg?.destinationCode || "--"}</span>
+                      <span className="flight-city-name">{leg?.destinationName || leg?.toCity || "--"}</span>
+                    </div>
+                  </div>
+                  <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{leg?.airlineName || leg?.airline || "Flight"} ({leg?.flightNumber || "--"})</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span className="flight-date-badge">{leg?.departDate || leg?.departureDate || "--"}</span>
+                      <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                        ₹{new Intl.NumberFormat("en-IN").format(Number(leg?.fare || leg?.price || leg?.priceInr || leg?.selectedTravelClassPriceInr || 0))}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flight-segment">
-                  <div className="flight-city-info">
-                    <span className="flight-city-code">{flowState.returnFlight.sourceCode || "--"}</span>
-                    <span className="flight-city-name">{flowState.searchContext?.destination || "--"}</span>
+              ))
+            ) : (
+              <>
+                {/* Onward Flight Segment */}
+                <div style={{ marginBottom: flowState.isTwoWay ? 16 : 0 }}>
+                  {flowState.isTwoWay && (
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
+                      1. Onward Flight
+                    </div>
+                  )}
+                  <div className="flight-segment">
+                    <div className="flight-city-info">
+                      <span className="flight-city-code">{flight.sourceCode || "--"}</span>
+                      <span className="flight-city-name">{flowState.searchContext?.source || "--"}</span>
+                    </div>
+                    <div className="flight-stops-indicator">
+                      <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
+                      <div className="stops-line"></div>
+                    </div>
+                    <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                      <span className="flight-city-code">{flight.destinationCode || "--"}</span>
+                      <span className="flight-city-name">{flowState.searchContext?.destination || "--"}</span>
+                    </div>
                   </div>
-                  <div className="flight-stops-indicator">
-                    <span className="stops-text">{Number(flowState.returnFlight.stops || 0) > 0 ? `${flowState.returnFlight.stops} stop` : "Non stop"}</span>
-                    <div className="stops-line"></div>
-                  </div>
-                  <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                    <span className="flight-city-code">{flowState.returnFlight.destinationCode || "--"}</span>
-                    <span className="flight-city-name">{flowState.searchContext?.source || "--"}</span>
+                  <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span className="flight-date-badge">{flight.departDate || flowState.searchContext?.departureDate || "--"}</span>
+                      <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                        ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>{flowState.returnFlight.airlineName || flowState.returnFlight.airline} ({flowState.returnFlight.flightNumber})</span>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <span className="flight-date-badge">{flowState.returnFlight.departDate || flowState.searchContext?.returnDate || "--"}</span>
-                    <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                      ₹{new Intl.NumberFormat("en-IN").format(Number(flowState.returnFlight.fare || flowState.returnFlight.price || flowState.returnFlight.priceInr || flowState.returnFlight.selectedTravelClassPriceInr || 0))}
-                    </span>
+
+                {/* Return Flight Segment */}
+                {flowState.isTwoWay && flowState.returnFlight && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#dc1e26", textTransform: "uppercase", marginBottom: 6 }}>
+                      2. Return Flight
+                    </div>
+                    <div className="flight-segment">
+                      <div className="flight-city-info">
+                        <span className="flight-city-code">{flowState.returnFlight.sourceCode || "--"}</span>
+                        <span className="flight-city-name">{flowState.searchContext?.destination || "--"}</span>
+                      </div>
+                      <div className="flight-stops-indicator">
+                        <span className="stops-text">{Number(flowState.returnFlight.stops || 0) > 0 ? `${flowState.returnFlight.stops} stop` : "Non stop"}</span>
+                        <div className="stops-line"></div>
+                      </div>
+                      <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                        <span className="flight-city-code">{flowState.returnFlight.destinationCode || "--"}</span>
+                        <span className="flight-city-name">{flowState.searchContext?.source || "--"}</span>
+                      </div>
+                    </div>
+                    <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>{flowState.returnFlight.airlineName || flowState.returnFlight.airline} ({flowState.returnFlight.flightNumber})</span>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <span className="flight-date-badge">{flowState.returnFlight.departDate || flowState.searchContext?.returnDate || "--"}</span>
+                        <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                          ₹{new Intl.NumberFormat("en-IN").format(Number(flowState.returnFlight.fare || flowState.returnFlight.price || flowState.returnFlight.priceInr || flowState.returnFlight.selectedTravelClassPriceInr || 0))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </div>
 
@@ -854,66 +1293,12 @@ export default function FlightPaymentPage() {
             <h3 className="sidebar-card-title">Fare Summary</h3>
             <div className="fare-row">
               <span>Base Fare</span>
-              <span>₹ {(Number(fareSummary.baseFare) || 0).toLocaleString("en-IN")}</span>
+              <span>₹ {displayBaseFare.toLocaleString("en-IN")}</span>
             </div>
-            {Number(fareSummary.seatSurcharge) > 0 && (
-              <div className="fare-row">
-                <span>Seat Surcharge</span>
-                <span>₹ {Number(fareSummary.seatSurcharge).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {(Number(fareSummary.mealFee) + Number(fareSummary.baggageFee)) > 0 && (
-              <div className="fare-row">
-                <span>Meals & Baggage</span>
-                <span>₹ {(Number(fareSummary.mealFee) + Number(fareSummary.baggageFee)).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.tax) > 0 && (
+            {displayTax > 0 && (
               <div className="fare-row">
                 <span>Taxes & Fees</span>
-                <span>₹ {Number(fareSummary.tax).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.markup) > 0 && (
-              <div className="fare-row">
-                <span>Service Markup</span>
-                <span>₹ {Number(fareSummary.markup).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.convenienceFee) > 0 && (
-              <div className="fare-row">
-                <span>Convenience Fee</span>
-                <span>₹ {Number(fareSummary.convenienceFee).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.assuredFee) > 0 && (
-              <div className="fare-row">
-                <span>PickNBook Fee</span>
-                <span>₹ {Number(fareSummary.assuredFee).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.tripSecureFee) > 0 && (
-              <div className="fare-row">
-                <span>Trip Secure Fee</span>
-                <span>₹ {Number(fareSummary.tripSecureFee).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.travelAssistanceFee) > 0 && (
-              <div className="fare-row">
-                <span>Travel Assistance</span>
-                <span>₹ {Number(fareSummary.travelAssistanceFee).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(fareSummary.zeroCancellationFee) > 0 && (
-              <div className="fare-row">
-                <span>Zero Cancellation</span>
-                <span>₹ {Number(fareSummary.zeroCancellationFee).toLocaleString("en-IN")}</span>
-              </div>
-            )}
-            {Number(flowState.couponDiscount || fareSummary.discount) > 0 && (
-              <div className="fare-row">
-                <span>Instant Discount</span>
-                <span className="discount-value">-₹ {Number(flowState.couponDiscount || fareSummary.discount).toLocaleString("en-IN")}</span>
+                <span>₹ {displayTax.toLocaleString("en-IN")}</span>
               </div>
             )}
             <div className="fare-row total-amount-row">
@@ -943,7 +1328,7 @@ export default function FlightPaymentPage() {
                 ⏳ Expiration time: <span className="timer-countdown">{formatTimer(qrTimer)}</span>
               </div>
             </div>
-            
+
             <div className="flight-payment-methods" style={{ padding: 0, marginBottom: 24 }}>
               {availableMethods.map((method) => (
                 <button
@@ -1076,7 +1461,7 @@ export default function FlightPaymentPage() {
                           />
                         </div>
                       </div>
-                      
+
                       <div className="upi-suffixes-row">
                         {["@okhdfcbank", "@okicici", "@okaxis", "@ybl", "@paytm"].map((suffix) => (
                           <button
@@ -1423,63 +1808,70 @@ export default function FlightPaymentPage() {
 
                   {(() => {
                     const rules = activeFareRuleModal.data?.results || activeFareRuleModal.data?.Results || [];
-                    const isRefundable = activeFareRuleModal.flight?.isRefundable ?? true;
+                    const miniFareRules = activeFareRuleModal.data?.miniFareRules || activeFareRuleModal.data?.MiniFareRules || [];
+                    const airlineRules = activeFareRuleModal.data?.airlineRules || activeFareRuleModal.data?.AirlineRules || null;
                     const fl = activeFareRuleModal.flight || {};
 
-                    if (Array.isArray(rules) && rules.length > 0) {
-                      return rules.map((rule, idx) => (
-                        <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px", marginBottom: "12px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}>
-                            <span>{rule.Airline || fl.airlineName || fl.airline || "Airline Fare Rules"}</span>
-                            <span style={{ color: "#d32f2f" }}>{rule.Origin || fl.sourceCode || "Origin"} ➔ {rule.Destination || fl.destinationCode || "Destination"}</span>
-                          </div>
-                          {rule.FareBasisCode && (
-                            <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "10px" }}>
-                              Fare Basis: <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>{rule.FareBasisCode}</code>
-                            </div>
-                          )}
-                          <div
-                            className="fare-rule-html-content"
-                            dangerouslySetInnerHTML={{
-                              __html: rule.FareRuleDetail || rule.FareRules || "Cancellation and date change penalties apply as per airline tariff rules."
-                            }}
-                          />
+                    const hasRules = Array.isArray(rules) && rules.length > 0;
+                    const hasMiniRules = Array.isArray(miniFareRules) && miniFareRules.length > 0;
+                    const hasAirlineRules = Boolean(airlineRules && typeof airlineRules === "object");
+
+                    if (!hasRules && !hasMiniRules && !hasAirlineRules) {
+                      return (
+                        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "20px", textAlign: "center", color: "#64748b" }}>
+                          No detailed fare rules returned by the airline provider for this fare.
                         </div>
-                      ));
+                      );
                     }
 
                     return (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
-                            <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px" }}>Refund Status</div>
-                            <div style={{ fontSize: "1rem", fontWeight: 700, color: isRefundable ? "#16a34a" : "#dc2626" }}>
-                              {isRefundable ? "Refundable Fare" : "Non-Refundable Fare"}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        {hasRules && rules.map((rule, idx) => (
+                          <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}>
+                              <span>{rule.Airline || fl.airlineName || fl.airline || "Airline Fare Rules"}</span>
+                              <span style={{ color: "#d32f2f" }}>{rule.Origin || fl.sourceCode || "Origin"} ➔ {rule.Destination || fl.destinationCode || "Destination"}</span>
                             </div>
-                            <div style={{ fontSize: "0.82rem", color: "#475569", marginTop: "4px" }}>
-                              {isRefundable ? "Refunds permitted minus airline cancellation fees." : "Base fare is non-refundable upon cancellation."}
-                            </div>
+                            {rule.FareBasisCode && (
+                              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "10px" }}>
+                                Fare Basis: <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>{rule.FareBasisCode}</code>
+                              </div>
+                            )}
+                            <div
+                              className="fare-rule-html-content"
+                              dangerouslySetInnerHTML={{
+                                __html: rule.FareRuleDetail || rule.FareRules || ""
+                              }}
+                            />
                           </div>
+                        ))}
 
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
-                            <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px" }}>Baggage Policy</div>
-                            <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>
-                              Check-in: {fl.checkInBaggage || "15 Kg"}
-                            </div>
-                            <div style={{ fontSize: "0.82rem", color: "#475569", marginTop: "4px" }}>
-                              Cabin Baggage: {fl.cabinBaggage || "7 Kg"}
-                            </div>
+                        {hasMiniRules && (
+                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
+                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Mini Fare Rules (API)</div>
+                            {miniFareRules.map((m, idx) => (
+                              <div key={idx} style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "6px" }}>
+                                <strong>{m.Type || m.Category || "Rule"}:</strong> {m.Details || m.Rule || JSON.stringify(m)}
+                              </div>
+                            ))}
                           </div>
-                        </div>
+                        )}
 
-                        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
-                          <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px", fontSize: "0.95rem" }}>Cancellation & Reschedule Charges</div>
-                          <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.88rem", color: "#334155", lineHeight: "1.6" }}>
-                            <li><strong>Cancellation Fee:</strong> Standard airline cancellation fee + agency service charge applies if cancelled &gt; 4 hours before departure.</li>
-                            <li><strong>Date Change / Reschedule:</strong> Airline change fee + fare difference (if any) applies per sector per passenger.</li>
-                            <li><strong>No Show:</strong> No refund for cancellations within 4 hours of scheduled departure time.</li>
-                          </ul>
-                        </div>
+                        {hasAirlineRules && (
+                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
+                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Airline Passenger Rules (API)</div>
+                            {airlineRules.FirstNameMinChar && (
+                              <div style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "4px" }}>
+                                <strong>First Name Minimum Length:</strong> {airlineRules.FirstNameMinChar} characters
+                              </div>
+                            )}
+                            {airlineRules.LastNameMinChar && (
+                              <div style={{ fontSize: "0.88rem", color: "#334155" }}>
+                                <strong>Last Name Minimum Length:</strong> {airlineRules.LastNameMinChar} characters
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}

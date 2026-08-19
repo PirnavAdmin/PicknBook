@@ -1,10 +1,31 @@
-/* eslint-disable */
-export function getHotelVisuals(hotelImages = []) {
-  const images = Array.isArray(hotelImages) ? hotelImages : [];
+const DEFAULT_HOTEL_IMAGES = [
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80"
+];
+
+export function getHotelVisuals(hotelInput = []) {
+  let images = [];
+  if (Array.isArray(hotelInput)) {
+    images = hotelInput.filter(Boolean);
+  } else if (typeof hotelInput === "string" && hotelInput.startsWith("http")) {
+    images = [hotelInput];
+  }
+
+  if (images.length === 0) {
+    const seed = String(hotelInput || "hotel").length;
+    images = [DEFAULT_HOTEL_IMAGES[seed % DEFAULT_HOTEL_IMAGES.length]];
+  }
+
+  const cardImg = images[0];
+  const thumbImg = images[1] || cardImg;
+
   return {
     gallery: images,
-    cardImage: images[0] || null,
-    thumbImage: images[1] || images[0] || null,
+    cardImage: cardImg,
+    thumbImage: thumbImg,
     hostName: "Hotel Host",
     hostYears: 2,
     propertyLabel: "Premium Stay",

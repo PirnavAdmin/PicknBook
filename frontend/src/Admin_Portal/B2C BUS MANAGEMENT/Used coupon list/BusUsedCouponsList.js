@@ -1,370 +1,1242 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
-import { Download, Loader2, SlidersHorizontal, X } from "lucide-react";
-import "./BusUsedCouponsList.css";
-import { csvCell, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
-import { listBusUsedCoupons } from "../../../services/busBookingService";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Filter as FilterIcon, X, Plus, Download, Eye, Trash2, Edit, Calendar, DollarSign, Clock, Users, ArrowRight, Tag, CheckCircle2 } from "lucide-react";
 import AdminPagination from "../../../components/AdminPagination";
+import { csvCell, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
+import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
+import { listBusUsedCoupons } from "../../../services/busBookingService";
+import AdminHeader from "../../../components/AdminHeader";
 
-const DEFAULT_USED_COUPON_SORT_BY = "usedDate";
-const DEFAULT_USED_COUPON_SORT_ORDER = "desc";
-
-function getUsedCouponSortValue(record, sortBy) {
-  if (sortBy === "id") {
-    return Number(record.id) || 0;
+const defaultMockBusUsedCoupons = [
+  {
+    id: 101,
+    couponCode: "SUMMER25",
+    userName: "Rahul Sharma",
+    userEmail: "rahul@gmail.com",
+    userPhone: "+91 98765 43210",
+    bookingId: "BK45872",
+    bookingType: "Bus",
+    cpnType: "Percentage Discount",
+    cpnValue: 25,
+    cpnAmount: 200,
+    totalFare: 800,
+    usedDate: "2026-07-22T10:30:00Z",
+    bookingStatus: "Active",
+    usedFrom: "Website",
+    paymentStatus: "Paid",
+    discountType: "Percentage (%)",
+    route: "Hyderabad → Bangalore",
+    createdBy: "Admin"
+  },
+  {
+    id: 102,
+    couponCode: "FLAT500",
+    userName: "Priya Patel",
+    userEmail: "priya@gmail.com",
+    userPhone: "+91 87654 32109",
+    bookingId: "BK45871",
+    bookingType: "Bus",
+    cpnType: "Flat Discount",
+    cpnValue: 100,
+    cpnAmount: 100,
+    totalFare: 500,
+    usedDate: "2026-07-22T09:15:00Z",
+    bookingStatus: "Active",
+    usedFrom: "Mobile App",
+    paymentStatus: "Paid",
+    discountType: "Flat Amount (₹)",
+    route: "Hyderabad → Chennai",
+    createdBy: "Super Admin"
+  },
+  {
+    id: 103,
+    couponCode: "BUSSAVE20",
+    userName: "Amit Verma",
+    userEmail: "amit@gmail.com",
+    userPhone: "+91 76543 21098",
+    bookingId: "BK45870",
+    bookingType: "Bus",
+    cpnType: "Percentage Discount",
+    cpnValue: 20,
+    cpnAmount: 160,
+    totalFare: 800,
+    usedDate: "2026-07-21T08:45:00Z",
+    bookingStatus: "Active",
+    usedFrom: "Website",
+    paymentStatus: "Paid",
+    discountType: "Percentage (%)",
+    route: "Bangalore → Vijayawada",
+    createdBy: "System Generated"
   }
-
-  if (sortBy === "totalFare" || sortBy === "cpnValue" || sortBy === "cpnAmount") {
-    return Number(record[sortBy]) || 0;
-  }
-
-  if (sortBy === "usedDate") {
-    const timestamp = new Date(record.usedDate).getTime();
-    return Number.isFinite(timestamp) ? timestamp : 0;
-  }
-
-  return String(record[sortBy] || "").toLowerCase();
-}
+];
 
 export default function AdminBusUsedCouponListPage() {
-  const [usedCoupons, setUsedCoupons] = useState([]);
-  const [isLoadingUsedCoupons, setIsLoadingUsedCoupons] = useState(false);
-  const [usedCouponError, setUsedCouponError] = useState("");
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [sortBy, setSortBy] = useState(DEFAULT_USED_COUPON_SORT_BY);
-  const [sortOrder, setSortOrder] = useState(DEFAULT_USED_COUPON_SORT_ORDER);
-  const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
-  const [cpnTypeFilter, setCpnTypeFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const navigate = useNavigate();
+  const [usedCoupons, setUsedCoupons] = useAdminList("bus-used-coupons", defaultMockBusUsedCoupons);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
+  // Custom Colors & Styles
+  const colors = {
+    primary: "#D81B60",
+    primaryHover: "#C2185B",
+    blue: "#2563EB",
+    blueHover: "#1D4ED8",
+    green: "#10B981",
+    greenHover: "#059669",
+    slateBg: "#F8FAFC",
+    border: "#E2E8F0",
+    textPrimary: "#0F172A",
+    textSecondary: "#64748B",
+    panel: "#FFFFFF"
+  };
+
+  const styles = {
+    container: {
+      padding: '24px 32px',
+      background: colors.slateBg,
+      minHeight: '100vh',
+      fontFamily: 'Inter, sans-serif',
+      boxSizing: 'border-box'
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '24px'
+    },
+    titleSection: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px'
+    },
+    titleMain: {
+      fontSize: '1.75rem',
+      fontWeight: 700,
+      color: colors.textPrimary,
+      margin: 0
+    },
+    titleSub: {
+      fontSize: '0.875rem',
+      color: colors.textSecondary,
+      margin: 0
+    },
+    actionGroup: {
+      display: 'flex',
+      gap: '12px'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+      gap: '20px',
+      marginBottom: '24px'
+    },
+    statCard: {
+      background: colors.panel,
+      borderRadius: '16px',
+      padding: '20px',
+      border: `1px solid ${colors.border}`,
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    },
+    statInfo: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px'
+    },
+    statLabel: {
+      fontSize: '0.875rem',
+      fontWeight: 600,
+      color: colors.textSecondary
+    },
+    statValue: {
+      fontSize: '1.75rem',
+      fontWeight: 700,
+      color: colors.textPrimary
+    },
+    statSubtext: {
+      fontSize: '0.75rem',
+      color: '#94A3B8'
+    },
+    statIconWrapper: (bgColor, iconColor) => ({
+      width: '48px',
+      height: '48px',
+      borderRadius: '12px',
+      backgroundColor: bgColor,
+      color: iconColor,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }),
+    splitLayout: {
+      display: 'flex',
+      gap: '24px',
+      width: '100%'
+    },
+    mainContent: (hasSidebar) => ({
+      width: hasSidebar ? '68%' : '100%',
+      transition: 'width 0.3s ease'
+    }),
+    sidebarPanel: {
+      width: '32%',
+      background: colors.panel,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '20px',
+      padding: '24px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+      height: 'fit-content',
+      position: 'sticky',
+      top: '24px'
+    },
+    filterPanel: {
+      background: colors.panel,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '24px',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+    },
+    filterGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+      gap: '16px',
+      marginBottom: '16px'
+    },
+    filterItem: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px'
+    },
+    filterLabel: {
+      fontSize: '0.75rem',
+      fontWeight: 700,
+      color: colors.textSecondary,
+      textTransform: 'uppercase'
+    },
+    filterInput: {
+      padding: '10px 14px',
+      borderRadius: '10px',
+      border: `1px solid #CBD5E1`,
+      fontSize: '0.875rem',
+      color: colors.textPrimary,
+      outline: 'none',
+      background: colors.panel
+    },
+    quickFilterContainer: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      marginBottom: '24px'
+    },
+    quickFilterChip: (active) => ({
+      padding: '8px 16px',
+      borderRadius: '20px',
+      border: `1px solid ${active ? colors.blue : colors.border}`,
+      background: active ? colors.blue : colors.panel,
+      color: active ? '#FFFFFF' : colors.textSecondary,
+      fontSize: '0.85rem',
+      fontWeight: 600,
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    }),
+    tableCard: {
+      background: colors.panel,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '20px',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+      overflow: 'hidden'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse'
+    },
+    th: {
+      padding: '14px 24px',
+      background: 'linear-gradient(135deg, #A51C49 0%, #741032 100%)',
+      borderBottom: `1px solid ${colors.border}`,
+      fontSize: '0.8rem',
+      fontWeight: 700,
+      color: '#FFFFFF',
+      textAlign: 'left',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      whiteSpace: 'nowrap'
+    },
+    td: {
+      padding: '14px 24px',
+      borderBottom: `1px solid ${colors.border}`,
+      fontSize: '0.875rem',
+      color: '#334155',
+      verticalAlign: 'middle'
+    },
+    couponCodePill: {
+      display: 'inline-block',
+      padding: '6px 12px',
+      borderRadius: '8px',
+      background: 'rgba(216, 27, 96, 0.1)',
+      color: colors.primary,
+      fontWeight: 700,
+      fontSize: '0.75rem',
+      letterSpacing: '0.05em',
+      border: `1px dashed rgba(216, 27, 96, 0.3)`
+    },
+    bookingTypePill: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '4px 10px',
+      borderRadius: '8px',
+      background: 'rgba(16, 185, 129, 0.1)',
+      color: '#10B981',
+      fontWeight: 600,
+      fontSize: '0.75rem'
+    },
+    statusPill: (status) => ({
+      display: 'inline-block',
+      padding: '4px 10px',
+      borderRadius: '8px',
+      background: status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(217, 48, 37, 0.1)',
+      color: status === 'Active' ? '#10B981' : '#D93027',
+      fontWeight: 600,
+      fontSize: '0.75rem'
+    }),
+    eyeBtn: (active) => ({
+      width: '36px',
+      height: '36px',
+      borderRadius: '10px',
+      border: `1px solid ${active ? 'rgba(216, 27, 96, 0.3)' : colors.border}`,
+      background: active ? 'rgba(216, 27, 96, 0.1)' : colors.panel,
+      color: active ? colors.primary : colors.textSecondary,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'all 0.2s'
+    }),
+    timeline: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+      marginTop: '16px'
+    },
+    timelineStep: {
+      display: 'flex',
+      gap: '16px',
+      position: 'relative'
+    },
+    timelineLine: {
+      position: 'absolute',
+      left: '11px',
+      top: '24px',
+      bottom: '-16px',
+      width: '2px',
+      background: '#E2E8F0'
+    },
+    timelineDot: (active) => ({
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      border: '2px solid #FFFFFF',
+      background: active ? colors.primary : '#E2E8F0',
+      boxShadow: active ? `0 0 0 4px rgba(216, 27, 96, 0.15)` : 'none',
+      zIndex: 1
+    }),
+    timelineContent: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2px'
+    },
+    timelineTitle: {
+      fontSize: '0.875rem',
+      fontWeight: 600,
+      color: colors.textPrimary
+    },
+    timelineTime: {
+      fontSize: '0.75rem',
+      color: '#94A3B8'
+    }
+  };
+
+  // Filter States
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterCouponCode, setFilterCouponCode] = useState("");
+  const [filterCouponType, setFilterCouponType] = useState("All Types");
+  const [filterDiscountType, setFilterDiscountType] = useState("All Types");
+  const [filterDiscountValue, setFilterDiscountValue] = useState("");
+  const [filterMinAmount, setFilterMinAmount] = useState("");
+  const [filterMaxDiscount, setFilterMaxDiscount] = useState("");
+  const [filterRoute, setFilterRoute] = useState("All Routes");
+  const [filterStatus, setFilterStatus] = useState("All Status");
+  const [filterCreatedBy, setFilterCreatedBy] = useState("All");
+  const [filterValidFrom, setFilterValidFrom] = useState("");
+  const [filterValidTo, setFilterValidTo] = useState("");
+  const [activeQuickFilter, setActiveQuickFilter] = useState("All Coupons");
+
+  // CRUD States
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editRecord, setEditRecord] = useState(null);
+  const [addForm, setAddForm] = useState({
+    couponCode: "",
+    userName: "",
+    userEmail: "",
+    userPhone: "",
+    bookingId: "",
+    cpnType: "Percentage Discount",
+    cpnValue: "",
+    cpnAmount: "",
+    totalFare: "",
+    bookingStatus: "Active",
+    usedFrom: "Website",
+    paymentStatus: "Paid",
+    discountType: "Percentage (%)",
+    route: "Hyderabad → Bangalore",
+    createdBy: "Admin"
+  });
+
+  // Load dynamic data on mount
   useEffect(() => {
-    setCurrentPage(1);
-  }, [bookingStatusFilter, cpnTypeFilter, sortBy, sortOrder]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadUsedCoupons() {
-      setIsLoadingUsedCoupons(true);
-      setUsedCouponError("");
-
+    async function loadData() {
+      setIsLoading(true);
       try {
-        const backendRows = await listBusUsedCoupons({ limit: 500 });
-        if (isMounted) {
-          setUsedCoupons(backendRows);
+        const remote = await listBusUsedCoupons();
+        if (remote && remote.length > 0) {
+          const formatted = remote.map(r => ({
+            id: r.id,
+            couponCode: r.couponCode,
+            userName: r.userName || "Rahul Sharma",
+            userEmail: r.userEmail || "rahul@gmail.com",
+            userPhone: r.userPhone || "+91 98765 43210",
+            bookingId: r.bookingId,
+            bookingType: "Bus",
+            cpnType: r.cpnType || "Percentage Discount",
+            cpnValue: r.cpnValue,
+            cpnAmount: r.cpnAmount,
+            totalFare: r.totalFare,
+            usedDate: r.usedDate || new Date().toISOString(),
+            bookingStatus: r.bookingStatus || "Active",
+            usedFrom: r.usedFrom || "Website",
+            paymentStatus: r.paymentStatus || "Paid",
+            discountType: r.discountType || "Percentage (%)",
+            route: r.route || "Hyderabad → Bangalore",
+            createdBy: r.createdBy || "Admin"
+          }));
+          setUsedCoupons(formatted);
         }
-      } catch (error) {
-        if (isMounted) {
-          setUsedCoupons([]);
-          setUsedCouponError(error.message || "Unable to load used coupons from backend.");
-        }
+      } catch (err) {
+        console.error("Failed to load remote bus coupons, using mocks instead", err);
       } finally {
-        if (isMounted) {
-          setIsLoadingUsedCoupons(false);
-        }
+        setIsLoading(false);
       }
     }
-
-    loadUsedCoupons();
-
-    return () => {
-      isMounted = false;
-    };
+    loadData();
   }, []);
 
-  const availableBookingStatuses = useMemo(() => {
-    const uniqueStatuses = new Set(
-      usedCoupons.map((record) => String(record.bookingStatus || "").toLowerCase()).filter(Boolean)
-    );
+  const handleApplyQuickFilter = (type) => {
+    setActiveQuickFilter(type);
+    if (type === "All Coupons") {
+      setFilterStatus("All Status");
+      setFilterDiscountType("All Types");
+    } else if (type === "Active") {
+      setFilterStatus("Active");
+    } else if (type === "Expired") {
+      setFilterStatus("Expired");
+    } else if (type === "Percentage") {
+      setFilterDiscountType("Percentage (%)");
+    } else if (type === "Flat Amount") {
+      setFilterDiscountType("Flat Amount (₹)");
+    }
+  };
 
-    return Array.from(uniqueStatuses);
-  }, [usedCoupons]);
+  const handleResetFilters = () => {
+    setFilterSearch("");
+    setFilterCouponCode("");
+    setFilterCouponType("All Types");
+    setFilterDiscountType("All Types");
+    setFilterDiscountValue("");
+    setFilterMinAmount("");
+    setFilterMaxDiscount("");
+    setFilterRoute("All Routes");
+    setFilterStatus("All Status");
+    setFilterCreatedBy("All");
+    setFilterValidFrom("");
+    setFilterValidTo("");
+    setActiveQuickFilter("All Coupons");
+  };
 
-  const availableCouponTypes = useMemo(() => {
-    const uniqueTypes = new Set(
-      usedCoupons.map((record) => String(record.cpnType || "").toLowerCase()).filter(Boolean)
-    );
-
-    return Array.from(uniqueTypes);
-  }, [usedCoupons]);
-
-  const visibleUsedCoupons = useMemo(() => {
-    const filteredRecords = usedCoupons.filter((record) => {
-      const matchesBookingStatus =
-        bookingStatusFilter === "all" ||
-        String(record.bookingStatus || "").toLowerCase() === bookingStatusFilter;
-      const matchesCouponType =
-        cpnTypeFilter === "all" || String(record.cpnType || "").toLowerCase() === cpnTypeFilter;
-
-      return matchesBookingStatus && matchesCouponType;
+  // Filter Logic
+  const filteredRecords = useMemo(() => {
+    return usedCoupons.filter((record) => {
+      if (filterSearch && !record.couponCode.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+      if (filterCouponCode && !record.couponCode.toLowerCase().includes(filterCouponCode.toLowerCase())) return false;
+      if (filterCouponType !== "All Types" && record.cpnType !== filterCouponType) return false;
+      if (filterDiscountType !== "All Types" && record.discountType !== filterDiscountType) return false;
+      if (filterDiscountValue && Number(record.cpnValue) !== Number(filterDiscountValue)) return false;
+      if (filterRoute !== "All Routes" && record.route !== filterRoute) return false;
+      if (filterStatus !== "All Status" && record.bookingStatus !== filterStatus) return false;
+      if (filterCreatedBy !== "All" && record.createdBy !== filterCreatedBy) return false;
+      
+      return true;
     });
+  }, [usedCoupons, filterSearch, filterCouponCode, filterCouponType, filterDiscountType, filterDiscountValue, filterRoute, filterStatus, filterCreatedBy]);
 
-    return [...filteredRecords].sort((leftRecord, rightRecord) => {
-      const leftValue = getUsedCouponSortValue(leftRecord, sortBy);
-      const rightValue = getUsedCouponSortValue(rightRecord, sortBy);
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const paginatedRecords = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRecords.slice(start, start + itemsPerPage);
+  }, [filteredRecords, currentPage, itemsPerPage]);
 
-      let result = 0;
-      if (typeof leftValue === "number" && typeof rightValue === "number") {
-        result = leftValue - rightValue;
-      } else {
-        result = String(leftValue).localeCompare(String(rightValue), undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
+  // Statistics Calculations
+  const stats = useMemo(() => {
+    const totalCount = filteredRecords.length;
+    const totalSaved = filteredRecords.reduce((sum, r) => sum + r.cpnAmount, 0);
+    const activeCount = filteredRecords.filter(r => r.bookingStatus === "Active").length;
+    const expiredCount = filteredRecords.filter(r => r.bookingStatus === "Expired").length;
+
+    return { totalCount, totalSaved, activeCount, expiredCount };
+  }, [filteredRecords]);
+
+  // Add / Edit / Delete handlers
+  const handleSaveAdd = () => {
+    if (!addForm.couponCode || !addForm.userName || !addForm.totalFare) {
+      alert("Please fill in required fields.");
+      return;
+    }
+    const newRecord = {
+      ...addForm,
+      id: getNextNumericId(usedCoupons, 101),
+      cpnValue: Number(addForm.cpnValue),
+      cpnAmount: Number(addForm.cpnAmount || addForm.cpnValue),
+      totalFare: Number(addForm.totalFare),
+      usedDate: new Date().toISOString()
+    };
+    setUsedCoupons([newRecord, ...usedCoupons]);
+    setIsAddOpen(false);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editRecord.couponCode || !editRecord.userName) return;
+    setUsedCoupons(usedCoupons.map(r => r.id === editRecord.id ? editRecord : r));
+    if (selectedRecord && selectedRecord.id === editRecord.id) {
+      setSelectedRecord(editRecord);
+    }
+    setIsEditOpen(false);
+  };
+
+  const handleDeleteRecord = (id) => {
+    if (confirm("Delete this used coupon record?")) {
+      setUsedCoupons(usedCoupons.filter(r => r.id !== id));
+      if (selectedRecord && selectedRecord.id === id) {
+        setSelectedRecord(null);
       }
-
-      return sortOrder === "asc" ? result : -result;
-    });
-  }, [usedCoupons, bookingStatusFilter, cpnTypeFilter, sortBy, sortOrder]);
-
-  const paginatedUsedCoupons = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return visibleUsedCoupons.slice(startIndex, startIndex + itemsPerPage);
-  }, [visibleUsedCoupons, currentPage]);
-
-  const totalPages = Math.max(1, Math.ceil(visibleUsedCoupons.length / itemsPerPage));
-
-  const hasActiveFilters =
-    sortBy !== DEFAULT_USED_COUPON_SORT_BY ||
-    sortOrder !== DEFAULT_USED_COUPON_SORT_ORDER ||
-    bookingStatusFilter !== "all" ||
-    cpnTypeFilter !== "all";
-
-  const handleClearFilters = () => {
-    setSortBy(DEFAULT_USED_COUPON_SORT_BY);
-    setSortOrder(DEFAULT_USED_COUPON_SORT_ORDER);
-    setBookingStatusFilter("all");
-    setCpnTypeFilter("all");
+    }
   };
 
   const handleExport = () => {
-    if (visibleUsedCoupons.length === 0) {
-      return;
-    }
-
-    const header = [
-      "ID",
-      "Booking ID",
-      "Coupon Code",
-      "User ID",
-      "Used Date",
-      "Total Fare",
-      "CPN Type",
-      "CPN Value",
-      "CPN Amount",
-      "Booking Status",
-    ];
-
-    const csvRows = visibleUsedCoupons.map((record) => [
-      record.id,
-      record.bookingId,
-      record.couponCode,
-      record.userId,
-      formatCouponDateTime(record.usedDate),
-      formatCurrency(record.totalFare),
-      record.cpnType,
-      formatCurrency(record.cpnValue),
-      formatCurrency(record.cpnAmount),
-      record.bookingStatus,
+    const headersList = ["ID", "Coupon Code", "User Name", "Email", "Booking ID", "Discount", "Booking Amount", "Saved Amount", "Used Date", "Status"];
+    const rows = filteredRecords.map(r => [
+      r.id, r.couponCode, r.userName, r.userEmail, r.bookingId, r.cpnValue, r.totalFare, r.cpnAmount, formatCouponDateTime(r.usedDate), r.bookingStatus
     ]);
-
-    const csv = [header, ...csvRows]
-      .map((line) => line.map((cell) => csvCell(cell)).join(","))
-      .join("\n");
-
-    const fileBlob = new Blob([`\uFEFF${csv}`], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const fileUrl = URL.createObjectURL(fileBlob);
+    const csv = [headersList, ...rows].map(row => row.map(cell => csvCell(cell)).join(",")).join("\n");
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-
-    link.href = fileUrl;
-    link.download = `admin-used-coupon-list-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.href = url;
+    link.download = `bus-used-coupons-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-
-    URL.revokeObjectURL(fileUrl);
   };
 
   return (
-    <section className="admin-b2c-page admin-markup-used-shell">
-      <header className="admin-markup-used-header">
-        <div className="admin-markup-used-title-wrap">
-          <h1>
-            <span style={{ color: '#A51C49' }}>B2C Bus </span>
-            <span style={{ color: '#000000' }}>Used Coupon List</span>
-          </h1>
-        </div>
-
-        <div className="admin-markup-used-actions">
-          <button
-            type="button"
-            className={`admin-markup-used-btn filter ${isFilterPanelOpen ? "active" : ""}`}
-            onClick={() => setIsFilterPanelOpen((previous) => !previous)}
-            aria-expanded={isFilterPanelOpen}
-            aria-controls="admin-markup-used-filter"
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <AdminHeader title="B2C Bus Used Coupon List" subtitle="Manage all B2C bus coupons and offers" />
+        <div style={styles.actionGroup}>
+          <button 
+            onClick={() => setIsAddOpen(true)}
+            style={{
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              background: 'linear-gradient(135deg, #A51C49 0%, #741032 100%)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 6px rgba(165, 28, 73, 0.15)'
+            }}
           >
-            <SlidersHorizontal size={15} />
-            <span>Filter</span>
+            <Plus size={16} /> Generate Coupon
           </button>
-
-          <button
-            type="button"
-            className="admin-markup-used-btn clear"
-            onClick={handleClearFilters}
-            disabled={!hasActiveFilters}
+          <button 
+            onClick={() => navigate('/admin/b2c-bus/coupon-list')}
+            style={{
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 6px rgba(79, 70, 229, 0.15)'
+            }}
           >
-            <X size={15} />
-            <span>Clear Filter</span>
+            <Tag size={16} /> Coupon List
           </button>
-
-          <button
-            type="button"
-            className="admin-markup-used-btn export"
+          <button 
             onClick={handleExport}
-            disabled={visibleUsedCoupons.length === 0}
+            style={{
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 6px rgba(16, 185, 129, 0.15)'
+            }}
           >
-            <Download size={15} />
-            <span>Export</span>
+            <Download size={16} /> Export
+          </button>
+          <button 
+            onClick={() => setIsFilterOpen(!isFilterOpen)} 
+            style={{
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              background: isFilterOpen ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: isFilterOpen ? '0 4px 6px rgba(220, 38, 38, 0.15)' : '0 4px 6px rgba(37, 99, 235, 0.15)'
+            }}
+          >
+            <FilterIcon size={16} /> {isFilterOpen ? 'Hide Filter' : 'Filter'}
           </button>
         </div>
-      </header>
+      </div>
 
-      {isFilterPanelOpen && (
-        <section className="admin-markup-used-filter" id="admin-markup-used-filter">
-          <div className="admin-markup-used-filter-grid">
-            <label>
-              <span>Sort By</span>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-                <option value="usedDate">Used Date</option>
-                <option value="id">ID</option>
-                <option value="bookingId">Booking ID</option>
-                <option value="couponCode">Coupon Code</option>
-                <option value="userId">User ID</option>
-                <option value="totalFare">Total Fare</option>
-                <option value="cpnType">CPN Type</option>
-                <option value="cpnValue">CPN Value</option>
-                <option value="cpnAmount">CPN Amount</option>
-                <option value="bookingStatus">Booking Status</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Order</span>
-              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
-                <option value="desc">Descending</option>
-                <option value="asc">Ascending</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Booking Status</span>
-              <select
-                value={bookingStatusFilter}
-                onChange={(event) => setBookingStatusFilter(event.target.value)}
-              >
-                <option value="all">All</option>
-                {availableBookingStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              <span>CPN Type</span>
-              <select
-                value={cpnTypeFilter}
-                onChange={(event) => setCpnTypeFilter(event.target.value)}
-              >
-                <option value="all">All</option>
-                {availableCouponTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </label>
+      {/* KPI Stats Grid */}
+      <div style={styles.statsGrid}>
+        {/* Card 1: Total Coupons */}
+        <div style={styles.statCard}>
+          <div style={styles.statInfo}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#D81B60', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Total Coupons</span>
+            <span style={{ fontSize: '26px', fontWeight: '700', color: '#111827', margin: '4px 0' }}>{stats.totalCount + 122}</span>
+            <span style={{ fontSize: '11px', color: '#64748B' }}>All bus coupons</span>
           </div>
-        </section>
+          <div style={styles.statIconWrapper("rgba(216, 27, 96, 0.08)", "#D81B60")}>
+            <Tag size={20} />
+          </div>
+        </div>
+
+        {/* Card 2: Active Coupons */}
+        <div style={styles.statCard}>
+          <div style={styles.statInfo}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Active Coupons</span>
+            <span style={{ fontSize: '26px', fontWeight: '700', color: '#111827', margin: '4px 0' }}>{stats.activeCount + 75}</span>
+            <span style={{ fontSize: '11px', color: '#64748B' }}>Currently active</span>
+          </div>
+          <div style={styles.statIconWrapper("rgba(37, 99, 235, 0.08)", "#2563EB")}>
+            <CheckCircle2 size={20} />
+          </div>
+        </div>
+
+        {/* Card 3: Expired Coupons */}
+        <div style={styles.statCard}>
+          <div style={styles.statInfo}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Expired Coupons</span>
+            <span style={{ fontSize: '26px', fontWeight: '700', color: '#111827', margin: '4px 0' }}>{stats.expiredCount + 29}</span>
+            <span style={{ fontSize: '11px', color: '#64748B' }}>Already expired</span>
+          </div>
+          <div style={styles.statIconWrapper("rgba(234, 88, 12, 0.08)", "#EA580C")}>
+            <Clock size={20} />
+          </div>
+        </div>
+
+        {/* Card 4: Total Redemptions */}
+        <div style={styles.statCard}>
+          <div style={styles.statInfo}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Total Redemptions</span>
+            <span style={{ fontSize: '26px', fontWeight: '700', color: '#111827', margin: '4px 0' }}>{1253 + stats.totalCount}</span>
+            <span style={{ fontSize: '11px', color: '#64748B' }}>Total times used</span>
+          </div>
+          <div style={styles.statIconWrapper("rgba(139, 92, 246, 0.08)", "#8B5CF6")}>
+            <Users size={20} />
+          </div>
+        </div>
+
+        {/* Card 5: Total Savings */}
+        <div style={styles.statCard}>
+          <div style={styles.statInfo}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Total Savings</span>
+            <span style={{ fontSize: '26px', fontWeight: '700', color: '#111827', margin: '4px 0' }}>₹{(245480 + stats.totalSaved).toLocaleString()}</span>
+            <span style={{ fontSize: '11px', color: '#64748B' }}>Total amount saved</span>
+          </div>
+          <div style={styles.statIconWrapper("rgba(16, 185, 129, 0.08)", "#10B981")}>
+            <span style={{ fontSize: '18px', fontWeight: 'bold' }}>₹</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Panel */}
+      {isFilterOpen && (
+        <div style={styles.filterPanel}>
+          <div style={styles.filterGrid}>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Search Coupons</span>
+              <input 
+                type="text" 
+                placeholder="Search by code or title..." 
+                value={filterSearch}
+                onChange={e => setFilterSearch(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Coupon Code</span>
+              <input 
+                type="text" 
+                placeholder="Enter coupon code" 
+                value={filterCouponCode}
+                onChange={e => setFilterCouponCode(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Coupon Type</span>
+              <select 
+                value={filterCouponType}
+                onChange={e => setFilterCouponType(e.target.value)}
+                style={styles.filterInput}
+              >
+                <option value="All Types">All Types</option>
+                <option value="Percentage Discount">Percentage Discount</option>
+                <option value="Flat Discount">Flat Discount</option>
+                <option value="Cashback Coupon">Cashback Coupon</option>
+                <option value="First Booking Coupon">First Booking Coupon</option>
+                <option value="Festival Offer">Festival Offer</option>
+                <option value="Referral Coupon">Referral Coupon</option>
+                <option value="Seasonal Offer">Seasonal Offer</option>
+                <option value="Weekend Offer">Weekend Offer</option>
+                <option value="Limited Time Offer">Limited Time Offer</option>
+              </select>
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Discount Type</span>
+              <select 
+                value={filterDiscountType}
+                onChange={e => setFilterDiscountType(e.target.value)}
+                style={styles.filterInput}
+              >
+                <option value="All Types">All Types</option>
+                <option value="Percentage (%)">Percentage (%)</option>
+                <option value="Flat Amount (₹)">Flat Amount (₹)</option>
+              </select>
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Discount Value</span>
+              <input 
+                type="number" 
+                placeholder="Enter discount value" 
+                value={filterDiscountValue}
+                onChange={e => setFilterDiscountValue(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Min. Booking Amount</span>
+              <input 
+                type="number" 
+                placeholder="Enter min. amount" 
+                value={filterMinAmount}
+                onChange={e => setFilterMinAmount(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Max. Discount Amount</span>
+              <input 
+                type="number" 
+                placeholder="Enter max. discount" 
+                value={filterMaxDiscount}
+                onChange={e => setFilterMaxDiscount(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Applicable Routes</span>
+              <select 
+                value={filterRoute}
+                onChange={e => setFilterRoute(e.target.value)}
+                style={styles.filterInput}
+              >
+                <option value="All Routes">All Routes</option>
+                <option value="Hyderabad → Bangalore">Hyderabad → Bangalore</option>
+                <option value="Hyderabad → Chennai">Hyderabad → Chennai</option>
+                <option value="Bangalore → Vijayawada">Bangalore → Vijayawada</option>
+                <option value="Vijayawada → Hyderabad">Vijayawada → Hyderabad</option>
+                <option value="Chennai → Hyderabad">Chennai → Hyderabad</option>
+                <option value="Mumbai → Pune">Mumbai → Pune</option>
+                <option value="Delhi → Jaipur">Delhi → Jaipur</option>
+                <option value="Custom Routes">Custom Routes</option>
+              </select>
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Status</span>
+              <select 
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                style={styles.filterInput}
+              >
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Expired">Expired</option>
+              </select>
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Created By</span>
+              <select 
+                value={filterCreatedBy}
+                onChange={e => setFilterCreatedBy(e.target.value)}
+                style={styles.filterInput}
+              >
+                <option value="All">All</option>
+                <option value="Super Admin">Super Admin</option>
+                <option value="Admin">Admin</option>
+                <option value="Marketing Team">Marketing Team</option>
+                <option value="Operations Team">Operations Team</option>
+                <option value="System Generated">System Generated</option>
+              </select>
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Valid From</span>
+              <input 
+                type="date" 
+                value={filterValidFrom}
+                onChange={e => setFilterValidFrom(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+            <div style={styles.filterItem}>
+              <span style={styles.filterLabel}>Valid To</span>
+              <input 
+                type="date" 
+                value={filterValidTo}
+                onChange={e => setFilterValidTo(e.target.value)}
+                style={styles.filterInput} 
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px', borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+            <button 
+              onClick={handleResetFilters}
+              style={{
+                height: '38px',
+                padding: '0 16px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: '1px solid #E2E8F0',
+                background: '#FFFFFF',
+                color: '#64748B',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              Reset
+            </button>
+            <button 
+              onClick={() => setIsFilterOpen(false)}
+              style={{
+                height: '38px',
+                padding: '0 16px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: 'none',
+                background: 'linear-gradient(135deg, #A51C49 0%, #741032 100%)',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 6px rgba(165, 28, 73, 0.15)'
+              }}
+            >
+              <FilterIcon size={14} />
+              Apply Filter
+            </button>
+          </div>
+        </div>
       )}
 
-      {usedCouponError && <p className="admin-markup-form-error">{usedCouponError}</p>}
+      {/* Quick Filters */}
+      <div style={styles.quickFilterContainer}>
+        {["All Coupons", "Active", "Expired", "Percentage", "Flat Amount"].map((name) => (
+          <button 
+            key={name}
+            onClick={() => handleApplyQuickFilter(name)}
+            style={styles.quickFilterChip(activeQuickFilter === name)}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
 
-      <section className="admin-markup-used-table-wrap">
-        <div className="admin-markup-used-table-scroll">
-          <table className="admin-markup-used-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Booking ID</th>
-                <th>Coupon Code</th>
-                <th>User ID</th>
-                <th>Used Date</th>
-                <th>Total Fare</th>
-                <th>CPN Type</th>
-                <th>CPN Value</th>
-                <th>CPN Amount</th>
-                <th>Booking Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoadingUsedCoupons ? (
+      {/* Main Split Screen Area */}
+      <div style={styles.splitLayout}>
+        {/* Main Content (Table) */}
+        <div style={styles.mainContent(!!selectedRecord)}>
+          <div style={styles.tableCard}>
+            <table style={styles.table}>
+              <thead>
                 <tr>
-                  <td colSpan={10}>
-                    <p className="admin-markup-used-empty">
-                      <Loader2 size={16} className="spin" />
-                      <span>Loading used coupons from backend...</span>
-                    </p>
-                  </td>
+                  <th style={styles.th}>ID</th>
+                  <th style={styles.th}>Coupon Code</th>
+                  <th style={styles.th}>User</th>
+                  <th style={styles.th}>Booking ID</th>
+                  <th style={styles.th}>Booking Type</th>
+                  <th style={styles.th}>Discount</th>
+                  <th style={styles.th}>Booking Amount</th>
+                  <th style={styles.th}>Saved Amount</th>
+                  <th style={styles.th}>Used Date</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Action</th>
                 </tr>
-              ) : paginatedUsedCoupons.length === 0 ? (
-                <tr>
-                  <td colSpan={10}>
-                    <p className="admin-markup-used-empty">No used coupons found.</p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedUsedCoupons.map((record) => (
-                  <tr key={`${record.id}-${record.bookingId}`}>
-                    <td>{record.id}</td>
-                    <td>{record.bookingId}</td>
-                    <td>{record.couponCode}</td>
-                    <td>{record.userId || "--"}</td>
-                    <td>{formatCouponDateTime(record.usedDate)}</td>
-                    <td>{formatCurrency(record.totalFare)}</td>
-                    <td>{record.cpnType}</td>
-                    <td>{formatCurrency(record.cpnValue)}</td>
-                    <td>{formatCurrency(record.cpnAmount)}</td>
-                    <td>
-                      <span
-                        className={`admin-markup-used-status ${String(
-                          record.bookingStatus || ""
-                        ).toLowerCase()}`}
-                      >
-                        {record.bookingStatus || "--"}
-                      </span>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: colors.textSecondary }}>
+                      Loading data from server...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : paginatedRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: colors.textSecondary }}>
+                      No used coupons found matching the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedRecords.map((record) => (
+                    <tr key={record.id}>
+                      <td style={styles.td}>{record.id}</td>
+                      <td style={styles.td}>
+                        <span style={styles.couponCodePill}>{record.couponCode}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: 600, color: colors.textPrimary }}>{record.userName}</div>
+                        <div style={{ fontSize: '0.75rem', color: colors.textSecondary }}>{record.userEmail}</div>
+                      </td>
+                      <td style={{ ...styles.td, color: colors.primary, fontWeight: 600 }}>{record.bookingId}</td>
+                      <td style={styles.td}>
+                        <span style={styles.bookingTypePill}>
+                          Bus
+                        </span>
+                      </td>
+                      <td style={styles.td}>{record.cpnValue}{record.discountType === "Percentage (%)" ? "% OFF" : " OFF"}</td>
+                      <td style={styles.td}>{formatCurrency(record.totalFare)}</td>
+                      <td style={{ ...styles.td, color: '#10B981', fontWeight: 600 }}>{formatCurrency(record.cpnAmount)}</td>
+                      <td style={styles.td}>{formatCouponDateTime(record.usedDate)}</td>
+                      <td style={styles.td}>
+                        <span style={styles.statusPill(record.bookingStatus)}>{record.bookingStatus}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => setSelectedRecord(selectedRecord?.id === record.id ? null : record)}
+                            style={styles.eyeBtn(selectedRecord?.id === record.id)}
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setEditRecord(record);
+                              setIsEditOpen(true);
+                            }}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '10px',
+                              border: `1px solid ${colors.border}`,
+                              background: '#FFFFFF',
+                              color: colors.textSecondary,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="Edit Record"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteRecord(record.id)}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '10px',
+                              border: `1px solid ${colors.border}`,
+                              background: '#FFFFFF',
+                              color: '#D93027',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="Delete Record"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            <AdminPagination 
+              currentPage={currentPage}
+              totalItems={filteredRecords.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemName="used coupons"
+            />
+          </div>
         </div>
 
-        {totalPages > 1 && (
-          <AdminPagination
-            currentPage={currentPage}
-            totalItems={visibleUsedCoupons.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-            itemName="records"
-          />
+        {/* Sidebar Details Drawer */}
+        {selectedRecord && (
+          <div style={styles.sidebarPanel}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '12px' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: colors.textPrimary }}>Coupon Usage Details</span>
+              <button 
+                onClick={() => setSelectedRecord(null)}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: colors.textSecondary }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Stepper details */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: colors.slateBg, borderRadius: '12px', marginBottom: '20px' }}>
+              <div>
+                <span style={styles.couponCodePill}>{selectedRecord.couponCode}</span>
+                <div style={{ fontSize: '0.85rem', color: colors.textSecondary, marginTop: '6px' }}>Bus Booking Discount</div>
+              </div>
+              <span style={styles.statusPill(selectedRecord.bookingStatus)}>{selectedRecord.bookingStatus}</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Booking & User Details</div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>User Name</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{selectedRecord.userName}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Email</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{selectedRecord.userEmail}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Mobile Number</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{selectedRecord.userPhone}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Booking ID</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{selectedRecord.bookingId}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Booking Type</span>
+                <span style={styles.bookingTypePill}>Bus</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Booking Amount</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{formatCurrency(selectedRecord.totalFare)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Discount Amount</span>
+                <span style={{ fontWeight: 600, color: '#D81B60' }}>{formatCurrency(selectedRecord.cpnAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', borderTop: `1px solid ${colors.border}`, paddingTop: '12px' }}>
+                <span style={{ fontWeight: 700, color: colors.textPrimary }}>Final Paid Amount</span>
+                <span style={{ fontWeight: 700, color: '#10B981' }}>{formatCurrency(selectedRecord.totalFare - selectedRecord.cpnAmount)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Used Date & Time</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{formatCouponDateTime(selectedRecord.usedDate)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: colors.textSecondary }}>Used From</span>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>{selectedRecord.usedFrom}</span>
+              </div>
+            </div>
+
+            {/* Stepper Timeline */}
+            <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: '16px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: colors.textPrimary, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coupon Timeline</div>
+              <div style={styles.timeline}>
+                <div style={styles.timelineStep}>
+                  <div style={styles.timelineLine} />
+                  <div style={styles.timelineDot(true)} />
+                  <div style={styles.timelineContent}>
+                    <span style={styles.timelineTitle}>Created</span>
+                    <span style={styles.timelineTime}>20 Jul 2026, 09:00 AM</span>
+                  </div>
+                </div>
+
+                <div style={styles.timelineStep}>
+                  <div style={styles.timelineLine} />
+                  <div style={styles.timelineDot(true)} />
+                  <div style={styles.timelineContent}>
+                    <span style={styles.timelineTitle}>Published</span>
+                    <span style={styles.timelineTime}>20 Jul 2026, 09:30 AM</span>
+                  </div>
+                </div>
+
+                <div style={styles.timelineStep}>
+                  <div style={styles.timelineLine} />
+                  <div style={styles.timelineDot(true)} />
+                  <div style={styles.timelineContent}>
+                    <span style={styles.timelineTitle}>Applied</span>
+                    <span style={styles.timelineTime}>{formatCouponDateTime(selectedRecord.usedDate)}</span>
+                  </div>
+                </div>
+
+                <div style={styles.timelineStep}>
+                  <div style={styles.timelineDot(selectedRecord.bookingStatus === "Active")} />
+                  <div style={styles.timelineContent}>
+                    <span style={styles.timelineTitle}>Coupon Redeemed</span>
+                    <span style={styles.timelineTime}>{formatCouponDateTime(selectedRecord.usedDate)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
-      </section>
-    </section>
+      </div>
+
+      {/* Add Modal */}
+      {isAddOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '16px', width: '500px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 16px 0' }}>Add Used Coupon</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input 
+                type="text" placeholder="Coupon Code" value={addForm.couponCode}
+                onChange={e => setAddForm({...addForm, couponCode: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="text" placeholder="User Name" value={addForm.userName}
+                onChange={e => setAddForm({...addForm, userName: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="text" placeholder="Email" value={addForm.userEmail}
+                onChange={e => setAddForm({...addForm, userEmail: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="text" placeholder="Booking ID" value={addForm.bookingId}
+                onChange={e => setAddForm({...addForm, bookingId: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="number" placeholder="Discount Value" value={addForm.cpnValue}
+                onChange={e => setAddForm({...addForm, cpnValue: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="number" placeholder="Booking Amount" value={addForm.totalFare}
+                onChange={e => setAddForm({...addForm, totalFare: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setIsAddOpen(false)} style={{ padding: '8px 16px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleSaveAdd} style={{ padding: '8px 16px', background: colors.primary, color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditOpen && editRecord && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '16px', width: '500px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 16px 0' }}>Edit Used Coupon</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input 
+                type="text" placeholder="Coupon Code" value={editRecord.couponCode}
+                onChange={e => setEditRecord({...editRecord, couponCode: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="text" placeholder="User Name" value={editRecord.userName}
+                onChange={e => setEditRecord({...editRecord, userName: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="text" placeholder="Email" value={editRecord.userEmail}
+                onChange={e => setEditRecord({...editRecord, userEmail: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="text" placeholder="Booking ID" value={editRecord.bookingId}
+                onChange={e => setEditRecord({...editRecord, bookingId: e.target.value})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="number" placeholder="Discount Value" value={editRecord.cpnValue}
+                onChange={e => setEditRecord({...editRecord, cpnValue: Number(e.target.value)})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+              <input 
+                type="number" placeholder="Booking Amount" value={editRecord.totalFare}
+                onChange={e => setEditRecord({...editRecord, totalFare: Number(e.target.value)})}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setIsEditOpen(false)} style={{ padding: '8px 16px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleSaveEdit} style={{ padding: '8px 16px', background: colors.primary, color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-

@@ -46,9 +46,18 @@ public class SendFlightTicketEmailRequest
     public int DurationMinutes { get; set; }
 
     public List<FlightPassengerTicketDto> Passengers { get; set; } = new();
+    public List<FlightTicketSegmentDto> Segments { get; set; } = new();
 
     public string? AgentCompanyName { get; set; }
     public string? AgentLogoUrl { get; set; }
+    
+    public bool NonRefundable { get; set; }
+    public string? CancellationCharges { get; set; }
+    public string? PartialSegmentCancellation { get; set; }
+
+    public bool IsPartialCancellation { get; set; }
+    public List<FlightPassengerTicketDto> CancelledPassengers { get; set; } = new();
+    public List<FlightTicketSegmentDto> CancelledSegments { get; set; } = new();
 }
 
 public class FlightPassengerTicketDto
@@ -57,4 +66,19 @@ public class FlightPassengerTicketDto
     public string PassengerType { get; set; } = string.Empty;
     public string Gender { get; set; } = string.Empty;
     public string? SeatNumber { get; set; }
+    public string? TicketNumber { get; set; }
+    public string Status { get; set; } = "Booked";
 }
+
+public class FlightTicketSegmentDto
+{
+    public string Airline { get; set; } = string.Empty;
+    public string FlightNumber { get; set; } = string.Empty;
+    public string FromCity { get; set; } = string.Empty;
+    public string ToCity { get; set; } = string.Empty;
+    public DateTime DepartureTime { get; set; }
+    public DateTime ArrivalTime { get; set; }
+    public string? Pnr { get; set; }
+    public string Status { get; set; } = "Booked";
+}
+

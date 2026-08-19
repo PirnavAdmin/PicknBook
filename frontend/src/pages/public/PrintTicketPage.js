@@ -802,13 +802,30 @@ const TicketPreviewPage = () => {
       <div className="pb-ticket-list">
         {tickets.map((ticket, index) => {
           const data = mapTicketToBus(ticket, ticket?.bookingReference);
+          const rawType = String(ticket?.ticketType || ticket?.type || "").toLowerCase();
+          const refUpper = String(data.pnr || "").toUpperCase();
+
+          let typeLabel = "BUS";
+          let pillClass = "bus-badge";
+
+          if (rawType === "flight" || refUpper.startsWith("FL")) {
+            typeLabel = "FLIGHT";
+            pillClass = "flight-badge";
+          } else if (rawType === "hotel" || refUpper.startsWith("HTL") || refUpper.startsWith("HOTEL")) {
+            typeLabel = "HOTEL";
+            pillClass = "hotel-badge";
+          }
+
+          const serviceText = data.busNo && data.busNo !== "--"
+            ? `${data.operator} - ${data.busNo}`
+            : data.operator;
 
           return (
             <article className="pb-select-card" key={ticket?.bookingReference || ticket?.pnr || index}>
               <div className="pb-select-main">
-                <span className="pb-type-pill">Bus</span>
+                <span className={`pb-type-pill ${pillClass}`}>{typeLabel}</span>
                 <strong>{data.from.city} to {data.to.city}</strong>
-                <small>{data.operator} - {data.busNo}</small>
+                <small>{serviceText}</small>
                 <em>{data.passengers[0]?.name || "--"}</em>
               </div>
               <div className="pb-select-meta">

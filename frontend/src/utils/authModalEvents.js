@@ -1,4 +1,3 @@
-/* eslint-disable */
 export const AUTH_MODAL_EVENT = "picknbook:open-auth-modal";
 
 export function openAuthModal(mode = "login", detail = {}) {

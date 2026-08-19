@@ -48,15 +48,13 @@ namespace PickNBook.Api.Controllers
             var flightCompleted = await dbContext.FlightReservations.AsNoTracking()
                 .CountAsync(x =>
                     x.Status != "Cancelled" &&
-                    x.FlightBooking != null &&
-                    x.FlightBooking.DepartureTime <= nowUtc &&
+                    x.DepartureTime <= nowUtc &&
                     x.UserId == userId);
  
             var flightUpcoming = await dbContext.FlightReservations.AsNoTracking()
                 .CountAsync(x =>
                     x.Status != "Cancelled" &&
-                    x.FlightBooking != null &&
-                    x.FlightBooking.DepartureTime > nowUtc &&
+                    x.DepartureTime > nowUtc &&
                     x.UserId == userId);
  
             var busTotal = await dbContext.BusReservations.AsNoTracking()

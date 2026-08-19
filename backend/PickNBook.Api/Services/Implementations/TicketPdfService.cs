@@ -9,136 +9,185 @@ namespace PickNBook.Api.Services;
 
 public class TicketPdfService : ITicketPdfService
 {
-    public byte[] GenerateFlightTicketPdf(SendFlightTicketEmailRequest request)
+    public List<(string FileName, byte[] Content)> GenerateFlightTicketPdf(SendFlightTicketEmailRequest request)
     {
-        using var document = new PdfDocument();
-        document.Info.Title = $"Flight Ticket - {request.BookingReference}";
-
-        var page = document.AddPage();
-
-        using var gfx = XGraphics.FromPdfPage(page);
+        var result = new List<(string FileName, byte[] Content)>();
 
         var titleFont = new XFont("Arial", 18, XFontStyle.Bold);
         var headerFont = new XFont("Arial", 11, XFontStyle.Bold);
         var valueFont = new XFont("Arial", 11, XFontStyle.Regular);
         var smallFont = new XFont("Arial", 9, XFontStyle.Regular);
 
-        double left = 40;
-        double width = page.Width - 80;
-        double y = 48;
+        var passengersList = request.Passengers != null && request.Passengers.Any() 
+            ? request.Passengers 
+            : new List<FlightPassengerTicketDto> { new FlightPassengerTicketDto { FullName = request.PassengerName, SeatNumber = request.SeatNumber, Status = "Booked" } };
 
-        string titleText = string.IsNullOrEmpty(request.AgentCompanyName) 
-            ? "PickNBook Flight Ticket" 
-            : $"{request.AgentCompanyName} Flight Ticket";
-
-        gfx.DrawString(
-            titleText,
-            titleFont,
-            XBrushes.DarkBlue,
-            new XRect(left, y, width, 30),
-            XStringFormats.TopLeft);
-
-        if (!string.IsNullOrEmpty(request.AgentLogoUrl))
+        foreach (var px in passengersList)
         {
-            var webRootPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot");
-            var physicalPath = System.IO.Path.Combine(webRootPath, request.AgentLogoUrl.TrimStart('/'));
-            if (System.IO.File.Exists(physicalPath))
+            var document = new PdfDocument();
+            document.Info.Title = $"Flight Ticket - {request.BookingReference}";
+
+            var page = document.AddPage();
+            var gfx = XGraphics.FromPdfPage(page);
+
+            double left = 40;
+            double width = page.Width - 80;
+            double y = 48;
+
+            string titleText = string.IsNullOrEmpty(request.AgentCompanyName) 
+                ? "PickNBook Flight Ticket" 
+                : $"{request.AgentCompanyName} Flight Ticket";
+
+            gfx.DrawString(
+                titleText,
+                titleFont,
+                XBrushes.DarkBlue,
+                new XRect(left, y, width, 30),
+                XStringFormats.TopLeft);
+
+            if (!string.IsNullOrEmpty(request.AgentLogoUrl))
             {
-                try
+                var webRootPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot");
+                var physicalPath = System.IO.Path.Combine(webRootPath, request.AgentLogoUrl.TrimStart('/'));
+                if (System.IO.File.Exists(physicalPath))
                 {
-                    using var logoImage = XImage.FromFile(physicalPath);
-                    double logoWidth = 80;
-                    double logoHeight = 40;
-                    double logoLeft = page.Width - 40 - logoWidth;
-                    gfx.DrawImage(logoImage, logoLeft, 35, logoWidth, logoHeight);
-                }
-                catch
-                {
-                    // Resilient fallback
+                    try
+                    {
+                        using var logoImage = XImage.FromFile(physicalPath);
+                        double logoWidth = 80;
+                        double logoHeight = 40;
+                        double logoLeft = page.Width - 40 - logoWidth;
+                        gfx.DrawImage(logoImage, logoLeft, 35, logoWidth, logoHeight);
+                    }
+                    catch
+                    {
+                        // Resilient fallback
+                    }
                 }
             }
+
+            y += 38;
+
+            gfx.DrawRectangle(XPens.Gray, left, y, width, 1);
+            y += 16;
+
+            DrawRow(gfx, headerFont, valueFont, left, ref y, "Booking Ref", request.BookingReference);
+            y += 10;
+            gfx.DrawLine(XPens.LightGray, left, y, width, y);
+            y += 15;
+
+            if (request.Segments != null && request.Segments.Any())
+            {
+                int legIndex = 1;
+                foreach (var seg in request.Segments)
+                {
+                    bool isCancelled = (px.Status == "Cancelled" || seg.Status == "Cancelled");
+                    var titleBrush = isCancelled ? XBrushes.Red : XBrushes.DarkBlue;
+                    var textBrush = isCancelled ? XBrushes.DarkRed : XBrushes.Black;
+                    
+                    var legTitle = $"Flight Leg {legIndex}: {seg.FromCity} -> {seg.ToCity}";
+                    if (isCancelled) legTitle += " **CANCELLED**";
+
+                    gfx.DrawString(legTitle, headerFont, titleBrush, left, y);
+                    y += 21;
+                    
+                    var pxName = px.FullName;
+                    if (px.Status == "Cancelled") pxName += " (CANCELLED)";
+                    
+                    DrawRow(gfx, headerFont, valueFont, left, ref y, $"Passenger ({px.PassengerType ?? "Adult"})", pxName, textBrush);
+                    DrawRow(gfx, headerFont, valueFont, left, ref y, "Airline", seg.Airline, textBrush);
+                    DrawRow(gfx, headerFont, valueFont, left, ref y, "Flight Number", seg.FlightNumber, textBrush);
+                    DrawRow(gfx, headerFont, valueFont, left, ref y, "Departure", seg.DepartureTime.ToString("dd MMM yyyy, hh:mm tt"), textBrush);
+                    DrawRow(gfx, headerFont, valueFont, left, ref y, "Arrival", seg.ArrivalTime.ToString("dd MMM yyyy, hh:mm tt"), textBrush);
+                    
+                    if (!string.IsNullOrWhiteSpace(seg.Pnr))
+                    {
+                        DrawRow(gfx, headerFont, valueFont, left, ref y, "PNR", seg.Pnr, textBrush);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(request.Pnr))
+                    {
+                        DrawRow(gfx, headerFont, valueFont, left, ref y, "PNR", request.Pnr, textBrush);
+                    }
+
+                    y += 10;
+                    gfx.DrawLine(XPens.LightGray, left, y, width, y);
+                    y += 15;
+                    
+                    if (y > page.Height - 80)
+                    {
+                        gfx.Dispose();
+                        page = document.AddPage();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 48;
+                    }
+                    
+                    legIndex++;
+                }
+            }
+            else
+            {
+                // Fallback for single leg
+                bool isCancelled = px.Status == "Cancelled";
+                var titleBrush = isCancelled ? XBrushes.Red : XBrushes.DarkBlue;
+                var textBrush = isCancelled ? XBrushes.DarkRed : XBrushes.Black;
+                
+                var legTitle = $"Flight: {request.Origin} -> {request.Destination}";
+                if (isCancelled) legTitle += " **CANCELLED**";
+
+                gfx.DrawString(legTitle, headerFont, titleBrush, left, y);
+                y += 21;
+                
+                var pxName = px.FullName;
+                if (px.Status == "Cancelled") pxName += " (CANCELLED)";
+                
+                DrawRow(gfx, headerFont, valueFont, left, ref y, "Passenger", pxName, textBrush);
+                DrawRow(gfx, headerFont, valueFont, left, ref y, "Airline", request.Airline, textBrush);
+                DrawRow(gfx, headerFont, valueFont, left, ref y, "Departure", request.DepartureTime.ToString("dd MMM yyyy, hh:mm tt"), textBrush);
+                DrawRow(gfx, headerFont, valueFont, left, ref y, "Arrival", request.ArrivalTime.ToString("dd MMM yyyy, hh:mm tt"), textBrush);
+                
+                if (!string.IsNullOrWhiteSpace(request.Pnr))
+                {
+                    DrawRow(gfx, headerFont, valueFont, left, ref y, "PNR", request.Pnr, textBrush);
+                }
+
+                y += 10;
+                gfx.DrawLine(XPens.LightGray, left, y, width, y);
+                y += 15;
+                
+                if (y > page.Height - 80)
+                {
+                    gfx.Dispose();
+                    page = document.AddPage();
+                    gfx = XGraphics.FromPdfPage(page);
+                    y = 48;
+                }
+            }
+
+            DrawRow(gfx, headerFont, valueFont, left, ref y, "Fare", $"{request.Price:0.00} {request.Currency}");
+
+            y += 20;
+
+            gfx.DrawRectangle(XPens.Gray, left, y, width, 1);
+
+            y += 14;
+
+            gfx.DrawString(
+                "Please carry a valid government ID proof while traveling. This is a system generated ticket.",
+                smallFont,
+                XBrushes.DarkSlateGray,
+                new XRect(left, y, width, 40),
+                XStringFormats.TopLeft);
+
+            gfx.Dispose();
+            using var stream = new MemoryStream();
+            document.Save(stream, false);
+            document.Dispose();
+            
+            var safeName = string.Join("_", (px.FullName ?? "Passenger").Split(System.IO.Path.GetInvalidFileNameChars()));
+            result.Add(($"Ticket-{safeName}.pdf", stream.ToArray()));
         }
 
-        y += 38;
-
-        gfx.DrawRectangle(XPens.Gray, left, y, width, 1);
-        y += 16;
-
-        DrawRow(gfx, headerFont, valueFont, left, ref y, "Passenger", request.PassengerName);
-        DrawRow(gfx, headerFont, valueFont, left, ref y, "Booking Ref", request.BookingReference);
-        DrawRow(gfx, headerFont, valueFont, left, ref y, "Airline", request.Airline);
-
-        if (!string.IsNullOrWhiteSpace(request.Pnr))
-        {
-            DrawRow(gfx, headerFont, valueFont, left, ref y, "PNR", request.Pnr);
-        }
-
-        DrawRow(gfx, headerFont, valueFont, left, ref y,
-            "Route",
-            $"{request.Origin} -> {request.Destination}");
-
-        DrawRow(gfx, headerFont, valueFont, left, ref y,
-            "Departure",
-            request.DepartureTime.ToString("dd MMM yyyy, hh:mm tt"));
-
-        DrawRow(gfx, headerFont, valueFont, left, ref y,
-            "Arrival",
-            request.ArrivalTime.ToString("dd MMM yyyy, hh:mm tt"));
-
-        DrawRow(gfx, headerFont, valueFont, left, ref y,
-            "Stops",
-            request.StopsCount.ToString());
-
-        if (request.DurationMinutes > 0)
-        {
-            var hours = request.DurationMinutes / 60;
-            var minutes = request.DurationMinutes % 60;
-
-            DrawRow(
-                gfx,
-                headerFont,
-                valueFont,
-                left,
-                ref y,
-                "Duration",
-                $"{hours}h {minutes}m");
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.SeatNumber))
-        {
-            DrawRow(gfx, headerFont, valueFont, left, ref y, "Seat", request.SeatNumber);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Terminal))
-        {
-            DrawRow(gfx, headerFont, valueFont, left, ref y, "Terminal", request.Terminal);
-        }
-
-        DrawRow(
-            gfx,
-            headerFont,
-            valueFont,
-            left,
-            ref y,
-            "Fare",
-            $"{request.Price:0.00} {request.Currency}");
-
-        y += 20;
-
-        gfx.DrawRectangle(XPens.Gray, left, y, width, 1);
-
-        y += 14;
-
-        gfx.DrawString(
-            "Please carry a valid government ID proof while traveling. This is a system generated ticket.",
-            smallFont,
-            XBrushes.DarkSlateGray,
-            new XRect(left, y, width, 40),
-            XStringFormats.TopLeft);
-
-        using var stream = new MemoryStream();
-        document.Save(stream, false);
-        return stream.ToArray();
+        return result;
     }
 
     private static void DrawRow(
@@ -148,19 +197,22 @@ public class TicketPdfService : ITicketPdfService
         double left,
         ref double y,
         string label,
-        string value)
+        string value,
+        XSolidBrush brush = null)
     {
+        brush ??= XBrushes.Black;
+        
         gfx.DrawString(
             label,
             headerFont,
-            XBrushes.Black,
+            brush,
             new XRect(left, y, 170, 18),
             XStringFormats.TopLeft);
 
         gfx.DrawString(
             value,
             valueFont,
-            XBrushes.Black,
+            brush,
             new XRect(left + 175, y, 340, 18),
             XStringFormats.TopLeft);
 
@@ -916,7 +968,7 @@ public class TicketPdfService : ITicketPdfService
         var r1 = new XRect(left, y, cardW, rowH);
         gfx.DrawRectangle(lightGreyBrush, r1);
         gfx.DrawRectangle(borderPen, r1);
-        gfx.DrawString("ROUTE", fontCardTitle, greyBrush, new XRect(left + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
+        gfx.DrawString("STAY", fontCardTitle, greyBrush, new XRect(left + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
         gfx.DrawString($"{reservation.HotelName} to {reservation.CityCode}", fontCardValue, navyBrush, new XRect(left + 12, y + 22, cardW - 24, 14), XStringFormats.TopLeft);
         gfx.DrawString(GetRoomCategory(reservation.OfferId), fontCardSub, greyBrush, new XRect(left + 12, y + 40, cardW - 24, 12), XStringFormats.TopLeft);
 
@@ -925,9 +977,9 @@ public class TicketPdfService : ITicketPdfService
         var r2 = new XRect(x2, y, cardW, rowH);
         gfx.DrawRectangle(lightGreyBrush, r2);
         gfx.DrawRectangle(borderPen, r2);
-        gfx.DrawString("DEPARTURE", fontCardTitle, greyBrush, new XRect(x2 + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
+        gfx.DrawString("CHECK IN", fontCardTitle, greyBrush, new XRect(x2 + 12, y + 10, cardW - 24, 10), XStringFormats.TopLeft);
         gfx.DrawString(reservation.CheckInDate.ToString("dd MMM yyyy"), fontCardValue, navyBrush, new XRect(x2 + 12, y + 22, cardW - 24, 14), XStringFormats.TopLeft);
-        gfx.DrawString($"Arrival: {reservation.CheckOutDate.ToString("dd MMM yyyy")}", fontCardSub, greyBrush, new XRect(x2 + 12, y + 40, cardW - 24, 12), XStringFormats.TopLeft);
+        gfx.DrawString($"Check Out: {reservation.CheckOutDate.ToString("dd MMM yyyy")}", fontCardSub, greyBrush, new XRect(x2 + 12, y + 40, cardW - 24, 12), XStringFormats.TopLeft);
 
         // Status Card
         double x3 = x2 + cardW + 10;
@@ -1072,7 +1124,6 @@ public class TicketPdfService : ITicketPdfService
         else
         {
             priceFieldsList.Add(("Base Fare", $"INR {reservation.BasePrice:N2}"));
-            priceFieldsList.Add(("Taxes", $"INR {reservation.GstAmount:N2}"));
             priceFieldsList.Add(("Convenience Fee", $"INR {reservation.ConvenienceFee:N2}"));
             priceFieldsList.Add(("Discount", $"INR {reservation.CouponDiscount:N2}"));
         }
@@ -1171,4 +1222,5 @@ public class TicketPdfService : ITicketPdfService
         }
     }
 }
+
 

@@ -1,4 +1,4 @@
-﻿namespace PickNBook.Api.Models.DTOs
+namespace PickNBook.Api.Models.DTOs
 {
     public class BookingHistoryDto
     {
@@ -21,5 +21,8 @@
         public string Note { get; set; } = string.Empty;
 
         public string CtaLabel { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public DateTime OriginalDate { get; set; }
     }
 }

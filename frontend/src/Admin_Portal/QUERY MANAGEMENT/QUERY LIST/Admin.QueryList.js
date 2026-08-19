@@ -1,7 +1,8 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { getAdminQueries, updateQueryStatus, deleteAdminQuery } from "../../../services/queryService";
-import { Eye, Edit2, Trash2, X, Search } from "lucide-react";
+import { Eye, Pencil, Trash2, X, Search } from "lucide-react";
+import AdminDynamicModal from "../../../components/AdminDynamicModal";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -33,6 +34,44 @@ export default function AdminQueryList() {
   const [editStatusQuery, setEditStatusQuery] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [toast, setToast] = useState(null);
+
+  // Reusable popup modal state
+  const [modalState, setModalState] = useState({ isOpen: false, mode: null, data: null });
+
+  const querySchema = React.useMemo(() => [
+    { name: 'name', label: 'Name', type: 'text', required: true },
+    { name: 'email', label: 'Email Address', type: 'text', required: true },
+    { name: 'phoneNo', label: 'Mobile Number', type: 'text' },
+    { name: 'subject', label: 'Subject', type: 'text' },
+    { name: 'status', label: 'Status', type: 'select', options: ['Pending', 'Resolved', 'Replied'] },
+    { name: 'message', label: 'Message', type: 'textarea' },
+  ], []);
+
+  const handleSaveQuery = async (updatedData) => {
+    try {
+      await updateQueryStatus(modalState.data.id, updatedData.status);
+      setQueries((prev) =>
+        prev.map((q) => (q.id === modalState.data.id ? { ...q, status: updatedData.status } : q))
+      );
+      showToast("Status updated successfully.", "success");
+      setModalState({ isOpen: false, mode: null, data: null });
+    } catch (error) {
+      console.error("Failed to update query status", error);
+      showToast("Failed to update status.", "error");
+    }
+  };
+
+  const handleDeleteQueryConfirm = async () => {
+    try {
+      await deleteAdminQuery(modalState.data.id);
+      setQueries((prev) => prev.filter((q) => q.id !== modalState.data.id));
+      showToast("Query deleted successfully.", "success");
+      setModalState({ isOpen: false, mode: null, data: null });
+    } catch (error) {
+      console.error("Failed to delete query", error);
+      showToast("Failed to delete query.", "error");
+    }
+  };
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -277,25 +316,22 @@ export default function AdminQueryList() {
       fontWeight: 700,
     },
     th: {
-      padding: "6px 10px",
+      padding: "16px 10px",
       textAlign: "center",
       borderRight: "1px solid rgba(255, 255, 255, 0.2)",
       whiteSpace: "nowrap",
       fontSize: "0.85rem",
       fontWeight: 600,
-      height: "34px",
       verticalAlign: "middle",
     },
     td: {
-      padding: "10px 12px",
+      padding: "16px 12px",
       borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
       color: "var(--text-primary)",
       textAlign: "center",
-      height: "48px",
     },
     tr: {
       transition: "background-color 0.2s ease",
-      height: "48px",
     },
     sn: {
       fontWeight: 600,
@@ -572,12 +608,7 @@ export default function AdminQueryList() {
             >
               Filter
             </button>
-            <button
-              style={{ ...styles.button, ...styles.clearBtn }}
-              onClick={handleClearFilters}
-            >
-              Clear Filter
-            </button>
+
             <div
               style={{
                 display: "inline-flex",
@@ -642,16 +673,16 @@ export default function AdminQueryList() {
             <table style={styles.table}>
               <thead style={styles.thead}>
                 <tr>
-                  <th style={styles.th}>ID</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>ID</th>
                   <th style={styles.th}>Entry Date</th>
                   <th style={styles.th}>Query Type</th>
-                  <th style={styles.th}>Module</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>Module</th>
                   <th style={styles.th}>Name</th>
                   <th style={styles.th}>Email</th>
                   <th style={styles.th}>Mobile</th>
                   <th style={styles.th}>Message</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Action</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
+                  <th className="action-col" style={{ ...styles.th, textAlign: 'center' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -666,76 +697,46 @@ export default function AdminQueryList() {
                       e.currentTarget.style.background = "transparent";
                     }}
                   >
-                    <td style={styles.td}><span style={styles.sn}>{q.id}</span></td>
-                    <td style={styles.td}>{formatDate(q.createdAtUtc || q.entryDate)}</td>
-                    <td style={styles.td}>{q.subject || "ContactUs"}</td>
-                    <td style={styles.td}>B2C</td>
-                    <td style={styles.td}>{q.name}</td>
-                    <td style={styles.td}>{q.email}</td>
-                    <td style={styles.td}>{q.phoneNo || "-"}</td>
-                    <td style={{ ...styles.td, maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={q.message}>
+                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}><span style={styles.sn}>{q.id}</span></td>
+                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{formatDate(q.createdAtUtc || q.entryDate)}</td>
+                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{q.subject || "ContactUs"}</td>
+                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>B2C</td>
+                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{q.name}</td>
+                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{q.email}</td>
+                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{q.phoneNo || "-"}</td>
+                    <td style={{ ...styles.td, maxWidth: "260px", whiteSpace: "normal", wordBreak: "break-word", textAlign: "left", lineHeight: "1.4", verticalAlign: 'middle' }} title={q.message}>
                       {q.message}
                     </td>
-                    <td style={styles.td}>
-                      <span style={getStatusBadgeStyle(q.status)}>
+                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                      <span style={{ ...getStatusBadgeStyle(q.status), display: 'inline-flex', justifyContent: 'center', margin: '0 auto' }}>
                         {q.status || "Pending"}
                       </span>
                     </td>
-                    <td style={styles.td}>
-                      <div style={styles.actionButtons}>
+                    <td className="action-col" style={{ verticalAlign: "middle" }}>
+                      <div className="admin-actions-cell-row">
                         <button
                           type="button"
-                          style={styles.actionBtn}
+                          className="admin-action-btn view"
                           title="View Details"
-                          onClick={() => setViewQuery(q)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(74, 15, 26, 0.15)";
-                            e.currentTarget.style.borderColor = "var(--primary)";
-                            e.currentTarget.style.transform = "scale(1.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "var(--surface-soft)";
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
+                          onClick={() => setModalState({ isOpen: true, mode: 'view', data: q })}
                         >
-                          <Eye size={16} strokeWidth={2} />
-                        </button>
-                         <button
-                          type="button"
-                          style={styles.actionBtn}
-                          title="Edit Status"
-                          onClick={() => setEditStatusQuery(q)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(74, 15, 26, 0.15)";
-                            e.currentTarget.style.borderColor = "var(--primary)";
-                            e.currentTarget.style.transform = "scale(1.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "var(--surface-soft)";
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
-                        >
-                          <Edit2 size={16} strokeWidth={2} />
+                          <Eye size={18} />
                         </button>
                         <button
                           type="button"
-                          style={{ ...styles.actionBtn, ...styles.deleteBtn }}
-                          title="Delete Query"
-                          onClick={() => handleDelete(q.id)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(217, 48, 37, 0.22)";
-                            e.currentTarget.style.borderColor = "var(--danger)";
-                            e.currentTarget.style.transform = "scale(1.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "rgba(217, 48, 37, 0.15)";
-                            e.currentTarget.style.borderColor = "rgba(217, 48, 37, 0.35)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
+                          className="admin-action-btn edit"
+                          title="Edit Status"
+                          onClick={() => setModalState({ isOpen: true, mode: 'edit', data: q })}
                         >
-                          <Trash2 size={16} strokeWidth={2} />
+                          <Pencil size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-action-btn delete"
+                          title="Delete Query"
+                          onClick={() => setModalState({ isOpen: true, mode: 'delete', data: q })}
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -779,200 +780,17 @@ export default function AdminQueryList() {
         </div>
 
 
-        {/* View Modal */}
-        {viewQuery && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setViewQuery(null)}>
-            <div style={{ background: "var(--panel)", padding: "24px", borderRadius: "14px", width: "600px", maxWidth: "90%", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }} onClick={(e) => e.stopPropagation()}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>Query Details</h3>
-                <button type="button" onClick={() => setViewQuery(null)} style={{ padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", color: "var(--text-primary)" }}>
-                  Close
-                </button>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Name</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.name}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Email</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.email}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Mobile</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.phoneNo || "-"}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Query Type</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.subject || "ContactUs"}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Status</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.status}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Entry Date</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{formatDate(viewQuery.createdAtUtc || viewQuery.entryDate)}</div>
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Message</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)", background: "var(--surface-soft)", padding: "12px", borderRadius: "8px", marginTop: "4px", wordBreak: "break-all" }}>{viewQuery.message}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Modal */}
-        {editStatusQuery && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setEditStatusQuery(null)}>
-            <div style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              width: "650px",
-              maxWidth: "95%",
-              overflow: "hidden",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.15)"
-            }} onClick={(e) => e.stopPropagation()}>
-              
-              {/* Header */}
-              <div style={{
-                background: "#A51C49",
-                padding: "14px 20px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                position: "relative"
-              }}>
-                <h3 style={{ margin: 0, color: "#ffffff", fontSize: "1.2rem", fontWeight: "700" }}>Edit Query</h3>
-                <button
-                  type="button"
-                  onClick={() => setEditStatusQuery(null)}
-                  style={{
-                    position: "absolute",
-                    right: "20px",
-                    background: "none",
-                    border: "none",
-                    color: "#ffffff",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Body */}
-              <form
-                onSubmit={handleStatusUpdateSubmit}
-                style={{
-                  padding: "24px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                  background: "#ffffff"
-                }}
-              >
-                {/* Two fields in one line */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Name</label>
-                    <input
-                      type="text"
-                      value={editStatusQuery.name || ""}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Email</label>
-                    <input
-                      type="email"
-                      value={editStatusQuery.email || ""}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Mobile</label>
-                    <input
-                      type="text"
-                      value={editStatusQuery.phoneNo || ""}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Query Type</label>
-                    <input
-                      type="text"
-                      value={editStatusQuery.subject || "ContactUs"}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Status</label>
-                    <select
-                      value={newStatus || editStatusQuery.status || "Pending"}
-                      onChange={(e) => setNewStatus(e.target.value)}
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#ffffff", color: "#111827", cursor: "pointer" }}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Replied">Replied</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Entry Date</label>
-                    <input
-                      type="text"
-                      value={formatDate(editStatusQuery.createdAtUtc || editStatusQuery.entryDate)}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Message takes full width */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Message</label>
-                  <textarea
-                    rows="3"
-                    value={editStatusQuery.message || ""}
-                    disabled
-                    style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827", resize: "none" }}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    background: "#A51C49",
-                    color: "#ffffff",
-                    padding: "10px 16px",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    marginTop: "8px",
-                    transition: "background 0.2s"
-                  }}
-                >
-                  Save Changes
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Reusable Dynamic Modal System */}
+        <AdminDynamicModal
+            isOpen={modalState.isOpen}
+            mode={modalState.mode}
+            moduleName="Query"
+            data={modalState.data}
+            schema={querySchema}
+            onClose={() => setModalState({ isOpen: false, mode: null, data: null })}
+            onSave={handleSaveQuery}
+            onDelete={handleDeleteQueryConfirm}
+        />
       </div>
     </>
   );

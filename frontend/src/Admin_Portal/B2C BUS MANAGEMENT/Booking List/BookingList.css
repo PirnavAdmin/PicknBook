@@ -1,4 +1,4 @@
-.admin-booking-page .admin-table-shell {
+﻿.admin-booking-page .admin-table-shell {
   border-color: var(--admin-border);
   background: var(--admin-surface);
   box-shadow: 0 10px 20px rgba(31, 31, 31, 0.08);
@@ -447,88 +447,6 @@
   box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2);
 }
 
-/* Pagination container styles */
-.admin-pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  background: var(--admin-surface);
-  border-top: 1px solid var(--admin-border);
-  border-bottom-left-radius: 14px;
-  border-bottom-right-radius: 14px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.admin-pagination-info {
-  font-size: 0.85rem;
-  color: var(--admin-muted);
-}
-
-.admin-pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.admin-pagination-controls button {
-  height: 32px;
-  min-width: 32px;
-  padding: 0 10px;
-  border: 1.5px solid var(--admin-border);
-  background: #ffffff;
-  color: var(--admin-text);
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease-in-out;
-}
-
-.admin-pagination-controls button:hover:not(:disabled) {
-  border-color: #A51C49;
-  color: #A51C49;
-}
-
-.admin-pagination-controls button.active {
-  background: #A51C49;
-  border-color: #A51C49;
-  color: #ffffff;
-}
-
-.admin-pagination-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination-ellipsis {
-  color: var(--admin-muted);
-  padding: 0 4px;
-}
-
-.admin-pagination-size {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: var(--admin-muted);
-}
-
-.admin-pagination-size select {
-  height: 32px;
-  padding: 0 8px;
-  border: 1.5px solid var(--admin-border);
-  border-radius: 8px;
-  background: #ffffff;
-  font-weight: 600;
-  color: var(--admin-text);
-  cursor: pointer;
-}
-
 /* Route Segment & Date styles */
 .admin-route-segment {
   display: flex;
@@ -559,4 +477,3 @@
 .admin-calendar-emoji {
   font-size: 0.85rem;
 }
-

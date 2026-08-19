@@ -11,28 +11,32 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock3,
+  Coffee,
+  Droplet,
   Filter,
   Fan,
   IndianRupee,
   Loader2,
+  MapPin,
   Moon,
   RotateCw,
   Search,
   ShieldAlert,
   Snowflake,
+  Sparkles,
   Sun,
   Sunrise,
   Sunset,
+  Tv,
+  Wifi,
   Wind,
   Zap,
   Square,
+  X,
   XCircle,
 } from "lucide-react";
 import { searchBuses, searchBusCities, getBoardingPointsProxy } from "../../services/busBookingService";
 import { getActiveOffers } from "../../services/adminFeaturedOffersService";
-import busExteriorImg from "../../assets/images/buses/luxury_bus_exterior.png";
-import busSleeperImg from "../../assets/images/buses/luxury_bus_interior_sleeper.png";
-import busSeatsImg from "../../assets/images/buses/luxury_bus_interior_seats.png";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import "../../STYLES/BusSearchResults.css";
 
@@ -324,13 +328,9 @@ function formatDuration(totalMinutes) {
 function formatCurrency(value) {
   const numeric = Number(value) || 0;
 
-  if (Number.isInteger(numeric)) {
-    return `INR ${new Intl.NumberFormat("en-IN").format(numeric)}`;
-  }
-
   return `INR ${new Intl.NumberFormat("en-IN", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    minimumFractionDigits: Number.isInteger(numeric) ? 0 : 2,
+    maximumFractionDigits: Number.isInteger(numeric) ? 0 : 2,
   }).format(numeric)}`;
 }
 
@@ -435,7 +435,7 @@ function ModifyPlaceAutocomplete({
   const requestAbortRef = useRef(null);
 
   useEffect(() => {
-    setInputValue(value || "");
+    setInputValue((prev) => (prev !== (value || "") ? (value || "") : prev));
   }, [value]);
 
   useEffect(() => {
@@ -453,8 +453,8 @@ function ModifyPlaceAutocomplete({
     const query = inputValue.trim();
 
     if (!open || query.length === 0) {
-      setResults([]);
-      setLoading(false);
+      setResults((prev) => (prev.length === 0 ? prev : []));
+      setLoading((prev) => (prev ? false : prev));
 
       if (requestAbortRef.current) {
         requestAbortRef.current.abort();
@@ -521,11 +521,11 @@ function ModifyPlaceAutocomplete({
         }
       } catch (error) {
         if (error.name !== "AbortError") {
-          setResults([]);
+          setResults((prev) => (prev.length === 0 ? prev : []));
         }
       } finally {
         if (!controller.signal.aborted) {
-          setLoading(false);
+          setLoading((prev) => (prev ? false : prev));
         }
       }
     }, 350);
@@ -539,7 +539,9 @@ function ModifyPlaceAutocomplete({
   const handleInputChange = (event) => {
     const nextValue = event.target.value;
     setInputValue(nextValue);
-    onChange(nextValue);
+    if (typeof onChange === "function") {
+      onChange(nextValue);
+    }
     setOpen(nextValue.trim().length > 0);
   };
 
@@ -662,12 +664,15 @@ export default function BusSearchResults() {
   const [expandedCard, setExpandedCard] = useState(() => cachedFilters?.expandedCard ?? null);
   const [expandedOperatorGroups, setExpandedOperatorGroups] = useState(() => cachedFilters?.expandedOperatorGroups ?? {});
   const [seatLoadingBusId, setSeatLoadingBusId] = useState(null);
+  const [visibleBusesCount, setVisibleBusesCount] = useState(15);
+  const [observerTarget, setObserverTarget] = useState(null);
 
   const [activeDetailTab, setActiveDetailTab] = useState("boarding");
   const [detailsBoardingData, setDetailsBoardingData] = useState(null);
   const [loadingBoardingData, setLoadingBoardingData] = useState(false);
   const [detailsOffersData, setDetailsOffersData] = useState([]);
   const [loadingOffersData, setLoadingOffersData] = useState(false);
+  const [copiedCoupon, setCopiedCoupon] = useState("");
 
   useEffect(() => {
     if (expandedCard?.panel === "details" && expandedCard?.busId) {
@@ -762,17 +767,16 @@ export default function BusSearchResults() {
   ]);
   const seatLoadingTimerRef = useRef(null);
 
+  const lastSearchKeyRef = useRef("");
+
   useEffect(() => {
-    setSourceName(initialSourceName);
-    setDestinationName(initialDestinationName);
-    setTripType(initialTripType);
-    setSelectedDate(parseDateInput(initialDepartureDateInput));
-    setModifyForm({
-      source: initialSourceName,
-      destination: initialDestinationName,
-      departureDate: initialDepartureDateInput,
-      tripType: initialTripType,
-    });
+    if (initialSourceName && initialSourceName !== sourceName) setSourceName(initialSourceName);
+    if (initialDestinationName && initialDestinationName !== destinationName) setDestinationName(initialDestinationName);
+    if (initialTripType && initialTripType !== tripType) setTripType(initialTripType);
+    const parsedDate = parseDateInput(initialDepartureDateInput);
+    if (parsedDate && formatDateInput(parsedDate) !== formatDateInput(selectedDate)) {
+      setSelectedDate(parsedDate);
+    }
   }, [
     initialSourceName,
     initialDestinationName,
@@ -790,6 +794,25 @@ export default function BusSearchResults() {
   );
 
   useEffect(() => {
+    if (!observerTarget) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleBusesCount((prev) => prev + 10);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(observerTarget);
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [observerTarget]);
+
+  useEffect(() => {
     let isCurrent = true;
 
     async function runSearch() {
@@ -799,13 +822,32 @@ export default function BusSearchResults() {
         return;
       }
 
+      const searchKey = `${sourceName.trim()}|${destinationName.trim()}|${formatDateInput(selectedDate)}|${searchVersion}`;
+      if (lastSearchKeyRef.current === searchKey && apiBuses.length > 0) {
+        return;
+      }
+
+      // Check session storage cache
+      const cacheKey = `bus_search_cache_${btoa(searchKey)}`;
+      try {
+        const cachedStr = sessionStorage.getItem(cacheKey);
+        if (cachedStr) {
+          const cachedData = JSON.parse(cachedStr);
+          if (cachedData.timestamp && Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
+            lastSearchKeyRef.current = searchKey;
+            setApiBuses(cachedData.results);
+            setExpandedCard(null);
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+
       setIsLoadingBuses(true);
       setSearchError("");
 
-      const normalizeCity = (city) => {
-        if (!city) return "";
-        return city.trim();
-      };
+      const normalizeCity = (city) => (city ? city.trim() : "");
 
       try {
         const result = await searchBuses({
@@ -818,6 +860,13 @@ export default function BusSearchResults() {
           return;
         }
 
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), results: result }));
+        } catch (e) {
+          // ignore quota exceeded or other errors
+        }
+
+        lastSearchKeyRef.current = searchKey;
         setApiBuses(result);
         setExpandedCard(null);
       } catch (error) {
@@ -858,9 +907,24 @@ export default function BusSearchResults() {
           resolveArrivalDate(departureDate, rawArrivalDate, durationMinutes) ||
           selectedDate;
 
+        const b2cFare = Number(
+          bus.b2cDisplayFare ||
+            bus.displayFare ||
+            bus.fare ||
+            bus.priceInr ||
+            0
+        ) || 0;
+        const availableSeats = Number(bus.availableSeats ?? bus.AvailableSeats ?? 0) || 0;
+        let totalSeats = Number(bus.totalSeats ?? bus.TotalSeats ?? 0) || 0;
+        if (!totalSeats || totalSeats <= availableSeats) {
+          totalSeats = (bus.isSleeper || String(bus.busType).toLowerCase().includes("sleeper"))
+            ? Math.max(availableSeats + 14, 36)
+            : Math.max(availableSeats + 18, 44);
+        }
+
         return {
           id: bus.id,
-          busNumber: bus.busNumber || "--",
+          busNumber: bus.busNumber && bus.busNumber !== "--" ? bus.busNumber : `PNB-${1000 + (index + 1)}`,
           operatorName: bus.operatorName || "Unknown Travels",
           busType: bus.busType || "Bus Service",
           fromCity: bus.fromCity || sourceName,
@@ -885,9 +949,10 @@ export default function BusSearchResults() {
           arrivalTime: formatTime(arrivalDate),
           durationMinutes: durationMinutes ?? 0,
           duration: formatDuration(durationMinutes),
-          fare: Number(bus.displayFare || bus.fare || bus.DisplayFare || bus.Price?.[0]?.PublishedFare || bus.priceInr || 0) || 0,
-          availableSeats: Number(bus.availableSeats ?? bus.AvailableSeats ?? bus.seatsAvailable ?? 0) || 0,
-          totalSeats: Number(bus.totalSeats || bus.availableSeats) || 0,
+          fare: b2cFare,
+          b2cDisplayFare: b2cFare,
+          availableSeats,
+          totalSeats,
           resultIndex: bus.resultIndex || "",
           traceId: bus.traceId || "",
           srdvIndex: bus.srdvIndex || 0,
@@ -1427,6 +1492,94 @@ export default function BusSearchResults() {
     { key: "offers", label: "Available Offers" }
   ];
 
+  function parseCancellationPolicies(bus, detailsData) {
+    const raw = bus?.cancellationPoliciesJson || bus?.cancellationPolicies || bus?.cancellationPolicy || bus?.CancellationPoliciesJson || bus?.CancellationPolicies || bus?.CancellationPolicy || detailsData?.CancellationPolicies || detailsData?.CancellationPolicy;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === "object") return [parsed];
+      } catch {
+        return [{ policyText: raw }];
+      }
+    }
+    return [];
+  }
+
+  function parseBusAmenities(bus, detailsData) {
+    const raw = bus?.amenities || bus?.Amenities || bus?.facilities || bus?.Facilities || bus?.busAmenities || detailsData?.Amenities || detailsData?.facilities;
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map(a => typeof a === "string" ? a : (a.name || a.Name || a.title || JSON.stringify(a))).filter(Boolean);
+    }
+    if (typeof raw === "string") {
+      return raw.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  }
+
+  function parseOperatorPolicies(bus, detailsData) {
+    const raw = bus?.travelPolicies || bus?.policies || bus?.operatorPolicies || bus?.terms || bus?.TravelPolicies || bus?.Policies || detailsData?.Policies || detailsData?.TravelPolicies;
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map(p => typeof p === "string" ? p : (p.policy || p.title || p.text || JSON.stringify(p))).filter(Boolean);
+    }
+    if (typeof raw === "string") {
+      return raw.split(/[\n;]/).map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  }
+
+  function renderAmenityIcon(name) {
+    const s = String(name || "").toLowerCase();
+    if (s.includes("charge") || s.includes("plug") || s.includes("usb") || s.includes("power")) {
+      return <Zap size={16} color="#eab308" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("light") || s.includes("reading")) {
+      return <Sun size={16} color="#f59e0b" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("pillow") || s.includes("sheet") || s.includes("blanket") || s.includes("bed")) {
+      return <Bed size={16} color="#3b82f6" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("wifi") || s.includes("internet")) {
+      return <Wifi size={16} color="#06b6d4" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("water") || s.includes("bottle")) {
+      return <Droplet size={16} color="#0284c7" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("ac") || s.includes("cool") || s.includes("air")) {
+      return <Snowflake size={16} color="#38bdf8" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("fan")) {
+      return <Fan size={16} color="#6366f1" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("tv") || s.includes("screen") || s.includes("movie") || s.includes("entertainment")) {
+      return <Tv size={16} color="#8b5cf6" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("aid") || s.includes("first") || s.includes("med") || s.includes("health")) {
+      return <ShieldAlert size={16} color="#ef4444" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("track") || s.includes("gps") || s.includes("location")) {
+      return <MapPin size={16} color="#10b981" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("snack") || s.includes("food") || s.includes("drink") || s.includes("tea") || s.includes("coffee")) {
+      return <Coffee size={16} color="#d97706" style={{ flexShrink: 0 }} />;
+    }
+    if (s.includes("seat") || s.includes("reclin")) {
+      return <Armchair size={16} color="#10b981" style={{ flexShrink: 0 }} />;
+    }
+    return <Sparkles size={16} color="#6366f1" style={{ flexShrink: 0 }} />;
+  }
+
+  function parseOperatorReviews(bus, detailsData) {
+    const raw = bus?.reviews || bus?.operatorReviews || bus?.Reviews || detailsData?.Reviews;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    return [];
+  }
+
   const renderBusDetailsPanel = (bus) => {
     const tab = activeDetailTab || "boarding";
 
@@ -1441,7 +1594,7 @@ export default function BusSearchResults() {
       time: p.CityPointTime || p.time || p.Time || bus.departureTime || "",
       name: p.CityPointName || p.name || p.Name || p.locationName || bus.boardingPoint || "",
       location: p.CityPointLocation || p.location || p.Location || p.address || "",
-    }));
+    })).filter(p => p.name || p.time);
 
     const droppingList = (
       detailsBoardingData?.DroppingPoints ||
@@ -1454,7 +1607,13 @@ export default function BusSearchResults() {
       time: p.CityPointTime || p.time || p.Time || bus.arrivalTime || "",
       name: p.CityPointName || p.name || p.Name || p.locationName || bus.droppingPoint || "",
       location: p.CityPointLocation || p.location || p.Location || p.address || "",
-    }));
+    })).filter(p => p.name || p.time);
+
+    const cancellationPolicies = parseCancellationPolicies(bus, detailsBoardingData);
+    const busAmenitiesList = parseBusAmenities(bus, detailsBoardingData);
+    const travelPoliciesList = parseOperatorPolicies(bus, detailsBoardingData);
+    const reviewsList = parseOperatorReviews(bus, detailsBoardingData);
+    const hasRating = bus?.rating !== undefined && bus?.rating !== null && String(bus.rating) !== "" && Number(bus.rating) > 0;
 
     return (
       <div className="bus-details-expanded-card">
@@ -1478,7 +1637,7 @@ export default function BusSearchResults() {
                 <h4 className="bus-details-section-title">Boarding Points</h4>
                 {loadingBoardingData ? (
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b", fontSize: "13px", padding: "12px 0" }}>
-                    <Loader2 size={16} className="animate-spin" /> Fetching boarding points from backend...
+                    <Loader2 size={16} className="animate-spin" /> Fetching boarding points...
                   </div>
                 ) : boardingList.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -1491,12 +1650,8 @@ export default function BusSearchResults() {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <div style={{ borderLeft: "3px solid #3b82f6", paddingLeft: "12px" }}>
-                      <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{bus.departureTime}</strong>
-                      <span style={{ display: "block", fontWeight: "700", fontSize: "13.5px", color: "#0f172a" }}>{bus.boardingPoint || bus.source || "Main Boarding Stand"}</span>
-                      <small style={{ color: "#64748b", fontSize: "12px" }}>Main Bus Stand Pick-up</small>
-                    </div>
+                  <div style={{ padding: "16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                    No boarding points provided by operator for this route.
                   </div>
                 )}
               </div>
@@ -1505,7 +1660,7 @@ export default function BusSearchResults() {
                 <h4 className="bus-details-section-title">Dropping Points</h4>
                 {loadingBoardingData ? (
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b", fontSize: "13px", padding: "12px 0" }}>
-                    <Loader2 size={16} className="animate-spin" /> Fetching dropping points from backend...
+                    <Loader2 size={16} className="animate-spin" /> Fetching dropping points...
                   </div>
                 ) : droppingList.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -1518,12 +1673,8 @@ export default function BusSearchResults() {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <div style={{ borderLeft: "3px solid #ef4444", paddingLeft: "12px" }}>
-                      <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{bus.arrivalTime}</strong>
-                      <span style={{ display: "block", fontWeight: "700", fontSize: "13.5px", color: "#0f172a" }}>{bus.droppingPoint || bus.destination || "Main Dropping Stand"}</span>
-                      <small style={{ color: "#64748b", fontSize: "12px" }}>Main Drop-off Point</small>
-                    </div>
+                  <div style={{ padding: "16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                    No dropping points provided by operator for this route.
                   </div>
                 )}
               </div>
@@ -1533,177 +1684,296 @@ export default function BusSearchResults() {
           {tab === "policy" && (
             <div>
               <h4 className="bus-details-section-title">Cancellation Charges & Timeline</h4>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "320px" }}>
-                  <thead>
-                    <tr style={{ background: "#f8fafc", textAlign: "left" }}>
-                      <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Time</th>
-                      <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Refund Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>More than 24 hours before departure</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", color: "#16a34a", fontWeight: "700" }}>90% Refund</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>12 to 24 hours before departure</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", color: "#eab308", fontWeight: "700" }}>75% Refund</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>6 to 12 hours before departure</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", color: "#ea580c", fontWeight: "700" }}>50% Refund</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>Less than 6 hours before departure</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", color: "#dc2626", fontWeight: "700" }}>No Refund</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              {cancellationPolicies.length > 0 ? (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "320px" }}>
+                    <thead>
+                      <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                        <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Time / Condition</th>
+                        <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Charge / Refund</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cancellationPolicies.map((item, idx) => {
+                        const timeText = item.policyText || item.PolicyString || item.CancellationTime || (item.FromValue !== undefined ? `Between ${item.FromValue}h and ${item.ToValue}h before departure` : `Condition ${idx + 1}`);
+                        const chargeText = item.CancellationChargePercentage !== undefined 
+                          ? `${item.CancellationChargePercentage}% Charge` 
+                          : (item.CancellationCharge !== undefined ? `₹${item.CancellationCharge}` : (item.RefundPercentage !== undefined ? `${item.RefundPercentage}% Refund` : (item.charge || "As per policy")));
+                        return (
+                          <tr key={idx}>
+                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>{timeText}</td>
+                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#dc2626" }}>{chargeText}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                  No cancellation policy provided by operator for this route.
+                </div>
+              )}
             </div>
           )}
 
           {tab === "amenities" && (
             <div>
               <h4 className="bus-details-section-title">Available Amenities</h4>
-              <div className="bus-details-grid-3col">
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                  <span>⚡</span> Charging Point
+              {busAmenitiesList.length > 0 ? (
+                <div className="bus-details-grid-3col">
+                  {busAmenitiesList.map((item, idx) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13.5px", color: "#1e293b", fontWeight: "600", padding: "6px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      {renderAmenityIcon(item)}
+                      <span>{item}</span>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                  <span>📶</span> WiFi Internet
+              ) : (
+                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                  No specific amenities listed by operator for this bus.
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                  <span>💧</span> Mineral Water Bottle
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                  <span>🛌</span> Blankets & Pillow
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                  <span>💡</span> Individual Reading Lights
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                  <span>⚠️</span> First Aid Kit
-                </div>
-              </div>
+              )}
             </div>
           )}
 
           {tab === "travel" && (
             <div>
               <h4 className="bus-details-section-title">Operator Travel Policies</h4>
-              <ul style={{ fontSize: "13px", paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "8px", color: "#334155" }}>
-                <li><strong>Luggage:</strong> Each passenger is allowed up to 2 items of personal luggage (max total weight 20 kg). Excess baggage may be charged.</li>
-                <li><strong>ID Verification:</strong> Passengers must show a valid government-issued photo ID (Aadhaar, PAN, Passport) during boarding.</li>
-                <li><strong>Onboarding Policy:</strong> Boarding closes exactly 10 minutes prior to scheduled departure. Passengers arriving late will be treated as no-show.</li>
-                <li><strong>Safety Policy:</strong> Smoking, consumption of alcohol, or carry of hazardous materials is strictly prohibited inside the coach.</li>
-              </ul>
-            </div>
-          )}
-
-          {tab === "reviews" && (
-            <div className="bus-details-grid-2col">
-              <div style={{ textAlign: "center", borderRight: "1px solid #e2e8f0", paddingRight: "16px" }}>
-                <div style={{ fontSize: "36px", fontWeight: "900", color: "#16a34a" }}>{bus.rating || "4.2"}</div>
-                <div style={{ fontSize: "14px", fontWeight: "700" }}>out of 5 stars</div>
-                <div style={{ color: "#fbbf24", margin: "6px 0", fontSize: "18px" }}>★★★★☆</div>
-                <small style={{ color: "#64748b" }}>Based on {bus.reviewCount || 124} customer reviews</small>
-
-                <div style={{ marginTop: "12px", textAlign: "left", fontSize: "12.5px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span>Punctuality</span>
-                    <strong style={{ color: "#16a34a" }}>88%</strong>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span>Cleanliness</span>
-                    <strong style={{ color: "#16a34a" }}>91%</strong>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Staff Behavior</span>
-                    <strong style={{ color: "#eab308" }}>82%</strong>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="bus-details-section-title">Recent Reviews</h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                      <strong>Ramesh K.</strong>
-                      <span style={{ color: "#16a34a" }}>★★★★★</span>
-                    </div>
-                    <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>"The bus was on-time and the seats were exceptionally clean. Best sleeper coach experience."</p>
-                  </div>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                      <strong>Sruthi M.</strong>
-                      <span style={{ color: "#fbbf24" }}>★★★★☆</span>
-                    </div>
-                    <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>"Comfortable journey. Charging point was functioning properly. Staff was helpful."</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === "photos" && (
-            <div>
-              <h4 className="bus-details-section-title">Bus Gallery</h4>
-              <div className="bus-details-photos-grid">
-                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-                  <img src={busExteriorImg} alt="Luxury Bus Exterior" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
-                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Coach Exterior</div>
-                </div>
-                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-                  <img src={busSleeperImg} alt="Luxury Sleeper Berths" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
-                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Sleeper Berths</div>
-                </div>
-                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-                  <img src={busSeatsImg} alt="Reclining Seats" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
-                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Comfortable Seating</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === "offers" && (
-            <div>
-              <h4 className="bus-details-section-title">Available Offers & Coupons</h4>
-              {loadingOffersData ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b", fontSize: "13px", padding: "12px 0" }}>
-                  <Loader2 size={16} className="animate-spin" /> Loading active backend offers...
-                </div>
-              ) : detailsOffersData.length > 0 ? (
-                <div className="bus-details-grid-2col">
-                  {detailsOffersData.map((offer, idx) => (
-                    <div key={idx} style={{ border: "1.5px dashed #16a34a", borderRadius: "10px", padding: "12px", background: "#f0fdf4", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <strong style={{ color: "#15803d", fontSize: "13px" }}>{offer.title || offer.offerTitle || "Special Offer"}</strong>
-                      <span style={{ fontSize: "12px", color: "#334155" }}>{offer.description || offer.offerDescription || "Save on your booking."}</span>
-                      {(offer.code || offer.couponCode) && (
-                        <div style={{ background: "#16a34a", color: "#fff", padding: "3px 8px", borderRadius: "4px", fontWeight: "800", fontSize: "11px", width: "fit-content", letterSpacing: "1px", marginTop: "4px" }}>
-                          CODE: {offer.code || offer.couponCode}
-                        </div>
-                      )}
-                    </div>
+              {travelPoliciesList.length > 0 ? (
+                <ul style={{ fontSize: "13px", paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "8px", color: "#334155" }}>
+                  {travelPoliciesList.map((pol, idx) => (
+                    <li key={idx}><strong>Policy {idx + 1}:</strong> {pol}</li>
                   ))}
-                </div>
+                </ul>
               ) : (
-                <div className="bus-details-grid-2col">
-                  <div style={{ border: "1.5px dashed #16a34a", borderRadius: "10px", padding: "12px", background: "#f0fdf4", display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <strong style={{ color: "#15803d", fontSize: "13px" }}>Flat Rs. 50 Discount</strong>
-                    <span style={{ fontSize: "12px" }}>Get flat Rs. 50 off on this booking. Valid on all seats.</span>
-                    <div style={{ background: "#16a34a", color: "#fff", padding: "3px 8px", borderRadius: "4px", fontWeight: "800", fontSize: "11px", width: "fit-content", letterSpacing: "1px", marginTop: "4px" }}>CODE: PNB50</div>
-                  </div>
-                  <div style={{ border: "1.5px dashed #3b82f6", borderRadius: "10px", padding: "12px", background: "#eff6ff", display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <strong style={{ color: "#1d4ed8", fontSize: "13px" }}>First Bus Booking Offer</strong>
-                    <span style={{ fontSize: "12px" }}>Save up to 20% on your first booking with PickNBook.</span>
-                    <div style={{ background: "#3b82f6", color: "#fff", padding: "3px 8px", borderRadius: "4px", fontWeight: "800", fontSize: "11px", width: "fit-content", letterSpacing: "1px", marginTop: "4px" }}>CODE: FIRSTBUS</div>
-                  </div>
+                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                  No specific travel policies listed by operator for this bus.
                 </div>
               )}
             </div>
           )}
+
+          {tab === "reviews" && (
+            <div>
+              {hasRating || reviewsList.length > 0 ? (
+                <div className="bus-details-grid-2col">
+                  <div style={{ textAlign: "center", borderRight: "1px solid #e2e8f0", paddingRight: "16px" }}>
+                    <div style={{ fontSize: "36px", fontWeight: "900", color: "#16a34a" }}>{bus.rating || "--"}</div>
+                    <div style={{ fontSize: "14px", fontWeight: "700" }}>out of 5 stars</div>
+                    {bus.reviewCount && <small style={{ color: "#64748b" }}>Based on {bus.reviewCount} customer reviews</small>}
+                  </div>
+                  <div>
+                    <h4 className="bus-details-section-title">Customer Reviews</h4>
+                    {reviewsList.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {reviewsList.map((rev, idx) => (
+                          <div key={idx} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                              <strong>{rev.user || rev.name || "Customer"}</strong>
+                              <span style={{ color: "#16a34a" }}>{rev.rating ? `★ ${rev.rating}` : ""}</span>
+                            </div>
+                            <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>{rev.comment || rev.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ color: "#64748b", fontSize: "13px" }}>No text reviews submitted for this bus operator.</div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                  No customer reviews or ratings available yet for this bus operator.
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "photos" && (() => {
+            const rawImages = bus?.images || bus?.photos || bus?.busImages || bus?.busPictures || bus?.Images || bus?.Photos || [];
+            const busImagesList = Array.isArray(rawImages) 
+              ? rawImages.filter(img => typeof img === "string" && img.trim()) 
+              : (typeof rawImages === "string" && rawImages.trim() ? [rawImages] : []);
+
+            return (
+              <div>
+                <h4 className="bus-details-section-title">Bus Gallery</h4>
+                {busImagesList.length > 0 ? (
+                  <div className="bus-details-photos-grid">
+                    {busImagesList.map((imgUrl, idx) => (
+                      <div key={idx} style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                        <img src={imgUrl} alt={`Bus Photo ${idx + 1}`} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+                        <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Bus Image {idx + 1}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", background: "#f8fafc", borderRadius: "10px", border: "1px dashed #cbd5e1" }}>
+                    <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>No photos available for this bus coach</p>
+                    <small style={{ fontSize: "12px", color: "#94a3b8" }}>The operator has not uploaded images for this specific route</small>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {tab === "offers" && (() => {
+            const busOffers = detailsOffersData.filter(offer => {
+              const type = String(offer.bookingType || offer.serviceType || offer.category || offer.type || "Bus").toLowerCase();
+              return type.includes("bus") || type.includes("all");
+            });
+
+            const handleCopyCoupon = (code) => {
+              if (navigator?.clipboard?.writeText) {
+                navigator.clipboard.writeText(code);
+              }
+              setCopiedCoupon(code);
+              setTimeout(() => setCopiedCoupon(""), 2500);
+            };
+
+            const formatConditions = (offer) => {
+              const conds = [];
+
+              // Discount value & type
+              const dVal = offer.discountValue || offer.DiscountValue;
+              const dType = offer.discountType || offer.DiscountType;
+              const maxDiscount = offer.maxDiscountAmount || offer.MaxDiscountAmount;
+              if (dVal) {
+                if (String(dType).toLowerCase() === "percentage") {
+                  conds.push(`Discount: ${dVal}% OFF${maxDiscount ? ` (Up to ₹${maxDiscount})` : ""}`);
+                } else {
+                  conds.push(`Discount: Flat ₹${dVal} OFF`);
+                }
+              }
+
+              // Min booking amount
+              const minAmt = offer.minBookingAmount || offer.MinBookingAmount;
+              if (minAmt && Number(minAmt) > 0) {
+                conds.push(`Minimum booking amount: ₹${minAmt}`);
+              }
+
+              // Parse conditions list
+              const rawConditions = offer.conditions || offer.Conditions || [];
+              if (Array.isArray(rawConditions) && rawConditions.length > 0) {
+                rawConditions.forEach(cond => {
+                  const type = cond.conditionType || cond.ConditionType;
+                  const val1 = cond.value1 || cond.Value1;
+                  const val2 = cond.value2 || cond.Value2;
+                  if (!val1) return;
+
+                  switch (type) {
+                    case "SourceCity":
+                      conds.push(`Departure city: ${val1}`);
+                      break;
+                    case "DestinationCity":
+                      conds.push(`Destination city: ${val1}`);
+                      break;
+                    case "SeatType":
+                      conds.push(`Applicable seat type: ${val1}`);
+                      break;
+                    case "BusType":
+                      conds.push(`Applicable coach type: ${val1}`);
+                      break;
+                    case "OperatorName":
+                      conds.push(`Applicable operator: ${val1}`);
+                      break;
+                    case "DayOfWeek":
+                      conds.push(`Valid on travel days: ${val1}`);
+                      break;
+                    case "MinimumFare":
+                      conds.push(`Minimum fare per seat: ₹${val1}`);
+                      break;
+                    default:
+                      conds.push(`${type}: ${val1}${val2 ? ` - ${val2}` : ""}`);
+                      break;
+                  }
+                });
+              }
+
+              // End date
+              const endDate = offer.endDateUtc || offer.EndDateUtc || offer.validTill;
+              if (endDate) {
+                try {
+                  const formattedDate = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                  if (formattedDate && formattedDate !== "Invalid Date") {
+                    conds.push(`Offer valid till: ${formattedDate}`);
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+
+              return conds;
+            };
+
+            return (
+              <div>
+                <h4 className="bus-details-section-title">Available Offers & Coupons</h4>
+                {loadingOffersData ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b", fontSize: "13px", padding: "12px 0" }}>
+                    <Loader2 size={16} className="animate-spin" /> Loading active offers...
+                  </div>
+                ) : busOffers.length > 0 ? (
+                  <div className="bus-details-grid-2col">
+                    {busOffers.map((offer, idx) => {
+                      const couponCode = offer.code || offer.couponCode || offer.promoCode || offer.title || offer.Title;
+                      const conditionsList = formatConditions(offer);
+                      const isCopied = copiedCoupon === couponCode;
+
+                      return (
+                        <div key={idx} style={{ border: "1.5px dashed #16a34a", borderRadius: "10px", padding: "14px", background: "#f0fdf4", display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div>
+                            <strong style={{ color: "#0f172a", fontSize: "15px", display: "block" }}>{offer.title || offer.offerTitle || "Discount Offer"}</strong>
+                            {(offer.subtitle || offer.description || offer.offerDescription) && (
+                              <span style={{ fontSize: "12.5px", color: "#475569", lineHeight: "1.4", display: "block", marginTop: "2px" }}>
+                                {offer.subtitle || offer.description || offer.offerDescription}
+                              </span>
+                            )}
+                          </div>
+
+                          {couponCode && (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", border: "1px dashed #16a34a", padding: "8px 12px", borderRadius: "6px" }}>
+                              <div>
+                                <small style={{ color: "#64748b", fontSize: "10px", display: "block", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>COUPON CODE</small>
+                                <strong style={{ fontSize: "14px", letterSpacing: "1px", color: "#15803d" }}>{couponCode}</strong>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCoupon(couponCode)}
+                                style={{ background: isCopied ? "#15803d" : "#16a34a", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "800", cursor: "pointer", transition: "all 0.2s ease" }}
+                              >
+                                {isCopied ? "COPIED ✓" : "COPY CODE"}
+                              </button>
+                            </div>
+                          )}
+
+                          <div style={{ paddingTop: "8px", borderTop: "1px solid #dcfce7", fontSize: "12px" }}>
+                            <strong style={{ display: "block", color: "#0f172a", fontSize: "12px", marginBottom: "4px" }}>Offer Conditions & Eligibility:</strong>
+                            {conditionsList.length > 0 ? (
+                              <ul style={{ margin: 0, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "3px", color: "#334155" }}>
+                                {conditionsList.map((cond, cIdx) => (
+                                  <li key={cIdx}>{cond}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div style={{ color: "#16a34a", fontSize: "11.5px", fontWeight: "600" }}>
+                                ✓ Valid on all routes, seat types & operators. No minimum booking amount required.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                    No promotional offers currently available.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
@@ -1781,11 +2051,11 @@ export default function BusSearchResults() {
           <div className="flow-modal" style={{ width: '95vw', maxWidth: '1200px', height: '90vh', maxHeight: '95vh', display: 'flex', flexDirection: 'column' }}>
             <header className="flow-modal-header" style={{ flexShrink: 0 }}>
               <h3>{expandedCard.panel === "seats" ? "Select Seats" : expandedCard.panel === "details" ? "Bus Details" : "Details"}</h3>
-              <button type="button" onClick={() => setExpandedCard(null)} aria-label="Close modal">
-                &times;
+              <button type="button" className="flow-modal-close-btn" onClick={() => setExpandedCard(null)} aria-label="Close modal">
+                <X size={18} />
               </button>
             </header>
-            <div className="flow-modal-main" style={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden', padding: 0, position: 'relative', background: 'var(--bus-bg, #F3F4F6)' }}>
+            <div className="flow-modal-main" style={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'auto', padding: 0, position: 'relative', background: 'var(--bus-bg, #F3F4F6)' }}>
               {expandedCard.panel === "details" ? (
                 <div style={{ padding: '16px' }}>{renderBusDetailsPanel(bus)}</div>
               ) : expandedCard.panel === "boarding" ? (
@@ -2469,51 +2739,56 @@ export default function BusSearchResults() {
                     <p>No buses match the selected filters.</p>
                   </div>
                 ) : (
-                  resultItems.map((item) => {
-                    if (item.type === "bus") {
-                      return renderBusCard(item.bus);
-                    }
+                  <>
+                    {resultItems.slice(0, visibleBusesCount).map((item) => {
+                      if (item.type === "bus") {
+                        return renderBusCard(item.bus);
+                      }
 
-                    const isExpanded = Boolean(expandedOperatorGroups[item.key]);
-                    const busLabel =
-                      item.buses.length === 1 ? "1 Bus Available" : `${item.buses.length} Buses Available`;
+                      const isExpanded = Boolean(expandedOperatorGroups[item.key]);
+                      const busLabel =
+                        item.buses.length === 1 ? "1 Bus Available" : `${item.buses.length} Buses Available`;
 
-                    return (
-                      <div className="operator-group-block" key={item.key}>
-                        <article className="operator-group-card">
-                          <div className="operator-group-icon" aria-hidden="true">
-                            <BusFront size={24} />
-                          </div>
+                      return (
+                        <div className="operator-group-block" key={item.key}>
+                          <article className="operator-group-card">
+                            <div className="operator-group-icon" aria-hidden="true">
+                              <BusFront size={24} />
+                            </div>
 
-                          <div className="operator-group-copy">
-                            <h4>{item.operatorName}</h4>
-                            <p>{busLabel}</p>
-                          </div>
+                            <div className="operator-group-copy">
+                              <h4>{item.operatorName}</h4>
+                              <p>{busLabel}</p>
+                            </div>
 
-                          <button
-                            type="button"
-                            className="operator-group-toggle"
-                            onClick={() => toggleOperatorGroup(item.key)}
-                          >
-                            {isExpanded ? "Hide" : "View All"}
-                          </button>
+                            <button
+                              type="button"
+                              className="operator-group-toggle"
+                              onClick={() => toggleOperatorGroup(item.key)}
+                            >
+                              {isExpanded ? "Hide" : "View All"}
+                            </button>
 
-                          <strong className="operator-group-fare">
-                            {formatCurrency(item.minFare)}
-                          </strong>
+                            <strong className="operator-group-fare">
+                              {formatCurrency(item.minFare)}
+                            </strong>
 
-                        </article>
+                          </article>
 
-                        {isExpanded && (
-                          <div className="operator-group-buses">
-                            {item.buses.map((bus) =>
-                              renderBusCard(bus, "operator-group-bus-card")
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
+                          {isExpanded && (
+                            <div className="operator-group-buses">
+                              {item.buses.map((bus) =>
+                                renderBusCard(bus, "operator-group-bus-card")
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {visibleBusesCount < resultItems.length && (
+                      <div ref={setObserverTarget} style={{ height: "20px", width: "100%" }} />
+                    )}
+                  </>
                 )}
               </div>
             </section>

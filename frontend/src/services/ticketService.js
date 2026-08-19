@@ -52,6 +52,24 @@ function normalizeFetchedTicket(ticket, request) {
   const bookingReference = String(
     pickFirst(ticket, ["bookingReference", "BookingReference", "pnr", "PNR", "reference", "Reference"], "") || ""
   ).trim();
+  const refUpper = bookingReference.toUpperCase();
+
+  let rawType = String(
+    pickFirst(ticket, ["ticketType", "TicketType", "type", "Type"], "") || ""
+  ).trim().toLowerCase();
+
+  if (!rawType || rawType === "bus") {
+    if (refUpper.startsWith("FL") || refUpper.startsWith("FLIGHT")) {
+      rawType = "flight";
+    } else if (refUpper.startsWith("HTL") || refUpper.startsWith("HOTEL")) {
+      rawType = "hotel";
+    } else if (refUpper.startsWith("BUS") || refUpper.startsWith("PB")) {
+      rawType = "bus";
+    } else {
+      rawType = bookingType || "bus";
+    }
+  }
+
   const departureTimeIst = pickFirst(ticket, ["departureTimeIst", "DepartureTimeIst"], "");
   const arrivalTimeIst = pickFirst(ticket, ["arrivalTimeIst", "ArrivalTimeIst"], "");
   const departureTimeUtc = pickFirst(ticket, ["departureTimeUtc", "DepartureTimeUtc"], "");
@@ -71,14 +89,12 @@ function normalizeFetchedTicket(ticket, request) {
     ...ticket,
     bookingReference,
     pnr: bookingReference,
-    ticketType: String(
-      pickFirst(ticket, ["ticketType", "TicketType", "type", "Type"], bookingType) || bookingType
-    ).trim().toLowerCase(),
+    ticketType: rawType,
     providerName: String(
       pickFirst(
         ticket,
-        ["providerName", "ProviderName", "operatorName", "OperatorName", "operator", "Operator"],
-        "Bus Service"
+        ["providerName", "ProviderName", "operatorName", "OperatorName", "operator", "Operator", "airline", "hotelName"],
+        rawType === "flight" ? "Flight Service" : rawType === "hotel" ? "Hotel Stay" : "Bus Service"
       ) || ""
     ).trim(),
     tripNumber: String(

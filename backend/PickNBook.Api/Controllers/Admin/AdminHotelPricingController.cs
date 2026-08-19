@@ -66,9 +66,6 @@ namespace PickNBook.Api.Controllers
             {
                 MarkupType = dto.MarkupType,
                 MarkupValue = dto.MarkupValue,
-                ConvenienceFeeType = dto.ConvenienceFeeType,
-                ConvenienceFeeValue = dto.ConvenienceFeeValue,
-                GstPercent = dto.GstPercent,
                 IsActive = dto.IsActive,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow,
@@ -108,9 +105,6 @@ namespace PickNBook.Api.Controllers
 
             setting.MarkupType = dto.MarkupType;
             setting.MarkupValue = dto.MarkupValue;
-            setting.ConvenienceFeeType = dto.ConvenienceFeeType;
-            setting.ConvenienceFeeValue = dto.ConvenienceFeeValue;
-            setting.GstPercent = dto.GstPercent;
             setting.IsActive = dto.IsActive;
             setting.UpdatedAtUtc = DateTime.UtcNow;
             setting.UpdatedBy = User?.Identity?.Name ?? "Admin";
@@ -142,9 +136,6 @@ namespace PickNBook.Api.Controllers
                 Id = rule.Id,
                 MarkupType = rule.MarkupType,
                 MarkupValue = rule.MarkupValue,
-                ConvenienceFeeType = rule.ConvenienceFeeType,
-                ConvenienceFeeValue = rule.ConvenienceFeeValue,
-                GstPercent = rule.GstPercent,
                 IsActive = rule.IsActive,
                 CreatedAtUtc = rule.CreatedAtUtc,
                 UpdatedAtUtc = rule.UpdatedAtUtc,

@@ -1,4 +1,5 @@
-/* eslint-disable */
+import { resetBookingSessionTimer } from "./BookingTimer";
+
 const BUS_BOOKING_FLOW_STORAGE_KEY = "bus_booking_flow_state_v1";
 
 function readRawState() {
@@ -33,6 +34,7 @@ export function writeBusBookingFlowState(partialState) {
 
   try {
     window.sessionStorage.setItem(BUS_BOOKING_FLOW_STORAGE_KEY, JSON.stringify(next));
+    resetBookingSessionTimer();
   } catch {
     // Ignore storage errors in private mode or restricted environments.
   }

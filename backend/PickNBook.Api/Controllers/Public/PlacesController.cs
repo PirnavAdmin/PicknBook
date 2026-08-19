@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Data;
@@ -52,7 +52,7 @@ namespace PickNBook.Api.Controllers
                 {
                     if (normalizedField is "all" or "from")
                     {
-                        var fromCities = await dbContext.FlightBookings
+                        var fromCities = await dbContext.FlightReservations
                             .AsNoTracking()
                             .Select(x => x.FromCity)
                             .ToListAsync();
@@ -65,7 +65,7 @@ namespace PickNBook.Api.Controllers
 
                     if (normalizedField is "all" or "to")
                     {
-                        var toCities = await dbContext.FlightBookings
+                        var toCities = await dbContext.FlightReservations
                             .AsNoTracking()
                             .Select(x => x.ToCity)
                             .ToListAsync();

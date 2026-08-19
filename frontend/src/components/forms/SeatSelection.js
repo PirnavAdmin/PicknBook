@@ -209,7 +209,8 @@ export default function SeatSelection({
     }
 
     const isSelected = selectedSeatLabels.includes(seat.label);
-    const isDimmed = activeFareFilter !== "all" && Number(activeFareFilter) !== seat.fare;
+    const seatFareVal = Number(seat.fare || seat.b2cDisplayFare || seat.priceInr || 0);
+    const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
     const isBooked = seat.status === "booked";
 
     const isBookedFemale = isBooked && seat.bookedGender === "Female";
@@ -439,8 +440,8 @@ export default function SeatSelection({
 
     const gridStyle = {
       display: "grid",
-      gridTemplateRows: `repeat(${maxGridRows}, ${baseCellH}px)`,
-      gridTemplateColumns: `repeat(${maxGridCols}, ${baseCellW}px)`,
+      gridTemplateRows: `repeat(${maxGridRows}, auto)`,
+      gridTemplateColumns: `repeat(${maxGridCols}, auto)`,
       gap: "18px 6px",
     };
 
@@ -464,7 +465,8 @@ export default function SeatSelection({
             {validSeats.map((seat, index) => {
               const isSelected = selectedSeatLabels.includes(seat.label);
               const isBooked = !seat.isAvailable;
-              const isDimmed = activeFareFilter !== "all" && Number(activeFareFilter) !== seat.fare;
+              const seatFareVal = Number(seat.fare || seat.b2cDisplayFare || seat.priceInr || 0);
+              const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
 
               let statusClass = "status-available";
               if (isBooked) statusClass = "status-booked";
@@ -493,8 +495,6 @@ export default function SeatSelection({
               const seatItemStyle = {
                 gridRow: layoutRow,
                 gridColumn: layoutCol,
-                width: `${seatW}px`,
-                height: `${seatH}px`,
               };
 
               return (

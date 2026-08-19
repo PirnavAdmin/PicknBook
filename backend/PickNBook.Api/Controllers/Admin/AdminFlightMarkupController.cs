@@ -54,6 +54,7 @@ namespace PickNBook.Api.Controllers
             {
                 AirlineCode = (dto.AirlineCode ?? string.Empty).Trim().ToUpperInvariant(),
                 TripType = dto.TripType,
+                CabinClass = string.IsNullOrWhiteSpace(dto.CabinClass) ? "*" : dto.CabinClass.Trim(),
                 MarkupType = dto.MarkupType,
                 MarkupValue = dto.MarkupValue,
                 Priority = dto.Priority,
@@ -84,6 +85,7 @@ namespace PickNBook.Api.Controllers
 
             rule.AirlineCode = (dto.AirlineCode ?? string.Empty).Trim().ToUpperInvariant();
             rule.TripType = dto.TripType;
+            rule.CabinClass = string.IsNullOrWhiteSpace(dto.CabinClass) ? "*" : dto.CabinClass.Trim();
             rule.MarkupType = dto.MarkupType;
             rule.MarkupValue = dto.MarkupValue;
             rule.Priority = dto.Priority;
@@ -117,6 +119,7 @@ namespace PickNBook.Api.Controllers
                 Id = rule.Id,
                 AirlineCode = rule.AirlineCode,
                 TripType = rule.TripType.ToString(),
+                CabinClass = rule.CabinClass,
                 MarkupType = rule.MarkupType.ToString(),
                 MarkupValue = rule.MarkupValue,
                 Priority = rule.Priority,

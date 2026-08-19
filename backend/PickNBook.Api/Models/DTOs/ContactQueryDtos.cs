@@ -12,5 +12,6 @@ namespace PickNBook.Api.Models.DTOs
     public class UpdateContactQueryStatusRequest
     {
         public string Status { get; set; } = "Resolved"; // Resolved, Pending, etc.
+        public string? ReplyMessage { get; set; }
     }
 }

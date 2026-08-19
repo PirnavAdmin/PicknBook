@@ -80,7 +80,7 @@ export default function PlaceAutocomplete({
   const requestAbortRef = useRef(null);
 
   useEffect(() => {
-    setInputValue(value || "");
+    setInputValue((prev) => (prev !== (value || "") ? (value || "") : prev));
   }, [value]);
 
   useEffect(() => {
@@ -98,8 +98,8 @@ export default function PlaceAutocomplete({
     const query = inputValue.trim();
 
     if (!open || query.length === 0) {
-      setResults([]);
-      setLoading(false);
+      setResults((prev) => (prev.length === 0 ? prev : []));
+      setLoading((prev) => (prev ? false : prev));
 
       if (requestAbortRef.current) {
         requestAbortRef.current.abort();
@@ -189,12 +189,12 @@ export default function PlaceAutocomplete({
 
             setResults(fallbackMatches);
           } else {
-            setResults([]);
+            setResults((prev) => (prev.length === 0 ? prev : []));
           }
         }
       } finally {
         if (!controller.signal.aborted) {
-          setLoading(false);
+          setLoading((prev) => (prev ? false : prev));
         }
       }
     }, 220);
@@ -208,7 +208,9 @@ export default function PlaceAutocomplete({
   const handleInputChange = (event) => {
     const nextValue = event.target.value;
     setInputValue(nextValue);
-    onChange(nextValue);
+    if (typeof onChange === "function") {
+      onChange(nextValue);
+    }
     setOpen(nextValue.trim().length > 0);
   };
 
@@ -231,29 +233,41 @@ export default function PlaceAutocomplete({
         ) : (
           <Bus size={18} color={isInline ? "var(--hotel-muted)" : "currentColor"} />
         )}
-        <div style={isInline ? { display: 'flex', flexDirection: 'column', width: '100%' } : { width: '100%' }}>
-          {isInline && <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Stay destination</span>}
+        {isInline ? (
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Stay destination</span>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onFocus={() => setOpen(inputValue.trim().length > 0)}
+              className={`inline-autocomplete-input ${error ? "error" : ""}`}
+              placeholder={placeholder}
+              autoComplete="off"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--hotel-muted)',
+                fontWeight: 600,
+                fontSize: '1.02rem',
+                padding: 0,
+                marginTop: '5px',
+                width: '100%'
+              }}
+            />
+          </div>
+        ) : (
           <input
             type="text"
             value={inputValue}
             onChange={handleInputChange}
             onFocus={() => setOpen(inputValue.trim().length > 0)}
-            className={isInline ? `inline-autocomplete-input ${error ? "error" : ""}` : `field-control place-input ${error ? "error" : ""} with-leading-icon`}
+            className={`field-control place-input ${error ? "error" : ""} with-leading-icon`}
             placeholder={placeholder}
             autoComplete="off"
-            style={isInline ? {
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--hotel-muted)',
-              fontWeight: 600,
-              fontSize: '1.02rem',
-              padding: 0,
-              marginTop: '5px',
-              width: '100%'
-            } : {}}
           />
-        </div>
+        )}
       </div>
 
       {open && (

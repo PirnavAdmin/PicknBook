@@ -1,7 +1,7 @@
 /* eslint-disable */
 // B2B Admin Centralized API & Storage Service
 
-const FALLBACK_API_BASE_URL = "https://paycheck-baton-overfull.ngrok-free.dev";
+const FALLBACK_API_BASE_URL = "https://www.picknbook.in";
 
 function resolveApiBaseUrl() {
   const explicitBase = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_ADMIN_API_BASE_URL;

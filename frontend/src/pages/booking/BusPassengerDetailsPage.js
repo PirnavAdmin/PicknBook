@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Check, Copy, Mail, Phone, User, X } from "lucide-react";
+import { Check, Copy, Mail, Phone, User, X, ShieldCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
 import BookingTimer from "./BookingTimer";
@@ -8,7 +8,7 @@ import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
 } from "./busBookingFlowStore";
-import { openAuthModal } from "../../utils/authModalEvents";
+
 import { isTokenExpired } from "../../services/authSession";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import {
@@ -18,6 +18,7 @@ import {
   calculateBusPayableAmount,
   getBusPromotionDiscountAmount,
   blockBusProxy,
+  isBusCategoryOfferOrCoupon,
 } from "../../services/busBookingService";
 import { usePromo } from "../../contexts/PromoContext";
 
@@ -82,6 +83,8 @@ function buildPassengerSeed(selectedSeats, passengers) {
           (fullNameParts.length > 1 ? fullNameParts.slice(1).join(" ") : ""),
         age: savedAge ? String(savedAge) : "",
         gender,
+        idNumber: passenger.idNumber || passenger.aadhaar || passenger.idCardNumber || passenger.idNo || "",
+        idType: passenger.idType || "Aadhar",
         email: passenger.email || "",
         mobile: passenger.mobile || passenger.phone || "",
         phone: passenger.phone || passenger.mobile || "",
@@ -101,6 +104,8 @@ function buildPassengerSeed(selectedSeats, passengers) {
       lastName: "",
       age: "",
       gender: isFemaleRestricted ? "Female" : (isMaleRestricted ? "Male" : ""),
+      idNumber: "",
+      idType: "Aadhar",
       email: "",
       mobile: "",
       phone: "",
@@ -138,8 +143,44 @@ function isValidEmail(email) {
 }
 
 function isValidMobile(mobile) {
-  const digits = String(mobile || "").replace(/\D/g, "");
-  return digits.length >= 10 && digits.length <= 13;
+  let digits = String(mobile || "").replace(/\D/g, "");
+  if (digits.length > 10 && digits.startsWith("91")) {
+    digits = digits.slice(-10);
+  }
+  return /^[6-9]\d{9}$/.test(digits);
+}
+
+const d = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+  [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+  [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+  [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+  [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+  [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+  [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+  [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+];
+const p = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+  [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+  [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+  [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+  [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+  [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+  [7, 0, 4, 6, 9, 1, 3, 2, 5, 8]
+];
+
+function validateAadhaar(aadhaar) {
+  if (!/^\d{12}$/.test(aadhaar)) return false;
+  let c = 0;
+  let invertedArray = aadhaar.split('').reverse().map(Number);
+  for (let i = 0; i < invertedArray.length; i++) {
+    c = d[c][p[i % 8][invertedArray[i]]];
+  }
+  return c === 0;
 }
 
 function normalizeGender(value) {
@@ -212,7 +253,7 @@ function isCouponVisible(coupon) {
   const code = String(coupon?.couponCode || "").trim();
   const status = getCouponStatus(coupon);
 
-  return Boolean(code) && (!status || status === "active");
+  return Boolean(code) && (!status || status === "active") && isBusCategoryOfferOrCoupon(coupon);
 }
 
 function getFeaturedOfferIdentity(offer) {
@@ -387,6 +428,12 @@ export default function BusPassengerDetailsPage() {
   const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
   const bus = flowState.bus || null;
+  const isIdProofRequired = Boolean(
+    bus?.idProofRequired ||
+    bus?.IdProofRequired ||
+    bus?.isIdProofRequired ||
+    bus?.IsIdProofRequired
+  );
   const selectedSeats = flowState.selectedSeats || [];
   const boardingPoint = flowState.boardingPoint || null;
   const droppingPoint = flowState.droppingPoint || null;
@@ -403,6 +450,15 @@ export default function BusPassengerDetailsPage() {
     }
     return contextOffer;
   }, [contextOffer]);
+
+  useEffect(() => {
+    if (!isAgent) {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        navigate(`/login?returnTo=${encodeURIComponent("/bus/passenger-details")}`, { replace: true });
+      }
+    }
+  }, [isAgent, navigate]);
 
   useEffect(() => {
     if (contextOffer && !validatedContextOffer) {
@@ -724,18 +780,20 @@ export default function BusPassengerDetailsPage() {
         seatNumber: seat.label || seat.seatCode || "",
         seatType: seat.seatType || "Seater",
         baseFare: Number(seat.baseFare) || 0,
-        markupAmount: Number(seat.markupAmount) || 0,
         tax: Number(seat.tax) || Number(seat.externalGst) || 0
       }));
 
       const preview = await getBusPricingPreview({
-        busId,
         traceId: bus?.tripId || bus?.traceId,
-        resultIndex: bus?.resultIndex || bus?.id,
-        srdvIndex: bus?.srdvIndex || 0,
         couponCode: couponCodeParam,
         selectedFeaturedOfferId: featuredOfferIdParam,
-        passengers: passengersPayload
+        passengers: passengersPayload,
+        fromCity: bus?.fromCity || searchContext?.fromCity?.name || searchContext?.fromCity,
+        toCity: bus?.toCity || searchContext?.toCity?.name || searchContext?.toCity,
+        departureTime: bus?.departureTimeUtc || bus?.departureTimeIst || bus?.departureTime,
+        operatorName: bus?.operatorName,
+        busType: bus?.busType,
+        totalFare: bus?.priceInr || bus?.displayFare || bus?.fare
       });
 
       setBasePricingPreview(preview);
@@ -1032,18 +1090,16 @@ export default function BusPassengerDetailsPage() {
         errorDetails.push(`${seatLabel}: Gender selection is required.`);
       }
 
-      if (!passenger.idType) {
-        newErrors[`${prefix}idType`] = "Required";
-        errorDetails.push(`${seatLabel}: ID Type is required.`);
-      }
-      
-      const idNumber = String(passenger.idNumber || "").trim();
-      if (!idNumber) {
+      const idNumDigits = String(passenger.idNumber || "").replace(/\D/g, "");
+      if (!idNumDigits) {
         newErrors[`${prefix}idNumber`] = "Required";
-        errorDetails.push(`${seatLabel}: ID Number is required.`);
-      } else if (idNumber.length < 4) {
-        newErrors[`${prefix}idNumber`] = "Min 4 chars";
-        errorDetails.push(`${seatLabel}: ID Number must be at least 4 characters.`);
+        errorDetails.push(`${seatLabel}: 12-digit Aadhaar Card number is required.`);
+      } else if (idNumDigits.length !== 12) {
+        newErrors[`${prefix}idNumber`] = "Must be 12 digits";
+        errorDetails.push(`${seatLabel}: Aadhaar Card number must be exactly 12 numeric digits.`);
+      } else if (!validateAadhaar(idNumDigits)) {
+        newErrors[`${prefix}idNumber`] = "Invalid Aadhaar";
+        errorDetails.push(`${seatLabel}: The Aadhaar number entered is mathematically invalid. Please enter a real Aadhaar number.`);
       }
 
     });
@@ -1137,6 +1193,8 @@ export default function BusPassengerDetailsPage() {
           lastName: "",
           age: "",
           gender: isFemaleRestricted ? "Female" : (isMaleRestricted ? "Male" : ""),
+          idNumber: "",
+          idType: "Aadhar",
           email: "",
           mobile: "",
           phone: "",
@@ -1232,6 +1290,8 @@ export default function BusPassengerDetailsPage() {
               lastName:  found.lastName  || "",
               gender:    finalGender || "Male",
               age:       found.age       ? String(found.age) : "",
+              idNumber:  found.idNumber || found.aadhaar || found.idCardNumber || found.idNo || "",
+              idType:    found.idType || "Aadhar",
               email:     travelerEmail,
               mobile:    travelerMobile,
               phone:     travelerMobile,
@@ -1472,7 +1532,7 @@ export default function BusPassengerDetailsPage() {
     if (!isAgent) {
       const token = localStorage.getItem("token");
       if (!token || isTokenExpired(token)) {
-        openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
+        navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
     }
@@ -1483,6 +1543,8 @@ export default function BusPassengerDetailsPage() {
         ...passenger,
         firstName: String(passenger.firstName || "").trim(),
         lastName: String(passenger.lastName || "").trim(),
+        idNumber: String(passenger.idNumber || "").replace(/\D/g, ""),
+        idType: String(passenger.idType || "Aadhar"),
         email: String(passenger.email || "").trim(),
         mobile: String(passenger.mobile || passenger.phone || "").trim(),
         phone: String(passenger.mobile || passenger.phone || "").trim(),
@@ -1529,7 +1591,7 @@ export default function BusPassengerDetailsPage() {
         contactNo: String(bookingContact.mobile || bookingContact.phone || ""),
         email: String(bookingContact.email || ""),
         idType: String(p.idType || "Aadhar"),
-        idNumber: String(p.idNumber || "123456789012")
+        idNumber: String(p.idNumber || "").replace(/\D/g, ""),
       }))
     };
 
@@ -1671,32 +1733,15 @@ export default function BusPassengerDetailsPage() {
           )}
         </label>
 
-        <label className="passenger-field">
-          <span>ID Type *</span>
-          <select
-            value={passenger.idType || ""}
-            onChange={(e) => updatePassenger(index, "idType", e.target.value)}
-            className={errors[`passenger_${index}_idType`] ? "field-has-error" : ""}
-          >
-            <option value="">ID Type *</option>
-            <option value="Aadhar">Aadhar</option>
-            <option value="Pan">PAN</option>
-            <option value="Passport">Passport</option>
-            <option value="VoterId">Voter ID</option>
-            <option value="DrivingLicense">Driving License</option>
-          </select>
-          {errors[`passenger_${index}_idType`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_idType`]}</span>
-          )}
-        </label>
-
-        <label className="passenger-field">
-          <span>ID Number *</span>
+        <label className="passenger-field passenger-field-aadhaar">
+          <span>Aadhaar Card Number *</span>
           <input
             type="text"
-            placeholder="ID Number *"
+            inputMode="numeric"
+            maxLength={12}
+            placeholder="Enter 12-digit Aadhaar number *"
             value={passenger.idNumber || ""}
-            onChange={(e) => updatePassenger(index, "idNumber", e.target.value)}
+            onChange={(e) => updatePassenger(index, "idNumber", e.target.value.replace(/\D/g, "").slice(0, 12))}
             className={errors[`passenger_${index}_idNumber`] ? "field-has-error" : ""}
           />
           {errors[`passenger_${index}_idNumber`] && (
@@ -2137,6 +2182,7 @@ export default function BusPassengerDetailsPage() {
                             {passenger.title} {passenger.firstName}{" "}
                             {passenger.lastName} (Seat {passenger.seatLabel})
                             {passenger.gender && ` (${passenger.gender[0].toUpperCase()})`}
+                            {passenger.idNumber && ` | Aadhaar: ${passenger.idNumber}`}
                           </span>
                         </div>
                       ))}

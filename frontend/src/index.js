@@ -5,7 +5,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { clearAuthSession, isTokenExpired } from './services/authSession';
-import { openAuthModal } from './utils/authModalEvents';
+
 
 const USER_PROTECTED_PATH_PREFIXES = [
   "/bus/payment",
@@ -171,11 +171,8 @@ window.fetch = async function (input, init) {
             }
 
             clearAuthSession();
-            if (currentPath !== "/") {
-              window.history.replaceState(null, "", "/");
-              window.dispatchEvent(new PopStateEvent("popstate"));
-            }
-            openAuthModal("login");
+            const returnTo = encodeURIComponent(currentPath);
+            window.location.href = `/login?returnTo=${returnTo}`;
           }
         }
       } else if (response.ok) {

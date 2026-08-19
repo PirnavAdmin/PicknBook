@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Check, Mail, MapPin, Phone, X, ArrowLeft, Calendar, Tag, ShieldCheck, Lock, Send, Bus, Plane, Building2, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Mail, MapPin, Phone, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Facebook, Twitter, Instagram, Youtube, Building2, Send, Lock } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -13,6 +13,7 @@ import { getActiveLayout } from "../../services/themeService";
 import { toApiAssetUrl } from "../../services/apiClient";
 import { submitContactQuery } from "../../services/queryService";
 import contactBg from "../../assets/images/contact-bg.png";
+import customFooterBg from "../../assets/images/indian-travel-banner-hd.png";
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
 import visaSvg from "../../assets/images/payments/visa.svg";
 import mastercardSvg from "../../assets/images/payments/mastercard.svg";
@@ -237,6 +238,7 @@ export default function SiteFooter() {
     }, 100);
   };
 
+
   const copyContact = async (value, type) => {
     try {
       if (navigator.clipboard?.writeText) {
@@ -252,7 +254,6 @@ export default function SiteFooter() {
         document.execCommand("copy");
         document.body.removeChild(textArea);
       }
-
       setCopiedContact(type);
       window.setTimeout(() => setCopiedContact(null), 1800);
     } catch (error) {
@@ -343,10 +344,13 @@ export default function SiteFooter() {
 
   const policyData = getPolicyData();
 
-  const footerStyle = {};
+  const footerStyle = {
+    backgroundImage: `url(${customFooterBg})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center bottom',
+    backgroundRepeat: 'no-repeat'
+  };
   if (footerConfig) {
-    if (footerConfig.bgColor) footerStyle.backgroundColor = footerConfig.bgColor;
-    if (footerConfig.gradientColor) footerStyle.background = footerConfig.gradientColor;
     if (footerConfig.textColor) footerStyle.color = footerConfig.textColor;
   }
 

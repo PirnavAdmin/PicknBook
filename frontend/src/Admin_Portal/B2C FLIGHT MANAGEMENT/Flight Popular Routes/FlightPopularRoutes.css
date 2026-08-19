@@ -819,3 +819,11 @@
   border-color: #A51C49 !important;
   box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.15) !important;
 }
+
+/* ── AdminPagination right group (added for compatibility) ── */
+.admin-pagination-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px;
+  flex: 0 0 auto;
+}

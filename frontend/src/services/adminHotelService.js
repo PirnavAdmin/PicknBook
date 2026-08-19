@@ -115,44 +115,11 @@ export async function getHotelPromotionUsages() {
 // ---------------------------------------------------------
 
 export async function getHotelConvenienceFees() {
-  const response = await fetch(toApiUrl("/api/admin/hotel-pricing"), {
-    method: "GET",
-    headers: getAdminAuthHeaders(),
-  });
-  const data = await handleResponse(response);
-  return (data || []).map((setting) => ({
-    id: setting.id,
-    feeInr: setting.convenienceFeeValue,
-    status: setting.isActive ? "Active" : "Inactive",
-    entryDateUtc: setting.createdAtUtc,
-    updateDateUtc: setting.updatedAtUtc,
-  }));
+  return [];
 }
 
 export async function saveHotelConvenienceFee(data) {
-  // Fetch existing settings to preserve markup and GST settings
-  const existingResponse = await fetch(toApiUrl("/api/admin/hotel-pricing"), {
-    method: "GET",
-    headers: getAdminAuthHeaders(),
-  });
-  const existingList = await handleResponse(existingResponse);
-  const activeRule = existingList.find((r) => r.isActive) || existingList[0] || {};
-
-  const payload = {
-    markupType: activeRule.markupType || "Amount",
-    markupValue: activeRule.markupValue || 0,
-    convenienceFeeType: "Amount",
-    convenienceFeeValue: data.feeInr,
-    gstPercent: activeRule.gstPercent || 0,
-    isActive: true,
-  };
-
-  const response = await fetch(toApiUrl("/api/admin/hotel-pricing"), {
-    method: "POST",
-    headers: getAdminAuthHeaders(true),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(response);
+  return {};
 }
 
 // ---------------------------------------------------------
@@ -160,46 +127,11 @@ export async function saveHotelConvenienceFee(data) {
 // ---------------------------------------------------------
 
 export async function getHotelGstSettings() {
-  const response = await fetch(toApiUrl("/api/admin/hotel-pricing"), {
-    method: "GET",
-    headers: getAdminAuthHeaders(),
-  });
-  const data = await handleResponse(response);
-  return (data || []).map((setting) => ({
-    id: setting.id,
-    gstPercent: setting.gstPercent,
-    gstCategory: "Hotel",
-    status: setting.isActive ? "Active" : "Inactive",
-    entryDateUtc: setting.createdAtUtc,
-    updateDateUtc: setting.updatedAtUtc,
-    remark: setting.updatedBy || "",
-  }));
+  return [];
 }
 
 export async function saveHotelGstSetting(data) {
-  // Fetch existing settings to preserve markup and convenience fee settings
-  const existingResponse = await fetch(toApiUrl("/api/admin/hotel-pricing"), {
-    method: "GET",
-    headers: getAdminAuthHeaders(),
-  });
-  const existingList = await handleResponse(existingResponse);
-  const activeRule = existingList.find((r) => r.isActive) || existingList[0] || {};
-
-  const payload = {
-    markupType: activeRule.markupType || "Amount",
-    markupValue: activeRule.markupValue || 0,
-    convenienceFeeType: activeRule.convenienceFeeType || "Amount",
-    convenienceFeeValue: activeRule.convenienceFeeValue || 0,
-    gstPercent: data.gstPercent,
-    isActive: true,
-  };
-
-  const response = await fetch(toApiUrl("/api/admin/hotel-pricing"), {
-    method: "POST",
-    headers: getAdminAuthHeaders(true),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(response);
+  return {};
 }
 
 // ---------------------------------------------------------

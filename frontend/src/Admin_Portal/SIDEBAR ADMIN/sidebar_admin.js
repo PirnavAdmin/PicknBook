@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import './sidebar_admin.css';
+import pickNBookLogo from '../../assets/images/brand/pick-n-book-logo.svg';
 
 /* ── SVG icon helper ── */
 const Ico = ({ children, size = 16 }) => (
@@ -35,6 +36,7 @@ const icons = {
   security: <Ico><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></Ico>,
   site: <Ico><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Ico>,
   chevron: <Ico size={14}><polyline points="6 9 12 15 18 9" /></Ico>,
+  brandLogo: <img src={pickNBookLogo} alt="PickNBook" style={{ height: '14px', width: 'auto', objectFit: 'contain', display: 'block' }} />,
 };
 
 const ADMIN = '/admin';
@@ -48,14 +50,19 @@ const navGroups = [
       { label: 'Dashboard', to: p(), icon: icons.dashboard, end: true, submenu: [] },
       {
         label: 'Account Management', to: p('account-management'), icon: icons.account, submenu: [
+          { label: 'Account Dashboard', to: p('account-management/dashboard') },
           { label: 'Transaction Log', to: p('account-management/transaction-log') },
           { label: 'Bank List', to: p('account-management/bank-list') },
           { label: 'QrCode List', to: p('account-management/qrcode-list') },
           { label: 'Payment Upload', to: p('account-management/payment-upload') },
           { label: 'Payment Upload List', to: p('account-management/payment-upload-list') },
           { label: 'Balance Sheet', to: p('account-management/balance-sheet') },
+          { label: 'Reconciliation', to: p('account-management/reconciliation') },
+          { label: 'Account Adjustment', to: p('account-management/account-adjustment') },
+          { label: 'Settlement / Transfer', to: p('account-management/settlement-transfer') },
         ],
       },
+
     ],
   },
   {
@@ -66,7 +73,7 @@ const navGroups = [
           { label: 'Agent Management', to: p('b2b-management/agent-management') },
           { label: 'Agent Bookings', to: p('b2b-management/agent-bookings') },
           { label: 'Deposit Management', to: p('b2b-management/deposit-management') },
-          { label: 'Wallet Management', to: p('b2b-management/wallet-management') },
+          { label: 'B2B Wallet', to: p('b2b-management/wallet-management') },
           { label: 'Ledger Details', to: p('b2b-management/ledger') },
           { label: 'Commission Rules', to: p('b2b-management/commission-management') },
           { label: 'Markup Settings', to: p('b2b-management/markup-management') },
@@ -86,12 +93,8 @@ const navGroups = [
         label: 'B2C Bus Management', to: p('b2c-bus'), icon: icons.bus, submenu: [
           { label: 'Booking List', to: p('b2c-bus/booking-list') },
           { label: 'Discount List', to: p('b2c-bus/discount-list') },
-          { label: 'Add Discount', to: p('b2c-bus/add-discount') },
-          { label: 'Discount Mapping', to: p('b2c-bus/discount-mapping') },
           { label: 'Markup List', to: p('b2c-bus/markup-list') },
-          { label: 'GST Settings', to: p('b2c-bus/gst-settings') },
           { label: 'Coupon List', to: p('b2c-bus/coupon-list') },
-          { label: 'Used Coupon List', to: p('b2c-bus/used-coupon-list') },
           { label: 'Convenience Fee', to: p('b2c-bus/convenience-fee') },
           { label: 'Cancellation List', to: p('b2c-bus/cancellation-list') },
           { label: 'Search History', to: p('b2c-bus/search-history') },
@@ -126,9 +129,8 @@ const navGroups = [
       {
         label: 'B2C Hotel Management', to: p('b2c-hotel'), icon: icons.hotel, submenu: [
           { label: 'Discount List', to: p('b2c-hotel/discount-list') },
+          { label: 'Markup List', to: p('hotel-management/markup-list') },
           { label: 'Coupon List', to: p('b2c-hotel/coupon-list') },
-          { label: 'Convenience Fee', to: p('b2c-hotel/convenience-fee') },
-          { label: 'GST Settings', to: p('b2c-hotel/gst-settings') },
           { label: 'Voucher Settings', to: p('b2c-hotel/voucher-settings') },
           { label: 'Booking List', to: p('hotel-management/booking-list') },
           { label: 'Cancellation List', to: p('hotel-management/cancellation-list') },
@@ -204,22 +206,35 @@ const navGroups = [
     section: 'SETTINGS',
     items: [
       {
-        label: 'Security Management', to: p('security-management'), icon: icons.security, submenu: [
-          { label: 'Black List IP', to: p('security-management/black-list-ip') },
-          { label: 'White List IP', to: p('security-management/white-list-ip') },
-        ],
+        label: 'Security Management',
+        to: p('security-management'),
+        icon: icons.security,
+        submenu: [
+          { label: 'Dashboard', subLabel: 'Overview & Analytics', to: p('security-management'), end: true },
+          {
+            label: 'IP Management',
+            subLabel: 'Whitelist, Blacklist & Blocks',
+            to: p('security-management/ip-management')
+          },
+          { label: 'Security Limits', subLabel: 'Admin, User & B2B Limits', to: p('security-management/security-settings') },
+          { label: 'Authentication Security', subLabel: 'Login, OTP, Registration etc.', to: p('security-management/auth-security') },
+          { label: 'Account Security', subLabel: 'Account Locks & Counters', to: p('security-management/account-security') },
+          { label: 'API Security', subLabel: 'APIs, Rate Limits & Exceptions', to: p('security-management/api-security') },
+          { label: 'B2B Wallet Security', subLabel: 'Wallet Restrictions & Rules', to: p('security-management/b2b-wallet-security') },
+          { label: 'Email Templates', subLabel: 'Admin, User & B2B Templates', to: p('security-management/email-templates') },
+          { label: 'Email Reminders', subLabel: 'Reminder Rules & Settings', to: p('security-management/email-reminders') },
+          { label: 'Email Logs', subLabel: 'Email Delivery History', to: p('security-management/email-logs') },
+          { label: 'Security Audit Logs', subLabel: 'Activity & Audit Trail', to: p('security-management/security-logs') }
+        ]
       },
       {
         label: 'Site Management', to: p('site-management'), icon: icons.site, submenu: [
-          { label: 'Site Setting', to: p('site-management/site-setting') },
+          { label: 'Site Settings', to: p('site-management/site-setting') },
           { label: 'Social Links', to: p('site-management/social-links') },
-          { label: 'Slider Image', to: p('site-management/slider-image') },
-          { label: 'Add Home Slider Image', to: p('site-management/add-home-slider-image') },
-          { label: 'Home Slider 2 Image', to: p('site-management/home-slider-2-image') },
-          { label: 'Add Home Slider 2 Image', to: p('site-management/add-home-slider-2-image') },
-          { label: 'Manual Booking Supplier', to: p('site-management/manual-booking-supplier') },
-          { label: 'Meta Data List', to: p('site-management/meta-data-list') },
-          { label: 'Seo Link List', to: p('site-management/seo-link-list') },
+          { label: 'Home Slider', to: p('site-management/slider-image') },
+          { label: 'Manual Suppliers', to: p('site-management/manual-booking-supplier') },
+          { label: 'SEO / Meta Data', to: p('site-management/meta-data-list') },
+          { label: 'SEO Links', to: p('site-management/seo-link-list') },
         ],
       },
       {
@@ -243,10 +258,12 @@ const navGroups = [
 
 function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) {
   const location = useLocation();
+
   const [openMenus, setOpenMenus] = useState(() => {
     // Auto-open the group that contains the current route
     const open = new Set();
-    navGroups.forEach(g => g.items.forEach(item => {
+    const activeGroups = navGroups;
+    activeGroups.forEach(g => g.items.forEach(item => {
       if (item.submenu.some(s => location.pathname.startsWith(s.to)) ||
         location.pathname.startsWith(item.to + '/')) {
         open.add(item.to);
@@ -255,10 +272,26 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
     return open;
   });
 
+  React.useEffect(() => {
+    const activeGroups = navGroups;
+    activeGroups.forEach(g => g.items.forEach(item => {
+      if (item.submenu.some(s => location.pathname.startsWith(s.to)) ||
+        location.pathname.startsWith(item.to + '/')) {
+        setOpenMenus(prev => {
+          const next = new Set(prev);
+          next.add(item.to);
+          return next;
+        });
+      }
+    }));
+  }, [location.pathname]);
+
   const toggle = (to) => {
     setOpenMenus(prev => {
-      const next = new Set(prev);
-      next.has(to) ? next.delete(to) : next.add(to);
+      const next = new Set();
+      if (!prev.has(to)) {
+        next.add(to);
+      }
       return next;
     });
   };
@@ -271,7 +304,8 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
 
   // Filter by search query
   const query = (searchQuery || '').toLowerCase();
-  const filteredGroups = navGroups.map(g => ({
+  const targetGroups = navGroups;
+  const filteredGroups = targetGroups.map(g => ({
     ...g,
     items: g.items.filter(item =>
       !query ||
@@ -295,13 +329,7 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
       <aside className={`ds-sidebar ${isOpen ? 'ds-sidebar-open' : ''}`}>
         {/* Sidebar header */}
         <div className="ds-sidebar-header">
-          <div className="ds-brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
-          </div>
-          <span className="ds-brand-name">Admin Panel</span>
+          <span className="ds-brand-title">Admin Panel</span>
         </div>
 
 
@@ -322,19 +350,26 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
                   <div key={item.to} className="ds-item-wrap">
                     {/* Parent row */}
                     {hasSubmenu ? (
-                      <button
-                        className={`ds-nav-row ${active ? 'ds-active' : ''}`}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className={`ds-nav-row ${active ? 'ds-active' : ''} ${isMenuOpen ? 'ds-open' : ''}`}
                         onClick={() => toggle(item.to)}
-                        type="button"
+                        style={{ cursor: 'pointer' }}
                       >
                         <span className={`ds-nav-icon ${active ? 'ds-icon-active' : ''}`}>
                           {item.icon}
                         </span>
-                        <span className="ds-nav-label">{item.label}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                          <span className="ds-nav-label" style={{ fontWeight: 600 }}>{item.label}</span>
+                          {item.subLabel && (
+                            <span className="ds-nav-sublabel">{item.subLabel}</span>
+                          )}
+                        </div>
                         <span className={`ds-chevron ${isMenuOpen ? 'ds-chevron-open' : ''}`}>
                           {icons.chevron}
                         </span>
-                      </button>
+                      </div>
                     ) : (
                       <NavLink
                         to={item.to}
@@ -345,7 +380,12 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
                         <span className={`ds-nav-icon ${active ? 'ds-icon-active' : ''}`}>
                           {item.icon}
                         </span>
-                        <span className="ds-nav-label">{item.label}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                          <span className="ds-nav-label" style={{ fontWeight: 600 }}>{item.label}</span>
+                          {item.subLabel && (
+                            <span className="ds-nav-sublabel">{item.subLabel}</span>
+                          )}
+                        </div>
                       </NavLink>
                     )}
 
@@ -354,17 +394,49 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
                       <div className={`ds-submenu ${isMenuOpen ? 'ds-submenu-open' : ''}`}>
                         {item.submenu
                           .filter(s => !query || s.label.toLowerCase().includes(query))
-                          .map(sub => (
-                            <NavLink
-                              key={sub.to}
-                              to={sub.to}
-                              className={({ isActive }) => `ds-sub-row${isActive ? ' ds-sub-active' : ''}`}
-                              onClick={onClose}
-                            >
-                              <span className="ds-sub-dot"></span>
-                              {sub.label}
-                            </NavLink>
-                          ))}
+                          .map(sub => {
+                            const isSubActive = location.pathname === sub.to || (sub.nestedSubmenu && sub.nestedSubmenu.some(n => location.pathname === n.to));
+                            const hasNested = sub.nestedSubmenu && sub.nestedSubmenu.length > 0;
+                            return (
+                              <div key={sub.label} className="ds-sub-item-wrap" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <NavLink
+                                  to={sub.to}
+                                  end={sub.end}
+                                  className={({ isActive }) => `ds-sub-row ${isActive || isSubActive ? 'ds-sub-active' : ''}`}
+                                  onClick={(e) => {
+                                    if (!hasNested) {
+                                      onClose();
+                                    }
+                                  }}
+                                  style={{ display: 'flex', padding: '6px 12px 6px 16px', gap: '8px', textDecoration: 'none' }}
+                                >
+                                  <span className="ds-sub-dot" style={{ marginTop: sub.subLabel ? '4px' : '6px' }}></span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                    <span className="ds-sub-label" style={{ fontWeight: 600, fontSize: '0.72rem' }}>{sub.label}</span>
+                                    {sub.subLabel && (
+                                      <span className="ds-nav-sublabel">{sub.subLabel}</span>
+                                    )}
+                                  </div>
+                                </NavLink>
+                                {hasNested && (
+                                  <div className="ds-nested-submenu" style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column' }}>
+                                    {sub.nestedSubmenu.map(nested => (
+                                      <NavLink
+                                        key={nested.to}
+                                        to={nested.to}
+                                        className={({ isActive }) => `ds-sub-row ${isActive ? 'ds-sub-active' : ''}`}
+                                        onClick={onClose}
+                                        style={{ display: 'flex', padding: '4px 12px', gap: '6px', textDecoration: 'none', alignItems: 'center' }}
+                                      >
+                                        <span className="ds-sub-dot" style={{ width: '4px', height: '4px' }}></span>
+                                        <span style={{ fontSize: '0.68rem' }}>{nested.label}</span>
+                                      </NavLink>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                       </div>
                     )}
                   </div>

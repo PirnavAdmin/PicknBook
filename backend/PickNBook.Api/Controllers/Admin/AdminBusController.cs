@@ -5,13 +5,14 @@ using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
 using Dapper;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace PickNBook.Api.Controllers
 {
     [ApiController]
     [Route("api/admin/bus")]
     //public class AdminBusController(AppDbContext dbContext) : ControllerBase
-    public class AdminBusController(AppDbContext dbContext, PickNBook.Api.Services.ISrdvBusService srdvBusService) : AdminApiController
+    public class AdminBusController(AppDbContext dbContext, PickNBook.Api.Services.ISrdvBusService srdvBusService, IMemoryCache cache) : AdminApiController
     {
         private static readonly TimeSpan IndiaOffset = TimeSpan.FromHours(5.5);
         private static readonly string[] AllowedDiscountTypes = ["Percentage", "Fixed"];
@@ -500,6 +501,9 @@ namespace PickNBook.Api.Controllers
             };
             dbContext.BusMarkupSettings.Add(row);
             await dbContext.SaveChangesAsync();
+            
+            cache.Remove($"BusMarkup_{seatType.ToUpper()}");
+            
             return CreatedAtAction(nameof(GetMarkupSettingById), new { id = row.Id }, row);
         }
 
@@ -540,6 +544,9 @@ namespace PickNBook.Api.Controllers
             row.UpdatedBy = request.UpdatedBy.Trim();
             row.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
             await dbContext.SaveChangesAsync();
+            
+            cache.Remove($"BusMarkup_{seatType.ToUpper()}");
+            
             return Ok(row);
         }
 
@@ -551,6 +558,9 @@ namespace PickNBook.Api.Controllers
             if (row == null) return NotFound("Markup setting not found.");
             dbContext.BusMarkupSettings.Remove(row);
             await dbContext.SaveChangesAsync();
+            
+            cache.Remove($"BusMarkup_{row.SeatType.ToUpper()}");
+            
             return Ok(new { message = "Markup setting deleted." });
         }
 

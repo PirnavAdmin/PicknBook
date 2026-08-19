@@ -10,7 +10,11 @@ namespace PickNBook.Api.Services
 {
     public class FlightPromotionEvaluationContext
     {
-        public FlightBooking Flight { get; set; } = null!;
+        public string AirlineCode { get; set; } = string.Empty;
+        public string AirlineName { get; set; } = string.Empty;
+        public string Origin { get; set; } = string.Empty;
+        public string Destination { get; set; } = string.Empty;
+        public DateTime DepartureDate { get; set; }
         public string TravelClass { get; set; } = string.Empty;
         public TripType TripType { get; set; }
         public decimal BaseFare { get; set; } // Total base fare for all seats in this class before promotions
@@ -30,6 +34,7 @@ namespace PickNBook.Api.Services
     public class FlightPromotionEngine : IFlightPromotionEngine
     {
         private readonly AppDbContext _dbContext;
+        private List<FlightPromotion>? _cachedPromotions;
 
         public FlightPromotionEngine(AppDbContext dbContext)
         {
@@ -40,23 +45,27 @@ namespace PickNBook.Api.Services
         {
             var now = DateTime.UtcNow;
 
-            // Fetch active promotions that are within validity dates
-            var query = _dbContext.FlightPromotions
-                .Include(p => p.Conditions)
-                .Where(p => p.IsActive &&
-                            (!p.StartDate.HasValue || p.StartDate <= now) &&
-                            (!p.EndDate.HasValue || p.EndDate >= now));
+            if (_cachedPromotions == null)
+            {
+                var query = _dbContext.FlightPromotions
+                    .Include(p => p.Conditions)
+                    .AsNoTracking()
+                    .Where(p => p.IsActive &&
+                                (!p.StartDate.HasValue || p.StartDate <= now) &&
+                                (!p.EndDate.HasValue || p.EndDate >= now));
+                _cachedPromotions = await query.ToListAsync();
+            }
+
+            var promotions = _cachedPromotions.AsEnumerable();
 
             if (context.SelectedPromotionId.HasValue)
             {
-                query = query.Where(p => p.Id == context.SelectedPromotionId.Value);
+                promotions = promotions.Where(p => p.Id == context.SelectedPromotionId.Value);
             }
             else
             {
-                query = query.Where(p => p.IsAutoApply);
+                promotions = promotions.Where(p => p.IsAutoApply);
             }
-
-            var promotions = await query.ToListAsync();
 
             var eligible = new List<FlightPromotion>();
 
@@ -162,15 +171,13 @@ namespace PickNBook.Api.Services
                         return EvaluateString(context.TravelClass, condition.Operator, condition.Value);
 
                     case FlightConditionType.Airline:
-                        // Match either airline name (e.g. "Air India") or airline code prefix (e.g. "AI") from flight number
-                        var flightNumber = context.Flight.FlightNumber;
-                        var airlineCode = flightNumber.Contains('-') ? flightNumber.Split('-')[0] : string.Empty;
-                        return EvaluateString(context.Flight.Airline, condition.Operator, condition.Value) ||
-                               EvaluateString(airlineCode, condition.Operator, condition.Value);
+                        // Match either airline name (e.g. "Air India") or airline code prefix (e.g. "AI")
+                        return EvaluateString(context.AirlineName, condition.Operator, condition.Value) ||
+                               EvaluateString(context.AirlineCode, condition.Operator, condition.Value);
 
                     case FlightConditionType.Route:
                         // Expected condition value: "Delhi-Mumbai" or "DEL-BOM" (case-insensitive)
-                        var route = $"{context.Flight.FromCity}-{context.Flight.ToCity}";
+                        var route = $"{context.Origin}-{context.Destination}";
                         return EvaluateString(route, condition.Operator, condition.Value);
 
                     case FlightConditionType.TripType:
@@ -193,7 +200,7 @@ namespace PickNBook.Api.Services
                     case FlightConditionType.AdvanceBookingDays:
                         if (int.TryParse(condition.Value, out var advanceDays))
                         {
-                            var days = (context.Flight.DepartureTime.Date - DateTime.UtcNow.Date).Days;
+                            var days = (context.DepartureDate.Date - DateTime.UtcNow.Date).Days;
                             return EvaluateNumeric(days, condition.Operator, advanceDays);
                         }
                         return false;

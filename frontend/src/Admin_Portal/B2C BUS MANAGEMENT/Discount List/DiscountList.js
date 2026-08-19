@@ -1,12 +1,14 @@
 /* eslint-disable */
 import { useEffect, useMemo, useState } from 'react';
-import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown, FaSearch } from 'react-icons/fa';
+import { FaEdit, FaEye, FaPlus, FaTrashAlt, FaFileExport, FaChevronDown, FaSearch, FaLink } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import './DiscountList.css';
 import AdminPagination from '../../../components/AdminPagination';
 import {
   listDiscounts,
-  deleteDiscount
+  deleteDiscount,
+  getDiscount,
+  updateDiscount
 } from '../../../services/adminBusService';
 
 const escapeCsvValue = (value) => {
@@ -41,6 +43,25 @@ const toBoolean = (value, fallback = false) => {
   return String(value).trim().toLowerCase() === 'true';
 };
 
+const toInputDateTimeLocal = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+};
+
+const toUtcIso = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+};
+
 function DiscountList() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
@@ -51,6 +72,27 @@ function DiscountList() {
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormValues, setEditFormValues] = useState({
+    code: '',
+    title: '',
+    description: '',
+    value: '',
+    discountType: 'Percentage',
+    isAutoApply: true,
+    isExclusive: false,
+    priority: '0',
+    minBookingAmount: '0',
+    startDateUtc: '',
+    endDateUtc: '',
+    status: 'Active',
+    remark: '',
+  });
+  const [editError, setEditError] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -207,20 +249,145 @@ function DiscountList() {
     navigate('/admin/b2c-bus/discount-mapping', { state: { discountId: row.id } });
   };
 
-  const handleEdit = (row) => {
-    navigate('/admin/b2c-bus/add-discount', { state: { mode: 'edit', row } });
+  const handleViewDetails = (row) => {
+    setSelectedRow(row);
   };
 
-  const handleDelete = async (rowId) => {
-    if (!window.confirm('Are you sure you want to delete this discount?')) {
+  const handleEditClick = async (row) => {
+    setEditError('');
+    setEditSubmitting(false);
+    setSelectedRow(row);
+    setIsEditModalOpen(true);
+
+    setEditFormValues({
+      code: row.code || '',
+      title: row.title || row.remark || '',
+      description: row.description || '',
+      value: row.value !== undefined && row.value !== null ? String(row.value) : '',
+      discountType: row.type || row.discountType || 'Percentage',
+      isAutoApply: toBoolean(row.isAutoApply, true),
+      isExclusive: toBoolean(row.isExclusive, false),
+      priority: row.priority !== undefined && row.priority !== null ? String(row.priority) : '0',
+      minBookingAmount: row.minBookingAmount !== undefined && row.minBookingAmount !== null ? String(row.minBookingAmount) : '0',
+      startDateUtc: toInputDateTimeLocal(row.startDateUtc),
+      endDateUtc: toInputDateTimeLocal(row.endDateUtc),
+      status: row.status || 'Active',
+      remark: row.remark || '',
+    });
+
+    try {
+      const item = await getDiscount(row.id);
+      if (item) {
+        setEditFormValues({
+          code: item.code || item.discountCode || '',
+          title: item.title || item.name || item.remark || '',
+          description: item.description || '',
+          value: item.value !== undefined && item.value !== null ? String(item.value) : '',
+          discountType: item.discountType || item.type || 'Percentage',
+          isAutoApply: toBoolean(item.isAutoApply, true),
+          isExclusive: toBoolean(item.isExclusive, false),
+          priority: item.priority !== undefined && item.priority !== null ? String(item.priority) : '0',
+          minBookingAmount: item.minBookingAmount !== undefined && item.minBookingAmount !== null ? String(item.minBookingAmount) : '0',
+          startDateUtc: toInputDateTimeLocal(item.startDateUtc || item.startDate),
+          endDateUtc: toInputDateTimeLocal(item.endDateUtc || item.endDate),
+          status: item.status || 'Active',
+          remark: item.remark || '',
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to fetch fresh discount details, using local data", e);
+    }
+  };
+
+  const handleEdit = (row) => {
+    handleEditClick(row);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditError('');
+
+    const code = String(editFormValues.code || '').trim().toUpperCase();
+    const title = String(editFormValues.title || '').trim();
+    const val = Number(editFormValues.value);
+    const priority = Number(editFormValues.priority) || 0;
+    const minBookingAmount = Number(editFormValues.minBookingAmount) || 0;
+    const startTimestamp = editFormValues.startDateUtc ? new Date(editFormValues.startDateUtc).getTime() : null;
+    const endTimestamp = editFormValues.endDateUtc ? new Date(editFormValues.endDateUtc).getTime() : null;
+
+    if (!code) {
+      setEditError('Discount code is required.');
       return;
     }
+    if (!title) {
+      setEditError('Discount title is required.');
+      return;
+    }
+    if (Number.isNaN(val) || val <= 0) {
+      setEditError('Please enter a valid value greater than 0.');
+      return;
+    }
+    if (minBookingAmount < 0) {
+      setEditError('Minimum booking amount cannot be negative.');
+      return;
+    }
+    if (startTimestamp && endTimestamp && startTimestamp > endTimestamp) {
+      setEditError('End date should be after start date.');
+      return;
+    }
+
+    setEditSubmitting(true);
     try {
-      await deleteDiscount(rowId);
-      setRows((prev) => prev.filter((row) => row.id !== rowId));
+      const payload = {
+        code,
+        title,
+        description: String(editFormValues.description || '').trim(),
+        value: val,
+        discountType: editFormValues.discountType,
+        isAutoApply: Boolean(editFormValues.isAutoApply),
+        isExclusive: Boolean(editFormValues.isExclusive),
+        priority,
+        minBookingAmount,
+        startDateUtc: toUtcIso(editFormValues.startDateUtc),
+        endDateUtc: toUtcIso(editFormValues.endDateUtc),
+        status: editFormValues.status,
+        updatedBy: 'admin',
+        remark: String(editFormValues.remark || '').trim(),
+      };
+
+      await updateDiscount(selectedRow.id, payload);
+      setIsEditModalOpen(false);
+      loadDiscounts();
+      setSelectedRow(null);
+    } catch (err) {
+      setEditError(err.message || 'Failed to update discount.');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (row) => {
+    setRowToDelete(row);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!rowToDelete) return;
+    try {
+      await deleteDiscount(rowToDelete.id);
+      setRows((prev) => prev.filter((row) => row.id !== rowToDelete.id));
+      if (selectedRow?.id === rowToDelete.id) {
+        setSelectedRow(null);
+      }
+      setIsDeleteModalOpen(false);
+      setRowToDelete(null);
     } catch (err) {
       alert(err.message || 'Failed to delete discount.');
     }
+  };
+
+  const handleDelete = (row) => {
+    handleDeleteClick(row);
   };
 
   return (
@@ -278,6 +445,10 @@ function DiscountList() {
               <option value="Inactive">Inactive</option>
             </select>
           </label>
+          <button type="button" className="primary-btn mapping-btn" onClick={() => navigate('/admin/b2c-bus/discount-mapping')}>
+            <FaLink aria-hidden="true" />
+            Discount Mapping
+          </button>
           <button type="button" className="primary-btn" onClick={() => navigate('/admin/b2c-bus/add-discount')}>
             <FaPlus aria-hidden="true" />
             Add B2C Discount
@@ -369,11 +540,23 @@ function DiscountList() {
                             className="dropdown-item view"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleView(row);
+                              handleViewDetails(row);
                               setActiveDropdownId(null);
                             }}
                           >
                             <FaEye className="item-icon" />
+                            <span>View Details</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item view"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleView(row);
+                              setActiveDropdownId(null);
+                            }}
+                          >
+                            <FaLink className="item-icon" />
                             <span>View Mapping</span>
                           </button>
                           <button
@@ -393,7 +576,7 @@ function DiscountList() {
                             className="dropdown-item delete"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(row.id);
+                              handleDelete(row);
                               setActiveDropdownId(null);
                             }}
                           >
@@ -421,6 +604,347 @@ function DiscountList() {
           />
         </div>
       </section>
+
+      {/* View Details Modal */}
+      {selectedRow && !isEditModalOpen && (
+        <div className="modal-overlay" onClick={() => setSelectedRow(null)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">View B2C Bus Discount Details</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setSelectedRow(null)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="details-grid">
+                <div className="details-item">
+                  <span className="details-label">ID</span>
+                  <span className="details-value">{selectedRow.id}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Discount Code</span>
+                  <span className="details-value">{selectedRow.code || '--'}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Title</span>
+                  <span className="details-value">{selectedRow.title || '--'}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Discount Type</span>
+                  <span className="details-value">{selectedRow.type}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Value</span>
+                  <span className="details-value">
+                    {selectedRow.type === 'Percentage' ? `${selectedRow.value}%` : `INR ${selectedRow.value}`}
+                  </span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Auto Apply</span>
+                  <span className="details-value">{selectedRow.isAutoApply ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Exclusive</span>
+                  <span className="details-value">{selectedRow.isExclusive ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Priority</span>
+                  <span className="details-value">{selectedRow.priority}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Min Booking Amount</span>
+                  <span className="details-value">INR {selectedRow.minBookingAmount}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Start Date & Time</span>
+                  <span className="details-value">{formatDate(selectedRow.startDateUtc)}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">End Date & Time</span>
+                  <span className="details-value">{formatDate(selectedRow.endDateUtc)}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Status</span>
+                  <span className={`discount-status-pill ${selectedRow.status.toLowerCase()}`} style={{ width: 'fit-content', marginTop: '4px' }}>
+                    <span className="discount-status-dot" />
+                    {selectedRow.status}
+                  </span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Updated By</span>
+                  <span className="details-value">{selectedRow.updatedBy}</span>
+                </div>
+                <div className="details-item">
+                  <span className="details-label">Entry Date</span>
+                  <span className="details-value">{formatDate(selectedRow.entryDate)}</span>
+                </div>
+                <div className="details-item wide">
+                  <span className="details-label">Description</span>
+                  <span className="details-value">{selectedRow.description || '--'}</span>
+                </div>
+                <div className="details-item wide">
+                  <span className="details-label">Remark</span>
+                  <span className="details-value">{selectedRow.remark || '--'}</span>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={() => {
+                  handleEditClick(selectedRow);
+                }}
+              >
+                <FaEdit /> Edit Discount
+              </button>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setSelectedRow(null)}
+                style={{ borderColor: '#cbd5e1', color: '#475569', background: 'transparent' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Form Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Edit B2C Bus Discount</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setIsEditModalOpen(false)}>
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit}>
+              <div className="modal-body">
+                <div className="add-discount-form" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Discount Code</span>
+                    <input
+                      type="text"
+                      value={editFormValues.code}
+                      onChange={(event) =>
+                        setEditFormValues((previous) => ({
+                          ...previous,
+                          code: event.target.value.toUpperCase().replace(/\s+/g, ''),
+                        }))
+                      }
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Title</span>
+                    <input
+                      type="text"
+                      value={editFormValues.title}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, title: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Discount Type</span>
+                    <select
+                      value={editFormValues.discountType}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, discountType: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', height: '38px' }}
+                      disabled={editSubmitting}
+                    >
+                      <option value="Percentage">Percentage</option>
+                      <option value="Fixed">Fixed</option>
+                    </select>
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Value</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editFormValues.value}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, value: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Min Booking Amount</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editFormValues.minBookingAmount}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, minBookingAmount: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Priority</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editFormValues.priority}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, priority: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Auto Apply</span>
+                    <select
+                      value={String(editFormValues.isAutoApply)}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, isAutoApply: e.target.value === 'true' }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', height: '38px' }}
+                      disabled={editSubmitting}
+                    >
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Exclusive</span>
+                    <select
+                      value={String(editFormValues.isExclusive)}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, isExclusive: e.target.value === 'true' }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', height: '38px' }}
+                      disabled={editSubmitting}
+                    >
+                      <option value="false">No</option>
+                      <option value="true">Yes</option>
+                    </select>
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Start Date & Time</span>
+                    <input
+                      type="datetime-local"
+                      value={editFormValues.startDateUtc}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, startDateUtc: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>End Date & Time</span>
+                    <input
+                      type="datetime-local"
+                      value={editFormValues.endDateUtc}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, endDateUtc: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Status</span>
+                    <select
+                      value={editFormValues.status}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, status: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', height: '38px' }}
+                      disabled={editSubmitting}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Description</span>
+                    <textarea
+                      value={editFormValues.description}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, description: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                      rows={2}
+                    />
+                  </label>
+
+                  <label className="add-field" style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>Remark</span>
+                    <textarea
+                      value={editFormValues.remark}
+                      onChange={(e) => setEditFormValues(prev => ({ ...prev, remark: e.target.value }))}
+                      style={{ border: '1px solid var(--admin-primary)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}
+                      disabled={editSubmitting}
+                      rows={2}
+                    />
+                  </label>
+                </div>
+
+                {editError && <p style={{ color: 'red', marginTop: '12px', fontSize: '13px' }}>{editError}</p>}
+              </div>
+              <div className="modal-footer">
+                <button type="submit" className="primary-btn" disabled={editSubmitting}>
+                  {editSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => setIsEditModalOpen(false)}
+                  style={{ borderColor: '#cbd5e1', color: '#475569', background: 'transparent' }}
+                  disabled={editSubmitting}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsDeleteModalOpen(false)}>
+          <div className="modal-container delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Delete Discount</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setIsDeleteModalOpen(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>
+                Are you sure you want to delete the discount{' '}
+                <strong style={{ color: '#0f172a' }}>
+                  {rowToDelete?.title || rowToDelete?.code || 'this discount'}
+                </strong>
+                ? This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={handleDeleteConfirm}
+                style={{ background: '#ef4444', borderColor: '#ef4444' }}
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setIsDeleteModalOpen(false)}
+                style={{ borderColor: '#cbd5e1', color: '#475569', background: 'transparent' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

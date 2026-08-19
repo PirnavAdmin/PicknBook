@@ -17,7 +17,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpGet("history")]
-        public async Task<IActionResult> GetHistory()
+        public async Task<IActionResult> GetHistory([FromQuery] string? type)
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                          ?? User.FindFirst("sub")?.Value;
@@ -31,7 +31,7 @@ namespace PickNBook.Api.Controllers
             }
 
             var result = await _bookingHistoryService
-                .GetBookingHistoryAsync(userId);
+                .GetBookingHistoryAsync(userId, type);
 
             return Ok(result);
         }

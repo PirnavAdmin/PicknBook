@@ -53,22 +53,3 @@ export function clearFlightBookingFlowState() {
     // Ignore storage errors in private mode or restricted environments.
   }
 }
-
-// ─── Explicit Helpers for SRDV Flow ───────────────────────────────────────
-
-export function getSrdvFlightState() {
-  const state = readFlightBookingFlowState() || {};
-  return {
-    TraceId: state.TraceId || "",
-    ResultIndex: state.ResultIndex || "",
-    SrdvType: state.SrdvType || "",
-    SrdvIndex: state.SrdvIndex || "",
-    PNR: state.PNR || "",
-    BookingId: state.BookingId || "",
-    IsLcc: state.IsLcc || false,
-  };
-}
-
-export function setSrdvFlightState(updates) {
-  writeFlightBookingFlowState(updates);
-}

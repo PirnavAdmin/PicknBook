@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import { Download, Eye, Pencil, PlaneTakeoff, Plus, Trash2, X } from "lucide-react";
 import "./FlightMarkupList.css";

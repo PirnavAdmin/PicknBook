@@ -22,12 +22,14 @@ namespace PickNBook.Api.Services
             _context = context;
         }
 
-        public async Task<List<BookingHistoryDto>> GetBookingHistoryAsync(string  userId)
+        public async Task<List<BookingHistoryDto>> GetBookingHistoryAsync(string userId, string? type = null)
         {
             var result = new List<BookingHistoryDto>();
 
-            var busBookings = await _context.BusReservations
-                .Include(x => x.BusBooking)
+            if (string.IsNullOrEmpty(type) || type.Equals("bus", StringComparison.OrdinalIgnoreCase))
+            {
+                var busBookings = await _context.BusReservations
+                    .Include(x => x.BusBooking)
                 .Where(x => x.UserId == userId)
                 .ToListAsync();
 
@@ -92,23 +94,26 @@ namespace PickNBook.Api.Services
                     From = booking.BusBooking.FromCity,
                     To = booking.BusBooking.ToCity,
 
-                    Date = journeyDateTime
-    .ToString("ddd, dd MMM yyyy"),
+                    Date = journeyDateTime.ToString("ddd, dd MMM yyyy"),
 
-                    Time = journeyDateTime
-    .ToString("HH:mm"),
+                    Time = journeyDateTime.ToString("HH:mm"),
 
                     Status = status,
 
                     Note = note,
 
-                    CtaLabel = ctaLabel
+                    CtaLabel = ctaLabel,
+
+                    OriginalDate = journeyDateTime
                 });
             }
+            }
 
-            var hotelBookings = await _context.HotelReservations
-                .Where(x => x.UserId == userId)
-                .ToListAsync();
+            if (string.IsNullOrEmpty(type) || type.Equals("hotel", StringComparison.OrdinalIgnoreCase))
+            {
+                var hotelBookings = await _context.HotelReservations
+                    .Where(x => x.UserId == userId)
+                    .ToListAsync();
 
             foreach (var booking in hotelBookings)
             {
@@ -164,12 +169,89 @@ namespace PickNBook.Api.Services
                     Time = checkInDateTimeIst.ToString("HH:mm"),
                     Status = status,
                     Note = note,
-                    CtaLabel = ctaLabel
+                    CtaLabel = ctaLabel,
+                    OriginalDate = checkInDateTimeIst
                 });
+            }
+            }
+
+            if (string.IsNullOrEmpty(type) || type.Equals("flight", StringComparison.OrdinalIgnoreCase))
+            {
+                var flightBookings = await _context.FlightReservations
+                    .Where(x => x.UserId == userId)
+                    .ToListAsync();
+
+                foreach (var booking in flightBookings)
+                {
+                    var departureDateTimeIst = ToIst(booking.DepartureTime);
+                    string status;
+                    if (booking.Status.Contains("Cancel", StringComparison.OrdinalIgnoreCase))
+                    {
+                        status = "Cancelled";
+                    }
+                    else if (booking.Status.Contains("Pending", StringComparison.OrdinalIgnoreCase))
+                    {
+                        status = "Pending";
+                    }
+                    else if (departureDateTimeIst > ToIst(DateTime.UtcNow))
+                    {
+                        status = "Upcoming";
+                    }
+                    else
+                    {
+                        status = "Past";
+                    }
+
+                    string note;
+                    string ctaLabel;
+
+                    switch (status)
+                    {
+                        case "Pending":
+                            note = "Your flight is currently pending confirmation.";
+                            ctaLabel = "View Details";
+                            break;
+
+                        case "Upcoming":
+                            note = "Your flight is coming up soon.";
+                            ctaLabel = "View Ticket";
+                            break;
+
+                        case "Past":
+                            note = "Hope you enjoyed your flight!";
+                            ctaLabel = "Book Return";
+                            break;
+
+                        case "Cancelled":
+                            note = "Need to fly? Book another flight.";
+                            ctaLabel = "Book Again";
+                            break;
+
+                        default:
+                            note = "";
+                            ctaLabel = "";
+                            break;
+                    }
+
+                    result.Add(new BookingHistoryDto
+                    {
+                        BookingId = booking.Id,
+                        BookingReference = booking.BookingReference,
+                        TripType = "Flight",
+                        From = booking.FromCity,
+                        To = booking.ToCity,
+                        Date = departureDateTimeIst.ToString("ddd, dd MMM yyyy"),
+                        Time = departureDateTimeIst.ToString("HH:mm"),
+                        Status = status,
+                        Note = note,
+                        CtaLabel = ctaLabel,
+                        OriginalDate = departureDateTimeIst
+                    });
+                }
             }
 
             return result
-                .OrderByDescending(x => x.Date)
+                .OrderByDescending(x => x.OriginalDate)
                 .ToList();
         }
     }
