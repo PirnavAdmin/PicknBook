@@ -94,10 +94,10 @@ namespace PickNBook.Api.Services
 
         public async Task<PickNBookHotelSearchResponseDto> SearchHotelsMultiLevelAsync(SrdvHotelSearchRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.ClientId) || request.ClientId == "string" || request.ClientId == "PickNBookClient") request.ClientId = _settings.ClientId;
-            if (string.IsNullOrWhiteSpace(request.UserName) || request.UserName == "string" || request.UserName == "srdv_user") request.UserName = _settings.UserName;
-            if (string.IsNullOrWhiteSpace(request.Password) || request.Password == "string" || request.Password == "srdv_password") request.Password = _settings.Password;
-            if (string.IsNullOrWhiteSpace(request.EndUserIp)) request.EndUserIp = "127.0.0.1";
+            request.ClientId = _settings.ClientId;
+            request.UserName = _settings.UserName;
+            request.Password = _settings.Password;
+            
             if (string.IsNullOrWhiteSpace(request.CountryCode)) request.CountryCode = "IN";
             if (string.IsNullOrWhiteSpace(request.ResultCount)) request.ResultCount = "500";
             if (string.IsNullOrWhiteSpace(request.PreferredCurrency)) request.PreferredCurrency = "INR";
@@ -105,6 +105,22 @@ namespace PickNBook.Api.Services
             if (request.RoomGuests == null || request.RoomGuests.Count == 0)
             {
                 request.RoomGuests = new List<RoomGuestDto> { new RoomGuestDto { NoOfAdults = "1", NoOfChild = "0", ChildAge = new List<int>() } };
+            }
+
+            if (string.IsNullOrWhiteSpace(request.RequestType) && !string.IsNullOrWhiteSpace(request.CityId))
+            {
+                var cacheSvc = _serviceProvider.GetService<HotelCityCacheService>();
+                if (cacheSvc != null)
+                {
+                    if (cacheSvc.SpecialCityIds.Contains(request.CityId))
+                    {
+                        request.RequestType = "Special";
+                    }
+                    else if (cacheSvc.InternationalCityIds.Contains(request.CityId))
+                    {
+                        request.RequestType = "International";
+                    }
+                }
             }
 
             if (!string.IsNullOrEmpty(_settings.ApiToken))
@@ -124,11 +140,14 @@ namespace PickNBook.Api.Services
 
                 // ── [SUPPLIER-DEBUG] Streaming deserialization ──
                 using var stream = await response.Content.ReadAsStreamAsync();
-                var srdvResponse = await JsonSerializer.DeserializeAsync<SrdvRawHotelSearchResponse>(stream, new JsonSerializerOptions 
+                var serializerOptions = new JsonSerializerOptions 
                 { 
                     PropertyNameCaseInsensitive = true,
                     NumberHandling = JsonNumberHandling.AllowReadingFromString 
-                });
+                };
+                serializerOptions.Converters.Add(new PickNBook.Api.Models.DTOs.SafeListConverterFactory());
+                
+                var srdvResponse = await JsonSerializer.DeserializeAsync<SrdvRawHotelSearchResponse>(stream, serializerOptions);
 
                 if (srdvResponse == null)
                     return new PickNBookHotelSearchResponseDto();
@@ -519,10 +538,16 @@ namespace PickNBook.Api.Services
 
                     if (target.TryGetProperty("Error", out var errProp) && errProp.ValueKind == JsonValueKind.Object)
                     {
-                        if (errProp.TryGetProperty("ErrorCode", out var ec) && ec.ValueKind == JsonValueKind.Number) resDto.Error.ErrorCode = ec.GetInt32();
+                        if (errProp.TryGetProperty("ErrorCode", out var ec))
+                        {
+                            if (ec.ValueKind == JsonValueKind.Number) 
+                                resDto.Error.ErrorCode = ec.GetInt32();
+                            else if (ec.ValueKind == JsonValueKind.String && int.TryParse(ec.GetString(), out int parsedCode)) 
+                                resDto.Error.ErrorCode = parsedCode;
+                        }
                         if (errProp.TryGetProperty("ErrorMessage", out var em)) resDto.Error.ErrorMessage = em.GetString() ?? "";
                     }
-                    if (resDto.Error.ErrorCode != 0)
+                    if (resDto.Error.ErrorCode != 0 || !string.IsNullOrEmpty(resDto.Error.ErrorMessage))
                     {
                         _logger?.LogWarning("SRDV API Book returned error: {ErrorCode} - {ErrorMessage}", resDto.Error.ErrorCode, resDto.Error.ErrorMessage);
                         bookRes = responseDto;
@@ -582,7 +607,7 @@ namespace PickNBook.Api.Services
                 Price = offer.Price, NetPrice = offer.Price, Amount = offer.Price, TotalPrice = offer.Price,
                 Currency = "INR",
                 Status = finalStatus,
-                Error = res.Error?.ErrorMessage,
+                Error = !string.IsNullOrEmpty(res.Error?.ErrorMessage) ? res.Error.ErrorMessage : (res.Error?.ErrorCode != 0 ? $"Error Code: {res.Error?.ErrorCode}" : null),
                 CreatedAt = DateTime.UtcNow
             };
         }
@@ -599,13 +624,13 @@ namespace PickNBook.Api.Services
                 RequestType = 4, BookingMode = 5, 
                 SrdvType = reservation.SrdvType ?? string.Empty, 
                 SrdvIndex = reservation.SrdvIndex ?? string.Empty,
-                EndUserIp = !string.IsNullOrWhiteSpace(endUserIp) ? endUserIp : "127.0.0.1"
+                EndUserIp = endUserIp,
             };
             var resDto = await CancelRoomAsync(req);
             return resDto.ResponseStatus == 1;
         }
 
-        public async Task<PickNBookBalanceResponseDto> GetApiBalanceAsync()
+        public async Task<PickNBookBalanceResponseDto> GetApiBalanceAsync(string endUserIp)
         {
             var requestBody = new
             {
@@ -651,7 +676,7 @@ namespace PickNBook.Api.Services
             return balanceDto;
         }
 
-        public async Task<PickNBookBalanceLogResponseDto> GetApiBalanceLogAsync()
+        public async Task<PickNBookBalanceLogResponseDto> GetApiBalanceLogAsync(string endUserIp)
         {
             var requestBody = new
             {
@@ -713,9 +738,9 @@ namespace PickNBook.Api.Services
 
         public async Task<PickNBookHotelInfoResponseDto> GetHotelInfoAsync(HotelInfoRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.ClientId)) request.ClientId = _settings.ClientId;
-            if (string.IsNullOrWhiteSpace(request.UserName)) request.UserName = _settings.UserName;
-            if (string.IsNullOrWhiteSpace(request.Password)) request.Password = _settings.Password;
+            request.ClientId = _settings.ClientId;
+            request.UserName = _settings.UserName;
+            request.Password = _settings.Password;
 
 
             using var scope = _serviceProvider.CreateScope();
@@ -1011,9 +1036,9 @@ namespace PickNBook.Api.Services
             JsonDocument? jsonDoc = null;
             try
             {
-                if (string.IsNullOrWhiteSpace(request.ClientId)) request.ClientId = _settings.ClientId;
-                if (string.IsNullOrWhiteSpace(request.UserName)) request.UserName = _settings.UserName;
-                if (string.IsNullOrWhiteSpace(request.Password)) request.Password = _settings.Password;
+                request.ClientId = _settings.ClientId;
+                request.UserName = _settings.UserName;
+                request.Password = _settings.Password;
 
 
                 var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/GetHotelRoom", request);
@@ -1399,9 +1424,9 @@ namespace PickNBook.Api.Services
                 var blockReq = new
                 {
                     EndUserIp = request.EndUserIp,
-                    ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
-                    UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
-                    Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password,
+                    ClientId = _settings.ClientId,
+                    UserName = _settings.UserName,
+                    Password = _settings.Password,
                     TokenId = "",
                     TraceId = int.TryParse(cleanTraceId, out var tid) ? (object)tid : cleanTraceId,
                     SrdvType = request.SrdvType,
@@ -1649,9 +1674,9 @@ namespace PickNBook.Api.Services
                 var payload = new
                 {
                     EndUserIp = request.EndUserIp,
-                    ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
-                    UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
-                    Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password,
+                    ClientId = _settings.ClientId,
+                    UserName = _settings.UserName,
+                    Password = _settings.Password,
                     TokenId = "",
                     TraceId = int.TryParse(request.TraceId, out var tid) ? (object)tid : request.TraceId,
                     SrdvType = request.SrdvType,
@@ -1783,11 +1808,15 @@ namespace PickNBook.Api.Services
 
                 if (target.TryGetProperty("Error", out var errProp) && errProp.ValueKind == JsonValueKind.Object)
                 {
-                    if (errProp.TryGetProperty("ErrorCode", out var ec) && ec.ValueKind == JsonValueKind.Number) resDto.Error.ErrorCode = ec.GetInt32();
+                    if (errProp.TryGetProperty("ErrorCode", out var ec))
+                    {
+                        if (ec.ValueKind == JsonValueKind.Number) resDto.Error.ErrorCode = ec.GetInt32();
+                        else if (ec.ValueKind == JsonValueKind.String && int.TryParse(ec.GetString(), out int parsedCode)) resDto.Error.ErrorCode = parsedCode;
+                    }
                     if (errProp.TryGetProperty("ErrorMessage", out var em)) resDto.Error.ErrorMessage = em.GetString() ?? "";
                 }
 
-                if (resDto.Error.ErrorCode != 0)
+                if (resDto.Error.ErrorCode != 0 || !string.IsNullOrEmpty(resDto.Error.ErrorMessage))
                 {
                     return responseDto;
                 }
@@ -1844,10 +1873,10 @@ namespace PickNBook.Api.Services
                     Remarks = !string.IsNullOrWhiteSpace(request.Remarks) ? request.Remarks : "Hotel Cancellation Request",
                     SrdvType = request.SrdvType ?? "",
                     SrdvIndex = request.SrdvIndex ?? "",
-                    EndUserIp = !string.IsNullOrWhiteSpace(request.EndUserIp) ? request.EndUserIp : "127.0.0.1",
-                    ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
-                    UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
-                    Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password,
+                    EndUserIp = request.EndUserIp,
+                    ClientId = _settings.ClientId,
+                    UserName = _settings.UserName,
+                    Password = _settings.Password,
                     TokenId = "",
                     TraceId = request.TraceId ?? ""
                 };
@@ -1931,10 +1960,10 @@ namespace PickNBook.Api.Services
             {
                 var payload = new
                 {
-                    EndUserIp = !string.IsNullOrWhiteSpace(request.EndUserIp) ? request.EndUserIp : "127.0.0.1",
-                    ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
-                    UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
-                    Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password
+                    EndUserIp = request.EndUserIp,
+                    ClientId = _settings.ClientId,
+                    UserName = _settings.UserName,
+                    Password = _settings.Password,
                 };
 
                 var payloadJson = System.Text.Json.JsonSerializer.Serialize(payload);
@@ -1968,10 +1997,10 @@ namespace PickNBook.Api.Services
             {
                 var payload = new
                 {
-                    EndUserIp = !string.IsNullOrWhiteSpace(request.EndUserIp) ? request.EndUserIp : "127.0.0.1",
-                    ClientId = !string.IsNullOrWhiteSpace(request.ClientId) ? request.ClientId : _settings.ClientId,
-                    UserName = !string.IsNullOrWhiteSpace(request.UserName) ? request.UserName : _settings.UserName,
-                    Password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : _settings.Password
+                    EndUserIp = request.EndUserIp,
+                    ClientId = _settings.ClientId,
+                    UserName = _settings.UserName,
+                    Password = _settings.Password,
                 };
 
                 var payloadJson = System.Text.Json.JsonSerializer.Serialize(payload);
@@ -2118,18 +2147,14 @@ namespace PickNBook.Api.Services
                 
                 price.B2CTotalPrice = price.OfferedPrice + markup;
                 price.B2CBasePrice = Math.Max(0m, price.B2CTotalPrice - price.TotalGSTAmount);
-            }
-            
-            if (markup > 0)
-            {
-                price.OfferedPrice += markup;
-                price.OfferedPriceRoundedOff = Math.Round(price.OfferedPrice);
-                price.PublishedPrice += markup;
-                price.PublishedPriceRoundedOff = Math.Round(price.PublishedPrice);
+                price.B2CFinalFare = price.B2CTotalPrice;
             }
         }
     }
 }
+
+
+
 
 
 

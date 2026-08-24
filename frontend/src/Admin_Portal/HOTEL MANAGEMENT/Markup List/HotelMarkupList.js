@@ -88,6 +88,9 @@ export default function HotelMarkupList() {
       await updateHotelPricingRule(rule.id, {
         markupType: rule.markupType,
         markupValue: rule.markupValue,
+        convenienceFeeType: rule.convenienceFeeType,
+        convenienceFeeValue: rule.convenienceFeeValue,
+        gstPercent: rule.gstPercent,
         isActive: nextActive,
       });
       showToast(nextActive ? "Rule activated." : "Rule deactivated.");
@@ -165,6 +168,8 @@ export default function HotelMarkupList() {
             <tr>
               <th>ID</th>
               <th>Markup</th>
+              <th>Convenience Fee</th>
+              <th>GST %</th>
               <th>Status</th>
               <th>Updated</th>
               <th>Updated By</th>
@@ -174,13 +179,13 @@ export default function HotelMarkupList() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 28, color: "#94a3b8" }}>
+                <td colSpan={8} style={{ textAlign: "center", padding: 28, color: "#94a3b8" }}>
                   Loading pricing rules...
                 </td>
               </tr>
             ) : rules.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 28, color: "#94a3b8" }}>
+                <td colSpan={8} style={{ textAlign: "center", padding: 28, color: "#94a3b8" }}>
                   No pricing rules found. Click "Add Pricing Rule" to create one.
                 </td>
               </tr>
@@ -199,6 +204,13 @@ export default function HotelMarkupList() {
                     <span className="hml-cat-badge">{rule.markupType}</span>{" "}
                     <span className="hml-markup">{fmtValue(rule.markupType, rule.markupValue)}</span>
                   </td>
+                  <td>
+                    <span className="hml-cat-badge">{rule.convenienceFeeType}</span>{" "}
+                    <span className="hml-markup">
+                      {fmtValue(rule.convenienceFeeType, rule.convenienceFeeValue)}
+                    </span>
+                  </td>
+                  <td>{Number(rule.gstPercent).toFixed(2)}%</td>
                   <td>
                     <span
                       className={`hml-status-badge ${rule.isActive ? "hml-active" : "hml-inactive"}`}

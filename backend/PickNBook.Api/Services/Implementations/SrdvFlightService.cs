@@ -624,6 +624,7 @@ namespace PickNBook.Api.Services
                 SrdvIndex = request.SrdvIndex,
                 TraceId = request.TraceId,
                 ResultIndex = request.ResultIndex,
+                PromoCode = request.PromoCode,
                 Passengers = request.Passengers?.Select(p => {
                     string gender = string.IsNullOrWhiteSpace(p.Gender) ? "1" : p.Gender.ToString();
                     string title = (p.Title ?? "").Trim();
@@ -731,6 +732,7 @@ namespace PickNBook.Api.Services
                 SrdvIndex = request.SrdvIndex,
                 TraceId = request.TraceId,
                 ResultIndex = request.ResultIndex,
+                PromoCode = request.PromoCode,
                 Passengers = request.Passengers?.Select(p => new
                 {
                     Title = p.Title,
@@ -821,7 +823,8 @@ namespace PickNBook.Api.Services
                 TraceId = request.TraceId,
                 PNR = request.PNR,
                 ResultIndex = request.ResultIndex,
-                BookingId = request.BookingId
+                BookingId = request.BookingId,
+                PromoCode = request.PromoCode
             };
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{_settings.FlightBaseUrl}/TicketGDS")

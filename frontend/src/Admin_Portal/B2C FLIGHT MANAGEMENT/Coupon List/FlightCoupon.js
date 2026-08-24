@@ -1,10 +1,10 @@
-/* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Check, Download, Pencil, Plus, Trash2, X, Eye, Tag, DollarSign, CheckCircle2, Clock, Users, SlidersHorizontal } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { Check, Download, Eye, List, Pencil, Trash2, X } from "lucide-react";
 import "./FlightCoupon.css";
-import { csvCell, formatCouponDate, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
+import "../Used Coupon List/FlightUsedCoupon.css";
 import AdminPagination from "../../../components/AdminPagination";
+import { formatCouponDate, formatCouponDateTime } from "../../../utils/adminPortalUtils";
+import { useAdminList } from "../../../utils/adminPortalStorage";
 import {
   createFlightCoupon,
   deleteFlightCoupon,
@@ -12,1078 +12,760 @@ import {
   updateFlightCoupon,
 } from "../../../services/flightBookingService";
 
-const DEFAULT_COUPON_SORT_BY = "entryDate";
-const DEFAULT_COUPON_SORT_ORDER = "desc";
+function toInputDate(value) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().slice(0, 10);
+}
 
 function generateCouponCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
+
   for (let index = 0; index < 8; index += 1) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
-  return code;
-}
 
-function toInputDate(value) {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toISOString().slice(0, 10);
+  return code;
 }
 
 function createDefaultCouponForm() {
   return {
     value: "",
-    cpnType: "Percentage Discount",
+    cpnType: "",
     startDate: "",
     expiryDate: "",
     couponCode: generateCouponCode(),
-    useLimit: "100",
-    maxUsagePerUser: "1",
-    isAutoApply: false,
-    isExclusive: true,
-    priority: "0",
-    minBookingAmount: "0",
-    status: "Active",
+    useLimit: "",
     remark: "",
-    discountType: "Percentage (%)",
-    route: "All Routes",
-    createdBy: "Admin"
   };
 }
 
 export default function AdminFlightCouponListPage() {
-  const [coupons, setCoupons] = useState([]);
+  const [coupons, setCoupons] = useAdminList("flight-coupons", []);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [couponLoadError, setCouponLoadError] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
-  // Filter States
-  const [filterSearch, setFilterSearch] = useState("");
-  const [filterCouponCode, setFilterCouponCode] = useState("");
-  const [filterCouponType, setFilterCouponType] = useState("All Types");
-  const [filterDiscountType, setFilterDiscountType] = useState("All Types");
-  const [filterDiscountValue, setFilterDiscountValue] = useState("");
-  const [filterMinAmount, setFilterMinAmount] = useState("");
-  const [filterMaxDiscount, setFilterMaxDiscount] = useState("");
-  const [filterRoute, setFilterRoute] = useState("All Routes");
-  const [filterStatus, setFilterStatus] = useState("All Status");
-  const [filterCreatedBy, setFilterCreatedBy] = useState("All");
-  const [filterValidFrom, setFilterValidFrom] = useState("");
-  const [filterValidTo, setFilterValidTo] = useState("");
-  const [activeQuickFilter, setActiveQuickFilter] = useState("All Coupons");
-
-  // Pagination & Modals
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [generateForm, setGenerateForm] = useState(createDefaultCouponForm);
   const [generateError, setGenerateError] = useState("");
   const [editCoupon, setEditCoupon] = useState(null);
   const [editError, setEditError] = useState("");
-  const [deleteCouponRecord, setDeleteCouponRecord] = useState(null);
-
-  // Load coupons from backend
-  const loadCoupons = async () => {
-    setIsLoadingCoupons(true);
-    setCouponLoadError("");
-    try {
-      const backendCoupons = await listFlightCoupons();
-      setCoupons(backendCoupons);
-    } catch (error) {
-      setCouponLoadError(error.message || "Unable to load coupons from backend.");
-    } finally {
-      setIsLoadingCoupons(false);
-    }
-  };
+  const [deleteCoupon, setDeleteCoupon] = useState(null);
+  const [viewCoupon, setViewCoupon] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalItems = coupons.length;
+  const paginatedCoupons = useMemo(() => {
+    const sortedCoupons = [...coupons].sort((a, b) => {
+      const numA = parseInt(String(a.id).replace(/\D/g, "")) || 0;
+      const numB = parseInt(String(b.id).replace(/\D/g, "")) || 0;
+      return numA - numB;
+    });
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedCoupons.slice(startIndex, startIndex + itemsPerPage);
+  }, [coupons, currentPage]);
+  const colWidths = [
+    "8%",
+    "10%",
+    "10%",
+    "13%",
+    "10%",
+    "10%",
+    "11%",
+    "8%",
+    "11%",
+    "9%",
+    "10%",
+  ];
+  const headers = [
+    "ID",
+    "CPN Value",
+    "CPN Type",
+    "Coupon Code",
+    "Start Date",
+    "Expiry Date",
+    "Use Limit",
+    "Status",
+    "Insert Date",
+    "Remark",
+    "Action",
+  ];
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadCoupons = async () => {
+      setIsLoadingCoupons(true);
+      setCouponLoadError("");
+
+      try {
+        const backendCoupons = await listFlightCoupons();
+        if (isMounted) {
+          setCoupons(backendCoupons);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setCoupons([]);
+          setCouponLoadError(error.message || "Unable to load coupons from backend.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingCoupons(false);
+        }
+      }
+    };
+
     loadCoupons();
-  }, []);
 
-  const handleApplyQuickFilter = (type) => {
-    setActiveQuickFilter(type);
-    if (type === "All Coupons") {
-      setFilterStatus("All Status");
-      setFilterDiscountType("All Types");
-      setFilterCouponType("All Types");
-    } else if (type === "Active") {
-      setFilterStatus("Active");
-    } else if (type === "Expired") {
-      setFilterStatus("Expired");
-    } else if (type === "Upcoming") {
-      setFilterStatus("Scheduled");
-    } else if (type === "Percentage") {
-      setFilterDiscountType("Percentage (%)");
-    } else if (type === "Flat Amount") {
-      setFilterDiscountType("Flat Amount (₹)");
-    } else if (type === "Weekend") {
-      setFilterCouponType("Weekend Offer");
-    } else if (type === "Festival") {
-      setFilterCouponType("Festival Offer");
-    } else if (type === "First Booking") {
-      setFilterCouponType("First Booking Coupon");
-    }
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [setCoupons]);
 
-  const handleResetFilters = () => {
-    setFilterSearch("");
-    setFilterCouponCode("");
-    setFilterCouponType("All Types");
-    setFilterDiscountType("All Types");
-    setFilterDiscountValue("");
-    setFilterMinAmount("");
-    setFilterMaxDiscount("");
-    setFilterRoute("All Routes");
-    setFilterStatus("All Status");
-    setFilterCreatedBy("All");
-    setFilterValidFrom("");
-    setFilterValidTo("");
-    setActiveQuickFilter("All Coupons");
-  };
-
-  // Filter logic over coupons
-  const filteredCoupons = useMemo(() => {
-    return coupons.filter((coupon) => {
-      if (filterSearch) {
-        const term = filterSearch.toLowerCase();
-        const matchesCode = String(coupon.couponCode || "").toLowerCase().includes(term);
-        const matchesName = String(coupon.couponCode || "").toLowerCase().includes(term);
-        const matchesDesc = String(coupon.remark || "").toLowerCase().includes(term);
-        if (!matchesCode && !matchesName && !matchesDesc) return false;
-      }
-      if (filterCouponCode && !String(coupon.couponCode || "").toLowerCase().includes(filterCouponCode.toLowerCase())) return false;
-      if (filterCouponType !== "All Types") {
-        if (coupon.cpnType !== filterCouponType) return false;
-      }
-      if (filterDiscountType !== "All Types") {
-        const type = filterDiscountType.includes("Percentage") ? "Percentage" : "Fixed";
-        if ((coupon.cpnType || "").toLowerCase() !== type.toLowerCase()) return false;
-      }
-      if (filterDiscountValue && Number(coupon.value) !== Number(filterDiscountValue)) return false;
-      if (filterStatus !== "All Status") {
-        if (String(coupon.status || "").toLowerCase() !== filterStatus.toLowerCase()) return false;
-      }
-      if (filterRoute !== "All Routes" && coupon.route && coupon.route !== filterRoute) return false;
-      if (filterCreatedBy !== "All" && coupon.createdBy && coupon.createdBy !== filterCreatedBy) return false;
-
-      return true;
-    });
-  }, [coupons, filterSearch, filterCouponCode, filterCouponType, filterDiscountType, filterDiscountValue, filterRoute, filterStatus, filterCreatedBy]);
-
-  const paginatedCoupons = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredCoupons.slice(start, start + itemsPerPage);
-  }, [filteredCoupons, currentPage, itemsPerPage]);
-
-  // Dynamic statistics
-  const stats = useMemo(() => {
-    const totalCount = filteredCoupons.length;
-    const activeCount = filteredCoupons.filter(c => String(c.status).toLowerCase() === "active").length;
-    const expiredCount = filteredCoupons.filter(c => String(c.status).toLowerCase() === "expired" || String(c.status).toLowerCase() === "inactive").length;
-    const totalRedemptions = filteredCoupons.reduce((sum, c) => sum + (Number(c.useLimit) || 0), 0);
-    const totalSavings = filteredCoupons.reduce((sum, c) => sum + (Number(c.value) * (Number(c.useLimit) || 0)), 0);
-
-    return { totalCount, activeCount, expiredCount, totalRedemptions, totalSavings };
-  }, [filteredCoupons]);
-
-  // Create Save handler
-  const handleSaveGenerate = async () => {
+  const openGenerateModal = () => {
     setGenerateError("");
-    if (!generateForm.value || !generateForm.startDate || !generateForm.expiryDate) {
-      setGenerateError("Please enter Discount Value, Start Date, and Expiry Date.");
-      return;
-    }
-    try {
-      const payload = {
-        ...generateForm,
-        value: Number(generateForm.value),
-        useLimit: Number(generateForm.useLimit || 0),
-        maxUsagePerUser: Number(generateForm.maxUsagePerUser || 1),
-        priority: Number(generateForm.priority || 0),
-        minBookingAmount: Number(generateForm.minBookingAmount || 0),
-        entryDate: new Date().toISOString()
-      };
-      await createFlightCoupon(payload);
-      setIsGenerateModalOpen(false);
-      setGenerateForm(createDefaultCouponForm());
-      loadCoupons();
-    } catch (err) {
-      setGenerateError(err.message || "Failed to create coupon.");
-    }
+    setGenerateForm(createDefaultCouponForm());
+    setIsGenerateModalOpen(true);
   };
 
-  // Edit Save handler
-  const handleSaveEdit = async () => {
+  const openEditModal = (coupon) => {
     setEditError("");
-    if (!editCoupon.value || !editCoupon.startDate || !editCoupon.expiryDate) {
-      setEditError("Please enter Discount Value, Start Date, and Expiry Date.");
+    setEditCoupon({
+      ...coupon,
+      value: String(coupon.value),
+      useLimit: String(coupon.useLimit),
+      startDate: toInputDate(coupon.startDate),
+      expiryDate: toInputDate(coupon.expiryDate),
+      remark: coupon.remark || "",
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editCoupon) {
       return;
     }
+
+    const amount = Number(editCoupon.value);
+    const useLimit = Number(editCoupon.useLimit);
+    const startTimestamp = new Date(editCoupon.startDate).getTime();
+    const expiryTimestamp = new Date(editCoupon.expiryDate).getTime();
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setEditError("Enter a valid coupon value.");
+      return;
+    }
+
+    if (!Number.isFinite(useLimit) || useLimit <= 0) {
+      setEditError("Use limit must be greater than zero.");
+      return;
+    }
+
+    if (!Number.isFinite(startTimestamp) || !Number.isFinite(expiryTimestamp)) {
+      setEditError("Choose valid start and expiry dates.");
+      return;
+    }
+
+    if (startTimestamp > expiryTimestamp) {
+      setEditError("Expiry date should be the same or after start date.");
+      return;
+    }
+
+    const nextCoupon = {
+      ...editCoupon,
+      value: amount,
+      cpnType: editCoupon.cpnType,
+      startDate: editCoupon.startDate,
+      expiryDate: editCoupon.expiryDate,
+      useLimit,
+      status: editCoupon.status,
+      remark: editCoupon.remark.trim(),
+      entryDate: new Date().toISOString(),
+    };
+
     try {
-      const payload = {
-        ...editCoupon,
-        value: Number(editCoupon.value),
-        useLimit: Number(editCoupon.useLimit || 0),
-        maxUsagePerUser: Number(editCoupon.maxUsagePerUser || 1),
-        priority: Number(editCoupon.priority || 0),
-        minBookingAmount: Number(editCoupon.minBookingAmount || 0)
-      };
-      await updateFlightCoupon(editCoupon.id, payload);
+      const savedCoupon = await updateFlightCoupon(editCoupon.id, nextCoupon);
+      setCoupons((previous) =>
+        previous.map((coupon) => (coupon.id === editCoupon.id ? savedCoupon : coupon))
+      );
       setEditCoupon(null);
-      loadCoupons();
-    } catch (err) {
-      setEditError(err.message || "Failed to update coupon.");
+      setEditError("");
+    } catch (error) {
+      setEditError(error.message || "Unable to update coupon in backend.");
     }
   };
 
-  // Delete handler
-  const handleSaveDelete = async () => {
-    if (!deleteCouponRecord) return;
+  const handleDeleteCoupon = async () => {
+    if (!deleteCoupon) {
+      return;
+    }
+
     try {
-      await deleteFlightCoupon(deleteCouponRecord.id);
-      setDeleteCouponRecord(null);
-      loadCoupons();
-    } catch (err) {
-      alert(err.message || "Failed to delete coupon.");
+      await deleteFlightCoupon(deleteCoupon.id);
+      setCoupons((previous) => previous.filter((coupon) => coupon.id !== deleteCoupon.id));
+      setDeleteCoupon(null);
+    } catch (error) {
+      setCouponLoadError(error.message || "Unable to delete coupon from backend.");
     }
   };
 
-  const handleExport = () => {
-    const header = ["ID", "Coupon Code", "Coupon Title", "Discount Type", "Discount Value", "Min. Booking", "Valid From", "Valid To", "Routes", "Status", "Redemptions", "Created On"];
-    const csvRows = filteredCoupons.map((c) => [
-      c.id, c.couponCode, c.remark || "Flight Discount", c.cpnType, c.value, c.minBookingAmount, formatCouponDate(c.startDate), formatCouponDate(c.expiryDate), c.route || "All Routes", c.status, c.useLimit, formatCouponDateTime(c.entryDate)
-    ]);
-    const csv = [header, ...csvRows].map(row => row.map(cell => csvCell(cell)).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `flight-coupons-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-  };
+  const handleGenerateCoupon = async () => {
+    const amount = Number(generateForm.value);
+    const useLimit = Number(generateForm.useLimit);
+    const couponCode = String(generateForm.couponCode || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "");
+    const startTimestamp = new Date(generateForm.startDate).getTime();
+    const expiryTimestamp = new Date(generateForm.expiryDate).getTime();
 
-  const colors = {
-    primary: "#D81B60",
-    primaryHover: "#C2185B",
-    blue: "#2563EB",
-    blueHover: "#1D4ED8",
-    green: "#10B981",
-    greenHover: "#059669",
-    slateBg: "#F8FAFC",
-    border: "#E2E8F0",
-    textPrimary: "#0F172A",
-    textSecondary: "#64748B",
-    panel: "#FFFFFF"
-  };
+    if (!String(generateForm.cpnType || "").trim()) {
+      setGenerateError("Select coupon type.");
+      return;
+    }
 
-  const styles = {
-    container: {
-      padding: '24px 32px',
-      background: colors.slateBg,
-      minHeight: '100vh',
-      fontFamily: 'Inter, sans-serif',
-      boxSizing: 'border-box'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '24px'
-    },
-    titleSection: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '4px'
-    },
-    titleMain: {
-      fontSize: '1.75rem',
-      fontWeight: 700,
-      color: colors.textPrimary,
-      margin: 0
-    },
-    titleSub: {
-      fontSize: '0.875rem',
-      color: colors.textSecondary,
-      margin: 0
-    },
-    actionGroup: {
-      display: 'flex',
-      gap: '12px'
-    },
-    statsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '20px',
-      marginBottom: '24px'
-    },
-    statCard: {
-      background: colors.panel,
-      borderRadius: '16px',
-      padding: '20px',
-      border: `1px solid ${colors.border}`,
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    statInfo: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px'
-    },
-    statLabel: {
-      fontSize: '0.875rem',
-      fontWeight: 600,
-      color: colors.textSecondary
-    },
-    statValue: {
-      fontSize: '1.75rem',
-      fontWeight: 700,
-      color: colors.textPrimary
-    },
-    statSubtext: {
-      fontSize: '0.75rem',
-      color: '#94A3B8'
-    },
-    statIconWrapper: (bgColor, iconColor) => ({
-      width: '48px',
-      height: '48px',
-      borderRadius: '12px',
-      backgroundColor: bgColor,
-      color: iconColor,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }),
-    filterPanel: {
-      background: colors.panel,
-      border: `1px solid ${colors.border}`,
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-    },
-    filterGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-      gap: '16px',
-      marginBottom: '16px'
-    },
-    filterItem: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px'
-    },
-    filterLabel: {
-      fontSize: '0.75rem',
-      fontWeight: 700,
-      color: colors.textSecondary,
-      textTransform: 'uppercase'
-    },
-    filterInput: {
-      padding: '10px 14px',
-      borderRadius: '10px',
-      border: `1px solid #CBD5E1`,
-      fontSize: '0.875rem',
-      color: colors.textPrimary,
-      outline: 'none',
-      background: colors.panel
-    },
-    quickFilterContainer: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      marginBottom: '24px'
-    },
-    quickFilterChip: (active) => ({
-      padding: '8px 16px',
-      borderRadius: '20px',
-      border: `1px solid ${active ? colors.blue : colors.border}`,
-      background: active ? colors.blue : colors.panel,
-      color: active ? '#FFFFFF' : colors.textSecondary,
-      fontSize: '0.85rem',
-      fontWeight: 600,
-      cursor: 'pointer',
-      transition: 'all 0.2s'
-    }),
-    tableCard: {
-      background: colors.panel,
-      border: `1px solid ${colors.border}`,
-      borderRadius: '20px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-      overflow: 'hidden'
-    },
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse'
-    },
-    th: {
-      padding: '16px 20px',
-      background: '#F8FAFC',
-      borderBottom: `1px solid ${colors.border}`,
-      fontSize: '0.875rem',
-      fontWeight: 600,
-      color: colors.textSecondary,
-      textAlign: 'left'
-    },
-    td: {
-      padding: '16px 20px',
-      borderBottom: `1px solid ${colors.border}`,
-      fontSize: '0.875rem',
-      color: '#334155',
-      verticalAlign: 'middle'
-    },
-    couponCodePill: {
-      display: 'inline-block',
-      padding: '6px 12px',
-      borderRadius: '8px',
-      background: 'rgba(216, 27, 96, 0.1)',
-      color: colors.primary,
-      fontWeight: 700,
-      fontSize: '0.75rem',
-      letterSpacing: '0.05em',
-      border: `1px dashed rgba(216, 27, 96, 0.3)`
-    },
-    statusPill: (status) => ({
-      display: 'inline-block',
-      padding: '4px 10px',
-      borderRadius: '8px',
-      background: String(status).toLowerCase() === 'active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(217, 48, 37, 0.1)',
-      color: String(status).toLowerCase() === 'active' ? '#10B981' : '#D93027',
-      fontWeight: 600,
-      fontSize: '0.75rem'
-    })
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setGenerateError("Enter a valid coupon value.");
+      return;
+    }
+
+    if (!Number.isFinite(useLimit) || useLimit <= 0) {
+      setGenerateError("Use limit must be greater than zero.");
+      return;
+    }
+
+    if (!Number.isFinite(startTimestamp) || !Number.isFinite(expiryTimestamp)) {
+      setGenerateError("Choose valid start and expiry dates.");
+      return;
+    }
+
+    if (startTimestamp > expiryTimestamp) {
+      setGenerateError("Expiry date should be the same or after start date.");
+      return;
+    }
+
+    const nextId =
+      coupons.reduce((highest, coupon) => Math.max(highest, Number(coupon.id) || 0), 0) + 1;
+    const existingCodes = new Set(
+      coupons.map((coupon) => String(coupon.couponCode || "").toUpperCase())
+    );
+
+    if (!couponCode) {
+      setGenerateError("Coupon code is required.");
+      return;
+    }
+
+    if (existingCodes.has(couponCode)) {
+      setGenerateError("Coupon code already exists. Use a different code.");
+      return;
+    }
+
+    const newCoupon = {
+      id: nextId,
+      value: amount,
+      cpnType: generateForm.cpnType,
+      couponCode,
+      startDate: generateForm.startDate,
+      expiryDate: generateForm.expiryDate,
+      useLimit,
+      status: "active",
+      entryDate: new Date().toISOString(),
+      remark: generateForm.remark.trim(),
+    };
+
+    try {
+      const savedCoupon = await createFlightCoupon(newCoupon);
+      setCoupons((previous) => [savedCoupon, ...previous]);
+      setIsGenerateModalOpen(false);
+      setGenerateError("");
+    } catch (error) {
+      setGenerateError(error.message || "Unable to save coupon to backend.");
+    }
   };
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.titleSection}>
-          <h1 style={styles.titleMain}>B2C Flight Coupon List</h1>
-          <p style={styles.titleSub}>Manage all B2C flight coupons and offers</p>
+    <section className="admin-b2c-page flight-markup-panel">
+      <header className="flight-markup-toolbar">
+        <div className="flight-markup-title">
+          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Flight</span> Coupon List</h1>
+          <div className="flight-markup-title-underline" aria-hidden="true" />
         </div>
-        <div style={styles.actionGroup}>
-          <button 
-            onClick={() => setIsGenerateModalOpen(true)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '12px',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: colors.primary,
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Plus size={16} /> Generate Coupon
-          </button>
-          <Link 
-            to="/admin/b2c-flight/used-coupon-list"
-            style={{
-              padding: '10px 20px',
-              borderRadius: '12px',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: '#7C3AED',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textDecoration: 'none'
-            }}
-          >
-            Used Coupon List
-          </Link>
-          <button 
-            onClick={handleExport}
-            style={{
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 6px rgba(16, 185, 129, 0.15)'
-            }}
-          >
-            <Download size={16} /> Export
-          </button>
+
+        <div className="flight-markup-actions">
           <button
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            style={{
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: isFilterOpen
-                ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
-                : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: isFilterOpen
-                ? '0 4px 6px rgba(220, 38, 38, 0.15)'
-                : '0 4px 6px rgba(37, 99, 235, 0.15)'
-            }}
+            type="button"
+            className="flight-markup-action-btn primary"
+            onClick={openGenerateModal}
           >
-            <SlidersHorizontal size={16} />
-            {isFilterOpen ? 'Hide Filter' : 'Filter'}
+            <List size={16} />
+            <span>Generate Coupon</span>
+          </button>
+          <button type="button" className="flight-markup-action-btn secondary">
+            <Download size={16} />
+            <span>Export</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* KPI Stats Grid */}
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Total Coupons</span>
-            <span style={styles.statValue}>{stats.totalCount}</span>
-            <span style={styles.statSubtext}>All flight coupons</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(139, 92, 246, 0.12)", "#8B5CF6")}>
-            <Tag size={24} />
-          </div>
-        </div>
+      {couponLoadError && <p className="admin-markup-coupon-error">{couponLoadError}</p>}
 
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Active Coupons</span>
-            <span style={styles.statValue}>{stats.activeCount}</span>
-            <span style={styles.statSubtext}>Currently active</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(59, 130, 246, 0.12)", "#2563EB")}>
-            <CheckCircle2 size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Expired Coupons</span>
-            <span style={styles.statValue}>{stats.expiredCount}</span>
-            <span style={styles.statSubtext}>Already expired</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(217, 48, 37, 0.12)", "#D93027")}>
-            <Clock size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Total Redemptions</span>
-            <span style={styles.statValue}>{stats.totalRedemptions}</span>
-            <span style={styles.statSubtext}>Total times used</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(124, 58, 237, 0.12)", "#7C3AED")}>
-            <Users size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Total Savings</span>
-            <span style={styles.statValue}>₹{stats.totalSavings.toLocaleString()}</span>
-            <span style={styles.statSubtext}>Total amount saved</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(16, 185, 129, 0.12)", "#10B981")}>
-            <DollarSign size={24} />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Panel */}
-      {isFilterOpen && (
-        <div style={styles.filterPanel}>
-          <div style={styles.filterGrid}>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Search Coupon</span>
-              <input 
-                type="text" 
-                placeholder="Search by code or title..." 
-                value={filterSearch}
-                onChange={e => setFilterSearch(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Coupon Code</span>
-              <input 
-                type="text" 
-                placeholder="Enter coupon code" 
-                value={filterCouponCode}
-                onChange={e => setFilterCouponCode(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Coupon Type</span>
-              <select 
-                value={filterCouponType}
-                onChange={e => setFilterCouponType(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Types">All Types</option>
-                <option value="Percentage Discount">Percentage Discount</option>
-                <option value="Flat Discount">Flat Discount</option>
-                <option value="Cashback Coupon">Cashback Coupon</option>
-                <option value="First Booking Coupon">First Booking Coupon</option>
-                <option value="Festival Offer">Festival Offer</option>
-                <option value="Weekend Offer">Weekend Offer</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Discount Type</span>
-              <select 
-                value={filterDiscountType}
-                onChange={e => setFilterDiscountType(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Types">All Types</option>
-                <option value="Percentage (%)">Percentage (%)</option>
-                <option value="Flat Amount (₹)">Flat Amount (₹)</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Discount Value</span>
-              <input 
-                type="number" 
-                placeholder="Enter discount value" 
-                value={filterDiscountValue}
-                onChange={e => setFilterDiscountValue(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Min. Booking Amount</span>
-              <input 
-                type="number" 
-                placeholder="₹ Min Amount" 
-                value={filterMinAmount}
-                onChange={e => setFilterMinAmount(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Max. Discount Amount</span>
-              <input 
-                type="number" 
-                placeholder="₹ Max Discount" 
-                value={filterMaxDiscount}
-                onChange={e => setFilterMaxDiscount(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Applicable Sectors</span>
-              <select 
-                value={filterRoute}
-                onChange={e => setFilterRoute(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Routes">All Routes</option>
-                <option value="Delhi → Jaipur">Delhi → Jaipur</option>
-                <option value="Hyderabad → Bangalore">Hyderabad → Bangalore</option>
-                <option value="Mumbai → Pune">Mumbai → Pune</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Status</span>
-              <select 
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Status">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Expired">Expired</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Created By</span>
-              <select 
-                value={filterCreatedBy}
-                onChange={e => setFilterCreatedBy(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All">All</option>
-                <option value="Super Admin">Super Admin</option>
-                <option value="Admin">Admin</option>
-                <option value="Marketing Team">Marketing Team</option>
-                <option value="Operations Team">Operations Team</option>
-                <option value="System Generated">System Generated</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Valid From</span>
-              <input 
-                type="date" 
-                value={filterValidFrom}
-                onChange={e => setFilterValidFrom(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Valid To</span>
-              <input 
-                type="date" 
-                value={filterValidTo}
-                onChange={e => setFilterValidTo(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button 
-              onClick={handleResetFilters}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '10px',
-                border: '1px solid #E2E8F0',
-                background: '#FFFFFF',
-                color: '#64748B',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              Reset
-            </button>
-            <button 
-              onClick={loadCoupons}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '10px',
-                border: 'none',
-                background: colors.primary,
-                color: '#FFFFFF',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              Apply Filter
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Filters */}
-      <div style={styles.quickFilterContainer}>
-        {["All Coupons", "Active", "Expired", "Upcoming", "Percentage", "Flat Amount", "Weekend", "Festival", "First Booking"].map((name) => (
-          <button 
-            key={name}
-            onClick={() => handleApplyQuickFilter(name)}
-            style={styles.quickFilterChip(activeQuickFilter === name)}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-
-      {/* Coupons Table */}
-      <div style={styles.tableCard}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>ID</th>
-              <th style={styles.th}>Coupon Code</th>
-              <th style={styles.th}>Coupon Title</th>
-              <th style={styles.th}>Discount</th>
-              <th style={styles.th}>Min. Booking</th>
-              <th style={styles.th}>Valid From</th>
-              <th style={styles.th}>Valid To</th>
-              <th style={styles.th}>Routes</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Redemptions</th>
-              <th style={styles.th}>Created On</th>
-              <th style={styles.th}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoadingCoupons ? (
-              <tr>
-                <td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: colors.textSecondary }}>
-                  Loading coupons...
-                </td>
-              </tr>
-            ) : paginatedCoupons.length === 0 ? (
-              <tr>
-                <td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: colors.textSecondary }}>
-                  No coupons found matching search criteria.
-                </td>
-              </tr>
-            ) : (
-              paginatedCoupons.map((coupon) => (
-                <tr key={coupon.id}>
-                  <td style={styles.td}>{coupon.id}</td>
-                  <td style={styles.td}>
-                    <span style={styles.couponCodePill}>{coupon.couponCode}</span>
-                  </td>
-                  <td style={{ ...styles.td, fontWeight: 600 }}>{coupon.remark || "Flight Discount"}</td>
-                  <td style={{ ...styles.td, color: '#10B981', fontWeight: 600 }}>
-                    {coupon.value}{String(coupon.cpnType).toLowerCase().includes("percent") ? "% OFF" : " OFF"}
-                  </td>
-                  <td style={styles.td}>₹{coupon.minBookingAmount || 0}</td>
-                  <td style={styles.td}>{formatCouponDate(coupon.startDate)}</td>
-                  <td style={styles.td}>{formatCouponDate(coupon.expiryDate)}</td>
-                  <td style={styles.td}>
-                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(37, 99, 235, 0.1)', color: colors.blue, fontSize: '0.75rem', fontWeight: 600 }}>
-                      {coupon.route || "All Routes"}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={styles.statusPill(coupon.status)}>{coupon.status}</span>
-                  </td>
-                  <td style={{ ...styles.td, fontWeight: 600 }}>{coupon.useLimit || 0}</td>
-                  <td style={styles.td}>{formatCouponDateTime(coupon.entryDate)}</td>
-                  <td style={styles.td}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        onClick={() => setEditCoupon(coupon)}
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          border: `1px solid ${colors.border}`,
-                          background: '#FFFFFF',
-                          color: colors.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        title="Edit Coupon"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button 
-                        onClick={() => setDeleteCouponRecord(coupon)}
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          border: `1px solid ${colors.border}`,
-                          background: '#FFFFFF',
-                          color: '#D93027',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        title="Delete Coupon"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        <AdminPagination 
-          currentPage={currentPage}
-          totalItems={filteredCoupons.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
-          itemName="coupons"
-        />
-      </div>
-
-      {/* Generate Modal */}
       {isGenerateModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', padding: '28px', borderRadius: '16px', width: '550px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 20px 0' }}>Generate Coupon</h3>
-            {generateError && <div style={{ color: '#D93027', marginBottom: '12px', fontWeight: 600 }}>{generateError}</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Coupon Code
-                <input 
-                  type="text" value={generateForm.couponCode}
-                  onChange={e => setGenerateForm({...generateForm, couponCode: e.target.value.toUpperCase()})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Coupon Title (Description)
-                <input 
-                  type="text" value={generateForm.remark}
-                  onChange={e => setGenerateForm({...generateForm, remark: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Coupon Type
-                <select 
+        <div className="admin-markup-coupon-backdrop" onClick={() => setIsGenerateModalOpen(false)}>
+          <section
+            className="admin-markup-coupon-modal generate"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Generate flight coupon"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="generate-header">
+              <h2>Add B2C Flight Coupon</h2>
+            </header>
+
+            <div className="admin-markup-coupon-form admin-markup-coupon-generate-form">
+              <label>
+                <span>Coupon Type :</span>
+                <select
                   value={generateForm.cpnType}
-                  onChange={e => setGenerateForm({...generateForm, cpnType: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({ ...previous, cpnType: event.target.value }))
+                  }
                 >
-                  <option value="Percentage Discount">Percentage Discount</option>
-                  <option value="Flat Discount">Flat Discount</option>
-                  <option value="Cashback Coupon">Cashback Coupon</option>
-                  <option value="First Booking Coupon">First Booking Coupon</option>
-                  <option value="Festival Offer">Festival Offer</option>
-                  <option value="Weekend Offer">Weekend Offer</option>
+                  <option value="">---Select Amount Type---</option>
+                  <option value="Fixed">Fixed</option>
+                  <option value="Percentage">Percentage</option>
                 </select>
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Discount Value (Amount or Percentage)
-                <input 
-                  type="number" value={generateForm.value}
-                  onChange={e => setGenerateForm({...generateForm, value: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Value :</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Enter value"
+                  value={generateForm.value}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({ ...previous, value: event.target.value }))
+                  }
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Min Booking Amount
-                <input 
-                  type="number" value={generateForm.minBookingAmount}
-                  onChange={e => setGenerateForm({...generateForm, minBookingAmount: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Start Date :</span>
+                <input
+                  type="date"
+                  placeholder="Select Start Date"
+                  value={generateForm.startDate}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({ ...previous, startDate: event.target.value }))
+                  }
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Redemption Limit (Total Uses)
-                <input 
-                  type="number" value={generateForm.useLimit}
-                  onChange={e => setGenerateForm({...generateForm, useLimit: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Expiry Date :</span>
+                <input
+                  type="date"
+                  placeholder="Select Expiry Date"
+                  value={generateForm.expiryDate}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({
+                      ...previous,
+                      expiryDate: event.target.value,
+                    }))
+                  }
                 />
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid From
-                  <input 
-                    type="date" value={generateForm.startDate}
-                    onChange={e => setGenerateForm({...generateForm, startDate: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid To
-                  <input 
-                    type="date" value={generateForm.expiryDate}
-                    onChange={e => setGenerateForm({...generateForm, expiryDate: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
-                </label>
-              </div>
+              <label>
+                <span>Coupon Code :</span>
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={generateForm.couponCode}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({
+                      ...previous,
+                      couponCode: event.target.value.toUpperCase().replace(/\s+/g, ""),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                <span>Coupon Use Limit :</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Enter use limit"
+                  value={generateForm.useLimit}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({ ...previous, useLimit: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="remark-field">
+                <span>Coupon Remark :</span>
+                <input
+                  type="text"
+                  placeholder="Enter remark"
+                  value={generateForm.remark}
+                  onChange={(event) =>
+                    setGenerateForm((previous) => ({ ...previous, remark: event.target.value }))
+                  }
+                />
+              </label>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
-              <button onClick={() => setIsGenerateModalOpen(false)} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSaveGenerate} style={{ padding: '10px 20px', background: colors.primary, color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Create Coupon</button>
+
+            {generateError && <p className="admin-markup-coupon-error">{generateError}</p>}
+
+            <div className="admin-markup-coupon-modal-actions generate-actions">
+              <button type="button" className="primary generate-submit" onClick={handleGenerateCoupon}>
+                <Check size={16} />
+                <span>Generate</span>
+              </button>
+              <button
+                type="button"
+                className="danger generate-cancel"
+                onClick={() => setIsGenerateModalOpen(false)}
+              >
+                <X size={16} />
+                <span>Cancel</span>
+              </button>
             </div>
-          </div>
+          </section>
         </div>
       )}
 
-      {/* Edit Modal */}
       {editCoupon && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', padding: '28px', borderRadius: '16px', width: '550px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 20px 0' }}>Edit Coupon</h3>
-            {editError && <div style={{ color: '#D93027', marginBottom: '12px', fontWeight: 600 }}>{editError}</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Coupon Code
-                <input 
-                  type="text" value={editCoupon.couponCode}
-                  onChange={e => setEditCoupon({...editCoupon, couponCode: e.target.value.toUpperCase()})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+        <div className="admin-markup-coupon-backdrop" onClick={() => setEditCoupon(null)}>
+          <section
+            className="admin-markup-coupon-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit coupon"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header>
+              <h2>Edit Coupon</h2>
+              <button type="button" onClick={() => setEditCoupon(null)} aria-label="Close edit">
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="admin-markup-coupon-form">
+              <label>
+                <span>ID</span>
+                <input type="text" value={editCoupon.id} disabled />
+              </label>
+              <label>
+                <span>Coupon Code</span>
+                <input type="text" value={editCoupon.couponCode} disabled />
+              </label>
+              <label>
+                <span>CPN Value</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={editCoupon.value}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, value: event.target.value }))
+                  }
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Coupon Title (Description)
-                <input 
-                  type="text" value={editCoupon.remark || ""}
-                  onChange={e => setEditCoupon({...editCoupon, remark: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>CPN Type</span>
+                <select
+                  value={editCoupon.cpnType}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, cpnType: event.target.value }))
+                  }
+                >
+                  <option value="Fixed">Fixed</option>
+                  <option value="Percentage">Percentage</option>
+                </select>
+              </label>
+              <label>
+                <span>Start Date</span>
+                <input
+                  type="date"
+                  value={editCoupon.startDate}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, startDate: event.target.value }))
+                  }
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Discount Value
-                <input 
-                  type="number" value={editCoupon.value}
-                  onChange={e => setEditCoupon({...editCoupon, value: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Expiry Date</span>
+                <input
+                  type="date"
+                  value={editCoupon.expiryDate}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, expiryDate: event.target.value }))
+                  }
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Min Booking Amount
-                <input 
-                  type="number" value={editCoupon.minBookingAmount || ""}
-                  onChange={e => setEditCoupon({...editCoupon, minBookingAmount: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Use Limit</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={editCoupon.useLimit}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, useLimit: event.target.value }))
+                  }
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Redemption Limit (Total Uses)
-                <input 
-                  type="number" value={editCoupon.useLimit || ""}
-                  onChange={e => setEditCoupon({...editCoupon, useLimit: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Status</span>
+                <select
+                  value={editCoupon.status}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, status: event.target.value }))
+                  }
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </label>
+              <label className="wide">
+                <span>Remark</span>
+                <textarea
+                  value={editCoupon.remark}
+                  onChange={(event) =>
+                    setEditCoupon((previous) => ({ ...previous, remark: event.target.value }))
+                  }
                 />
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid From
-                  <input 
-                    type="date" value={toInputDate(editCoupon.startDate)}
-                    onChange={e => setEditCoupon({...editCoupon, startDate: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid To
-                  <input 
-                    type="date" value={toInputDate(editCoupon.expiryDate)}
-                    onChange={e => setEditCoupon({...editCoupon, expiryDate: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
-                </label>
-              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
-              <button onClick={() => setEditCoupon(null)} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSaveEdit} style={{ padding: '10px 20px', background: colors.primary, color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>
+
+            {editError && <p className="admin-markup-coupon-error">{editError}</p>}
+
+            <div className="admin-markup-coupon-modal-actions">
+              <button type="button" className="secondary" onClick={() => setEditCoupon(null)}>
+                Cancel
+              </button>
+              <button type="button" className="primary" onClick={handleEditSave}>
+                Save Changes
+              </button>
             </div>
-          </div>
+          </section>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteCouponRecord && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '16px', width: '450px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 12px 0' }}>Delete Coupon</h3>
-            <p style={{ color: colors.textSecondary, fontSize: '0.9rem', marginBottom: '20px' }}>
-              Are you sure you want to delete coupon <strong style={{ color: colors.textPrimary }}>{deleteCouponRecord.couponCode}</strong>? This action cannot be undone.
+      {deleteCoupon && (
+        <div className="admin-markup-coupon-backdrop" onClick={() => setDeleteCoupon(null)}>
+          <section
+            className="admin-markup-coupon-modal small"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete coupon"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header>
+              <h2>Delete Coupon</h2>
+              <button
+                type="button"
+                onClick={() => setDeleteCoupon(null)}
+                aria-label="Close delete dialog"
+              >
+                <X size={16} />
+              </button>
+            </header>
+
+            <p className="admin-markup-coupon-delete-copy">
+              Are you sure you want to delete coupon <strong>{deleteCoupon.couponCode}</strong>?
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setDeleteCouponRecord(null)} style={{ padding: '8px 16px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSaveDelete} style={{ padding: '8px 16px', background: '#D93027', color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+
+            <div className="admin-markup-coupon-modal-actions">
+              <button type="button" className="secondary" onClick={() => setDeleteCoupon(null)}>
+                Cancel
+              </button>
+              <button type="button" className="danger" onClick={handleDeleteCoupon}>
+                Delete
+              </button>
             </div>
-          </div>
+          </section>
         </div>
       )}
-    </div>
+
+      {viewCoupon && (
+        <div className="admin-markup-coupon-backdrop" onClick={() => setViewCoupon(null)}>
+          <section
+            className="admin-markup-coupon-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="View coupon details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flight-markup-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+              <h2 style={{ margin: 0 }}>View Coupon Details</h2>
+              <button
+                type="button"
+                className="flight-markup-modal-close"
+                onClick={() => setViewCoupon(null)}
+                aria-label="Close view dialog"
+                style={{ border: '1px solid var(--border)', background: 'var(--surface-soft)', color: 'var(--text-primary)', borderRadius: '10px', padding: '4px 8px', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="admin-markup-modal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '14px' }}>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>ID</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.id}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Coupon Code</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.couponCode}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>CPN Value</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{`INR ${viewCoupon.value}`}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>CPN Type</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.cpnType}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Start Date</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCouponDate(viewCoupon.startDate)}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Expiry Date</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCouponDate(viewCoupon.expiryDate)}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Use Limit</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.useLimit}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Status</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.status === "active" ? "Active" : "Inactive"}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Insert Date</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCouponDateTime(viewCoupon.entryDate)}</strong>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Remark</span>
+                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{viewCoupon.remark || "--"}</strong>
+              </div>
+            </div>
+
+            <div className="admin-markup-modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setViewCoupon(null)}
+                style={{ border: '1px solid var(--border)', padding: '8px 14px', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', background: 'var(--surface-soft)', color: 'var(--text-primary)' }}
+              >
+                Close
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      <section className="flight-markup-table-wrap">
+        <div className="flight-markup-table-scroll">
+          <table className="flight-markup-table">
+            <colgroup>
+              {colWidths.map((width, index) => (
+                <col key={`${width}-${index}`} style={{ width }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr>
+                {headers.map((header) => (
+                  <th key={header}>
+                    <div className="flight-markup-th-pill">
+                      <span>{header}</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoadingCoupons ? (
+                <tr>
+                  <td colSpan={headers.length} className="flight-markup-empty-cell">
+                    <span className="flight-markup-empty">Loading coupons from backend...</span>
+                  </td>
+                </tr>
+              ) : paginatedCoupons.length === 0 ? (
+                <tr>
+                  <td colSpan={headers.length} className="flight-markup-empty-cell">
+                    <span className="flight-markup-empty">No Record Found...</span>
+                  </td>
+                </tr>
+              ) : (
+                paginatedCoupons.map((coupon, index) => (
+                  <tr key={coupon.id}>
+                    <td>{coupon.id}</td>
+                    <td>{`INR ${Number(coupon.value) || 0}`}</td>
+                    <td>{coupon.cpnType}</td>
+                    <td>
+                      <span className="flight-coupon-code">{coupon.couponCode}</span>
+                    </td>
+                    <td>{formatCouponDate(coupon.startDate)}</td>
+                    <td>{formatCouponDate(coupon.expiryDate)}</td>
+                    <td>{coupon.useLimit}</td>
+                    <td>
+                      <span className={`flight-coupon-status ${coupon.status}`}>
+                        {coupon.status === "active" ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td>{formatCouponDateTime(coupon.entryDate)}</td>
+                    <td>{coupon.remark || "--"}</td>
+                    <td>
+                      <div className="flight-markup-row-actions" aria-label="Coupon actions">
+                        <button
+                          type="button"
+                          title="View"
+                          aria-label={`View coupon ${coupon.id}`}
+                          onClick={() => setViewCoupon(coupon)}
+                        >
+                          <Eye size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          title="Edit"
+                          aria-label={`Edit coupon ${coupon.id}`}
+                          onClick={() => openEditModal(coupon)}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete"
+                          aria-label={`Delete coupon ${coupon.id}`}
+                          className="danger"
+                          onClick={() => setDeleteCoupon(coupon)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="coupons"
+        />
+      </section>
+    </section>
   );
 }
+
+
+

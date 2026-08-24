@@ -1,8 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState, useRef } from "react";
-import { 
-  List, Info, Image as ImageIcon, Globe, FileText, ChevronDown, Check, AlertCircle 
-} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./AddPage.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createAdminPage, updateAdminPage } from "../../../services/cmsPageService";
@@ -19,18 +16,6 @@ const DEFAULT_FORM = {
   imageName: "",
   bannerName: "",
 };
-
-const MODULE_OPTIONS = [
-  { value: "All", label: "All" },
-  { value: "B2C", label: "B2C" },
-  { value: "B2B", label: "B2B" },
-  { value: "Admin", label: "Admin" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "Active", label: "Active", dotClass: "active" },
-  { value: "Inactive", label: "Inactive", dotClass: "inactive" },
-];
 
 const buildSlug = (value) =>
   String(value || "")
@@ -83,35 +68,15 @@ const AddPage = () => {
   const [formError, setFormError] = useState("");
   const [saved, setSaved] = useState(false);
 
-  // Dropdown States
-  const [moduleOpen, setModuleOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
-
-  const moduleRef = useRef(null);
-  const statusRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (moduleRef.current && !moduleRef.current.contains(event.target)) {
-        setModuleOpen(false);
-      }
-      if (statusRef.current && !statusRef.current.contains(event.target)) {
-        setStatusOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleChange = (field, value) => {
-    setFormData((previous) => ({ ...previous, [field]: value }));
+  const handleChange = (field) => (event) => {
+    setFormData((previous) => ({ ...previous, [field]: event.target.value }));
   };
 
   const handleFileChange = (field) => (event) => {
     const file = event.target.files?.[0];
     if (file && file.size > 1024 * 1024) {
       setFormError("File size must be within 1MB limit.");
-      event.target.value = "";
+      event.target.value = ""; // Clear file input
       if (field === "image") {
         setImageFile(null);
         setFormData((previous) => ({ ...previous, imageName: "" }));
@@ -174,6 +139,7 @@ const AddPage = () => {
     data.append("ImagePath", formData.imageName ? (editingPage?.imagePath || "") : "");
     data.append("BannerPath", formData.bannerName ? (editingPage?.bannerPath || "") : "");
 
+    // Deletion flags for image
     if (!formData.imageName) {
       data.append("DeleteImage", "true");
       data.append("RemoveImage", "true");
@@ -183,6 +149,7 @@ const AddPage = () => {
       data.append("removeImage", "true");
     }
 
+    // Deletion flags for banner
     if (!formData.bannerName) {
       data.append("DeleteBanner", "true");
       data.append("RemoveBanner", "true");
@@ -220,326 +187,185 @@ const AddPage = () => {
     }
   };
 
-  const currentModuleOpt = MODULE_OPTIONS.find(o => o.value === formData.module) || MODULE_OPTIONS[0];
-  const currentStatusOpt = STATUS_OPTIONS.find(o => o.value === formData.status) || STATUS_OPTIONS[0];
-
   return (
     <div className="add-container">
-      {/* Top Header */}
-      <div className="page-add-header-wrapper">
-        <div className="page-add-title-box">
-          <h1>{editingPage ? "Edit Page Content" : "Add New Page"}</h1>
-          <p>Configure dynamic content and SEO details for website pages</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="page-new-badge">{editingPage ? "# EDIT" : "# NEW"}</span>
-          <button 
-            type="button" 
-            className="page-btn-cancel" 
-            style={{ height: '36px', padding: '0 16px' }}
-            onClick={() => navigate(pageListPath)}
-          >
-            <List size={16} /> All Page List
-          </button>
-        </div>
-      </div>
-
-      <form className="page-form-layout" onSubmit={handleSubmit}>
-        
-        {/* 1. Basic Details */}
-        <div className="form-section-card">
-          <div className="section-card-header">
-            <span className="section-number-badge">1</span>
-            <h2>Basic Information</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="section">
+          {/* ── Header inside container ── */}
+          <div className="add-page-header">
+            <h2 className="add-page-heading">{editingPage ? "Edit Page" : "Add New Page"}</h2>
+            <button 
+              type="button" 
+              className="add-page-list-btn" 
+              onClick={() => navigate(pageListPath)}
+            >
+              All Page List
+            </button>
           </div>
-          <div className="form-grid-2">
-            <div className="form-field-wrapper">
-              <label htmlFor="page-title">Title <span>*</span></label>
+
+          <h3><span className="title-tab">Basic Details</span></h3>
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Title <span style={{ color: "#d93025" }}>*</span></label>
               <input
-                id="page-title"
-                type="text"
-                placeholder="Enter page title"
+                placeholder="Page title"
                 value={formData.title}
-                onChange={(e) => handleChange("title", e.target.value)}
+                onChange={handleChange("title")}
                 disabled={loading}
-                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Slug</label>
+              <input
+                placeholder="Page Slug"
+                value={formData.slug}
+                onChange={handleChange("slug")}
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label>
+                Image [max_size: 1MB]{" "}
+                {formData.imageName && (
+                  <span className="current-file">
+                    ({formData.imageName}){" "}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile("image")}
+                      className="remove-file-btn"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#d93025",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        fontSize: "0.8rem",
+                        padding: "0 4px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </span>
+                )}
+              </label>
+              <input
+                type="file"
+                id="image-input"
+                onChange={handleFileChange("image")}
+                disabled={loading}
+                accept="image/*"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>
+                OG Image [max_size: 1MB]{" "}
+                {formData.bannerName && (
+                  <span className="current-file">
+                    ({formData.bannerName}){" "}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile("banner")}
+                      className="remove-file-btn"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#d93025",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        fontSize: "0.8rem",
+                        padding: "0 4px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </span>
+                )}
+              </label>
+              <input
+                type="file"
+                id="banner-input"
+                onChange={handleFileChange("banner")}
+                disabled={loading}
+                accept="image/*"
               />
             </div>
             
-            <div className="form-field-wrapper">
-              <label htmlFor="page-slug">Slug</label>
-              <input
-                id="page-slug"
-                type="text"
-                placeholder="Enter slug path (automatically generated if empty)"
-                value={formData.slug}
-                onChange={(e) => handleChange("slug", e.target.value)}
-                disabled={loading}
-              />
+            <div className="form-group">
+              <label>Status</label>
+              <select value={formData.status} onChange={handleChange("status")} disabled={loading}>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
             </div>
-
-            <div className="form-field-wrapper" ref={statusRef}>
-              <label>Status <span>*</span></label>
-              <div 
-                className={`custom-select-trigger ${statusOpen ? "active" : ""}`}
-                onClick={() => setStatusOpen(!statusOpen)}
-              >
-                <div className="trigger-value-box">
-                  <span className={`status-dot ${currentStatusOpt.dotClass}`} />
-                  <span>{currentStatusOpt.label}</span>
-                </div>
-                <ChevronDown size={16} />
-              </div>
-              {statusOpen && (
-                <div className="custom-select-options">
-                  {STATUS_OPTIONS.map((opt) => {
-                    const isSelected = opt.value === formData.status;
-                    return (
-                      <div
-                        key={opt.value}
-                        className={`custom-select-option ${isSelected ? "selected" : ""}`}
-                        onClick={() => {
-                          handleChange("status", opt.value);
-                          setStatusOpen(false);
-                        }}
-                      >
-                        <div className="option-value-box">
-                          <span className={`status-dot ${opt.dotClass}`} />
-                          <span>{opt.label}</span>
-                        </div>
-                        {isSelected && <Check size={14} />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="form-field-wrapper" ref={moduleRef}>
-              <label>Module <span>*</span></label>
-              <div 
-                className={`custom-select-trigger ${moduleOpen ? "active" : ""}`}
-                onClick={() => setModuleOpen(!moduleOpen)}
-              >
-                <div className="trigger-value-box">
-                  <Globe size={16} />
-                  <span>{currentModuleOpt.label}</span>
-                </div>
-                <ChevronDown size={16} />
-              </div>
-              {moduleOpen && (
-                <div className="custom-select-options">
-                  {MODULE_OPTIONS.map((opt) => {
-                    const isSelected = opt.value === formData.module;
-                    return (
-                      <div
-                        key={opt.value}
-                        className={`custom-select-option ${isSelected ? "selected" : ""}`}
-                        onClick={() => {
-                          handleChange("module", opt.value);
-                          setModuleOpen(false);
-                        }}
-                      >
-                        <div className="option-value-box">
-                          <span>{opt.label}</span>
-                        </div>
-                        {isSelected && <Check size={14} />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            
+            <div className="form-group">
+              <label>Module</label>
+              <select value={formData.module} onChange={handleChange("module")} disabled={loading}>
+                <option value="All">All</option>
+                <option value="B2C">B2C</option>
+                <option value="B2B">B2B</option>
+                <option value="Admin">Admin</option>
+              </select>
             </div>
           </div>
-        </div>
 
-        {/* 2. Page Media */}
-        <div className="form-section-card">
-          <div className="section-card-header">
-            <span className="section-number-badge">2</span>
-            <h2>Page Media</h2>
-          </div>
-          
-          <div className="form-grid-2">
-            {/* Image Upload */}
-            <div className="form-field-wrapper">
-              <label>Page Thumbnail Image [max_size: 1MB]</label>
-              <div className="page-image-section-body">
-                {formData.imageName && (
-                  <div className="current-image-preview-card">
-                    <div style={{ padding: '24px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', wordBreak: 'break-all' }}>
-                      <ImageIcon size={24} style={{ display: 'block', margin: '0 auto 6px auto', color: '#be185d' }} />
-                      {formData.imageName}
-                    </div>
-                    <button 
-                      type="button" 
-                      className="remove-image-badge"
-                      onClick={() => handleRemoveFile("image")}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-                
-                <div 
-                  className="drag-drop-upload-zone"
-                  onClick={() => document.getElementById("image-input").click()}
-                >
-                  <ImageIcon size={28} className="upload-icon-box" />
-                  <span className="upload-prompt-text">Choose Thumbnail Image</span>
-                  <span className="upload-hint-text">PNG, JPG up to 1MB</span>
-                  
-                  <input
-                    id="image-input"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange("image")}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* OG Banner Upload */}
-            <div className="form-field-wrapper">
-              <label>OG Share Banner [max_size: 1MB]</label>
-              <div className="page-image-section-body">
-                {formData.bannerName && (
-                  <div className="current-image-preview-card">
-                    <div style={{ padding: '24px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', wordBreak: 'break-all' }}>
-                      <ImageIcon size={24} style={{ display: 'block', margin: '0 auto 6px auto', color: '#be185d' }} />
-                      {formData.bannerName}
-                    </div>
-                    <button 
-                      type="button" 
-                      className="remove-image-badge"
-                      onClick={() => handleRemoveFile("banner")}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-                
-                <div 
-                  className="drag-drop-upload-zone"
-                  onClick={() => document.getElementById("banner-input").click()}
-                >
-                  <ImageIcon size={28} className="upload-icon-box" />
-                  <span className="upload-prompt-text">Choose OG Banner</span>
-                  <span className="upload-hint-text">PNG, JPG up to 1MB</span>
-                  
-                  <input
-                    id="banner-input"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange("banner")}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. SEO Details */}
-        <div className="form-section-card">
-          <div className="section-card-header">
-            <span className="section-number-badge">3</span>
-            <h2>SEO Meta Information</h2>
-          </div>
-          <div className="form-grid-3">
-            <div className="form-field-wrapper">
-              <label htmlFor="meta-title">Meta Title</label>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Meta Title</label>
               <textarea
-                id="meta-title"
-                placeholder="Enter Meta Title for Search Engines"
+                placeholder="Meta Title"
                 value={formData.metaTitle}
-                onChange={(e) => handleChange("metaTitle", e.target.value)}
+                onChange={handleChange("metaTitle")}
                 disabled={loading}
-                rows={3}
               />
             </div>
-
-            <div className="form-field-wrapper">
-              <label htmlFor="meta-keyword">Meta Keyword</label>
+            <div className="form-group">
+              <label>Meta Keyword</label>
               <textarea
-                id="meta-keyword"
-                placeholder="Enter Keywords (comma separated)"
+                placeholder="Meta Keyword"
                 value={formData.metaKeyword}
-                onChange={(e) => handleChange("metaKeyword", e.target.value)}
+                onChange={handleChange("metaKeyword")}
                 disabled={loading}
-                rows={3}
               />
             </div>
-
-            <div className="form-field-wrapper">
-              <label htmlFor="meta-desc">Meta Description</label>
+            <div className="form-group">
+              <label>Meta Description</label>
               <textarea
-                id="meta-desc"
-                placeholder="Enter Meta Description summary"
+                placeholder="Meta Description"
                 value={formData.metaDescription}
-                onChange={(e) => handleChange("metaDescription", e.target.value)}
+                onChange={handleChange("metaDescription")}
                 disabled={loading}
-                rows={3}
               />
             </div>
-          </div>
-        </div>
 
-        {/* 4. Description Content */}
-        <div className="form-section-card">
-          <div className="section-card-header">
-            <span className="section-number-badge">4</span>
-            <h2>Page Description & Content</h2>
-          </div>
-          <div className="form-field-wrapper">
-            <label htmlFor="page-desc">Content Description</label>
-            <div className="textarea-count-wrapper">
+            {/* Description section inside the same grid spanning 3 columns */}
+            <div className="form-group" style={{ gridColumn: 'span 3', marginTop: '2px' }}>
+              <label>Description</label>
               <textarea
-                id="page-desc"
-                placeholder="Write full description and HTML page content here..."
-                rows={8}
+                className="editor"
+                rows={4}
+                placeholder="Write description..."
                 value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
+                onChange={handleChange("description")}
                 disabled={loading}
+                style={{ minHeight: '100px' }}
               />
             </div>
           </div>
-        </div>
 
-        {/* Logs */}
-        {formError && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626', fontWeight: 600, fontSize: '0.9rem', padding: '0 8px' }}>
-            <AlertCircle size={16} />
-            <span>{formError}</span>
+          {formError && <p className="admin-markup-form-error" style={{ marginTop: '16px' }}>{formError}</p>}
+          {saved && <p className="menu-form-success" style={{ marginTop: '16px' }}>Page saved successfully.</p>}
+
+          <div className="submit-area">
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? "SAVING..." : (editingPage ? "UPDATE" : "SUBMIT")}
+            </button>
           </div>
-        )}
-        {saved && (
-          <div style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.9rem', padding: '0 8px' }}>
-            Page content saved successfully.
-          </div>
-        )}
-
-        {/* Actions Footer */}
-        <div className="page-form-actions-bar">
-          <button 
-            type="button" 
-            className="page-btn-cancel"
-            onClick={() => navigate(pageListPath)}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className="page-btn-save"
-            disabled={loading}
-          >
-            {loading ? "Saving Content..." : (editingPage ? "Update Page" : "Create Page")}
-          </button>
         </div>
-
       </form>
     </div>
   );

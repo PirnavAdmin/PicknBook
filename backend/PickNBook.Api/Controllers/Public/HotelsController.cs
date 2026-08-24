@@ -7,6 +7,7 @@ using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
 using PickNBook.Api.Services;
+using PickNBook.Api.Filters;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -48,6 +49,7 @@ namespace PickNBook.Api.Controllers
 
         [HttpPost("SearchHotels")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> SearchHotelsMultiLevelPost([FromBody] SrdvHotelSearchRequestDto request)
         {
             if (request == null)
@@ -151,6 +153,7 @@ namespace PickNBook.Api.Controllers
         [HttpGet("GetHotelInfo")]
         [HttpGet("info")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> GetHotelInfo([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string srdvType = "", [FromQuery] string srdvIndex = "", [FromQuery] string endUserIp = "", [FromQuery] string clientId = "", [FromQuery] string userName = "", [FromQuery] string password = "")
         {
             _logger.LogInformation("Fetch hotel info GET request received: HotelCode: {HotelCode}", hotelCode);
@@ -187,6 +190,7 @@ namespace PickNBook.Api.Controllers
         [HttpPost("GetHotelInfo")]
         //[HttpPost("info")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> PostHotelInfo([FromBody] HotelInfoRequestDto request)
         {
             if (request == null)
@@ -218,6 +222,7 @@ namespace PickNBook.Api.Controllers
         // =====================================
         [HttpGet("rooms")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> GetHotelRooms([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string srdvIndex, [FromQuery] string endUserIp)
         {
             _logger.LogInformation("Fetch hotel rooms GET request received: HotelCode: {HotelCode}", hotelCode);
@@ -242,6 +247,7 @@ namespace PickNBook.Api.Controllers
         [HttpPost("GetHotelRoom")]
         //[HttpPost("rooms")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> PostHotelRooms([FromBody] HotelRoomRequestDto request)
         {
             _logger.LogInformation("Fetch hotel rooms POST request received: HotelCode: {HotelCode}", request.HotelCode);
@@ -268,6 +274,7 @@ namespace PickNBook.Api.Controllers
         // =====================================
         [HttpPost("BlockRoom")]
         [Authorize]
+        [InjectClientIp]
         public async Task<IActionResult> PostBlockRoom([FromBody] BlockRoomRequestDto request)
         {
             _logger.LogInformation("Block room POST request received: HotelCode: {HotelCode}", request.HotelCode);
@@ -291,6 +298,7 @@ namespace PickNBook.Api.Controllers
 
         [HttpGet("blockRoom")]
         [Authorize]
+        [InjectClientIp]
         public async Task<IActionResult> GetBlockRoom([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string hotelName = "", [FromQuery] int noOfRooms = 1, [FromQuery] decimal price = 0m)
         {
             _logger.LogInformation("Block room GET request received: HotelCode: {HotelCode}", hotelCode);
@@ -326,6 +334,7 @@ namespace PickNBook.Api.Controllers
         // =====================================
         [HttpPost("BookRoom")]
         [Authorize]
+        [InjectClientIp]
         public async Task<IActionResult> PostBookRoom([FromBody] HotelBookRequestDto request)
         {
             _logger.LogInformation("Book room POST request received: HotelCode: {HotelCode}, Guest: {GuestName}", request.HotelCode, request.GuestName);
@@ -349,29 +358,53 @@ namespace PickNBook.Api.Controllers
             string userId = _currentUserService.GetUserOrGuestId();
             if (string.IsNullOrWhiteSpace(userId)) userId = "guest_user";
 
-            decimal publishedPrice = request.Price > 0 ? request.Price : (request.HotelRoomsDetails?.FirstOrDefault()?.Price?.PublishedPrice ?? 0m);
+            var firstRoomPrice = request.HotelRoomsDetails?.FirstOrDefault()?.Price;
+            decimal publishedPrice = firstRoomPrice?.PublishedPrice ?? 0m;
+            decimal quotedPrice = firstRoomPrice?.OfferedPrice ?? 0m;
+            decimal agentMarkupAmount = request.HotelRoomsDetails?.FirstOrDefault()?.Price?.AgentMarkUp ?? 0m;
+
+            if (agentMarkupAmount <= 0)
+            {
+                using var markupScope = HttpContext.RequestServices.CreateScope();
+                var markupService = markupScope.ServiceProvider.GetService<IHotelMarkupService>();
+                if (markupService != null && quotedPrice > 0)
+                {
+                    agentMarkupAmount = await markupService.CalculateMarkupAsync(quotedPrice, null, request.HotelCode, "B2C");
+                }
+            }
+
+            decimal markedUpPrice = publishedPrice + agentMarkupAmount;
             decimal couponDiscount = 0m;
-            decimal b2cFinalFare = publishedPrice;
+            decimal b2cFinalFare = markedUpPrice;
             HotelCoupon? couponApplied = null;
 
             if (!string.IsNullOrWhiteSpace(request.CouponCode))
             {
-                var validationResult = await ValidateCouponInternalAsync(request.CouponCode, publishedPrice, userId);
+                var validationResult = await ValidateCouponInternalAsync(request.CouponCode, markedUpPrice, userId);
                 if (!validationResult.IsValid)
                 {
                     return BadRequest(new { message = $"Coupon error: {validationResult.Message}" });
                 }
                 couponDiscount = validationResult.DiscountAmount;
                 couponApplied = validationResult.Coupon;
-                b2cFinalFare = publishedPrice - couponDiscount;
+                b2cFinalFare = markedUpPrice - couponDiscount;
             }
 
             try
             {
                 var bookRes = await _hotelService.BookRoomAsync(request);
 
+                bool isSuccess = bookRes?.BookResult != null &&
+                                 bookRes.BookResult.Error.ErrorCode == 0 &&
+                                 string.IsNullOrEmpty(bookRes.BookResult.Error.ErrorMessage) &&
+                                 bookRes.BookResult.Status != null &&
+                                 !bookRes.BookResult.Status.Equals("Failed", StringComparison.OrdinalIgnoreCase) &&
+                                 !bookRes.BookResult.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) &&
+                                 !bookRes.BookResult.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase) &&
+                                 !bookRes.BookResult.Status.Equals("Error", StringComparison.OrdinalIgnoreCase);
+
                 // If booking succeeded with SRDV supplier, save DB reservation record
-                if (bookRes?.BookResult != null && bookRes.BookResult.Error.ErrorCode == 0)
+                if (isSuccess)
                 {
                     try
                     {
@@ -384,21 +417,7 @@ namespace PickNBook.Api.Controllers
                         string rawOfferId = request.ResultIndex ?? "";
                         string offerId = rawOfferId.Length > 120 ? rawOfferId.Substring(0, 120) : rawOfferId;
 
-                        decimal quotedPrice = request.Price > 0 ? request.Price : (request.HotelRoomsDetails?.FirstOrDefault()?.Price?.OfferedPrice ?? 0m);
-                        decimal agentMarkupAmount = request.HotelRoomsDetails?.FirstOrDefault()?.Price?.AgentMarkUp ?? 0m;
-
-                        if (agentMarkupAmount <= 0)
-                        {
-                            using var markupScope = HttpContext.RequestServices.CreateScope();
-                            var markupService = markupScope.ServiceProvider.GetService<IHotelMarkupService>();
-                            if (markupService != null && quotedPrice > 0)
-                            {
-                                agentMarkupAmount = await markupService.CalculateMarkupAsync(quotedPrice, null, request.HotelCode, "B2C");
-                            }
-                        }
-
-                        decimal netSupplierPrice = Math.Max(0m, quotedPrice - agentMarkupAmount);
-
+                        decimal netSupplierPrice = quotedPrice;
                         var firstRoom = request.HotelRoomsDetails?.FirstOrDefault();
 
                         var reservation = new HotelReservation
@@ -430,14 +449,14 @@ namespace PickNBook.Api.Controllers
                             Rooms = request.NoOfRooms > 0 ? request.NoOfRooms : 1,
                             
                             // Pricing
-                            Price = quotedPrice,
+                            Price = markedUpPrice,
                             SrdvOfferedPrice = netSupplierPrice,
                             MarkupAmount = agentMarkupAmount,
-                            TotalPrice = quotedPrice,
+                            TotalPrice = Math.Max(0m, b2cFinalFare),
                             B2CFinalFare = Math.Max(0m, b2cFinalFare),
                             CouponCode = request.CouponCode,
                             CouponDiscount = couponDiscount,
-                            BasePrice = Math.Max(0m, quotedPrice - agentMarkupAmount - (firstRoom?.Price?.TotalGSTAmount ?? 0m)),
+                            BasePrice = Math.Max(0m, quotedPrice - (firstRoom?.Price?.TotalGSTAmount ?? 0m)),
                             
                             // SRDV GST Breakdown
                             SrdvGstAmount = firstRoom?.Price?.TotalGSTAmount ?? 0m,
@@ -511,6 +530,7 @@ namespace PickNBook.Api.Controllers
 
         [HttpGet("bookRoom")]
         [Authorize]
+        [InjectClientIp]
         public async Task<IActionResult> GetBookRoom([FromQuery] string traceId, [FromQuery] string resultIndex, [FromQuery] string hotelCode, [FromQuery] string hotelName = "", [FromQuery] string guestName = "", [FromQuery] string guestEmail = "", [FromQuery] string guestPhone = "", [FromQuery] int noOfRooms = 1, [FromQuery] decimal price = 0m)
         {
             _logger.LogInformation("Book room GET request received: HotelCode: {HotelCode}, Guest: {GuestName}", hotelCode, guestName);
@@ -595,6 +615,7 @@ namespace PickNBook.Api.Controllers
         [HttpPost("SendChangeRequest")]
         [HttpPost("CancelRoom")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> PostSendChangeRequest([FromBody] HotelCancelRequestDto request)
         {
             _logger.LogInformation("Hotel cancel POST request received: BookingId: {BookingId}, RequestType: {RequestType}", request.BookingId, request.RequestType);
@@ -710,6 +731,7 @@ namespace PickNBook.Api.Controllers
         // =====================================
         [HttpPost("book")]
         [Authorize]
+        [InjectClientIp]
         public async Task<IActionResult> Book([FromBody] HotelBookingRequestDto request)
         {
             _logger.LogInformation("Book hotel request received for OfferId: {OfferId}, Guest: {GuestName}", request.OfferId, request.GuestName);
@@ -885,13 +907,21 @@ namespace PickNBook.Api.Controllers
                     reservation.SrdvBookingResponseJson = System.Text.Json.JsonSerializer.Serialize(srdvBooking);
                     reservation.UpdatedAt = DateTime.UtcNow;
 
-                    if (!string.IsNullOrEmpty(srdvBooking.Error))
+                    bool isProviderError = !string.IsNullOrEmpty(srdvBooking.Error);
+                    bool isFailedStatus = srdvBooking.Status != null && (
+                        srdvBooking.Status.Equals("Failed", StringComparison.OrdinalIgnoreCase) ||
+                        srdvBooking.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) ||
+                        srdvBooking.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase) ||
+                        srdvBooking.Status.Equals("Error", StringComparison.OrdinalIgnoreCase));
+
+                    if (isProviderError || isFailedStatus)
                     {
                         reservation.Status = "Failed";
                         await _dbContext.SaveChangesAsync();
                         await transaction.CommitAsync();
-                        System.IO.File.WriteAllText("book_error.txt", $"Provider Error: {srdvBooking.Error}");
-                        return BadRequest(new { message = $"Booking failed at provider: {srdvBooking.Error}" });
+                        var errorMessage = isProviderError ? srdvBooking.Error : $"Provider rejected booking with status: {srdvBooking.Status}";
+                        System.IO.File.WriteAllText("book_error.txt", $"Provider Error: {errorMessage}");
+                        return BadRequest(new { message = $"Booking failed at provider: {errorMessage}" });
                     }
                     
                     reservation.TraceId = offerDetails.TraceId;
@@ -1055,6 +1085,7 @@ namespace PickNBook.Api.Controllers
         // =====================================
         [HttpPost("bookings/{bookingId}/cancel")]
         [Authorize]
+        [InjectClientIp]
         public async Task<IActionResult> Cancel(string bookingId, [FromQuery] string? reason)
         {
             _logger.LogInformation("Cancel hotel booking request received: BookingId: {BookingId}, Reason: {Reason}", bookingId, reason);
@@ -1354,3 +1385,4 @@ namespace PickNBook.Api.Controllers
         }
     }
 }
+

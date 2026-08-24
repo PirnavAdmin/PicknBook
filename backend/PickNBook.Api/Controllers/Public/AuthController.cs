@@ -305,6 +305,19 @@ namespace PickNBook.Api.Controllers
 
             var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var loggedInEmail = User.FindFirstValue(ClaimTypes.Email)?.ToLowerInvariant();
+                if (!string.Equals(loggedInEmail, normalizedEmail))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Wrong email: Please enter your registered logged-in email."
+                    });
+                }
+            }
+
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail);
 
@@ -444,6 +457,19 @@ namespace PickNBook.Api.Controllers
             }
 
             var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var loggedInEmail = User.FindFirstValue(ClaimTypes.Email)?.ToLowerInvariant();
+                if (!string.Equals(loggedInEmail, normalizedEmail))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Wrong email: Please enter your registered logged-in email."
+                    });
+                }
+            }
 
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail);

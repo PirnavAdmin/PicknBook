@@ -4,7 +4,7 @@ import { Check, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import "./MenuList.css";
 import { getAdminMenuItems, updateMenuItem, deleteMenuItem } from "../../../services/menuService";
 import AdminPagination from "../../../components/AdminPagination";
-import AdminDynamicModal from '../../../components/AdminDynamicModal';
+
 const DEFAULT_EDIT_FORM = {
   name: "",
   slug: "",
@@ -38,7 +38,7 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
   const [deleteItem, setDeleteItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [modalState, setModalState] = useState({ isOpen: false, mode: 'view', data: null });
+
   const paginatedMenus = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return menuItems.slice(startIndex, startIndex + itemsPerPage);
@@ -152,14 +152,14 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
   };
 
   const handleDeleteConfirm = async () => {
-    const itemToDelete = modalState.data || deleteItem;
-    if (!itemToDelete) return;
+    if (!deleteItem) {
+      return;
+    }
 
     try {
-      await deleteMenuItem(itemToDelete.id);
+      await deleteMenuItem(deleteItem.id);
       setDeleteItem(null);
-      setModalState({ isOpen: false, mode: 'view', data: null });
-      setViewItem((previous) => (previous?.id === itemToDelete.id ? null : previous));
+      setViewItem((previous) => (previous?.id === deleteItem.id ? null : previous));
       fetchMenus();
     } catch (error) {
       console.error("Error deleting menu item:", error);
@@ -232,34 +232,32 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
                           <span>{item.status === "active" ? "Active" : "Inactive"}</span>
                         </button>
                       </td>
-                      <td className="action-col" style={{ verticalAlign: 'middle' }}>
-                        <div className="admin-actions-cell-row">
+                      <td className="action-col">
+                        <div className="markup-action-group" aria-label="Menu actions">
                           <button
                             type="button"
-                            className="admin-action-btn view"
                             title="View"
                             aria-label={`View menu ${item.name}`}
-                            onClick={() => setModalState({ isOpen: true, mode: 'view', data: item })}
+                            onClick={() => setViewItem(item)}
                           >
-                            <Eye size={18} />
+                            <Eye size={14} />
                           </button>
                           <button
                             type="button"
-                            className="admin-action-btn edit"
                             title="Edit"
                             aria-label={`Edit menu ${item.name}`}
                             onClick={() => onEditMenu ? onEditMenu(item) : openEditModal(item)}
                           >
-                            <Pencil size={18} />
+                            <Pencil size={14} />
                           </button>
                           <button
                             type="button"
-                            className="admin-action-btn delete"
                             title="Delete"
                             aria-label={`Delete menu ${item.name}`}
-                            onClick={() => setModalState({ isOpen: true, mode: 'delete', data: item })}
+                            className="danger"
+                            onClick={() => setDeleteItem(item)}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -282,6 +280,76 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
           </div>
         </section>
       </section>
+
+      {viewItem && (
+        <div className="admin-markup-modal-backdrop" onClick={() => setViewItem(null)}>
+          <section
+            className="admin-markup-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="View menu details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header>
+              <h2>Menu Details</h2>
+              <button type="button" onClick={() => setViewItem(null)} aria-label="Close view dialog">
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="admin-markup-modal-grid">
+              <div>
+                <span>Name</span>
+                <strong>{viewItem.name}</strong>
+              </div>
+              <div>
+                <span>Slug</span>
+                <strong>{viewItem.slug}</strong>
+              </div>
+              <div>
+                <span>Display Title</span>
+                <strong>{viewItem.displayTitle}</strong>
+              </div>
+              <div>
+                <span>Order</span>
+                <strong>{viewItem.order}</strong>
+              </div>
+              <div>
+                <span>Module</span>
+                <strong>{viewItem.module}</strong>
+              </div>
+              <div>
+                <span>Menu Location</span>
+                <strong>{viewItem.location}</strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <strong>{viewItem.status}</strong>
+              </div>
+            </div>
+
+            <div className="admin-markup-modal-actions">
+              <button type="button" className="secondary" onClick={() => setViewItem(null)}>
+                Close
+              </button>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => {
+                  if (onEditMenu) {
+                    onEditMenu(viewItem);
+                  } else {
+                    openEditModal(viewItem);
+                  }
+                  setViewItem(null);
+                }}
+              >
+                Edit
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {editItem && (
         <div className="admin-markup-modal-backdrop" onClick={() => setEditItem(null)}>
@@ -395,27 +463,37 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
         </div>
       )}
 
-      <AdminDynamicModal
-        isOpen={modalState.isOpen}
-        mode={modalState.mode}
-        moduleName="Menu"
-        data={modalState.data}
-        schema={[
-          { name: 'name', label: 'Name', type: 'text', required: true },
-          { name: 'slug', label: 'Slug', type: 'text', required: true },
-          { name: 'displayTitle', label: 'Display Title', type: 'text', required: true },
-          { name: 'order', label: 'Order', type: 'number' },
-          { name: 'module', label: 'Module', type: 'select', options: ['B2C', 'B2B', 'Admin'] },
-          { name: 'location', label: 'Menu Location', type: 'select', options: ['header', 'footer', 'sidebar'] },
-          { name: 'status', label: 'Status', type: 'select', options: ['active', 'inactive'] },
-        ]}
-        onClose={() => setModalState({ isOpen: false, mode: 'view', data: null })}
-        onSave={(updatedData) => {
-          openEditModal({ ...modalState.data, ...updatedData });
-          setModalState({ isOpen: false, mode: 'view', data: null });
-        }}
-        onDelete={() => handleDeleteConfirm()}
-      />
+      {deleteItem && (
+        <div className="admin-markup-modal-backdrop" onClick={() => setDeleteItem(null)}>
+          <section
+            className="admin-markup-modal small"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete menu"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header>
+              <h2>Delete Menu</h2>
+              <button type="button" onClick={() => setDeleteItem(null)} aria-label="Close delete dialog">
+                <X size={16} />
+              </button>
+            </header>
+
+            <p className="admin-markup-delete-copy">
+              Are you sure you want to delete <strong>{deleteItem.name}</strong>?
+            </p>
+
+            <div className="admin-markup-modal-actions">
+              <button type="button" className="secondary" onClick={() => setDeleteItem(null)}>
+                Cancel
+              </button>
+              <button type="button" className="danger" onClick={handleDeleteConfirm}>
+                Delete
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </>
   );
 }

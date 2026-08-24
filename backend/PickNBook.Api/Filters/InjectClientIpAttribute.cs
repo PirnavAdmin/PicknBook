@@ -24,7 +24,8 @@ namespace PickNBook.Api.Filters
                 }
             }
 
-            base.OnActionExecuting(context);
+            if (context.ActionArguments.ContainsKey("endUserIp")) { context.ActionArguments["endUserIp"] = ip; } if (context.ActionArguments.ContainsKey("EndUserIp")) { context.ActionArguments["EndUserIp"] = ip; } base.OnActionExecuting(context);
         }
     }
 }
+

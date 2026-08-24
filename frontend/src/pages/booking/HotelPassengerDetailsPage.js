@@ -593,6 +593,31 @@ export default function HotelPassengerDetailsPage() {
     return () => { isMounted = false; };
   }, []);
 
+  // Restore pending hotel offer selection after logging in
+  useEffect(() => {
+    const activePortal = sessionStorage.getItem("active_portal");
+    const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
+    const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
+    const isLoggedIn = token && !isTokenExpired(token);
+
+    if (isLoggedIn && hotel?.hotelId) {
+      const pendingRaw = sessionStorage.getItem("pending_hotel_offer");
+      if (pendingRaw) {
+        try {
+          const pendingOffer = JSON.parse(pendingRaw);
+          sessionStorage.removeItem("pending_hotel_offer");
+          handleSelectOffer(pendingOffer).then(() => {
+            setCurrentStep(2);
+          }).catch((err) => {
+            console.error("Failed to select restored pending offer:", err);
+          });
+        } catch (e) {
+          console.error("Error restoring pending hotel offer:", e);
+        }
+      }
+    }
+  }, [hotel?.hotelId]);
+
   useEffect(() => {
     if (hotel || offer) {
       writeHotelBookingFlowState({
@@ -619,7 +644,8 @@ export default function HotelPassengerDetailsPage() {
     const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
     const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
     if (!token || isTokenExpired(token)) {
-      openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
+      sessionStorage.setItem("pending_hotel_offer", JSON.stringify(roomOffer));
+      navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       return;
     }
 
@@ -884,7 +910,7 @@ export default function HotelPassengerDetailsPage() {
     const token = isAgent ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
     if (!token || isTokenExpired(token)) { 
       alert("Login is mandatory to proceed to payment. Opening login window.");
-      openAuthModal("login", { returnTo: window.location.pathname + window.location.search }); 
+      navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); 
       return; 
     }
     const hotelImg = hotel?.image || hotel?.cardImage || (Array.isArray(hotel?.images) ? hotel.images[0] : null) || offer?.image || null;
@@ -986,7 +1012,7 @@ export default function HotelPassengerDetailsPage() {
       const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
       const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
       if (!token || isTokenExpired(token)) {
-        openAuthModal("login", { returnTo: window.location.pathname + window.location.search });
+        navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
     }
@@ -1131,7 +1157,7 @@ export default function HotelPassengerDetailsPage() {
 
                 {/* Checkbox selector container for saved profiles */}
                 <div style={{ marginBottom: "10px", padding: "6px 10px", background: "#f8fafc", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.04)" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", fontWeight: 600, color: "var(--hotel-ink)", cursor: "pointer", margin: 0 }}>
+                  <label style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: "10px", fontSize: "0.85rem", fontWeight: 600, color: "var(--hotel-ink)", cursor: "pointer", margin: 0, width: "100%" }}>
                     <input 
                       type="checkbox" 
                       checked={isExistingGuest} 
@@ -1143,8 +1169,9 @@ export default function HotelPassengerDetailsPage() {
                           selectExistingTraveler("");
                         }
                       }}
+                      style={{ margin: 0, width: "16px", height: "16px" }}
                     />
-                    <span>Book using a saved traveler profile</span>
+                    <span style={{ whiteSpace: "nowrap" }}>Book using a saved traveler profile</span>
                   </label>
                   
                   {isExistingGuest && (

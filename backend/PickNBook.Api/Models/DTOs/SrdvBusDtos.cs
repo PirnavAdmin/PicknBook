@@ -58,6 +58,9 @@ namespace PickNBook.Api.Models.DTOs
         public string BusType { get; set; } = string.Empty;
         public decimal TotalFare { get; set; }
         public List<SrdvBusPassengerDto> Passengers { get; set; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("EndUserIp")]
+        public string EndUserIp { get; set; } = string.Empty;
     }
 
     public class SrdvBusPassengerDto

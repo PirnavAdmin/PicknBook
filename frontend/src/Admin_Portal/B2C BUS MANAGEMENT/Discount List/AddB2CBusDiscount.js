@@ -1,8 +1,8 @@
 /* eslint-disable */
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './AddB2CBusDiscount.css';
-import { createDiscount, updateDiscount, getDiscount } from '../../../services/adminBusService';
+import { createDiscount, updateDiscount } from '../../../services/adminBusService';
 
 const DEFAULT_FORM = {
   code: '',
@@ -93,43 +93,6 @@ function AddB2CBusDiscount() {
   const [formValues, setFormValues] = useState(() => buildInitialForm(editingRow));
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (editingRow) {
-      async function fetchFreshDiscount() {
-        try {
-          const item = await getDiscount(editingRow.id);
-          if (item) {
-            setFormValues({
-              code: item.code || item.discountCode || '',
-              title: item.title || item.name || item.remark || '',
-              description: item.description || '',
-              value: item.value !== undefined && item.value !== null ? String(item.value) : '',
-              discountType: item.discountType || item.type || 'Percentage',
-              isAutoApply: toBoolean(item.isAutoApply, true),
-              isExclusive: toBoolean(item.isExclusive, false),
-              priority: item.priority !== undefined && item.priority !== null ? String(item.priority) : '0',
-              minBookingAmount:
-                item.minBookingAmount !== undefined && item.minBookingAmount !== null
-                  ? String(item.minBookingAmount)
-                  : '0',
-              startDateUtc: toInputDateTimeLocal(item.startDateUtc || item.startDate),
-              endDateUtc: toInputDateTimeLocal(item.endDateUtc || item.endDate),
-              status: item.status || 'Active',
-              remark: item.remark || '',
-            });
-            return;
-          }
-        } catch (e) {
-          console.warn("Failed to fetch fresh discount details, falling back to state data", e);
-        }
-        setFormValues(buildInitialForm(editingRow));
-      }
-      fetchFreshDiscount();
-    } else {
-      setFormValues(DEFAULT_FORM);
-    }
-  }, [editingRow]);
 
   const handleChange = (field) => (event) => {
     const value =

@@ -203,9 +203,9 @@ export default function AuthPage() {
     setStatus({ type: "success", message });
     window.setTimeout(() => {
       const role = (localStorage.getItem("role") || sessionStorage.getItem("role")) || "";
-      if (role === "Admin") window.location.href = "/admin";
+      if (returnTo && returnTo.startsWith("/")) window.location.href = returnTo;
+      else if (role === "Admin") window.location.href = "/admin";
       else if (role === "Agent" || role === "B2B") window.location.href = "/b2b/dashboard";
-      else if (returnTo && returnTo.startsWith("/")) window.location.href = returnTo;
       else window.location.href = "/";
     }, 500);
   };

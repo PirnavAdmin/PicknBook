@@ -1,0 +1,187 @@
+.hotel-review-card {
+  position: relative;
+  width: 100%;
+  min-height: 230px;
+  background: #ffffff;
+  border: 1px solid rgba(220, 30, 38, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(220, 30, 38, 0.03), 0 2px 6px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease;
+  padding: 20px 22px;
+  box-sizing: border-box;
+}
+
+.hotel-review-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 22px 45px rgba(220, 30, 38, 0.1), 0 4px 10px rgba(0, 0, 0, 0.02);
+  border-color: rgba(220, 30, 38, 0.3);
+}
+
+.hotel-review-card:hover .hotel-card-corner-badge {
+  transform: scale(1.04) translate(-1px, -1px);
+}
+
+/* Red Curved Corner Badge Shape */
+.hotel-card-corner-badge {
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #8b0000 0%, #b8141b 40%, #dc1e26 100%);
+  border-radius: 20px 0 65px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.hotel-card-corner-icon-circle {
+  width: 46px;
+  height: 46px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-top: -10px;
+  margin-left: -10px;
+}
+
+.hotel-card-corner-icon {
+  color: #dc1e26;
+}
+
+/* Header (HOTEL BOOKING & Verified Trip) */
+.hotel-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-left: 82px; /* Offset to clear the corner badge */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hotel-card-type-label {
+  color: #dc1e26;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.hotel-card-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background-color: #fff0f0;
+  color: #dc1e26;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border: 1px solid #ffe3e3;
+}
+
+.hotel-card-verified-icon {
+  color: #dc1e26;
+  flex-shrink: 0;
+}
+
+/* Rating Area */
+.hotel-card-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-left: 82px; /* Offset to clear the corner badge */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hotel-card-rating-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hotel-card-rating-num span {
+  font-weight: 500;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.hotel-card-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.hotel-card-star-icon {
+  flex-shrink: 0;
+}
+
+/* Review Text Content */
+.hotel-card-comment {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #1e293b;
+  margin: 0;
+  margin-bottom: 16px;
+  text-align: left;
+  flex-grow: 1;
+}
+
+/* Footer Section */
+.hotel-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+  width: 100%;
+}
+
+.hotel-card-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #7f0000 0%, #b8141b 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.hotel-card-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.hotel-card-author-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hotel-card-meta-row {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.hotel-card-meta-dot {
+  margin: 0 4px;
+  color: #cbd5e1;
+}

@@ -776,7 +776,7 @@ export default function HotelPaymentPage() {
               </div>
             </div>
             {/* Apply Promo Code Card */}
-            <div className="hotel-panel" style={{ padding: "20px", marginBottom: "16px" }}>
+            <div className="hotel-panel" style={{ padding: "20px", marginBottom: "16px", width: "100%", overflow: "hidden" }}>
               <div className="payment-promo-card">
                 <div className="promo-label" style={{ marginBottom: "12px", display: "flex", gap: "8px", alignItems: "center" }}>
                   <span>🏷️</span>
@@ -810,7 +810,7 @@ export default function HotelPaymentPage() {
                 </div>
 
                 {promoType === "offers" && (
-                  <div style={{ display: "flex", overflowX: "auto", gap: "12px", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
+                  <div className="hotel-offers-scroll" style={{ display: "flex", overflowX: "auto", gap: "12px", paddingBottom: "10px", WebkitOverflowScrolling: "touch", width: "100%" }}>
                     {[
                       { code: "WELCOME500", desc: "Flat ₹500 discount on your first booking.", discount: 500, img: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=80&q=80" },
                       { code: "HOTELDEAL", desc: "Get flat ₹1,000 off on select premium hotels.", discount: 1000, img: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=80&q=80" }
@@ -874,7 +874,7 @@ export default function HotelPaymentPage() {
                 )}
 
                 {promoType === "coupons" && (
-                  <div style={{ display: "flex", overflowX: "auto", gap: "12px", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
+                  <div className="hotel-offers-scroll" style={{ display: "flex", overflowX: "auto", gap: "12px", paddingBottom: "10px", WebkitOverflowScrolling: "touch", width: "100%" }}>
                     {loadingCoupons ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--hotel-muted)", padding: "10px" }}>
                         <Loader2 className="hotel-spin" size={14} />

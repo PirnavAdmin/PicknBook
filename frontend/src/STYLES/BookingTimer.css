@@ -8,7 +8,7 @@
   border-bottom: 1px solid rgba(220, 30, 38, 0.15);
   padding: 10px 16px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
@@ -60,13 +60,10 @@
 }
 
 @keyframes pulse {
-
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
     transform: scale(1);
   }
-
   50% {
     opacity: .5;
     transform: scale(1.1);
@@ -151,23 +148,50 @@
 }
 
 @keyframes expiryFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes expiryScaleUp {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* Compact Mode Styles */
+.booking-timer-compact {
+  background: #eaeef1;
+  border-radius: 999px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
 
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.booking-timer-compact.is-urgent {
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+
+.booking-timer-compact .booking-timer-content {
+  color: #4b5563;
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.booking-timer-compact.is-urgent .booking-timer-content {
+  color: #b91c1c;
+}
+
+.booking-timer-compact .booking-timer-val {
+  background: transparent;
+  padding: 0;
+  font-weight: 700;
+  color: #374151;
+  margin-left: 2px;
+}
+
+.booking-timer-compact.is-urgent .booking-timer-val {
+  color: #b91c1c;
 }

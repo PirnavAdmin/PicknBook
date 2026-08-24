@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plane, Building2, Bus } from "lucide-react";
-import { searchBusCities } from "../services/busBookingService";
+
 
 const USE_DIRECT_API_IN_DEV =
   String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() ===
@@ -14,52 +14,7 @@ const PLACES_API_URL =
     ? "/api/Places"
     : process.env.REACT_APP_PLACES_API_URL || "/api/Places";
 
-const FALLBACK_CITIES = [
-  "Hyderabad",
-  "Bengaluru",
-  "Chennai",
-  "Mumbai",
-  "Pune",
-  "Vijayawada",
-  "Visakhapatnam",
-  "Delhi",
-  "Kolkata",
-  "Goa",
-  "Ahmedabad",
-  "Jaipur",
-  "Lucknow",
-  "Kochi",
-  "Thiruvananthapuram",
-  "Coimbatore",
-  "Madurai",
-  "Tiruchirappalli",
-  "Mysuru",
-  "Mangaluru",
-  "Hubli",
-  "Belagavi",
-  "Indore",
-  "Bhopal",
-  "Nagpur",
-  "Nashik",
-  "Surat",
-  "Vadodara",
-  "Rajkot",
-  "Chandigarh",
-  "Amritsar",
-  "Ludhiana",
-  "Jalandhar",
-  "Patna",
-  "Ranchi",
-  "Bhubaneswar",
-  "Guwahati",
-  "Agartala",
-  "Imphal",
-  "Shillong",
-  "Aizawl",
-  "Kohima",
-  "Itanagar",
-  "Gangtok",
-];
+
 
 export default function PlaceAutocomplete({
   label,
@@ -120,25 +75,11 @@ export default function PlaceAutocomplete({
       setLoading(true);
 
       try {
-        if (tripType === "bus" || tripType === "buses") {
-          const busCities = await searchBusCities(query);
-          if (controller.signal.aborted) return;
-          const normalized = (Array.isArray(busCities) ? busCities : [])
-            .map((item) => {
-              if (typeof item === "string") return { cityName: item, cityId: item, stateName: "" };
-              return {
-                cityName: item.cityName || item.CityName || item.cityNameWithState || item.name || item.description || item.label || "",
-                cityId: String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || ""),
-                stateName: item.stateName || item.StateName || "",
-              };
-            })
-            .filter((item) => item.cityName);
-          setResults(normalized);
-        } else {
+
           const endpoint = new URL(PLACES_API_URL, window.location.origin);
           endpoint.searchParams.set("query", query);
-          endpoint.searchParams.set("tripType", tripType === "hotel" ? "all" : tripType);
-          endpoint.searchParams.set("field", field);
+          endpoint.searchParams.set("tripType", tripType);
+          endpoint.searchParams.set("field", "all");
           endpoint.searchParams.set("limit", "20");
 
           const needsNgrokBypass =
@@ -167,6 +108,7 @@ export default function PlaceAutocomplete({
           const normalized = rawList
             .map((item) => ({
               cityName: typeof item === "string" ? item : item?.cityName || "",
+              cityId: typeof item === "object" ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
               usageCount:
                 typeof item === "object" && item?.usageCount
                   ? item.usageCount
@@ -175,22 +117,10 @@ export default function PlaceAutocomplete({
             .filter((item) => item.cityName);
 
           setResults(normalized);
-        }
+
       } catch (error) {
         if (error.name !== "AbortError") {
-          if (tripType !== "bus" && tripType !== "buses") {
-            const normalizedQuery = query.toLowerCase();
-            const fallbackMatches = FALLBACK_CITIES.filter((city) =>
-              city.toLowerCase().includes(normalizedQuery),
-            ).map((cityName, index) => ({
-              cityName,
-              usageCount: 100 - index,
-            }));
-
-            setResults(fallbackMatches);
-          } else {
-            setResults((prev) => (prev.length === 0 ? prev : []));
-          }
+          setResults((prev) => (prev.length === 0 ? prev : []));
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -214,9 +144,10 @@ export default function PlaceAutocomplete({
     setOpen(nextValue.trim().length > 0);
   };
 
-  const handleSelect = (cityName) => {
-    setInputValue(cityName);
-    onChange(cityName);
+  const handleSelect = (item) => {
+    const name = item.cityName || item;
+    setInputValue(name);
+    onChange(name, item.cityId);
     setOpen(false);
   };
 
@@ -281,7 +212,7 @@ export default function PlaceAutocomplete({
                 type="button"
                 className={isBusMode ? "bus-place-option" : "place-option"}
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => handleSelect(item.cityName)}
+                onClick={() => handleSelect(item)}
               >
                 {item.cityName}
               </button>

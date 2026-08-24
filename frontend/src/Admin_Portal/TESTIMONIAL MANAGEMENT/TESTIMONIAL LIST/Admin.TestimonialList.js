@@ -1,10 +1,10 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Star } from "lucide-react";
+import { Eye, Edit2, Trash2, Star } from "lucide-react";
 import { getAdminTestimonials, deleteAdminTestimonial, toggleTestimonialStatus } from "../../../services/testimonialService";
 import { toApiAssetUrl } from "../../../services/apiClient";
-import AdminDynamicModal from '../../../components/AdminDynamicModal';
+
 export default function AdminTestimonialList() {
   const navigate = useNavigate();
   const toastTimerRef = useRef(null);
@@ -15,7 +15,7 @@ export default function AdminTestimonialList() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedTestimonial, setSelectedTestimonial] = useState(null);
   const [toast, setToast] = useState(null);
-  const [modalState, setModalState] = useState({ isOpen: false, mode: 'view', data: null });
+
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -57,13 +57,13 @@ export default function AdminTestimonialList() {
     }
   };
 
-  const handleDeleteTestimonial = async (testimonial) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this testimonial?")) return;
     try {
-      await deleteAdminTestimonial(testimonial.id);
-      setTestimonials((prev) => prev.filter((t) => t.id !== testimonial.id));
+      await deleteAdminTestimonial(id);
+      setTestimonials((prev) => prev.filter((t) => t.id !== id));
       showToast("Testimonial deleted successfully.", "success");
-      setModalState({ isOpen: false, mode: 'view', data: null });
-      if (selectedTestimonial && selectedTestimonial.id === testimonial.id) {
+      if (selectedTestimonial && selectedTestimonial.id === id) {
         setSelectedTestimonial(null);
       }
     } catch {
@@ -513,7 +513,7 @@ export default function AdminTestimonialList() {
                   <th style={styles.th}>Rating</th>
                   <th style={styles.th}>Comment</th>
                   <th style={styles.th}>Status</th>
-                  <th className="action-col" style={{ ...styles.th, textAlign: 'center' }}>Action</th>
+                  <th style={styles.th}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -528,10 +528,10 @@ export default function AdminTestimonialList() {
                       e.currentTarget.style.background = "transparent";
                     }}
                   >
-                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                    <td style={styles.td}>
                       <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
                     </td>
-                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                    <td style={styles.td}>
                       {t.imageUrl || t.image ? (
                         <img
                           src={toApiAssetUrl(t.imageUrl || t.image)}
@@ -549,9 +549,9 @@ export default function AdminTestimonialList() {
                         "-"
                       )}
                     </td>
-                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{t.name}</td>
-                    <td style={{ ...styles.td, verticalAlign: 'middle' }}>{t.designation}</td>
-                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>{renderStars(t.rating)}</td>
+                    <td style={styles.td}>{t.name}</td>
+                    <td style={styles.td}>{t.designation}</td>
+                    <td style={styles.td}>{renderStars(t.rating)}</td>
                     <td
                       style={{
                         ...styles.td,
@@ -559,34 +559,33 @@ export default function AdminTestimonialList() {
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
-                        verticalAlign: 'middle',
                       }}
                       title={t.comment || t.message}
                     >
                       {t.comment || t.message}
                     </td>
-                    <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                    <td style={styles.td}>
                       <button
                         type="button"
-                        style={{ ...getStatusStyle(t.status), margin: '0 auto' }}
+                        style={getStatusStyle(t.status)}
                         onClick={() => handleToggleStatus(t.id)}
                       >
                         {t.status || "Active"}
                       </button>
                     </td>
-                    <td className="action-col" style={{ verticalAlign: 'middle' }}>
-                      <div className="admin-actions-cell-row">
+                    <td style={styles.td}>
+                      <div style={styles.actionButtons}>
                         <button
                           type="button"
-                          className="admin-action-btn view"
+                          style={styles.actionBtn}
                           title="View Details"
-                          onClick={() => setModalState({ isOpen: true, mode: 'view', data: t })}
+                          onClick={() => setSelectedTestimonial(t)}
                         >
-                          <Eye size={18} />
+                          <Eye size={16} strokeWidth={2} />
                         </button>
                         <button
                           type="button"
-                          className="admin-action-btn edit"
+                          style={styles.actionBtn}
                           title="Edit"
                           onClick={() =>
                             navigate(`/admin/testimonial-management/add-testimonial`, {
@@ -594,15 +593,15 @@ export default function AdminTestimonialList() {
                             })
                           }
                         >
-                          <Pencil size={18} />
+                          <Edit2 size={16} strokeWidth={2} />
                         </button>
                         <button
                           type="button"
-                          className="admin-action-btn delete"
-                          title="Delete Testimonial"
-                          onClick={() => setModalState({ isOpen: true, mode: 'delete', data: t })}
+                          style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                          title="Delete"
+                          onClick={() => handleDelete(t.id)}
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} strokeWidth={2} />
                         </button>
                       </div>
                     </td>
@@ -654,29 +653,6 @@ export default function AdminTestimonialList() {
           </div>
         )}
       </div>
-
-      <AdminDynamicModal
-        isOpen={modalState.isOpen}
-        mode={modalState.mode}
-        moduleName="Testimonial"
-        data={modalState.data}
-        schema={[
-          { name: 'name', label: 'Name', type: 'text', required: true },
-          { name: 'designation', label: 'Designation', type: 'text' },
-          { name: 'rating', label: 'Rating', type: 'number' },
-          { name: 'comment', label: 'Comment', type: 'textarea' },
-          { name: 'status', label: 'Status', type: 'select', options: ['Active', 'Inactive'] },
-          { name: 'imageUrl', label: 'Photo', type: 'image' },
-        ]}
-        onClose={() => setModalState({ isOpen: false, mode: 'view', data: null })}
-        onSave={(updatedData) => {
-          navigate('/admin/testimonial-management/add-testimonial', { state: { editItem: { ...modalState.data, ...updatedData } } });
-          setModalState({ isOpen: false, mode: 'view', data: null });
-        }}
-        onDelete={() => {
-          if (modalState.data) handleDeleteTestimonial(modalState.data);
-        }}
-      />
     </>
   );
 }

@@ -12,6 +12,9 @@ import "./HotelEditMarkup.css";
 const DEFAULT_FORM = {
   markupType: "Percentage",
   markupValue: "",
+  convenienceFeeType: "Flat",
+  convenienceFeeValue: "",
+  gstPercent: "18.00",
   isActive: false,
 };
 
@@ -37,6 +40,9 @@ export default function HotelEditMarkup() {
           setFormValues({
             markupType: data.markupType || "Percentage",
             markupValue: data.markupValue != null ? String(data.markupValue) : "",
+            convenienceFeeType: data.convenienceFeeType || "Flat",
+            convenienceFeeValue: data.convenienceFeeValue != null ? String(data.convenienceFeeValue) : "",
+            gstPercent: data.gstPercent != null ? String(data.gstPercent) : "18.00",
             isActive: Boolean(data.isActive),
           });
         }
@@ -60,12 +66,23 @@ export default function HotelEditMarkup() {
 
   const validate = () => {
     const markupVal = Number(formValues.markupValue);
+    const convVal = Number(formValues.convenienceFeeValue);
+    const gstVal = Number(formValues.gstPercent);
 
-    if (formValues.markupValue === "" || !Number.isFinite(markupVal) || markupVal < 0) {
+    if (!Number.isFinite(markupVal) || markupVal < 0) {
       return "Markup value must be a number >= 0.";
+    }
+    if (!Number.isFinite(convVal) || convVal < 0) {
+      return "Convenience fee value must be a number >= 0.";
+    }
+    if (!Number.isFinite(gstVal) || gstVal < 0) {
+      return "GST percent must be a number >= 0.";
     }
     if (formValues.markupType === "Percentage" && markupVal > 100) {
       return "Markup percentage cannot exceed 100%.";
+    }
+    if (formValues.convenienceFeeType === "Percentage" && convVal > 100) {
+      return "Convenience fee percentage cannot exceed 100%.";
     }
     return "";
   };
@@ -92,6 +109,9 @@ export default function HotelEditMarkup() {
       const payload = {
         markupType: formValues.markupType,
         markupValue: Number(formValues.markupValue),
+        convenienceFeeType: formValues.convenienceFeeType,
+        convenienceFeeValue: Number(formValues.convenienceFeeValue),
+        gstPercent: Number(formValues.gstPercent),
         isActive: formValues.isActive,
       };
 
@@ -143,7 +163,7 @@ export default function HotelEditMarkup() {
 
       <div className="hml-edit-shell">
         <div className="hml-edit-grid">
-          {/* Row 1: Markup Type */}
+          {/* Row 1: Markup */}
           <div className="hml-edit-label">Markup Type</div>
           <div className="hml-edit-field">
             <select value={formValues.markupType} onChange={handleChange("markupType")}>
@@ -152,7 +172,6 @@ export default function HotelEditMarkup() {
             </select>
           </div>
 
-          {/* Row 2: Markup Value */}
           <div className="hml-edit-label">Markup Value</div>
           <div className="hml-edit-field">
             <input
@@ -165,7 +184,40 @@ export default function HotelEditMarkup() {
             />
           </div>
 
-          {/* Row 3: Active Status */}
+          {/* Row 2: Convenience Fee */}
+          <div className="hml-edit-label">Convenience Fee Type</div>
+          <div className="hml-edit-field">
+            <select value={formValues.convenienceFeeType} onChange={handleChange("convenienceFeeType")}>
+              <option value="Percentage">Percentage</option>
+              <option value="Flat">Flat</option>
+            </select>
+          </div>
+
+          <div className="hml-edit-label">Convenience Fee Value</div>
+          <div className="hml-edit-field">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formValues.convenienceFeeValue}
+              onChange={handleChange("convenienceFeeValue")}
+              placeholder={formValues.convenienceFeeType === "Percentage" ? "e.g. 5.00" : "e.g. 250.00"}
+            />
+          </div>
+
+          {/* Row 3: GST + Active */}
+          <div className="hml-edit-label">GST Percent</div>
+          <div className="hml-edit-field">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formValues.gstPercent}
+              onChange={handleChange("gstPercent")}
+              placeholder="e.g. 18.00"
+            />
+          </div>
+
           <div className="hml-edit-label">Active Status</div>
           <div className="hml-edit-field">
             <div className="hml-toggle-wrap">

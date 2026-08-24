@@ -1,386 +1,405 @@
 /* eslint-disable */
-import React, { useState } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  X,
-  Percent,
-  CheckCircle,
-  HelpCircle,
-  AlertTriangle
-} from 'lucide-react';
+import { useRef, useState } from 'react';
+import './TaxManagement.css';
 
-const mockTaxRules = [
-  { id: '1', name: 'GST 5%', code: 'GST5', rate: '5.00', type: 'Percentage', status: 'Active' },
-  { id: '2', name: 'GST 12%', code: 'GST12', rate: '12.00', type: 'Percentage', status: 'Active' },
-  { id: '3', name: 'GST 18%', code: 'GST18', rate: '18.00', type: 'Percentage', status: 'Active' },
+const initialForm = {
+  companyName: '',
+  registrationNo: '',
+  gstNo: '',
+  gstStateCode: '',
+  pan: '',
+  email: '',
+  phone: '',
+  hsnCode: '',
+  gstPercentage: '',
+  address: '',
+};
+
+const styleOptions = [
+  { label: 'Paragraph', value: 'p' },
+  { label: 'Heading 1', value: 'h1' },
+  { label: 'Heading 2', value: 'h2' },
+  { label: 'Heading 3', value: 'h3' },
+];
+
+const formatOptions = [
+  { label: 'Normal', value: 'p' },
+  { label: 'Quote', value: 'blockquote' },
+  { label: 'Code', value: 'pre' },
+];
+
+const fontOptions = ['Arial', 'Times New Roman', 'Verdana', 'Georgia'];
+
+const sizeOptions = [
+  { label: '10', value: '1' },
+  { label: '12', value: '2' },
+  { label: '14', value: '3' },
+  { label: '16', value: '4' },
+  { label: '18', value: '5' },
+  { label: '20', value: '6' },
+  { label: '24', value: '7' },
 ];
 
 function TaxManagement() {
-  const [taxRules, setTaxRules] = useState(mockTaxRules);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const editorRef = useRef(null);
+  const [formData, setFormData] = useState(initialForm);
+  const [termsHtml, setTermsHtml] = useState('');
+  const [isSourceView, setIsSourceView] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
 
-  // Form State
-  const [form, setForm] = useState({
-    name: '',
-    code: '',
-    type: 'Percentage',
-    rate: '',
-    applyOn: 'Total Booking Amount',
-    status: 'Active',
-    description: ''
-  });
+  const handleFieldChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    if (!form.name || !form.code || !form.rate) {
-      alert('Please fill in all required fields marked with *');
+  const syncEditorContent = () => {
+    if (editorRef.current) {
+      setTermsHtml(editorRef.current.innerHTML);
+    }
+  };
+
+  const applyCommand = (command, value) => {
+    if (!editorRef.current || isSourceView) {
       return;
     }
 
-    const newRule = {
-      id: String(taxRules.length + 1),
-      name: form.name,
-      code: form.code,
-      rate: parseFloat(form.rate).toFixed(2),
-      type: form.type,
-      status: form.status
-    };
+    editorRef.current.focus();
 
-    setTaxRules([...taxRules, newRule]);
-    setShowAddForm(false);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setForm({
-      name: '',
-      code: '',
-      type: 'Percentage',
-      rate: '',
-      applyOn: 'Total Booking Amount',
-      status: 'Active',
-      description: ''
-    });
-  };
-
-  const deleteRule = (id) => {
-    if (window.confirm('Are you sure you want to delete this tax rule?')) {
-      setTaxRules(taxRules.filter(r => r.id !== id));
+    if (command === 'createLink') {
+      const url = window.prompt('Enter URL');
+      if (url) {
+        document.execCommand('createLink', false, url);
+      }
+    } else {
+      document.execCommand(command, false, value);
     }
+
+    syncEditorContent();
   };
 
-  const resetFilters = () => {
-    setSearch('');
-    setStatusFilter('All');
+  const handleToggleSource = () => {
+    if (!isSourceView) {
+      setTermsHtml(editorRef.current ? editorRef.current.innerHTML : '');
+    } else if (editorRef.current) {
+      editorRef.current.innerHTML = termsHtml;
+      editorRef.current.focus();
+    }
+
+    setIsSourceView((prev) => !prev);
   };
 
-  const filtered = taxRules.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) || r.code.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleSourceChange = (event) => {
+    setTermsHtml(event.target.value);
+  };
 
-  const totalCount = taxRules.length;
-  const activeCount = taxRules.filter(r => r.status === 'Active').length;
-  const inactiveCount = taxRules.filter(r => r.status === 'Inactive').length;
+  const handleSelectCommand = (command) => (event) => {
+    const { value } = event.target;
+    if (!value) {
+      return;
+    }
+
+    applyCommand(command, value);
+    event.target.selectedIndex = 0;
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setStatusMessage('Saved successfully.');
+
+    window.setTimeout(() => {
+      setStatusMessage('');
+    }, 2400);
+  };
 
   return (
-    <div style={{ padding: '24px 30px', color: '#0f172a', background: '#f8fafc', minHeight: '100%' }}>
-      
-      {!showAddForm ? (
-        <>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>Tax Management</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b', fontWeight: 500 }}>
-                Home &gt; Payment Management &gt; <span style={{ color: '#A51C49', fontWeight: 600 }}>Tax Management</span>
-              </p>
-            </div>
+    <section className="tax-management">
+      <div className="tax-heading">
+        <h2 className="tax-title">Tax Management</h2>
+        <span className="tax-underline" />
+      </div>
 
-            <button
-              onClick={() => setShowAddForm(true)}
-              style={{
-                background: '#A51C49',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(165, 28, 73, 0.2)'
-              }}
-            >
-              <Plus size={16} /> Add Tax Rule
-            </button>
+      <form className="tax-form" onSubmit={handleSubmit}>
+        <div className="tax-grid">
+          <div className="label-cell">Company Name</div>
+          <div className="input-cell">
+            <input
+              type="text"
+              name="companyName"
+              placeholder="Enter Company Name"
+              value={formData.companyName}
+              onChange={handleFieldChange}
+            />
+          </div>
+          <div className="label-cell">Registration No.</div>
+          <div className="input-cell">
+            <input
+              type="text"
+              name="registrationNo"
+              placeholder="Enter Registration No."
+              value={formData.registrationNo}
+              onChange={handleFieldChange}
+            />
+          </div>
+          <div className="label-cell">GST No.</div>
+          <div className="input-cell">
+            <input
+              type="text"
+              name="gstNo"
+              placeholder="GST No."
+              value={formData.gstNo}
+              onChange={handleFieldChange}
+            />
           </div>
 
-          {/* Stats Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '28px' }}>
-            <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#eff6ff', display: 'grid', placeItems: 'center', color: '#3b82f6' }}>
-                <Percent size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Total Tax Rules</span>
-                <h3 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 800 }}>{totalCount}</h3>
-              </div>
-            </div>
-
-            <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#dcfce7', display: 'grid', placeItems: 'center', color: '#15803d' }}>
-                <CheckCircle size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Active</span>
-                <h3 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 800 }}>{activeCount}</h3>
-              </div>
-            </div>
-
-            <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#b91c1c' }}>
-                <X size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Inactive</span>
-                <h3 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 800 }}>{inactiveCount}</h3>
-              </div>
-            </div>
+          <div className="label-cell">GST State Code</div>
+          <div className="input-cell">
+            <input
+              type="text"
+              name="gstStateCode"
+              placeholder="GST State Code"
+              value={formData.gstStateCode}
+              onChange={handleFieldChange}
+            />
+          </div>
+          <div className="label-cell">PAN</div>
+          <div className="input-cell">
+            <input
+              type="text"
+              name="pan"
+              placeholder="Enter PAN No."
+              value={formData.pan}
+              onChange={handleFieldChange}
+            />
+          </div>
+          <div className="label-cell">Email</div>
+          <div className="input-cell">
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter Email ID"
+              value={formData.email}
+              onChange={handleFieldChange}
+            />
           </div>
 
-          {/* Filters */}
-          <div style={{
-            background: '#ffffff',
-            padding: '16px 24px',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            marginBottom: '20px',
-            display: 'flex',
-            gap: '16px',
-            alignItems: 'center'
-          }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-              <input
-                type="text"
-                placeholder="Search tax name or code..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem', outline: 'none' }}
-              />
-              <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-            </div>
-
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem', background: '#fff', fontWeight: 500 }}
-            >
-              <option value="All">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-
-            <button
-              onClick={resetFilters}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '0.82rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
-            >
-              Reset
-            </button>
+          <div className="label-cell">Phone</div>
+          <div className="input-cell">
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Enter Phone No."
+              value={formData.phone}
+              onChange={handleFieldChange}
+            />
+          </div>
+          <div className="label-cell">HSN Code</div>
+          <div className="input-cell">
+            <input
+              type="text"
+              name="hsnCode"
+              placeholder="Enter HSN Code"
+              value={formData.hsnCode}
+              onChange={handleFieldChange}
+            />
+          </div>
+          <div className="label-cell">GST Percentage</div>
+          <div className="input-cell">
+            <input
+              type="number"
+              name="gstPercentage"
+              placeholder="Enter GST Percentage"
+              value={formData.gstPercentage}
+              onChange={handleFieldChange}
+            />
           </div>
 
-          {/* Table */}
-          <div style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.01)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: '#fff1f2', borderBottom: '1px solid #ffe4e6' }}>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49', width: '60px' }}>#</th>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49' }}>Tax Name</th>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49', width: '180px' }}>Tax Code</th>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49', width: '140px', textAlign: 'right' }}>Rate (%)</th>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49', width: '180px' }}>Type</th>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49', width: '130px' }}>Status</th>
-                  <th style={{ padding: '14px 16px', fontWeight: 700, color: '#A51C49', width: '100px', textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r, idx) => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '14px 16px', color: '#64748b' }}>{idx + 1}</td>
-                    <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{r.name}</td>
-                    <td style={{ padding: '14px 16px', color: '#334155' }}>{r.code}</td>
-                    <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>{r.rate}%</td>
-                    <td style={{ padding: '14px 16px', color: '#475569', fontWeight: 500 }}>{r.type}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span style={{
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        background: r.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                        color: r.status === 'Active' ? '#15803d' : '#b91c1c'
-                      }}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button style={{ border: '1px solid #cbd5e1', background: '#fff', padding: '5px', borderRadius: '6px', cursor: 'pointer', color: '#475569', display: 'inline-flex' }}>
-                          <Pencil size={13} />
-                        </button>
-                        <button
-                          onClick={() => deleteRule(r.id)}
-                          style={{ border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.04)', padding: '5px', borderRadius: '6px', cursor: 'pointer', color: '#ef4444', display: 'inline-flex' }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : (
-        /* Add Tax Rule view */
-        <div>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>Add Tax Rule</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b', fontWeight: 500 }}>
-                Home &gt; Payment Management &gt; Tax Management &gt; <span style={{ color: '#A51C49', fontWeight: 600 }}>Add Tax Rule</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Form Card */}
-          <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', padding: '30px' }}>
-            
-            <h4 style={{ margin: '0 0 20px', color: '#A51C49', fontSize: '0.92rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-              Tax Rule Details
-            </h4>
-            
-            <form onSubmit={handleCreate}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px 32px', marginBottom: '28px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
-                  TAX NAME *
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. GST 18%"
-                    value={form.name}
-                    onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', boxSizing: 'border-box' }}
-                  />
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
-                  TAX CODE *
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. GST18"
-                    value={form.code}
-                    onChange={e => setForm(prev => ({ ...prev, code: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', boxSizing: 'border-box' }}
-                  />
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
-                  TAX TYPE *
-                  <select
-                    value={form.type}
-                    onChange={e => setForm(prev => ({ ...prev, type: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', background: '#fff' }}
-                  >
-                    <option value="Percentage">Percentage</option>
-                    <option value="Fixed Amount">Fixed Amount</option>
-                  </select>
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
-                  TAX RATE (%) *
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="e.g. 18.00"
-                    value={form.rate}
-                    onChange={e => setForm(prev => ({ ...prev, rate: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', boxSizing: 'border-box' }}
-                  />
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
-                  APPLY ON *
-                  <select
-                    value={form.applyOn}
-                    onChange={e => setForm(prev => ({ ...prev, applyOn: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', background: '#fff' }}
-                  >
-                    <option value="Total Booking Amount">Total Booking Amount</option>
-                    <option value="Base Fare Only">Base Fare Only</option>
-                  </select>
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
-                  STATUS *
-                  <select
-                    value={form.status}
-                    onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', background: '#fff' }}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </label>
-
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239', gridColumn: '1 / -1' }}>
-                  DESCRIPTION (OPTIONAL)
-                  <textarea
-                    placeholder="Enter tax rule description..."
-                    rows={2}
-                    value={form.description}
-                    onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-                    style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
-                  />
-                </label>
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
-                <button
-                  type="button"
-                  onClick={() => { setShowAddForm(false); resetForm(); }}
-                  style={{ padding: '10px 24px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{ padding: '10px 28px', borderRadius: '8px', border: 'none', background: '#A51C49', color: '#ffffff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(165, 28, 73, 0.15)' }}
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-
+          <div className="label-cell">Address</div>
+          <div className="input-cell span-5">
+            <input
+              type="text"
+              name="address"
+              placeholder="Enter Address"
+              value={formData.address}
+              onChange={handleFieldChange}
+            />
           </div>
         </div>
-      )}
 
-    </div>
+        <div className="terms-header">
+          <span className="terms-title">Terms And Condition</span>
+          <span className="terms-fill" />
+        </div>
+
+        <div className="editor-shell">
+          <div className="editor-toolbar">
+            <button
+              type="button"
+              className={`tool-btn ${isSourceView ? 'active' : ''}`}
+              onClick={handleToggleSource}
+            >
+              Source
+            </button>
+            <span className="tool-divider" />
+            <button type="button" className="tool-btn" onClick={() => applyCommand('undo')}>
+              Undo
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('redo')}>
+              Redo
+            </button>
+            <span className="tool-divider" />
+            <button type="button" className="tool-btn" onClick={() => applyCommand('cut')}>
+              Cut
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('copy')}>
+              Copy
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('paste')}>
+              Paste
+            </button>
+            <span className="tool-divider" />
+            <button type="button" className="tool-btn" onClick={() => applyCommand('createLink')}>
+              Link
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('unlink')}>
+              Unlink
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('removeFormat')}>
+              Clear
+            </button>
+          </div>
+
+          <div className="editor-toolbar secondary">
+            <select
+              className="tool-select"
+              defaultValue=""
+              onChange={handleSelectCommand('formatBlock')}
+              disabled={isSourceView}
+            >
+              <option value="" disabled>Styles</option>
+              {styleOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className="tool-select"
+              defaultValue=""
+              onChange={handleSelectCommand('formatBlock')}
+              disabled={isSourceView}
+            >
+              <option value="" disabled>Format</option>
+              {formatOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className="tool-select"
+              defaultValue=""
+              onChange={handleSelectCommand('fontName')}
+              disabled={isSourceView}
+            >
+              <option value="" disabled>Font</option>
+              {fontOptions.map((font) => (
+                <option key={font} value={font}>
+                  {font}
+                </option>
+              ))}
+            </select>
+            <select
+              className="tool-select"
+              defaultValue=""
+              onChange={handleSelectCommand('fontSize')}
+              disabled={isSourceView}
+            >
+              <option value="" disabled>Size</option>
+              {sizeOptions.map((size) => (
+                <option key={size.value} value={size.value}>
+                  {size.label}
+                </option>
+              ))}
+            </select>
+
+            <span className="tool-divider" />
+            <button type="button" className="tool-btn bold" onClick={() => applyCommand('bold')}>
+              B
+            </button>
+            <button type="button" className="tool-btn italic" onClick={() => applyCommand('italic')}>
+              I
+            </button>
+            <button type="button" className="tool-btn underline" onClick={() => applyCommand('underline')}>
+              U
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('strikeThrough')}>
+              S
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('superscript')}>
+              X2
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('subscript')}>
+              x2
+            </button>
+
+            <span className="tool-divider" />
+            <button type="button" className="tool-btn" onClick={() => applyCommand('insertUnorderedList')}>
+              UL
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('insertOrderedList')}>
+              OL
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('outdent')}>
+              Out
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('indent')}>
+              In
+            </button>
+
+            <span className="tool-divider" />
+            <button type="button" className="tool-btn" onClick={() => applyCommand('justifyLeft')}>
+              Left
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('justifyCenter')}>
+              Center
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('justifyRight')}>
+              Right
+            </button>
+            <button type="button" className="tool-btn" onClick={() => applyCommand('justifyFull')}>
+              Justify
+            </button>
+          </div>
+
+          <div className="editor-body">
+            {isSourceView ? (
+              <textarea
+                className="editor-source"
+                value={termsHtml}
+                onChange={handleSourceChange}
+                spellCheck={false}
+              />
+            ) : (
+              <div
+                ref={editorRef}
+                className="editor-area"
+                contentEditable
+                suppressContentEditableWarning
+                onInput={syncEditorContent}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="tax-actions">
+          <button type="submit" className="submit-btn">Submit</button>
+          {statusMessage ? <span className="status-text">{statusMessage}</span> : null}
+        </div>
+      </form>
+    </section>
   );
 }
 

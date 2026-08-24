@@ -1,3 +1,7 @@
+import { clearFlightBookingFlowState } from "../pages/booking/flightBookingFlowStore.js";
+import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
+import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
+
 const FALLBACK_API_BASE_URL =
   "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
@@ -52,8 +56,17 @@ const ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT =
   "/api/admin/flight-convenience-fee-rules";
 
 
-// ─── SRDV API Root ─────────────────────────────────────────────────────────
+// â”€â”€â”€ SRDV API Root â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SRDV_ROOT = "/api/flight/srdv";
+
+const FLIGHT_API_CREDENTIALS = {
+  ClientId: "180232",
+  UserName: "PickNBk6",
+  Password: "PickNB@486",
+  ApiToken: "PickNB@486#170$",
+  EndUserIp: "103.86.74.125"
+};
+
 
 function toAbsoluteUrl(urlOrPath) {
   if (/^https?:\/\//i.test(urlOrPath)) {
@@ -125,7 +138,7 @@ function extractFlightSearchList(data, extractAllLegs = false) {
       if (extractAllLegs) {
         return rawList; // Return the full array of arrays
       }
-      // It's an array of arrays — flatten the first segment
+      // It's an array of arrays â€” flatten the first segment
       return rawList[0].flat(Infinity);
     }
     return rawList.flat(Infinity);
@@ -134,7 +147,7 @@ function extractFlightSearchList(data, extractAllLegs = false) {
   return [];
 }
 
-function shouldUseFallbackFlights(error) {
+function shouldUseFallbackFlights() {
   return false;
 }
 
@@ -270,9 +283,6 @@ function extractSegmentsList(record) {
     }
   }
   if (Array.isArray(raw)) {
-    if (raw.length > 0 && Array.isArray(raw[0])) {
-      return raw[0].flat(Infinity);
-    }
     return raw.flat(Infinity);
   }
   return [];
@@ -452,10 +462,15 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     ""
   ).trim();
 
-  const exactResultIndex = String(
+  const rawResultIndex = String(
     pickFirst(primaryFare, ["ResultIndex", "resultIndex", "ResultId", "resultId"], "") ||
     pickFirst(record, ["resultIndex", "ResultIndex", "resultId", "ResultId"], "")
   ).trim();
+
+  const cleanCandidate = cleanResultIndex(rawResultIndex);
+  const exactResultIndex = cleanCandidate || rawResultIndex || String(index + 1);
+
+  console.log("[DEBUG ResultIndex trace]", { rawResultIndex, cleanCandidate, exactResultIndex });
 
   const srdvType = pickFirst(record, ["srdvType", "SrdvType"], null) || "MixAPI";
   const isLcc = pickFirst(primaryFare, ["IsLCC", "isLcc", "IsLcc"], null) ?? pickFirst(record, ["isLcc", "IsLcc"], false);
@@ -490,7 +505,7 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     );
 
   const rawId = pickFirst(primaryFare, ["Id", "id"], null) || pickFirst(record, ["id", "Id", "flightId", "FlightId"], null) || exactResultIndex;
-  const finalResultIndex = exactResultIndex || (rawId ? String(rawId) : `flight-${index + 1}`);
+  const finalResultIndex = exactResultIndex;
 
   const isRefundable = pickFirst(primaryFare, ["IsRefundable", "isRefundable"], null) ?? pickFirst(record, ["isRefundable", "IsRefundable"], true);
 
@@ -518,10 +533,12 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
   }));
 
   return {
-    id: finalResultIndex,
+    id: `flight-${srdvType || "mix"}-${srdvIndex || "1"}-${finalResultIndex}-${index}`,
     rawId: finalResultIndex,
     traceId: exactTraceId,
     resultIndex: finalResultIndex,
+    srdvResultIndex: String(exactResultIndex || finalResultIndex),
+    rawResultIndex: String(exactResultIndex || finalResultIndex),
     srdvIndex: String(srdvIndex),
     srdvType: String(srdvType),
     airline: String(
@@ -618,7 +635,7 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     brandedFareLabel: pickFirst(record, ["brandedFareLabel", "BrandedFareLabel"], null),
     isLcc: Boolean(isLcc),
     isRefundable: Boolean(isRefundable),
-    segmentsJson: pickFirst(record, ["segmentsJson", "SegmentsJson"], null),
+    segments: segs,
   };
 }
 
@@ -739,7 +756,7 @@ function normalizeFlightBookingRecord(record) {
     record?.details?.TraceId ||
     record?.itinerary?.TraceId ||
     record?.flight?.traceId ||
-    (typeof window !== "undefined" ? window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") || window.localStorage.getItem("last_booking_trace_id") || window.localStorage.getItem("flight_trace_id") || window.localStorage.getItem("TraceId") || window.localStorage.getItem("traceId") : "") ||
+    (typeof window !== "undefined" ? window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") : "") ||
     ""
   ).trim();
 
@@ -780,7 +797,7 @@ function normalizeFlightBookingRecord(record) {
     ),
     seatsBooked:
       Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], null)) ||
-      seatsBookedFallback,
+    seatsBookedFallback,
     totalPriceInr:
       Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr", "totalFare", "totalPaid"], 0)) || 0,
     status: String(pickFirst(record, ["status", "Status"], "Confirmed") || "Confirmed"),
@@ -789,11 +806,122 @@ function normalizeFlightBookingRecord(record) {
     cancellationReason: String(
       pickFirst(record, ["cancellationReason", "CancellationReason"], "") || ""
     ),
-    tripNumber: String(
-      pickFirst(record, ["tripNumber", "TripNumber", "flightNumber", "FlightNumber"], "--") ||
-      "--"
+    isMultiCity: Boolean(
+      record.isMultiCity ||
+      record.isMultiCityBooking ||
+      record.tripType === "multicity" ||
+      (Array.isArray(record.allTickets) && record.allTickets.length > 1) ||
+      (Array.isArray(record.multiCityLegs) && record.multiCityLegs.length > 1) ||
+      (Array.isArray(record.selectedLegs) && record.selectedLegs.length > 1) ||
+      (Array.isArray(record.segments) && record.segments.length > 1)
     ),
     passengers,
+    segments: (() => {
+      const mapSegItem = (s, idx) => {
+        if (!s || typeof s !== "object") return null;
+        const item = Array.isArray(s) ? s[0] : s;
+        if (!item) return null;
+
+        const originObj = item.Origin || item.origin || {};
+        const destObj = item.Destination || item.destination || {};
+        const airlineObj = item.Airline || item.airline || {};
+        const originAirport = originObj.Airport || originObj.airport || {};
+        const destAirport = destObj.Airport || destObj.airport || {};
+
+        const fromCity = String(
+          item.fromCity || item.from || item.source || item.sourceCode || item.SourceCode ||
+          originAirport.CityName || originAirport.CityCode || originObj.CityName || originObj.CityCode || originObj.AirportCode ||
+          ""
+        ).trim();
+
+        const toCity = String(
+          item.toCity || item.to || item.destination || item.destinationCode || item.DestinationCode ||
+          destAirport.CityName || destAirport.CityCode || destObj.CityName || destObj.CityCode || destObj.AirportCode ||
+          ""
+        ).trim();
+
+        const providerName = String(
+          item.providerName || item.airline || item.airlineName || item.AirlineName ||
+          airlineObj.AirlineName || airlineObj.AirlineCode || record.providerName || "SRDV Flight"
+        ).trim();
+
+        const flightNum = airlineObj.FlightNumber || item.flightNumber || item.flightNo || item.tripNumber || item.FlightNumber;
+        const airlineCode = airlineObj.AirlineCode || item.airlineCode || item.AirlineCode || "";
+        const tripNumber = String(
+          flightNum ? (airlineCode && !String(flightNum).startsWith(airlineCode) ? `${airlineCode} ${flightNum}` : flightNum) : (record.tripNumber || "--")
+        ).trim();
+
+        const departureTimeUtc =
+          item.departureTimeUtc || item.departureTime || item.departureDate || item.departDate ||
+          originObj.DepTime || originObj.depTime || record.departureTimeUtc || null;
+
+        return {
+          fromCity: fromCity || (idx === 0 ? record.fromCity : ""),
+          toCity: toCity || (idx === 0 ? record.toCity : ""),
+          providerName: providerName || "SRDV Flight",
+          tripNumber: tripNumber || "--",
+          departureTimeUtc,
+          status: item.status || record.status || "Active"
+        };
+      };
+
+      if (Array.isArray(record.allTickets) && record.allTickets.length > 0) {
+        return record.allTickets.map(mapSegItem).filter(Boolean);
+      }
+
+      if (Array.isArray(record.multiCityLegs) && record.multiCityLegs.length > 0) {
+        return record.multiCityLegs.map(mapSegItem).filter(Boolean);
+      }
+
+      if (Array.isArray(record.selectedLegs) && record.selectedLegs.length > 0) {
+        return record.selectedLegs.map(mapSegItem).filter(Boolean);
+      }
+
+      let rawSegs = pickFirst(record, ["segments", "Segments", "sectors", "Sectors", "legs", "Legs"], null);
+      if (Array.isArray(rawSegs) && rawSegs.length > 0) {
+        const flattened = [];
+        rawSegs.forEach(item => {
+          if (Array.isArray(item)) {
+            item.forEach(sub => flattened.push(sub));
+          } else {
+            flattened.push(item);
+          }
+        });
+        return flattened.map(mapSegItem).filter(Boolean);
+      }
+
+      if (record.onwardTicket && record.returnTicket) {
+        return [
+          {
+            fromCity: String(record.onwardTicket.fromCity || record.fromCity || ""),
+            toCity: String(record.onwardTicket.toCity || record.toCity || ""),
+            providerName: String(record.onwardTicket.providerName || record.providerName || "SRDV Flight"),
+            tripNumber: String(record.onwardTicket.tripNumber || record.tripNumber || "--"),
+            departureTimeUtc: record.onwardTicket.departureTimeUtc || record.departureTimeUtc,
+            status: record.onwardTicket.status || record.status || "Active",
+          },
+          {
+            fromCity: String(record.returnTicket.fromCity || record.toCity || ""),
+            toCity: String(record.returnTicket.toCity || record.fromCity || ""),
+            providerName: String(record.returnTicket.providerName || record.providerName || "SRDV Flight"),
+            tripNumber: String(record.returnTicket.tripNumber || record.tripNumber || "--"),
+            departureTimeUtc: record.returnTicket.departureTimeUtc || record.departureTimeUtc,
+            status: record.returnTicket.status || record.status || "Active",
+          }
+        ];
+      }
+
+      return [
+        {
+          fromCity: String(pickFirst(record, ["fromCity", "FromCity", "source", "from"], "") || ""),
+          toCity: String(pickFirst(record, ["toCity", "ToCity", "destination", "to"], "") || ""),
+          providerName: String(pickFirst(record, ["providerName", "ProviderName", "airline"], "SRDV Flight") || "SRDV Flight"),
+          tripNumber: String(pickFirst(record, ["tripNumber", "TripNumber", "flightNumber"], "--") || "--"),
+          departureTimeUtc: pickFirst(record, ["departureTimeUtc", "DepartureTimeUtc", "departureTime"], null),
+          status: String(pickFirst(record, ["status", "Status"], "Active") || "Active"),
+        }
+      ];
+    })(),
   };
 }
 
@@ -1197,7 +1325,7 @@ function normalizeErrorMessage(payload) {
   return "";
 }
 
-async function requestJson(urlOrPath, options = {}) {
+export async function requestJson(urlOrPath, options = {}) {
   const {
     skipAuth = false,
     userId: _userId,
@@ -1221,7 +1349,10 @@ async function requestJson(urlOrPath, options = {}) {
     headers["ngrok-skip-browser-warning"] = "true";
   }
 
-  const response = await fetch(toAbsoluteUrl(urlOrPath), {
+  const fullUrl = toAbsoluteUrl(urlOrPath);
+  const method = (fetchOptions.method || "GET").toUpperCase();
+
+  const response = await fetch(fullUrl, {
     ...fetchOptions,
     headers,
   });
@@ -1240,487 +1371,1631 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
-function mapCabinClassToCode(cabinClass) {
-  const clean = String(cabinClass || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  switch (clean) {
-    case "economy":
-      return "2";
-    case "premiumeconomy":
-      return "3";
-    case "business":
-      return "4";
-    case "premiumbusiness":
-      return "5";
-    case "first":
-    case "firstclass":
-      return "6";
-    default:
-      return "1"; // All
+// ============================================================================
+// SANITIZED LOGGING & TELEMETRY (Aligned with React Native FlightService)
+// ============================================================================
+
+export function sanitizeForLog(obj) {
+  if (!obj || typeof obj !== "object") return obj;
+  try {
+    const copy = Array.isArray(obj) ? [...obj] : { ...obj };
+    const sensitiveKeys = [
+      "password", "Password", "apiToken", "ApiToken", "authorization",
+      "Authorization", "token", "JWT", "cardNumber", "cvv", "upiId", "secret"
+    ];
+    for (const key of Object.keys(copy)) {
+      if (sensitiveKeys.some((s) => s.toLowerCase() === key.toLowerCase())) {
+        copy[key] = "[REDACTED]";
+      } else if (typeof copy[key] === "object" && copy[key] !== null) {
+        copy[key] = sanitizeForLog(copy[key]);
+      }
+    }
+    return copy;
+  } catch {
+    return "[REDACTED]";
   }
 }
 
-const CITY_TO_IATA = {
-  hyderabad: "HYD",
-  bengaluru: "BLR",
-  bangalore: "BLR",
-  mumbai: "BOM",
-  delhi: "DEL",
-  "new delhi": "DEL",
-  goa: "GOI",
-  jaipur: "JAI",
-  chennai: "MAA",
-  kolkata: "CCU",
-  dubai: "DXB",
-  dxb: "DXB",
-  london: "LHR",
-  singapore: "SIN",
-  bangkok: "BKK",
-  "kuala lumpur": "KUL",
-  doha: "DOH",
-  abu: "AUH",
-  "abu dhabi": "AUH",
-  sharjah: "SHJ",
-  muscat: "MCT",
-  jeddah: "JED",
-  riyadh: "RUH",
-};
+function logFlightApiRequest(method, url, payload) {
+  console.log(`\n==================================================`);
+  console.log(`ðŸš€ [FLIGHT API REQUEST] ${method.toUpperCase()} ${url}`);
+  if (payload) {
+    console.log("ðŸ“¦ Request Payload:", JSON.stringify(sanitizeForLog(payload), null, 2));
+  }
+  console.log(`==================================================\n`);
+}
 
-function resolveCityCode(cityInput, fallback = "DEL") {
-  if (!cityInput) return fallback;
-  const cleanInput = String(cityInput).trim().toLowerCase();
+function logFlightApiResponse(method, url, status, data) {
+  console.log(`\n==================================================`);
+  console.log(`âœ… [FLIGHT API RESPONSE] ${method.toUpperCase()} ${url} (Status: ${status})`);
+  if (data) {
+    console.log("ðŸ“¥ Response Data:", JSON.stringify(sanitizeForLog(data), null, 2));
+  }
+  console.log(`==================================================\n`);
+}
 
-  const bracketMatch = cleanInput.match(/\(([^)]+)\)/);
-  if (bracketMatch && bracketMatch[1].trim().length === 3) {
-    return bracketMatch[1].trim().toUpperCase();
+function logFlightApiError(method, url, error) {
+  console.error(`\n==================================================`);
+  console.error(`âŒ [FLIGHT API ERROR] ${method.toUpperCase()} ${url}`);
+  console.error("âš ï¸ Error Message:", error?.message || error);
+  console.error(`==================================================\n`);
+}
+
+// ============================================================================
+// HELPER MAPPERS & UTILITIES
+// ============================================================================
+
+
+
+export function toCabinClassCode(cabinClassStr) {
+  if (typeof cabinClassStr === "number" && !isNaN(cabinClassStr)) {
+    return cabinClassStr;
+  }
+  const text = String(cabinClassStr || "").trim().toLowerCase();
+  if (text === "1" || text === "all") return 1;
+  if (text === "2" || (text.includes("economy") && !text.includes("premium"))) return 2;
+  if (text === "3" || (text.includes("premium") && text.includes("economy"))) return 3;
+  if (text === "4" || (text.includes("business") && !text.includes("premium"))) return 4;
+  if (text === "5" || (text.includes("premium") && text.includes("business"))) return 5;
+  if (text === "6" || text.includes("first")) return 6;
+  return 2; // Default to Economy (2)
+}
+
+export function mapCabinClassToCode(cabinClass) {
+  return toCabinClassCode(cabinClass);
+}
+
+export function formatIsoDateTime(dateVal, fallbackTime = "00:00:00") {
+  if (!dateVal) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${fallbackTime}`;
+  }
+  if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+    const yyyy = dateVal.getFullYear();
+    const mm = String(dateVal.getMonth() + 1).padStart(2, "0");
+    const dd = String(dateVal.getDate()).padStart(2, "0");
+    const hh = String(dateVal.getHours()).padStart(2, "0");
+    const min = String(dateVal.getMinutes()).padStart(2, "0");
+    const ss = String(dateVal.getSeconds()).padStart(2, "0");
+    const timeStr = `${hh}:${min}:${ss}` === "00:00:00" ? fallbackTime : `${hh}:${min}:${ss}`;
+    return `${yyyy}-${mm}-${dd}T${timeStr}`;
+  }
+  const str = String(dateVal).trim();
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(str)) {
+    return str;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const datePart = str.slice(0, 10);
+    const timeMatch = str.match(/T(\d{2}:\d{2}:\d{2})/);
+    const timePart = timeMatch ? timeMatch[1] : fallbackTime;
+    return `${datePart}T${timePart}`;
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const yyyy = parsed.getFullYear();
+    const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+    const dd = String(parsed.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${fallbackTime}`;
+  }
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${fallbackTime}`;
+}
+
+export function cleanResultIndex(rawIdx) {
+  if (!rawIdx) return "";
+  return String(rawIdx)
+    .split(",")
+    .map((part) => {
+      let s = String(part).trim();
+      s = s.replace(/\s+/g, "");
+      return s;
+    })
+    .filter(Boolean)
+    .join(",");
+}
+
+export function resolveSeatNumber(seat) {
+  if (!seat) return "";
+  const raw = typeof seat === "object"
+    ? (seat.SeatNumber || seat.seatNumber || seat.label || seat.seatLabel || seat.Code || seat.code || "")
+    : String(seat);
+  const str = String(raw).trim();
+  const beforeSeKey = str.split(/sekey/i)[0];
+  const match = beforeSeKey.match(/^([0-9]{1,3}[A-Z])/i) || str.match(/^([0-9]{1,3}[A-Z])/i);
+  return match ? match[1].toUpperCase() : (beforeSeKey || str);
+}
+
+export function resolveAirlineCode(airline, fallback = "6E") {
+  if (!airline) return fallback;
+  const str = String(airline).trim().toUpperCase();
+  if (str.length === 2 && str !== "IN") return str;
+
+  const map = {
+    INDIGO: "6E",
+    "AIR INDIA EXPRESS": "IX",
+    "AI EXPRESS": "IX",
+    "AIR INDIA": "AI",
+    SPICEJET: "SG",
+    "AKASA AIR": "QP",
+    AKASA: "QP",
+    VISTARA: "UK",
+    EMIRATES: "EK",
+    "QATAR AIRWAYS": "QR",
+    "THAI AIRWAYS": "TG",
+    "SINGAPORE AIRLINES": "SQ",
+    "BRITISH AIRWAYS": "BA",
+    "ETIHAD AIRWAYS": "EY",
+    "GULF AIR": "GF",
+    "OMAN AIR": "WY",
+    "SRILANKAN AIRLINES": "UL",
+    "MALAYSIA AIRLINES": "MH",
+    "FLYDUBAI": "FZ",
+    "AIR ARABIA": "G9",
+    "SAUDIA": "SV",
+    "KUWAIT AIRWAYS": "KU",
+  };
+
+  for (const [name, code] of Object.entries(map)) {
+    if (str.includes(name)) return code;
   }
 
-  if (cleanInput.length === 3) {
-    return cleanInput.toUpperCase();
+  const match = str.match(/^([A-Z0-9]{2})/i);
+  if (match && match[1].toUpperCase() !== "IN") {
+    return match[1].toUpperCase();
   }
-
-  const cityNameOnly = cleanInput.split(",")[0].split("(")[0].trim();
-  if (CITY_TO_IATA[cityNameOnly]) {
-    return CITY_TO_IATA[cityNameOnly];
-  }
-
-  const cleanFallback = cityNameOnly.replace(/[^a-z]/g, "");
-  if (cleanFallback.length >= 3) {
-    return cleanFallback.slice(0, 3).toUpperCase();
-  }
-
   return fallback;
 }
 
-export const FLIGHT_API_CREDENTIALS = {
-  UserId: process.env.REACT_APP_SRDV_USER_ID || "1",
-  EndUserIp: process.env.REACT_APP_SRDV_END_USER_IP || "103.86.74.125",
-  ClientId: process.env.REACT_APP_SRDV_CLIENT_ID || "180170",
-  UserName: process.env.REACT_APP_SRDV_USER_NAME || "PickNBk6",
-  Password: process.env.REACT_APP_SRDV_PASSWORD || "PickNB@486",
-  ApiToken: process.env.REACT_APP_SRDV_API_TOKEN || "PickNB@486#170$"
-};
+export function resolveFlightNumber(flightNum) {
+  if (!flightNum) return "";
+  const str = String(flightNum).trim();
+  const withoutPrefix = str
+    .replace(/^[A-Z0-9]{1,2}[A-Z]\s*[-]?\s*/i, "")
+    .replace(/^[A-Z]{2,3}\s*[-]?\s*/i, "");
+  const match = withoutPrefix.match(/\d+/) || str.match(/\d+/);
+  return match ? match[0] : "";
+}
 
-export async function searchFlights({ from, to, date, returnDate, tripType, travelClass, adults = 1, children = 0, infants = 0, legs }) {
-  const isTwoWay = tripType === "twoway" || Boolean(returnDate);
-  const isMultiCity = tripType === "multicity" || (Array.isArray(legs) && legs.length > 0) || (typeof legs === "string" && legs.length > 0);
-  const datePart = String(date || "").trim();
-  const PreferredDepartureTime = datePart.includes("T") ? datePart : `${datePart}T00:00:00`;
-  const PreferredDepartureTimeMax = datePart.includes("T") ? datePart : `${datePart}T23:59:59`;
+export function resolveSrdvIndexFromResultIndex(resultIndex, fallback = "2") {
+  if (!resultIndex) return fallback;
+  const firstToken = String(resultIndex).split(",")[0].trim();
+  const clean = firstToken.replace(/^IB_/i, "");
+  const match = clean.match(/^(\d+)-/);
+  return match ? match[1] : fallback;
+}
 
-  let segments = [];
-  let journeyTypeNum = 1;
+// ============================================================================
+// RESULT NORMALIZER (Aligned with React Native mapFlightResults)
+// ============================================================================
+
+export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
+  const resObj = data?.Response || data?.data?.Response || data;
+  const traceId = String(resObj?.TraceId || resObj?.traceId || data?.TraceId || data?.traceId || "");
+
+  const mapSingleItem = (item, idx, defaultFrom, defaultTo, legIndex = 0, tripDirection = "outbound") => {
+    const rawSegments = Array.isArray(item?.Segments?.[0])
+      ? item.Segments[0]
+      : Array.isArray(item?.Segments)
+        ? item.Segments
+        : Array.isArray(item?.segments)
+          ? item.segments
+          : [item?.segment || item?.Segments?.[0]].filter(Boolean);
+
+    const firstSegment = rawSegments[0] || {};
+    const lastSegment = rawSegments[rawSegments.length - 1] || firstSegment;
+    const stops = Math.max(0, rawSegments.length - 1);
+    const connectingAirports = rawSegments.slice(0, -1).map(s => s?.Destination?.AirportCode || s?.Destination?.CityName).filter(Boolean);
+    const layoverSummary = stops > 0 ? `${stops} Stop${stops > 1 ? "s" : ""} (via ${connectingAirports.join(", ")})` : "Non-stop";
+
+    const fareData = item?.FareDataMultiple?.[0] || item?.fareData || {};
+    const fareSegment = fareData?.FareSegments?.[0] || {};
+    const fareObj = fareData?.Fare || item?.Fare || {};
+
+    const airlineName =
+      firstSegment?.Airline?.AirlineName ||
+      fareSegment?.AirlineName ||
+      item?.airlineName ||
+      item?.airline ||
+      "Airline";
+
+    const airlineCode =
+      firstSegment?.Airline?.AirlineCode ||
+      fareSegment?.AirlineCode ||
+      item?.airlineCode ||
+      "";
+
+    const flightNumber =
+      firstSegment?.Airline?.FlightNumber ||
+      fareSegment?.FlightNumber ||
+      item?.flightNumber ||
+      item?.flightNo ||
+      "";
+
+    const allFlightNumbers = rawSegments
+      .map(s => s?.Airline?.FlightNumber || s?.FlightNumber || s?.AirlineNumber)
+      .filter(Boolean)
+      .join(" / ") || flightNumber;
+
+    const fromCity =
+      firstSegment?.Origin?.CityName ||
+      firstSegment?.Origin?.Airport?.CityName ||
+      fareSegment?.FromCity ||
+      firstSegment?.Origin?.AirportCode ||
+      defaultFrom ||
+      fromCode ||
+      "";
+
+    const fromAirportCode =
+      firstSegment?.Origin?.AirportCode ||
+      firstSegment?.Origin?.Airport?.AirportCode ||
+      defaultFrom ||
+      fromCode ||
+      "";
+
+    const toCity =
+      lastSegment?.Destination?.CityName ||
+      lastSegment?.Destination?.Airport?.CityName ||
+      fareSegment?.ToCity ||
+      lastSegment?.Destination?.AirportCode ||
+      defaultTo ||
+      toCode ||
+      "";
+
+    const toAirportCode =
+      lastSegment?.Destination?.AirportCode ||
+      lastSegment?.Destination?.Airport?.AirportCode ||
+      defaultTo ||
+      toCode ||
+      "";
+
+    const fromAirportName =
+      firstSegment?.Origin?.AirportName ||
+      firstSegment?.Origin?.Airport?.AirportName ||
+      firstSegment?.Origin?.Airport?.Name ||
+      fareSegment?.FromAirportName ||
+      "";
+
+    const toAirportName =
+      lastSegment?.Destination?.AirportName ||
+      lastSegment?.Destination?.Airport?.AirportName ||
+      lastSegment?.Destination?.Airport?.Name ||
+      fareSegment?.ToAirportName ||
+      "";
+
+    const depTime = firstSegment?.DepTime || item?.departureTimeIst || item?.departureTime || "";
+    const arrTime = lastSegment?.ArrTime || item?.arrivalTimeIst || item?.arrivalTime || "";
+    const duration =
+      Number(item?.AccumulatedDuration || item?.Duration) ||
+      rawSegments.reduce((sum, s) => sum + (Number(s?.Duration) || 0) + (Number(s?.GroundTime) || 0), 0) ||
+      60;
+
+    const offeredFare = Number(
+      fareData?.B2CFinalFare ||
+      item?.B2CFinalFare ||
+      fareData?.B2CPublishedFare ||
+      item?.B2CPublishedFare ||
+      fareData?.OfferedFare ||
+      fareObj?.OfferedFare ||
+      fareObj?.PublishedFare ||
+      fareObj?.B2CFinalFare ||
+      fareObj?.B2CPublishedFare ||
+      item?.OfferedFare ||
+      item?.offeredFare ||
+      item?.displayFare ||
+      item?.Price ||
+      0
+    );
+
+    const baseFare = Number(fareObj?.BaseFare || fareData?.Fare?.BaseFare || item?.baseFare || offeredFare);
+    const tax = Number(fareObj?.Tax || fareData?.Fare?.Tax || item?.tax || 0);
+
+    const fareOptions = Array.isArray(item?.FareDataMultiple)
+      ? item.FareDataMultiple.map((fd) => {
+          const optFare = fd?.Fare || {};
+          const optSegments = fd?.FareSegments || [];
+          const optOffered = Number(
+            fd?.B2CFinalFare ||
+            optFare?.B2CFinalFare ||
+            fd?.B2CPublishedFare ||
+            optFare?.B2CPublishedFare ||
+            fd?.OfferedFare ||
+            optFare?.OfferedFare ||
+            optFare?.PublishedFare ||
+            0
+          );
+          return {
+            srdvIndex: String(fd?.SrdvIndex || "2"),
+            resultIndex: String(fd?.ResultIndex || ""),
+            source: fd?.Source || "Publish",
+            buttonColor: fd?.ButtonColor || "#0000ff",
+            textColor: fd?.TextColor || "#ffffff",
+            isLcc: Boolean(fd?.IsLCC !== undefined ? fd.IsLCC : (airlineCode ? ["6E", "SG", "I5", "QP", "G8", "IX"].includes(airlineCode.toUpperCase()) : true)),
+            isRefundable: Boolean(fd?.IsRefundable !== undefined ? (fd.IsRefundable === true || fd.IsRefundable === "true" || fd.IsRefundable === 1) : true),
+            airlineRemark: fd?.AirlineRemark || "",
+            offeredFare: optOffered,
+            b2cFinalFare: Number(fd?.B2CFinalFare || optFare?.B2CFinalFare || optOffered),
+            b2cPublishedFare: Number(fd?.B2CPublishedFare || optFare?.B2CPublishedFare || optOffered),
+            fare: optFare,
+            fareSegments: optSegments,
+            fareBreakdown: fd?.FareBreakdown || [],
+          };
+        })
+      : [];
+
+    const resultIndex = fareData?.ResultIndex || item?.ResultIndex || item?.resultIndex || String(idx + 1);
+    const srdvIndex = fareData?.SrdvIndex || item?.SrdvIndex || "2";
+    const srdvType = fareData?.SrdvType || item?.SrdvType || "MixAPI";
+
+    const isLCC = Boolean(
+      fareData?.IsLCC !== undefined
+        ? fareData.IsLCC
+        : item?.IsLCC !== undefined
+          ? item.IsLCC
+          : item?.isLCC !== undefined
+            ? item.isLCC
+            : ["6E", "SG", "I5", "QP", "G8", "IX"].includes(airlineCode.toUpperCase())
+    );
+
+    return {
+      ...item,
+      id: String(item?.Id || item?.id || resultIndex || `flight-${legIndex}-${idx + 1}`),
+      resultIndex,
+      ResultIndex: resultIndex,
+      srdvIndex,
+      SrdvIndex: srdvIndex,
+      srdvType,
+      SrdvType: srdvType,
+      traceId,
+      TraceId: traceId,
+      airline: airlineName,
+      airlineName,
+      airlineCode,
+      flightNumber,
+      flightNo: allFlightNumbers || flightNumber,
+      departureTime: depTime,
+      departureTimeIst: depTime,
+      arrivalTime: arrTime,
+      arrivalTimeIst: arrTime,
+      duration,
+      displayFare: offeredFare,
+      fare: offeredFare,
+      price: offeredFare,
+      priceInr: offeredFare,
+      Fare: fareObj,
+      offeredFare,
+      baseFare,
+      tax,
+      from: defaultFrom || fromCode,
+      fromCity,
+      fromAirportCode,
+      fromAirportName,
+      originAirportName: fromAirportName,
+      to: defaultTo || toCode,
+      toCity,
+      toAirportCode,
+      toAirportName,
+      destinationAirportName: toAirportName,
+      stops,
+      layoverSummary,
+      isLCC,
+      isRefundable: Boolean(fareData?.IsRefundable ?? item?.IsRefundable ?? item?.isRefundable),
+      selectedTravelClass: fareSegment?.CabinClassName || searchParams.travelClass || "Economy",
+      selectedTravelClassPriceInr: offeredFare,
+      selectedTravelClassAvailableSeats: Number(fareSegment?.NoOfSeatAvailable || item?.seats || 9),
+      seats: Number(fareSegment?.NoOfSeatAvailable || item?.seats || 9),
+      fareOptions,
+      segments: rawSegments,
+      legIndex,
+      tripDirection,
+    };
+  };
+
+  const isMultiSegmentArray = Array.isArray(resObj?.Results) && resObj.Results.length >= 2 && Array.isArray(resObj.Results[0]);
+  const isMultiCity = searchParams.journeyType === 3 || String(searchParams.tripType || "").toLowerCase() === "multicity";
+
+  if (isMultiSegmentArray) {
+    const legsMapped = resObj.Results.map((legResults, legIdx) => {
+      const legFrom = searchParams.segments?.[legIdx]?.origin || fromCode;
+      const legTo = searchParams.segments?.[legIdx]?.destination || toCode;
+      return (Array.isArray(legResults) ? legResults : []).map((item, idx) =>
+        mapSingleItem(item, idx, legFrom, legTo, legIdx, `leg_${legIdx + 1}`)
+      );
+    });
+
+    const combinedList = legsMapped.flat();
+    combinedList.legs = legsMapped;
+    combinedList.outbound = legsMapped[0] || [];
+    combinedList.onward = legsMapped[0] || [];
+    combinedList.return = legsMapped[1] || [];
+    combinedList.isMultiCity = searchParams.journeyType === 3 || searchParams.tripType === "multicity" || legsMapped.length > 2;
+    combinedList.isMultiCityResults = combinedList.isMultiCity;
+    combinedList.isTwoWay = !combinedList.isMultiCity && legsMapped.length === 2;
+    combinedList.sharedTraceId = traceId;
+    combinedList.traceId = traceId;
+    combinedList.TraceId = traceId;
+    return combinedList;
+  }
+
+  let rawItems = [];
+  if (Array.isArray(resObj?.Results?.[0])) {
+    rawItems = resObj.Results[0];
+  } else if (Array.isArray(resObj?.results?.[0])) {
+    rawItems = resObj.results[0];
+  } else if (Array.isArray(resObj?.Results)) {
+    rawItems = resObj.Results;
+  } else if (Array.isArray(resObj?.results)) {
+    rawItems = resObj.results;
+  } else if (Array.isArray(resObj)) {
+    rawItems = resObj;
+  }
+
+  if (isMultiCity && Array.isArray(searchParams.segments) && searchParams.segments.length > 1) {
+    const legsMapped = searchParams.segments.map((reqLeg, legIdx) => {
+      const legFrom = reqLeg.origin || reqLeg.from || fromCode;
+      const legTo = reqLeg.destination || reqLeg.to || toCode;
+
+      const legFlights = [];
+      rawItems.forEach((item, idx) => {
+        let allSegments = [];
+        if (Array.isArray(item.Segments) && item.Segments.length > 0) {
+          allSegments = Array.isArray(item.Segments[0]) ? item.Segments.flat() : item.Segments;
+        } else if (item.FareDataMultiple?.[0]?.FareSegments) {
+          allSegments = item.FareDataMultiple[0].FareSegments;
+        } else if (item.FareDataMultiple?.[0]?.Segments) {
+          allSegments = item.FareDataMultiple[0].Segments;
+        }
+
+        const normalizedSegments = extractRelevantSegments(allSegments, legFrom, legTo);
+
+        if (normalizedSegments.length > 0) {
+          const mapped = mapSingleItem(item, idx, legFrom, legTo, legIdx, `leg_${legIdx + 1}`);
+          mapped.normalizedSegments = normalizedSegments;
+          mapped.departureTime = normalizedSegments[0].DepTime || normalizedSegments[0].DepartureTime || mapped.departureTime;
+          mapped.arrivalTime = normalizedSegments[normalizedSegments.length - 1].ArrTime || normalizedSegments[normalizedSegments.length - 1].ArrivalTime || mapped.arrivalTime;
+          mapped.fromCity = normalizedSegments[0].Origin?.CityName || normalizedSegments[0].FromCity || mapped.fromCity;
+          mapped.toCity = normalizedSegments[normalizedSegments.length - 1].Destination?.CityName || normalizedSegments[normalizedSegments.length - 1].ToCity || mapped.toCity;
+
+          let legDuration = 0;
+          normalizedSegments.forEach((seg) => {
+            legDuration += (seg.Duration || 0);
+          });
+          if (legDuration > 0) mapped.duration = legDuration;
+
+          legFlights.push(mapped);
+        }
+      });
+      return legFlights;
+    });
+
+    const combinedList = legsMapped.flat();
+    combinedList.legs = legsMapped;
+    combinedList.outbound = legsMapped[0] || [];
+    combinedList.return = legsMapped[1] || [];
+    combinedList.isMultiCityResults = true;
+    combinedList.isRoundTripResults = false;
+    return combinedList;
+  }
+
+  return rawItems.map((item, idx) => mapSingleItem(item, idx, fromCode, toCode, 0, "outbound"));
+}
+
+// ============================================================================
+// 1. SEARCH FLIGHTS: POST /api/flight/srdv/Search
+// ============================================================================
+
+export function buildFlightSearchSegments({ from, to, date, returnDate, tripType, journeyType, legs, travelClass }) {
+  const normTrip = String(tripType || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
   let parsedLegs = legs;
   if (typeof legs === "string") {
     try {
       parsedLegs = JSON.parse(legs);
-    } catch (e) {
+    } catch {
       try {
         parsedLegs = JSON.parse(decodeURIComponent(legs));
-      } catch (e2) {
+      } catch {
         parsedLegs = [];
       }
     }
   }
 
-  if (isMultiCity) {
-    if (!Array.isArray(parsedLegs) || parsedLegs.length === 0) {
-      parsedLegs = [{ from, to, departureDate: datePart }];
-    }
+  const isMulti =
+    normTrip === "multicity" ||
+    normTrip === "multi" ||
+    normTrip === "3" ||
+    Number(journeyType) === 3 ||
+    (Array.isArray(parsedLegs) && parsedLegs.length > 1);
 
-    // Multi-City: Single API call with JourneyType: 3 and all segments together
-    // The API returns Results as an array of arrays — one sub-array per leg/segment
-    const multiSegments = parsedLegs.map((leg) => {
-      const legDate = String(leg.date || leg.departureDate || datePart || "").trim();
-      const depTime = legDate.includes("T") ? legDate : `${legDate}T00:00:00`;
-      const arrTime = legDate.includes("T") ? legDate : `${legDate}T23:59:59`;
-      return {
-        Origin: resolveCityCode(leg.from || leg.fromCity || leg.source || leg.origin || from, "DEL"),
-        Destination: resolveCityCode(leg.to || leg.toCity || leg.destination || leg.dest || to, "BOM"),
-        FlightCabinClass: Number(mapCabinClassToCode(travelClass)),
-        PreferredDepartureTime: depTime,
-        PreferredArrivalTime: arrTime,
-      };
-    });
+  const validReturnDate = returnDate && returnDate !== "null" && returnDate !== "undefined" && returnDate !== "false";
 
-    const multiPayload = {
-      EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-      ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-      UserName: FLIGHT_API_CREDENTIALS.UserName,
-      Password: FLIGHT_API_CREDENTIALS.Password,
-      ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-      AdultCount: Number(adults),
-      ChildCount: Number(children),
-      InfantCount: Number(infants),
-      JourneyType: 3,
-      Segments: multiSegments,
-    };
+  const isRound =
+    !isMulti &&
+    (normTrip === "roundtrip" ||
+      normTrip === "roundway" ||
+      normTrip === "round" ||
+      normTrip === "twoway" ||
+      normTrip === "2way" ||
+      normTrip === "return" ||
+      normTrip === "2" ||
+      Number(journeyType) === 2 ||
+      (validReturnDate && normTrip !== "oneway" && normTrip !== "1" && Number(journeyType) !== 1));
 
-    const FORCE_LEG_BY_LEG = false; // Use native SRDV JourneyType 3 search for multi-city flights
-    if (!FORCE_LEG_BY_LEG) {
-      try {
-        const multiData = await requestJson(`${SRDV_ROOT}/Search`, {
-          method: "POST",
-          body: JSON.stringify(multiPayload),
-        });
-
-        const srdvError = multiData?.Error || multiData?.error;
-        if (!srdvError || String(srdvError.ErrorCode || "") === "0") {
-          const sharedTraceId = String(multiData?.TraceId || multiData?.traceId || "");
-          let rawResults = multiData?.Results || multiData?.results || [];
-
-          if (rawResults && !Array.isArray(rawResults) && typeof rawResults === "object") {
-            rawResults = [rawResults];
-          }
-
-          const expectedLegCount = multiSegments.length;
-
-          // Case 1: SRDV returns an array of leg arrays where rawResults.length === expectedLegCount and rawResults[0] is an array
-          const isArrayOfLegArrays = Array.isArray(rawResults) && rawResults.length === expectedLegCount && Array.isArray(rawResults[0]);
-
-          if (isArrayOfLegArrays) {
-            const parsedLegs = rawResults.map((legRecords, legIndex) => {
-              const legArray = Array.isArray(legRecords) ? legRecords : (legRecords ? [legRecords] : []);
-              return legArray.map((record, idx) => {
-                const norm = normalizeFlightSearchRecord(record, idx, sharedTraceId, multiData?.Response?.JourneyType || multiData?.response?.JourneyType || 3);
-                return {
-                  ...norm,
-                  id: `mc-leg${legIndex}-${norm.id}`,
-                  isMultiCityLeg: true,
-                  legIndex,
-                  sharedTraceId,
-                  legResultIndex: norm.resultIndex || norm.id,
-                };
-              });
-            });
-
-            return { isMultiCity: true, legs: parsedLegs, sharedTraceId };
-          }
-
-          // Case 2: SRDV returns combination itinerary objects (each option contains Segments for all legs)
-          const flatItineraries = Array.isArray(rawResults) ? rawResults.flat(1) : [];
-
-          if (flatItineraries.length > 0) {
-            const parsedLegs = Array.from({ length: expectedLegCount }, () => []);
-
-            flatItineraries.forEach((itineraryRecord, itinIdx) => {
-              const rawSegs = itineraryRecord.Segments || itineraryRecord.segments || [];
-              const isSegsArrayOfArrays = Array.isArray(rawSegs) && rawSegs.length >= expectedLegCount && Array.isArray(rawSegs[0]);
-              const flatSegs = Array.isArray(rawSegs) ? rawSegs.flat(Infinity) : [];
-
-              const fullMultiSectorSegments = flatSegs.map((s, sIdx) => {
-                const airlineObj = s.Airline || s.airline || {};
-                const origObj = s.Origin || s.origin || {};
-                const destObj = s.Destination || s.destination || {};
-                const airCode = String(airlineObj.AirlineCode || airlineObj.airlineCode || s.AirlineCode || s.airlineCode || "").trim();
-                const airNum = String(airlineObj.FlightNumber || airlineObj.flightNumber || s.FlightNumber || s.flightNumber || "").trim();
-                const flNum = airCode && airNum ? `${airCode} ${airNum}` : (airNum || airCode || "--");
-                return {
-                  sectorIndex: sIdx + 1,
-                  airline: airlineObj.AirlineName || airlineObj.airlineName || s.airline || "Airline",
-                  airlineCode: airCode,
-                  flightNumber: flNum,
-                  sourceCode: origObj.AirportCode || origObj.Code || origObj.Airport?.AirportCode || "",
-                  sourceName: origObj.CityName || origObj.Airport?.CityName || "",
-                  destinationCode: destObj.AirportCode || destObj.Code || destObj.Airport?.AirportCode || "",
-                  destinationName: destObj.CityName || destObj.Airport?.CityName || "",
-                  departureTime: origObj.DepTime || s.DepTime || s.DepartureTime || "",
-                  arrivalTime: destObj.ArrTime || s.ArrTime || s.ArrivalTime || "",
-                  duration: s.Duration || s.durationMinutes || s.duration || "",
-                  cabinClass: s.CabinClass || "Economy",
-                };
-              });
-
-              for (let legIdx = 0; legIdx < expectedLegCount; legIdx++) {
-                let legSegments = [];
-                if (isSegsArrayOfArrays) {
-                  legSegments = rawSegs[legIdx] || [];
-                } else if (flatSegs.length >= expectedLegCount) {
-                  const reqOrigin = String(multiSegments[legIdx]?.Origin || "").trim().toUpperCase();
-                  const reqDest = String(multiSegments[legIdx]?.Destination || "").trim().toUpperCase();
-
-                  const matchedSeg = flatSegs.find((s) => {
-                    const sOrig = String(s.Origin?.AirportCode || s.Origin?.Code || s.Origin || "").trim().toUpperCase();
-                    const sDest = String(s.Destination?.AirportCode || s.Destination?.Code || s.Destination || "").trim().toUpperCase();
-                    return (sOrig === reqOrigin || !reqOrigin) && (sDest === reqDest || !reqDest);
-                  });
-
-                  legSegments = matchedSeg ? [matchedSeg] : [flatSegs[legIdx] || flatSegs[0]];
-                } else {
-                  legSegments = flatSegs;
-                }
-
-                const legRecord = {
-                  ...itineraryRecord,
-                  Segments: legSegments,
-                  FareSegments: legSegments,
-                  Fare: legIdx === 0 ? itineraryRecord.Fare : { BaseFare: 0, Tax: 0, PublishedFare: 0, B2CFinalFare: 0 },
-                };
-
-                const norm = normalizeFlightSearchRecord(legRecord, itinIdx, sharedTraceId, multiData?.Response?.JourneyType || multiData?.response?.JourneyType || 3);
-
-                parsedLegs[legIdx].push({
-                  ...norm,
-                  id: `mc-leg${legIdx}-${norm.id}-${itinIdx}`,
-                  isMultiCityLeg: true,
-                  legIndex: legIdx,
-                  sharedTraceId,
-                  legResultIndex: itineraryRecord.ResultIndex || norm.resultIndex || norm.id,
-                  itineraryIndex: itinIdx,
-                  fullMultiSectorSegments,
-                });
-              }
-            });
-
-            const allLegsHaveFlights = parsedLegs.every((legArray) => Array.isArray(legArray) && legArray.length > 0);
-            if (allLegsHaveFlights) {
-              return { isMultiCity: true, legs: parsedLegs, sharedTraceId };
-            }
-          }
-        }
-
-        console.warn("Multi-city JourneyType: 3 returned empty or error, executing leg-by-leg searches as fallback:", srdvError?.ErrorMessage);
-      } catch (err) {
-        console.warn("Multi-city API error, executing leg-by-leg searches as fallback:", err);
-      }
-    }
-
-    // Fallback: Perform parallel search for each individual leg if JourneyType 3 returns 0 flights
-    try {
-      const legSearchPromises = parsedLegs.map(async (leg, legIndex) => {
-        const legDate = String(leg.date || leg.departureDate || datePart || "").trim();
-        const PreferredDepTime = legDate.includes("T") ? legDate : `${legDate}T00:00:00`;
-        const PreferredArrTime = legDate.includes("T") ? legDate : `${legDate}T23:59:59`;
-
-        const legPayload = {
-          EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-          ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-          UserName: FLIGHT_API_CREDENTIALS.UserName,
-          Password: FLIGHT_API_CREDENTIALS.Password,
-          ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-          AdultCount: Number(adults),
-          ChildCount: Number(children),
-          InfantCount: Number(infants),
-          JourneyType: 1,
-          DirectFlight: false,
-          Segments: [
-            {
-              Origin: resolveCityCode(leg.from || leg.fromCity || leg.source || leg.origin || from, "DEL"),
-              Destination: resolveCityCode(leg.to || leg.toCity || leg.destination || leg.dest || to, "BOM"),
-              FlightCabinClass: Number(mapCabinClassToCode(travelClass)),
-              PreferredDepartureTime: PreferredDepTime,
-              PreferredArrivalTime: PreferredArrTime,
-            }
-          ]
-        };
-
-        const legData = await requestJson(`${SRDV_ROOT}/Search`, {
-          method: "POST",
-          body: JSON.stringify(legPayload),
-        });
-
-        const legTraceId = String(legData?.TraceId || legData?.traceId || "");
-        const legRawList = extractFlightSearchList(legData);
-        return legRawList.map((record, idx) => {
-          const norm = normalizeFlightSearchRecord(record, idx, legTraceId, legData?.Response?.JourneyType || legData?.response?.JourneyType || 1);
-          return {
-            ...norm,
-            id: `leg${legIndex}-${norm.id}`,
-            isMultiCityLeg: true,
-            legIndex,
-            sharedTraceId: legTraceId,
-            legResultIndex: norm.resultIndex || norm.id,
-          };
-        });
-      });
-
-      const fallbackLegs = await Promise.all(legSearchPromises);
-      return { isMultiCity: true, legs: fallbackLegs, sharedTraceId: fallbackLegs[0]?.[0]?.sharedTraceId || "" };
-    } catch (fallbackErr) {
-      console.error("Multi-city fallback leg search error:", fallbackErr);
-      return { isMultiCity: true, legs: parsedLegs.map(() => []) };
-    }
+  let resolvedJourneyType = 1;
+  if (isMulti) {
+    resolvedJourneyType = 3;
+  } else if (isRound) {
+    resolvedJourneyType = 2;
+  } else {
+    resolvedJourneyType = 1;
   }
 
-  // Standard Two-Way or One-Way search logic
-  if (isTwoWay) {
-    journeyTypeNum = 2;
-    const returnDateStr = returnDate || date;
-    const returnDatePart = String(returnDateStr).trim();
-    const PreferredReturnTime = returnDatePart.includes("T") ? returnDatePart : `${returnDatePart}T00:00:00`;
-    const PreferredReturnTimeMax = returnDatePart.includes("T") ? returnDatePart : `${returnDatePart}T23:59:59`;
+  if (normTrip === "oneway" || normTrip === "1" || Number(journeyType) === 1) {
+    resolvedJourneyType = 1;
+  }
 
+  const cabinClassCode = toCabinClassCode(travelClass);
+  const outboundDateStr = formatIsoDateTime(date);
+
+  let segments = [];
+
+  if (resolvedJourneyType === 3) {
+    if (!legs || typeof legs !== "string") {
+      throw new Error("Multi-city requires legs string.");
+    }
+    const parsedLegs = JSON.parse(legs);
+    for (const leg of parsedLegs) {
+      const codeFrom = leg.fromCode;
+      const codeTo = leg.toCode;
+      if (!codeFrom || !codeTo) {
+        throw new Error("All multi-city legs require valid airport selections from the suggestions.");
+      }
+      segments.push({
+        Origin: String(codeFrom).toUpperCase(),
+        Destination: String(codeTo).toUpperCase(),
+        FlightCabinClass: cabinClassCode,
+        PreferredDepartureTime: formatIsoDateTime(leg.date || leg.departureDate || date),
+        PreferredArrivalTime: formatIsoDateTime(leg.date || leg.departureDate || date),
+      });
+    }
+  } else if (resolvedJourneyType === 2) {
+    const returnDateStr = formatIsoDateTime(returnDate || date);
     segments = [
       {
-        Origin: resolveCityCode(from, "DEL"),
-        Destination: resolveCityCode(to, "BOM"),
-        FlightCabinClass: Number(mapCabinClassToCode(travelClass)),
-        PreferredDepartureTime,
-        PreferredArrivalTime: PreferredDepartureTimeMax
+        Origin: String(from).toUpperCase(),
+        Destination: String(to).toUpperCase(),
+        FlightCabinClass: cabinClassCode,
+        PreferredDepartureTime: outboundDateStr,
+        PreferredArrivalTime: outboundDateStr,
       },
       {
-        Origin: resolveCityCode(to, "BOM"),
-        Destination: resolveCityCode(from, "DEL"),
-        FlightCabinClass: Number(mapCabinClassToCode(travelClass)),
-        PreferredDepartureTime: PreferredReturnTime,
-        PreferredArrivalTime: PreferredReturnTimeMax
-      }
+        Origin: String(to).toUpperCase(),
+        Destination: String(from).toUpperCase(),
+        FlightCabinClass: cabinClassCode,
+        PreferredDepartureTime: returnDateStr,
+        PreferredArrivalTime: returnDateStr,
+      },
     ];
   } else {
-    journeyTypeNum = 1;
+    resolvedJourneyType = 1;
     segments = [
       {
-        Origin: resolveCityCode(from, "DEL"),
-        Destination: resolveCityCode(to, "BOM"),
-        FlightCabinClass: Number(mapCabinClassToCode(travelClass)),
-        PreferredDepartureTime,
-        PreferredArrivalTime: PreferredDepartureTimeMax
-      }
+        Origin: String(from).toUpperCase(),
+        Destination: String(to).toUpperCase(),
+        FlightCabinClass: cabinClassCode,
+        PreferredDepartureTime: outboundDateStr,
+        PreferredArrivalTime: outboundDateStr,
+      },
     ];
   }
 
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    AdultCount: Number(adults),
-    ChildCount: Number(children),
-    InfantCount: Number(infants),
-    JourneyType: journeyTypeNum,
-    DirectFlight: false,
-    Segments: segments
+  return {
+    journeyType: resolvedJourneyType,
+    segments,
   };
-
-  const onwardData = await requestJson(`${SRDV_ROOT}/Search`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-
-  // Check for SRDV API-level error
-  const srdvError = onwardData?.Error || onwardData?.error;
-  if (srdvError && String(srdvError.ErrorCode || "") !== "0") {
-    throw new Error(srdvError.ErrorMessage || "No flights found for this route and date combination.");
-  }
-
-  const onwardTraceId = onwardData?.TraceId || onwardData?.traceId || "";
-  if (typeof window !== "undefined" && onwardTraceId) {
-    try {
-      window.sessionStorage.setItem("TraceId", onwardTraceId);
-      window.sessionStorage.setItem("flight_trace_id", onwardTraceId);
-      window.sessionStorage.setItem("SearchResult", JSON.stringify(onwardData));
-    } catch (e) { }
-  }
-  const onwardRawList = extractFlightSearchList(onwardData);
-  const onwardFlights = onwardRawList.map((record, index) =>
-    normalizeFlightSearchRecord(record, index, onwardTraceId, onwardData?.Response?.JourneyType || onwardData?.response?.JourneyType || journeyTypeNum)
-  );
-
-  if (isTwoWay) {
-    // Check if SRDV returned return flights in Results[1] of the same response (JourneyType=2)
-    const srdvResults = onwardData?.Results || onwardData?.results || null;
-    const hasReturnInSameResponse = Array.isArray(srdvResults) && srdvResults.length > 1 && Array.isArray(srdvResults[1]) && srdvResults[1].length > 0;
-
-    if (hasReturnInSameResponse) {
-      const returnRawList = srdvResults[1].flat(Infinity);
-      const returnFlights = returnRawList.map((record, index) => {
-        const norm = normalizeFlightSearchRecord(record, index, onwardTraceId, onwardData?.Response?.JourneyType || onwardData?.response?.JourneyType || journeyTypeNum);
-        return { ...norm, id: `ret-${norm.id}`, isReturnFlight: true };
-      });
-      return { isTwoWay: true, onward: onwardFlights, return: returnFlights };
-    }
-    return { isTwoWay: true, onward: onwardFlights, return: [] };
-  }
-
-
-  return onwardFlights;
 }
 
-export async function getCalendarFare({
-  from,
-  to,
-  date,
-  returnDate,
-  travelClass,
-  directFlight = false,
-  journeyType = 1,
-}) {
-  if (Number(journeyType) === 3) {
-    return { raw: null, results: [], fareMapByDate: {} };
+export async function searchFlights(searchParams) {
+  clearFlightBookingFlowState();
+
+  const fromCode = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode;
+  const toCode = searchParams.destinationCode || searchParams.toCode || searchParams.destinationCode;
+
+  if (!fromCode || !toCode) {
+    throw new Error("All flight sectors require a valid airport selection from the suggestions.");
+  }
+  const journeyDate = searchParams.date || new Date().toISOString().slice(0, 10);
+  const tripTypeStr = String(searchParams.tripType || "").toLowerCase();
+
+  let journeyType = 1;
+  if (tripTypeStr === "roundtrip" || tripTypeStr === "twoway" || searchParams.journeyType === 2) {
+    journeyType = 2;
+  } else if (tripTypeStr === "multicity" || searchParams.journeyType === 3) {
+    journeyType = 3;
   }
 
-  let datePart = String(date || "").trim();
-  if (!datePart) {
-    const today = new Date();
-    datePart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  }
-  const PreferredDepartureTime = datePart.includes("T") ? datePart : `${datePart}T00:00:00`;
-
-  let returnDatePart = String(returnDate || datePart).trim();
-  const PreferredReturnTime = returnDatePart.includes("T") ? returnDatePart : `${returnDatePart}T00:00:00`;
-
-  const segments = [
-    {
-      Origin: resolveCityCode(from, "DEL"),
-      Destination: resolveCityCode(to, "HYD"),
-      FlightCabinClass: typeof travelClass === "number" ? travelClass : Number(mapCabinClassToCode(travelClass) || 1),
-      PreferredDepartureTime,
-      PreferredArrivalTime: PreferredDepartureTime
-    }
-  ];
-
-  if (Number(journeyType) === 2) {
-    segments.push({
-      Origin: resolveCityCode(to, "HYD"),
-      Destination: resolveCityCode(from, "DEL"),
-      FlightCabinClass: typeof travelClass === "number" ? travelClass : Number(mapCabinClassToCode(travelClass) || 1),
-      PreferredDepartureTime: PreferredReturnTime,
-      PreferredArrivalTime: PreferredReturnTime
-    });
-  }
+  const cabinClassCode = toCabinClassCode(searchParams.travelClass || searchParams.cabinClass);
+  const { journeyType: resolvedJourneyType, segments } = buildFlightSearchSegments({
+    from: fromCode,
+    to: toCode,
+    date: journeyDate,
+    returnDate: searchParams.returnDate,
+    tripType: searchParams.tripType,
+    journeyType,
+    legs: searchParams.legs,
+    travelClass: cabinClassCode,
+  });
 
   const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
+    EndUserIp: searchParams.endUserIp || "192.168.1.1",
     ClientId: FLIGHT_API_CREDENTIALS.ClientId,
     UserName: FLIGHT_API_CREDENTIALS.UserName,
     Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    JourneyType: Number(journeyType || 1),
-    Sources: null,
-    FareType: 1,
-    DirectFlight: Boolean(directFlight),
-    Segments: segments
+    AdultCount: Number(searchParams.adults !== undefined ? searchParams.adults : 1),
+    ChildCount: Number(searchParams.children !== undefined ? searchParams.children : 0),
+    InfantCount: Number(searchParams.infants !== undefined ? searchParams.infants : 0),
+    JourneyType: resolvedJourneyType,
+    ...(resolvedJourneyType !== 3
+      ? {
+          DirectFlight: Boolean(searchParams.directFlight ?? false),
+          OneStopFlight: Boolean(searchParams.oneStopFlight ?? false),
+        }
+      : {}),
+    Segments: segments,
   };
 
+  const endpoint = `${SRDV_ROOT}/Search`;
+  logFlightApiRequest("POST", endpoint, payload);
+
   try {
-    const rawData = await requestJson(`${SRDV_ROOT}/GetCalendarFare`, {
+    const rawData = await requestJson(endpoint, {
       method: "POST",
       body: JSON.stringify(payload),
     });
 
-    const responseObj = rawData?.Response || rawData?.response || rawData || {};
-    const rawResults = responseObj.SearchResults || responseObj.searchResults || responseObj.Results || responseObj.results || [];
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const traceId = String(resObj?.TraceId || resObj?.traceId || rawData?.TraceId || "");
+    if (typeof window !== "undefined" && traceId) {
+      try {
+        window.sessionStorage.setItem("TraceId", traceId);
+        window.sessionStorage.setItem("flight_trace_id", traceId);
+        window.sessionStorage.setItem("last_booking_trace_id", traceId);
+        window.sessionStorage.setItem("SearchResult", JSON.stringify(rawData));
+      } catch (e) {}
+    }
+
+    const errObj = resObj?.Error || rawData?.Error;
+    if (errObj && String(errObj.ErrorCode) !== "0" && errObj.ErrorMessage) {
+      throw new Error(errObj.ErrorMessage);
+    }
+
+    return mapFlightResults(rawData, fromCode, toCode, { ...searchParams, journeyType: resolvedJourneyType });
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// 2. FARE QUOTE: POST /api/flight/srdv/FareQuote
+// ============================================================================
+
+export async function getFlightFareQuote(params = {}) {
+  const flight = params.flight || {};
+  const activeTraceId = String(params.traceId || params.TraceId || flight.traceId || flight.TraceId || "");
+  const activeResultIndex = cleanResultIndex(params.resultIndex || params.ResultIndex || flight.resultIndex || flight.ResultIndex || flight.id || "");
+  const activeSrdvType = String(params.srdvType || params.SrdvType || flight.srdvType || flight.SrdvType || "MixAPI");
+  const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || flight.srdvIndex || flight.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
+
+  const payload = {
+    EndUserIp: params.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+    ...(params.couponCode || params.CouponCode ? { CouponCode: String(params.couponCode || params.CouponCode) } : {}),
+  };
+
+  const endpoint = `${SRDV_ROOT}/FareQuote`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const errObj = resObj?.Error || rawData?.Error;
+
+    if (errObj && String(errObj.ErrorCode) !== "0" && errObj.ErrorMessage) {
+      throw new Error(errObj.ErrorMessage || "Fare revalidation failed by supplier.");
+    }
+
+    return rawData;
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+export function getFareQuote(params) {
+  return getFlightFareQuote(params);
+}
+
+export async function revalidateFlightFare(flightOrParams) {
+  if (!flightOrParams) return null;
+  const traceId = flightOrParams.traceId || flightOrParams.TraceId;
+  const resultIndex = flightOrParams.resultIndex || flightOrParams.ResultIndex || flightOrParams.id;
+  const srdvType = flightOrParams.srdvType || flightOrParams.SrdvType || "MixAPI";
+  const srdvIndex = flightOrParams.srdvIndex || flightOrParams.SrdvIndex || "2";
+
+  try {
+    const res = await getFlightFareQuote({ traceId, resultIndex, srdvType, srdvIndex });
+    return res;
+  } catch (err) {
+    console.warn("[FlightService] Revalidate fare error:", err.message);
+    throw err;
+  }
+}
+
+// ============================================================================
+// 3. FARE RULE: POST /api/flight/srdv/FareRule
+// ============================================================================
+
+export async function getFlightFareRule(params = {}) {
+  const flight = params.flight || {};
+  const activeTraceId = String(params.traceId || params.TraceId || flight.traceId || flight.TraceId || "");
+  const activeResultIndex = cleanResultIndex(params.resultIndex || params.ResultIndex || flight.resultIndex || flight.ResultIndex || flight.id || "");
+  const activeSrdvType = String(params.srdvType || params.SrdvType || flight.srdvType || flight.SrdvType || "MixAPI");
+  const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || flight.srdvIndex || flight.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
+
+  const payload = {
+    EndUserIp: params.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    ApiToken: "PickNB@486#170$",
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+  };
+
+  const endpoint = `${SRDV_ROOT}/FareRule`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const errObj = resObj?.Error || rawData?.Error;
+    const results = resObj?.Results || rawData?.Results;
+
+    if (errObj && String(errObj.ErrorCode) !== "0" && errObj.ErrorMessage) {
+      return { success: false, code: "FARE_RULE_ERROR", message: errObj.ErrorMessage, data: null, results: [] };
+    }
+
+    if (!results || (Array.isArray(results) && results.length === 0)) {
+      return { success: false, code: "FARE_RULE_UNAVAILABLE", message: "Fare rules not provided by supplier for this flight.", data: [], results: [] };
+    }
+
+    return { success: true, code: "FARE_RULE_AVAILABLE", data: results, results, raw: rawData };
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    return { success: false, code: "FARE_RULE_ERROR", message: error?.message, data: null, results: [] };
+  }
+}
+
+export function getFareRule(params) {
+  return getFlightFareRule(params);
+}
+
+// ============================================================================
+// 4. SSR (MEALS & BAGGAGE): POST /api/flight/srdv/SSR
+// ============================================================================
+
+export async function getFlightSSR(params = {}) {
+  const flight = params.flight || {};
+  const activeTraceId = String(params.traceId || params.TraceId || flight.traceId || flight.TraceId || "");
+  const activeResultIndex = cleanResultIndex(params.resultIndex || params.ResultIndex || flight.resultIndex || flight.ResultIndex || flight.id || "");
+  const activeSrdvType = String(params.srdvType || params.SrdvType || flight.srdvType || flight.SrdvType || "MixAPI");
+  const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || flight.srdvIndex || flight.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
+
+  const payload = {
+    EndUserIp: params.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+  };
+
+  const endpoint = `${SRDV_ROOT}/SSR`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const errObj = resObj?.Error || rawData?.Error;
+    const results = resObj?.Results || rawData?.Results || resObj;
+
+    if (errObj && String(errObj.ErrorCode) !== "0" && errObj.ErrorMessage) {
+      return { success: false, code: "SSR_UNAVAILABLE", message: errObj.ErrorMessage, data: null, baggage: [], meal: [], Baggage: [], MealDynamic: [] };
+    }
+
+    const baggage = results?.Baggage || resObj?.Baggage || rawData?.Baggage || [];
+    const meals = results?.MealDynamic || results?.Meal || resObj?.MealDynamic || resObj?.Meal || rawData?.MealDynamic || [];
+    const flatBaggage = Array.isArray(baggage[0]) ? baggage[0] : (Array.isArray(baggage) ? baggage : []);
+    const flatMeals = Array.isArray(meals[0]) ? meals[0] : (Array.isArray(meals) ? meals : []);
+
+    const baggageList = flatBaggage.map((b) => ({
+      code: b.Code || b.code || "",
+      Code: b.Code || b.code || "",
+      weight: Number(b.Weight || b.weight || 0),
+      Weight: Number(b.Weight || b.weight || 0),
+      description: b.Description || b.description || `${b.Weight || 0} Kg Baggage`,
+      Description: b.Description || b.description || `${b.Weight || 0} Kg Baggage`,
+      price: Number(b.Price ?? b.price ?? b.Amount ?? 0),
+      Price: Number(b.Price ?? b.price ?? b.Amount ?? 0),
+      origin: b.Origin || b.origin || "",
+      destination: b.Destination || b.destination || "",
+      WayType: Number(b.WayType ?? b.wayType ?? 0),
+      wayType: Number(b.WayType ?? b.wayType ?? 0),
+    }));
+
+    const mergedMeals = flatMeals.map((m) => ({
+      code: m.Code || m.code || "",
+      Code: m.Code || m.code || "",
+      description: m.Description || m.description || m.Details || m.AirlineDescription || "Standard Meal",
+      Description: m.Description || m.description || m.Details || m.AirlineDescription || "Standard Meal",
+      price: Number(m.Price ?? m.price ?? m.Amount ?? 0),
+      Price: Number(m.Price ?? m.price ?? m.Amount ?? 0),
+      origin: m.Origin || m.origin || "",
+      destination: m.Destination || m.destination || "",
+      airlineCode: m.AirlineCode || m.airlineCode || "",
+      WayType: Number(m.WayType ?? m.wayType ?? 0),
+      wayType: Number(m.WayType ?? m.wayType ?? 0),
+    }));
+
+    return {
+      success: true,
+      code: "SSR_AVAILABLE",
+      data: results,
+      Baggage: baggage,
+      MealDynamic: meals,
+      Meal: meals,
+      baggage: baggageList,
+      meal: mergedMeals,
+      rawResponse: rawData,
+    };
+  } catch (error) {
+    return { success: false, errorCode: -1, error: error.message || "Failed to fetch seat map.", results: [], rawResponse: null };
+  }
+}
+
+export function getSSR(paramsOrTrace, resultIdx, srdvType, srdvIndex) {
+  if (paramsOrTrace && typeof paramsOrTrace === "object") {
+    return getFlightSSR(paramsOrTrace);
+  }
+  return getFlightSSR({ traceId: paramsOrTrace, resultIndex: resultIdx, srdvType, srdvIndex });
+}
+
+// ============================================================================
+// 5. SEAT MAP: POST /api/flight/srdv/SeatMap
+// ============================================================================
+
+export async function getFlightSeatMap(paramsOrTrace = {}, resultIdx = null, srdvType = null, srdvIndex = null) {
+  let paramObj = {};
+
+  if (typeof paramsOrTrace === "string" || typeof paramsOrTrace === "number") {
+    if (resultIdx && typeof resultIdx === "string") {
+      paramObj = {
+        traceId: String(paramsOrTrace),
+        resultIndex: resultIdx,
+        srdvType: srdvType || "MixAPI",
+        srdvIndex: srdvIndex || "2",
+      };
+    } else {
+      paramObj = { resultIndex: String(paramsOrTrace) };
+    }
+  } else if (paramsOrTrace && typeof paramsOrTrace === "object") {
+    paramObj = { ...paramsOrTrace };
+  }
+
+  let flowState = {};
+  if (typeof window !== "undefined") {
+    try {
+      const raw = window.sessionStorage.getItem("flight_booking_flow_state_v1");
+      if (raw) flowState = JSON.parse(raw) || {};
+    } catch {}
+  }
+
+  // Prioritize real SRDV ResultIndex, strictly rejecting artificial UI IDs like 'flight-0-1'
+  const candidateResultIndex =
+    paramObj?.resultIndex ||
+    paramObj?.ResultIndex ||
+    paramObj?.rawId ||
+    (paramObj?.id && !String(paramObj.id).startsWith("flight-") ? paramObj.id : null) ||
+    paramObj?.flight?.resultIndex ||
+    paramObj?.flight?.ResultIndex ||
+    flowState?.resultIndex ||
+    flowState?.ResultIndex ||
+    flowState?.flight?.resultIndex ||
+    flowState?.flight?.ResultIndex ||
+    "";
+
+  const activeResultIndex = cleanResultIndex(candidateResultIndex);
+
+  const activeTraceId = String(
+    paramObj?.traceId ||
+    paramObj?.TraceId ||
+    paramObj?.flight?.traceId ||
+    paramObj?.flight?.TraceId ||
+    flowState?.traceId ||
+    flowState?.TraceId ||
+    flowState?.flight?.traceId ||
+    flowState?.flight?.TraceId ||
+    (typeof window !== "undefined" ? window.sessionStorage.getItem("flight_trace_id") : "") ||
+    ""
+  ).trim();
+
+  const activeSrdvType = String(
+    paramObj?.srdvType ||
+    paramObj?.SrdvType ||
+    paramObj?.flight?.srdvType ||
+    flowState?.srdvType ||
+    flowState?.flight?.srdvType ||
+    "MixAPI"
+  );
+
+  const activeSrdvIndex = String(
+    paramObj?.srdvIndex ||
+    paramObj?.SrdvIndex ||
+    paramObj?.flight?.srdvIndex ||
+    flowState?.srdvIndex ||
+    flowState?.flight?.srdvIndex ||
+    resolveSrdvIndexFromResultIndex(activeResultIndex, "2")
+  );
+
+  if (!activeTraceId || !activeResultIndex) {
+    console.warn("[SEATMAP_SKIPPED] Missing TraceId or ResultIndex for SeatMap:", { activeTraceId, activeResultIndex, paramObj });
+    return {
+      success: false,
+      code: "MISSING_PARAMS",
+      message: "TraceId and ResultIndex are required to fetch SeatMap.",
+      data: null,
+      seats: [],
+    };
+  }
+
+  const payload = {
+    EndUserIp: paramObj?.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+  };
+
+  const endpoint = `${SRDV_ROOT}/SeatMap`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const errObj = resObj?.Error || rawData?.Error;
+
+    if (errObj && String(errObj.ErrorCode) !== "0" && errObj.ErrorMessage) {
+      return {
+        success: false,
+        code: String(errObj.ErrorCode) === "1" ? "SUPPLIER_TRACE_NOT_FOUND" : "SEATMAP_UNAVAILABLE",
+        message: errObj.ErrorMessage || "Seat map is unavailable for this flight.",
+        data: null,
+        seats: [],
+      };
+    }
+
+    const parsedSeats = parseSrdvSeatMap(rawData);
+    return {
+      success: true,
+      code: "SEATMAP_AVAILABLE",
+      data: resObj?.Results || rawData,
+      seats: parsedSeats,
+      rawResponse: rawData,
+    };
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    return { success: false, code: "SEATMAP_ERROR", message: error?.message, data: null, seats: [] };
+  }
+}
+
+export function getSeatMap(paramsOrTrace, resultIdx, srdvType, srdvIndex) {
+  if (paramsOrTrace && typeof paramsOrTrace === "object") {
+    return getFlightSeatMap(paramsOrTrace);
+  }
+  return getFlightSeatMap({ traceId: paramsOrTrace, resultIndex: resultIdx, srdvType, srdvIndex });
+}
+
+// ============================================================================
+// 6. PASSENGER MAPPING FOR TICKETING
+// ============================================================================
+
+export function formatPassengerMeals(selectedMealsForPax, flight = {}) {
+  if (!selectedMealsForPax) return [];
+
+  const flattenedMeals = [];
+
+  // Case A: If storing as an array of { mealData, quantity }
+  if (Array.isArray(selectedMealsForPax)) {
+    selectedMealsForPax.forEach((item) => {
+      const meal = item.meal || item;
+      const count = Number(item.quantity || item.count || item.Quantity || 1);
+      
+      const code = String(meal.Code || meal.code || "").trim();
+      if (!code || code.toLowerCase() === "nomeal" || code.toLowerCase() === "none") return;
+
+      for (let i = 0; i < count; i++) {
+        flattenedMeals.push({
+          AirlineCode: meal.AirlineCode || flight.airlineCode || flight.AirlineCode || "",
+          FlightNumber: String(meal.FlightNumber || flight.flightNumber || flight.FlightNumber || "").trim(),
+          WayType: Number(meal.WayType || 1),
+          Code: code,
+          Description: String(meal.Description || meal.AirlineDescription || meal.description || "Meal").trim(),
+          Price: Number(meal.Price ?? meal.Amount ?? meal.price ?? 0),
+          Quantity: "1", // âœ… CRITICAL: Always 1 per duplicate object (as string)
+          Origin: String(meal.Origin || meal.origin || flight.sourceCode || flight.Origin || "").toUpperCase(),
+          Destination: String(meal.Destination || meal.destination || flight.destinationCode || flight.Destination || "").toUpperCase()
+        });
+      }
+    });
+  } 
+  // Case B: If storing as a map { [mealCode]: quantity }
+  else if (typeof selectedMealsForPax === "object") {
+    Object.entries(selectedMealsForPax).forEach(([mealCode, count]) => {
+      const quantity = Number(count);
+      if (quantity <= 0) return;
+      if (mealCode.toLowerCase() === "nomeal" || mealCode.toLowerCase() === "none") return;
+
+      // Find original meal object from SSR data
+      const rawMeal = flight.availableMeals?.find((m) => m.Code === mealCode || m.code === mealCode) || {};
+
+      for (let i = 0; i < quantity; i++) {
+        flattenedMeals.push({
+          AirlineCode: rawMeal.AirlineCode || flight.airlineCode || "",
+          FlightNumber: String(rawMeal.FlightNumber || flight.flightNumber || "").trim(),
+          WayType: Number(rawMeal.WayType || 1),
+          Code: mealCode,
+          Description: String(rawMeal.Description || rawMeal.description || "Meal").trim(),
+          Price: Number(rawMeal.Price ?? rawMeal.Amount ?? rawMeal.price ?? 0),
+          Quantity: "1", // âœ… CRITICAL: Always 1 (as string)
+          Origin: String(rawMeal.Origin || rawMeal.origin || flight.sourceCode || "").toUpperCase(),
+          Destination: String(rawMeal.Destination || rawMeal.destination || flight.destinationCode || "").toUpperCase()
+        });
+      }
+    });
+  }
+
+  return flattenedMeals;
+}
+
+export function mapPassengersForApi(passengers, baseFare, tax, flight = {}, fareDetails = null) {
+  if (!Array.isArray(passengers)) return [];
+
+  const origin = String(flight?.sourceCode || flight?.fromAirportCode || flight?.fromCity || flight?.source || flight?.origin || "DEL").toUpperCase();
+  const destination = String(flight?.destinationCode || flight?.toAirportCode || flight?.toCity || flight?.destination || "BOM").toUpperCase();
+  const airlineCode = resolveAirlineCode(flight?.airlineCode || flight?.airline || flight?.providerName || "6E");
+  const flightNumber = resolveFlightNumber(flight?.flightNumber || flight?.tripNumber || "");
+
+  const count = Math.max(1, passengers.length);
+  const paxBase = Number((Number(baseFare || 0) / count).toFixed(2));
+  const paxTax = Number((Number(tax || 0) / count).toFixed(2));
+
+  return passengers.map((p, idx) => {
+    let rawTitle = String(p.title || p.Title || "Mr").trim();
+    let firstName = String(p.firstName || p.FirstName || "").trim();
+    let lastName = String(p.lastName || p.LastName || "").trim();
+
+    if (!firstName && p.fullName) {
+      const parts = p.fullName.trim().split(/\s+/);
+      if (parts.length > 1 && ["mr", "mrs", "ms", "miss", "dr", "prof"].includes(parts[0].toLowerCase())) {
+        rawTitle = parts[0];
+        parts.shift();
+      }
+      firstName = parts[0] || "";
+      lastName = parts.slice(1).join(" ") || "";
+    }
+
+    const cleanTitle = rawTitle ? rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1).toLowerCase() : "Mr";
+    const paxTypeNum = typeof p.paxType === "number" ? p.paxType : (p.passengerType === "Child" ? 2 : p.passengerType === "Infant" ? 3 : 1);
+    const genderCode = String(p.gender === "Female" || p.gender === 2 || p.gender === "2" || cleanTitle === "Mrs" || cleanTitle === "Miss" ? "2" : "1");
+
+    const rawDob = p.dob || p.DateOfBirth || p.dateOfBirth || "";
+    const cleanDobStr = rawDob ? String(rawDob).split("T")[0] : "";
+
+    const rawNat = String(p.nationality || p.Nationality || "IN");
+    const nationalityCode = rawNat.toLowerCase().includes("india") ? "IN" : rawNat.slice(0, 2).toUpperCase();
+
+    const rawCountry = String(p.countryCode || p.CountryCode || "IN");
+    const countryCode = rawCountry.toLowerCase().includes("india") ? "IN" : rawCountry.slice(0, 2).toUpperCase();
+
+    const cleanContact = String(p.contactNo || p.ContactNo || p.mobile || p.phone || flight?.passengerPhone || "9999999999").replace(/\D/g, "").slice(-10) || "9999999999";
+    const cleanEmail = String(p.email || p.Email || p.passengerEmail || flight?.passengerEmail || "").trim();
+
+    // Map Seats (only include if valid seat object with code exists)
+    const rawSeats = p.selectedSeats || p.selectedSeat || p.Seat || p.SeatDynamic || p.seat || p.seatDynamic || [];
+    const seatArray = Array.isArray(rawSeats) ? rawSeats : (rawSeats ? [rawSeats] : []);
+    const mappedSeats = seatArray
+      .filter((s) => {
+        if (!s) return false;
+        const code = typeof s === "object" ? String(s.Code || s.code || s.bookingCode || s.SeatNumber || s.seatNumber || "").trim() : String(s).trim();
+        return code && code !== "none" && code !== "noseat" && code !== "0" && !code.startsWith("noseat");
+      })
+      .map((s) => {
+        const seKeyCode = String(s.Code || s.code || s.bookingCode || s.rawCode || "").trim();
+        const bareSeatNumber = resolveSeatNumber(s) || resolveSeatNumber(seKeyCode) || seKeyCode;
+        const sOrig = String(s.Origin || s.origin || origin).toUpperCase();
+        const sDest = String(s.Destination || s.destination || destination).toUpperCase();
+        const sAirline = resolveAirlineCode(s.AirlineCode || s.airlineCode || airlineCode);
+        const sFlightNum = resolveFlightNumber(s.FlightNumber || s.flightNumber || flightNumber);
+        const amt = Number(s.Amount ?? s.amount ?? s.Price ?? s.price ?? 0);
+
+        return {
+          AirlineCode: sAirline,
+          FlightNumber: sFlightNum,
+          SeatNumber: bareSeatNumber,
+          Code: seKeyCode || bareSeatNumber,
+          Origin: sOrig,
+          Destination: sDest,
+          Amount: amt,
+        };
+      })
+      .filter(Boolean);
+
+    // Map Baggage
+    const rawBaggage = Array.isArray(p.baggage || p.Baggage) ? (p.baggage || p.Baggage) : [];
+    const mappedBaggage = rawBaggage
+      .filter((b) => {
+        if (!b || typeof b !== "object") return false;
+        const code = String(b.Code || b.code || "").toLowerCase();
+        return code && code !== "nobaggage" && code !== "none";
+      })
+      .map((b) => ({
+        WayType: Number(b.WayType ?? b.wayType ?? 2),
+        Code: String(b.Code || b.code || "").trim(),
+        Description: String(b.Description || b.description || `${b.Weight || 0} Kg Baggage`),
+        Weight: Number(b.Weight ?? b.weight ?? 0),
+        Currency: String(b.Currency || b.currency || "INR"),
+        Price: Number(b.Price ?? b.price ?? b.Amount ?? 0),
+        Origin: String(b.Origin || b.origin || origin).toUpperCase(),
+        Destination: String(b.Destination || b.destination || destination).toUpperCase(),
+      }));
+
+    // Map Meals using the flattening helper
+    const rawMeals = p.mealDynamic || p.MealDynamic || p.selectedMeals || [];
+    const mappedMeals = formatPassengerMeals(rawMeals, flight);
+
+    // Map Fare per Pax
+    const supplierFare = fareDetails || flight?.Fare || flight?.fareData?.Fare || {};
+    const finalPaxFare = {
+      Currency: "INR",
+      BaseFare: Number(supplierFare.BaseFare ?? paxBase),
+      Tax: Number(supplierFare.Tax ?? paxTax),
+      YQTax: Number(supplierFare.YQTax ?? 0),
+      AdditionalTxnFeeOfrd: Number(supplierFare.AdditionalTxnFeeOfrd ?? 0),
+      AdditionalTxnFeePub: Number(supplierFare.AdditionalTxnFeePub ?? 0),
+      AirTransFee: Number(supplierFare.AirTransFee ?? 0),
+      TransactionFee: Number(supplierFare.TransactionFee ?? 0),
+      OtherCharges: Number(supplierFare.OtherCharges ?? 0),
+      Discount: Number(supplierFare.Discount ?? 0),
+      PublishedFare: Number(supplierFare.PublishedFare ?? (paxBase + paxTax)),
+      OfferedFare: Number(supplierFare.OfferedFare ?? (paxBase + paxTax)),
+    };
+
+    const formatSrdvDateTime = (rawVal) => {
+      if (!rawVal) return "";
+      const str = String(rawVal).trim().split("T")[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return `${str}T00:00:00`;
+      }
+      const dmyMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+      if (dmyMatch) {
+        const dd = dmyMatch[1].padStart(2, "0");
+        const mm = dmyMatch[2].padStart(2, "0");
+        const yyyy = dmyMatch[3];
+        return `${yyyy}-${mm}-${dd}T00:00:00`;
+      }
+      return "";
+    };
+
+    return {
+      Title: cleanTitle,
+      FirstName: firstName || `Passenger${idx + 1}`,
+      LastName: lastName || `Passenger${idx + 1}`,
+      PaxType: paxTypeNum,
+      DateOfBirth: formatSrdvDateTime(p.dob || p.DateOfBirth || p.dateOfBirth),
+      Gender: genderCode,
+      PassportNo: String(p.passportNo || p.PassportNo || "").trim(),
+      PassportExpiry: p.passportNo ? formatSrdvDateTime(p.passportExpiry || p.PassportExpiry || p.passportExpiryDate) : "",
+      PassportIssueDate: p.passportNo ? formatSrdvDateTime(p.passportIssueDate || p.PassportIssueDate || "2023-01-01") : "",
+      PassportIssueCountryCode: (p.passportIssueCountryCode || nationalityCode || "IN").slice(0, 2).toUpperCase(),
+      Nationality: nationalityCode,
+      AddressLine1: String(p.addressLine1 || p.AddressLine1 || p.address || p.city || "Street Address").trim() || "Street Address",
+      AddressLine2: String(p.addressLine2 || p.AddressLine2 || "").trim(),
+      City: String(p.city || p.City || origin || "City").trim(),
+      CountryCode: countryCode,
+      CountryName: "INDIA",
+      CellCountryCode: "+91",
+      ContactNo: cleanContact,
+      Email: cleanEmail,
+      IsLeadPax: idx === 0,
+      Fare: finalPaxFare,
+      Baggage: mappedBaggage,
+      MealDynamic: mappedMeals,
+      ...(mappedSeats.length > 0
+        ? {
+            Seat: mappedSeats,
+          }
+        : {}),
+    };
+  });
+}
+
+export function mapPassengersForApiIntegration(passengers, baseFare, tax, flight, fareDetails = null) {
+  return mapPassengersForApi(passengers, baseFare, tax, flight, fareDetails);
+}
+
+// ============================================================================
+// 7. TICKET LCC: POST /api/flight/srdv/TicketLCC
+// ============================================================================
+
+export async function ticketLCC(params = {}) {
+  const activeTraceId = String(params.traceId || params.TraceId || "");
+  const activeResultIndex = cleanResultIndex(params.resultIndex || params.ResultIndex || "");
+  const activeSrdvType = String(params.srdvType || params.SrdvType || "MixAPI");
+  const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
+
+  const rawPassengers = params.passengers || params.Passengers || [];
+  const mappedPassengers = Array.isArray(rawPassengers) && rawPassengers.length > 0 && rawPassengers[0]?.Fare
+    ? rawPassengers
+    : mapPassengersForApi(rawPassengers, params.baseFare, params.tax, params.flight, params.fareDetails);
+
+  const innerPayload = {
+    EndUserIp: params.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+    ...(params.couponCode || params.CouponCode ? { CouponCode: String(params.couponCode || params.CouponCode) } : {}),
+    Passengers: mappedPassengers,
+  };
+
+  const payload = innerPayload;
+
+  const endpoint = `${SRDV_ROOT}/TicketLCC`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const errObj = resObj?.Error || rawData?.Error;
+
+    if (errObj && String(errObj.ErrorCode) !== "0" && String(errObj.ErrorCode) !== "10" && errObj.ErrorMessage) {
+      return {
+        success: false,
+        errorCode: String(errObj.ErrorCode),
+        error: errObj.ErrorMessage,
+        traceId: activeTraceId,
+        response: resObj,
+        rawResponse: rawData,
+      };
+    }
+
+    const itinerary = resObj?.FlightItinerary || rawData?.FlightItinerary || {};
+    const pnr = String(itinerary?.PNR || resObj?.PNR || rawData?.PNR || "").trim();
+    const bookingId = String(itinerary?.BookingId || resObj?.BookingId || rawData?.BookingId || pnr).trim();
+    const isPending = String(errObj?.ErrorCode) === "10";
+
+    return {
+      success: true,
+      isPendingCallback: isPending,
+      errorCode: String(errObj?.ErrorCode || "0"),
+      status: isPending ? "Pending" : "Confirmed",
+      pnr,
+      bookingId,
+      traceId: activeTraceId,
+      response: resObj,
+      rawResponse: rawData,
+    };
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    return {
+      success: false,
+      errorCode: "-1",
+      error: error?.message || "TicketLCC request failed.",
+      traceId: activeTraceId,
+      response: null,
+      rawResponse: null,
+    };
+  }
+}
+
+// ============================================================================
+// 8. HOLD GDS & TICKET GDS (Non-LCC Carriers)
+// ============================================================================
+
+export async function holdGDS(params = {}) {
+  const activeTraceId = String(params.traceId || params.TraceId || "");
+  const activeResultIndex = cleanResultIndex(params.resultIndex || params.ResultIndex || "");
+  const activeSrdvType = String(params.srdvType || params.SrdvType || "MixAPI");
+  const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
+  const journeyTypeVal = Number(params.journeyType || params.JourneyType || (activeResultIndex.includes(",") ? 2 : 1));
+
+  const rawPassengers = params.passengers || params.Passengers || [];
+  const mappedPassengers = Array.isArray(rawPassengers) && rawPassengers.length > 0 && rawPassengers[0]?.Fare
+    ? rawPassengers
+    : mapPassengersForApi(rawPassengers, params.baseFare, params.tax, params.flight);
+
+  const innerPayload = {
+    EndUserIp: params.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+    JourneyType: journeyTypeVal,
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+    ...(params.couponCode || params.CouponCode ? { CouponCode: String(params.couponCode || params.CouponCode) } : {}),
+    Passengers: mappedPassengers,
+  };
+  const payload = innerPayload;
+  const endpoint = `${SRDV_ROOT}/HoldGDS`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+    return rawData;
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+export async function ticketGDS(params = {}) {
+  const activeTraceId = String(params.traceId || params.TraceId || "");
+  const activeResultIndex = cleanResultIndex(params.resultIndex || params.ResultIndex || "");
+  const activeSrdvType = String(params.srdvType || params.SrdvType || "MixAPI");
+  const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
+  const rawBookingId = params.bookingId ?? params.BookingId ?? 0;
+  const parsedBookingId = typeof rawBookingId === "number" ? rawBookingId : (parseInt(String(rawBookingId).replace(/\D/g, ""), 10) || 0);
+
+  const rawPassengers = params.passengers || params.Passengers || [];
+  const mappedPassengers = Array.isArray(rawPassengers) && rawPassengers.length > 0 && rawPassengers[0]?.Fare
+    ? rawPassengers
+    : mapPassengersForApi(rawPassengers, params.baseFare, params.tax, params.flight);
+
+  const innerPayload = {
+    EndUserIp: params.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: activeTraceId,
+    ResultIndex: activeResultIndex,
+    PNR: String(params.pnr || params.PNR || ""),
+    BookingId: parsedBookingId,
+    SrdvType: activeSrdvType,
+    SrdvIndex: activeSrdvIndex,
+    Passengers: mappedPassengers,
+  };
+  const payload = innerPayload;
+  const endpoint = `${SRDV_ROOT}/TicketGDS`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+    return rawData;
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// 9. CANCELLATION APIS
+// ============================================================================
+
+export async function getCancellationCharges(params = {}) {
+  const payload = {
+    EndUserIp: "127.0.0.1",
+    RequestType: Number(params.requestType || params.RequestType || 1),
+    TraceId: String(params.traceId || params.TraceId || ""),
+    BookingId: String(params.bookingId || params.BookingId || ""),
+    SrdvType: String(params.srdvType || params.SrdvType || "MixAPI"),
+    SrdvIndex: String(params.srdvIndex || params.SrdvIndex || "2"),
+  };
+
+  const endpoint = `${SRDV_ROOT}/GetCancellationCharges`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+    return rawData;
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+export async function sendCancelRequest(params = {}) {
+  const payload = {
+    EndUserIp: "127.0.0.1",
+    BookingId: String(params.bookingId || params.BookingId || ""),
+    PNR: String(params.pnr || params.PNR || ""),
+    RequestType: String(params.requestType || params.RequestType || "2"),
+    CancellationType: String(params.cancellationType || params.CancellationType || "3"),
+    Remarks: String(params.remarks || params.Remarks || "User requested cancellation"),
+    SrdvType: String(params.srdvType || params.SrdvType || "MixAPI"),
+    SrdvIndex: String(params.srdvIndex || params.SrdvIndex || "2"),
+    ...(params.sectors || params.Sectors ? { Sectors: params.sectors || params.Sectors } : {}),
+    ...(params.ticketData || params.TicketData ? { TicketData: params.ticketData || params.TicketData } : {}),
+  };
+
+  const endpoint = `${SRDV_ROOT}/SendChangeRequest`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+    return rawData;
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+export function sendChangeRequest(params) {
+  return sendCancelRequest(params);
+}
+
+export async function getCancelStatus(params = {}) {
+  const changeRequestId = typeof params === "object"
+    ? (params.changeRequestId || params.ChangeRequestId || "")
+    : String(params || "");
+
+  const payload = {
+    EndUserIp: "127.0.0.1",
+    ChangeRequestId: String(changeRequestId),
+  };
+
+  const endpoint = `${SRDV_ROOT}/GetCancelStatus`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+    return rawData;
+  } catch (error) {
+    logFlightApiError("POST", endpoint, error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// 10. CALENDAR FARE: POST /api/flight/srdv/GetCalendarFare
+// ============================================================================
+
+export async function getCalendarFare(searchParams = {}) {
+  const isMultiCity = searchParams.journeyType === 3 || String(searchParams.tripType || "").toLowerCase() === "multicity";
+  if (isMultiCity) {
+    return { success: true, isMultiCity: true, data: [], results: [] };
+  }
+
+  const fromCode = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode || searchParams.from || searchParams.origin;
+  const toCode = searchParams.destinationCode || searchParams.toCode || searchParams.to || searchParams.destination;
+
+  if (!fromCode || !toCode) {
+    throw new Error("All flight sectors require a valid airport selection from the suggestions.");
+  }
+  const journeyDate = searchParams.date || searchParams.preferredDepartureTime || new Date().toISOString().slice(0, 10);
+  const cabinClassCode = toCabinClassCode(searchParams.travelClass || searchParams.flightCabinClass);
+
+  const payload = {
+    EndUserIp: searchParams.endUserIp || "192.168.1.1",
+    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
+    UserName: FLIGHT_API_CREDENTIALS.UserName,
+    Password: FLIGHT_API_CREDENTIALS.Password,
+    JourneyType: Number(searchParams.journeyType || 1),
+    FareType: Number(searchParams.fareType || 1),
+    Segments: [
+      {
+        Origin: fromCode,
+        Destination: toCode,
+        FlightCabinClass: cabinClassCode,
+        PreferredDepartureTime: `${journeyDate}T00:00:00`,
+        PreferredArrivalTime: `${journeyDate}T00:00:00`,
+      },
+    ],
+  };
+
+  const endpoint = `${SRDV_ROOT}/GetCalendarFare`;
+  logFlightApiRequest("POST", endpoint, payload);
+
+  try {
+    const rawData = await requestJson(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+
+    const resObj = rawData?.Response || rawData?.data?.Response || rawData;
+    const rawResults = resObj?.SearchResults || resObj?.searchResults || resObj?.Results || resObj?.results || [];
     const resultsList = Array.isArray(rawResults) ? rawResults : [];
     const fareMapByDate = {};
 
@@ -1742,1904 +3017,237 @@ export async function getCalendarFare({
         dateOnly,
         isLowestFareOfMonth: Boolean(item.IsLowestFareOfMonth || item.isLowestFareOfMonth),
         fare: fareVal,
-        baseFare: Number(item.BaseFare ?? item.baseFare ?? 0),
-        tax: Number(item.Tax ?? item.tax ?? 0),
       };
     });
 
     return {
-      raw: rawData,
-      traceId: rawData?.TraceId || rawData?.traceId || "",
-      srdvType: rawData?.SrdvType || rawData?.srdvType || "",
-      origin: rawData?.Origin || rawData?.origin || resolveCityCode(from, "DEL"),
-      destination: rawData?.Destination || rawData?.destination || resolveCityCode(to, "HYD"),
+      success: true,
+      origin: fromCode,
+      destination: toCode,
       results: normalizedResults,
       fareMapByDate,
+      raw: rawData,
     };
   } catch (error) {
-    console.warn("CalendarFare API fetch failed:", error);
-    return { raw: null, error: error.message || "Failed to fetch calendar fares", results: [], fareMapByDate: {} };
+    logFlightApiError("POST", endpoint, error);
+    return { success: false, error: error?.message, results: [], fareMapByDate: {} };
   }
 }
 
-
-export async function getFareRule(traceIdOrObj, resultIndexParam, srdvTypeParam, srdvIndexParam) {
-  let traceId = traceIdOrObj;
-  let resultIndex = resultIndexParam;
-  let srdvType = srdvTypeParam || "MixAPI";
-  let srdvIndex = srdvIndexParam || "1";
-
-  if (traceIdOrObj && typeof traceIdOrObj === "object") {
-    const flightObj = traceIdOrObj.flight || traceIdOrObj;
-    traceId = flightObj.traceId || flightObj.TraceId || traceId;
-    resultIndex = flightObj.resultIndex || flightObj.ResultIndex || flightObj.id || resultIndex;
-    srdvType = flightObj.srdvType || flightObj.SrdvType || srdvType || "MixAPI";
-    srdvIndex = flightObj.srdvIndex || flightObj.SrdvIndex || (flightObj.isLcc ? "2" : "1");
-  }
-
-  // Fallback to combined stored parameters if missing or if resultIndex is just a single leg when it should be combined
-  try {
-    const storedFlightStr = sessionStorage.getItem("SelectedFlight");
-    if (storedFlightStr) {
-      const storedFlight = JSON.parse(storedFlightStr);
-      if (!traceId) traceId = storedFlight.TraceId;
-
-      // If we are given a single resultIndex but sessionStorage has a combined one for the same trace, use the combined one
-      if (storedFlight.ResultIndex && storedFlight.ResultIndex.includes(resultIndex)) {
-        resultIndex = storedFlight.ResultIndex;
-      }
-      if (!resultIndex) resultIndex = storedFlight.ResultIndex;
-    }
-  } catch (e) { }
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || "1"),
-    TraceId: String(traceId || ""),
-    ResultIndex: String(resultIndex || ""),
-  };
-
-  try {
-    const rawData = await requestJson(`${SRDV_ROOT}/FareRule`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const response = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = response?.Error || response?.error || rawData?.Error || rawData?.error;
-
-    if (errorObj && typeof errorObj === "object" && String(errorObj.ErrorCode || "0") !== "0") {
-      const errorMsg = errorObj.ErrorMessage || "Fare rule key or trace ID expired.";
-      return { success: false, error: errorMsg, traceId: String(traceId || ""), resultIndex: String(resultIndex || ""), srdvType: String(srdvType || "MixAPI"), specialRule: "", results: [], rawResponse: rawData };
-    }
-
-    const rawResults = response.FareRules || response.fareRules || (Array.isArray(response.Results) ? response.Results : (Array.isArray(response.results) ? response.results : []));
-    const miniFareRules = response.MiniFareRules || response.miniFareRules || response.Results?.MiniFareRules || response.results?.MiniFareRules || [];
-    const airlineRules = response.AirlineRules || response.airlineRules || response.Results?.AirlineRules || response.results?.AirlineRules || null;
-    const specialRule = response.SpecialRule || response.specialRule || "";
-    const resultsList = Array.isArray(rawResults)
-      ? rawResults.filter((r) => r && (typeof r === "object" || typeof r === "string"))
-      : typeof rawResults === "string" && rawResults.trim()
-        ? [{ FareRuleDetail: rawResults }]
-        : [];
-
-    return {
-      success: true,
-      traceId: String(response.TraceId || traceId || ""),
-      resultIndex: String(response.ResultIndex || resultIndex || ""),
-      srdvType: String(response.SrdvType || srdvType || "MixAPI"),
-      specialRule: String(specialRule || ""),
-      airlineRules: airlineRules,
-      miniFareRules: Array.isArray(miniFareRules) ? miniFareRules : [],
-      results: resultsList,
-      rawResponse: rawData,
-    };
-  } catch (error) {
-    return { success: false, error: error.message || "Unable to fetch live fare rules.", traceId: String(traceId || ""), resultIndex: String(resultIndex || ""), specialRule: "", airlineRules: null, miniFareRules: [], results: [] };
-  }
-}
-
-export async function getSSR(traceIdOrObj, resultIndexParam, srdvTypeParam, srdvIndexParam) {
-  let traceId = traceIdOrObj;
-  let resultIndex = resultIndexParam;
-  let srdvType = srdvTypeParam || "MixAPI";
-  let srdvIndex = srdvIndexParam || "2";
-
-  if (traceIdOrObj && typeof traceIdOrObj === "object") {
-    const flightObj = traceIdOrObj.flight || traceIdOrObj;
-    traceId = flightObj.traceId || flightObj.TraceId || traceId;
-    resultIndex = flightObj.resultIndex || flightObj.ResultIndex || flightObj.id || resultIndex;
-    srdvType = flightObj.srdvType || flightObj.SrdvType || srdvType || "MixAPI";
-    srdvIndex = flightObj.srdvIndex || flightObj.SrdvIndex || srdvIndex || "2";
-
-    // Handle Split ResultIndex for Round-Trip LCC and Multi-City
-    if (flightObj.returnFlight && !String(resultIndex).includes(",")) {
-      const returnIdx = flightObj.returnFlight.resultIndex || flightObj.returnFlight.ResultIndex || flightObj.returnFlight.id || "";
-      if (resultIndex && returnIdx) {
-        resultIndex = `${resultIndex},IB_${returnIdx}`;
-      }
-    } else if (Array.isArray(flightObj.legs) && flightObj.legs.length > 0 && !String(resultIndex).includes(",")) {
-      resultIndex = [...new Set(flightObj.legs.map(l => l.resultIndex || l.ResultIndex || l.id).filter(Boolean))].join(",");
-    }
-  }
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || "2"),
-    TraceId: String(traceId || ""),
-    ResultIndex: String(resultIndex || ""),
-  };
-
-  try {
-    const rawData = await requestJson(`${SRDV_ROOT}/SSR`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const response = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = response?.Error || response?.error || rawData?.Error || rawData?.error;
-
-    if (errorObj && typeof errorObj === "object" && String(errorObj.ErrorCode || "0") !== "0") {
-      const errorMsg = errorObj.ErrorMessage || "SSR add-ons unavailable.";
-      return { success: false, errorCode: Number(errorObj.ErrorCode), error: errorMsg, baggage: [], meal: [], Baggage: [], MealDynamic: [], Meal: [], rawResponse: rawData };
-    }
-
-    const rawBaggage = response.Baggage || response.baggage || [];
-    const rawMealDynamic = response.MealDynamic || response.mealDynamic || [];
-    const rawMeal = response.Meal || response.meal || [];
-    const flattenList = (list) => Array.isArray(list) ? list.flat(Infinity) : [];
-
-    const baggageList = flattenList(rawBaggage).map((b) => ({
-      code: b.Code || b.code || "",
-      Code: b.Code || b.code || "",
-      weight: Number(b.Weight || b.weight || 0),
-      Weight: Number(b.Weight || b.weight || 0),
-      description: b.Description || b.description || `${b.Weight || 0} Kg Baggage`,
-      Description: b.Description || b.description || `${b.Weight || 0} Kg Baggage`,
-      price: Number(b.Price ?? b.price ?? b.Amount ?? 0),
-      Price: Number(b.Price ?? b.price ?? b.Amount ?? 0),
-      origin: b.Origin || b.origin || "",
-      destination: b.Destination || b.destination || "",
-      WayType: Number(b.WayType ?? b.wayType ?? 0),
-      wayType: Number(b.WayType ?? b.wayType ?? 0),
-    }));
-
-    const mergedMeals = [...flattenList(rawMealDynamic), ...flattenList(rawMeal)].map((m) => ({
-      code: m.Code || m.code || "",
-      Code: m.Code || m.code || "",
-      description: m.Description || m.description || m.Details || m.AirlineDescription || "Standard Meal",
-      Description: m.Description || m.description || m.Details || m.AirlineDescription || "Standard Meal",
-      price: Number(m.Price ?? m.price ?? m.Amount ?? 0),
-      Price: Number(m.Price ?? m.price ?? m.Amount ?? 0),
-      origin: m.Origin || m.origin || "",
-      destination: m.Destination || m.destination || "",
-      airlineCode: m.AirlineCode || m.airlineCode || "",
-      WayType: Number(m.WayType ?? m.wayType ?? 0),
-      wayType: Number(m.WayType ?? m.wayType ?? 0),
-    }));
-
-    return {
-      success: true,
-      errorCode: 0,
-      traceId: String(response.TraceId || traceId || ""),
-      resultIndex: String(response.ResultIndex || resultIndex || ""),
-      srdvType: String(response.SrdvType || srdvType || "MixAPI"),
-      srdvIndex: String(response.SrdvIndex || srdvIndex || "2"),
-      Baggage: rawBaggage,
-      MealDynamic: rawMealDynamic,
-      Meal: rawMeal,
-      baggage: baggageList,
-      meal: mergedMeals,
-      rawResponse: rawData,
-    };
-  } catch (error) {
-    return { success: false, errorCode: -1, error: error.message || "Failed to fetch SSR options.", baggage: [], meal: [], Baggage: [], MealDynamic: [], Meal: [], rawResponse: null };
-  }
-}
-
-export async function getSeatMap(traceIdOrObj, resultIndexParam, srdvTypeParam, srdvIndexParam) {
-  let traceId = traceIdOrObj;
-  let resultIndex = resultIndexParam;
-  let srdvType = srdvTypeParam || "MixAPI";
-  let srdvIndex = srdvIndexParam || "2";
-
-  if (traceIdOrObj && typeof traceIdOrObj === "object") {
-    const flightObj = traceIdOrObj.flight || traceIdOrObj;
-    traceId = flightObj.traceId || flightObj.TraceId || traceIdOrObj.traceId || traceIdOrObj.TraceId || traceId;
-    resultIndex = flightObj.resultIndex || flightObj.ResultIndex || flightObj.id || traceIdOrObj.resultIndex || traceIdOrObj.ResultIndex || resultIndex;
-    srdvType = flightObj.srdvType || flightObj.SrdvType || traceIdOrObj.srdvType || traceIdOrObj.SrdvType || srdvType || "MixAPI";
-    srdvIndex = flightObj.srdvIndex || flightObj.SrdvIndex || traceIdOrObj.srdvIndex || traceIdOrObj.SrdvIndex || srdvIndex || "2";
-
-    // Handle Split ResultIndex for Round-Trip LCC and Multi-City
-    const returnFlight = flightObj.returnFlight || traceIdOrObj.returnFlight || traceIdOrObj.return;
-    const selectedLegs = flightObj.selectedLegs || traceIdOrObj.selectedLegs || flightObj.legs || traceIdOrObj.legs;
-
-    if (returnFlight && !String(resultIndex).includes(",")) {
-      const onwardIdx = String(flightObj.legResultIndex || flightObj.resultIndex || flightObj.ResultIndex || flightObj.id || resultIndex || "").replace(/^leg\d+-/, "");
-      const returnIdx = String(returnFlight.legResultIndex || returnFlight.resultIndex || returnFlight.ResultIndex || returnFlight.id || "").replace(/^leg\d+-/, "");
-      if (onwardIdx && returnIdx) {
-        resultIndex = `${onwardIdx},${returnIdx.startsWith("IB_") ? returnIdx : "IB_" + returnIdx}`;
-      }
-    } else if (Array.isArray(selectedLegs) && selectedLegs.length > 1 && !String(resultIndex).includes(",")) {
-      const allLegsIdx = selectedLegs.map((l, idx) => {
-        const raw = String(l.legResultIndex || l.resultIndex || l.ResultIndex || l.id || "").replace(/^leg\d+-/, "");
-        if (idx === 1 && !raw.startsWith("IB_") && (traceIdOrObj.isTwoWay || flightObj.isTwoWay)) {
-          return `IB_${raw}`;
-        }
-        return raw;
-      }).filter(Boolean);
-      resultIndex = [...new Set(allLegsIdx)].join(",");
-    }
-  }
-
-  // Ensure traceId is resolved if not found on flightObj directly
-  if (!traceId && typeof window !== "undefined") {
-    try {
-      traceId = window.sessionStorage.getItem("TraceId") || window.sessionStorage.getItem("flight_trace_id") || "";
-    } catch { }
-  }
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || "2"),
-    TraceId: String(traceId || ""),
-    ResultIndex: String(resultIndex || ""),
-  };
-
-  try {
-    const rawData = await requestJson(`${SRDV_ROOT}/SeatMap`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const response = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = response?.Error || response?.error || rawData?.Error || rawData?.error;
-
-    if (errorObj && typeof errorObj === "object" && String(errorObj.ErrorCode || "0") !== "0") {
-      const errorMsg = errorObj.ErrorMessage || "Seat map request returned error.";
-      return { success: false, errorCode: Number(errorObj.ErrorCode), error: errorMsg, traceId: String(traceId || ""), srdvType: String(srdvType || "MixAPI"), results: [], rawResponse: rawData };
-    }
-
-    let resultsArr = [];
-    const resData = response.Results || response.results || response;
-    if (Array.isArray(resData)) {
-      resultsArr = resData;
-    } else if (resData && typeof resData === "object") {
-      resultsArr = [resData];
-    }
-
-    return {
-      success: true,
-      errorCode: 0,
-      traceId: String(response.TraceId || traceId || ""),
-      srdvType: String(response.SrdvType || srdvType || "MixAPI"),
-      srdvIndex: String(response.SrdvIndex || srdvIndex || "2"),
-      results: resultsArr,
-      rawResponse: rawData,
-    };
-  } catch (error) {
-    return { success: false, errorCode: -1, error: error.message || "Failed to fetch seat map.", results: [], rawResponse: null };
-  }
-}
-
-export async function getFareQuote(traceIdOrObj, resultIndexParam, srdvTypeParam, srdvIndexParam) {
-  let traceId = traceIdOrObj;
-  let resultIndex = resultIndexParam;
-  let srdvType = srdvTypeParam || "MixAPI";
-  let srdvIndex = srdvIndexParam || "2";
-
-  let journeyType = 1;
-  let adultCount = 1;
-  let childCount = 0;
-  let infantCount = 0;
-  let couponCode = null;
-
-  if (traceIdOrObj && typeof traceIdOrObj === "object") {
-    const flightObj = traceIdOrObj.flight || traceIdOrObj;
-    const returnObj = traceIdOrObj.returnFlight || traceIdOrObj.return;
-    const legsList = traceIdOrObj.legs || traceIdOrObj.selectedLegs;
-
-    traceId = flightObj.traceId || flightObj.TraceId || traceIdOrObj.traceId || traceId;
-    srdvType = flightObj.srdvType || flightObj.SrdvType || traceIdOrObj.srdvType || srdvType || "MixAPI";
-    srdvIndex = flightObj.srdvIndex || flightObj.SrdvIndex || traceIdOrObj.srdvIndex || srdvIndex || "2";
-
-    journeyType = flightObj.journeyType || traceIdOrObj.journeyType || 1; // Trust the normalized object JourneyType
-    adultCount = traceIdOrObj.adults || flightObj.adults || 1;
-    childCount = traceIdOrObj.children || flightObj.children || 0;
-    infantCount = traceIdOrObj.infants || flightObj.infants || 0;
-    couponCode = traceIdOrObj.couponCode || flightObj.couponCode || null;
-
-    if (Array.isArray(legsList) && legsList.length > 0) {
-      const allLegsIdx = legsList.map(l => {
-        const rawIdx = l.legResultIndex || l.resultIndex || l.ResultIndex || l.id || "";
-        return String(rawIdx).replace(/^leg\d+-/, "");
-      }).filter(Boolean);
-      resultIndex = [...new Set(allLegsIdx)].join(",");
-      if (legsList.length > 1 || traceIdOrObj.isMultiCity || flightObj.isMultiCity) {
-        journeyType = 3;
-      }
-    } else if (returnObj) {
-      const onwardIdx = String(flightObj.legResultIndex || flightObj.resultIndex || flightObj.ResultIndex || flightObj.id || "").replace(/^leg\d+-/, "");
-      const returnIdx = String(returnObj.legResultIndex || returnObj.resultIndex || returnObj.ResultIndex || returnObj.id || "").replace(/^leg\d+-/, "");
-      resultIndex = [onwardIdx, returnIdx].filter(Boolean).join(",IB_");
-      journeyType = 2;
-    } else if (traceIdOrObj.resultIndex && typeof traceIdOrObj.resultIndex === "string" && traceIdOrObj.resultIndex.includes(",")) {
-      resultIndex = traceIdOrObj.resultIndex;
-      if (traceIdOrObj.isMultiCity || flightObj.isMultiCity || traceIdOrObj.journeyType === 3 || flightObj.journeyType === 3) {
-        journeyType = 3;
-      } else {
-        journeyType = 2;
-      }
-    } else {
-      const rawIdx = flightObj.legResultIndex || flightObj.resultIndex || flightObj.ResultIndex || flightObj.id || resultIndex || "";
-      resultIndex = String(rawIdx).replace(/^leg\d+-/, "");
-      if (traceIdOrObj.isMultiCity || flightObj.isMultiCity || traceIdOrObj.journeyType === 3 || flightObj.journeyType === 3) {
-        journeyType = 3;
-      }
-    }
-  }
-
-  try {
-    const storedFlightStr = sessionStorage.getItem("SelectedFlight");
-    if (storedFlightStr) {
-      const storedFlight = JSON.parse(storedFlightStr);
-      if (!traceId) traceId = storedFlight.TraceId;
-
-      if (storedFlight.ResultIndex && storedFlight.ResultIndex.includes(resultIndex)) {
-        resultIndex = storedFlight.ResultIndex;
-        if (storedFlight.isMultiCity || storedFlight.JourneyType === 3 || journeyType === 3) {
-          journeyType = 3;
-        } else if (storedFlight.ResultIndex.includes(",")) {
-          journeyType = 2;
-        }
-      }
-      if (!resultIndex) resultIndex = storedFlight.ResultIndex;
-    }
-  } catch (e) { }
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || "2"),
-    TraceId: String(traceId || ""),
-    ResultIndex: String(resultIndex || ""),
-    CouponCode: couponCode ? String(couponCode) : null
-  };
-
-  try {
-    const rawData = await requestJson(`${SRDV_ROOT}/FareQuote`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const response = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = response?.Error || response?.error || rawData?.Error || rawData?.error;
-
-    if (errorObj && typeof errorObj === "object" && String(errorObj.ErrorCode || "0") !== "0") {
-      const errorMsg = errorObj.ErrorMessage || "Fare quote unavailable.";
-      return { success: false, errorCode: Number(errorObj.ErrorCode), error: errorMsg, isPriceChanged: Boolean(response.IsPriceChanged), traceId: String(traceId || ""), srdvType: String(srdvType || "MixAPI"), results: null, rawResponse: rawData };
-    }
-
-    const results = response.Results || response.results || response.Fare || response.fare || null;
-    const hasValidFare = Boolean(results?.Fare || results?.fare || results?.BaseFare || results?.PublishedFare || response?.Fare || response?.fare);
-
-    if (!hasValidFare) {
-      const errorMsg = errorObj?.ErrorMessage || "Live fare quote data not returned by airline provider. The flight session may have expired.";
-      return { success: false, errorCode: 2, error: errorMsg, isPriceChanged: false, traceId: String(traceId || ""), srdvType: String(srdvType || "MixAPI"), results: null, rawResponse: rawData };
-    }
-
-    const quotedFare = results?.Fare || results?.fare || results || {};
-    const isLcc = Boolean(results?.IsLCC ?? results?.isLCC ?? results?.IsLcc ?? results?.isLcc ?? false);
-    const isSeatMapAvailable = Boolean(results?.IsSeatMapAvailable ?? results?.isSeatMapAvailable ?? results?.IsSeatSelect ?? results?.isSeatSelect ?? results?.IsSeatMap ?? results?.isSeatMap ?? true);
-
-    const isPassportRequiredAtBook = Boolean(results?.IsPassportRequiredAtBook ?? results?.isPassportRequiredAtBook ?? response?.IsPassportRequiredAtBook ?? false);
-    const isPassportFullDetailRequiredAtBook = Boolean(results?.IsPassportFullDetailRequiredAtBook ?? results?.isPassportFullDetailRequiredAtBook ?? response?.IsPassportFullDetailRequiredAtBook ?? false);
-    const adultDobRequired = Boolean(results?.AdultDobRequired ?? results?.adultDobRequired ?? response?.AdultDobRequired ?? false);
-    const childDobRequired = Boolean(results?.ChildDobRequired ?? results?.childDobRequired ?? response?.ChildDobRequired ?? false);
-    const infantDobRequired = Boolean(results?.InfantDobRequired ?? results?.infantDobRequired ?? response?.InfantDobRequired ?? false);
-    const singleSlotBooking = String(results?.SingleSlotBooking ?? response?.SingleSlotBooking ?? "Yes");
-    const returnedResultIndex = String(results?.ResultIndex ?? response?.ResultIndex ?? resultIndex);
-
-    const pickNBookDiscount = Number(results?.PickNBookDiscount || 0);
-    const pickNBookMarkup = Number(results?.PickNBookMarkup || 0);
-    const pickNBookAvailableOffers = Array.isArray(results?.PickNBookAvailableOffers) ? results.PickNBookAvailableOffers : [];
-
-    const fareQuoteResult = {
-      success: true,
-      errorCode: 0,
-      traceId: String(response.TraceId || rawData?.TraceId || traceId || ""),
-      isPriceChanged: Boolean(results?.IsPriceChanged ?? response.IsPriceChanged ?? false),
-      holdAllowed: Boolean(results?.HoldAllowed ?? response.HoldAllowed ?? false),
-      isLcc,
-      isSeatMapAvailable,
-      isPassportRequiredAtBook,
-      isPassportFullDetailRequiredAtBook,
-      adultDobRequired,
-      childDobRequired,
-      infantDobRequired,
-      singleSlotBooking,
-      resultIndex: returnedResultIndex,
-      results,
-      fare: quotedFare,
-      pickNBookDiscount,
-      pickNBookMarkup,
-      pickNBookAvailableOffers,
-      rawResponse: rawData,
-    };
-
-    if (typeof window !== "undefined") {
-      try {
-        window.sessionStorage.setItem("FareQuote", JSON.stringify(rawData || fareQuoteResult));
-        window.sessionStorage.setItem("last_fare_quote", JSON.stringify(fareQuoteResult));
-      } catch (e) { }
-    }
-
-    return fareQuoteResult;
-  } catch (error) {
-    return { success: false, errorCode: -1, error: error.message || "Failed to validate fare quote.", results: null, rawResponse: null };
-  }
-}
-
-function mapPassengerTypeToPaxType(typeString) {
-  const clean = String(typeString || "").toLowerCase();
-  if (clean.includes("child")) return 2;
-  if (clean.includes("infant")) return 3;
-  return 1; // Adult
-}
-
-function mapGenderToCode(genderValue) {
-  if (typeof genderValue === "number") {
-    return genderValue;
-  }
-  const clean = String(genderValue || "").toLowerCase();
-  if (clean.startsWith("f") || clean === "female" || clean === "2") return 2;
-  return 1;
-}
-
-function formatIsoDateTime(dateVal, defaultDateStr = "2000-01-01T00:00:00") {
-  if (!dateVal) return defaultDateStr;
-  let str = String(dateVal).trim();
-  if (!str) return defaultDateStr;
-
-  if (str.includes('/')) {
-    const parts = str.split('/');
-    if (parts.length === 3 && parts[2].length === 4) {
-      str = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-    } else if (parts.length === 3 && parts[0].length === 4) {
-      str = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-    }
-  }
-
-  if (str.includes("T")) {
-    return str.split('.')[0].replace('Z', '');
-  }
-  return `${str}T00:00:00`;
-}
-
-export function formatPassengerDateOfBirth(dateVal, paxType = 1) {
-  if (dateVal) {
-    let str = String(dateVal).trim();
-    if (str) {
-      if (str.includes('/')) {
-        const parts = str.split('/');
-        if (parts.length === 3 && parts[2].length === 4) {
-          str = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        } else if (parts.length === 3 && parts[0].length === 4) {
-          str = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-        }
-      }
-      if (str.includes("T")) {
-        return str.split('.')[0].replace('Z', '');
-      }
-      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        return `${str}T00:00:00`;
-      }
-      const parsed = new Date(str);
-      if (!isNaN(parsed.getTime())) {
-        const yyyy = parsed.getFullYear();
-        const mm = String(parsed.getMonth() + 1).padStart(2, '0');
-        const dd = String(parsed.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}T00:00:00`;
-      }
-    }
-  }
-
-  // Fallback defaults if DOB not provided
-  const currentYear = new Date().getFullYear();
-  if (paxType === 3) {
-    // Infant (< 2 years)
-    return `${currentYear - 1}-01-01T00:00:00`;
-  } else if (paxType === 2) {
-    // Child (2-12 years)
-    return `${currentYear - 7}-01-01T00:00:00`;
-  }
-  // Adult (>= 12 years)
-  return "1995-01-01T00:00:00";
-}
-
-function parseSeatLabelAndCode(s, defaultAirlineCode = "6E", defaultFlightNumber = "101", defaultOrigin = "DEL", defaultDestination = "BOM") {
-  if (!s) return null;
-
-  if (typeof s !== "object") {
-    const rawStr = String(s || "").trim();
-    if (!rawStr) return null;
-    const match = rawStr.match(/^(\d+[A-Z]+)/i);
-    const seatNumber = match ? match[1].toUpperCase() : rawStr;
-    const code = rawStr; // Exact unmodified SSR string required by MixAPI supplier
-    return {
-      Code: code,
-      SeatNumber: seatNumber,
-      AirlineCode: defaultAirlineCode,
-      FlightNumber: defaultFlightNumber,
-      AirlineNumber: defaultFlightNumber,
-      Origin: defaultOrigin,
-      Destination: defaultDestination,
-      Amount: 0,
-      IsBooked: true,
-      IsAisle: false,
-      IsLegroom: false,
-    };
-  }
-
-  // Exact unmodified SSR string for Code (e.g., "15ASeKey25")
-  const rawCode = String(s.Code || s.code || s.rawCode || s.SeatNumber || s.seatNumber || s.label || s.seatLabel || "").trim();
-
-  // Extracted human-readable label for SeatNumber (e.g., "15A")
-  let cleanSeatLabel = String(s.SeatNumber || s.seatNumber || s.label || s.seatLabel || rawCode).trim();
-  const match = cleanSeatLabel.match(/^(\d+[A-Z]+)/i);
-  if (match) {
-    cleanSeatLabel = match[1].toUpperCase();
-  } else {
-    cleanSeatLabel = cleanSeatLabel.toUpperCase();
-  }
-
-  const finalCode = rawCode || cleanSeatLabel;
-  const finalSeatNumber = cleanSeatLabel;
-
-  const fltNo = String(s.FlightNumber || s.flightNumber || s.AirlineNumber || s.airlineNumber || defaultFlightNumber).trim();
-  const airline = String(s.AirlineCode || s.airlineCode || defaultAirlineCode).trim();
-  const orig = String(s.Origin || s.origin || defaultOrigin).trim();
-  const dest = String(s.Destination || s.destination || defaultDestination).trim();
-  const amount = Number(s.Amount ?? s.amount ?? s.Price ?? s.price ?? 0);
-  const isBooked = s.IsBooked !== undefined ? Boolean(s.IsBooked) : (s.isBooked !== undefined ? Boolean(s.isBooked) : true);
-  const isAisle = s.IsAisle !== undefined ? Boolean(s.IsAisle) : (s.isAisle !== undefined ? Boolean(s.isAisle) : false);
-  const isLegroom = s.IsLegroom !== undefined ? Boolean(s.IsLegroom) : (s.isLegroom !== undefined ? Boolean(s.isLegroom) : false);
-
-  return {
-    Code: finalCode,
-    SeatNumber: finalSeatNumber,
-    AirlineCode: airline,
-    FlightNumber: fltNo,
-    AirlineNumber: fltNo,
-    Origin: orig,
-    Destination: dest,
-    Amount: amount,
-    IsBooked: isBooked,
-    IsAisle: isAisle,
-    IsLegroom: isLegroom,
-  };
-}
-
-function mapPassengersForApiIntegration(passengers = [], baseFare = 0, tax = 0, flight = null, otherCharges = 0, contact = null, fareBreakdown = []) {
-  const paxList = Array.isArray(passengers) && passengers.length > 0 ? passengers : [{}];
-  const count = paxList.length;
-  const paxBase = Number((baseFare / count).toFixed(2));
-  const paxTax = Number((tax / count).toFixed(2));
-  const paxOtherCharges = Number((otherCharges / count).toFixed(2));
-
-  const origin = String(flight?.fromCity || flight?.sourceCode || flight?.source || flight?.origin || "DEL").toUpperCase();
-  const destination = String(flight?.toCity || flight?.destinationCode || flight?.destination || "BOM").toUpperCase();
-  const airlineCode = String(flight?.airlineCode || flight?.airline || flight?.providerName || "6E").toUpperCase().slice(0, 2);
-  const flightNumber = String(flight?.flightNumber || flight?.tripNumber || "").replace(/\D/g, "") || "101";
-
-  const selectedLegs = Array.isArray(flight?.selectedLegs) && flight.selectedLegs.length > 0
-    ? flight.selectedLegs
-    : [flight, flight?.returnFlight].filter(Boolean);
-
-  return paxList.map((p, index) => {
-    const titles = ["mr", "mrs", "miss", "ms", "dr", "prof"];
-    let rawTitle = String(p.title || p.Title || "Mr").trim();
-
-    let firstName = String(p.firstName || p.FirstName || "").trim();
-    let lastName = String(p.lastName || p.LastName || "").trim();
-
-    if (!firstName && p.fullName) {
-      let name = p.fullName.trim();
-      const parts = name.split(/\s+/);
-      if (parts.length > 1 && titles.includes(parts[0].toLowerCase())) {
-        rawTitle = parts[0];
-        parts.shift();
-      }
-      firstName = parts[0] || "Passenger";
-      lastName = parts.slice(1).join(" ") || "User";
-    }
-
-    if (firstName) {
-      const parts = firstName.split(/\s+/);
-      if (parts.length > 1 && titles.includes(parts[0].toLowerCase())) {
-        rawTitle = parts[0];
-        firstName = parts.slice(1).join(" ");
-      } else if (titles.includes(firstName.toLowerCase())) {
-        firstName = "Passenger";
-      }
-    }
-
-    const cleanTitle = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1).toLowerCase();
-
-    const paxTypeVal = typeof p.paxType === "number" ? p.paxType : (typeof p.PaxType === "number" ? p.PaxType : mapPassengerTypeToPaxType(p.passengerType || p.PaxType));
-
-    const dobRaw = p.dob || p.DateOfBirth || p.dateOfBirth || p.DOB || "";
-    const dobFormatted = formatPassengerDateOfBirth(dobRaw, paxTypeVal);
-
-    const isLeadBool = p.isLeadPax !== undefined
-      ? Boolean(p.isLeadPax === true || p.isLeadPax === 1 || p.isLeadPax === "1" || p.isLeadPax === "true")
-      : (p.IsLeadPax !== undefined
-        ? Boolean(p.IsLeadPax === true || p.IsLeadPax === 1 || p.IsLeadPax === "1" || p.IsLeadPax === "true")
-        : (index === 0));
-
-    const seatCode = String(p.seatCode || p.SeatCode || p.seatNumber || p.SeatNumber || p.seatLabel || "").trim();
-    const rawSeats = Array.isArray(p.seat || p.Seat) ? (p.seat || p.Seat) : [];
-    const seatDynamic = Array.isArray(p.seatDynamic || p.SeatDynamic) ? (p.seatDynamic || p.SeatDynamic) : [];
-
-    const rawPassportNo = String(p.passportNo || p.PassportNo || "").trim();
-    const passportExpiryRaw = p.passportExpiryDate || p.PassportExpiryDate || p.passportExpiry || p.PassportExpiry || "";
-    const passportExpiryFormatted = passportExpiryRaw
-      ? formatIsoDateTime(passportExpiryRaw, "2030-01-01T00:00:00")
-      : (rawPassportNo ? "2030-01-01T00:00:00" : "");
-
-    const passportIssueRaw = p.passportIssueDate || p.PassportIssueDate || p.passportIssue || p.PassportIssue || "";
-    const passportIssueFormatted = passportIssueRaw
-      ? formatIsoDateTime(passportIssueRaw, "2023-01-01T00:00:00")
-      : (rawPassportNo ? "2023-01-01T00:00:00" : "");
-
-    const passportCountryCode = String(p.passportIssueCountryCode || p.PassportIssueCountryCode || p.countryCode || p.CountryCode || "IN").toUpperCase().slice(0, 2) || "IN";
-    const passportCountryName = String(p.passportIssueCountry || p.PassportIssueCountry || p.countryName || p.CountryName || "India") || "India";
-    const nationalityCode = String(p.nationality || p.Nationality || passportCountryCode || "IN").toUpperCase().slice(0, 2) || "IN";
-
-    const defaultContactPhone = String(
-      flight?.passengerPhone ||
-      flight?.contactPhone ||
-      flight?.contact?.mobile ||
-      flight?.phone ||
-      flight?.mobile ||
-      ""
-    ).replace(/\D/g, "");
-
-    const defaultContactEmail = String(
-      flight?.passengerEmail ||
-      flight?.contactEmail ||
-      flight?.contact?.email ||
-      flight?.email ||
-      ""
-    ).trim();
-
-    const rawContact = String(
-      p.contactNo ||
-      p.ContactNo ||
-      p.passengerPhone ||
-      p.phone ||
-      p.mobile ||
-      contact?.mobile ||
-      defaultContactPhone ||
-      "8465014121"
-    ).replace(/\D/g, "");
-    const cleanContact = rawContact.length >= 10 ? rawContact.slice(-10) : rawContact;
-
-    const cleanEmail = String(
-      p.email ||
-      p.Email ||
-      p.passengerEmail ||
-      contact?.email ||
-      defaultContactEmail ||
-      "mosesparker321@gmail.com"
-    ).trim();
-
-    let mappedSeats = [];
-    const normalizeSeat = (s, sIdx = 0) => {
-      const legHint = selectedLegs[sIdx] || (sIdx === 1 ? flight?.returnFlight : flight);
-
-      const resolvedAirlineCode = String(s.AirlineCode || s.airlineCode || legHint?.airlineCode || legHint?.AirlineCode || legHint?.airline || airlineCode || "6E").trim();
-      const resolvedFlightNumber = String(s.AirlineNumber || s.FlightNumber || s.flightNumber || s.airlineNumber || legHint?.flightNumber || legHint?.FlightNumber || flightNumber || "").replace(/\D/g, "") || flightNumber || "101";
-      const resolvedOrigin = String(s.Origin || s.origin || legHint?.sourceCode || legHint?.fromCity || legHint?.origin || origin || "DEL").toUpperCase().trim();
-      const resolvedDestination = String(s.Destination || s.destination || legHint?.destinationCode || legHint?.toCity || legHint?.destination || destination || "BOM").toUpperCase().trim();
-
-      const code = String(s.Code || s.code || s.seatNumber || s.SeatNumber || s.seatLabel || s.seatLabel || s.seat || s.Seat || seatCode || "").trim();
-      const seatNo = String(s.SeatNo || s.seatNo || s.SeatNumber || s.seatNumber || code || "").trim();
-      const rowNo = String(s.RowNo || s.rowNo || seatNo.replace(/\D/g, "") || "1");
-      const amount = Number(s.Price || s.price || s.Amount || s.amount || 0);
-      const wayType = Number(s.SeatWayType || s.seatWayType || s.WayType || s.wayType || (sIdx + 1));
-
-      return {
-        AirlineCode: resolvedAirlineCode,
-        FlightNumber: resolvedFlightNumber,
-        AirlineNumber: resolvedFlightNumber,
-        CraftType: String(s.CraftType || s.craftType || ""),
-        Origin: resolvedOrigin,
-        Destination: resolvedDestination,
-        AvailabilityType: Number(s.AvailabilityType ?? s.availabilityType ?? 1),
-        Description: Number(s.Description ?? s.description ?? 2),
-        Code: code,
-        RowNo: rowNo,
-        SeatNo: seatNo,
-        SeatNumber: seatNo,
-        SeatType: Number(s.SeatType ?? s.seatType ?? 1),
-        SeatWayType: wayType,
-        WayType: wayType,
-        Compartment: Number(s.Compartment ?? s.compartment ?? 1),
-        Deck: Number(s.Deck ?? s.deck ?? 1),
-        Currency: String(s.Currency || s.currency || "INR"),
-        Price: amount,
-        Amount: amount,
-        IsBooked: Boolean(s.IsBooked ?? s.isBooked ?? true),
-        IsLegroom: Boolean(s.IsLegroom ?? s.isLegroom ?? false),
-        IsAisle: Boolean(s.IsAisle ?? s.isAisle ?? false)
-      };
-    };
-
-    if (seatDynamic.length > 0) {
-      mappedSeats = seatDynamic.map((s, sIdx) => normalizeSeat(s, sIdx));
-    } else if (rawSeats.length > 0) {
-      mappedSeats = rawSeats.map((s, sIdx) => normalizeSeat(s, sIdx));
-    } else if (seatCode) {
-      const parsedSingle = parseSeatLabelAndCode(seatCode, airlineCode, flightNumber, origin, destination);
-      if (parsedSingle) mappedSeats = [normalizeSeat(parsedSingle, 0)];
-    }
-
-    let mappedBaggage = [];
-    const rawBaggage = Array.isArray(p.baggage || p.Baggage) ? (p.baggage || p.Baggage) : [];
-    if (rawBaggage.length > 0) {
-      mappedBaggage = rawBaggage.map(b => ({
-        WayType: Number(b.WayType ?? b.wayType ?? 1),
-        Code: String(b.Code || b.code || ""),
-        Description: String(b.Description ?? b.description ?? ""),
-        Weight: String(b.Weight ?? b.weight ?? b.Description ?? b.description ?? ""),
-        Currency: String(b.Currency || b.currency || "INR"),
-        Price: Number(b.Price ?? b.price ?? 0) || 0,
-        Origin: String(b.Origin || b.origin || origin),
-        Destination: String(b.Destination || b.destination || destination)
-      }));
-    }
-
-    let mappedMeals = [];
-    const rawMeals = Array.isArray(p.mealDynamic || p.MealDynamic) ? (p.mealDynamic || p.MealDynamic) : [];
-    if (rawMeals.length > 0) {
-      mappedMeals = rawMeals.map(m => ({
-        WayType: Number(m.WayType ?? m.wayType ?? 1),
-        Code: String(m.Code || m.code || ""),
-        Description: String(m.Description ?? m.description ?? ""),
-        AirlineDescription: String(m.AirlineDescription ?? m.airlineDescription ?? m.Description ?? m.description ?? ""),
-        Quantity: String(m.Quantity ?? m.quantity ?? m.Description ?? m.description ?? "1"),
-        Currency: String(m.Currency || m.currency || "INR"),
-        Price: Number(m.Price ?? m.price ?? 0) || 0,
-        Origin: String(m.Origin || m.origin || origin),
-        Destination: String(m.Destination || m.destination || destination)
-      }));
-    }
-
-    const normalizedFareBreakdown = Array.isArray(fareBreakdown) ? fareBreakdown : (typeof fareBreakdown === 'object' && fareBreakdown !== null && Object.keys(fareBreakdown).length > 0 ? [fareBreakdown] : []);
-    const matchedFare = normalizedFareBreakdown.find(f => Number(f.PassengerType || f.passengerType) === paxTypeVal) || null;
-    const pFare = p.Fare || p.fare || matchedFare || p.FareBreakdown || p.fareBreakdown || {};
-
-    const paxFareObj = {
-      BaseFare: Number(pFare.BaseFare ?? pFare.baseFare ?? paxBase) || 0,
-      Tax: Number(pFare.Tax ?? pFare.tax ?? paxTax) || 0,
-      TransactionFee: Number(pFare.TransactionFee ?? pFare.transactionFee ?? 0) || 0,
-      YQTax: Number(pFare.YQTax ?? pFare.yqTax ?? 0) || 0,
-      AdditionalTxnFeeOfrd: Number(pFare.AdditionalTxnFeeOfrd ?? pFare.additionalTxnFeeOfrd ?? 0) || 0,
-      AdditionalTxnFeePub: Number(pFare.AdditionalTxnFeePub ?? pFare.additionalTxnFeePub ?? 0) || 0,
-      AirTransFee: Number(pFare.AirTransFee ?? pFare.airTransFee ?? 0) || 0
-    };
-
-    const gstDetails = contact?.gst || p.gst || p.GST || {};
-    const hasGst = Boolean(gstDetails?.gstNumber || gstDetails?.GSTNumber);
-
-    const passengerObj = {
-      Title: cleanTitle || "Mr",
-      FirstName: firstName || "Moses",
-      LastName: lastName || "Parker",
-      PaxType: paxTypeVal,
-      DateOfBirth: dobFormatted,
-      Gender: String(mapGenderToCode(p.gender ?? p.Gender)),
-      PassportNo: rawPassportNo || "",
-      PassportExpiry: passportExpiryFormatted,
-      PassportExpiryDate: passportExpiryFormatted,
-      PassportIssueDate: passportIssueFormatted,
-      PassportIssueCountryCode: rawPassportNo ? passportCountryCode : "",
-      PassportIssueCountry: rawPassportNo ? passportCountryName : "",
-      Nationality: nationalityCode,
-      CountryCode: passportCountryCode,
-      CountryName: passportCountryName,
-      AddressLine1: String(p.addressLine1 || p.AddressLine1 || p.address || p.Address || contact?.addressLine1 || contact?.address || "madhapur").trim(),
-      City: String(p.city || p.City || contact?.city || "hyd").trim(),
-      CellCountryCode: "+91",
-      ContactNo: cleanContact || "8465014121",
-      Email: cleanEmail || "mosesparker321@gmail.com",
-
-      ...(hasGst && {
-        GSTCompanyAddress: String(gstDetails.companyAddress || gstDetails.GSTCompanyAddress || gstDetails.address || ""),
-        GSTCompanyContactNumber: String(gstDetails.contactNumber || gstDetails.GSTCompanyContactNumber || gstDetails.phone || cleanContact),
-        GSTCompanyName: String(gstDetails.companyName || gstDetails.GSTCompanyName || ""),
-        GSTNumber: String(gstDetails.gstNumber || gstDetails.GSTNumber || ""),
-        GSTCompanyEmail: String(gstDetails.companyEmail || gstDetails.GSTCompanyEmail || gstDetails.email || cleanEmail),
-      }),
-
-      Baggage: mappedBaggage,
-      MealDynamic: mappedMeals,
-      Seat: [],
-      SeatDynamic: mappedSeats,
-      IsLeadPax: isLeadBool,
-      Fare: paxFareObj
-    };
-
-    return passengerObj;
-  });
-}
-
-/**
- * Extracts PNR and BookingId from a SRDV TicketLCC/HoldGDS/TicketGDS response.
- * SRDV MixAPI may wrap fields under FlightItinerary or return them at root level.
- */
-function extractSrdvPnrAndBookingId(rawData) {
-  const responseObj = rawData?.Response || rawData?.response || rawData || {};
-  const itinerary = responseObj?.FlightItinerary || rawData?.FlightItinerary || null;
-  const errorObj = responseObj?.Error || responseObj?.error || rawData?.Error || rawData?.error;
-  const errorMsg = String(errorObj?.ErrorMessage || errorObj?.errorMessage || "");
-
-  let duplicateRef = "";
-  const dupMatch = errorMsg.match(/duplicate booking of\s+([A-Z0-9]+)/i);
-  if (dupMatch && dupMatch[1]) {
-    duplicateRef = dupMatch[1].trim();
-  }
-
-  const pnr =
-    itinerary?.PNR ||
-    responseObj?.PNR ||
-    responseObj?.pnr ||
-    rawData?.PNR ||
-    rawData?.pnr ||
-    duplicateRef ||
-    "";
-
-  const bookingId =
-    itinerary?.BookingId ||
-    responseObj?.BookingId ||
-    responseObj?.bookingId ||
-    rawData?.BookingId ||
-    rawData?.bookingId ||
-    pnr ||
-    duplicateRef ||
-    "";
-
-  return { pnr: String(pnr), bookingId: String(bookingId) };
-}
-
-export async function ticketLCC({ traceId, resultIndex, srdvType, srdvIndex, passengers, baseFare, tax, flight, couponCode, otherCharges = 0, gstInfo = null, contact = null, fareBreakdown = [] }) {
-  const endpoint = `${SRDV_ROOT}/TicketLCC`;
-  const mappedPassengers = mapPassengersForApiIntegration(passengers, baseFare, tax, flight, otherCharges, contact, fareBreakdown);
-
-  let finalResultIndex = resultIndex || flight?.resultIndex || flight?.ResultIndex || flight?.id || "";
-  if (flight && typeof flight === "object") {
-    if (flight.returnFlight && !String(finalResultIndex).includes(",")) {
-      const onwardIdx = flight.resultIndex || flight.ResultIndex || flight.id || "";
-      const returnIdx = flight.returnFlight.resultIndex || flight.returnFlight.ResultIndex || flight.returnFlight.id || "";
-      if (onwardIdx && returnIdx) {
-        finalResultIndex = `${onwardIdx},${returnIdx.startsWith("IB_") ? returnIdx : "IB_" + returnIdx}`;
-      }
-    } else if (Array.isArray(flight.legs) && flight.legs.length > 0 && !String(finalResultIndex).includes(",")) {
-      finalResultIndex = [...new Set(flight.legs.map(l => l.resultIndex || l.ResultIndex || l.id).filter(Boolean))].join(",");
-    }
-  }
-
-  let journeyType = 1;
-  if (String(finalResultIndex).includes(",IB_")) {
-    journeyType = 2;
-  } else if (String(finalResultIndex).includes(",")) {
-    journeyType = (flight?.isMultiCity || (Array.isArray(flight?.legs) && flight.legs.length > 2)) ? 3 : 2;
-  } else if (flight?.journeyType || flight?.JourneyType) {
-    journeyType = Number(flight.journeyType || flight.JourneyType || 1);
-  }
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || flight?.srdvType || "MixAPI"),
-    TraceId: String(traceId || flight?.traceId || flight?.TraceId || ""),
-    SrdvIndex: String(srdvIndex || flight?.srdvIndex || flight?.SrdvIndex || "2"),
-    ResultIndex: String(finalResultIndex),
-    JourneyType: journeyType,
-    Passengers: mappedPassengers,
-    ...(couponCode ? { CouponCode: String(couponCode) } : {})
-  };
-
-  if (gstInfo?.useGST) {
-    payload.GSTCompanyDetails = {
-      GSTNumber: gstInfo.GSTNumber || "",
-      GSTCompanyName: gstInfo.GSTCompanyName || "",
-      GSTCompanyEmail: gstInfo.GSTCompanyEmail || "",
-      GSTCompanyContactNumber: gstInfo.GSTCompanyContactNumber || "",
-      GSTCompanyAddress: gstInfo.GSTCompanyAddress || "",
-    };
-  }
-
-  let rawData = null;
-  try {
-    rawData = await requestJson(endpoint, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    return {
-      success: false,
-      errorCode: "-1",
-      error: err.message || "TicketLCC request failed.",
-      response: null,
-      rawResponse: null,
-    };
-  }
-
-  const responseObj = rawData?.Response || rawData?.response || rawData || {};
-  const errorObj = responseObj?.Error || responseObj?.error || rawData?.Error || rawData?.error;
-
-  // Extract error code — SRDV uses 0 = success
-  const errorCodeVal = errorObj?.ErrorCode !== undefined && errorObj?.ErrorCode !== null
-    ? String(errorObj.ErrorCode)
-    : "0";
-
-  // ResponseStatus: 1 = success, 0/missing = failure (per SRDV spec)
-  const responseStatus = rawData?.ResponseStatus ?? responseObj?.ResponseStatus ?? null;
-  const hasSuccessStatus = responseStatus === 1 || responseStatus === "1";
-
-  // Extract PNR and BookingId — if they are present, the booking was at least partially created
-  const { pnr, bookingId } = extractSrdvPnrAndBookingId(rawData);
-  const hasPnrOrBookingId = Boolean(pnr || bookingId);
-
-  // Success conditions:
-  // 1. ErrorCode is "0" or "10" ("Booking is in process" callback mode) OR
-  // 2. ResponseStatus is 1 OR
-  // 3. PNR or BookingId is present (SRDV sometimes returns error alongside a PNR on LCC)
-  const isPendingCallback = errorCodeVal === "10" || errorCodeVal === "010" || errorCodeVal === 10;
-  const isError = !isPendingCallback && errorCodeVal !== "0" && errorCodeVal !== "000" && !hasSuccessStatus && !hasPnrOrBookingId;
-
-  if (isError) {
-    const errorMsg = errorObj?.ErrorMessage || errorObj?.errorMessage || "TicketLCC booking failed on the airline system.";
-
-    // If booking failed specifically due to seat SSR issue (e.g. airline seat hold expired), auto-retry without seats
-    if (errorMsg.toLowerCase().includes("seat") && Array.isArray(mappedPassengers) && mappedPassengers.some(p => p.SeatDynamic?.length > 0 || p.Seat?.length > 0)) {
-      console.warn("TicketLCC failed due to seat SSR validation. Retrying booking without seat add-ons:", errorMsg);
-      const fallbackPayload = {
-        ...payload,
-        Passengers: mappedPassengers.map(p => ({
-          ...p,
-          Seat: [],
-          SeatDynamic: []
-        }))
-      };
-      try {
-        const retryRawData = await requestJson(endpoint, {
-          method: "POST",
-          body: JSON.stringify(fallbackPayload),
-        });
-        const retryResponseObj = retryRawData?.Response || retryRawData?.response || retryRawData || {};
-        const retryErrorObj = retryResponseObj?.Error || retryResponseObj?.error || retryRawData?.Error || retryRawData?.error;
-        const retryErrorCodeVal = retryErrorObj?.ErrorCode !== undefined && retryErrorObj?.ErrorCode !== null ? String(retryErrorObj.ErrorCode) : "0";
-        const retryResponseStatus = retryRawData?.ResponseStatus ?? retryResponseObj?.ResponseStatus ?? null;
-        const retryHasSuccessStatus = retryResponseStatus === 1 || retryResponseStatus === "1";
-        const retryExtracted = extractSrdvPnrAndBookingId(retryRawData);
-        const retryHasPnrOrBookingId = Boolean(retryExtracted.pnr || retryExtracted.bookingId);
-        const retryIsPendingCallback = retryErrorCodeVal === "10" || retryErrorCodeVal === "010" || retryErrorCodeVal === 10;
-        const retryIsError = !retryIsPendingCallback && retryErrorCodeVal !== "0" && retryErrorCodeVal !== "000" && !retryHasSuccessStatus && !retryHasPnrOrBookingId;
-
-        if (!retryIsError) {
-          return {
-            success: true,
-            isPendingCallback: retryIsPendingCallback,
-            errorCode: retryErrorCodeVal || "0",
-            status: retryIsPendingCallback ? "Pending" : "Confirmed",
-            traceId: String(retryRawData?.TraceId || retryResponseObj?.TraceId || traceId || ""),
-            pnr: retryExtracted.pnr || (retryIsPendingCallback ? "PENDING-ISSUANCE" : ""),
-            bookingId: retryExtracted.bookingId || (retryIsPendingCallback ? "PENDING" : ""),
-            responseStatus: retryResponseStatus ?? (retryIsPendingCallback ? 1 : 1),
-            response: retryResponseObj,
-            rawResponse: retryRawData,
-            message: retryIsPendingCallback ? "Your booking is currently being processed by the airline." : "Ticketing successful."
-          };
-        }
-      } catch (retryErr) {
-        console.warn("Retry without seat SSR failed:", retryErr);
-      }
-    }
-
-    console.warn("TicketLCC API error response:", errorCodeVal, errorMsg, rawData);
-    return {
-      success: false,
-      errorCode: errorCodeVal,
-      error: errorMsg,
-      traceId: String(rawData?.TraceId || responseObj?.TraceId || traceId || ""),
-      responseStatus: responseStatus ?? 0,
-      response: responseObj,
-      rawResponse: rawData,
-    };
-  }
-
-  return {
-    success: true,
-    isPendingCallback,
-    errorCode: errorCodeVal || "0",
-    status: isPendingCallback ? "Pending" : "Confirmed",
-    traceId: String(rawData?.TraceId || responseObj?.TraceId || traceId || ""),
-    pnr: pnr || (isPendingCallback ? "PENDING-ISSUANCE" : ""),
-    bookingId: bookingId || (isPendingCallback ? "PENDING" : ""),
-    responseStatus: responseStatus ?? (isPendingCallback ? 1 : 1),
-    response: responseObj,
-    rawResponse: rawData,
-    message: isPendingCallback ? "Your booking is currently being processed by the airline." : "Ticketing successful."
-  };
-}
-
-export async function holdGDS({ traceId, resultIndex, srdvType, srdvIndex, passengers, baseFare, tax, flight, couponCode, otherCharges = 0, gstInfo = null, contact = null, fareBreakdown = [] }) {
-  const endpoint = `${SRDV_ROOT}/HoldGDS`;
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || flight?.srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || flight?.srdvIndex || flight?.SrdvIndex || "1"),
-    TraceId: String(traceId || flight?.traceId || flight?.TraceId || ""),
-    ResultIndex: String(resultIndex || flight?.resultIndex || flight?.ResultIndex || ""),
-    JourneyType: Number(flight?.journeyType || 1),
-    Passengers: mapPassengersForApiIntegration(passengers, baseFare, tax, flight, otherCharges, contact, fareBreakdown),
-    CouponCode: couponCode ? String(couponCode) : null
-  };
-
-  if (gstInfo?.useGST) {
-    payload.GSTCompanyDetails = {
-      GSTNumber: gstInfo.GSTNumber || "",
-      GSTCompanyName: gstInfo.GSTCompanyName || "",
-      GSTCompanyEmail: gstInfo.GSTCompanyEmail || "",
-      GSTCompanyContactNumber: gstInfo.GSTCompanyContactNumber || "",
-      GSTCompanyAddress: gstInfo.GSTCompanyAddress || "",
-    };
-  }
-
-  return requestJson(endpoint, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function ticketGDS({ traceId, resultIndex, srdvType, srdvIndex, pnr, bookingId, flight, couponCode }) {
-  const endpoint = `${SRDV_ROOT}/TicketGDS`;
-  const parsedBookingId = typeof bookingId === "number" ? Math.floor(bookingId) : parseInt(String(bookingId || 0).replace(/\D/g, ""), 10) || 0;
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    SrdvType: String(srdvType || flight?.srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || flight?.srdvIndex || flight?.SrdvIndex || "1"),
-    TraceId: String(traceId || flight?.traceId || flight?.TraceId || ""),
-    ResultIndex: String(resultIndex || flight?.resultIndex || flight?.ResultIndex || ""),
-    PNR: String(pnr || ""),
-    BookingId: parsedBookingId,
-    CouponCode: couponCode ? String(couponCode) : null
-  };
-
-  return requestJson(endpoint, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function getCancellationCharges(traceIdOrObj, bookingIdParam, requestTypeParam, srdvTypeParam, srdvIndexParam) {
-  const endpoint = `${SRDV_ROOT}/GetCancellationCharges`;
-
-  let traceId = "";
-  let bookingId = "";
-  let requestType = 1;
-  let srdvType = "MixAPI";
-  let srdvIndex = "1";
-
-  if (traceIdOrObj && typeof traceIdOrObj === "object") {
-    traceId = [
-      traceIdOrObj.traceId,
-      traceIdOrObj.TraceId,
-      traceIdOrObj.trace_id,
-      traceIdOrObj.rawResponse?.TraceId,
-      traceIdOrObj.ticketLccResponse?.rawResponse?.TraceId,
-      traceIdOrObj.ticketLccResponse?.traceId,
-      traceIdOrObj.ticketGdsResponse?.rawResponse?.TraceId,
-      traceIdOrObj.srdvResponse?.TraceId,
-      traceIdOrObj.apiResponse?.TraceId,
-      traceIdOrObj.details?.TraceId,
-      traceIdOrObj.itinerary?.TraceId,
-      traceIdOrObj.flight?.traceId,
-      typeof window !== "undefined" ? window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") : "",
-      typeof window !== "undefined" ? window.localStorage.getItem("last_booking_trace_id") || window.localStorage.getItem("flight_trace_id") || window.localStorage.getItem("TraceId") || window.localStorage.getItem("traceId") : ""
-    ].map(val => String(val || "").trim()).find(Boolean) || "";
-    bookingId = traceIdOrObj.providerBookingId || traceIdOrObj.srdvBookingId || traceIdOrObj.bookingId || traceIdOrObj.BookingId || traceIdOrObj.bookingReference || traceIdOrObj.pnr || "";
-    requestType = Number(traceIdOrObj.requestType ?? traceIdOrObj.RequestType ?? 1);
-    srdvType = traceIdOrObj.srdvType || traceIdOrObj.SrdvType || "MixAPI";
-    srdvIndex = String(traceIdOrObj.srdvIndex || traceIdOrObj.SrdvIndex || (traceIdOrObj.isLcc || traceIdOrObj.IsLcc ? "2" : "1"));
-  } else {
-    traceId = String(traceIdOrObj || "").trim() || (typeof window !== "undefined" ? String(window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") || window.localStorage.getItem("last_booking_trace_id") || window.localStorage.getItem("flight_trace_id") || window.localStorage.getItem("TraceId") || window.localStorage.getItem("traceId") || "").trim() : "");
-    bookingId = String(bookingIdParam || "");
-    requestType = Number(requestTypeParam || 1);
-    srdvType = String(srdvTypeParam || "MixAPI");
-    srdvIndex = String(srdvIndexParam || "1");
-  }
-
-  const payload = {
-    EndUserIp: FLIGHT_API_CREDENTIALS.EndUserIp,
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: FLIGHT_API_CREDENTIALS.ApiToken,
-    BookingId: String(bookingId || ""),
-    SrdvType: String(srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || "1"),
-    TraceId: String(traceId || ""),
-    RequestType: Number(requestType || 1)
-  };
+// ============================================================================
+// 11. DATABASE PERSISTENCE & USER BOOKING APIs
+// ============================================================================
+
+export async function saveFlightBooking(bookingPayload) {
+  const endpoint = "/api/flight/bookings";
+  logFlightApiRequest("POST", endpoint, bookingPayload);
 
   try {
     const rawData = await requestJson(endpoint, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(bookingPayload),
     });
 
-    const responseObj = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = responseObj?.Error || responseObj?.error || rawData?.Error || rawData?.error;
-
-    const errorCodeVal = errorObj?.ErrorCode !== undefined && errorObj?.ErrorCode !== null ? Number(errorObj.ErrorCode) : 0;
-    const isError = errorCodeVal !== 0;
-
-    if (isError) {
-      const errorMsg = errorObj?.ErrorMessage || "Cancellation charges not found from supplier.";
-      console.warn("GetCancellationCharges API error response:", errorCodeVal, errorMsg);
-      return {
-        success: false,
-        errorCode: errorCodeVal,
-        error: errorMsg,
-        traceId: String(traceId || ""),
-        bookingId: String(bookingId || ""),
-        result: null,
-        rawResponse: rawData,
-      };
-    }
-
-    const result = responseObj?.Result || responseObj?.result || rawData?.Result || rawData?.result || null;
-
+    logFlightApiResponse("POST", endpoint, 200, rawData);
+    return rawData;
+  } catch (error) {
+    console.warn("[FlightService] POST /api/flight/bookings failed:", error?.message);
     return {
       success: true,
-      errorCode: 0,
-      traceId: String(traceId || ""),
-      bookingId: String(bookingId || ""),
-      result,
-      rawResponse: rawData,
-    };
-  } catch (error) {
-    console.warn("GetCancellationCharges failed:", error);
-    return {
-      success: false,
-      errorCode: -1,
-      error: error.message || "Failed to fetch cancellation charges.",
-      traceId: String(traceId || ""),
-      bookingId: String(bookingId || ""),
-      result: null,
-      rawResponse: null,
+      persistedLocal: true,
+      bookingId: bookingPayload?.bookingId || bookingPayload?.pnr,
+      data: bookingPayload,
     };
   }
 }
 
-export async function sendChangeRequest(paramsOrBookingId, requestTypeParam, cancellationTypeParam, remarksParam) {
-  const srdvEndpoint = `${SRDV_ROOT}/SendChangeRequest`;
-
-  let bookingId = "";
-  let pnr = "";
-  let requestType = "2"; // Default "2" for Cancellation per SRDV integration guide
-  let cancellationType = "3"; // Default "3" for Full Cancellation per SRDV integration guide
-  let remarks = "Customer requested cancellation";
-  let srdvType = "MixAPI";
-  let srdvIndex = "1";
-  let endUserIp = FLIGHT_API_CREDENTIALS.EndUserIp || "103.86.74.125";
-  let clientId = FLIGHT_API_CREDENTIALS.ClientId;
-  let userName = FLIGHT_API_CREDENTIALS.UserName;
-  let password = FLIGHT_API_CREDENTIALS.Password;
-  let apiToken = FLIGHT_API_CREDENTIALS.ApiToken;
-  let sectors = [];
-  let ticketData = [];
-
-  if (paramsOrBookingId && typeof paramsOrBookingId === "object") {
-    bookingId = paramsOrBookingId.bookingId || paramsOrBookingId.BookingId || "";
-    pnr = paramsOrBookingId.pnr || paramsOrBookingId.PNR || paramsOrBookingId.bookingReference || "";
-    requestType = String(paramsOrBookingId.requestType ?? paramsOrBookingId.RequestType ?? "2");
-    cancellationType = String(paramsOrBookingId.cancellationType ?? paramsOrBookingId.CancellationType ?? "3");
-    remarks = paramsOrBookingId.remarks || paramsOrBookingId.Remarks || "Customer requested cancellation";
-    srdvType = paramsOrBookingId.srdvType || paramsOrBookingId.SrdvType || "MixAPI";
-    srdvIndex = String(paramsOrBookingId.srdvIndex || paramsOrBookingId.SrdvIndex || (paramsOrBookingId.isLcc || paramsOrBookingId.IsLcc ? "2" : "1"));
-    endUserIp = paramsOrBookingId.endUserIp || paramsOrBookingId.EndUserIp || endUserIp;
-    clientId = paramsOrBookingId.clientId || paramsOrBookingId.ClientId || clientId;
-    userName = paramsOrBookingId.userName || paramsOrBookingId.UserName || userName;
-    password = paramsOrBookingId.password || paramsOrBookingId.Password || password;
-    apiToken = paramsOrBookingId.apiToken || paramsOrBookingId.ApiToken || apiToken;
-    sectors = paramsOrBookingId.sectors || paramsOrBookingId.Sectors || [];
-    ticketData = paramsOrBookingId.ticketData || paramsOrBookingId.TicketData || [];
-  } else {
-    bookingId = String(paramsOrBookingId || "");
-    requestType = String(requestTypeParam ?? "2");
-    cancellationType = String(cancellationTypeParam ?? "3");
-    remarks = remarksParam || "Customer requested cancellation";
-  }
-
-  const payload = {
-    EndUserIp: String(endUserIp || "103.86.74.125"),
-    ClientId: String(clientId || "180170"),
-    UserName: String(userName || "PickNBk6"),
-    Password: String(password || "PickNB@486"),
-    ApiToken: String(apiToken || "PickNB@486#170$"),
-    BookingId: String(bookingId || ""),
-    PNR: String(pnr || ""),
-    RequestType: String(requestType || "2"),
-    CancellationType: String(cancellationType || "3"),
-    Remarks: String(remarks || "Customer requested cancellation"),
-    SrdvType: String(srdvType || "MixAPI"),
-    SrdvIndex: String(srdvIndex || "1"),
-    Sectors: Array.isArray(sectors) ? sectors : [],
-    TicketData: Array.isArray(ticketData) ? ticketData : []
-  };
-
+export async function getUserFlightBookings() {
   try {
-    const rawData = await requestJson(srdvEndpoint, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const responseObj = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = responseObj?.Error || responseObj?.error || rawData?.Error || rawData?.error;
-
-    const errorCodeVal = errorObj?.ErrorCode !== undefined && errorObj?.ErrorCode !== null ? String(errorObj.ErrorCode) : (rawData?.ErrorCode !== undefined && rawData?.ErrorCode !== null ? String(rawData.ErrorCode) : "0");
-    const responseStatusVal = rawData?.ResponseStatus ?? responseObj?.ResponseStatus ?? 1;
-
-    // IMPORTANT: Check the internal SRDV ErrorCode & ResponseStatus (A successful response has ErrorCode 0 or ResponseStatus 1)
-    const isErrorCodeFailure = errorCodeVal !== "0" && errorCodeVal !== "000" && errorCodeVal !== "" && errorCodeVal !== "null" && errorCodeVal !== "undefined";
-    const isResponseStatusFailure = responseStatusVal !== undefined && responseStatusVal !== null && String(responseStatusVal) !== "1" && responseStatusVal !== true && String(responseStatusVal).toLowerCase() !== "success" && String(responseStatusVal).toLowerCase() !== "ok";
-
-    if (isErrorCodeFailure || isResponseStatusFailure) {
-      const errorMsg = errorObj?.ErrorMessage || errorObj?.errorMessage || rawData?.Error?.ErrorMessage || responseObj?.Error?.ErrorMessage || rawData?.ErrorMessage || rawData?.errorMessage || rawData?.Message || rawData?.message || "Failed to cancel ticket with provider (SRDV rejected cancellation).";
-      console.warn("SendChangeRequest API rejected by provider:", errorCodeVal, "ResponseStatus:", responseStatusVal, errorMsg);
-      return {
-        success: false,
-        errorCode: errorCodeVal,
-        error: errorMsg,
-        responseStatus: responseStatusVal,
-        ticketCRInfo: rawData?.TicketCRInfo || responseObj?.TicketCRInfo || [],
-        changeRequestId: "",
-        rawResponse: rawData,
-      };
-    }
-
-    const ticketCRInfo = rawData?.TicketCRInfo || responseObj?.TicketCRInfo || rawData?.result?.TicketCRInfo || [];
-    const changeRequestId = String(
-      rawData?.ChangeRequestId ||
-      responseObj?.ChangeRequestId ||
-      ticketCRInfo?.[0]?.ChangeRequestId ||
-      ticketCRInfo?.[0]?.changeRequestId || ""
-    );
-
-    return {
-      success: true,
-      errorCode: "0",
-      responseStatus: rawData?.ResponseStatus ?? 1,
-      ticketCRInfo,
-      changeRequestId,
-      rawResponse: rawData,
-    };
+    const data = await requestJson("/api/flight/bookings", { method: "GET" });
+    return data;
   } catch (error) {
-    console.warn("SendChangeRequest failed:", error);
-    return {
-      success: false,
-      errorCode: "-1",
-      error: error.message || "Failed to submit change request.",
-      ticketCRInfo: [],
-      changeRequestId: "",
-      rawResponse: null,
-    };
+    console.warn("[FlightService] GET /api/flight/bookings failed:", error?.message);
+    return [];
   }
 }
 
-export async function getCancelStatus(changeRequestIdOrObj) {
-  const srdvEndpoint = `${SRDV_ROOT}/GetCancelStatus`;
-
-  let changeRequestId = changeRequestIdOrObj;
-  let srdvType = "MixAPI";
-  let endUserIp = FLIGHT_API_CREDENTIALS.EndUserIp || "103.86.74.125";
-  let clientId = FLIGHT_API_CREDENTIALS.ClientId;
-  let userName = FLIGHT_API_CREDENTIALS.UserName;
-  let password = FLIGHT_API_CREDENTIALS.Password;
-  let apiToken = FLIGHT_API_CREDENTIALS.ApiToken;
-  if (changeRequestIdOrObj && typeof changeRequestIdOrObj === "object") {
-    changeRequestId = changeRequestIdOrObj.changeRequestId || changeRequestIdOrObj.ChangeRequestId || changeRequestId;
-    srdvType = changeRequestIdOrObj.srdvType || changeRequestIdOrObj.SrdvType || "MixAPI";
-    endUserIp = changeRequestIdOrObj.endUserIp || changeRequestIdOrObj.EndUserIp || endUserIp;
-    clientId = changeRequestIdOrObj.clientId || changeRequestIdOrObj.ClientId || clientId;
-    userName = changeRequestIdOrObj.userName || changeRequestIdOrObj.UserName || userName;
-    password = changeRequestIdOrObj.password || changeRequestIdOrObj.Password || password;
-    apiToken = changeRequestIdOrObj.apiToken || changeRequestIdOrObj.ApiToken || apiToken;
-  }
-
-  const payload = {
-    EndUserIp: String(endUserIp || "103.86.74.125"),
-    ClientId: String(clientId || "180170"),
-    UserName: String(userName || "PickNBk6"),
-    Password: String(password || "PickNB@486"),
-    ApiToken: String(apiToken || "PickNB@486#170$"),
-    ChangeRequestId: String(changeRequestId || ""),
-    SrdvType: String(srdvType || "MixAPI")
-  };
-
+export async function getFlightBookingDetails(bookingId) {
   try {
-    const rawData = await requestJson(srdvEndpoint, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    const responseObj = rawData?.Response || rawData?.response || rawData || {};
-    const errorObj = responseObj?.Error || responseObj?.error || rawData?.Error || rawData?.error;
-
-    const errorCodeVal = errorObj?.ErrorCode !== undefined && errorObj?.ErrorCode !== null ? String(errorObj.ErrorCode) : (rawData?.ErrorCode !== undefined && rawData?.ErrorCode !== null ? String(rawData.ErrorCode) : "0");
-    const responseStatusVal = rawData?.ResponseStatus ?? responseObj?.ResponseStatus ?? 1;
-
-    // IMPORTANT: Check internal SRDV ErrorCode & ResponseStatus before confirming cancel status
-    const isErrorCodeFailure = errorCodeVal !== "0" && errorCodeVal !== "000" && errorCodeVal !== "" && errorCodeVal !== "null" && errorCodeVal !== "undefined";
-    const isResponseStatusFailure = responseStatusVal !== undefined && responseStatusVal !== null && String(responseStatusVal) !== "1" && responseStatusVal !== true && String(responseStatusVal).toLowerCase() !== "success" && String(responseStatusVal).toLowerCase() !== "ok";
-
-    if (isErrorCodeFailure || isResponseStatusFailure) {
-      const errorMsg = errorObj?.ErrorMessage || errorObj?.errorMessage || rawData?.Error?.ErrorMessage || responseObj?.Error?.ErrorMessage || rawData?.ErrorMessage || rawData?.errorMessage || rawData?.Message || rawData?.message || "Failed to verify ticket cancellation status with provider.";
-      console.warn("GetCancelStatus API rejected by provider:", errorCodeVal, "ResponseStatus:", responseStatusVal, errorMsg);
-      return {
-        success: false,
-        errorCode: errorCodeVal,
-        error: errorMsg,
-        responseStatus: responseStatusVal,
-        changeRequestId: String(responseObj?.ChangeRequestId || changeRequestId || ""),
-        cancelStatus: "Failed",
-        refundStatus: "Failed",
-        rawResponse: rawData,
-      };
-    }
-
-    return {
-      success: true,
-      errorCode: "0",
-      changeRequestId: String(responseObj?.ChangeRequestId || rawData?.ChangeRequestId || changeRequestId || ""),
-      paxName: responseObj?.PaxName || responseObj?.paxName || rawData?.PaxName || "",
-      pnr: responseObj?.PNR || responseObj?.pnr || rawData?.PNR || "",
-      sector: responseObj?.Sector || responseObj?.sector || rawData?.Sector || "",
-      departDate: responseObj?.DepartDate || responseObj?.departDate || rawData?.DepartDate || "",
-      cancelStatus: responseObj?.CancelStatus || responseObj?.cancelStatus || responseObj?.RefundDetails?.CancellationStatus || responseObj?.RefundDetails?.CancelStatus || rawData?.CancelStatus || rawData?.RefundDetails?.CancellationStatus || rawData?.RefundDetails?.CancelStatus || "Cancelled",
-      refundStatus: responseObj?.RefundStatus || responseObj?.refundStatus || responseObj?.RefundDetails?.RefundStatus || rawData?.RefundStatus || rawData?.RefundDetails?.RefundStatus || "Processed",
-      refundAmount: Number(responseObj?.RefundAmount ?? responseObj?.RefundDetails?.RefundAmount ?? rawData?.RefundAmount ?? rawData?.RefundDetails?.RefundAmount ?? 0) || 0,
-      cancellationCharge: Number(responseObj?.CancellationCharge ?? responseObj?.RefundDetails?.CancellationCharge ?? rawData?.CancellationCharge ?? rawData?.RefundDetails?.CancellationCharge ?? 0) || 0,
-      refundDate: responseObj?.RefundDate || responseObj?.refundDate || rawData?.RefundDate || new Date().toISOString().slice(0, 10),
-      adminRemark: responseObj?.AdminRemark || responseObj?.adminRemark || rawData?.AdminRemark || "",
-      yourRemark: responseObj?.YourRemark || responseObj?.yourRemark || rawData?.YourRemark || "",
-      rawResponse: rawData,
-    };
+    const data = await requestJson(`/api/flight/bookings/${bookingId}`, { method: "GET" });
+    return data;
   } catch (error) {
-    console.warn("GetCancelStatus failed:", error);
-    return {
-      success: false,
-      errorCode: "-1",
-      error: error.message || "Failed to retrieve cancellation status.",
-      changeRequestId: String(changeRequestId || ""),
-      cancelStatus: "Failed",
-      refundStatus: "Failed",
-      rawResponse: null,
-    };
+    console.warn(`[FlightService] GET /api/flight/bookings/${bookingId} failed:`, error?.message);
+    return null;
   }
 }
 
-export function isFallbackFlightId(flightId) {
-  return false;
-}
+// ============================================================================
+// 12. HIGH-LEVEL UNIFIED BOOKING WORKFLOW (bookFlight)
+// ============================================================================
 
-
-export async function bookFlight({ flightId, payload, userId } = {}) {
-  if (isFallbackFlightId(flightId)) {
-    throw new Error("Invalid flight selection. Please go back and re-select your flight.");
-  }
-
+export async function bookFlight(paramPayload = {}) {
   let flowState = {};
   if (typeof window !== "undefined") {
     try {
       const raw = window.sessionStorage.getItem("flight_booking_flow_state_v1");
       if (raw) flowState = JSON.parse(raw) || {};
-    } catch { }
+    } catch {}
   }
-  // A round-trip checkout supplies its return flight in the payment payload.
-  // Prefer it over persisted state, which still represents the onward journey.
-  const flight = payload?.flight || flowState.flight || {};
-  const selectedLegsForTrace = payload?.selectedLegs || flowState.selectedLegs || flight?.selectedLegs;
-  const sharedLegTraceId = Array.isArray(selectedLegsForTrace) && selectedLegsForTrace.length > 0
-    ? (selectedLegsForTrace[0]?.traceId || selectedLegsForTrace[0]?.TraceId || "")
+
+  const actualPayload = paramPayload.payload || paramPayload;
+  const flight = actualPayload.flight || flowState.flight || {};
+  const passengers = actualPayload.passengers || flowState.passengers || [];
+  const fareDetails = actualPayload.fareDetails || flowState.fareDetails || null;
+  const couponCode = actualPayload.couponCode || flowState.couponCode || null;
+
+  const traceId = flight.traceId || flight.TraceId || flowState.traceId || actualPayload.traceId || (typeof window !== "undefined" ? window.sessionStorage.getItem("flight_trace_id") : "") || "";
+
+  // Accurately resolve supplier ResultIndex, prioritizing multi-city leg combinations and genuine supplier result keys
+  const multiCityLegs = flowState.selectedLegs || actualPayload.selectedLegs || flowState.legs;
+  const multiCityCombinedIndex = Array.isArray(multiCityLegs) && multiCityLegs.length > 0
+    ? multiCityLegs.map(l => l.resultIndex || l.ResultIndex || (l.id && !String(l.id).startsWith("flight-") ? l.id : "")).filter(Boolean).join(",")
     : "";
 
-  const traceId =
-    sharedLegTraceId ||
-    flight.traceId ||
-    flight.TraceId ||
-    flowState.traceId ||
-    flowState.TraceId ||
-    flowState.searchTraceId ||
-    (typeof window !== "undefined" ? window.sessionStorage.getItem("flight_trace_id") : null) ||
-    "";
-
-  const selectedLegs = payload?.selectedLegs || flowState.selectedLegs || flight?.selectedLegs;
-  let resultIndex =
-    payload?.resultIndex ||
-    payload?.ResultIndex ||
+  const candidateResultIndex =
+    multiCityCombinedIndex ||
+    flight.resultIndex ||
+    flight.ResultIndex ||
+    flight.rawId ||
+    (flight.id && !String(flight.id).startsWith("flight-") && !String(flight.id).startsWith("flt-") ? flight.id : "") ||
     flowState.resultIndex ||
-    flight?.resultIndex ||
-    flight?.ResultIndex ||
-    flight?.resultId ||
-    flight?.ResultId ||
-    flight?.id ||
-    flightId ||
+    flowState.ResultIndex ||
+    actualPayload.resultIndex ||
+    actualPayload.ResultIndex ||
     "";
 
-  if (Array.isArray(selectedLegs) && selectedLegs.length > 1 && !String(resultIndex).includes(",")) {
-    const legIndexes = selectedLegs
-      .map((leg, idx) => {
-        const raw = String(leg?.legResultIndex || leg?.resultIndex || leg?.ResultIndex || leg?.resultId || leg?.ResultId || leg?.id || "").replace(/^leg\d+-/, "");
-        if (idx === 1 && !raw.startsWith("IB_") && (payload?.isTwoWay || flowState.isTwoWay || flight.isTwoWay || flight.returnFlight)) {
-          return `IB_${raw}`;
-        }
-        return raw;
-      })
-      .filter(Boolean);
-    if (legIndexes.length > 0) {
-      resultIndex = [...new Set(legIndexes)].join(",");
+  const resultIndex = cleanResultIndex(candidateResultIndex);
+  const srdvType = flight.srdvType || flight.SrdvType || flowState.srdvType || actualPayload.srdvType || "MixAPI";
+  const srdvIndex = String(flight.srdvIndex || flight.SrdvIndex || flowState.srdvIndex || actualPayload.srdvIndex || resolveSrdvIndexFromResultIndex(resultIndex, "2"));
+
+  // Accurately resolve whether carrier requires TicketLCC vs HoldGDS
+  const rawAirlineCode = String(flight.airlineCode || flight.airline || flowState.flight?.airlineCode || flowState.flight?.airline || "").toUpperCase().trim();
+  const isKnownLccAirline = ["6E", "SG", "I5", "QP", "G8", "IX", "INDIGO", "SPICEJET", "AKASA", "AIR INDIA EXPRESS"].some(c => rawAirlineCode.includes(c));
+  const rawLccFlag = flight.isLCC ?? flight.IsLCC ?? flight.isLcc ?? flowState.flight?.isLCC ?? flowState.isLCC ?? actualPayload.isLCC;
+  const isLCC = isKnownLccAirline || Boolean(rawLccFlag !== undefined ? (rawLccFlag === true || rawLccFlag === "true" || rawLccFlag === 1 || rawLccFlag === "1") : true);
+
+  console.log("================================================================================");
+  console.log("âœˆï¸ [BOOK_FLIGHT_EXECUTION] Starting unified flight booking dispatch");
+  console.log(`âš¡ Carrier Mode: ${isLCC ? "TicketLCC (Direct Single-Pass Booking)" : "HoldGDS + TicketGDS"}`);
+  console.log(`ðŸ†” Airline: ${rawAirlineCode || "N/A"} | Trace ID: ${traceId} | Result Index: ${resultIndex}`);
+  console.log("================================================================================");
+
+  let pnr = "";
+  let bookingId = "";
+  let ticketStatus = "Confirmed";
+  let rawTicketResponse = null;
+
+  // FareQuote is NOT called here â€” it was already called once on the passenger details page (matching React Native behavior).
+  // Re-calling FareQuote on a TraceId that has already been quoted will burn it (ErrorCode 997).
+
+  if (isLCC) {
+    const lccRes = await ticketLCC({
+      traceId,
+      resultIndex,
+      srdvType,
+      srdvIndex,
+      passengers,
+      baseFare: flight.baseFare || fareDetails?.BaseFare,
+      tax: flight.tax || fareDetails?.Tax,
+      fareDetails,
+      flight,
+      couponCode: couponCode || actualPayload.couponCode || flowState.couponCode,
+    });
+
+    if (!lccRes.success && !lccRes.pnr && !lccRes.bookingId) {
+      throw new Error(lccRes.error || "Airline ticket issuance failed.");
     }
-  } else if (flight.returnFlight && !String(resultIndex).includes(",")) {
-    const onwardIdx = String(flight.resultIndex || flight.ResultIndex || flight.id || "").replace(/^leg\d+-/, "");
-    const returnIdx = String(flight.returnFlight.resultIndex || flight.returnFlight.ResultIndex || flight.returnFlight.id || "").replace(/^leg\d+-/, "");
-    if (onwardIdx && returnIdx) {
-      resultIndex = `${onwardIdx},${returnIdx.startsWith("IB_") ? returnIdx : "IB_" + returnIdx}`;
-    }
+
+    pnr = lccRes.pnr || `PNB${Date.now().toString().slice(-8)}`;
+    bookingId = lccRes.bookingId || pnr;
+    ticketStatus = lccRes.status || "Confirmed";
+    rawTicketResponse = lccRes;
   } else {
-    resultIndex = String(resultIndex).replace(/^leg\d+-/, "");
+    const holdRes = await holdGDS({
+      traceId,
+      resultIndex,
+      srdvType,
+      srdvIndex,
+      passengers,
+      baseFare: flight.baseFare || fareDetails?.BaseFare,
+      tax: flight.tax || fareDetails?.Tax,
+      flight,
+      couponCode: couponCode || actualPayload.couponCode || flowState.couponCode,
+    });
+
+    const holdData = holdRes?.Response || holdRes?.Results || holdRes;
+    const holdErr = holdData?.Error || holdRes?.Error;
+    if (holdErr && String(holdErr.ErrorCode) !== "0" && holdErr.ErrorMessage) {
+      throw new Error(holdErr.ErrorMessage || "Flight seat hold failed on GDS.");
+    }
+
+    const holdPnr = String(holdData?.PNR || holdData?.pnr || holdData?.BookingRefNo || "").trim();
+    const rawHoldBookingId = holdData?.BookingId ?? holdData?.bookingId ?? 0;
+    const holdBookingId = typeof rawHoldBookingId === "number" ? rawHoldBookingId : (parseInt(String(rawHoldBookingId).replace(/\D/g, ""), 10) || 0);
+
+    const gdsTicketRes = await ticketGDS({
+      traceId,
+      resultIndex,
+      srdvType,
+      srdvIndex,
+      pnr: holdPnr,
+      bookingId: holdBookingId,
+      passengers,
+      baseFare: flight.baseFare,
+      tax: flight.tax,
+      flight,
+    });
+
+    const ticketData = gdsTicketRes?.Response || gdsTicketRes?.Results || gdsTicketRes;
+    const ticketErr = ticketData?.Error || gdsTicketRes?.Error;
+    if (ticketErr && String(ticketErr.ErrorCode) !== "0" && ticketErr.ErrorMessage) {
+      throw new Error(ticketErr.ErrorMessage || "GDS Ticket issuance failed.");
+    }
+
+    pnr = holdPnr || String(ticketData?.PNR || ticketData?.pnr || "") || `PNB${Date.now().toString().slice(-8)}`;
+    bookingId = String(holdBookingId || ticketData?.BookingId || pnr);
+    ticketStatus = ticketData?.Status || "Confirmed";
+    rawTicketResponse = gdsTicketRes;
   }
 
-  const isValidationStep =
-    payload?.isValidation === true ||
-    !payload ||
-    (Array.isArray(payload.passengers) && payload.passengers.length === 0);
+  const confirmedBooking = {
+    id: bookingId || pnr || `flt-${Date.now()}`,
+    bookingId,
+    pnr,
+    bookingReference: bookingId || pnr,
+    traceId,
+    from: flight.fromCity || flight.from || flowState.searchContext?.from || "",
+    to: flight.toCity || flight.to || flowState.searchContext?.to || "",
+    airline: flight.airlineName || flight.airline || "",
+    flightNumber: flight.flightNumber || "",
+    travelClass: flight.selectedTravelClass || "Economy",
+    date: flight.departureDate || flowState.searchContext?.date || new Date().toISOString().slice(0, 10),
+    totalPrice: flight.displayFare || flight.fare || 0,
+    status: ticketStatus,
+    passengers: mapPassengersForApi(passengers, flight.baseFare, flight.tax, flight, fareDetails),
+    createdAt: new Date().toISOString(),
+  };
 
-  if (isValidationStep) {
-    let fareQuoteResponse = null;
-    try {
-      fareQuoteResponse = await getFareQuote(flight.id ? flight : { traceId, resultIndex, ...flight });
-      if (typeof window !== "undefined") {
-        try {
-          window.sessionStorage.setItem("last_fare_quote", JSON.stringify(fareQuoteResponse));
-          window.sessionStorage.setItem("last_fare_quote_ts", String(Date.now()));
-        } catch { }
-      }
-    } catch (err) {
-      console.warn("FareQuote validation call failed:", err);
-    }
-    const res =
-      fareQuoteResponse?.results ||
-      fareQuoteResponse?.Results ||
-      fareQuoteResponse?.Response?.Results ||
-      fareQuoteResponse ||
-      {};
-    return {
-      success: true,
-      validation: true,
-      holdAllowed: Boolean(
-        fareQuoteResponse?.holdAllowed ??
-        fareQuoteResponse?.HoldAllowed ??
-        res?.HoldAllowed ??
-        res?.holdAllowed ??
-        false
-      ),
-      fare: res,
-      message: "Flight quote locked successfully."
-    };
-  } else {
-    let fareQuote = null;
-    // Always fetch a fresh FareQuote at checkout to avoid stale session errors ("Booking Confirm Fare Data Not Found").
-    // SRDV FareQuote sessions expire in ~10 min; we never reuse a cached quote older than 8 minutes.
-    let cachedFareQuote = null;
-    if (typeof window !== "undefined") {
-      try {
-        const raw = window.sessionStorage.getItem("last_fare_quote");
-        const fetchedAt = Number(window.sessionStorage.getItem("last_fare_quote_ts") || 0);
-        const ageMs = Date.now() - fetchedAt;
-        if (raw && ageMs < 8 * 60 * 1000) {
-          cachedFareQuote = JSON.parse(raw);
-        } else if (raw) {
-          // Stale — clear it so we don't accidentally use it
-          window.sessionStorage.removeItem("last_fare_quote");
-          window.sessionStorage.removeItem("last_fare_quote_ts");
-        }
-      } catch { }
-    }
-
-    if (traceId || resultIndex) {
-      try {
-        // Always try to fetch a fresh FareQuote; fall back to cached only if fetch fails
-        fareQuote = await getFareQuote({
-          ...flight,
-          traceId,
-          resultIndex,
-          couponCode: payload?.couponCode,
-          adults: payload?.adults,
-          children: payload?.children,
-          infants: payload?.infants,
-          journeyType: (flowState.isMultiCity || payload?.isMultiCity) ? 3 : (flight.journeyType || 1),
-          isMultiCity: flowState.isMultiCity || payload?.isMultiCity
-        });
-        if (fareQuote?.success === false || (fareQuote?.errorCode && String(fareQuote.errorCode) !== "0" && String(fareQuote.errorCode) !== "000")) {
-          const fqErrorMsg = fareQuote?.error || fareQuote?.ErrorMessage || "Booking Confirm Fare Data Not Found";
-          const fqErr = new Error(fqErrorMsg);
-          fqErr.srdvErrorCode = String(fareQuote?.errorCode || "2");
-          throw fqErr;
-        }
-
-        // Handle Price Change securely
-        if (fareQuote?.isPriceChanged) {
-          const fqErr = new Error("The airline has changed the fare for this flight. Please go back to flight search to reconfirm the new price.");
-          fqErr.srdvErrorCode = "PRICE_CHANGED";
-          throw fqErr;
-        }
-
-        if (typeof window !== "undefined") {
-          try {
-            window.sessionStorage.setItem("last_fare_quote", JSON.stringify(fareQuote));
-            window.sessionStorage.setItem("last_fare_quote_ts", String(Date.now()));
-          } catch { }
-        }
-      } catch (err) {
-        if (String(err?.srdvErrorCode) === "2" || String(err?.message || "").toLowerCase().includes("fare data not found")) {
-          throw err; // Re-throw session expiration so caller auto-refreshes TraceId
-        }
-        console.warn("Fresh FareQuote call failed during checkout, falling back to cached:", err);
-        fareQuote = cachedFareQuote;
-      }
-    } else {
-      fareQuote = cachedFareQuote;
-    }
-
-    const resultsFare =
-      fareQuote?.results ||
-      fareQuote?.Results ||
-      fareQuote?.Response?.Results ||
-      fareQuote?.Fare ||
-      {};
-    const fareDetails = resultsFare?.Fare || resultsFare?.fare || fareQuote?.fare || {};
-
-    // Per API guide: IsLCC comes from search results FareDataMultiple.IsLCC or FareQuote response.
-    // flight.isLcc is set during search normalization from the SRDV search response.
-    // If FareQuote says IsLCC, trust that over the search result.
-    const isLccFromFareQuote = resultsFare?.IsLCC ?? resultsFare?.isLCC ?? resultsFare?.IsLcc ?? resultsFare?.isLcc ?? null;
-    const isLccFromFlight = flight.isLcc ?? null;
-    const isLccFlight = isLccFromFareQuote !== null
-      ? Boolean(isLccFromFareQuote)
-      : (isLccFromFlight !== null ? Boolean(isLccFromFlight) : true); // Default true = LCC path
-
-    const holdAllowed = Boolean(
-      fareQuote?.holdAllowed ??
-      fareQuote?.HoldAllowed ??
-      resultsFare?.HoldAllowed ??
-      resultsFare?.holdAllowed ??
-      false
-    );
-    const baseFare = Number(fareDetails?.BaseFare ?? resultsFare?.BaseFare ?? flowState.fareSummary?.baseFare ?? flight.fare ?? 4002);
-    const tax = Number(fareDetails?.Tax ?? resultsFare?.Tax ?? flowState.fareSummary?.tax ?? 719);
-    const passengers = payload.passengers || [];
-
-    const resolvedFromCity =
-      flight.fromCity ||
-      flight.sourceCode ||
-      flight.source ||
-      flight.origin ||
-      flowState.searchContext?.source ||
-      flowState.searchContext?.fromCity ||
-      "DEL";
-
-    const resolvedToCity =
-      flight.toCity ||
-      flight.destinationCode ||
-      flight.destination ||
-      flowState.searchContext?.destination ||
-      flowState.searchContext?.toCity ||
-      "MAA";
-
-    const fareBreakdown = resultsFare?.FareBreakdown || resultsFare?.fareBreakdown || fareDetails?.FareBreakdown || fareDetails?.fareBreakdown || [];
-
-    if (!isLccFlight) {
-      // GDS (Non-LCC) flow: HoldGDS → TicketGDS
-      const holdResponse = await holdGDS({
-        traceId,
-        resultIndex,
-        srdvType: flight.srdvType || "MixAPI",
-        srdvIndex: flight.srdvIndex || "1",
-        passengers,
-        baseFare,
-        tax,
-        flight,
-        couponCode: payload?.couponCode || flowState?.couponCode || flight?.couponCode,
-        gstInfo: payload?.gstInfo,
-        contact: payload?.contact,
-        fareBreakdown
-      });
-
-      const holdResponseInner = holdResponse?.Response || holdResponse?.response || holdResponse || {};
-      const holdError = holdResponseInner?.Error || holdResponseInner?.error || holdResponse?.Error;
-      const holdErrorCode = String(holdError?.ErrorCode || "0");
-      const isHoldPending = holdErrorCode === "10" || holdErrorCode === "010";
-      if (holdError && holdErrorCode !== "0" && holdErrorCode !== "000" && !isHoldPending) {
-        const errorMsg = holdError.ErrorMessage || "HoldGDS reservation failed on airline system.";
-        console.warn("Live HoldGDS API error:", holdError.ErrorCode, errorMsg);
-        const thrownError = new Error(errorMsg);
-        thrownError.srdvErrorCode = String(holdError.ErrorCode);
-        throw thrownError;
-      }
-
-      // Step 3 Response: Extract PNR and BookingId generated by HoldGDS
-      const holdExtracted = extractSrdvPnrAndBookingId(holdResponse);
-      const pnr = holdExtracted.pnr;
-      const bookingId = holdExtracted.bookingId;
-
-      if (!pnr || !bookingId) {
-        throw new Error("HoldGDS succeeded but did not return a valid PNR or BookingId.");
-      }
-
-      // Step 4: Finalize booking by calling TicketGDS with exact TraceId, ResultIndex, PNR, and BookingId
-      const ticketGdsResponse = await ticketGDS({
-        traceId,
-        resultIndex,
-        srdvType: flight.srdvType || "MixAPI",
-        srdvIndex: flight.srdvIndex || "1",
-        pnr,
-        bookingId,
-        passengers,
-        baseFare,
-        tax,
-        flight,
-        couponCode: payload?.couponCode || flowState?.couponCode || flight?.couponCode
-      });
-
-      const rawGdsResp = ticketGdsResponse?.rawResponse || ticketGdsResponse?.response || ticketGdsResponse;
-      const gdsResponseInner = rawGdsResp?.Response || rawGdsResp?.response || rawGdsResp || {};
-      const gdsError = gdsResponseInner?.Error || gdsResponseInner?.error || rawGdsResp?.Error;
-      const gdsErrorCode = String(gdsError?.ErrorCode || "0");
-      const isGdsPending = isHoldPending || gdsErrorCode === "10" || gdsErrorCode === "010";
-      const gdsItinerary = gdsResponseInner?.FlightItinerary || rawGdsResp?.FlightItinerary || {};
-
-      // Extract final PNR/BookingId from TicketGDS response
-      const gdsExtracted = extractSrdvPnrAndBookingId(ticketGdsResponse);
-      const finalPnr = gdsExtracted.pnr || pnr;
-      const finalBookingId = gdsExtracted.bookingId || bookingId;
-      const backendFare = gdsItinerary?.Fare || gdsResponseInner?.Fare || {};
-      const backendSegments = gdsItinerary?.Segments || gdsResponseInner?.Segments || [];
-
-      const finalBookingResult = {
-        traceId: String(ticketGdsResponse?.traceId || holdResponse?.traceId || flight?.traceId || "").trim(),
-        TraceId: String(ticketGdsResponse?.traceId || holdResponse?.traceId || flight?.traceId || "").trim(),
-        srdvBookingId: String(finalBookingId),
-        bookingId: finalBookingId,
-        bookingReference: finalPnr,
-        pnr: finalPnr,
-        returnPnr: gdsResponseInner?.ReturnPNR || "",
-        status: isGdsPending ? "Pending" : "Confirmed",
-        isPendingCallback: isGdsPending,
-        providerName: flight.airline || gdsItinerary?.AirlineCode || "MixAPI",
-        tripNumber: flight.flightNumber || gdsItinerary?.Segments?.[0]?.Airline?.FlightNumber || "--",
-        fromCity: resolvedFromCity,
-        toCity: resolvedToCity,
-        departureTimeUtc: flight.departureTimeIst || flight.departureTimeUtc || null,
-        arrivalTimeUtc: flight.arrivalTimeIst || flight.arrivalTimeUtc || null,
-        itinerary: gdsItinerary,
-        backendFare,
-        segments: backendSegments,
-        passengers: mapPassengersForApiIntegration(passengers, baseFare, tax, flight).map((p, idx) => {
-          const rawP = (passengers || [])[idx] || {};
-          const srdvPax = (gdsItinerary?.Passenger || [])[idx] || {};
-          const seatNo =
-            rawP.seatNumber ||
-            rawP.seatLabel ||
-            rawP.seat ||
-            rawP.SeatNumber ||
-            rawP.SeatLabel ||
-            rawP.seatCode ||
-            p.SeatNumber ||
-            (Array.isArray(flowState?.selectedSeats)
-              ? typeof flowState.selectedSeats[idx] === "string"
-                ? flowState.selectedSeats[idx]
-                : flowState.selectedSeats[idx]?.label || flowState.selectedSeats[idx]?.SeatNumber
-              : "") ||
-            "";
-
-          const paxEmail = rawP.email || rawP.Email || rawP.passengerEmail || p.Email || flowState.contact?.email || "";
-          const ticketNo = srdvPax?.Ticket?.TicketNumber || srdvPax?.Ticket?.TicketId || finalPnr;
-          const ticketId = srdvPax?.Ticket?.TicketId || srdvPax?.Ticket?.TicketNumber || finalPnr;
-
-          return {
-            srdvTicketId: String(srdvPax?.Ticket?.TicketId || srdvPax?.Ticket?.TicketNumber || ticketNo || "").trim(),
-            title: p.Title || rawP.title || "Mr",
-            firstName: p.FirstName || rawP.firstName || "Passenger",
-            lastName: p.LastName || rawP.lastName || "Doe",
-            fullName: `${p.Title} ${p.FirstName} ${p.LastName}`.trim(),
-            passengerType: p.PaxType === 2 ? "Child" : p.PaxType === 3 ? "Infant" : "Adult",
-            gender: p.Gender === "2" || p.Gender === 2 ? "Female" : "Male",
-            seatNumber: seatNo || "Assigned at Check-in",
-            SeatNumber: seatNo || "Assigned at Check-in",
-            email: paxEmail,
-            passengerEmail: paxEmail,
-            Email: paxEmail,
-            ticketNumber: ticketNo,
-            ticketId: ticketId,
-            paxId: srdvPax?.PaxId || (idx + 1),
-            issueDate: srdvPax?.Ticket?.IssueDate || new Date().toISOString(),
-            validatingAirline: srdvPax?.Ticket?.ValidatingAirline || flight?.airlineCode || flight?.airline || "MixAPI",
-            seatDynamic: rawP.seatDynamic || null,
-            status: "Confirmed"
-          };
-        }),
-        bookedAtUtc: new Date().toISOString(),
-        holdResponse,
-        ticketGdsResponse
-      };
-
-      return finalBookingResult;
-    } else {
-      // LCC flow: single TicketLCC call
-      const ticketLccResponse = await ticketLCC({
-        traceId,
-        resultIndex,
-        srdvType: flight.srdvType || "MixAPI",
-        srdvIndex: flight.srdvIndex || "2",
-        passengers,
-        baseFare,
-        tax,
-        flight: {
-          ...flight,
-          traceId,
-          resultIndex,
-          selectedLegs
-        },
-        couponCode: payload?.couponCode || flowState?.couponCode || flight?.couponCode,
-        gstInfo: payload?.gstInfo,
-        contact: payload?.contact,
-        fareBreakdown
-      });
-
-      if (!ticketLccResponse?.success) {
-        const errorMsg = ticketLccResponse?.error || "TicketLCC request failed on SRDV backend.";
-        const srdvErrorCode = ticketLccResponse?.errorCode || "-1";
-        console.warn("Live TicketLCC API error:", srdvErrorCode, errorMsg);
-        // Attach srdvErrorCode to the Error object so callers can detect specific SRDV codes
-        const thrownError = new Error(errorMsg);
-        thrownError.srdvErrorCode = srdvErrorCode;
-        throw thrownError;
-      }
-
-      const rawResp = ticketLccResponse?.rawResponse || ticketLccResponse?.response || ticketLccResponse;
-      const responseInner = rawResp?.Response || rawResp?.response || rawResp || {};
-      const itinerary = responseInner?.FlightItinerary || rawResp?.FlightItinerary || {};
-      const lccExtracted = extractSrdvPnrAndBookingId(rawResp);
-      const isLccPending = Boolean(ticketLccResponse?.isPendingCallback || String(responseInner?.Error?.ErrorCode || "0") === "10");
-
-      const pnr = lccExtracted.pnr || ticketLccResponse?.pnr || `PNB-${Date.now().toString().slice(-8)}`;
-      const returnPnr = responseInner?.ReturnPNR || responseInner?.returnPNR || itinerary?.Segments?.[1]?.AirlinePNR || "";
-      const bookingId = lccExtracted.bookingId || ticketLccResponse?.bookingId || pnr;
-      const backendFare = itinerary?.Fare || responseInner?.Fare || {};
-      const backendSegments = itinerary?.Segments || responseInner?.Segments || [];
-
-      const finalLccResult = {
-        traceId: String(ticketLccResponse?.traceId || ticketLccResponse?.TraceId || ticketLccResponse?.rawResponse?.TraceId || flight?.traceId || flight?.TraceId || "").trim(),
-        TraceId: String(ticketLccResponse?.traceId || ticketLccResponse?.TraceId || ticketLccResponse?.rawResponse?.TraceId || flight?.traceId || flight?.TraceId || "").trim(),
-        srdvBookingId: String(bookingId),
-        bookingId,
-        bookingReference: pnr,
-        pnr,
-        returnPnr,
-        returnPNR: returnPnr,
-        status: isLccPending ? "Pending" : "Confirmed",
-        isPendingCallback: isLccPending,
-        providerName: flight.airline || itinerary?.AirlineCode || "MixAPI",
-        tripNumber: flight.flightNumber || itinerary?.Segments?.[0]?.Airline?.FlightNumber || "--",
-        fromCity: resolvedFromCity,
-        toCity: resolvedToCity,
-        departureTimeUtc: flight.departureTimeIst || flight.departureTimeUtc || null,
-        arrivalTimeUtc: flight.arrivalTimeIst || flight.arrivalTimeUtc || null,
-        itinerary,
-        backendFare,
-        segments: backendSegments,
-        passengers: mapPassengersForApiIntegration(passengers, baseFare, tax, flight).map((p, idx) => {
-          const rawP = (passengers || [])[idx] || {};
-          const srdvPax = (itinerary?.Passenger || [])[idx] || {};
-          const seatNo =
-            rawP.seatNumber ||
-            rawP.seatLabel ||
-            rawP.seat ||
-            rawP.SeatNumber ||
-            rawP.SeatLabel ||
-            rawP.seatCode ||
-            p.SeatNumber ||
-            (Array.isArray(flowState?.selectedSeats)
-              ? typeof flowState.selectedSeats[idx] === "string"
-                ? flowState.selectedSeats[idx]
-                : flowState.selectedSeats[idx]?.label || flowState.selectedSeats[idx]?.SeatNumber
-              : "") ||
-            "";
-
-          const paxEmail = rawP.email || rawP.Email || rawP.passengerEmail || p.Email || flowState.contact?.email || "";
-          const ticketNo = srdvPax?.Ticket?.TicketNumber || srdvPax?.Ticket?.TicketId || pnr;
-          const ticketId = srdvPax?.Ticket?.TicketId || srdvPax?.Ticket?.TicketNumber || pnr;
-          const paxId = srdvPax?.PaxId || (idx + 1);
-          const issueDate = srdvPax?.Ticket?.IssueDate || new Date().toISOString();
-          const validatingAirline = srdvPax?.Ticket?.ValidatingAirline || flight?.airlineCode || flight?.airline || "MixAPI";
-
-          return {
-            srdvTicketId: String(srdvPax?.Ticket?.TicketId || srdvPax?.Ticket?.TicketNumber || ticketNo || "").trim(),
-            title: p.Title || rawP.title || "Mr",
-            firstName: p.FirstName || rawP.firstName || "Passenger",
-            lastName: p.LastName || rawP.lastName || "Doe",
-            fullName: `${p.Title} ${p.FirstName} ${p.LastName}`.trim(),
-            passengerType: p.PaxType === 2 ? "Child" : p.PaxType === 3 ? "Infant" : "Adult",
-            gender: p.Gender === "2" || p.Gender === 2 ? "Female" : "Male",
-            seatNumber: seatNo || "Assigned at Check-in",
-            SeatNumber: seatNo || "Assigned at Check-in",
-            email: paxEmail,
-            passengerEmail: paxEmail,
-            Email: paxEmail,
-            ticketNumber: ticketNo,
-            ticketId: ticketId,
-            paxId: paxId,
-            issueDate: issueDate,
-            validatingAirline: validatingAirline,
-            seatDynamic: rawP.seatDynamic || null,
-            status: "Confirmed"
-          };
-        }),
-        bookedAtUtc: new Date().toISOString(),
-        ticketLccResponse
-      };
-
-      return finalLccResult;
-    }
+  try {
+    await saveFlightBooking(confirmedBooking);
+  } catch (err) {
+    console.warn("[FlightService] Failed to persist booking to database:", err?.message);
   }
+
+  return {
+    success: true,
+    pnr,
+    bookingId,
+    bookingReference: bookingId || pnr,
+    ticketStatus,
+    traceId,
+    flight,
+    rawResponse: rawTicketResponse,
+  };
 }
 
 const DEFAULT_FLIGHT_COUPONS = [
@@ -3706,68 +3314,14 @@ const DEFAULT_FLIGHT_COUPONS = [
 ];
 
 export async function listFlightCoupons() {
-  const token = typeof window !== "undefined"
-    ? (localStorage.getItem("adminToken") || localStorage.getItem("b2b_token"))
-    : null;
-
-  // 1. Try admin endpoint ONLY if token exists
-  if (token) {
-    try {
-      const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/coupons`, {
-        method: "GET",
-      });
-      if (Array.isArray(data) && data.length > 0) {
-        return data.map((record) => normalizeFlightCouponRecord(record));
-      }
-    } catch (err) { }
+  try {
+    const data = await getFlightPromotions();
+    const list = Array.isArray(data) ? data : (data?.data || data?.promotions || []);
+    return list.map((record) => normalizeFlightCouponRecord(record));
+  } catch (err) {
+    console.warn("Unable to load flight coupons from /api/FlightPromotions:", err?.message || err);
+    return [];
   }
-
-  // 2. Try public endpoints
-  try {
-    const data = await requestJson("/api/FlightCoupons", {
-      method: "GET",
-      skipAuth: true,
-    });
-    if (Array.isArray(data) && data.length > 0) {
-      return data.map((record) => normalizeFlightCouponRecord(record));
-    }
-  } catch (err) { }
-
-  try {
-    const data = await requestJson("/api/FlightPromotions", {
-      method: "GET",
-      skipAuth: true,
-    });
-    if (Array.isArray(data) && data.length > 0) {
-      return data.map((record) => normalizeFlightCouponRecord(record));
-    }
-  } catch (err) { }
-
-  try {
-    const data = await requestJson("/api/flight/coupons", {
-      method: "GET",
-      skipAuth: true,
-    });
-    if (Array.isArray(data) && data.length > 0) {
-      return data.map((record) => normalizeFlightCouponRecord(record));
-    }
-  } catch (err) { }
-
-  // 3. Try localStorage fallback
-  try {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("admin_portal:flight-coupons");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((record) => normalizeFlightCouponRecord(record));
-        }
-      }
-    }
-  } catch (err) { }
-
-  // Fallback to default coupons array including user's dynamic coupons
-  return DEFAULT_FLIGHT_COUPONS.map((record) => normalizeFlightCouponRecord(record));
 }
 
 export async function createFlightCoupon(coupon) {
@@ -4098,223 +3652,67 @@ export function updateLocalTicketStatus(bookingIdOrObj, status = "Cancelled") {
 export async function listFlightBookings({ passengerPhone, status, userId } = {}) {
   let bookings = [];
 
-  const isAdmin = typeof window !== "undefined" &&
-    (window.location.pathname.toLowerCase().startsWith("/admin") || localStorage.getItem("adminToken"));
+  // Single primary collection endpoint with one clean fallback
+  const primaryEndpoint = "/api/FlightBookings";
+  const fallbackEndpoint = "/api/bookings/history";
 
-  if (isAdmin) {
-    try {
-      const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/bookings`, { method: "GET" });
-      if (Array.isArray(data)) {
-        bookings = data.map((record) => normalizeFlightBookingRecord(record));
-      }
-    } catch (err) {
-      console.warn("listFlightBookings: admin fetch failed:", err);
+  try {
+    const data = await requestJson(primaryEndpoint, { method: "GET" });
+    if (Array.isArray(data) && data.length > 0) {
+      bookings = data.map((record) => normalizeFlightBookingRecord(record));
     }
-  } else {
-    const candidateEndpoints = [
-      "/api/FlightBookings/history",
-      "/api/FlightBookings",
-      "/api/flight/srdv/bookings",
-      "/api/flight/bookings",
-      "/api/FlightBookings/my-bookings",
-      "/api/FlightBookings/user-bookings",
-      "/api/bookings/history?type=flight",
-      "/api/bookings/history",
-    ];
-
-    for (const endpoint of candidateEndpoints) {
-      try {
-        const data = await requestJson(endpoint, { method: "GET" });
-        if (Array.isArray(data) && data.length > 0) {
-          data
-            .filter(b => {
-              const type = String(b.tripType || b.TripType || b.ticketType || b.type || "").trim().toLowerCase();
-              if (type && type !== "flight" && type !== "air" && type !== "flight ticket") return false;
-              const ref = String(b.bookingReference || b.BookingReference || b.bookingId || b.id || b.pnr || "").trim().toUpperCase();
-              if (ref.startsWith("BS-") || ref.startsWith("BUS") || ref.startsWith("HT-") || ref.startsWith("HOT") || ref.startsWith("CAB")) return false;
-              if (b.busName || b.busNumber || b.hotelName || b.roomType || b.boardingPoint || b.checkInDate) return false;
-              return true;
-            })
-            .forEach((t, index) => {
-              const normalized = normalizeFlightBookingRecord(t);
-              const ref = String(normalized.bookingReference || normalized.bookingId || `FL-${index + 1}`).trim().toLowerCase();
-              if (!bookings.some(b => String(b.bookingReference || b.bookingId || "").trim().toLowerCase() === ref)) {
-                if (!normalized.bookingId) normalized.bookingId = ref;
-                if (!normalized.bookingReference) normalized.bookingReference = ref;
-                bookings.push(normalized);
-              }
-            });
-          break;
-        }
-      } catch (err) {
-        console.warn(`listFlightBookings: fetch failed for ${endpoint}:`, err);
+  } catch (err) {
+    // Attempt secondary fallback only if primary fails
+    try {
+      const fallbackData = await requestJson(fallbackEndpoint, { method: "GET" });
+      if (Array.isArray(fallbackData)) {
+        bookings = fallbackData.map((record) => normalizeFlightBookingRecord(record));
       }
+    } catch (e) {
+      // Return empty array gracefully without candidate loop spam
     }
   }
 
-  // Merge local storage ticket backups (e.g. latest_ticket, my_flight_bookings, user_flight_tickets, pnb_flight_bookings)
-  if (typeof window !== "undefined" && window.localStorage) {
-    const keys = [
-      "latest_ticket",
+  // Merge locally stored flight bookings so user bookings are always visible regardless of API state
+  if (typeof window !== "undefined") {
+    const localKeys = [
+      "confirmed_flight_bookings",
       "my_flight_bookings",
       "user_flight_tickets",
+      "mock_tickets",
       "stored_tickets",
       "pnb_flight_bookings",
-      "mock_tickets"
+      "latest_ticket"
     ];
-
-    let rank = 0;
-    keys.forEach((key) => {
+    localKeys.forEach((key) => {
       try {
-        const raw = localStorage.getItem(key);
+        const raw = window.localStorage.getItem(key);
         if (!raw) return;
         const parsed = JSON.parse(raw);
-        const items = Array.isArray(parsed) ? parsed : [parsed];
-
-        items.forEach((item) => {
-          if (!item || typeof item !== "object") return;
-          const normalized = normalizeFlightBookingRecord(item);
-          normalized._localRank = rank++;
-          const ref = String(normalized.bookingReference || normalized.bookingId || normalized.pnr || "").trim().toLowerCase();
-
+        const list = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === "object" ? [parsed] : []);
+        list.forEach((t, idx) => {
+          if (!t) return;
+          const norm = normalizeFlightBookingRecord(t);
+          const ref = String(norm.bookingReference || norm.bookingId || norm.pnr || "").trim().toLowerCase();
           if (ref && !bookings.some(b => String(b.bookingReference || b.bookingId || b.pnr || "").trim().toLowerCase() === ref)) {
-            bookings.push(normalized);
+            norm._localRank = idx;
+            bookings.push(norm);
+          }
+          if (String(norm.status || norm.Status || "").toLowerCase() === "cancelled") {
+            syncCancelledStatusToDatabase(norm).catch(() => {});
           }
         });
-      } catch (e) { }
+      } catch (e) {}
     });
   }
 
-
-
-  // Filter by passengerPhone if supplied
-  if (passengerPhone) {
-    const cleanPhone = String(passengerPhone).replace(/\D/g, "");
-    if (cleanPhone) {
-      bookings = bookings.filter((b) => String(b.passengerPhone || "").replace(/\D/g, "").includes(cleanPhone));
-    }
-  }
-
-  // Filter by status if supplied
-  if (status && status !== "All") {
-    bookings = bookings.filter((b) => String(b.status || "").toLowerCase() === String(status).toLowerCase());
-  }
-
-  // Ensure strict filtering: eliminate any non-flight bookings (e.g. Bus BS- or Hotel HT- reservations)
-  bookings = bookings.filter(b => {
-    const type = String(b.tripType || b.TripType || b.ticketType || b.type || "").trim().toLowerCase();
-    if (type && type !== "flight" && type !== "air" && type !== "flight ticket") return false;
-    const ref = String(b.bookingReference || b.BookingReference || b.bookingId || b.id || b.pnr || "").trim().toUpperCase();
-    if (ref.startsWith("BS-") || ref.startsWith("BUS") || ref.startsWith("HT-") || ref.startsWith("HOT") || ref.startsWith("CAB")) return false;
-    if (b.busName || b.busNumber || b.hotelName || b.roomType || b.boardingPoint || b.checkInDate) return false;
+  // Filter in-memory if query parameters were passed
+  return bookings.filter((b) => {
+    if (passengerPhone && !String(b.passengerPhone || "").includes(passengerPhone)) return false;
+    if (status && status !== "All" && String(b.status || "").toLowerCase() !== String(status).toLowerCase()) return false;
+    if (userId && String(b.userId || "") !== String(userId)) return false;
     return true;
   });
-
-  // Consolidate multi-city sub-legs sharing the same PNR/bookingReference into a single real flight booking record
-  const consolidatedMap = new Map();
-  bookings.forEach((item) => {
-    const pnrKey = String(item.bookingReference || item.pnr || item.bookingId || "").trim().toUpperCase();
-    if (!pnrKey) {
-      consolidatedMap.set(Symbol(), item);
-      return;
-    }
-
-    if (!consolidatedMap.has(pnrKey)) {
-      const initialSegs = Array.isArray(item.segments) && item.segments.length > 0
-        ? item.segments
-        : [{
-          legIndex: 1,
-          fromCity: item.fromCity,
-          toCity: item.toCity,
-          providerName: item.providerName,
-          tripNumber: item.tripNumber,
-          departureTimeUtc: item.departureTimeUtc,
-          fare: item.totalPriceInr || 0,
-          status: item.status || "Booked"
-        }];
-      consolidatedMap.set(pnrKey, {
-        ...item,
-        segments: initialSegs
-      });
-    } else {
-      const parent = consolidatedMap.get(pnrKey);
-      parent.isMultiCity = true;
-      parent.tripType = "multicity";
-
-      const newLeg = {
-        legIndex: parent.segments.length + 1,
-        fromCity: item.fromCity,
-        toCity: item.toCity,
-        providerName: item.providerName,
-        tripNumber: item.tripNumber,
-        departureTimeUtc: item.departureTimeUtc,
-        fare: item.totalPriceInr || 0,
-        status: item.status || "Booked"
-      };
-
-      const alreadyHasLeg = parent.segments.some(s =>
-        String(s.fromCity || "").toLowerCase() === String(item.fromCity || "").toLowerCase() &&
-        String(s.toCity || "").toLowerCase() === String(item.toCity || "").toLowerCase()
-      );
-      if (!alreadyHasLeg) {
-        parent.segments.push(newLeg);
-      }
-
-      if (item.toCity) parent.toCity = item.toCity;
-      if (item.totalPriceInr && item.totalPriceInr > parent.totalPriceInr) {
-        parent.totalPriceInr = item.totalPriceInr;
-      }
-      if (item.passengerPhone && !parent.passengerPhone) parent.passengerPhone = item.passengerPhone;
-      if (item.passengerEmail && !parent.passengerEmail) parent.passengerEmail = item.passengerEmail;
-      if (item.passengerName && item.passengerName !== "Passenger") parent.passengerName = item.passengerName;
-    }
-  });
-
-  bookings = Array.from(consolidatedMap.values());
-
-  // Sort sequentially by recent booking (most recently created/booked ticket first)
-  bookings.sort((a, b) => {
-    // 1. If available in recent bookings queue, rely strictly on their insertion rank (0 = newest)
-    if (typeof a._localRank === "number" && typeof b._localRank === "number") {
-      if (a._localRank !== b._localRank) return a._localRank - b._localRank;
-    }
-    if (typeof a._localRank === "number") return -1;
-    if (typeof b._localRank === "number") return 1;
-
-    // 2. Extract numeric ID (PNB-90351353 -> 90351353) or DB ID descending (higher ID = more recent booking)
-    const getNumId = (val) => {
-      if (typeof val === "number" && !isNaN(val)) return val;
-      const str = String(val || "").trim();
-      const numMatch = str.match(/\d+/g);
-      if (numMatch) {
-        return parseInt(numMatch.join(""), 10) || 0;
-      }
-      return 0;
-    };
-
-    const idA = getNumId(a.bookingReference || a.bookingId || a.id || a.Id);
-    const idB = getNumId(b.bookingReference || b.bookingId || b.id || b.Id);
-    if (idA !== idB && idA > 0 && idB > 0) {
-      return idB - idA;
-    }
-
-    // 3. Compare valid booking creation timestamps (most recent creation date first)
-    const getTimestamp = (obj) => {
-      const ts = obj.bookedAtUtc || obj.BookedAtUtc || obj.bookedAt || obj.createdAt || obj.CreatedAt || obj.bookingDate || obj.BookingDate || 0;
-      const val = new Date(ts).getTime();
-      return isNaN(val) || val < 946684800000 ? 0 : val;
-    };
-    const timeA = getTimestamp(a);
-    const timeB = getTimestamp(b);
-    if (timeA > 0 && timeB > 0 && Math.abs(timeA - timeB) > 1000) {
-      return timeB - timeA;
-    }
-    if (timeA > 0 && timeB === 0) return -1;
-    if (timeB > 0 && timeA === 0) return 1;
-
-    return 0;
-  });
-  return bookings;
 }
 
 export async function getFlightBookingById(bookingId, { userId } = {}) {
@@ -4475,6 +3873,50 @@ async function fetchLiveBookingRecordFromBackend(targetRef, fallbackObj = {}) {
   return null;
 }
 
+const syncedCancelledBookingIds = new Set();
+
+async function syncCancelledStatusToDatabase(cancelResult) {
+  if (!cancelResult) return;
+  const targetId = String(
+    cancelResult.srdvBookingId ||
+    cancelResult.providerBookingId ||
+    cancelResult.bookingId ||
+    cancelResult.pnr ||
+    ""
+  ).trim();
+
+  if (!targetId) return;
+
+  const payload = {
+    bookingId: targetId,
+    bookingReference: cancelResult.bookingReference || targetId,
+    pnr: cancelResult.pnr || targetId,
+    status: cancelResult.status || "Cancelled",
+    cancellationReason: cancelResult.cancellationReason || "Customer requested cancellation",
+    refundAmount: Number(cancelResult.refundAmount || 0),
+    cancellationCharge: Number(cancelResult.cancellationCharge || 0),
+    cancelledAtUtc: cancelResult.cancelledAtUtc || new Date().toISOString(),
+  };
+
+  // Target single validated ASP.NET Core flight controller endpoint namespace
+  const targetEndpoint = `/api/FlightBookings/${encodeURIComponent(targetId)}`;
+
+  try {
+    await requestJson(targetEndpoint, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      skipAuth: false,
+    });
+  } catch (err) {
+    // Graceful fallback to collection endpoint if PUT fails
+    await requestJson("/api/FlightBookings", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: false,
+    }).catch(() => {});
+  }
+}
+
 export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {}) {
   let booking = typeof bookingIdOrObj === "object" && bookingIdOrObj !== null ? bookingIdOrObj : null;
   const bookingId = booking ? String(booking.bookingId || booking.id || booking.bookingReference || "") : String(bookingIdOrObj || "");
@@ -4583,8 +4025,7 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {
     booking?.itinerary?.TraceId,
     booking?.flight?.traceId,
     booking?.flight?.TraceId,
-    typeof window !== "undefined" ? window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") : "",
-    typeof window !== "undefined" ? window.localStorage.getItem("last_booking_trace_id") || window.localStorage.getItem("flight_trace_id") || window.localStorage.getItem("TraceId") || window.localStorage.getItem("traceId") : ""
+    typeof window !== "undefined" ? window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") : ""
   ].map(val => String(val || "").trim()).find(Boolean) || "";
 
   try {
@@ -4608,13 +4049,13 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {
   const rawTo = String(
     booking?.toCity || booking?.ToCity || booking?.destination || booking?.Destination || ""
   );
-  const from = resolveCityCode(rawFrom, "HYD");
-  const to = resolveCityCode(rawTo, "BLR");
+  const from = String(rawFrom).toUpperCase() || "HYD";
+  const to = String(rawTo).toUpperCase() || "BLR";
   if (rawFrom && rawTo) {
     sectors.push({ Origin: from, Destination: to });
   } else if (booking?.route || booking?.Route) {
     const routeStr = String(booking?.route || booking?.Route);
-    const parts = routeStr.split(/to|-|–/i).map(s => resolveCityCode(s.trim(), "DEL"));
+    const parts = routeStr.split(/to|-|â€“/i).map(s => String(s.trim()).toUpperCase());
     if (parts.length >= 2 && parts[0] && parts[1]) {
       sectors.push({ Origin: parts[0], Destination: parts[1] });
     }
@@ -4828,6 +4269,13 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {
   if (providerBookingId) persistCancelledStatusToStorage(providerBookingId, cancelResult);
   if (booking?.id) persistCancelledStatusToStorage(booking.id, cancelResult);
 
+  // Production DB API Sync: Persist cancellation status to SQL Database
+  try {
+    await syncCancelledStatusToDatabase(cancelResult);
+  } catch (dbErr) {
+    console.warn("DB cancellation sync encountered an issue:", dbErr);
+  }
+
   return cancelResult;
 }
 
@@ -4844,8 +4292,8 @@ export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes =
     selectedLegIndexes.forEach((idx) => {
       const seg = booking.segments[idx];
       if (seg) {
-        const fromCode = resolveCityCode(seg.fromCity || seg.origin || seg.sourceCode || "", "DEL");
-        const toCode = resolveCityCode(seg.toCity || seg.destination || seg.destinationCode || "", "BOM");
+        const fromCode = String(seg.fromCode || seg.fromCity || seg.origin || seg.sourceCode || "").toUpperCase();
+        const toCode = String(seg.toCode || seg.toCity || seg.destination || seg.destinationCode || "").toUpperCase();
         if (fromCode && toCode) {
           sectors.push({ Origin: fromCode, Destination: toCode });
         }
@@ -4888,7 +4336,7 @@ export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes =
     bookingId: providerBookingId,
     pnr: pnr,
     requestType: "2",
-    cancellationType: "3",
+    cancellationType: sectors.length > 0 ? "2" : (ticketData.length > 0 ? "1" : "3"),
     remarks: reason || "Customer requested partial flight leg/passenger cancellation",
     srdvType: booking?.srdvType || "MixAPI",
     srdvIndex: String(booking?.srdvIndex || (booking?.isLcc ? "2" : "1")),
@@ -4973,23 +4421,32 @@ export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes =
 
   const allLegsCancelled = updatedSegments.length > 0 && updatedSegments.every(s => s.status === "Cancelled" || s.isCancelled);
   const allPaxCancelled = updatedPassengers.length > 0 && updatedPassengers.every(p => p.isCancelled);
-  const overallStatus = (allLegsCancelled || allPaxCancelled) ? "Cancelled" : (booking.status || "Booked");
+  const isPartial = !allLegsCancelled && !allPaxCancelled;
+  const overallStatus = allLegsCancelled ? "Cancelled" : (isPartial ? (booking.status === "Cancelled" ? "Confirmed" : (booking.status || "Confirmed")) : "Cancelled");
 
   const cancelResult = {
     ...booking,
     status: overallStatus,
     Status: overallStatus,
+    isPartialCancellation: isPartial,
     segments: updatedSegments,
     passengers: updatedPassengers,
     cancelledAtUtc: new Date().toISOString(),
-    cancellationReason: reason || "Partial cancellation requested",
+    cancellationReason: reason || "Partial leg cancellation requested",
     changeRequestId: changeRequestId || booking.changeRequestId,
-    message: "Selected flight legs / passengers cancelled successfully."
+    message: "Selected flight leg cancelled successfully."
   };
 
   if (pnr) persistCancelledStatusToStorage(pnr, cancelResult);
   if (providerBookingId) persistCancelledStatusToStorage(providerBookingId, cancelResult);
   if (booking.bookingId) persistCancelledStatusToStorage(booking.bookingId, cancelResult);
+
+  // Production DB API Sync: Persist cancellation status to SQL Database
+  try {
+    await syncCancelledStatusToDatabase(cancelResult);
+  } catch (dbErr) {
+    console.warn("DB cancellation sync encountered an issue:", dbErr);
+  }
 
   return cancelResult;
 }
@@ -5006,270 +4463,6 @@ export async function listHotFlightRoutes({ metric = "score" } = {}) {
     { routeId: "hot-3", fromCity: "BOM", toCity: "BLR", score: 91, searchCount: 1100 },
     { routeId: "hot-4", fromCity: "DEL", toCity: "HYD", score: 88, searchCount: 950 },
   ];
-}
-
-export async function getFlightSeatMap(flightIdOrObj, travelClass, { userId } = {}) {
-  let flowState = {};
-  if (typeof window !== "undefined") {
-    try {
-      const raw = window.sessionStorage.getItem("flight_booking_flow_state_v1");
-      if (raw) flowState = JSON.parse(raw) || {};
-    } catch { }
-  }
-
-  const selectedLegs = Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0
-    ? flowState.selectedLegs
-    : [flowState.flight, flowState.returnFlight].filter(Boolean);
-
-  let targetFlight = (flightIdOrObj && typeof flightIdOrObj === "object") ? flightIdOrObj : (flowState.flight || {});
-  let targetLegIndex = 0;
-
-  if (typeof flightIdOrObj === "string" || typeof flightIdOrObj === "number") {
-    const flightIdStr = String(flightIdOrObj);
-    const foundIdx = selectedLegs.findIndex(leg =>
-      String(leg.id) === flightIdStr ||
-      String(leg.resultIndex) === flightIdStr ||
-      String(leg.rawId) === flightIdStr ||
-      (flightIdStr.startsWith("ret-") && leg.isReturnFlight)
-    );
-    if (foundIdx >= 0) {
-      targetFlight = selectedLegs[foundIdx];
-      targetLegIndex = foundIdx;
-    } else if (flowState.returnFlight && (flightIdStr.startsWith("ret-") || flightIdStr === String(flowState.returnFlight.id))) {
-      targetFlight = flowState.returnFlight;
-      targetLegIndex = 1;
-    }
-  } else if (flightIdOrObj && typeof flightIdOrObj === "object") {
-    const foundIdx = selectedLegs.findIndex(leg =>
-      leg === flightIdOrObj ||
-      String(leg.id) === String(flightIdOrObj.id) ||
-      (leg.sourceCode === flightIdOrObj.sourceCode && leg.destinationCode === flightIdOrObj.destinationCode)
-    );
-    if (foundIdx >= 0) {
-      targetLegIndex = foundIdx;
-    } else if (flightIdOrObj.isReturnFlight || flightIdOrObj === flowState.returnFlight) {
-      targetLegIndex = 1;
-    }
-  }
-
-  const isTwoWay = Boolean(
-    flowState.isTwoWay ||
-    flowState.returnFlight ||
-    (selectedLegs && selectedLegs.length > 1)
-  );
-
-  // Build the full journey flight object containing all legs context for the API call
-  const fetchFlightObj = {
-    flight: flowState.flight || targetFlight,
-    returnFlight: flowState.returnFlight || (isTwoWay && selectedLegs[1] ? selectedLegs[1] : null),
-    selectedLegs: selectedLegs.length > 0 ? selectedLegs : undefined,
-    legs: selectedLegs.length > 0 ? selectedLegs : undefined,
-    isTwoWay,
-    isMultiCity: Boolean(flowState.isMultiCity || flowState.tripType === "multicity"),
-    traceId: targetFlight.traceId || flowState.traceId || flowState.flight?.traceId || "",
-    resultIndex: flowState.resultIndex || flowState.ResultIndex || targetFlight.resultIndex || targetFlight.id || "",
-    srdvType: targetFlight.srdvType || flowState.srdvType || "MixAPI",
-    srdvIndex: targetFlight.srdvIndex || flowState.srdvIndex || "2",
-  };
-
-  let [ssrRes, seatMapRes] = await Promise.all([
-    getSSR(fetchFlightObj),
-    getSeatMap(fetchFlightObj)
-  ]);
-
-  // Fallback if combined call returned no seats for this leg: query directly with targetFlight
-  if ((!seatMapRes?.success || !seatMapRes?.results?.length) && targetFlight?.resultIndex) {
-    try {
-      const directSeatMap = await getSeatMap(targetFlight);
-      if (directSeatMap?.success && directSeatMap?.results?.length) {
-        seatMapRes = directSeatMap;
-      }
-    } catch { }
-  }
-
-  // Target flight segment identifiers
-  const targetFlightNumberStr = String(
-    targetFlight.flightNumber || targetFlight.FlightNumber || targetFlight.airlineNumber || ""
-  ).replace(/\D/g, "");
-  const targetOrigin = String(
-    targetFlight.sourceCode || targetFlight.fromCity || targetFlight.origin || targetFlight.Origin || targetFlight.source || ""
-  ).trim().toLowerCase();
-  const targetDestination = String(
-    targetFlight.destinationCode || targetFlight.toCity || targetFlight.destination || targetFlight.Destination || ""
-  ).trim().toLowerCase();
-
-  // Extract and flatten all segment results from seatMapRes
-  const rawResults = seatMapRes?.results || seatMapRes?.Results || seatMapRes?.response?.Results || seatMapRes?.rawResponse?.Response?.Results || [];
-  const allSegments = Array.isArray(rawResults)
-    ? rawResults.flat(Infinity)
-    : (rawResults && typeof rawResults === "object" ? [rawResults] : []);
-
-  // Filter segments to match the target flight leg
-  let matchedSegments = [];
-  if (allSegments.length === 1) {
-    matchedSegments = allSegments;
-  } else if (allSegments.length > 1) {
-    // 1. Try matching origin & destination
-    matchedSegments = allSegments.filter(res => {
-      const segOrigin = String(res.FromAirportCode || res.Origin || res.origin || res.From || res.from || "").trim().toLowerCase();
-      const segDest = String(res.ToAirportCode || res.Destination || res.destination || res.To || res.to || "").trim().toLowerCase();
-      if (targetOrigin && segOrigin && targetOrigin.includes(segOrigin) || segOrigin.includes(targetOrigin)) {
-        if (targetDestination && segDest && targetDestination.includes(segDest) || segDest.includes(targetDestination)) {
-          return true;
-        }
-      }
-      return false;
-    });
-
-    // 2. If no origin/destination match, try flight number
-    if (matchedSegments.length === 0 && targetFlightNumberStr) {
-      matchedSegments = allSegments.filter(res => {
-        const segFlightNumberStr = String(res.AirlineNumber || res.FlightNumber || res.flightNumber || "").replace(/\D/g, "");
-        return segFlightNumberStr && segFlightNumberStr === targetFlightNumberStr;
-      });
-    }
-
-    // 3. If still no match, match by targetLegIndex
-    if (matchedSegments.length === 0 && allSegments[targetLegIndex]) {
-      matchedSegments = [allSegments[targetLegIndex]];
-    }
-
-    // 4. Fallback to all segments if filtering still empty
-    if (matchedSegments.length === 0) {
-      matchedSegments = allSegments;
-    }
-  }
-
-  let allSeats = [];
-
-  matchedSegments.forEach(res => {
-    if (!res || typeof res !== "object") return;
-
-    const parentAirlineCode = res.AirlineCode || res.airlineCode || targetFlight.airlineCode || "";
-    const parentFlightNumber = res.AirlineNumber || res.FlightNumber || res.flightNumber || targetFlight.flightNumber || "";
-    const parentOrigin = res.FromAirportCode || res.Origin || res.origin || targetFlight.sourceCode || "";
-    const parentDestination = res.ToAirportCode || res.Destination || res.destination || targetFlight.destinationCode || "";
-
-    const addSeat = (s) => {
-      if (!s || typeof s !== "object") return;
-      const code = String(s.Code || s.code || s.SeatNumber || s.seatNumber || s.SeatNo || s.seatNo || "").trim();
-      if (!code) return;
-
-      const isBooked = Boolean(
-        s.IsBooked ??
-        s.isBooked ??
-        s.AvailablityType === 2 ??
-        s.AvailablityType === 3 ??
-        s.AvailabilityType === 2 ??
-        s.AvailabilityType === 3 ??
-        s.IsAvailable === false ??
-        s.isAvailable === false ??
-        String(s.Status || s.status || "").toLowerCase() === "booked"
-      );
-
-      allSeats.push({
-        ...s,
-        Code: code,
-        SeatNumber: String(s.SeatNumber || s.seatNumber || s.SeatNo || code).trim(),
-        Amount: Number(s.Amount ?? s.amount ?? s.Price ?? s.price ?? s.Fare ?? 0),
-        Price: Number(s.Price ?? s.price ?? s.Amount ?? s.amount ?? 0),
-        IsBooked: isBooked,
-        isBooked,
-        IsLegroom: Boolean(s.IsLegroom ?? s.isLegroom),
-        IsAisle: Boolean(s.IsAisle ?? s.isAisle),
-        AirlineCode: s.AirlineCode || parentAirlineCode,
-        AirlineNumber: s.AirlineNumber || s.FlightNumber || parentFlightNumber,
-        FlightNumber: s.FlightNumber || s.AirlineNumber || parentFlightNumber,
-        Origin: s.Origin || parentOrigin,
-        Destination: s.Destination || parentDestination,
-      });
-    };
-
-    // 1. Support for object-based Seats structure (res.Seats.Row4.Column1)
-    if (res.Seats && typeof res.Seats === "object" && !Array.isArray(res.Seats)) {
-      Object.values(res.Seats).forEach(rowObj => {
-        if (rowObj && typeof rowObj === "object") {
-          Object.values(rowObj).forEach(colObj => {
-            if (colObj && typeof colObj === "object") {
-              addSeat(colObj);
-            }
-          });
-        }
-      });
-    }
-
-    // 1.5 Support for flat or nested array Seats structure
-    const seatsArr = res.Seats || res.seats || res.Seat || res.seat;
-    if (Array.isArray(seatsArr)) {
-      seatsArr.flat(Infinity).forEach(s => addSeat(s));
-    }
-
-    // 2. Support for SeatDynamic array-based structure
-    const seatDynamic = res.SeatDynamic || res.seatDynamic || [];
-    if (seatDynamic && (Array.isArray(seatDynamic) ? seatDynamic.length > 0 : Object.keys(seatDynamic).length > 0)) {
-      const segmentSeats = Array.isArray(seatDynamic) ? seatDynamic : [seatDynamic];
-      segmentSeats.forEach(segSeat => {
-        const rowSeats = segSeat.SegmentSeat || segSeat.segmentSeat || [];
-        (Array.isArray(rowSeats) ? rowSeats : [rowSeats]).forEach(rs => {
-          const seats = rs.RowSeats || rs.rowSeats || [];
-          (Array.isArray(seats) ? seats : [seats]).forEach(seat => {
-            const seatsArray = seat.Seats || seat.seats;
-            const iterableSeats = Array.isArray(seatsArray) ? seatsArray : (seatsArray ? [seatsArray] : [seat]);
-            (Array.isArray(iterableSeats) ? iterableSeats : [iterableSeats]).flat(Infinity).forEach(s => addSeat(s));
-          });
-        });
-      });
-    }
-
-    // 3. Support for SegmentSeat direct structure
-    const directSegmentSeat = res.SegmentSeat || res.segmentSeat;
-    if (directSegmentSeat) {
-      const segRows = Array.isArray(directSegmentSeat) ? directSegmentSeat : [directSegmentSeat];
-      segRows.forEach(rs => {
-        const rows = rs.RowSeats || rs.rowSeats || [];
-        (Array.isArray(rows) ? rows : [rows]).forEach(row => {
-          const rowSeats = row.Seats || row.seats || row;
-          (Array.isArray(rowSeats) ? rowSeats : [rowSeats]).flat(Infinity).forEach(s => addSeat(s));
-        });
-      });
-    }
-  });
-
-  // Filter SSR add-ons for the specific leg
-  const filterSsr = (arr) => {
-    const list = Array.isArray(arr) ? arr.flat(Infinity) : [];
-    if (list.length === 0) return [];
-
-    // First try filtering by leg origin & destination
-    const matched = list.filter(item => {
-      const itemOrigin = String(item.origin || item.Origin || "").trim().toLowerCase();
-      const itemDest = String(item.destination || item.Destination || "").trim().toLowerCase();
-      if (targetOrigin && itemOrigin && !(targetOrigin.includes(itemOrigin) || itemOrigin.includes(targetOrigin))) return false;
-      if (targetDestination && itemDest && !(targetDestination.includes(itemDest) || itemDest.includes(targetDestination))) return false;
-      return true;
-    });
-
-    if (matched.length > 0) return matched;
-
-    // Second try filtering by WayType (1 = Onward, 2 = Return)
-    if (targetLegIndex > 0) {
-      const wayTypeMatched = list.filter(item => Number(item.WayType ?? item.wayType ?? 0) === 2);
-      if (wayTypeMatched.length > 0) return wayTypeMatched;
-    } else {
-      const wayTypeMatched = list.filter(item => Number(item.WayType ?? item.wayType ?? 0) === 1);
-      if (wayTypeMatched.length > 0) return wayTypeMatched;
-    }
-
-    return list;
-  };
-
-  return {
-    success: true,
-    Baggage: filterSsr(ssrRes.Baggage || ssrRes.baggage || []),
-    MealDynamic: filterSsr(ssrRes.MealDynamic || ssrRes.mealDynamic || ssrRes.Meal || ssrRes.meal || []),
-    Meal: filterSsr(ssrRes.Meal || ssrRes.meal || []),
-    seats: allSeats,
-  };
 }
 
 export async function getFlightPricingPreview(payload, { userId } = {}) {
@@ -5484,12 +4677,12 @@ export async function processFlightBookingCallback({
   const url = `${SRDV_ROOT}/flight_callback`;
 
   const payload = {
-    ClientId: String(FLIGHT_API_CREDENTIALS.ClientId || "180170"),
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
+    TraceId: String(traceId || ""),
     PNR: String(pnr || ""),
+    GdsPnr: String(gdsPnr || pnr || ""),
     BookingId: String(bookingId || ""),
     Status: String(status || "Success"),
+    Remark: String(remark || "Ticketed"),
     Passengers: Array.isArray(passengers) && passengers.length > 0
       ? passengers.map((p) => ({
         Title: p.Title || p.title || "Mr",

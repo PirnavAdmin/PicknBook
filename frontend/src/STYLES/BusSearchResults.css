@@ -1360,15 +1360,15 @@
 }
  
 .sort-control-list button.active {
-  color: var(--theme-navy, #1f2a44);
-  background: transparent;
-  box-shadow: none;
-}
-
-.sort-control-list button.active svg {
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--bus-primary), var(--bus-primary-strong));
-}
+    color: #ffffff !important;
+    background: linear-gradient(135deg, var(--bus-primary), var(--bus-primary-strong)) !important;
+    box-shadow: 0 4px 12px rgba(220, 30, 38, 0.2);
+  }
+  
+  .sort-control-list button.active svg,
+  .sort-control-list button.active .sort-direction-arrow {
+    color: #ffffff !important;
+  }
 .bus-card-list {
   margin-top: 10px;
   display: grid;
@@ -2881,7 +2881,6 @@
 }
 
 .bus-action-cell .subtle,
-.sort-control-list button.active,
 .bus-depart-cell span,
 .bus-arrive-cell span {
   color: #dc1e26 !important;
@@ -2928,7 +2927,6 @@
 }
 
 .bus-action-cell .subtle,
-.sort-control-list button.active,
 .bus-depart-cell span,
 .bus-arrive-cell span {
   color: var(--theme-primary, #dc1e26) !important;

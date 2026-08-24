@@ -7144,6 +7144,353 @@
         }
       }
     },
+    "/api/v1/admin/email/templates": {
+      "get": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/templates/{id}": {
+      "get": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailTemplate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/send": {
+      "post": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualEmailRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualEmailRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/test": {
+      "post": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestEmailRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestEmailRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/reminders": {
+      "get": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailReminder"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailReminder"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailReminder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/reminders/{id}": {
+      "get": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailReminder"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailReminder"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailReminder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/reminders/{id}/cancel": {
+      "post": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email/history": {
+      "get": {
+        "tags": [
+          "EmailManagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/FeaturedOffers": {
       "get": {
         "tags": [
@@ -8200,6 +8547,37 @@
         }
       }
     },
+    "/api/Places/track": {
+      "post": {
+        "tags": [
+          "Places"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackPlaceRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackPlaceRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackPlaceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Profile": {
       "get": {
         "tags": [
@@ -8343,6 +8721,886 @@
         }
       }
     },
+    "/api/v1/admin/security/metrics": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/recent-activity": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/limits": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "USER"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/limits/{id}": {
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecurityLimitDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecurityLimitDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecurityLimitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/limits/bulk": {
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateSecurityLimitDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateSecurityLimitDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateSecurityLimitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/b2b-wallet-restrictions": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/b2b-wallet-restrictions/{id}/unblock": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockIpDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockIpDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockIpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/settings": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { }
+            },
+            "text/json": {
+              "schema": { }
+            },
+            "application/*+json": {
+              "schema": { }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "tab",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/whitelist": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWhitelistDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWhitelistDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWhitelistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/blacklist": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBlacklistDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBlacklistDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBlacklistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/block": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBlockDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBlockDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBlockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/{id}/unblock": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockIpDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockIpDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockIpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/{id}/extend": {
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendBlockDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendBlockDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendBlockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/{id}/details": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/{id}/status": {
+      "patch": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IpRuleStatusUpdateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IpRuleStatusUpdateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IpRuleStatusUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/ip-rules/{id}": {
+      "delete": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/locked-accounts": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/account-locks": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualLockDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualLockDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualLockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/locked-accounts/{id}/unlock": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/audit-logs": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/audit-logs/{id}": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/audit-logs/export": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/api-rules": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityApiRule"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityApiRule"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityApiRule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/api-rules/{id}": {
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityApiRule"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityApiRule"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityApiRule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/b2b-wallet-config": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityB2bWalletConfig"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityB2bWalletConfig"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityB2bWalletConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/counters": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dimensionType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dimensionValue",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/counters/{accountId}/reset": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/account-details/{accountId}": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/flight/srdv/Search": {
       "post": {
         "tags": [
@@ -8352,17 +9610,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirSearchRequestDto"
+                "$ref": "#/components/schemas/FlightSearchProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirSearchRequestDto"
+                "$ref": "#/components/schemas/FlightSearchProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AirSearchRequestDto"
+                "$ref": "#/components/schemas/FlightSearchProxyRequestDto"
               }
             }
           }
@@ -8383,17 +9641,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CalendarFareRequestDto"
+                "$ref": "#/components/schemas/FlightCalendarFareProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CalendarFareRequestDto"
+                "$ref": "#/components/schemas/FlightCalendarFareProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/CalendarFareRequestDto"
+                "$ref": "#/components/schemas/FlightCalendarFareProxyRequestDto"
               }
             }
           }
@@ -8414,17 +9672,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             }
           }
@@ -8445,17 +9703,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             }
           }
@@ -8476,17 +9734,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             }
           }
@@ -8507,17 +9765,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AirFareRuleRequestDto"
+                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
               }
             }
           }
@@ -8538,17 +9796,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TicketLCCRequestDto"
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TicketLCCRequestDto"
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/TicketLCCRequestDto"
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
               }
             }
           }
@@ -8569,17 +9827,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/HoldGDSRequestDto"
+                "$ref": "#/components/schemas/FlightHoldGDSProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/HoldGDSRequestDto"
+                "$ref": "#/components/schemas/FlightHoldGDSProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/HoldGDSRequestDto"
+                "$ref": "#/components/schemas/FlightHoldGDSProxyRequestDto"
               }
             }
           }
@@ -8600,17 +9858,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TicketGDSRequestDto"
+                "$ref": "#/components/schemas/FlightTicketGDSProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TicketGDSRequestDto"
+                "$ref": "#/components/schemas/FlightTicketGDSProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/TicketGDSRequestDto"
+                "$ref": "#/components/schemas/FlightTicketGDSProxyRequestDto"
               }
             }
           }
@@ -8631,17 +9889,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendChangeRequestDto"
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendChangeRequestDto"
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/SendChangeRequestDto"
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
               }
             }
           }
@@ -8662,17 +9920,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCancelStatusRequestDto"
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCancelStatusRequestDto"
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCancelStatusRequestDto"
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
               }
             }
           }
@@ -8693,17 +9951,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCancellationChargesRequestDto"
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCancellationChargesRequestDto"
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/GetCancellationChargesRequestDto"
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
               }
             }
           }
@@ -8786,17 +10044,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SrdvBookingCallbackRequestDto"
+                "$ref": "#/components/schemas/FlightBookingCallbackProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/SrdvBookingCallbackRequestDto"
+                "$ref": "#/components/schemas/FlightBookingCallbackProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/SrdvBookingCallbackRequestDto"
+                "$ref": "#/components/schemas/FlightBookingCallbackProxyRequestDto"
               }
             }
           }
@@ -9742,6 +11000,62 @@
         },
         "additionalProperties": false
       },
+      "AddBlacklistDto": {
+        "type": "object",
+        "properties": {
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "blockType": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "sendEmail": {
+            "type": "boolean"
+          },
+          "emailTemplateId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddBlockDto": {
+        "type": "object",
+        "properties": {
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AddWalletBalanceRequest": {
         "type": "object",
         "properties": {
@@ -9749,6 +11063,40 @@
             "minimum": 0.01,
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddWhitelistDto": {
+        "type": "object",
+        "properties": {
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "whitelistType": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "sendEmail": {
+            "type": "boolean"
+          },
+          "emailTemplateId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9924,125 +11272,6 @@
           },
           "newPassword": {
             "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "AirFareRuleRequestDto": {
-        "type": "object",
-        "properties": {
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "TraceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "ResultIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "CouponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "JourneyType": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "AdultCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "ChildCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "InfantCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "AirSearchRequestDto": {
-        "type": "object",
-        "properties": {
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "AdultCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "ChildCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "InfantCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "JourneyType": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "DirectFlight": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "Segments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AirSearchSegmentDto"
-            },
             "nullable": true
           }
         },
@@ -10625,6 +11854,23 @@
         },
         "additionalProperties": false
       },
+      "BulkUpdateSecurityLimitDto": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "nullable": true
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateSecurityLimitDtoItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BusBoardingPointsProxyRequestDto": {
         "type": "object",
         "properties": {
@@ -10921,51 +12167,6 @@
           },
           "resultIndex": {
             "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "CalendarFareRequestDto": {
-        "type": "object",
-        "properties": {
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "JourneyType": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Sources": {
-            "type": "string",
-            "nullable": true
-          },
-          "FareType": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "Segments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CalendarFareSegmentDto"
-            },
             "nullable": true
           }
         },
@@ -11595,6 +12796,185 @@
         },
         "additionalProperties": false
       },
+      "EmailReminder": {
+        "required": [
+          "recipientEmail",
+          "reminderName",
+          "scheduledTime"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reminderName": {
+            "maxLength": 150,
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipientEmail": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "templateId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "subject": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "includeLoginLink": {
+            "type": "boolean"
+          },
+          "scheduledTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reminderBeforeExpiryMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "maxReminderCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentReminderCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "relatedBlockId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "status": {
+            "maxLength": 20,
+            "type": "string",
+            "nullable": true
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdBy": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmailTemplate": {
+        "required": [
+          "body",
+          "scope",
+          "securityEvent",
+          "subject",
+          "templateKey",
+          "templateName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "templateName": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "templateKey": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 20,
+            "minLength": 1,
+            "type": "string"
+          },
+          "securityEvent": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "body": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "bodyFormat": {
+            "maxLength": 10,
+            "type": "string",
+            "nullable": true
+          },
+          "includeLoginLink": {
+            "type": "boolean"
+          },
+          "loginButtonText": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "actionLinkUrl": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdBy": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ExclusiveOfferSubscriptionRequest": {
         "type": "object",
         "properties": {
@@ -11603,6 +12983,20 @@
             "nullable": true
           },
           "whatsAppNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExtendBlockDto": {
+        "type": "object",
+        "properties": {
+          "newDurationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
             "type": "string",
             "nullable": true
           }
@@ -11672,6 +13066,68 @@
           },
           "adminRemark": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightBookingCallbackProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "BookingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "GdsPNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "Status": {
+            "type": "string",
+            "nullable": true
+          },
+          "Remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SrdvCallbackPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightCalendarFareProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Sources": {
+            "type": "string",
+            "nullable": true
+          },
+          "FareType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarFareSegmentDto"
+            },
             "nullable": true
           }
         },
@@ -11846,6 +13302,123 @@
         "type": "integer",
         "format": "int32"
       },
+      "FlightFareRuleProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "AdultCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ChildCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "InfantCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightGetCancelStatusProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "ChangeRequestId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightGetCancellationChargesProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "RequestType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightHoldGDSProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromoCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "FlightMarkupType": {
         "enum": [
           0,
@@ -11922,6 +13495,184 @@
           },
           "status": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightSearchProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "AdultCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ChildCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "InfantCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "DirectFlight": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AirSearchSegmentDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightSendChangeProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "BookingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "RequestType": {
+            "type": "string",
+            "nullable": true
+          },
+          "CancellationType": {
+            "type": "string",
+            "nullable": true
+          },
+          "Remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "Sectors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestSectorDto"
+            },
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TicketData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestTicketDataDto"
+            },
+            "nullable": true
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightTicketGDSProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "BookingId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromoCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCPassengerDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightTicketLCCProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromoCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "PromotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "Passengers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LCCPassengerDto"
+            },
             "nullable": true
           }
         },
@@ -12049,137 +13800,6 @@
           "otp": {
             "minLength": 1,
             "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "GetCancelStatusRequestDto": {
-        "type": "object",
-        "properties": {
-          "UserId": {
-            "type": "string",
-            "nullable": true
-          },
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "ChangeRequestId": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GetCancellationChargesRequestDto": {
-        "type": "object",
-        "properties": {
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "RequestType": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "TraceId": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "HoldGDSRequestDto": {
-        "type": "object",
-        "properties": {
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "TraceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "ResultIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "CouponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "PromotionId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "JourneyType": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Passengers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LCCPassengerDto"
-            },
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12810,6 +14430,20 @@
           "b2CTotalPrice": {
             "type": "number",
             "format": "double"
+          },
+          "b2cFinalFare": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IpRuleStatusUpdateDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13143,6 +14777,49 @@
         },
         "additionalProperties": false
       },
+      "ManualEmailRequest": {
+        "type": "object",
+        "properties": {
+          "recipientEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "templateId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "includeLoginLink": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ManualLockDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "lockReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "PendingAirlineRequestDto": {
         "type": "object",
         "properties": {
@@ -13276,65 +14953,121 @@
         },
         "additionalProperties": false
       },
-      "SendChangeRequestDto": {
+      "SecurityApiRule": {
+        "required": [
+          "apiName",
+          "httpMethod",
+          "scope",
+          "urlPattern"
+        ],
         "type": "object",
         "properties": {
-          "EndUserIp": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "apiName": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "httpMethod": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string"
+          },
+          "urlPattern": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 20,
+            "minLength": 1,
+            "type": "string"
+          },
+          "rateLimitValue": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "rateLimitPeriod": {
+            "maxLength": 20,
             "type": "string",
             "nullable": true
           },
-          "ClientId": {
+          "isBlockable": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "isException": {
+            "type": "boolean"
+          },
+          "status": {
+            "maxLength": 20,
             "type": "string",
             "nullable": true
           },
-          "UserName": {
+          "createdAt": {
             "type": "string",
-            "nullable": true
+            "format": "date-time"
           },
-          "Password": {
+          "updatedAt": {
             "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecurityB2bWalletConfig": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "minWalletAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "autoUnblockEnabled": {
+            "type": "boolean"
+          },
+          "appliesToTempBlocks": {
+            "type": "boolean"
+          },
+          "appliesToAutoBlocks": {
+            "type": "boolean"
+          },
+          "appliesToRateLimit": {
+            "type": "boolean"
+          },
+          "emailOnRestriction": {
+            "type": "boolean"
+          },
+          "emailTemplateRestrictionId": {
+            "type": "integer",
+            "format": "int64",
             "nullable": true
           },
-          "BookingId": {
+          "emailOnUnblock": {
+            "type": "boolean"
+          },
+          "emailTemplateUnblockId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "createdAt": {
             "type": "string",
-            "nullable": true
+            "format": "date-time"
           },
-          "RequestType": {
+          "updatedAt": {
             "type": "string",
-            "nullable": true
-          },
-          "CancellationType": {
-            "type": "string",
-            "nullable": true
-          },
-          "Remarks": {
-            "type": "string",
-            "nullable": true
-          },
-          "Sectors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChangeRequestSectorDto"
-            },
-            "nullable": true
-          },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "TicketData": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChangeRequestTicketDataDto"
-            },
-            "nullable": true
-          },
-          "PNR": {
-            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -13493,59 +15226,6 @@
         },
         "additionalProperties": false
       },
-      "SrdvBookingCallbackRequestDto": {
-        "type": "object",
-        "properties": {
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "TraceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "BookingId": {
-            "type": "string",
-            "nullable": true
-          },
-          "PNR": {
-            "type": "string",
-            "nullable": true
-          },
-          "GdsPNR": {
-            "type": "string",
-            "nullable": true
-          },
-          "Status": {
-            "type": "string",
-            "nullable": true
-          },
-          "Remark": {
-            "type": "string",
-            "nullable": true
-          },
-          "Passengers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SrdvCallbackPassengerDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "SrdvBookingCallbackResponseDto": {
         "type": "object",
         "properties": {
@@ -13611,6 +15291,10 @@
             "items": {
               "$ref": "#/components/schemas/SrdvBusPassengerDto"
             },
+            "nullable": true
+          },
+          "EndUserIp": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -13880,130 +15564,33 @@
         },
         "additionalProperties": false
       },
-      "TicketGDSRequestDto": {
+      "TestEmailRequest": {
         "type": "object",
         "properties": {
-          "EndUserIp": {
+          "recipientEmail": {
             "type": "string",
             "nullable": true
           },
-          "ClientId": {
+          "templateKey": {
             "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "TraceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "ResultIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "PNR": {
-            "type": "string",
-            "nullable": true
-          },
-          "BookingId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "CouponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "PromotionId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Passengers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LCCPassengerDto"
-            },
             "nullable": true
           }
         },
         "additionalProperties": false
       },
-      "TicketLCCRequestDto": {
+      "TrackPlaceRequest": {
         "type": "object",
         "properties": {
-          "EndUserIp": {
+          "cityName": {
             "type": "string",
             "nullable": true
           },
-          "ClientId": {
+          "cityCode": {
             "type": "string",
             "nullable": true
           },
-          "UserName": {
+          "tripType": {
             "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "TraceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "ResultIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "CouponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "PromotionId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "ApiToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "JourneyType": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "Passengers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LCCPassengerDto"
-            },
             "nullable": true
           }
         },
@@ -14017,6 +15604,23 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "UnblockIpDto": {
+        "type": "object",
+        "properties": {
+          "unblockAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "sendEmail": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
       },
       "UpdateAboutUsDto": {
         "type": "object",
@@ -14330,6 +15934,116 @@
           "membershipTier": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateSecurityLimitDto": {
+        "type": "object",
+        "properties": {
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "limitValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timePeriodValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timePeriodUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "blockDurationValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blockDurationUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "emailTemplateId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "resetPeriodValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resetPeriodUnit": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateSecurityLimitDtoItem": {
+        "type": "object",
+        "properties": {
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "limitValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timePeriodValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timePeriodUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "blockDurationValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blockDurationUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "emailTemplateId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "resetPeriodValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resetPeriodUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false

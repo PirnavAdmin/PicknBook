@@ -4,6 +4,29 @@ import "./FlightCancelRequestList.css";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import AdminPagination from "../../../components/AdminPagination";
 
+const safeValue = (val, fallback = "--") =>
+  val !== undefined && val !== null && val !== "" ? val : fallback;
+
+const formatRequestDate = (rawDate) => {
+  if (!rawDate) return "--";
+  const parsed = new Date(rawDate);
+  if (Number.isNaN(parsed.getTime())) return "--";
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const toNumberDate = (rawDate) => {
+  if (!rawDate) return 0;
+  const parsed = new Date(rawDate);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
@@ -23,9 +46,9 @@ const normalizeText = (value, fallback = "") => {
 };
 
 const FALLBACK_API_BASE_URL =
-  "https://satin-eastcoast-musky.ngrok-free.dev";
+  "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
-const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
+const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
   String(process.env.REACT_APP_API_USER_ID || "").trim() || "user_123";
 
@@ -232,17 +255,24 @@ function normalizeFlightBookingRecord(record) {
       String(passenger.passengerType || "").toLowerCase() !== "infant"
   ).length;
 
+  const segment = String(pickFirst(record, ["segment", "Segment"], "") || "");
+  const [fromCityFallback, toCityFallback] = segment.includes(" - ")
+    ? segment.split(" - ").map((s) => s.trim())
+    : ["", ""];
+
   return {
-    bookingId: pickFirst(record, ["bookingId", "BookingId"], null),
+    id: pickFirst(record, ["id", "Id"], null),
+    bookingId: pickFirst(record, ["bookingId", "BookingId", "id", "Id"], null),
     bookingReference: String(
-      pickFirst(record, ["bookingReference", "BookingReference"], "") || ""
+      pickFirst(record, ["bookingReference", "BookingReference", "pnr", "PNR"], "") ||
+      pickFirst(record, ["id", "Id"], "") || ""
     ),
     tripType: String(
       pickFirst(record, ["tripType", "TripType"], "Flight") || "Flight"
     ),
     tripId: pickFirst(record, ["tripId", "TripId"], null),
     passengerName: String(
-      pickFirst(record, ["passengerName", "PassengerName"], "") || ""
+      pickFirst(record, ["passengerName", "PassengerName", "customer", "Customer"], "") || ""
     ),
     passengerPhone: String(
       pickFirst(record, ["passengerPhone", "PassengerPhone", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo", "contactNumber", "ContactNumber"], "") ||
@@ -253,8 +283,8 @@ function normalizeFlightBookingRecord(record) {
     passengerEmail: String(
       pickFirst(record, ["passengerEmail", "PassengerEmail"], "") || ""
     ),
-    fromCity: String(pickFirst(record, ["fromCity", "FromCity"], "") || ""),
-    toCity: String(pickFirst(record, ["toCity", "ToCity"], "") || ""),
+    fromCity: String(pickFirst(record, ["fromCity", "FromCity"], fromCityFallback) || fromCityFallback),
+    toCity: String(pickFirst(record, ["toCity", "ToCity"], toCityFallback) || toCityFallback),
     providerName: String(
       pickFirst(record, ["providerName", "ProviderName", "airline", "Airline"], "") ||
         ""
@@ -287,13 +317,26 @@ function normalizeFlightBookingRecord(record) {
       Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], null)) ||
       seatsBookedFallback,
     totalPriceInr:
-      Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr"], 0)) || 0,
-    status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
-    bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc"], null),
-    cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
-    cancellationReason: String(
-      pickFirst(record, ["cancellationReason", "CancellationReason"], "") || ""
+      Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr", "CustomerRefundAmountInr", "customerRefundAmountInr"], 0)) || 0,
+    status: String(
+      pickFirst(record, ["status", "Status", "cancellationStatus", "CancellationStatus", "CancelStatus", "cancelStatus"], null) ||
+      pickFirst(record?.RefundDetails, ["CancellationStatus", "cancellationStatus", "CancelStatus", "cancelStatus"], "Unknown") ||
+      "Unknown"
     ),
+    bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc", "requestDateUtc", "RequestDateUtc"], null),
+    cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc", "requestDateUtc", "RequestDateUtc"], null),
+    cancellationReason: String(
+      pickFirst(record, ["cancellationReason", "CancellationReason", "remark", "Remark"], "") || ""
+    ),
+    cancellationCharge: Number(
+      pickFirst(record, ["cancellationCharge", "CancellationCharge", "CustomerCancellationChargeInr", "customerCancellationChargeInr", "AdminCancellationChargeInr", "adminCancellationChargeInr"], null) ??
+      pickFirst(record?.RefundDetails, ["cancellationCharge", "CancellationCharge"], 0)
+    ) || 0,
+    refundAmount: Number(
+      pickFirst(record, ["refundAmount", "RefundAmount", "CustomerRefundAmountInr", "customerRefundAmountInr"], null) ??
+      pickFirst(record?.RefundDetails, ["refundAmount", "RefundAmount"], 0)
+    ) || 0,
+    details: pickFirst(record, ["details", "Details"], null),
     tripNumber: String(
       pickFirst(
         record,
@@ -504,50 +547,9 @@ const toAdminStatusLabel = (statusValue) => {
 
 const mapAdminStatusClass = (statusValue) => {
   const key = normalizeText(statusValue, "").toLowerCase();
-
-  if (CANCELLED_STATUS_SET.has(key) || key.includes("cancel") || key.includes("failed")) {
-    return "cancelled";
-  }
-
-  if (PENDING_STATUS_SET.has(key)) {
-    return "pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
-    return "success";
-  }
-
-  return "pending";
-};
-
-const formatRequestDate = (statusValue) => {
-  if (!statusValue) return "--";
-  const parsed = new Date(statusValue);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "--";
-  }
-
-  return parsed.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-const toNumberDate = (val) => {
-  if (!val) return 0;
-  const parsed = new Date(val).getTime();
-  return isNaN(parsed) ? 0 : parsed;
-};
-
-const safeValue = (value, fallback = "--") => {
-  if (value === undefined || value === null) return fallback;
-  const str = String(value).trim();
-  return str ? str : fallback;
+  if (key === "approved" || key === "completed" || key === "refunded") return "status-approved";
+  if (key === "rejected" || key === "cancelled") return "status-rejected";
+  return "status-pending";
 };
 
 export default function AdminFlightCancellationRequestListPage() {
@@ -619,16 +621,22 @@ export default function AdminFlightCancellationRequestListPage() {
             raw: record,
           };
         })
-        .filter((record) => mapAdminStatusClass(record.status) === "cancelled")
+        .filter((record) => {
+          const isCancelReq = Boolean(record?.raw?.details || record?.raw?.Details || record?.raw?.id || record?.raw?.Id);
+          return isCancelReq || mapAdminStatusClass(record.status) === "cancelled";
+        })
         .map((unifiedBooking) => {
           const fare = Math.max(parseNumber(unifiedBooking?.fare, 0), 0);
           const raw = unifiedBooking?.raw || {};
 
           const cancellationChargeRaw = parseNumber(
-            raw.cancellationCharge ?? raw.CancellationCharge,
-            Number.NaN
+            raw.cancellationCharge ?? raw.CancellationCharge ?? raw?.RefundDetails?.CancellationCharge ?? unifiedBooking.cancellationCharge,
+            0
           );
-          const refundAmountRaw = parseNumber(raw.refundAmount ?? raw.RefundAmount, Number.NaN);
+          const refundAmountRaw = parseNumber(
+            raw.refundAmount ?? raw.RefundAmount ?? raw?.RefundDetails?.RefundAmount ?? unifiedBooking.refundAmount,
+            0
+          );
 
           const cancellationCharge = Number.isFinite(cancellationChargeRaw)
             ? Math.max(cancellationChargeRaw, 0)

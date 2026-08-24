@@ -831,6 +831,9 @@ namespace PickNBook.Api.Models.DTOs
 
         [JsonPropertyName("b2CTotalPrice")]
         public decimal B2CTotalPrice { get; set; }
+
+        [JsonPropertyName("b2cFinalFare")]
+        public decimal B2CFinalFare { get; set; }
     }
 
     public class HotelSearchGstDto

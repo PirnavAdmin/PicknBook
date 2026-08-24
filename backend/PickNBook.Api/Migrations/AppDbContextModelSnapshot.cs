@@ -246,7 +246,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("AgentId");
 
-                    b.ToTable("AgentLedgerEntries");
+                    b.ToTable("AgentLedgerEntries", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.AgentMarkupSetting", b =>
@@ -278,7 +278,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("AgentId");
 
-                    b.ToTable("AgentMarkupSettings");
+                    b.ToTable("AgentMarkupSettings", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Airline", b =>
@@ -377,7 +377,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("B2BCommissionRules");
+                    b.ToTable("B2BCommissionRules", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.BlogCategory", b =>
@@ -1834,7 +1834,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("TraceId");
 
-                    b.ToTable("busblockedseatprices");
+                    b.ToTable("busblockedseatprices", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Entities.HotelInfoCache", b =>
@@ -4062,7 +4062,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Themes");
+                    b.ToTable("Themes", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.ThemeConfig", b =>
@@ -4076,7 +4076,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasKey("Key");
 
-                    b.ToTable("ThemeConfigs");
+                    b.ToTable("ThemeConfigs", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Traveler", b =>

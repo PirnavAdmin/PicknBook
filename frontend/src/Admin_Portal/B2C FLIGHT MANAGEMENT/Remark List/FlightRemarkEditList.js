@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import { List } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";

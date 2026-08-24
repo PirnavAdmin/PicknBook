@@ -1,11 +1,10 @@
 /* eslint-disable */
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Edit2, Trash2 } from 'lucide-react';
 import AdminPagination from '../../../components/AdminPagination';
 import { deleteBlogSubCategory, getBlogSubCategories, toggleBlogSubCategoryStatus, updateBlogSubCategory, getBlogCategories } from '../../../services/blogService';
-import { toApiAssetUrl, NgrokSafeImage } from '../../../services/apiClient';
-import AdminDynamicModal from '../../../components/AdminDynamicModal';
+import { toApiAssetUrl } from '../../../services/apiClient';
 
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -48,62 +47,17 @@ function BlogSubCategoryList() {
     const [categories, setCategories] = useState([]);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingSubCategory, setEditingSubCategory] = useState(null);
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        category: '',
+        slug: '',
+        status: 'Active',
+        metaTitle: '',
+        metaKeyword: '',
+        metaDescription: '',
+        image: null,
+    });
     const [activePopupImage, setActivePopupImage] = useState(null);
-
-    // Reusable popup modal state
-    const [modalState, setModalState] = useState({ isOpen: false, mode: null, data: null });
-
-    const categoriesOptions = useMemo(() => {
-        return categories.map(cat => ({ value: cat.name, label: cat.name }));
-    }, [categories]);
-
-    const subCategorySchema = React.useMemo(() => [
-        { name: 'name', label: 'Sub Category Name', type: 'text', required: true },
-        { name: 'category', label: 'Category', type: 'select', options: categoriesOptions, required: true },
-        { name: 'slug', label: 'Slug', type: 'text' },
-        { name: 'status', label: 'Status', type: 'select', options: ['Active', 'Inactive'] },
-        { name: 'image', label: 'Image', type: 'image' },
-        { name: 'metaTitle', label: 'Meta Title', type: 'text' },
-        { name: 'metaKeyword', label: 'Meta Keyword', type: 'text' },
-        { name: 'metaDescription', label: 'Meta Description', type: 'textarea' },
-    ], [categoriesOptions]);
-
-    const handleSaveSubCategory = async (updatedData) => {
-        try {
-            const formData = new FormData();
-            formData.append("Name", updatedData.name.trim());
-            formData.append("Category", updatedData.category);
-            formData.append("Slug", updatedData.slug || '');
-            formData.append("Status", updatedData.status || 'Active');
-            formData.append("MetaTitle", updatedData.metaTitle || '');
-            formData.append("MetaKeyword", updatedData.metaKeyword || '');
-            formData.append("MetaDescription", updatedData.metaDescription || '');
-
-            if (updatedData.image instanceof File) {
-                formData.append("Image", updatedData.image);
-            }
-
-            const updated = await updateBlogSubCategory(modalState.data.id, formData);
-            setSubCategories(prev => prev.map(row => (row.id === modalState.data.id ? updated : row)));
-            showToast('Sub category updated successfully.', 'success');
-            setModalState({ isOpen: false, mode: null, data: null });
-        } catch (error) {
-            console.error("Failed to update subcategory", error);
-            showToast("Failed to update subcategory.", "error");
-        }
-    };
-
-    const handleDeleteSubCategoryConfirm = async () => {
-        try {
-            await deleteBlogSubCategory(modalState.data.id);
-            setSubCategories(prev => prev.filter(row => row.id !== modalState.data.id));
-            showToast('Sub category deleted.', 'info');
-            setModalState({ isOpen: false, mode: null, data: null });
-        } catch (error) {
-            console.error("Failed to delete subcategory", error);
-            showToast("Failed to delete subcategory.", "error");
-        }
-    };
 
     const loadCategories = async () => {
         try {
@@ -751,7 +705,7 @@ function BlogSubCategoryList() {
                                         <th style={styles.th}>Name</th>
                                         <th style={styles.th}>Category</th>
                                         <th style={{ ...styles.th, width: '100px' }}>Status</th>
-                                        <th className="action-col" style={{ ...styles.th, textAlign: 'center' }}>Action</th>
+                                        <th style={{ ...styles.th, width: '140px' }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -766,11 +720,11 @@ function BlogSubCategoryList() {
                                                 e.currentTarget.style.background = 'transparent';
                                             }}
                                         >
-                                            <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
-                                            <td style={{ ...styles.td, verticalAlign: 'middle' }}>{formatDate(item.createdAtUtc || item.createdAt || item.entryDate)}</td>
-                                            <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                                            <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
+                                            <td style={styles.td}>{formatDate(item.createdAtUtc || item.createdAt || item.entryDate)}</td>
+                                            <td style={styles.td}>
                                                 {(item.imageUrl || item.image) && (item.imageUrl || item.image) !== '-' ? (
-                                                    <NgrokSafeImage 
+                                                    <img 
                                                         src={toApiAssetUrl(item.imageUrl || item.image)} 
                                                         alt={item.name} 
                                                         style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
@@ -780,19 +734,20 @@ function BlogSubCategoryList() {
                                                     '-'
                                                 )}
                                             </td>
-                                            <td style={{ ...styles.td, verticalAlign: 'middle' }}>{item.name}</td>
-                                            <td style={{ ...styles.td, verticalAlign: 'middle' }}>
-                                                <span
-                                                    className={`blog-cat-badge-custom cat-${(item.category || 'default').toLowerCase()}`}
-                                                    onClick={() => handleViewDetails(item)}
-                                                >
-                                                    {item.category || '-'}
-                                                </span>
-                                            </td>
-                                            <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                                            <td style={styles.td}>{item.name}</td>
+                                            <td style={styles.td}>
                                                 <button
                                                     type="button"
-                                                    style={{ ...getStatusStyle(item.status), margin: '0 auto' }}
+                                                    style={styles.badge}
+                                                    onClick={() => handleViewDetails(item)}
+                                                >
+                                                    {item.category}
+                                                </button>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <button
+                                                    type="button"
+                                                    style={getStatusStyle(item.status)}
                                                     onClick={() => handleToggleStatus(item.id)}
                                                     onMouseEnter={(e) => {
                                                         e.target.style.opacity = '0.85';
@@ -804,33 +759,61 @@ function BlogSubCategoryList() {
                                                     {item.status}
                                                 </button>
                                             </td>
-                                            <td className="action-col" style={{ verticalAlign: 'middle' }}>
-                                                <div className="admin-actions-cell-row">
-                                                    <button
-                                                        type="button"
-                                                        className="admin-action-btn view"
-                                                        title="View Details"
-                                                        onClick={() => setModalState({ isOpen: true, mode: 'view', data: item })}
-                                                    >
-                                                        <Eye size={18} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="admin-action-btn edit"
-                                                        title="Edit Sub Category"
-                                                        onClick={() => setModalState({ isOpen: true, mode: 'edit', data: item })}
-                                                    >
-                                                        <Pencil size={18} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="admin-action-btn delete"
-                                                        title="Delete Sub Category"
-                                                        onClick={() => setModalState({ isOpen: true, mode: 'delete', data: item })}
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
+                                            <td style={{ ...styles.td, ...styles.actionButtons }}>
+                                                <button
+                                                    type="button"
+                                                    style={styles.actionBtn}
+                                                    title="View Details"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'var(--surface-soft)';
+                                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleViewDetails(item)}
+                                                >
+                                                    <Eye size={16} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={styles.actionBtn}
+                                                    title="Edit Sub Category"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'var(--surface-soft)';
+                                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleEditSubCategory(item)}
+                                                >
+                                                    <Edit2 size={16} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                                                    title="Delete Sub Category"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
+                                                        e.currentTarget.style.borderColor = 'var(--danger)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleDeleteSubCategory(item)}
+                                                >
+                                                    <Trash2 size={16} strokeWidth={2} />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -854,17 +837,147 @@ function BlogSubCategoryList() {
                 </div>
             </div>
 
-            {/* Reusable Dynamic Modal System */}
-            <AdminDynamicModal
-                isOpen={modalState.isOpen}
-                mode={modalState.mode}
-                moduleName="Sub Category"
-                data={modalState.data}
-                schema={subCategorySchema}
-                onClose={() => setModalState({ isOpen: false, mode: null, data: null })}
-                onSave={handleSaveSubCategory}
-                onDelete={handleDeleteSubCategoryConfirm}
-            />
+            {editModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 1000,
+                    padding: '20px',
+                }}>
+                    <div style={{
+                        background: 'var(--panel)',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        width: '100%',
+                        maxWidth: '500px',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}>
+                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                            Edit Sub Category
+                        </h3>
+                        <form onSubmit={handleSaveEditSubCategory} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Sub Category Name *</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.name} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                    required
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Category *</label>
+                                <select 
+                                    value={editFormData.category} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                    required
+                                >
+                                    <option value="">Select a Category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Slug</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.slug} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, slug: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Status</label>
+                                <select 
+                                    value={editFormData.status} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                >
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Meta Title</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.metaTitle} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Meta Keyword</label>
+                                <input 
+                                    type="text" 
+                                    value={editFormData.metaKeyword} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, metaKeyword: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Meta Description</label>
+                                <textarea 
+                                    value={editFormData.metaDescription} 
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
+                                    style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--panel)', color: 'var(--text-primary)', minHeight: '60px', resize: 'vertical' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 700 }}>Sub Category Image</label>
+                                {(editingSubCategory?.imageUrl || editingSubCategory?.image) && (
+                                    <div style={{ marginBottom: '8px' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Current Image:</div>
+                                        <img 
+                                            src={toApiAssetUrl(editingSubCategory.imageUrl || editingSubCategory.image)} 
+                                            alt="Current Sub Category" 
+                                            style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                        />
+                                    </div>
+                                )}
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => setEditFormData(prev => ({ ...prev, image: e.target.files[0] }))}
+                                    style={{ fontSize: '0.85rem' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setEditModalOpen(false)}
+                                    style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--panel)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: '#ffffff', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {activePopupImage && (
                 <div 

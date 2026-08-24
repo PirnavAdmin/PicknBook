@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { CalendarDays, Search, Users, MapPin, ChevronDown, Plus, Minus, Trash2 } from "lucide-react";
+import { CalendarDays, Search, Users, MapPin, ChevronDown, Plus, Minus, BedDouble, User, Baby, Info } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
 
 function getDateInputValue(offsetDays = 0) {
@@ -23,46 +23,68 @@ export default function HotelSearchWidget({
   initialCheckIn = "",
   initialCheckOut = "",
   initialRoomsConfig = null,
+  initialInternalCityId = null,
   onSearch,
   isInline = false
 }) {
   const [destination, setDestination] = useState(() => initialDestination || "");
   const [destinationError, setDestinationError] = useState("");
+  const [internalCityId, setInternalCityId] = useState(() => initialInternalCityId || null);
 
   const [checkInDate, setCheckInDate] = useState(() => initialCheckIn || "");
   const [checkOutDate, setCheckOutDate] = useState(() => initialCheckOut || "");
 
-  const [roomsConfig, setRoomsConfig] = useState(() => {
-    if (initialRoomsConfig && typeof initialRoomsConfig === "string") {
-      try {
-        const parsed = JSON.parse(initialRoomsConfig);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) { }
+  const [rooms, setRooms] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.length;
+      }
     }
-    if (initialRoomsConfig && Array.isArray(initialRoomsConfig) && initialRoomsConfig.length > 0) {
-      return initialRoomsConfig;
-    }
-    return [{ adults: 2, children: 0, childAges: [] }];
+    return 0;
   });
 
-  useEffect(() => {
-    sessionStorage.setItem("hotelSearchDestination", destination);
-  }, [destination]);
+  const [adults, setAdults] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.reduce((sum, r) => sum + (r.adults || 0), 0);
+      }
+    }
+    return 0;
+  });
 
-  useEffect(() => {
-    sessionStorage.setItem("hotelSearchCheckIn", checkInDate);
-  }, [checkInDate]);
-
-  useEffect(() => {
-    sessionStorage.setItem("hotelSearchCheckOut", checkOutDate);
-  }, [checkOutDate]);
-
-  useEffect(() => {
-    sessionStorage.setItem("hotelSearchRooms", JSON.stringify(roomsConfig));
-  }, [roomsConfig]);
+  const [children, setChildren] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.reduce((sum, r) => sum + (r.children || 0), 0);
+      }
+    }
+    return 0;
+  });
 
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const guestsFieldRef = useRef(null);
+
+  const toggleGuestsDropdown = () => {
+    setShowGuestsDropdown((prev) => !prev);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -76,49 +98,35 @@ export default function HotelSearchWidget({
     };
   }, []);
 
-  const handleDestinationChange = (value) => {
+  useEffect(() => {
+    if (initialDestination) setDestination(initialDestination);
+  }, [initialDestination]);
+
+  useEffect(() => {
+    if (initialInternalCityId) setInternalCityId(initialInternalCityId);
+  }, [initialInternalCityId]);
+
+  useEffect(() => {
+    if (initialCheckIn) setCheckInDate(initialCheckIn);
+  }, [initialCheckIn]);
+
+  useEffect(() => {
+    if (initialCheckOut) setCheckOutDate(initialCheckOut);
+  }, [initialCheckOut]);
+
+  const handleDestinationChange = (value, cityId) => {
     setDestination(value);
     setDestinationError("");
-  };
-
-  const addRoom = () => {
-    if (roomsConfig.length < 8) {
-      setRoomsConfig([...roomsConfig, { adults: 2, children: 0, childAges: [] }]);
+    if (cityId) {
+      setInternalCityId(cityId);
+    } else {
+      setInternalCityId(null);
     }
   };
 
-  const removeRoom = (index) => {
-    if (roomsConfig.length > 1) {
-      setRoomsConfig(roomsConfig.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateRoom = (index, field, value) => {
-    const updated = [...roomsConfig];
-    updated[index][field] = value;
-    if (field === "children") {
-      const currentAges = updated[index].childAges;
-      if (value > currentAges.length) {
-        updated[index].childAges = [...currentAges, ...Array(value - currentAges.length).fill(4)];
-      } else if (value < currentAges.length) {
-        updated[index].childAges = currentAges.slice(0, value);
-      }
-    }
-    setRoomsConfig(updated);
-  };
-
-  const updateChildAge = (roomIndex, childIndex, age) => {
-    const updated = [...roomsConfig];
-    updated[roomIndex].childAges[childIndex] = age;
-    setRoomsConfig(updated);
-  };
-
-  const totalRooms = roomsConfig.length;
-  const totalAdults = roomsConfig.reduce((sum, r) => sum + (Number(r.adults) || 0), 0);
-  const totalChildren = roomsConfig.reduce((sum, r) => sum + (Number(r.children) || 0), 0);
-  const guestSummary = (totalAdults === 0 && totalChildren === 0)
+  const guestSummary = (rooms === 0 && adults === 0)
     ? "Add Guests"
-    : `${totalRooms} Room${totalRooms > 1 ? 's' : ''}, ${totalAdults} Adult${totalAdults > 1 ? 's' : ''}${totalChildren > 0 ? `, ${totalChildren} Child${totalChildren > 1 ? 'ren' : ''}` : ""}`;
+    : `${rooms} Room${rooms > 1 ? 's' : ''}, ${adults} Adult${adults > 1 ? 's' : ''}${children > 0 ? `, ${children} Child${children > 1 ? 'ren' : ''}` : ""}`;
 
   const handleSubmit = () => {
     const destVal = destination.trim();
@@ -129,16 +137,22 @@ export default function HotelSearchWidget({
     setDestinationError("");
 
     if (onSearch) {
+      const dynamicRoomsConfig = [{
+        adults: adults || 2,
+        children: children || 0,
+        childAges: Array(children || 0).fill(4)
+      }];
       onSearch({
         destination: destVal,
         checkInDate,
         checkOutDate,
-        roomsConfig,
-        rooms: String(totalRooms),
-        adults: String(totalAdults),
-        children: String(totalChildren),
+        rooms: String(rooms || 1),
+        adults: String(adults || 2),
+        children: String(children || 0),
         guests: guestSummary,
-        roomsConfigStr: JSON.stringify(roomsConfig)
+        roomsConfig: dynamicRoomsConfig,
+        roomsConfigStr: JSON.stringify(dynamicRoomsConfig),
+        internalCityId: internalCityId
       });
     }
   };
@@ -253,24 +267,24 @@ export default function HotelSearchWidget({
         {!isInline && <label>Rooms & Guests</label>}
 
         {isInline ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', cursor: 'pointer' }} onClick={() => setShowGuestsDropdown((prev) => !prev)}>
-            <Users size={18} color="var(--hotel-muted)" />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', cursor: 'pointer', minWidth: 0 }} onClick={toggleGuestsDropdown}>
+            <Users size={18} color="var(--hotel-muted)" style={{ flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
               <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Guests</span>
-              <strong style={{ fontSize: '1.02rem', fontWeight: 600, color: 'var(--hotel-muted)', marginTop: '5px' }}>{guestSummary}</strong>
+              <strong style={{ fontSize: '1.02rem', fontWeight: 600, color: 'var(--hotel-muted)', marginTop: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{guestSummary}</strong>
             </div>
           </div>
         ) : (
           <div
             className={`traveller-trigger ${showGuestsDropdown ? "open" : ""}`}
-            onClick={() => setShowGuestsDropdown((prev) => !prev)}
-            style={{ cursor: "pointer" }}
+            onClick={toggleGuestsDropdown}
+            style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}
           >
-            <div className="traveller-trigger-content">
-              <Users size={18} />
-              <span>{guestSummary}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1, overflow: "hidden" }}>
+              <Users size={18} style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.85rem", fontWeight: 600, textTransform: "none" }}>{guestSummary}</span>
             </div>
-            <ChevronDown size={16} className={`traveller-caret ${showGuestsDropdown ? "open" : ""}`} />
+            <ChevronDown size={16} className={`traveller-caret ${showGuestsDropdown ? "open" : ""}`} style={{ flexShrink: 0 }} />
           </div>
         )}
 
@@ -278,75 +292,140 @@ export default function HotelSearchWidget({
           <div
             className="traveller-dropdown hotel-guests-dropdown"
             style={{
-              maxHeight: "450px",
-              overflowY: "auto",
-              top: isInline ? 'calc(100% + 10px)' : undefined,
-              width: "320px",
-              right: 0,
-              left: "auto",
+              width: "380px",
+              left: 0,
+              right: "auto",
               border: "1px solid #cfcfcf",
-              borderRadius: "12px",
+              borderRadius: "16px",
               boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
-              padding: "16px",
+              padding: "20px",
               zIndex: 1400,
               background: "#ffffff",
               color: "#1e293b",
-              position: "absolute"
+              position: "absolute",
+              top: isInline ? 'calc(100% + 10px)' : undefined,
             }}
           >
-            {roomsConfig.map((room, roomIndex) => (
-              <div key={roomIndex} style={{ paddingBottom: roomIndex !== roomsConfig.length - 1 ? "8px" : "0px", marginBottom: roomIndex !== roomsConfig.length - 1 ? "8px" : "8px", borderBottom: roomIndex !== roomsConfig.length - 1 ? "1px solid #e5e7eb" : "none" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <strong style={{ fontSize: "0.85rem", color: "#d32f2f" }}>Room {roomIndex + 1}</strong>
-                  {roomsConfig.length > 1 && (
-                    <button type="button" onClick={() => removeRoom(roomIndex)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontSize: "0.85rem", fontWeight: "600" }}>
-                      <Trash2 size={14} /> Remove
-                    </button>
-                  )}
-                </div>
-
-                <div className="traveller-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <div className="traveller-type" style={{ display: "flex", flexDirection: "column" }}>
-                    <span className="type-name" style={{ fontSize: "0.7rem", fontWeight: "800", textTransform: "uppercase", color: "#111" }}>Adults</span>
-                  </div>
-                  <div className="traveller-counter" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <button type="button" onClick={() => updateRoom(roomIndex, "adults", Math.max(1, room.adults - 1))} disabled={room.adults <= 1} style={{ background: "transparent", border: "1px solid #d32f2f", borderRadius: "6px", width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: room.adults <= 1 ? "not-allowed" : "pointer", opacity: room.adults <= 1 ? 0.4 : 1 }}>
-                      <Minus size={14} />
-                    </button>
-                    <span style={{ fontSize: "0.9rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#000" }}>{room.adults}</span>
-                    <button type="button" onClick={() => updateRoom(roomIndex, "adults", Math.min(4, room.adults + 1))} disabled={room.adults >= 4} style={{ background: "transparent", border: "1px solid #d32f2f", borderRadius: "6px", width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: room.adults >= 4 ? "not-allowed" : "pointer", opacity: room.adults >= 4 ? 0.4 : 1 }}>
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="traveller-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div className="traveller-type" style={{ display: "flex", flexDirection: "column" }}>
-                    <span className="type-name" style={{ fontSize: "0.7rem", fontWeight: "800", textTransform: "uppercase", color: "#111" }}>Children</span>
-                  </div>
-                  <div className="traveller-counter" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <button type="button" onClick={() => updateRoom(roomIndex, "children", Math.max(0, room.children - 1))} disabled={room.children <= 0} style={{ background: "transparent", border: "1px solid #d32f2f", borderRadius: "6px", width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: room.children <= 0 ? "not-allowed" : "pointer", opacity: room.children <= 0 ? 0.4 : 1 }}>
-                      <Minus size={14} />
-                    </button>
-                    <span style={{ fontSize: "0.9rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#000" }}>{room.children}</span>
-                    <button type="button" onClick={() => updateRoom(roomIndex, "children", Math.min(4, room.children + 1))} disabled={room.children >= 4} style={{ background: "transparent", border: "1px solid #d32f2f", borderRadius: "6px", width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: room.children >= 4 ? "not-allowed" : "pointer", opacity: room.children >= 4 ? 0.4 : 1 }}>
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
+            {/* Rooms Row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", paddingBottom: "16px", borderBottom: "1px solid #e2e8f0", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "#f8fafc", borderRadius: "10px", color: "#d32f2f" }}>
+                <BedDouble size={22} />
               </div>
-            ))}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#1e293b" }}>ROOMS</span>
+                <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>How many rooms do you need?</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setRooms(Math.max(0, rooms - 1))}
+                  disabled={rooms <= 0}
+                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: rooms <= 0 ? "not-allowed" : "pointer", opacity: rooms <= 0 ? 0.4 : 1, transition: "all 0.2s" }}
+                >
+                  <Minus size={16} />
+                </button>
+                <span style={{ fontSize: "1.05rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#0f172a" }}>{rooms}</span>
+                <button
+                  type="button"
+                  onClick={() => setRooms(Math.min(8, rooms + 1))}
+                  disabled={rooms >= 8}
+                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: rooms >= 8 ? "not-allowed" : "pointer", opacity: rooms >= 8 ? 0.4 : 1, transition: "all 0.2s" }}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
 
-            {roomsConfig.length < 4 && (
-              <button type="button" onClick={addRoom} style={{ width: "100%", padding: "6px", background: "#fff", border: "1px dashed #d32f2f", borderRadius: "8px", color: "#d32f2f", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginTop: "4px", fontSize: "0.8rem", transition: "all 0.2s" }}>
-                <Plus size={14} /> Add another room
-              </button>
-            )}
+            {/* Adults Row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", paddingBottom: "16px", borderBottom: "1px solid #e2e8f0", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "#f8fafc", borderRadius: "10px", color: "#d32f2f" }}>
+                <User size={22} />
+              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#1e293b" }}>ADULTS</span>
+                <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>18 years and above</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setAdults(Math.max(0, adults - 1))}
+                  disabled={adults <= 0}
+                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: adults <= 0 ? "not-allowed" : "pointer", opacity: adults <= 0 ? 0.4 : 1, transition: "all 0.2s" }}
+                >
+                  <Minus size={16} />
+                </button>
+                <span style={{ fontSize: "1.05rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#0f172a" }}>{adults}</span>
+                <button
+                  type="button"
+                  onClick={() => setAdults(Math.min(30, adults + 1))}
+                  disabled={adults >= 30}
+                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: adults >= 30 ? "not-allowed" : "pointer", opacity: adults >= 30 ? 0.4 : 1, transition: "all 0.2s" }}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
 
-            <div style={{ marginTop: "8px" }}>
-              <button type="button" onClick={() => setShowGuestsDropdown(false)} style={{ width: "100%", padding: "8px", background: "#d32f2f", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", fontSize: "0.85rem", boxShadow: "0 4px 10px rgba(211,47,47,0.3)" }}>
+            {/* Children Row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", paddingBottom: "16px", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "#f8fafc", borderRadius: "10px", color: "#d32f2f" }}>
+                <Baby size={22} />
+              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#1e293b" }}>CHILDREN</span>
+                <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>0 - 17 years</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setChildren(Math.max(0, children - 1))}
+                  disabled={children <= 0}
+                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: children <= 0 ? "not-allowed" : "pointer", opacity: children <= 0 ? 0.4 : 1, transition: "all 0.2s" }}
+                >
+                  <Minus size={16} />
+                </button>
+                <span style={{ fontSize: "1.05rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#0f172a" }}>{children}</span>
+                <button
+                  type="button"
+                  onClick={() => setChildren(Math.min(10, children + 1))}
+                  disabled={children >= 10}
+                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: children >= 10 ? "not-allowed" : "pointer", opacity: children >= 10 ? 0.4 : 1, transition: "all 0.2s" }}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Done Button */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowGuestsDropdown(false)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  background: "#d32f2f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  fontSize: "0.95rem",
+                  boxShadow: "0 4px 10px rgba(211,47,47,0.3)",
+                  transition: "all 0.2s",
+                  textTransform: "uppercase"
+                }}
+              >
                 Done
               </button>
+            </div>
+
+            {/* Bedding Info Note */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginTop: "16px", padding: "8px", background: "#f8fafc", borderRadius: "8px" }}>
+              <Info size={14} color="#64748b" style={{ marginTop: "2px" }} />
+              <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>
+                Children under 6 years may stay free with existing bedding.
+              </span>
             </div>
           </div>
         )}

@@ -12,6 +12,7 @@ using PickNBook.Api.Models.DTOs;
 using PickNBook.Api.Services;
 using PickNBook.Api.Services.SeatLayouts;
 using Microsoft.Extensions.Caching.Memory;
+using PickNBook.Api.Filters;
 
 namespace PickNBook.Api.Controllers
 {
@@ -380,6 +381,7 @@ namespace PickNBook.Api.Controllers
 
         [HttpPost("block")]
         [AllowAnonymous]
+        [InjectClientIp]
         public async Task<IActionResult> BlockBusProxy([FromBody] SrdvBusBookingRequestDto request)
         {
             if (string.IsNullOrWhiteSpace(request.TraceId) || 

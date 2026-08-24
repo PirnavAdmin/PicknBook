@@ -6,6 +6,7 @@ using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
+using PickNBook.Api.Extensions;
 
 namespace PickNBook.Api.Controllers
 {
@@ -1757,7 +1758,8 @@ namespace PickNBook.Api.Controllers
         {
             try
             {
-                var rawJson = await srdvBusService.GetSrdvMasterWalletBalanceAsync();
+                var ip = HttpContext.GetClientIpAddress();
+                var rawJson = await srdvBusService.GetSrdvMasterWalletBalanceAsync(ip);
                 return Content(rawJson, "application/json");
             }
             catch (Exception ex)
@@ -1772,7 +1774,8 @@ namespace PickNBook.Api.Controllers
         {
             try
             {
-                var rawJson = await srdvBusService.GetSrdvMasterWalletLogAsync();
+                var ip = HttpContext.GetClientIpAddress();
+                var rawJson = await srdvBusService.GetSrdvMasterWalletLogAsync(ip);
                 return Content(rawJson, "application/json");
             }
             catch (Exception ex)

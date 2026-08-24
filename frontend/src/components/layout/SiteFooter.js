@@ -373,29 +373,6 @@ export default function SiteFooter() {
             </p>
           </div>
 
-          <div className="upgraded-footer-newsletter-box">
-            <div className="newsletter-text-content">
-              <span className="newsletter-kicker">
-                <Sparkles size={14} /> EXCLUSIVE TRAVEL OFFERS
-              </span>
-              <h4 className="newsletter-title">Subscribe to Get Secret Discounts</h4>
-            </div>
-            <form className="upgraded-subscribe-form" onSubmit={(e) => e.preventDefault()}>
-              <div className="subscribe-input-wrapper">
-                <Mail size={16} className="subscribe-mail-icon" />
-                <input
-                  type="email"
-                  placeholder="Enter your email address"
-                  required
-                  className="upgraded-subscribe-input"
-                />
-              </div>
-              <button type="submit" className="upgraded-subscribe-btn">
-                <span>Subscribe</span>
-                <Send size={14} />
-              </button>
-            </form>
-          </div>
         </div>
 
         <hr className="upgraded-footer-divider" />
@@ -563,7 +540,7 @@ export default function SiteFooter() {
 
           {/* Copyright */}
           <div className="upgraded-copyright-text">
-            <span>{footerConfig?.bottomLineText || "© 2026 Pick N Book. All rights reserved."}</span>
+            <span>{footerConfig?.bottomLineText || "© 2026 Pirnav Software Solutions. All rights reserved."}</span>
           </div>
 
         </div>

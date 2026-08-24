@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useState } from "react";
 import { ShieldCheck, Save, RefreshCw, Mail, Phone, MapPin, CheckCircle2 } from "lucide-react";
 import "./FlightVoucherSettings.css";

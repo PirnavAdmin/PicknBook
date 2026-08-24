@@ -210,7 +210,6 @@ export function withNgrokSkipWarningHeader(urlOrPath, headers = {}) {
   return {
     ...headers,
     "ngrok-skip-browser-warning": "true",
-    "User-Agent": "custom-app-client",
   };
 }
 

@@ -7,6 +7,8 @@ using PickNBook.Api.Data;
 using PickNBook.Api.Middleware;
 using PickNBook.Api.Models;
 using PickNBook.Api.Services;
+using PickNBook.Api.Services.Interfaces;
+using PickNBook.Api.Services.Implementations;
 using System.Text;
 using Serilog;
 using Serilog.Events;
@@ -67,6 +69,12 @@ builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggin
 builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>()
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
 
+builder.Services.AddSingleton<HotelCityCacheService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<HotelCityCacheService>());
+
+builder.Services.AddSingleton<BusCityCacheService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<BusCityCacheService>());
+
 builder.Services.AddHttpClient("TicketEmailApi", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(20);
@@ -90,6 +98,8 @@ builder.Services.Configure<SmsSettings>(
     builder.Configuration.GetSection("SmsSettings"));
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.EmailReminderHostedService>();
 builder.Services.AddHttpClient<IWhatsAppService, WhatsAppService>();
 builder.Services.AddHttpClient<ISmsService, SmsService>();
 builder.Services.AddScoped<IExclusiveOfferSubscriptionService, ExclusiveOfferSubscriptionService>();
@@ -114,6 +124,10 @@ builder.Services.AddScoped<IBlogsService, BlogsService>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<User>, Microsoft.AspNetCore.Identity.PasswordHasher<User>>();
 builder.Services.AddSingleton<IBackgroundJobQueue, BackgroundJobQueue>();
 builder.Services.AddHostedService<BackgroundJobExecutor>();
+builder.Services.AddScoped<ISecurityService, SecurityService>();
+builder.Services.AddHostedService<SecurityNotificationHostedService>();
+builder.Services.AddScoped<ISecurityCounterService, SecurityCounterService>();
+builder.Services.AddHostedService<SecurityBackgroundService>();
 
 // Database
 
@@ -280,6 +294,7 @@ app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/hotels", St
     appBuilder.UseMiddleware<PickNBook.Api.Middleware.HotelRequestLoggingMiddleware>();
 });
 
+
 // ---------------- MIDDLEWARE ----------------
 
 // Enable Swagger in all environments
@@ -328,13 +343,34 @@ app.UseStaticFiles();
 
 app.UseOutputCache();
 
+app.UseMiddleware<RealClientIpResolverMiddleware>();
+app.UseMiddleware<HealthCheckFilterMiddleware>();
+app.UseMiddleware<SuperAdminEmergencyRecoveryMiddleware>();
+
 app.UseAuthentication();
+
+app.UseMiddleware<AccountSessionStatusMiddleware>();
+app.UseMiddleware<CentralSecurityMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
-
-
+// === ONE-TIME DB SCHEMA FIX (remove after first successful run) ===
+using (var scope = app.Services.CreateScope())
+{
+    var dbCtx = scope.ServiceProvider.GetRequiredService<PickNBook.Api.Data.AppDbContext>();
+    var alterStatements = new[]
+    {
+        "ALTER TABLE `place_search_stats` ADD COLUMN `CityCode` varchar(50) NULL;",
+        "ALTER TABLE `place_search_stats` ADD COLUMN `LastSelectedAtUtc` datetime(6) NULL;"
+    };
+    foreach (var sql in alterStatements)
+    {
+        try { dbCtx.Database.ExecuteSqlRaw(sql); }
+        catch { /* column already exists - ignore */ }
+    }
+}
 
 app.Run();
 

@@ -237,13 +237,28 @@ namespace PickNBook.Api.Services
 
                 if (json.RootElement.TryGetProperty("Result", out var results) && results.ValueKind == JsonValueKind.Array)
                 {
+                    var istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+                    var cutoffTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istZone).AddMinutes(-5);
+                    DateTime.TryParseExact(journeyDate, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out DateTime parsedJourneyDate);
+
                     foreach (var bus in results.EnumerateArray())
                     {
-                        var operatorName = bus.GetProperty("TravelsName").GetString() ?? string.Empty;
-                        var operatorId = bus.GetProperty("OperatorId").GetString() ?? string.Empty;
-                        var busType = bus.GetProperty("BusType").GetString() ?? string.Empty;
-                        var departureTime = bus.GetProperty("DepartureTime").GetString() ?? string.Empty;
-                        var arrivalTime = bus.GetProperty("ArrivalTime").GetString() ?? string.Empty;
+                        var operatorName = bus.TryGetProperty("TravelsName", out var tnProp) ? tnProp.GetString() ?? string.Empty : string.Empty;
+                        var operatorId = bus.TryGetProperty("OperatorId", out var oiProp) ? oiProp.GetString() ?? string.Empty : string.Empty;
+                        var busType = bus.TryGetProperty("BusType", out var btProp) ? btProp.GetString() ?? string.Empty : string.Empty;
+                        var departureTime = bus.TryGetProperty("DepartureTime", out var dtProp) ? dtProp.GetString() ?? string.Empty : string.Empty;
+
+                        if (DateTime.TryParse(departureTime, out DateTime deptTime))
+                        {
+                            // Combine parsed journey date with the time to correctly evaluate tomorrow's buses
+                            var fullDeptTime = new DateTime(parsedJourneyDate.Year, parsedJourneyDate.Month, parsedJourneyDate.Day, deptTime.Hour, deptTime.Minute, deptTime.Second);
+                            if (fullDeptTime < cutoffTime)
+                            {
+                                continue; // Skip buses that departed over 5 mins ago
+                            }
+                        }
+
+                        var arrivalTime = bus.TryGetProperty("ArrivalTime", out var atProp) ? atProp.GetString() ?? string.Empty : string.Empty;
                         
                         decimal price = 0;
                         if (bus.TryGetProperty("DisplayFare", out var fareProp))
@@ -274,8 +289,8 @@ namespace PickNBook.Api.Services
                             Price = price,
                             AvailableSeats = availableSeats,
                             TraceId = traceId,
-                            ResultIndex = bus.GetProperty("ResultIndex").GetString(),
-                            SrdvIndex = bus.GetProperty("SrdvIndex").GetInt32(),
+                            ResultIndex = bus.TryGetProperty("ResultIndex", out var riProp) ? riProp.GetString() : null,
+                            SrdvIndex = bus.TryGetProperty("SrdvIndex", out var siProp) && siProp.ValueKind == JsonValueKind.Number ? siProp.GetInt32() : 0,
                             IsGSTMandatory = bus.TryGetProperty("IsGSTMandatory", out var gstProp) && gstProp.GetBoolean(),
                             IsTypeRequired = bus.TryGetProperty("IsTypeRequired", out var typeProp) && typeProp.GetBoolean(),
                             IsDropPointMandatory = bus.TryGetProperty("IsDropPointMandatory", out var dropProp) && dropProp.GetBoolean()
@@ -293,9 +308,10 @@ namespace PickNBook.Api.Services
 
         public async Task<string> BlockBusProxyAsync(SrdvBusBookingRequestDto request)
         {
+            var endUserIp = string.IsNullOrWhiteSpace(request.EndUserIp) ? "127.0.0.1" : request.EndUserIp.Trim();
             var blockRequestBody = new
             {
-                EndUserIp = "127.0.0.1",
+                EndUserIp = endUserIp,
                 ClientId = ClientId,
                 UserName = UserName,
                 Password = Password,
@@ -398,7 +414,6 @@ namespace PickNBook.Api.Services
             // Step 2: Book Seat (Confirm booking)
             var bookRequestBody = new
             {
-                EndUserIp = "127.0.0.1",
                 ClientId = ClientId,
                 UserName = UserName,
                 Password = Password,
@@ -674,7 +689,6 @@ namespace PickNBook.Api.Services
                 ClientId = ClientId,
                 UserName = UserName,
                 Password = Password,
-                EndUserIp = "127.0.0.1",
                 TraceId = traceId,
                 SeatName = seatName,
                 Remark = remark
@@ -706,11 +720,11 @@ namespace PickNBook.Api.Services
 
             return (errorCode == 0, errorMessage);
         }
-        public async Task<string> GetSrdvMasterWalletBalanceAsync()
+        public async Task<string> GetSrdvMasterWalletBalanceAsync(string endUserIp)
         {
             var requestBody = new
             {
-                EndUserIp = "127.0.0.1",
+                EndUserIp = endUserIp,
                 ClientId = ClientId,
                 UserName = UserName,
                 Password = Password
@@ -720,11 +734,11 @@ namespace PickNBook.Api.Services
             return await response.Content.ReadAsStringAsync();
         }
 
-        public async Task<string> GetSrdvMasterWalletLogAsync()
+        public async Task<string> GetSrdvMasterWalletLogAsync(string endUserIp)
         {
             var requestBody = new
             {
-                EndUserIp = "127.0.0.1",
+                EndUserIp = endUserIp,
                 ClientId = ClientId,
                 UserName = UserName,
                 Password = Password

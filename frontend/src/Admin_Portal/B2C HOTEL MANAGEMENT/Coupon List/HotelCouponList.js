@@ -1,10 +1,17 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Check, Download, Pencil, Plus, Trash2, X, Eye, Tag, DollarSign, CheckCircle2, Clock, Users, SlidersHorizontal } from "lucide-react";
+import {
+  Check,
+  Download,
+  Pencil,
+  Plus,
+  SlidersHorizontal,
+  Trash2,
+  X,
+} from "lucide-react";
 import "./HotelCouponList.css";
-import { csvCell, formatCouponDate, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
 import AdminPagination from "../../../components/AdminPagination";
+import { csvCell, formatCouponDate, formatCouponDateTime } from "../../../utils/adminPortalUtils";
 import {
   listHotelPromotions,
   createHotelPromotion,
@@ -14,6 +21,17 @@ import {
 
 const DEFAULT_SORT_BY = "createdAtUtc";
 const DEFAULT_SORT_ORDER = "desc";
+
+function getSortValue(promo, sortBy) {
+  if (sortBy === "id") return Number(promo.id) || 0;
+  if (sortBy === "discountValue") return Number(promo.discountValue) || 0;
+  if (sortBy === "maxUsage") return Number(promo.maxUsage) || 999999;
+  if (sortBy === "startDateUtc" || sortBy === "endDateUtc" || sortBy === "createdAtUtc") {
+    const ts = new Date(promo[sortBy]).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  }
+  return String(promo[sortBy] || "").toLowerCase();
+}
 
 function generatePromoCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -33,25 +51,23 @@ function toInputDate(value) {
 
 function createDefaultForm() {
   return {
-    code: generatePromoCode(),
+    code: "",
     title: "",
     description: "",
     promotionType: "Coupon",
-    discountType: "Percentage (%)",
+    discountType: "Flat",
     discountValue: "",
-    maxDiscountAmount: "2000",
-    minBookingAmount: "500",
+    maxDiscountAmount: "",
+    minBookingAmount: "",
     isActive: true,
     isExclusive: true,
     isAutoApply: false,
-    priority: "0",
-    maxUsage: "100",
-    maxUsagePerUser: "1",
+    priority: "",
+    maxUsage: "",
+    maxUsagePerUser: "",
     startDateUtc: "",
     endDateUtc: "",
-    conditions: [],
-    createdBy: "Admin",
-    route: "All Routes"
+    conditions: []
   };
 }
 
@@ -59,1078 +75,762 @@ export default function HotelCouponList() {
   const [promotions, setPromotions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [sortBy, setSortBy] = useState(DEFAULT_SORT_BY);
+  const [sortOrder, setSortOrder] = useState(DEFAULT_SORT_ORDER);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [discountTypeFilter, setDiscountTypeFilter] = useState("all");
+  const [isFormViewOpen, setIsFormViewOpen] = useState(() => {
+    return sessionStorage.getItem("hotel_coupon_form_open") === "true";
+  });
+  const [form, setForm] = useState(() => {
+    const savedForm = sessionStorage.getItem("hotel_coupon_form_data");
+    return savedForm ? JSON.parse(savedForm) : createDefaultForm();
+  });
+  const [formError, setFormError] = useState("");
+  const [editPromoId, setEditPromoId] = useState(() => {
+    const saved = sessionStorage.getItem("hotel_coupon_edit_id");
+    return saved ? Number(saved) : null;
+  });
+  const [deletePromo, setDeletePromo] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  // Filter States
-  const [filterSearch, setFilterSearch] = useState("");
-  const [filterCouponCode, setFilterCouponCode] = useState("");
-  const [filterCouponType, setFilterCouponType] = useState("All Types");
-  const [filterDiscountType, setFilterDiscountType] = useState("All Types");
-  const [filterDiscountValue, setFilterDiscountValue] = useState("");
-  const [filterMinAmount, setFilterMinAmount] = useState("");
-  const [filterMaxDiscount, setFilterMaxDiscount] = useState("");
-  const [filterRoute, setFilterRoute] = useState("All Routes");
-  const [filterStatus, setFilterStatus] = useState("All Status");
-  const [filterCreatedBy, setFilterCreatedBy] = useState("All");
-  const [filterValidFrom, setFilterValidFrom] = useState("");
-  const [filterValidTo, setFilterValidTo] = useState("");
-  const [activeQuickFilter, setActiveQuickFilter] = useState("All Coupons");
-
-  // Pagination & Modals
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [addForm, setAddForm] = useState(createDefaultForm);
-  const [editRecord, setEditRecord] = useState(null);
-  const [addError, setAddError] = useState("");
-  const [editError, setEditError] = useState("");
-  const [deleteRecord, setDeleteRecord] = useState(null);
+  const itemsPerPage = 10;
 
-  const fetchPromotions = async () => {
+  // Synchronize form states to sessionStorage to persist across page reloads
+  useEffect(() => {
+    sessionStorage.setItem("hotel_coupon_form_open", isFormViewOpen);
+    if (editPromoId !== null) {
+      sessionStorage.setItem("hotel_coupon_edit_id", editPromoId);
+    } else {
+      sessionStorage.removeItem("hotel_coupon_edit_id");
+    }
+    sessionStorage.setItem("hotel_coupon_form_data", JSON.stringify(form));
+  }, [isFormViewOpen, editPromoId, form]);
+
+  // Conditions temp states
+  const [condType, setCondType] = useState("HotelCity");
+  const [condVal, setCondVal] = useState("");
+
+  const loadPromotions = async () => {
     setIsLoading(true);
     setLoadError("");
     try {
       const data = await listHotelPromotions();
-      setPromotions(data);
-    } catch (err) {
-      setLoadError(err.message || "Failed to load promotions.");
+      // Filter for manual coupons (isAutoApply === false)
+      setPromotions(data.filter(p => !p.isAutoApply));
+    } catch (error) {
+      setPromotions([]);
+      setLoadError(error.message || "Unable to load hotel coupons.");
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPromotions();
+    loadPromotions();
   }, []);
 
-  const handleApplyQuickFilter = (type) => {
-    setActiveQuickFilter(type);
-    if (type === "All Coupons") {
-      setFilterStatus("All Status");
-      setFilterDiscountType("All Types");
-      setFilterCouponType("All Types");
-    } else if (type === "Active") {
-      setFilterStatus("Active");
-    } else if (type === "Expired") {
-      setFilterStatus("Expired");
-    } else if (type === "Upcoming") {
-      setFilterStatus("Scheduled");
-    } else if (type === "Percentage") {
-      setFilterDiscountType("Percentage (%)");
-    } else if (type === "Flat Amount") {
-      setFilterDiscountType("Flat Amount (₹)");
-    } else if (type === "Weekend") {
-      setFilterCouponType("Weekend Offer");
-    } else if (type === "Festival") {
-      setFilterCouponType("Festival Offer");
-    } else if (type === "First Booking") {
-      setFilterCouponType("First Booking Coupon");
-    }
-  };
-
-  const handleResetFilters = () => {
-    setFilterSearch("");
-    setFilterCouponCode("");
-    setFilterCouponType("All Types");
-    setFilterDiscountType("All Types");
-    setFilterDiscountValue("");
-    setFilterMinAmount("");
-    setFilterMaxDiscount("");
-    setFilterRoute("All Routes");
-    setFilterStatus("All Status");
-    setFilterCreatedBy("All");
-    setFilterValidFrom("");
-    setFilterValidTo("");
-    setActiveQuickFilter("All Coupons");
-  };
-
-  const filteredRecords = useMemo(() => {
-    return promotions.filter((promo) => {
-      if (filterSearch) {
-        const term = filterSearch.toLowerCase();
-        const matchesCode = String(promo.code || "").toLowerCase().includes(term);
-        const matchesTitle = String(promo.title || "").toLowerCase().includes(term);
-        const matchesDesc = String(promo.description || "").toLowerCase().includes(term);
-        if (!matchesCode && !matchesTitle && !matchesDesc) return false;
-      }
-      if (filterCouponCode && !String(promo.code || "").toLowerCase().includes(filterCouponCode.toLowerCase())) return false;
-      if (filterCouponType !== "All Types" && promo.promotionType !== filterCouponType) return false;
-      if (filterDiscountType !== "All Types") {
-        const isFlat = filterDiscountType.includes("Flat");
-        const typeMatch = isFlat ? "Flat" : "Percentage";
-        if (!String(promo.discountType || "").toLowerCase().includes(typeMatch.toLowerCase())) return false;
-      }
-      if (filterDiscountValue && Number(promo.discountValue) !== Number(filterDiscountValue)) return false;
-      if (filterStatus !== "All Status") {
-        const isActive = filterStatus === "Active";
-        if (promo.isActive !== isActive) return false;
-      }
-      if (filterRoute !== "All Routes" && promo.route && promo.route !== filterRoute) return false;
-      if (filterCreatedBy !== "All" && promo.createdBy && promo.createdBy !== filterCreatedBy) return false;
-
-      return true;
+  const visiblePromotions = useMemo(() => {
+    const filtered = promotions.filter((p) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && p.isActive) ||
+        (statusFilter === "inactive" && !p.isActive);
+      const matchesType =
+        discountTypeFilter === "all" ||
+        String(p.discountType).toLowerCase() === discountTypeFilter.toLowerCase();
+      return matchesStatus && matchesType;
     });
-  }, [promotions, filterSearch, filterCouponCode, filterCouponType, filterDiscountType, filterDiscountValue, filterRoute, filterStatus, filterCreatedBy]);
 
-  const paginatedRecords = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredRecords.slice(start, start + itemsPerPage);
-  }, [filteredRecords, currentPage, itemsPerPage]);
+    return [...filtered].sort((left, right) => {
+      const leftVal = getSortValue(left, sortBy);
+      const rightVal = getSortValue(right, sortBy);
 
-  const stats = useMemo(() => {
-    const totalCount = filteredRecords.length;
-    const activeCount = filteredRecords.filter(p => p.isActive).length;
-    const expiredCount = filteredRecords.filter(p => !p.isActive).length;
-    const totalRedemptions = filteredRecords.reduce((sum, p) => sum + (Number(p.maxUsage) || 0), 0);
-    const totalSavings = filteredRecords.reduce((sum, p) => sum + (Number(p.discountValue) * (Number(p.maxUsage) || 0)), 0);
+      let result = 0;
+      if (typeof leftVal === "number" && typeof rightVal === "number") {
+        result = leftVal - rightVal;
+      } else {
+        result = String(leftVal).localeCompare(String(rightVal), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      }
+      return sortOrder === "asc" ? result : -result;
+    });
+  }, [promotions, discountTypeFilter, sortBy, sortOrder, statusFilter]);
 
-    return { totalCount, activeCount, expiredCount, totalRedemptions, totalSavings };
-  }, [filteredRecords]);
+  const paginatedPromotions = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return visiblePromotions.slice(startIndex, startIndex + itemsPerPage);
+  }, [visiblePromotions, currentPage, itemsPerPage]);
 
-  // Create Save handler
-  const handleSaveAdd = async () => {
-    setAddError("");
-    if (!addForm.discountValue || !addForm.startDateUtc || !addForm.endDateUtc) {
-      setAddError("Please fill in required fields (Discount Value, Dates).");
-      return;
-    }
-    try {
-      const payload = {
-        ...addForm,
-        discountValue: Number(addForm.discountValue),
-        minBookingAmount: Number(addForm.minBookingAmount || 0),
-        maxDiscountAmount: Number(addForm.maxDiscountAmount || 0),
-        maxUsage: Number(addForm.maxUsage || 0),
-        maxUsagePerUser: Number(addForm.maxUsagePerUser || 1),
-        priority: Number(addForm.priority || 0),
-        startDateUtc: new Date(addForm.startDateUtc).toISOString(),
-        endDateUtc: new Date(addForm.endDateUtc).toISOString()
-      };
-      await createHotelPromotion(payload);
-      setIsAddOpen(false);
-      setAddForm(createDefaultForm());
-      fetchPromotions();
-    } catch (err) {
-      setAddError(err.message || "Failed to create promotion.");
-    }
-  };
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [discountTypeFilter, sortBy, sortOrder, statusFilter]);
 
-  // Edit Save handler
-  const handleSaveEdit = async () => {
-    setEditError("");
-    if (!editRecord.discountValue || !editRecord.startDateUtc || !editRecord.endDateUtc) {
-      setEditError("Please fill in required fields (Discount Value, Dates).");
-      return;
-    }
-    try {
-      const payload = {
-        ...editRecord,
-        discountValue: Number(editRecord.discountValue),
-        minBookingAmount: Number(editRecord.minBookingAmount || 0),
-        maxDiscountAmount: Number(editRecord.maxDiscountAmount || 0),
-        maxUsage: Number(editRecord.maxUsage || 0),
-        maxUsagePerUser: Number(editRecord.maxUsagePerUser || 1),
-        priority: Number(editRecord.priority || 0),
-        startDateUtc: new Date(editRecord.startDateUtc).toISOString(),
-        endDateUtc: new Date(editRecord.endDateUtc).toISOString()
-      };
-      await updateHotelPromotion(editRecord.id, payload);
-      setIsEditOpen(false);
-      setEditRecord(null);
-      fetchPromotions();
-    } catch (err) {
-      setEditError(err.message || "Failed to update promotion.");
-    }
-  };
-
-  // Delete handler
-  const handleSaveDelete = async () => {
-    if (!deleteRecord) return;
-    try {
-      await deleteHotelPromotion(deleteRecord.id);
-      setDeleteRecord(null);
-      fetchPromotions();
-    } catch (err) {
-      alert(err.message || "Failed to delete promotion.");
-    }
-  };
-
-  const handleToggleStatus = async (promo) => {
-    try {
-      const payload = {
-        ...promo,
-        isActive: !promo.isActive,
-        discountValue: Number(promo.discountValue),
-        minBookingAmount: Number(promo.minBookingAmount || 0),
-        maxDiscountAmount: Number(promo.maxDiscountAmount || 0),
-        maxUsage: Number(promo.maxUsage || 0),
-        maxUsagePerUser: Number(promo.maxUsagePerUser || 1),
-        priority: Number(promo.priority || 0),
-        startDateUtc: promo.startDateUtc ? new Date(promo.startDateUtc).toISOString() : "",
-        endDateUtc: promo.endDateUtc ? new Date(promo.endDateUtc).toISOString() : ""
-      };
-      await updateHotelPromotion(promo.id, payload);
-      fetchPromotions();
-    } catch (err) {
-      alert(err.message || "Failed to toggle status.");
-    }
+  const handleClearFilters = () => {
+    setSortBy(DEFAULT_SORT_BY);
+    setSortOrder(DEFAULT_SORT_ORDER);
+    setStatusFilter("all");
+    setDiscountTypeFilter("all");
   };
 
   const handleExport = () => {
-    const header = ["ID", "Coupon Code", "Coupon Title", "Discount Type", "Discount Value", "Min. Booking", "Valid From", "Valid To", "Routes", "Status", "Redemptions", "Created On"];
-    const csvRows = filteredRecords.map((c) => [
-      c.id, c.code, c.title || "Hotel Discount", c.discountType, c.discountValue, c.minBookingAmount, formatCouponDate(c.startDateUtc), formatCouponDate(c.endDateUtc), c.route || "All Routes", c.isActive ? "Active" : "Inactive", c.maxUsage, formatCouponDateTime(c.createdAtUtc)
+    if (visiblePromotions.length === 0) return;
+    const header = [
+      "ID",
+      "Coupon Code",
+      "Title",
+      "Discount Type",
+      "Value",
+      "Max Discount",
+      "Min Booking Amount",
+      "Start Date",
+      "Expiry Date",
+      "Use Limit",
+      "Status",
+      "Used Count"
+    ];
+
+    const csvRows = visiblePromotions.map((p) => [
+      p.id,
+      p.code,
+      p.title,
+      p.discountType,
+      p.discountValue,
+      p.maxDiscountAmount || "N/A",
+      p.minBookingAmount,
+      formatCouponDate(p.startDateUtc),
+      formatCouponDate(p.endDateUtc),
+      p.maxUsage || "Unlimited",
+      p.isActive ? "Active" : "Inactive",
+      p.usedCount
     ]);
-    const csv = [header, ...csvRows].map(row => row.map(cell => csvCell(cell)).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+
+    const csv = [header, ...csvRows]
+      .map((line) => line.map((cell) => csvCell(cell)).join(","))
+      .join("\n");
+
+    const fileBlob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+    const fileUrl = URL.createObjectURL(fileBlob);
     const link = document.createElement("a");
-    link.href = url;
-    link.download = `hotel-coupons-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.href = fileUrl;
+    link.download = `admin-hotel-coupons-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+    URL.revokeObjectURL(fileUrl);
   };
 
-  const colors = {
-    primary: "#D81B60",
-    primaryHover: "#C2185B",
-    blue: "#2563EB",
-    blueHover: "#1D4ED8",
-    green: "#10B981",
-    greenHover: "#059669",
-    slateBg: "#F8FAFC",
-    border: "#E2E8F0",
-    textPrimary: "#0F172A",
-    textSecondary: "#64748B",
-    panel: "#FFFFFF"
+  const openAddModal = () => {
+    setFormError("");
+    setValidationErrors({});
+    setEditPromoId(null);
+    setForm(createDefaultForm());
+    setIsFormViewOpen(true);
   };
 
-  const styles = {
-    container: {
-      padding: '24px 32px',
-      background: colors.slateBg,
-      minHeight: '100vh',
-      fontFamily: 'Inter, sans-serif',
-      boxSizing: 'border-box'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '24px'
-    },
-    titleSection: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '4px'
-    },
-    titleMain: {
-      fontSize: '1.75rem',
-      fontWeight: 700,
-      color: colors.textPrimary,
-      margin: 0
-    },
-    titleSub: {
-      fontSize: '0.875rem',
-      color: colors.textSecondary,
-      margin: 0
-    },
-    actionGroup: {
-      display: 'flex',
-      gap: '12px'
-    },
-    statsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '20px',
-      marginBottom: '24px'
-    },
-    statCard: {
-      background: colors.panel,
-      borderRadius: '16px',
-      padding: '20px',
-      border: `1px solid ${colors.border}`,
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    statInfo: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px'
-    },
-    statLabel: {
-      fontSize: '0.875rem',
-      fontWeight: 600,
-      color: colors.textSecondary
-    },
-    statValue: {
-      fontSize: '1.75rem',
-      fontWeight: 700,
-      color: colors.textPrimary
-    },
-    statSubtext: {
-      fontSize: '0.75rem',
-      color: '#94A3B8'
-    },
-    statIconWrapper: (bgColor, iconColor) => ({
-      width: '48px',
-      height: '48px',
-      borderRadius: '12px',
-      backgroundColor: bgColor,
-      color: iconColor,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }),
-    filterPanel: {
-      background: colors.panel,
-      border: `1px solid ${colors.border}`,
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '24px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-    },
-    filterGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-      gap: '16px',
-      marginBottom: '16px'
-    },
-    filterItem: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px'
-    },
-    filterLabel: {
-      fontSize: '0.75rem',
-      fontWeight: 700,
-      color: colors.textSecondary,
-      textTransform: 'uppercase'
-    },
-    filterInput: {
-      padding: '10px 14px',
-      borderRadius: '10px',
-      border: `1px solid #CBD5E1`,
-      fontSize: '0.875rem',
-      color: colors.textPrimary,
-      outline: 'none',
-      background: colors.panel
-    },
-    quickFilterContainer: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      marginBottom: '24px'
-    },
-    quickFilterChip: (active) => ({
-      padding: '8px 16px',
-      borderRadius: '20px',
-      border: `1px solid ${active ? colors.blue : colors.border}`,
-      background: active ? colors.blue : colors.panel,
-      color: active ? '#FFFFFF' : colors.textSecondary,
-      fontSize: '0.85rem',
-      fontWeight: 600,
-      cursor: 'pointer',
-      transition: 'all 0.2s'
-    }),
-    tableCard: {
-      background: colors.panel,
-      border: `1px solid ${colors.border}`,
-      borderRadius: '20px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-      overflow: 'hidden'
-    },
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse'
-    },
-    th: {
-      padding: '16px 20px',
-      background: '#F8FAFC',
-      borderBottom: `1px solid ${colors.border}`,
-      fontSize: '0.875rem',
-      fontWeight: 600,
-      color: colors.textSecondary,
-      textAlign: 'left'
-    },
-    td: {
-      padding: '16px 20px',
-      borderBottom: `1px solid ${colors.border}`,
-      fontSize: '0.875rem',
-      color: '#334155',
-      verticalAlign: 'middle'
-    },
-    couponCodePill: {
-      display: 'inline-block',
-      padding: '6px 12px',
-      borderRadius: '8px',
-      background: 'rgba(216, 27, 96, 0.1)',
-      color: colors.primary,
-      fontWeight: 700,
-      fontSize: '0.75rem',
-      letterSpacing: '0.05em',
-      border: `1px dashed rgba(216, 27, 96, 0.3)`
-    },
-    statusPill: (isActive) => ({
-      display: 'inline-block',
-      padding: '4px 10px',
-      borderRadius: '8px',
-      background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(217, 48, 37, 0.1)',
-      color: isActive ? '#10B981' : '#D93027',
-      fontWeight: 600,
-      fontSize: '0.75rem'
-    })
+  const openEditModal = (p) => {
+    setFormError("");
+    setValidationErrors({});
+    setEditPromoId(p.id);
+    setForm({
+      code: p.code,
+      title: p.title,
+      description: p.description || "",
+      promotionType: p.promotionType || "Coupon",
+      discountType: p.discountType,
+      discountValue: String(p.discountValue),
+      maxDiscountAmount: p.maxDiscountAmount ? String(p.maxDiscountAmount) : "",
+      minBookingAmount: String(p.minBookingAmount),
+      isActive: p.isActive,
+      isExclusive: p.isExclusive,
+      isAutoApply: p.isAutoApply,
+      priority: String(p.priority || 0),
+      maxUsage: p.maxUsage ? String(p.maxUsage) : "",
+      maxUsagePerUser: String(p.maxUsagePerUser || 1),
+      startDateUtc: toInputDate(p.startDateUtc),
+      endDateUtc: toInputDate(p.endDateUtc),
+      conditions: p.conditions ? p.conditions.map(c => ({
+        conditionType: c.conditionType,
+        conditionOperator: c.conditionOperator || "Equals",
+        value1: c.value1,
+        value2: c.value2 || null
+      })) : []
+    });
+    setIsFormViewOpen(true);
+  };
+
+  const handleCancelForm = () => {
+    setIsFormViewOpen(false);
+    sessionStorage.removeItem("hotel_coupon_form_open");
+    sessionStorage.removeItem("hotel_coupon_edit_id");
+    sessionStorage.removeItem("hotel_coupon_form_data");
+  };
+
+  const handleAddCondition = () => {
+    if (!condVal.trim()) return;
+    setForm(prev => ({
+      ...prev,
+      conditions: [...prev.conditions, {
+        conditionType: condType,
+        conditionOperator: "Equals",
+        value1: condVal.trim()
+      }]
+    }));
+    setCondVal("");
+  };
+
+  const handleRemoveCondition = (idx) => {
+    setForm(prev => ({
+      ...prev,
+      conditions: prev.conditions.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleSave = async () => {
+    setFormError("");
+    const amount = Number(form.discountValue);
+    const code = String(form.code || "").trim().toUpperCase().replace(/\s+/g, "");
+
+    const errors = {};
+    if (!code) errors.code = true;
+    if (!form.title.trim()) errors.title = true;
+    if (!Number.isFinite(amount) || amount <= 0) errors.discountValue = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setFormError("Please fill in all compulsory fields with valid values.");
+      return;
+    }
+    setValidationErrors({});
+
+    const payload = {
+      code,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      promotionType: form.promotionType,
+      discountType: form.discountType,
+      discountValue: amount,
+      maxDiscountAmount: form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null,
+      minBookingAmount: Number(form.minBookingAmount) || 0,
+      isActive: form.isActive,
+      isExclusive: form.isExclusive,
+      isAutoApply: form.isAutoApply,
+      priority: Number(form.priority) || 0,
+      maxUsage: form.maxUsage ? Number(form.maxUsage) : null,
+      maxUsagePerUser: Number(form.maxUsagePerUser) || 1,
+      startDateUtc: form.startDateUtc ? new Date(form.startDateUtc).toISOString() : null,
+      endDateUtc: form.endDateUtc ? new Date(form.endDateUtc).toISOString() : null,
+      conditions: form.conditions
+    };
+
+    try {
+      if (editPromoId) {
+        await updateHotelPromotion(editPromoId, payload);
+      } else {
+        await createHotelPromotion(payload);
+      }
+      setIsFormViewOpen(false);
+      sessionStorage.removeItem("hotel_coupon_form_open");
+      sessionStorage.removeItem("hotel_coupon_edit_id");
+      sessionStorage.removeItem("hotel_coupon_form_data");
+      loadPromotions();
+    } catch (err) {
+      setFormError(err.message || "Failed to save hotel coupon.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletePromo) return;
+    try {
+      await deleteHotelPromotion(deletePromo.id);
+      setDeletePromo(null);
+      loadPromotions();
+    } catch (err) {
+      setLoadError(err.message || "Failed to delete coupon.");
+    }
+  };
+
+  const handleStatusToggle = async (promo) => {
+    try {
+      const payload = {
+        code: promo.code,
+        title: promo.title,
+        description: promo.description,
+        promotionType: promo.promotionType || "Coupon",
+        discountType: promo.discountType,
+        discountValue: promo.discountValue,
+        maxDiscountAmount: promo.maxDiscountAmount,
+        minBookingAmount: promo.minBookingAmount,
+        isActive: !promo.isActive,
+        isExclusive: promo.isExclusive,
+        isAutoApply: promo.isAutoApply,
+        priority: promo.priority,
+        maxUsage: promo.maxUsage,
+        maxUsagePerUser: promo.maxUsagePerUser,
+        startDateUtc: promo.startDateUtc,
+        endDateUtc: promo.endDateUtc,
+        conditions: promo.conditions || []
+      };
+      await updateHotelPromotion(promo.id, payload);
+      loadPromotions();
+    } catch (err) {
+      setLoadError(err.message || "Failed to update coupon status.");
+    }
   };
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.titleSection}>
-          <h1 style={styles.titleMain}>B2C Hotel Coupon List</h1>
-          <p style={styles.titleSub}>Manage all B2C hotel coupons and promotions</p>
-        </div>
-        <div style={styles.actionGroup}>
-          <button 
-            onClick={() => setIsAddOpen(true)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '12px',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: colors.primary,
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Plus size={16} /> Generate Coupon
-          </button>
-          <Link 
-            to="/admin/b2c-hotel/used-coupon-list"
-            style={{
-              padding: '10px 20px',
-              borderRadius: '12px',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: '#7C3AED',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textDecoration: 'none'
-            }}
-          >
-            Used Coupon List
-          </Link>
-          <button 
-            onClick={handleExport}
-            style={{
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 6px rgba(16, 185, 129, 0.15)'
-            }}
-          >
-            <Download size={16} /> Export
-          </button>
-          <button
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            style={{
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: 'none',
-              background: isFilterOpen
-                ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
-                : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: isFilterOpen
-                ? '0 4px 6px rgba(220, 38, 38, 0.15)'
-                : '0 4px 6px rgba(37, 99, 235, 0.15)'
-            }}
-          >
-            <SlidersHorizontal size={16} />
-            {isFilterOpen ? 'Hide Filter' : 'Filter'}
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Stats Grid */}
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Total Coupons</span>
-            <span style={styles.statValue}>{stats.totalCount}</span>
-            <span style={styles.statSubtext}>All hotel coupons</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(139, 92, 246, 0.12)", "#8B5CF6")}>
-            <Tag size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Active Coupons</span>
-            <span style={styles.statValue}>{stats.activeCount}</span>
-            <span style={styles.statSubtext}>Currently active</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(59, 130, 246, 0.12)", "#2563EB")}>
-            <CheckCircle2 size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Expired Coupons</span>
-            <span style={styles.statValue}>{stats.expiredCount}</span>
-            <span style={styles.statSubtext}>Already expired</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(217, 48, 37, 0.12)", "#D93027")}>
-            <Clock size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Total Redemptions</span>
-            <span style={styles.statValue}>{stats.totalRedemptions}</span>
-            <span style={styles.statSubtext}>Total times used</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(124, 58, 237, 0.12)", "#7C3AED")}>
-            <Users size={24} />
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statInfo}>
-            <span style={styles.statLabel}>Total Savings</span>
-            <span style={styles.statValue}>₹{stats.totalSavings.toLocaleString()}</span>
-            <span style={styles.statSubtext}>Total amount saved</span>
-          </div>
-          <div style={styles.statIconWrapper("rgba(16, 185, 129, 0.12)", "#10B981")}>
-            <DollarSign size={24} />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Panel */}
-      {isFilterOpen && (
-        <div style={styles.filterPanel}>
-          <div style={styles.filterGrid}>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Search Coupon</span>
-              <input 
-                type="text" 
-                placeholder="Search by code or title..." 
-                value={filterSearch}
-                onChange={e => setFilterSearch(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Coupon Code</span>
-              <input 
-                type="text" 
-                placeholder="Enter coupon code" 
-                value={filterCouponCode}
-                onChange={e => setFilterCouponCode(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Coupon Type</span>
-              <select 
-                value={filterCouponType}
-                onChange={e => setFilterCouponType(e.target.value)}
-                style={styles.filterInput}
+    <>
+      {isFormViewOpen ? (
+        <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-coupon-shell">
+          <section className="admin-markup-coupon-table-wrap" style={{ padding: "24px", background: "var(--panel)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h1 className="form-title" style={{ color: "#be185d", fontSize: "1.6rem", margin: 0, fontWeight: "700" }}>
+                {editPromoId ? "Edit Hotel B2C Hotel coupon" : "Add Hotel B2C Hotel coupon"}
+              </h1>
+              <button
+                type="button"
+                className="admin-markup-coupon-btn generate"
+                onClick={handleCancelForm}
+                style={{ backgroundColor: "#be185d", borderColor: "#be185d" }}
               >
-                <option value="All Types">All Types</option>
-                <option value="Percentage Discount">Percentage Discount</option>
-                <option value="Flat Discount">Flat Discount</option>
-                <option value="Cashback Coupon">Cashback Coupon</option>
-                <option value="First Booking Coupon">First Booking Coupon</option>
-                <option value="Festival Offer">Festival Offer</option>
-                <option value="Weekend Offer">Weekend Offer</option>
-              </select>
+                Coupon List
+              </button>
             </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Discount Type</span>
-              <select 
-                value={filterDiscountType}
-                onChange={e => setFilterDiscountType(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Types">All Types</option>
-                <option value="Percentage (%)">Percentage (%)</option>
-                <option value="Flat Amount (₹)">Flat Amount (₹)</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Discount Value</span>
-              <input 
-                type="number" 
-                placeholder="Enter discount value" 
-                value={filterDiscountValue}
-                onChange={e => setFilterDiscountValue(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Min. Booking Amount</span>
-              <input 
-                type="number" 
-                placeholder="₹ Min Amount" 
-                value={filterMinAmount}
-                onChange={e => setFilterMinAmount(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Max. Discount Amount</span>
-              <input 
-                type="number" 
-                placeholder="₹ Max Discount" 
-                value={filterMaxDiscount}
-                onChange={e => setFilterMaxDiscount(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Applicable Hotel/Routes</span>
-              <select 
-                value={filterRoute}
-                onChange={e => setFilterRoute(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Routes">All Routes</option>
-                <option value="Mumbai Gateway Hotel">Mumbai Gateway Hotel</option>
-                <option value="Goa Beach Resort">Goa Beach Resort</option>
-                <option value="Delhi Palace Inn">Delhi Palace Inn</option>
-                <option value="Bangalore Suites">Bangalore Suites</option>
-                <option value="Kolkata Plaza">Kolkata Plaza</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Status</span>
-              <select 
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All Status">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Expired">Expired</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Created By</span>
-              <select 
-                value={filterCreatedBy}
-                onChange={e => setFilterCreatedBy(e.target.value)}
-                style={styles.filterInput}
-              >
-                <option value="All">All</option>
-                <option value="Super Admin">Super Admin</option>
-                <option value="Admin">Admin</option>
-                <option value="Marketing Team">Marketing Team</option>
-                <option value="Operations Team">Operations Team</option>
-                <option value="System Generated">System Generated</option>
-              </select>
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Valid From</span>
-              <input 
-                type="date" 
-                value={filterValidFrom}
-                onChange={e => setFilterValidFrom(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-            <div style={styles.filterItem}>
-              <span style={styles.filterLabel}>Valid To</span>
-              <input 
-                type="date" 
-                value={filterValidTo}
-                onChange={e => setFilterValidTo(e.target.value)}
-                style={styles.filterInput} 
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button 
-              onClick={handleResetFilters}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '10px',
-                border: '1px solid #E2E8F0',
-                background: '#FFFFFF',
-                color: '#64748B',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              Reset
-            </button>
-            <button 
-              onClick={fetchPromotions}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '10px',
-                border: 'none',
-                background: colors.primary,
-                color: '#FFFFFF',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              Apply Filter
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Quick Filters */}
-      <div style={styles.quickFilterContainer}>
-        {["All Coupons", "Active", "Expired", "Upcoming", "Percentage", "Flat Amount", "Weekend", "Festival", "First Booking"].map((name) => (
-          <button 
-            key={name}
-            onClick={() => handleApplyQuickFilter(name)}
-            style={styles.quickFilterChip(activeQuickFilter === name)}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-
-      {/* Coupons Table */}
-      <div style={styles.tableCard}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>ID</th>
-              <th style={styles.th}>Coupon Code</th>
-              <th style={styles.th}>Coupon Title</th>
-              <th style={styles.th}>Discount</th>
-              <th style={styles.th}>Min. Booking</th>
-              <th style={styles.th}>Valid From</th>
-              <th style={styles.th}>Valid To</th>
-              <th style={styles.th}>Routes/Hotels</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Redemptions</th>
-              <th style={styles.th}>Created On</th>
-              <th style={styles.th}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: colors.textSecondary }}>
-                  Loading promotions...
-                </td>
-              </tr>
-            ) : paginatedRecords.length === 0 ? (
-              <tr>
-                <td colSpan={12} style={{ padding: '24px', textAlign: 'center', color: colors.textSecondary }}>
-                  No coupons found matching search criteria.
-                </td>
-              </tr>
-            ) : (
-              paginatedRecords.map((promo) => (
-                <tr key={promo.id}>
-                  <td style={styles.td}>{promo.id}</td>
-                  <td style={styles.td}>
-                    <span style={styles.couponCodePill}>{promo.code}</span>
-                  </td>
-                  <td style={{ ...styles.td, fontWeight: 600 }}>{promo.title || "Hotel Promotion"}</td>
-                  <td style={{ ...styles.td, color: '#10B981', fontWeight: 600 }}>
-                    {promo.discountValue}{String(promo.discountType).toLowerCase().includes("percent") ? "% OFF" : " OFF"}
-                  </td>
-                  <td style={styles.td}>₹{promo.minBookingAmount || 0}</td>
-                  <td style={styles.td}>{formatCouponDate(promo.startDateUtc)}</td>
-                  <td style={styles.td}>{formatCouponDate(promo.endDateUtc)}</td>
-                  <td style={styles.td}>
-                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(37, 99, 235, 0.1)', color: colors.blue, fontSize: '0.75rem', fontWeight: 600 }}>
-                      {promo.route || "All Hotels"}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <span 
-                      onClick={() => handleToggleStatus(promo)}
-                      style={{ ...styles.statusPill(promo.isActive), cursor: 'pointer' }}
-                      title="Click to toggle status"
-                    >
-                      {promo.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td style={{ ...styles.td, fontWeight: 600 }}>{promo.maxUsage || 0}</td>
-                  <td style={styles.td}>{formatCouponDateTime(promo.createdAtUtc)}</td>
-                  <td style={styles.td}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        onClick={() => {
-                          setEditRecord(promo);
-                          setIsEditOpen(true);
-                        }}
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          border: `1px solid ${colors.border}`,
-                          background: '#FFFFFF',
-                          color: colors.textSecondary,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        title="Edit Coupon"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button 
-                        onClick={() => setDeleteRecord(promo)}
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          border: `1px solid ${colors.border}`,
-                          background: '#FFFFFF',
-                          color: '#D93027',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        title="Delete Coupon"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        <AdminPagination 
-          currentPage={currentPage}
-          totalItems={filteredRecords.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
-          itemName="promotions"
-        />
-      </div>
-
-      {/* Add Modal */}
-      {isAddOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', padding: '28px', borderRadius: '16px', width: '550px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 20px 0' }}>Generate Hotel Promotion</h3>
-            {addError && <div style={{ color: '#D93027', marginBottom: '12px', fontWeight: 600 }}>{addError}</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Promotion Code
-                <input 
-                  type="text" value={addForm.code}
-                  onChange={e => setAddForm({...addForm, code: e.target.value.toUpperCase()})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+            <div className="admin-markup-coupon-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <label>
+                <span>Coupon Code: <span style={{ color: "red" }}>*</span></span>
+                <input
+                  type="text"
+                  className={validationErrors.code ? "validation-error" : ""}
+                  value={form.code}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }));
+                    if (e.target.value.trim()) {
+                      setValidationErrors(prev => ({ ...prev, code: false }));
+                    }
+                  }}
+                  placeholder="e.g. HOTEL500"
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Promotion Title
-                <input 
-                  type="text" value={addForm.title}
-                  onChange={e => setAddForm({...addForm, title: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              
+              <label>
+                <span>Title: <span style={{ color: "red" }}>*</span></span>
+                <input
+                  type="text"
+                  className={validationErrors.title ? "validation-error" : ""}
+                  value={form.title}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, title: e.target.value }));
+                    if (e.target.value.trim()) {
+                      setValidationErrors(prev => ({ ...prev, title: false }));
+                    }
+                  }}
+                  placeholder="e.g. Save flat ₹500"
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Discount Value
-                <input 
-                  type="number" value={addForm.discountValue}
-                  onChange={e => setAddForm({...addForm, discountValue: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Min Booking Amount
-                <input 
-                  type="number" value={addForm.minBookingAmount}
-                  onChange={e => setAddForm({...addForm, minBookingAmount: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Max Usage Limit
-                <input 
-                  type="number" value={addForm.maxUsage}
-                  onChange={e => setAddForm({...addForm, maxUsage: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                />
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid From
-                  <input 
-                    type="date" value={addForm.startDateUtc}
-                    onChange={e => setAddForm({...addForm, startDateUtc: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid To
-                  <input 
-                    type="date" value={addForm.endDateUtc}
-                    onChange={e => setAddForm({...addForm, endDateUtc: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
-                </label>
-              </div>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Status
-                <select 
-                  value={addForm.isActive ? "true" : "false"}
-                  onChange={e => setAddForm({...addForm, isActive: e.target.value === "true"})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', cursor: 'pointer' }}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
+
+              <label>
+                <span>Discount Type: <span style={{ color: "red" }}>*</span></span>
+                <select value={form.discountType} onChange={(e) => setForm(prev => ({ ...prev, discountType: e.target.value }))}>
+                  <option value="Flat">Flat (INR)</option>
+                  <option value="Percentage">Percentage (%)</option>
                 </select>
               </label>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
-              <button onClick={() => setIsAddOpen(false)} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSaveAdd} style={{ padding: '10px 20px', background: colors.primary, color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Create Promotion</button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Edit Modal */}
-      {isEditOpen && editRecord && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', padding: '28px', borderRadius: '16px', width: '550px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 20px 0' }}>Edit Hotel Promotion</h3>
-            {editError && <div style={{ color: '#D93027', marginBottom: '12px', fontWeight: 600 }}>{editError}</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Promotion Code
-                <input 
-                  type="text" value={editRecord.code}
-                  onChange={e => setEditRecord({...editRecord, code: e.target.value.toUpperCase()})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+              <label>
+                <span>Discount Value: <span style={{ color: "red" }}>*</span></span>
+                <input
+                  type="number"
+                  className={validationErrors.discountValue ? "validation-error" : ""}
+                  value={form.discountValue}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, discountValue: e.target.value }));
+                    if (e.target.value.trim()) {
+                      setValidationErrors(prev => ({ ...prev, discountValue: false }));
+                    }
+                  }}
+                  placeholder="e.g. 500 or 10"
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Promotion Title
-                <input 
-                  type="text" value={editRecord.title || ""}
-                  onChange={e => setEditRecord({...editRecord, title: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+
+              <label>
+                <span>Max Discount (Percentage only):</span>
+                <input
+                  type="number"
+                  value={form.maxDiscountAmount}
+                  onChange={(e) => setForm(prev => ({ ...prev, maxDiscountAmount: e.target.value }))}
+                  placeholder="e.g. 1000"
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Discount Value
-                <input 
-                  type="number" value={editRecord.discountValue}
-                  onChange={e => setEditRecord({...editRecord, discountValue: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+
+              <label>
+                <span>Min Booking Amount:</span>
+                <input
+                  type="number"
+                  value={form.minBookingAmount}
+                  onChange={(e) => setForm(prev => ({ ...prev, minBookingAmount: e.target.value }))}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Min Booking Amount
-                <input 
-                  type="number" value={editRecord.minBookingAmount || ""}
-                  onChange={e => setEditRecord({...editRecord, minBookingAmount: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+
+              <label>
+                <span>Start Date:</span>
+                <input
+                  type="date"
+                  value={form.startDateUtc}
+                  onChange={(e) => setForm(prev => ({ ...prev, startDateUtc: e.target.value }))}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Max Usage Limit
-                <input 
-                  type="number" value={editRecord.maxUsage || ""}
-                  onChange={e => setEditRecord({...editRecord, maxUsage: e.target.value})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+
+              <label>
+                <span>Expiry Date:</span>
+                <input
+                  type="date"
+                  value={form.endDateUtc}
+                  onChange={(e) => setForm(prev => ({ ...prev, endDateUtc: e.target.value }))}
                 />
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid From
-                  <input 
-                    type="date" value={toInputDate(editRecord.startDateUtc)}
-                    onChange={e => setEditRecord({...editRecord, startDateUtc: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+
+              <label>
+                <span>Max Total Usages (Optional):</span>
+                <input
+                  type="number"
+                  value={form.maxUsage}
+                  onChange={(e) => setForm(prev => ({ ...prev, maxUsage: e.target.value }))}
+                  placeholder="e.g. 100"
+                />
+              </label>
+
+              <label>
+                <span>Max Usages Per User:</span>
+                <input
+                  type="number"
+                  value={form.maxUsagePerUser}
+                  onChange={(e) => setForm(prev => ({ ...prev, maxUsagePerUser: e.target.value }))}
+                />
+              </label>
+
+              {/* Conditions Sub-form and Priority in one line side-by-side without borderTop */}
+              <div style={{ gridColumn: "span 2", display: "flex", gap: "24px", marginTop: "5px" }}>
+                
+                {/* Promotion Conditions column */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "0.82rem", fontWeight: "600", color: "#000000" }}>Promotion Conditions (Optional):</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <select value={condType} onChange={(e) => setCondType(e.target.value)} style={{ width: "180px", minWidth: "140px", padding: "8px 10px", fontSize: "0.85rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                      <option value="HotelCity">Hotel City Code</option>
+                      <option value="HotelName">Hotel Name Match</option>
+                      <option value="MinNights">Min Nights Required</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={condVal}
+                      onChange={(e) => setCondVal(e.target.value)}
+                      placeholder="Value (e.g. DEL or 3)"
+                      style={{ flex: 1, minWidth: "100px", padding: "8px 10px", fontSize: "0.85rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}
+                    />
+                    <button type="button" onClick={handleAddCondition} style={{ padding: "8px 16px", fontSize: "0.85rem", backgroundColor: "#be185d", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "600", whiteSpace: "nowrap" }}>
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Priority column */}
+                <div style={{ width: "120px", display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
+                  <span style={{ fontSize: "0.82rem", fontWeight: "600", color: "#be185d" }}>Priority:</span>
+                  <input
+                    type="number"
+                    value={form.priority}
+                    onChange={(e) => setForm(prev => ({ ...prev, priority: e.target.value }))}
+                    style={{ width: "100%", padding: "8px 10px", fontSize: "0.85rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}
                   />
+                </div>
+
+              </div>
+
+              {form.conditions.length > 0 && (
+                <div style={{ gridColumn: "span 2", display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                  {form.conditions.map((c, idx) => (
+                    <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "3px 8px", background: "var(--surface-soft)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "0.75rem" }}>
+                      <strong>{c.conditionType}</strong> = {c.value1}
+                      <X size={12} style={{ cursor: "pointer", color: "red" }} onClick={() => handleRemoveCondition(idx)} />
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Description - placed MIDDLE */}
+              <label style={{ gridColumn: "span 2" }}>
+                <span>Description:</span>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Details about the promotion terms..."
+                  rows={3}
+                  style={{ borderRadius: "10px", padding: "8px", width: "100%", height: "75px", fontFamily: "inherit" }}
+                />
+              </label>
+
+              {/* Options - placed BELOW description */}
+              <div style={{ display: "flex", gap: "12px", gridColumn: "span 2", marginTop: "5px", alignItems: "center" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#be185d", marginRight: "10px" }}>Options:</span>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, isActive: !prev.isActive }))}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: "1px solid " + (form.isActive ? "#be185d" : "#e2e8f0"),
+                    backgroundColor: form.isActive ? "#be185d" : "transparent",
+                    color: form.isActive ? "#ffffff" : "#000000",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <Check size={16} style={{ display: form.isActive ? "inline" : "none" }} />
+                  Active
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, isExclusive: !prev.isExclusive }))}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: "1px solid " + (form.isExclusive ? "#be185d" : "#e2e8f0"),
+                    backgroundColor: form.isExclusive ? "#be185d" : "transparent",
+                    color: form.isExclusive ? "#ffffff" : "#000000",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <Check size={16} style={{ display: form.isExclusive ? "inline" : "none" }} />
+                  Exclusive
+                </button>
+              </div>
+            </div>
+
+            {formError && <p className="admin-markup-coupon-error" style={{ margin: "15px 0" }}>{formError}</p>}
+
+            <footer style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button type="button" className="admin-markup-coupon-btn clear" onClick={handleCancelForm}>Cancel</button>
+              <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave}>Save</button>
+            </footer>
+          </section>
+        </section>
+      ) : (
+        <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-coupon-shell">
+          <header className="admin-markup-coupon-header">
+            <div className="admin-markup-coupon-title-wrap">
+              <h2 style={{ fontWeight: 500 }}><span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Hotel</span> Coupon List</h2>
+            </div>
+
+            <div className="admin-markup-coupon-actions">
+              <button
+                type="button"
+                className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
+                onClick={() => setIsFilterPanelOpen((prev) => !prev)}
+              >
+                <SlidersHorizontal size={15} />
+                <span>Filter</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn clear"
+                onClick={handleClearFilters}
+                disabled={sortBy === DEFAULT_SORT_BY && statusFilter === "all" && discountTypeFilter === "all"}
+              >
+                <X size={15} />
+                <span>Clear Filter</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn generate"
+                onClick={openAddModal}
+              >
+                <Plus size={15} />
+                <span>Add Hotel Coupon</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn export"
+                onClick={handleExport}
+                disabled={visiblePromotions.length === 0}
+              >
+                <Download size={15} />
+                <span>Export</span>
+              </button>
+            </div>
+          </header>
+
+          {isFilterPanelOpen && (
+            <section className="admin-markup-coupon-filter">
+              <div className="admin-markup-coupon-filter-grid">
+                <label>
+                  <span>Sort By</span>
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="createdAtUtc">Date Created</option>
+                    <option value="id">ID</option>
+                    <option value="code">Coupon Code</option>
+                    <option value="discountValue">Value</option>
+                    <option value="startDateUtc">Start Date</option>
+                    <option value="endDateUtc">Expiry Date</option>
+                  </select>
                 </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Valid To
-                  <input 
-                    type="date" value={toInputDate(editRecord.endDateUtc)}
-                    onChange={e => setEditRecord({...editRecord, endDateUtc: e.target.value})}
-                    style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-                  />
+
+                <label>
+                  <span>Order</span>
+                  <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Status</span>
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Discount Type</span>
+                  <select value={discountTypeFilter} onChange={(e) => setDiscountTypeFilter(e.target.value)}>
+                    <option value="all">All</option>
+                    <option value="Flat">Flat</option>
+                    <option value="Percentage">Percentage</option>
+                  </select>
                 </label>
               </div>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-                Status
-                <select 
-                  value={editRecord.isActive ? "true" : "false"}
-                  onChange={e => setEditRecord({...editRecord, isActive: e.target.value === "true"})}
-                  style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', cursor: 'pointer' }}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </label>
+            </section>
+          )}
+
+          {loadError && <p className="admin-markup-coupon-error">{loadError}</p>}
+
+          <section className="admin-markup-coupon-table-wrap">
+            <div className="admin-markup-coupon-table-scroll">
+              <table className="admin-markup-coupon-table">
+                <colgroup>
+                  <col style={{ width: "5%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "13%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Coupon Code</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Min Booking</th>
+                    <th>Used Count</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <p className="admin-markup-coupon-empty">Loading coupons from database...</p>
+                      </td>
+                    </tr>
+                  ) : visiblePromotions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <p className="admin-markup-coupon-empty">No hotel coupons found.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPromotions.map((p, index) => (
+                      <tr key={p.id}>
+                        <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                        <td>
+                          <span className="admin-markup-coupon-code">{p.code}</span>
+                        </td>
+                        <td>{p.title}</td>
+                        <td>{p.discountType}</td>
+                        <td>{p.discountType === "Percentage" ? `${p.discountValue}%` : `₹${p.discountValue}`}</td>
+                        <td>₹{p.minBookingAmount}</td>
+                        <td>{p.usedCount} / {p.maxUsage || "∞"}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`admin-markup-coupon-status ${p.isActive ? "active" : "inactive"}`}
+                            onClick={() => handleStatusToggle(p)}
+                          >
+                            <Check size={14} />
+                            <span>{p.isActive ? "Active" : "Inactive"}</span>
+                          </button>
+                        </td>
+                        <td className="action-col">
+                          <div className="admin-markup-coupon-action-group" style={{ justifyContent: "center" }}>
+                            <button type="button" title="Edit" onClick={() => openEditModal(p)}>
+                              <Pencil size={14} />
+                            </button>
+                            <button type="button" className="danger" title="Delete" onClick={() => setDeletePromo(p)}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
-              <button onClick={() => setEditRecord(null)} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSaveEdit} style={{ padding: '10px 20px', background: colors.primary, color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={visiblePromotions.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="coupons"
+              />
             </div>
-          </div>
-        </div>
+          </section>
+        </section>
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteRecord && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '16px', width: '450px', border: `1px solid ${colors.border}`, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: colors.textPrimary, margin: '0 0 12px 0' }}>Delete Promotion</h3>
-            <p style={{ color: colors.textSecondary, fontSize: '0.9rem', marginBottom: '20px' }}>
-              Are you sure you want to delete promotion <strong style={{ color: colors.textPrimary }}>{deleteRecord.code}</strong>? This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setDeleteRecord(null)} style={{ padding: '8px 16px', background: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSaveDelete} style={{ padding: '8px 16px', background: '#D93027', color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+      {deletePromo && (
+        <div className="admin-markup-coupon-backdrop" onClick={() => setDeletePromo(null)}>
+          <section className="admin-markup-coupon-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px" }}>
+            <header className="generate-header">
+              <h2>Confirm Delete</h2>
+            </header>
+            <div style={{ padding: "20px", fontSize: "0.9rem" }}>
+              Are you sure you want to delete the coupon code <strong>{deletePromo.code}</strong>? This action cannot be undone.
             </div>
-          </div>
+            <footer style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setDeletePromo(null)}>Cancel</button>
+              <button type="button" className="admin-markup-coupon-btn generate" style={{ backgroundColor: "#d32f2f", borderColor: "#d32f2f" }} onClick={handleDelete}>Delete</button>
+            </footer>
+          </section>
         </div>
       )}
-    </div>
+    </>
   );
 }
+

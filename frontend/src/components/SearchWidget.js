@@ -22,7 +22,6 @@ import {
   Users,
 } from "lucide-react";
 import { toDisplayDate } from "../utils/apiDateFormat";
-import { searchBusCities } from "../services/busBookingService";
 import "../STYLES/HomePage.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -124,21 +123,7 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        if (tripType === "buses" || tripType === "bus") {
-          const busCities = await searchBusCities(query);
-          if (controller.signal.aborted) return;
-          const normalized = (Array.isArray(busCities) ? busCities : [])
-            .map((item) => {
-              if (typeof item === "string") return { cityName: item, cityId: item, stateName: "" };
-              return {
-                cityName: item.cityName || item.CityName || item.cityNameWithState || item.name || item.description || item.label || "",
-                cityId: String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || ""),
-                stateName: item.stateName || item.StateName || "",
-              };
-            })
-            .filter((item) => item.cityName);
-          setResults(normalized);
-        } else {
+
           const endpoint = new URL(PLACES_API_URL, window.location.origin);
           endpoint.searchParams.set("query", query);
           endpoint.searchParams.set("tripType", tripType === "hotel" ? "all" : tripType);
@@ -150,10 +135,13 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
           const payload = await response.json();
           const rawList = Array.isArray(payload) ? payload : Array.isArray(payload?.value) ? payload.value : [];
           const normalized = rawList
-            .map((item) => ({ cityName: typeof item === "string" ? item : item?.cityName || "", usageCount: typeof item === "object" && item?.usageCount ? item.usageCount : 0 }))
+            .map((item) => ({ 
+               cityName: typeof item === "string" ? item : item?.cityName || "", 
+               cityId: typeof item === "object" ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
+               usageCount: typeof item === "object" && item?.usageCount ? item.usageCount : 0 
+            }))
             .filter((item) => item.cityName);
           setResults(normalized);
-        }
       } catch (err) {
         if (err.name !== "AbortError") {
           setResults((prev) => (prev.length === 0 ? prev : []));
@@ -175,9 +163,10 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
     setOpen(v.trim().length > 0);
   };
 
-  const handleSelect = (cityName) => {
-    setInputValue(cityName);
-    onChange(cityName);
+  const handleSelect = (item) => {
+    const name = typeof item === "string" ? item : item.cityName;
+    setInputValue(name);
+    onChange(name, item.cityId);
     setOpen(false);
   };
 
@@ -208,7 +197,7 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
                 type="button"
                 className={tripType === "bus" || tripType === "buses" ? "bus-place-option" : "place-option"}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleSelect(item.cityName)}
+                onClick={() => handleSelect(item)}
               >
                 {item.cityName}
               </button>
@@ -266,6 +255,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
 
   // ── Hotel state ──
   const [hotelDestination, setHotelDestination] = useState("");
+  const [hotelCityId, setHotelCityId] = useState("");
   const [hotelDestinationError, setHotelDestinationError] = useState("");
   const [hotelCheckInDate, setHotelCheckInDate] = useState("");
   const [hotelCheckOutDate, setHotelCheckOutDate] = useState("");
@@ -334,7 +324,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   const handleFlightToChange = (v) => { setFlightTo(v); if (v.trim()) setFlightToError(""); };
   const handleBusFromChange = (v) => { setBusFrom(v); if (v.trim()) setBusFromError(""); };
   const handleBusToChange = (v) => { setBusTo(v); if (v.trim()) setBusToError(""); };
-  const handleHotelDestinationChange = (v) => { setHotelDestination(v); if (v.trim()) setHotelDestinationError(""); };
+  const handleHotelDestinationChange = (v, id) => { setHotelDestination(v); if (id) setHotelCityId(id); if (v.trim()) setHotelDestinationError(""); };
 
   // ── Navigation helpers ──
   const navigateTo = (path, payload) => {
@@ -350,6 +340,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
       setHotelDestinationError("");
       navigateTo("/search/hotels", {
         destination: hotelDestination.trim(),
+        cityId: hotelCityId,
         checkInDate: hotelCheckInDate.trim(),
         checkOutDate: hotelCheckOutDate.trim(),
         rooms: String(hotelRooms),

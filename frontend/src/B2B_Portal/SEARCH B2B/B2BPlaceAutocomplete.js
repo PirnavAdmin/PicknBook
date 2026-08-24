@@ -5,19 +5,6 @@ import "../../STYLES/B2BLayout.css";
 
 const PLACES_API_URL = process.env.NODE_ENV === "production" ? "/api/Places" : process.env.REACT_APP_PLACES_API_URL || "/api/Places";
 
-const FALLBACK_CITIES = [
-  "Hyderabad",
-  "Bengaluru",
-  "Chennai",
-  "Mumbai",
-  "Pune",
-  "Vijayawada",
-  "Visakhapatnam",
-  "Delhi",
-  "Kolkata",
-  "Ahmedabad",
-  "Proddatur",  
-];
 
 export default function B2BPlaceAutocomplete({
   label,
@@ -108,14 +95,7 @@ export default function B2BPlaceAutocomplete({
         setResults(normalized);
       } catch (error) {
         if (error.name !== "AbortError") {
-          const normalizedQuery = query.toLowerCase();
-          const fallbackMatches = FALLBACK_CITIES.filter((city) =>
-            city.toLowerCase().includes(normalizedQuery)
-          ).map((cityName, index) => ({
-            cityName,
-            usageCount: 100 - index,
-          }));
-          setResults(fallbackMatches);
+          setResults((prev) => (prev.length === 0 ? prev : []));
         }
       } finally {
         if (!controller.signal.aborted) {

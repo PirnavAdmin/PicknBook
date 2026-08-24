@@ -66,6 +66,7 @@ public class AdminHotelController : AdminApiController
                     b.CheckInDate,
                     b.CheckOutDate,
                     b.Adults,
+                    b.Children,
                     b.Rooms,
                     b.TotalPrice,
                     b.Currency,
@@ -92,11 +93,16 @@ public class AdminHotelController : AdminApiController
                 CheckInDate = b.CheckInDate != DateTime.MinValue ? b.CheckInDate.ToString("yyyy-MM-dd") : "",
                 CheckOutDate = b.CheckOutDate != DateTime.MinValue ? b.CheckOutDate.ToString("yyyy-MM-dd") : "",
                 Adults = b.Adults,
+                Children = b.Children,
+                TotalGuests = b.Adults + b.Children,
+                ChildAges = new int[0],
                 Rooms = b.Rooms,
                 TotalPrice = b.TotalPrice,
+                TotalPaid = b.TotalPrice,
                 Currency = b.Currency ?? "INR",
                 Status = b.Status ?? "Confirmed",
-                CreatedAt = DateTime.SpecifyKind(b.CreatedAt, DateTimeKind.Utc)
+                CreatedAt = DateTime.SpecifyKind(b.CreatedAt, DateTimeKind.Utc),
+                BookedAt = b.CreatedAt != DateTime.MinValue ? b.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss") : ""
             }).ToList();
 
             return Ok(list);
@@ -275,7 +281,7 @@ public class AdminHotelController : AdminApiController
         _logger.LogInformation("Retrieving PickNBook Hotel API Balance for admin.");
         try
         {
-            var balance = await _hotelService.GetApiBalanceAsync();
+            var endUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1"; var balance = await _hotelService.GetApiBalanceAsync(endUserIp);
             return Ok(balance);
         }
         catch (Exception ex)
@@ -292,7 +298,7 @@ public class AdminHotelController : AdminApiController
         _logger.LogInformation("Retrieving PickNBook Hotel API Balance Log for admin.");
         try
         {
-            var logs = await _hotelService.GetApiBalanceLogAsync();
+            var endUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1"; var logs = await _hotelService.GetApiBalanceLogAsync(endUserIp);
             return Ok(logs);
         }
         catch (Exception ex)
@@ -483,3 +489,4 @@ public class AdminCancelHotelBookingRequestDto
     public string Reason { get; set; } = "Cancelled by admin";
     public decimal CancellationCharges { get; set; } = 0m;
 }
+

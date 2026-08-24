@@ -102,10 +102,10 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://satin-eastcoast-musky.ngrok-free.dev";
+  "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const BUS_BOOKINGS_ROOT = "/api/BusBookings";
-const BUS_SEARCH_LOGS_ROOT = "/api/admin/bus-search-logs";
+const BUS_SEARCH_LOGS_ROOT = "/api/BusSearchLogs";
 const DEFAULT_API_USER_ID =
   String(process.env.REACT_APP_API_USER_ID || "").trim() || "user_123";
 
@@ -618,7 +618,6 @@ async function listAdminBusSearchHistory({
   }
 
   const candidateEndpoints = [
-    BUS_SEARCH_LOGS_ROOT,
     `${BUS_BOOKINGS_ROOT}/admin/search-history`,
     `${BUS_BOOKINGS_ROOT}/admin/searches`,
     `${BUS_BOOKINGS_ROOT}/admin/bus-search-history`,

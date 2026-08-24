@@ -600,7 +600,6 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             background: 'var(--panel)',
             position: 'relative',
             flexShrink: 0,
-            zIndex: 1010,
         },
         topbarLeft: {
             display: 'flex',
@@ -860,7 +859,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             top: '100%',
             right: 0,
             marginTop: '12px',
-            background: theme === 'light' ? '#ffffff' : '#1e293b',
+            background: 'var(--panel)',
             border: '1px solid var(--border)',
             borderRadius: '14px',
             boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
@@ -1205,17 +1204,16 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     {/* Fullscreen Toggle Button */}
                     <button
                         style={styles.topupButton}
-                        className="admin-fullscreen-btn"
                         onClick={toggleFullscreen}
                         title="Toggle Fullscreen"
                         aria-label="Toggle Fullscreen"
                     >
                         {isFullscreen ? (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7" />
                             </svg>
                         ) : (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                             </svg>
                         )}
@@ -1225,7 +1223,6 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     <div style={{ position: 'relative' }}>
                         <button
                             style={styles.notificationBtn}
-                            className="admin-notification-btn"
                             type="button"
                             aria-label="Notifications"
                             onClick={() => {
@@ -1237,7 +1234,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                 }
                             }}
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                             </svg>
@@ -1376,9 +1373,25 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
 
                                 <div style={styles.dropdownMenuItems}>
                                     <button
-                                        className="topbar-dropdown-menu-item"
+                                        style={{
+                                            ...styles.dropdownMenuItem,
+                                            color: theme === 'light' ? '#000000' : 'var(--text-primary)'
+                                        }}
                                         onClick={handleClearCache}
                                         type="button"
+                                        onMouseEnter={(e) => {
+                                            if (theme === 'light') {
+                                                e.currentTarget.style.background = '#fef2f2';
+                                                e.currentTarget.style.color = '#ef4444';
+                                            } else {
+                                                e.currentTarget.style.background = '#f1f5fa';
+                                                e.currentTarget.style.color = '#1e75ff';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = theme === 'light' ? '#000000' : 'var(--text-primary)';
+                                        }}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>
                                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
@@ -1390,9 +1403,25 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                     </button>
 
                                     <button
-                                        className="topbar-dropdown-menu-item"
+                                        style={{
+                                            ...styles.dropdownMenuItem,
+                                            color: theme === 'light' ? '#000000' : 'var(--text-primary)'
+                                        }}
                                         onClick={handleChangePassword}
                                         type="button"
+                                        onMouseEnter={(e) => {
+                                            if (theme === 'light') {
+                                                e.currentTarget.style.background = '#fef2f2';
+                                                e.currentTarget.style.color = '#ef4444';
+                                            } else {
+                                                e.currentTarget.style.background = '#f1f5fa';
+                                                e.currentTarget.style.color = '#1e75ff';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = theme === 'light' ? '#000000' : 'var(--text-primary)';
+                                        }}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>
                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -1402,9 +1431,25 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                     </button>
 
                                     <button
-                                        className="topbar-dropdown-menu-item"
+                                        style={{
+                                            ...styles.dropdownMenuItem,
+                                            color: theme === 'light' ? '#000000' : 'var(--text-primary)'
+                                        }}
                                         onClick={handleChangePin}
                                         type="button"
+                                        onMouseEnter={(e) => {
+                                            if (theme === 'light') {
+                                                e.currentTarget.style.background = '#fef2f2';
+                                                e.currentTarget.style.color = '#ef4444';
+                                            } else {
+                                                e.currentTarget.style.background = '#f1f5fa';
+                                                e.currentTarget.style.color = '#1e75ff';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = theme === 'light' ? '#000000' : 'var(--text-primary)';
+                                        }}
                                     >
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>
                                             <circle cx="12" cy="12" r="1"></circle>
@@ -1418,9 +1463,15 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                 <div style={styles.dropdownDivider}></div>
 
                                 <button
-                                    className="topbar-dropdown-menu-item logout-item"
+                                    style={{ ...styles.dropdownMenuItem, ...styles.logoutBtn }}
                                     onClick={handleLogout}
                                     type="button"
+                                    onMouseEnter={(e) => {
+                                        e.target.style.background = 'rgba(239, 68, 68, 0.08)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.background = 'none';
+                                    }}
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={styles.svg}>
                                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

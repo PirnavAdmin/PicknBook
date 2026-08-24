@@ -1,11 +1,10 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Edit2, Trash2 } from 'lucide-react';
 import AdminPagination from '../../../components/AdminPagination';
-import AdminDynamicModal from '../../../components/AdminDynamicModal';
 import { deleteBlogCategory, getBlogCategories, toggleBlogCategoryStatus, updateBlogCategory } from '../../../services/blogService';
-import { toApiAssetUrl, NgrokSafeImage } from '../../../services/apiClient';
+import { toApiAssetUrl } from '../../../services/apiClient';
 
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -61,7 +60,6 @@ function BlogCategoryList() {
     const [toast, setToast] = useState(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
-    const [modalState, setModalState] = useState({ isOpen: false, mode: 'view', data: null });
     const [editFormData, setEditFormData] = useState({
         name: '',
         slug: '',
@@ -186,11 +184,14 @@ function BlogCategoryList() {
     };
 
     const handleDeleteCategory = async (category) => {
+        const confirmed = window.confirm(`Delete "${category.name}"?`);
+        if (!confirmed) {
+            return;
+        }
         try {
             await deleteBlogCategory(category.id);
             setCategories(prev => prev.filter(item => item.id !== category.id));
             showToast('Category deleted.', 'info');
-            setModalState({ isOpen: false, mode: 'view', data: null });
         } catch (error) {
             console.error("Failed to delete category", error);
             showToast("Failed to delete category.", "error");
@@ -198,7 +199,8 @@ function BlogCategoryList() {
     };
 
     const handleViewDetails = (category) => {
-        setModalState({ isOpen: true, mode: 'view', data: category });
+        setSelectedCategory(category);
+        showToast('Showing category details.', 'info');
     };
 
     const handleAddCategory = () => {
@@ -685,7 +687,7 @@ function BlogCategoryList() {
                                         <th style={styles.th}>Image</th>
                                         <th style={styles.th}>Name</th>
                                         <th style={styles.th}>Status</th>
-                                        <th className="action-col" style={{ ...styles.th, textAlign: 'center' }}>Action</th>
+                                        <th style={styles.th}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -700,26 +702,26 @@ function BlogCategoryList() {
                                                 e.currentTarget.style.background = 'transparent';
                                             }}
                                         >
-                                            <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
-                                            <td style={{ ...styles.td, verticalAlign: 'middle' }}>{formatDate(category.createdAtUtc || category.createdAt || category.entryDate)}</td>
-                                            <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
-                                                 {(category.imageUrl || category.image) && (category.imageUrl || category.image) !== '-' ? (
-                                                     <NgrokSafeImage 
-                                                         src={toApiAssetUrl(category.imageUrl || category.image)} 
-                                                         alt={category.name} 
-                                                         title={category.name}
-                                                         style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
-                                                         onClick={() => setActivePopupImage(toApiAssetUrl(category.imageUrl || category.image))}
-                                                     />
-                                                 ) : (
-                                                     '-'
-                                                 )}
+                                            <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
+                                            <td style={styles.td}>{formatDate(category.createdAtUtc || category.createdAt || category.entryDate)}</td>
+                                            <td style={styles.td}>
+                                                {(category.imageUrl || category.image) && (category.imageUrl || category.image) !== '-' ? (
+                                                    <img 
+                                                        src={toApiAssetUrl(category.imageUrl || category.image)} 
+                                                        alt={category.name} 
+                                                        title={category.name}
+                                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
+                                                        onClick={() => setActivePopupImage(toApiAssetUrl(category.imageUrl || category.image))}
+                                                    />
+                                                ) : (
+                                                    '-'
+                                                )}
                                             </td>
-                                            <td style={{ ...styles.td, verticalAlign: 'middle' }}>{category.name}</td>
-                                            <td style={{ ...styles.td, textAlign: 'center', verticalAlign: 'middle' }}>
+                                            <td style={styles.td}>{category.name}</td>
+                                            <td style={styles.td}>
                                                 <button
                                                     type="button"
-                                                    style={{ ...getStatusStyle(category.status), margin: '0 auto' }}
+                                                    style={getStatusStyle(category.status)}
                                                     onClick={() => handleToggleStatus(category.id)}
                                                     onMouseEnter={(e) => {
                                                         e.target.style.opacity = '0.85';
@@ -731,33 +733,61 @@ function BlogCategoryList() {
                                                     {category.status}
                                                 </button>
                                             </td>
-                                            <td className="action-col" style={{ verticalAlign: 'middle' }}>
-                                                <div className="admin-actions-cell-row">
-                                                    <button
-                                                        type="button"
-                                                        className="admin-action-btn view"
-                                                        title="View Details"
-                                                        onClick={() => handleViewDetails(category)}
-                                                    >
-                                                        <Eye size={18} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="admin-action-btn edit"
-                                                        title="Edit Category"
-                                                        onClick={() => handleEditCategory(category)}
-                                                    >
-                                                        <Pencil size={18} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="admin-action-btn delete"
-                                                        title="Delete Category"
-                                                        onClick={() => setModalState({ isOpen: true, mode: 'delete', data: category })}
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
+                                            <td style={{ ...styles.td, ...styles.actionButtons }}>
+                                                <button
+                                                    type="button"
+                                                    style={styles.actionBtn}
+                                                    title="View Details"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'var(--surface-soft)';
+                                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleViewDetails(category)}
+                                                >
+                                                    <Eye size={16} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={styles.actionBtn}
+                                                    title="Edit Category"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(74, 15, 26, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'var(--surface-soft)';
+                                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleEditCategory(category)}
+                                                >
+                                                    <Edit2 size={16} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                                                    title="Delete Category"
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.22)';
+                                                        e.currentTarget.style.borderColor = 'var(--danger)';
+                                                        e.currentTarget.style.transform = 'scale(1.08)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'rgba(217, 48, 37, 0.35)';
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}
+                                                    onClick={() => handleDeleteCategory(category)}
+                                                >
+                                                    <Trash2 size={16} strokeWidth={2} />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -940,30 +970,6 @@ function BlogCategoryList() {
                     />
                 </div>
             )}
-
-            <AdminDynamicModal
-                isOpen={modalState.isOpen}
-                mode={modalState.mode}
-                moduleName="Blog Category"
-                data={modalState.data}
-                schema={[
-                    { name: 'name', label: 'Name', type: 'text', required: true },
-                    { name: 'slug', label: 'Slug', type: 'text' },
-                    { name: 'status', label: 'Status', type: 'select', options: ['Active', 'Inactive'] },
-                    { name: 'imageUrl', label: 'Image', type: 'image' },
-                    { name: 'metaTitle', label: 'Meta Title', type: 'text' },
-                    { name: 'metaKeyword', label: 'Meta Keyword', type: 'text' },
-                    { name: 'metaDescription', label: 'Meta Description', type: 'textarea' },
-                ]}
-                onClose={() => setModalState({ isOpen: false, mode: 'view', data: null })}
-                onSave={(updatedData) => {
-                    handleEditCategory({ ...modalState.data, ...updatedData });
-                    setModalState({ isOpen: false, mode: 'view', data: null });
-                }}
-                onDelete={() => {
-                    if (modalState.data) handleDeleteCategory(modalState.data);
-                }}
-            />
         </>
     );
 }

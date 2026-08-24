@@ -34,8 +34,8 @@ namespace PickNBook.Api.Services
             string userId);
 
         Task<bool> CancelBookingAsync(HotelReservation reservation, string endUserIp);
-        Task<PickNBookBalanceResponseDto> GetApiBalanceAsync();
-        Task<PickNBookBalanceLogResponseDto> GetApiBalanceLogAsync();
+        Task<PickNBookBalanceResponseDto> GetApiBalanceAsync(string endUserIp);
+        Task<PickNBookBalanceLogResponseDto> GetApiBalanceLogAsync(string endUserIp);
         Task<PickNBookHotelInfoResponseDto> GetHotelInfoAsync(HotelInfoRequestDto request);
         Task<PickNBookHotelInfoResponseDto> GetHotelInfoAsync(string traceId, string resultIndex, string hotelCode);
         Task<PickNBookHotelRoomResponseDto> GetHotelRoomAsync(HotelRoomRequestDto request);
@@ -47,3 +47,4 @@ namespace PickNBook.Api.Services
         Task<BalanceLogResponseDto> GetBalanceLogAsync(BalanceLogRequestDto request);
     }
 }
+

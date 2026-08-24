@@ -135,6 +135,9 @@ namespace PickNBook.Api.Models.DTOs
         [JsonPropertyName("CouponCode")]
         public string? CouponCode { get; set; }
 
+        [JsonPropertyName("PromoCode")]
+        public string? PromoCode { get; set; }
+
         [JsonPropertyName("PromotionId")]
         public int? PromotionId { get; set; }
 
@@ -408,6 +411,9 @@ namespace PickNBook.Api.Models.DTOs
         [JsonPropertyName("CouponCode")]
         public string? CouponCode { get; set; }
 
+        [JsonPropertyName("PromoCode")]
+        public string? PromoCode { get; set; }
+
         [JsonPropertyName("PromotionId")]
         public int? PromotionId { get; set; }
 
@@ -455,6 +461,9 @@ namespace PickNBook.Api.Models.DTOs
 
         [JsonPropertyName("CouponCode")]
         public string? CouponCode { get; set; }
+
+        [JsonPropertyName("PromoCode")]
+        public string? PromoCode { get; set; }
 
         [JsonPropertyName("PromotionId")]
         public int? PromotionId { get; set; }

@@ -136,35 +136,38 @@ async function requestProfile(path) {
   return {};
 }
 
+// Module-level in-flight Promise cache
+let pendingProfilePromise = null;
+
 export async function getAccountProfile() {
-  const storedProfile = normalizeProfile(getStoredUserProfile());
-  const sessionProfile = normalizeProfile(getAuthUser());
-  const userId = getAuthUserId() || storedProfile.userId || sessionProfile.userId;
-  const candidatePaths = [
-    "/api/Profile",
-    "/api/Auth/me",
-    "/api/Auth/profile",
-    "/api/Auth/user",
-    userId ? `/api/Auth/users/${encodeURIComponent(userId)}` : "",
-    userId ? `/api/Users/${encodeURIComponent(userId)}` : "",
-  ].filter(Boolean);
-
-  for (const path of candidatePaths) {
-    try {
-      const backendProfile = normalizeProfile(await requestProfile(path));
-      const mergedProfile = mergeProfiles(storedProfile, sessionProfile, backendProfile);
-
-      if (Object.keys(backendProfile).length > 0) {
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem("user", JSON.stringify(mergedProfile));
-        }
-        setAuthUser(mergedProfile);
-        return mergedProfile;
-      }
-    } catch {
-      // Try the next known profile endpoint, then fall back to the saved login profile.
-    }
+  if (pendingProfilePromise) {
+    return pendingProfilePromise; // Eliminates duplicate parallel network calls
   }
 
-  return mergeProfiles(storedProfile, sessionProfile);
+  pendingProfilePromise = (async () => {
+    try {
+      const profile = await requestProfile("/api/Profile");
+      if (profile && typeof profile === "object") {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("user", JSON.stringify(profile));
+        }
+        return profile;
+      }
+    } catch (err) {
+      // Fallback to Auth/me if /api/Profile fails
+      try {
+        const authMe = await requestProfile("/api/Auth/me");
+        if (authMe) return authMe;
+      } catch {
+        // Fallback to localStorage copy
+        const localUser = JSON.parse(window.localStorage.getItem("user") || "{}");
+        return localUser;
+      }
+    }
+    return {};
+  })().finally(() => {
+    pendingProfilePromise = null; // Automatically reset cache when request completes
+  });
+
+  return pendingProfilePromise;
 }

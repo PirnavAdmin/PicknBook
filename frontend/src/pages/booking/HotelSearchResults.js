@@ -99,6 +99,7 @@ export default function HotelSearchResults() {
   const state = location.state || {};
  
   const destination = readValue(searchParams, state, "destination") || readValue(searchParams, state, "city") || "";
+  const internalCityId = readValue(searchParams, state, "internalCityId") || readValue(searchParams, state, "cityId") || "";
   const checkInDate = readValue(searchParams, state, "checkInDate") || readValue(searchParams, state, "checkIn") || getDefaultDateString(0);
   const checkOutDate = readValue(searchParams, state, "checkOutDate") || readValue(searchParams, state, "checkOut") || getDefaultDateString(1);
     const rawRooms = readValue(searchParams, state, "rooms");
@@ -174,6 +175,12 @@ export default function HotelSearchResults() {
     urlParams.set("checkInDate", params.checkInDate || checkInDate);
     urlParams.set("checkOutDate", params.checkOutDate || checkOutDate);
 
+    const destChanged = params.destination && params.destination !== destination;
+    const resolvedCityId = destChanged ? params.internalCityId : (params.internalCityId || internalCityId);
+    if (resolvedCityId) {
+      urlParams.set("internalCityId", String(resolvedCityId));
+    }
+
     const config = params.roomsConfig || roomsConfig;
     if (Array.isArray(config)) {
       urlParams.set("roomsConfig", JSON.stringify(config));
@@ -189,7 +196,12 @@ export default function HotelSearchResults() {
     if (params.guests) {
       urlParams.set("guests", params.guests);
     }
-    navigate(`/search/hotels?${urlParams.toString()}`, { state: params });
+    navigate(`/search/hotels?${urlParams.toString()}`, { 
+      state: { 
+        ...params, 
+        internalCityId: resolvedCityId 
+      } 
+    });
     setIsModifying(false);
   };
   const [apiHotels, setApiHotels] = useState([]);
@@ -290,6 +302,7 @@ export default function HotelSearchResults() {
       try {
         const data = await searchHotels({
           city: destination,
+          cityId: internalCityId ? Number(internalCityId) : null,
           checkInDate,
           checkOutDate,
           roomsConfig
@@ -584,6 +597,7 @@ export default function HotelSearchResults() {
               <HotelSearchWidget
                 isInline={true}
                 initialDestination={destination}
+                initialInternalCityId={internalCityId}
                 initialCheckIn={checkInDate}
                 initialCheckOut={checkOutDate}
                 initialRoomsConfig={roomsConfig}
@@ -791,14 +805,14 @@ export default function HotelSearchResults() {
                 </div>
               </aside>
             )}            <div className="hotel-split-left">
-              <header className="hotel-discover-resultshead" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+              <header className="hotel-discover-resultshead" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", flexWrap: "wrap", gap: "16px", marginBottom: "24px" }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: "24px", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.05em", color: "#dc1e26", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Hotel results</span>
-                    <h2 style={{ fontSize: "1.32rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.06em", color: "#dc1e26", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Hotel results</span>
+                    <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
                       {loading ? "Finding the Best Hotels for You..." : "Best Hotels for You"}
                     </h2>
-                    <div style={{ width: "36px", height: "3px", backgroundColor: "#dc1e26", marginTop: "8px", borderRadius: "2px" }} />
+                    <div style={{ width: "32px", height: "3px", backgroundColor: "#dc1e26", marginTop: "6px", borderRadius: "2px" }} />
                   </div>
                   
                   {!loading && (
@@ -811,26 +825,26 @@ export default function HotelSearchResults() {
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
-                        background: "rgba(255, 255, 255, 0.45)",
-                        backdropFilter: "blur(10px)",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
+                        background: "transparent",
+                        border: "1px solid rgba(0, 0, 0, 0.08)",
                         borderRadius: "20px",
                         padding: "6px 14px",
-                        fontSize: "0.78rem",
-                        fontWeight: 600,
-                        color: "#475569",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        color: "#0f172a",
                         cursor: "pointer",
-                        marginTop: "12px"
+                        marginBottom: "4px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
                       }}
                     >
                       <Map size={14} color="#dc1e26" />
-                      <span style={{ color: "#0f172a" }}>Map</span>
+                      <span style={{ color: "#0f172a" }}>MAP</span>
                     </button>
                   )}
                 </div>
 
                 {!loading && (
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "4px" }}>
                     <button
                       type="button"
                       className={`hotel-map-toggle-btn${isFilterOpen ? " is-active" : ""}`}
@@ -840,19 +854,19 @@ export default function HotelSearchResults() {
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
-                        background: "rgba(255, 255, 255, 0.45)",
-                        backdropFilter: "blur(10px)",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
+                        background: "transparent",
+                        border: "1px solid rgba(0, 0, 0, 0.08)",
                         borderRadius: "20px",
-                        padding: "6px 12px",
-                        fontSize: "0.78rem",
-                        fontWeight: 600,
-                        color: "#475569",
-                        cursor: "pointer"
+                        padding: "6px 14px",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        cursor: "pointer",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
                       }}
                     >
                       <Filter size={14} color="#dc1e26" />
-                      <span style={{ color: "#0f172a" }}>Filter</span>
+                      <span style={{ color: "#0f172a" }}>FILTER</span>
                     </button>
                     
                     <button
@@ -864,31 +878,30 @@ export default function HotelSearchResults() {
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
-                        background: "rgba(255, 255, 255, 0.45)",
-                        backdropFilter: "blur(10px)",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
+                        background: "transparent",
+                        border: "1px solid rgba(0, 0, 0, 0.08)",
                         borderRadius: "20px",
-                        padding: "6px 12px",
-                        fontSize: "0.78rem",
-                        fontWeight: 600,
-                        color: "#475569",
-                        cursor: "pointer"
+                        padding: "6px 14px",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        cursor: "pointer",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
                       }}
                     >
                       <Heart size={14} fill={collectionKey === "favourites" ? "#dc1e26" : "none"} color="#dc1e26" />
-                      <span style={{ color: "#0f172a" }}>Favourites ({savedStayIds.length})</span>
+                      <span style={{ color: "#0f172a" }}>FAVOURITES ({savedStayIds.length})</span>
                     </button>
 
                     <select
                       value={sortKey}
                       onChange={(event) => setSortKey(event.target.value)}
                       style={{
-                        padding: "6px 12px",
+                        padding: "6px 14px",
                         borderRadius: "20px",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
-                        background: "rgba(255, 255, 255, 0.45)",
-                        backdropFilter: "blur(10px)",
-                        fontSize: "0.78rem",
+                        border: "none",
+                        background: "transparent",
+                        fontSize: "0.82rem",
                         fontWeight: 600,
                         color: "#0f172a",
                         cursor: "pointer",

@@ -160,7 +160,7 @@ function buildBookingPayload(flowState) {
     srdvBlockKey: String(flowState.blockKey || ""),
     fromCity: String(flowState.bus?.fromCity || flowState.searchContext?.fromCity?.name || flowState.searchContext?.fromCity || ""),
     toCity: String(flowState.bus?.toCity || flowState.searchContext?.toCity?.name || flowState.searchContext?.toCity || ""),
-    departureTime: String(flowState.bus?.departureTimeUtc || flowState.bus?.departureTimeIst || flowState.bus?.departureTime || ""),
+    departureTime: [flowState.searchContext?.departureDate, flowState.bus?.departureTimeUtc || flowState.bus?.departureTimeIst || flowState.bus?.departureTime || ""].filter(Boolean).join(" "),
     arrivalTime: String(flowState.bus?.arrivalTimeUtc || flowState.bus?.arrivalTimeIst || flowState.bus?.arrivalTime || ""),
     operatorName: String(flowState.bus?.operatorName || ""),
     busType: String(flowState.bus?.busType || ""),
@@ -216,8 +216,7 @@ function isNetworkError(error) {
   return (
     message.includes("failed to fetch") ||
     message.includes("network") ||
-    message.includes("offline") ||
-    message.includes("cannot")
+    message.includes("offline")
   );
 }
 
@@ -504,11 +503,7 @@ export default function BusPaymentPage() {
     return msg;
   };
 
-  const getPromotionDiscountAmount = (preview, fallback = 0) => {
-    if (!preview) return fallback;
-    const rawDiscount = preview.couponDiscountAmount || preview.promotionDiscountAmount || preview.discountAmount || 0;
-    return Number(rawDiscount) || fallback;
-  };
+
 
   const clearSelectedOffer = () => {
     setFlowState((prev) => ({
@@ -546,7 +541,7 @@ export default function BusPaymentPage() {
 
     try {
       const preview = await fetchPricingPreview({ selectedFeaturedOfferId: null, couponCode: normalized });
-      const effectiveDiscount = getPromotionDiscountAmount(preview, 0);
+      const effectiveDiscount = getBusPromotionDiscountAmount(preview, 0);
 
       if (effectiveDiscount <= 0) {
         setAppliedCoupon(null);
@@ -591,7 +586,7 @@ export default function BusPaymentPage() {
         setManualCouponCode(couponCodeValue);
 
         const preview = await fetchPricingPreview({ selectedFeaturedOfferId: null, couponCode: couponCodeValue });
-        const effectiveDiscount = getPromotionDiscountAmount(preview, 0);
+        const effectiveDiscount = getBusPromotionDiscountAmount(preview, 0);
 
         if (effectiveDiscount <= 0) {
           setManualCouponCode("");
@@ -660,7 +655,7 @@ export default function BusPaymentPage() {
     try {
       const offerId = offer.offerId || offer.id;
       const preview = await fetchPricingPreview({ selectedFeaturedOfferId: offerId, couponCode: null });
-      const effectiveDiscount = getPromotionDiscountAmount(preview, 0);
+      const effectiveDiscount = getBusPromotionDiscountAmount(preview, 0);
 
       if (effectiveDiscount <= 0) {
         setSelectedFeaturedOffer(null);

@@ -158,8 +158,8 @@ module.exports = function setupProxy(app) {
                 const parsed = JSON.parse(reqBodyStr);
                 if (parsed.Password) parsed.Password = "[REDACTED]";
                 console.log(`\n==================================================`);
-                console.log(`🚀 [API REQUEST] ${req.method} ${target}${req.url}`);
-                console.log(`📦 Request Payload:`, JSON.stringify(parsed, null, 2));
+                console.log(`ðŸš€ [API REQUEST] ${req.method} ${target}${req.url}`);
+                console.log(`ðŸ“¦ Request Payload:`, JSON.stringify(parsed, null, 2));
                 console.log(`==================================================\n`);
               }
             } catch (e) {}
@@ -184,9 +184,9 @@ module.exports = function setupProxy(app) {
               if (resBodyStr && resBodyStr.startsWith("{")) {
                 const parsed = JSON.parse(resBodyStr);
                 console.log(`\n==================================================`);
-                console.log(`✅ [API RESPONSE] ${req.method} ${req.url} (Status: ${proxyRes.statusCode})`);
+                console.log(`âœ… [API RESPONSE] ${req.method} ${req.url} (Status: ${proxyRes.statusCode})`);
                 const str = JSON.stringify(parsed, null, 2);
-                console.log(`📥 Response Data:`, str.length > 800 ? str.substring(0, 800) + '...\n  }\n}' : str);
+                console.log(`ðŸ“¥ Response Data:`, str.length > 800 ? str.substring(0, 800) + '...\n  }\n}' : str);
                 console.log(`==================================================\n`);
               }
             } catch (e) {}
@@ -195,7 +195,7 @@ module.exports = function setupProxy(app) {
         }
       },
       onError: (err, req, res) => {
-        console.error(`[Proxy Error] ${req.method} ${req.url} → ${target}:`, err.message);
+        console.error(`[Proxy Error] ${req.method} ${req.url} â†’ ${target}:`, err.message);
         if (!res.headersSent) {
           res.writeHead(502, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Backend proxy error", detail: err.message }));

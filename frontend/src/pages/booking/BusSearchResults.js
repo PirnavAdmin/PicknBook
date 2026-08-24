@@ -35,7 +35,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { searchBuses, searchBusCities, getBoardingPointsProxy } from "../../services/busBookingService";
+import { searchBuses, getBoardingPointsProxy } from "../../services/busBookingService";
 import { getActiveOffers } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import "../../STYLES/BusSearchResults.css";
@@ -51,18 +51,7 @@ const PLACES_API_URL =
   IS_LOCAL_DEV && !USE_DIRECT_API_IN_DEV
     ? "/api/Places"
     : process.env.REACT_APP_PLACES_API_URL || "/api/Places";
-const FALLBACK_CITIES = [
-  "Hyderabad",
-  "Bengaluru",
-  "Chennai",
-  "Mumbai",
-  "Pune",
-  "Vijayawada",
-  "Visakhapatnam",
-  "Delhi",
-  "Kolkata",
-  "Ahmedabad",
-];
+
 
 const MONTHS = [
   "JAN",
@@ -475,21 +464,6 @@ function ModifyPlaceAutocomplete({
       setLoading(true);
 
       try {
-        if (tripType === "bus" || tripType === "buses") {
-          const busCities = await searchBusCities(query);
-          if (controller.signal.aborted) return;
-          const normalized = (Array.isArray(busCities) ? busCities : [])
-            .map((item) => {
-              if (typeof item === "string") return { cityName: item, cityId: item, stateName: "" };
-              return {
-                cityName: item.cityName || item.CityName || item.cityNameWithState || item.name || item.description || item.label || "",
-                cityId: String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || ""),
-                stateName: item.stateName || item.StateName || "",
-              };
-            })
-            .filter((item) => item.cityName);
-          setResults(normalized);
-        } else {
           const endpoint = new URL(PLACES_API_URL, window.location.origin);
           endpoint.searchParams.set("query", query);
           endpoint.searchParams.set("tripType", tripType);
@@ -518,7 +492,6 @@ function ModifyPlaceAutocomplete({
             .filter((item) => item.cityName);
 
           setResults(normalized);
-        }
       } catch (error) {
         if (error.name !== "AbortError") {
           setResults((prev) => (prev.length === 0 ? prev : []));
@@ -1441,46 +1414,6 @@ export default function BusSearchResults() {
       </div>
     );
   };
-
-  const renderPromotionalBanner = () => (
-    <div className="bus-promo-banner" style={{
-      background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
-      borderRadius: "16px",
-      padding: "20px",
-      color: "#ffffff",
-      marginBottom: "20px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      boxShadow: "0 10px 25px rgba(59, 130, 246, 0.15)",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      <div style={{ zIndex: 2 }}>
-        <span style={{
-          background: "rgba(255, 255, 255, 0.2)",
-          padding: "4px 8px",
-          borderRadius: "999px",
-          fontSize: "11px",
-          fontWeight: "800",
-          textTransform: "uppercase",
-          letterSpacing: "1px"
-        }}>Limited Offer</span>
-        <h2 style={{ fontSize: "20px", margin: "10px 0 4px", fontWeight: "800", color: "#ffffff" }}>Save Flat 20% on Your First Bus Ride!</h2>
-        <p style={{ margin: 0, fontSize: "13px", opacity: 0.9 }}>Use Coupon Code <strong style={{ color: "#fcd34d", fontSize: "14px" }}>FIRSTBUS</strong> at checkout.</p>
-      </div>
-      <div className="banner-art" style={{
-        fontSize: "72px",
-        opacity: 0.15,
-        position: "absolute",
-        right: "10px",
-        bottom: "-10px",
-        userSelect: "none"
-      }}>
-        🚌
-      </div>
-    </div>
-  );
 
   const DETAIL_TABS = [
     { key: "boarding", label: "Boarding & Dropping" },
@@ -2694,7 +2627,7 @@ export default function BusSearchResults() {
             </aside>
 
             <section className="bus-results-column">
-              {renderPromotionalBanner()}
+
               <header className="bus-sort-strip">
                 <div className="bus-found-count">
                   <strong>{filteredBuses.length} Buses</strong> found

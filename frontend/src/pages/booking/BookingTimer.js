@@ -15,7 +15,7 @@ export function resetBookingSessionTimer() {
   return null;
 }
 
-export default function BookingTimer({ hideBanner = false, mode = "banner" }) {
+export default function BookingTimer({ mode = "banner", hideBanner = false }) {
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState(600);
   const [isExpired, setIsExpired] = useState(false);
@@ -74,46 +74,21 @@ export default function BookingTimer({ hideBanner = false, mode = "banner" }) {
     );
   }
 
+  if (hideBanner) {
+    return null;
+  }
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const formattedTime = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   const isUrgent = timeLeft < 120; // less than 2 minutes
 
-  if (hideBanner && mode !== "compact") {
-    return null;
-  }
-
-  if (mode === "compact") {
-    return (
-      <div className={`booking-timer-compact${isUrgent ? " is-urgent" : ""}`} style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        fontSize: "0.82rem",
-        color: isUrgent ? "#b91c1c" : "#64748b",
-        fontWeight: 600,
-        background: isUrgent ? "rgba(220, 38, 38, 0.05)" : "rgba(0, 0, 0, 0.02)",
-        padding: "4px 10px",
-        borderRadius: "8px",
-        border: isUrgent ? "1px solid rgba(220, 38, 38, 0.15)" : "1px solid rgba(0, 0, 0, 0.05)",
-      }}>
-        <Clock size={13} className={`booking-timer-clock${isUrgent ? " animate-pulse" : ""}`} style={{ color: isUrgent ? "#b91c1c" : "#dc1e26" }} />
-        <span>
-          {isUrgent ? "Complete booking in: " : "Complete your booking within: "}
-          <strong className="booking-timer-val" style={{
-            fontFamily: "monospace",
-            fontSize: "0.88rem",
-            background: "none",
-            padding: 0,
-            marginLeft: "2px"
-          }}>{formattedTime}</strong>
-        </span>
-      </div>
-    );
-  }
+  const containerClass = mode === "compact" 
+    ? `booking-timer-compact${isUrgent ? " is-urgent" : ""}`
+    : `booking-timer-banner${isUrgent ? " is-urgent" : ""}`;
 
   return (
-    <div className={`booking-timer-banner${isUrgent ? " is-urgent" : ""}`}>
+    <div className={containerClass}>
       <div className="booking-timer-content">
         <Clock size={16} className={`booking-timer-clock${isUrgent ? " animate-pulse" : ""}`} />
         <span>

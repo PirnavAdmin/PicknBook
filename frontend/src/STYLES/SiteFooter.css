@@ -133,6 +133,7 @@
   color: #94a3b8;
   margin: 0;
   font-weight: 400;
+  white-space: nowrap;
 }
 
 /* Newsletter Box */
@@ -380,10 +381,6 @@
   height: 24px;
   width: auto;
   object-fit: contain;
-  background: #ffffff;
-  padding: 2px 4px;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.22s ease;
 }
 

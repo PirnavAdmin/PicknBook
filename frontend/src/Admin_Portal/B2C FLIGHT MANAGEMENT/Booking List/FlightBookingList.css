@@ -613,11 +613,3 @@
   border: 1px solid var(--admin-border) !important;
 }
 
-
-/* ── AdminPagination right group (added for compatibility) ── */
-.admin-pagination-right {
-  display: flex !important;
-  align-items: center !important;
-  gap: 14px;
-  flex: 0 0 auto;
-}

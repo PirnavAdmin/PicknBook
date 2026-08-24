@@ -342,19 +342,6 @@ const DEFAULT_BUS_FEATURED_OFFERS = [
   },
 ];
 
-const FALLBACK_CITIES = [
-  "Hyderabad",
-  "Bengaluru",
-  "Chennai",
-  "Mumbai",
-  "Pune",
-  "Vijayawada",
-  "Visakhapatnam",
-  "Delhi",
-  "Kolkata",
-  "Ahmedabad",
-  "Proddatur",
-];
 
 const POPULAR_FLIGHTS = [
   {
@@ -482,72 +469,72 @@ const FALLBACK_BUS_ROUTES = [
   },
 ];
 
-/* ─── City photo lookup — full names + IATA codes + aliases ────────────── */
+/* â”€â”€â”€ City photo lookup â€” full names + IATA codes + aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const CITY_IMAGES = {
-  /* ── Hyderabad ── */
+  /* â”€â”€ Hyderabad â”€â”€ */
   hyderabad: "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
   hyd: "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
-  /* ── Mumbai ── */
+  /* â”€â”€ Mumbai â”€â”€ */
   mumbai: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
   bombay: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
   bom: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
-  /* ── Delhi / New Delhi ── */
+  /* â”€â”€ Delhi / New Delhi â”€â”€ */
   delhi: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   "new delhi": "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   del: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   ixi: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
-  /* ── Bengaluru / Bangalore ── */
+  /* â”€â”€ Bengaluru / Bangalore â”€â”€ */
   bengaluru: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
   bangalore: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
   blr: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
   bng: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
-  /* ── Chennai ── */
+  /* â”€â”€ Chennai â”€â”€ */
   chennai: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
   madras: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
   maa: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
-  /* ── Kolkata ── */
+  /* â”€â”€ Kolkata â”€â”€ */
   kolkata: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
   calcutta: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
   ccu: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
-  /* ── Pune ── */
+  /* â”€â”€ Pune â”€â”€ */
   pune: "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=560&q=75&fit=crop&auto=format",
   pnq: "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=560&q=75&fit=crop&auto=format",
-  /* ── Ahmedabad ── */
+  /* â”€â”€ Ahmedabad â”€â”€ */
   ahmedabad: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=560&q=75&fit=crop&auto=format",
   amd: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=560&q=75&fit=crop&auto=format",
-  /* ── Jaipur ── */
+  /* â”€â”€ Jaipur â”€â”€ */
   jaipur: "https://images.unsplash.com/photo-1477587458883-47145ed6979c?w=560&q=75&fit=crop&auto=format",
   jai: "https://images.unsplash.com/photo-1477587458883-47145ed6979c?w=560&q=75&fit=crop&auto=format",
-  /* ── Goa ── */
+  /* â”€â”€ Goa â”€â”€ */
   goa: "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?w=560&q=75&fit=crop&auto=format",
   panaji: "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?w=560&q=75&fit=crop&auto=format",
   goi: "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?w=560&q=75&fit=crop&auto=format",
-  /* ── Vijayawada ── */
+  /* â”€â”€ Vijayawada â”€â”€ */
   vijayawada: "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
   vga: "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
-  /* ── Visakhapatnam / Vizag ── */
+  /* â”€â”€ Visakhapatnam / Vizag â”€â”€ */
   visakhapatnam: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
   vizag: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
   vtz: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
-  /* ── Agra ── */
+  /* â”€â”€ Agra â”€â”€ */
   agra: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=560&q=75&fit=crop&auto=format",
   agr: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=560&q=75&fit=crop&auto=format",
-  /* ── Kochi / Cochin ── */
+  /* â”€â”€ Kochi / Cochin â”€â”€ */
   kochi: "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?w=560&q=75&fit=crop&auto=format",
   cochin: "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?w=560&q=75&fit=crop&auto=format",
   cok: "https://images.unsplash.com/photo-1593693411515-c20261bcad6e?w=560&q=75&fit=crop&auto=format",
-  /* ── Coimbatore ── */
+  /* â”€â”€ Coimbatore â”€â”€ */
   coimbatore: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
   cjb: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
-  /* ── Patna ── */
+  /* â”€â”€ Patna â”€â”€ */
   patna: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
   pat: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
-  /* ── Proddatur ── */
+  /* â”€â”€ Proddatur â”€â”€ */
   proddatur: "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
-  /* ── Lucknow ── */
+  /* â”€â”€ Lucknow â”€â”€ */
   lucknow: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   lko: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
-  /* ── International ── */
+  /* â”€â”€ International â”€â”€ */
   dubai: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=560&q=75&fit=crop&auto=format",
   dxb: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=560&q=75&fit=crop&auto=format",
   "new york": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=560&q=75&fit=crop&auto=format",
@@ -559,7 +546,7 @@ const CITY_IMAGES = {
   sin: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=560&q=75&fit=crop&auto=format",
   london: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=560&q=75&fit=crop&auto=format",
   lhr: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=560&q=75&fit=crop&auto=format",
-  /* ── Fallbacks ── */
+  /* â”€â”€ Fallbacks â”€â”€ */
   bus_default: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=560&q=75&fit=crop&auto=format",
   flight_default: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=560&q=75&fit=crop&auto=format",
   hotel_default: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=560&q=75&fit=crop&auto=format",
@@ -605,19 +592,19 @@ function getCityImage(cityName, fallbackKey = "bus_default") {
   /* 1. Exact match (handles full names and IATA codes) */
   if (CITY_IMAGES[key]) return CITY_IMAGES[key];
 
-  /* 2. Substring match — look for a known keyword inside the input */
+  /* 2. Substring match â€” look for a known keyword inside the input */
   for (const [keyword, resolved] of CITY_KEYWORD_MAP) {
     if (key.includes(keyword)) return CITY_IMAGES[resolved];
   }
 
-  /* 3. Input contains a 3-letter IATA code as a whole word — try it */
+  /* 3. Input contains a 3-letter IATA code as a whole word â€” try it */
   const iataMatch = key.match(/\b([a-z]{3})\b/);
   if (iataMatch && CITY_IMAGES[iataMatch[1]]) return CITY_IMAGES[iataMatch[1]];
 
   return CITY_IMAGES[fallbackKey];
 }
 
-/* ─── 6 distinct hotel-property photos — one per card slot ─────────────── */
+/* â”€â”€â”€ 6 distinct hotel-property photos â€” one per card slot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const HOTEL_ROOM_IMAGES = [
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=560&q=80&fit=crop&auto=format", /* pool villa */
   "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=560&q=80&fit=crop&auto=format", /* luxury bedroom */
@@ -627,7 +614,7 @@ const HOTEL_ROOM_IMAGES = [
   "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=560&q=80&fit=crop&auto=format", /* resort pool */
 ];
 
-/* Map IATA city code → full display name */
+/* Map IATA city code â†’ full display name */
 const CITY_CODE_TO_NAME = {
   hyd: "Hyderabad", bom: "Mumbai", del: "Delhi", blr: "Bengaluru",
   maa: "Chennai", ccu: "Kolkata", pnq: "Pune", amd: "Ahmedabad",
@@ -1404,7 +1391,7 @@ const HOME_MODE_CONTENT = {
     mode: "flights",
     Icon: Plane,
     heroTitleStart: "Pack Your Dreams, ",
-    heroTitleEnd: "We’ll Handle the Journey.",
+    heroTitleEnd: "Weâ€™ll Handle the Journey.",
     heroSubtitle: "Book your next flight with ease.",
     heroTags: ["Domestic Flights", "International Routes", "Instant Booking"],
     valueProps: [
@@ -2316,7 +2303,7 @@ export default function HomePage() {
       } else {
         list.push(
           <li key="discount-val">
-            Get a flat <strong>₹{offer.discountValue}</strong> discount on your booking.
+            Get a flat <strong>â‚¹{offer.discountValue}</strong> discount on your booking.
           </li>
         );
       }
@@ -2326,7 +2313,7 @@ export default function HomePage() {
     if (offer.minBookingAmount > 0) {
       list.push(
         <li key="min-booking">
-          Minimum booking amount of <strong>₹{offer.minBookingAmount}</strong> required.
+          Minimum booking amount of <strong>â‚¹{offer.minBookingAmount}</strong> required.
         </li>
       );
     }
@@ -2335,7 +2322,7 @@ export default function HomePage() {
     if (offer.maxDiscountAmount > 0) {
       list.push(
         <li key="max-discount">
-          Maximum discount limit is <strong>₹{offer.maxDiscountAmount}</strong>.
+          Maximum discount limit is <strong>â‚¹{offer.maxDiscountAmount}</strong>.
         </li>
       );
     }
@@ -2705,7 +2692,7 @@ export default function HomePage() {
     };
   }, []);
 
-  /* Popular Bus Routes — Static Curated Data (No API Hit) */
+  /* Popular Bus Routes â€” Static Curated Data (No API Hit) */
   useEffect(() => {
     setPopularRoutesLoading(false);
     setPopularRoutesError("");
@@ -2719,7 +2706,7 @@ export default function HomePage() {
     ]);
   }, []);
 
-  /* Popular Flight Routes — Static Curated Data (No API Hit) */
+  /* Popular Flight Routes â€” Static Curated Data (No API Hit) */
   useEffect(() => {
     setPopularFlightsLoading(false);
     setPopularFlightsError("");
@@ -2731,7 +2718,7 @@ export default function HomePage() {
     ]);
   }, []);
 
-  /* Popular Hotels — Static Curated Data (No API Hit) */
+  /* Popular Hotels â€” Static Curated Data (No API Hit) */
   useEffect(() => {
     setPopularHotelsLoading(false);
     setPopularHotelsError("");
@@ -3402,7 +3389,7 @@ export default function HomePage() {
   return (
     <div className={`homepage homepage-${homeContent.mode}`}>
       <style>{`
-        /* ─── Global Homepage Spacing Overrides ────────────────── */
+        /* â”€â”€â”€ Global Homepage Spacing Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         .homepage .hero-section {
           padding-bottom: 0 !important;
         }
@@ -3410,7 +3397,7 @@ export default function HomePage() {
           margin-top: 0 !important;
         }
 
-        /* ─── Solid Opaque Search Container ─── */
+        /* â”€â”€â”€ Solid Opaque Search Container â”€â”€â”€ */
         .homepage .search-panel {
           background: #ffffff !important;
           border: 1px solid #e5e7eb !important;
@@ -3472,7 +3459,7 @@ export default function HomePage() {
           border-color: #dc1e26 !important;
         }
 
-        /* ─── Offers Filter Tabs ─────────────────────────── */
+        /* â”€â”€â”€ Offers Filter Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         .offers-filter-tabs {
           display: inline-flex;
           align-items: center;
@@ -3535,7 +3522,7 @@ export default function HomePage() {
            box-shadow: 0 12px 28px rgba(6, 24, 44, 0.13);
         }
 
-        /* Image header — flush, no side gaps */
+        /* Image header â€” flush, no side gaps */
         .pop-route-img-wrap {
            width: 100%;
            height: 160px;
@@ -3719,7 +3706,7 @@ export default function HomePage() {
           .offers-scroll-row::-webkit-scrollbar-thumb:hover {
             background: rgba(0, 0, 0, 0.2);
           }
-                /* ─── Pastel Offer Card ───────────────────────────── */
+                /* â”€â”€â”€ Pastel Offer Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
           .homepage .offer-card,
           .deals-dialog-grid .offer-card {
             position: relative;
@@ -3863,7 +3850,7 @@ export default function HomePage() {
            min-height: auto !important;
          }
 
-         /* ─── Skeleton Loader ──────────────────────────────── */
+         /* â”€â”€â”€ Skeleton Loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
          .offer-skeleton-card {
            min-width: 340px;
            max-width: 340px;
@@ -4227,8 +4214,8 @@ export default function HomePage() {
             transform: translateY(0);
           }
 
-          /* ─── Flight Video & Hero Wallpaper Styles (21:9 Aspect Ratio) ─── */
-          /* ─── 18:6 Ultra-Wide Flight Hero & Horizontal Search Bar ─── */
+          /* â”€â”€â”€ Flight Video & Hero Wallpaper Styles (21:9 Aspect Ratio) â”€â”€â”€ */
+          /* â”€â”€â”€ 18:6 Ultra-Wide Flight Hero & Horizontal Search Bar â”€â”€â”€ */
           .homepage-flights.hero-section {
             position: relative !important;
             overflow: visible !important;
@@ -4336,7 +4323,7 @@ export default function HomePage() {
             box-sizing: border-box !important;
           }
 
-          /* ─── Premium High-Contrast Flight Search Bar ─── */
+          /* â”€â”€â”€ Premium High-Contrast Flight Search Bar â”€â”€â”€ */
           .homepage-flights .search-panel {
             width: 100% !important;
             max-width: 1240px !important;
@@ -5106,7 +5093,7 @@ export default function HomePage() {
     const config = isFlight
       ? {
           headline: <>Your Flight.<br /><span className="td-highlight-red">Our Priority.</span></>,
-          subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable – all in one place.",
+          subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
           features: [
             { icon: <Search size={17} />, title: "Smart Search", desc: "Find flights across hundreds of routes with smart filters." },
             { icon: <Clock3 size={17} />, title: "Live Flight Status", desc: "Get real-time departure, arrival & delay updates instantly." },
@@ -5126,7 +5113,7 @@ export default function HomePage() {
             { color: "crimson", icon: <MapPin size={15} />, value: "300+", label: "Destinations" },
             { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
           ],
-          phoneGreeting: "Book Your Flight! ✈️",
+          phoneGreeting: "Book Your Flight! âœˆï¸",
           phoneSub: "Where are you flying to?",
           phoneField1Icon: <Plane size={13} className="td-field-icon" />,
           phoneField1Label: "From",
@@ -5141,7 +5128,7 @@ export default function HomePage() {
       : isHotel
       ? {
           headline: <>Your Stay.<br /><span className="td-highlight-red">Our Priority.</span></>,
-          subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable – all in one place.",
+          subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
           features: [
             { icon: <Search size={17} />, title: "Smart Search", desc: "Find hotels across hundreds of destinations with smart filters." },
             { icon: <BedDouble size={17} />, title: "Room Availability", desc: "Get live room availability & pricing updates instantly." },
@@ -5161,7 +5148,7 @@ export default function HomePage() {
             { color: "crimson", icon: <MapPin size={15} />, value: "200+", label: "Cities Covered" },
             { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
           ],
-          phoneGreeting: "Book Your Hotel! 🏨",
+          phoneGreeting: "Book Your Hotel! ðŸ¨",
           phoneSub: "Where are you staying?",
           phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
           phoneField1Label: "Destination",
@@ -5175,7 +5162,7 @@ export default function HomePage() {
         }
       : {
           headline: <>Your Journey.<br /><span className="td-highlight-red">Our Priority.</span></>,
-          subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable – all in one place.",
+          subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
           features: [
             { icon: <Search size={17} />, title: "Smart Search", desc: "Find buses across thousands of routes with smart filters." },
             { icon: <Clock3 size={17} />, title: "Real-time Updates", desc: "Get live timings, seat availability & prices instantly." },
@@ -5195,7 +5182,7 @@ export default function HomePage() {
             { color: "crimson", icon: <Handshake size={15} />, value: "1000+", label: "Trusted Partners" },
             { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
           ],
-          phoneGreeting: "Hello, Traveller! 👋",
+          phoneGreeting: "Hello, Traveller! ðŸ‘‹",
           phoneSub: "Where are you going?",
           phoneField1Icon: <Bus size={13} className="td-field-icon" />,
           phoneField1Label: "From",
@@ -5515,7 +5502,7 @@ export default function HomePage() {
                 <div className="pop-route-img-wrap">
                   <img
                     src={hotel.hotelImage || HOTEL_ROOM_IMAGES[0]}
-                    alt={`${hotel.name} – ${hotel.city}`}
+                    alt={`${hotel.name} â€“ ${hotel.city}`}
                     loading="lazy"
                     onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.hotel_default; }}
                   />
@@ -5528,7 +5515,7 @@ export default function HomePage() {
                     {hotel.name}
                   </p>
                   <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "#5a6a78" }}>
-                    {hotel.city} &nbsp;·&nbsp; From INR {hotel.price}
+                    {hotel.city} &nbsp;Â·&nbsp; From INR {hotel.price}
                   </p>
                 </div>
                 <button type="button" className="pop-route-book-btn"
@@ -5790,7 +5777,7 @@ export default function HomePage() {
                     <div className="upgraded-author-avatar">{initials}</div>
                     <div className="upgraded-author-meta">
                       <strong className="upgraded-author-name">{review.author}</strong>
-                      <span className="upgraded-verified-tag">✓ Verified Traveler</span>
+                      <span className="upgraded-verified-tag">âœ“ Verified Traveler</span>
                     </div>
                   </div>
                   <span className="upgraded-booking-tag">Verified Trip</span>

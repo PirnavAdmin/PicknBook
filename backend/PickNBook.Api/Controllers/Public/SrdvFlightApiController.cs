@@ -47,10 +47,20 @@ namespace PickNBook.Api.Controllers.Public
         }
 
         [HttpPost("Search")]
-        public async Task<IActionResult> Search([FromBody] AirSearchRequestDto request)
+        public async Task<IActionResult> Search([FromBody] FlightSearchProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new AirSearchRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    AdultCount = proxyRequest.AdultCount,
+                    ChildCount = proxyRequest.ChildCount,
+                    InfantCount = proxyRequest.InfantCount,
+                    JourneyType = proxyRequest.JourneyType,
+                    DirectFlight = proxyRequest.DirectFlight,
+                    Segments = proxyRequest.Segments
+                };
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
                 
                 var responseRaw = await _srdvFlightService.SearchFlightsRawAsync(request);
@@ -243,10 +253,18 @@ namespace PickNBook.Api.Controllers.Public
         }
 
         [HttpPost("GetCalendarFare")]
-        public async Task<IActionResult> GetCalendarFare([FromBody] CalendarFareRequestDto request)
+        public async Task<IActionResult> GetCalendarFare([FromBody] FlightCalendarFareProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new CalendarFareRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    JourneyType = proxyRequest.JourneyType,
+                    Sources = proxyRequest.Sources,
+                    FareType = proxyRequest.FareType,
+                    Segments = proxyRequest.Segments
+                };
                 var responseRaw = await _srdvFlightService.GetCalendarFareRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 return Ok(doc.RootElement.Clone());
@@ -259,10 +277,23 @@ namespace PickNBook.Api.Controllers.Public
         }
 
         [HttpPost("FareRule")]
-        public async Task<IActionResult> FareRule([FromBody] AirFareRuleRequestDto request)
+        public async Task<IActionResult> FareRule([FromBody] FlightFareRuleProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new AirFareRuleRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    SrdvType = proxyRequest.SrdvType,
+                    SrdvIndex = proxyRequest.SrdvIndex,
+                    TraceId = proxyRequest.TraceId,
+                    ResultIndex = proxyRequest.ResultIndex,
+                    CouponCode = proxyRequest.CouponCode,
+                    JourneyType = proxyRequest.JourneyType,
+                    AdultCount = proxyRequest.AdultCount,
+                    ChildCount = proxyRequest.ChildCount,
+                    InfantCount = proxyRequest.InfantCount
+                };
                 var responseRaw = await _srdvFlightService.GetFareRuleRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 return Ok(doc.RootElement.Clone());
@@ -275,10 +306,23 @@ namespace PickNBook.Api.Controllers.Public
         }
 
         [HttpPost("FareQuote")]
-        public async Task<IActionResult> FareQuote([FromBody] AirFareRuleRequestDto request)
+        public async Task<IActionResult> FareQuote([FromBody] FlightFareRuleProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new AirFareRuleRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    SrdvType = proxyRequest.SrdvType,
+                    SrdvIndex = proxyRequest.SrdvIndex,
+                    TraceId = proxyRequest.TraceId,
+                    ResultIndex = proxyRequest.ResultIndex,
+                    CouponCode = proxyRequest.CouponCode,
+                    JourneyType = proxyRequest.JourneyType,
+                    AdultCount = proxyRequest.AdultCount,
+                    ChildCount = proxyRequest.ChildCount,
+                    InfantCount = proxyRequest.InfantCount
+                };
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
                 
                 var responseRaw = await _srdvFlightService.GetFareQuoteRawAsync(request);
@@ -378,10 +422,23 @@ namespace PickNBook.Api.Controllers.Public
         }
 
         [HttpPost("SSR")]
-        public async Task<IActionResult> SSR([FromBody] AirFareRuleRequestDto request)
+        public async Task<IActionResult> SSR([FromBody] FlightFareRuleProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new AirFareRuleRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    SrdvType = proxyRequest.SrdvType,
+                    SrdvIndex = proxyRequest.SrdvIndex,
+                    TraceId = proxyRequest.TraceId,
+                    ResultIndex = proxyRequest.ResultIndex,
+                    CouponCode = proxyRequest.CouponCode,
+                    JourneyType = proxyRequest.JourneyType,
+                    AdultCount = proxyRequest.AdultCount,
+                    ChildCount = proxyRequest.ChildCount,
+                    InfantCount = proxyRequest.InfantCount
+                };
                 var responseRaw = await _srdvFlightService.GetSSRRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 return Ok(doc.RootElement.Clone());
@@ -394,10 +451,23 @@ namespace PickNBook.Api.Controllers.Public
         }
 
         [HttpPost("SeatMap")]
-        public async Task<IActionResult> SeatMap([FromBody] AirFareRuleRequestDto request)
+        public async Task<IActionResult> SeatMap([FromBody] FlightFareRuleProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new AirFareRuleRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    SrdvType = proxyRequest.SrdvType,
+                    SrdvIndex = proxyRequest.SrdvIndex,
+                    TraceId = proxyRequest.TraceId,
+                    ResultIndex = proxyRequest.ResultIndex,
+                    CouponCode = proxyRequest.CouponCode,
+                    JourneyType = proxyRequest.JourneyType,
+                    AdultCount = proxyRequest.AdultCount,
+                    ChildCount = proxyRequest.ChildCount,
+                    InfantCount = proxyRequest.InfantCount
+                };
                 var responseRaw = await _srdvFlightService.GetSeatMapRawAsync(request);
                 var outNode = JsonNode.Parse(responseRaw);
                 if (outNode != null) InjectSeatMapB2CFields(outNode);
@@ -438,8 +508,22 @@ namespace PickNBook.Api.Controllers.Public
 
         [Authorize]
         [HttpPost("TicketLCC")]
-        public async Task<IActionResult> TicketLCC([FromBody] TicketLCCRequestDto request)
+        public async Task<IActionResult> TicketLCC([FromBody] FlightTicketLCCProxyRequestDto proxyRequest)
         {
+            var request = new TicketLCCRequestDto
+            {
+                EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                SrdvType = proxyRequest.SrdvType,
+                SrdvIndex = proxyRequest.SrdvIndex,
+                TraceId = proxyRequest.TraceId,
+                ResultIndex = proxyRequest.ResultIndex,
+                CouponCode = proxyRequest.CouponCode,
+                PromoCode = proxyRequest.PromoCode,
+                PromotionId = proxyRequest.PromotionId,
+                JourneyType = proxyRequest.JourneyType,
+                Passengers = proxyRequest.Passengers
+            };
+
             var passportValidationResult = ValidatePassengersPassport(request.Passengers);
             if (passportValidationResult != null) return passportValidationResult;
 
@@ -914,8 +998,22 @@ namespace PickNBook.Api.Controllers.Public
 
         [Authorize]
         [HttpPost("HoldGDS")]
-        public async Task<IActionResult> HoldGDS([FromBody] HoldGDSRequestDto request)
+        public async Task<IActionResult> HoldGDS([FromBody] FlightHoldGDSProxyRequestDto proxyRequest)
         {
+            var request = new HoldGDSRequestDto
+            {
+                EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                SrdvType = proxyRequest.SrdvType,
+                SrdvIndex = proxyRequest.SrdvIndex,
+                TraceId = proxyRequest.TraceId,
+                ResultIndex = proxyRequest.ResultIndex,
+                CouponCode = proxyRequest.CouponCode,
+                PromoCode = proxyRequest.PromoCode,
+                PromotionId = proxyRequest.PromotionId,
+                JourneyType = proxyRequest.JourneyType,
+                Passengers = proxyRequest.Passengers
+            };
+
             var passportValidationResult = ValidatePassengersPassport(request.Passengers);
             if (passportValidationResult != null) return passportValidationResult;
 
@@ -1297,10 +1395,24 @@ namespace PickNBook.Api.Controllers.Public
 
         [Authorize]
         [HttpPost("TicketGDS")]
-        public async Task<IActionResult> TicketGDS([FromBody] TicketGDSRequestDto request)
+        public async Task<IActionResult> TicketGDS([FromBody] FlightTicketGDSProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new TicketGDSRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    SrdvType = proxyRequest.SrdvType,
+                    SrdvIndex = proxyRequest.SrdvIndex,
+                    TraceId = proxyRequest.TraceId,
+                    ResultIndex = proxyRequest.ResultIndex,
+                    PNR = proxyRequest.PNR,
+                    BookingId = proxyRequest.BookingId,
+                    CouponCode = proxyRequest.CouponCode,
+                    PromoCode = proxyRequest.PromoCode,
+                    PromotionId = proxyRequest.PromotionId,
+                    Passengers = proxyRequest.Passengers
+                };
                 var responseRaw = await _srdvFlightService.TicketGDSRawAsync(request);
                 var outNode = JsonNode.Parse(responseRaw);
                 using var doc = JsonDocument.Parse(responseRaw);
@@ -1754,12 +1866,26 @@ namespace PickNBook.Api.Controllers.Public
             }
         }
 
+
         [Authorize]
         [HttpPost("SendChangeRequest")]
-        public async Task<IActionResult> SendChangeRequest([FromBody] SendChangeRequestDto request)
+        public async Task<IActionResult> SendChangeRequest([FromBody] FlightSendChangeProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new SendChangeRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    BookingId = proxyRequest.BookingId,
+                    RequestType = proxyRequest.RequestType,
+                    CancellationType = proxyRequest.CancellationType,
+                    Remarks = proxyRequest.Remarks,
+                    Sectors = proxyRequest.Sectors,
+                    SrdvType = proxyRequest.SrdvType,
+                    SrdvIndex = proxyRequest.SrdvIndex,
+                    TicketData = proxyRequest.TicketData,
+                    PNR = proxyRequest.PNR
+                };
                 var responseRaw = await _srdvFlightService.SendChangeRequestRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 var root = doc.RootElement;
@@ -1851,10 +1977,15 @@ namespace PickNBook.Api.Controllers.Public
 
         [Authorize]
         [HttpPost("GetCancelStatus")]
-        public async Task<IActionResult> GetCancelStatus([FromBody] GetCancelStatusRequestDto request)
+        public async Task<IActionResult> GetCancelStatus([FromBody] FlightGetCancelStatusProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new GetCancelStatusRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    ChangeRequestId = proxyRequest.ChangeRequestId
+                };
                 var responseRaw = await _srdvFlightService.GetCancelStatusRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 var root = doc.RootElement;
@@ -2070,10 +2201,16 @@ namespace PickNBook.Api.Controllers.Public
 
         [Authorize]
         [HttpPost("GetCancellationCharges")]
-        public async Task<IActionResult> GetCancellationCharges([FromBody] GetCancellationChargesRequestDto request)
+        public async Task<IActionResult> GetCancellationCharges([FromBody] FlightGetCancellationChargesProxyRequestDto proxyRequest)
         {
             try
             {
+                var request = new GetCancellationChargesRequestDto
+                {
+                    EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                    RequestType = proxyRequest.RequestType,
+                    TraceId = proxyRequest.TraceId
+                };
                 var responseRaw = await _srdvFlightService.GetCancellationChargesRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 return Ok(doc.RootElement.Clone());
@@ -2118,8 +2255,22 @@ namespace PickNBook.Api.Controllers.Public
 
         [HttpPost("flight_callback")]
         [ProducesResponseType(typeof(SrdvBookingCallbackResponseDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> BookingCallback([FromBody] SrdvBookingCallbackRequestDto request)
+        public async Task<IActionResult> BookingCallback([FromBody] FlightBookingCallbackProxyRequestDto proxyRequest)
         {
+            var request = new SrdvBookingCallbackRequestDto
+            {
+                ClientId = _srdvSettings.ClientId,
+                UserName = _srdvSettings.UserName,
+                Password = _srdvSettings.Password,
+                EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                TraceId = proxyRequest.TraceId,
+                BookingId = proxyRequest.BookingId,
+                PNR = proxyRequest.PNR,
+                GdsPNR = proxyRequest.GdsPNR,
+                Status = proxyRequest.Status,
+                Remark = proxyRequest.Remark,
+                Passengers = proxyRequest.Passengers
+            };
             try
             {
                 _logger.LogInformation("Received SRDV Booking Update Callback for BookingId: {BookingId}", request.BookingId);
@@ -2299,6 +2450,8 @@ namespace PickNBook.Api.Controllers.Public
                 return Ok(new SrdvBookingCallbackResponseDto { Error = new SrdvCallbackErrorDto { ErrorCode = "500", ErrorMessage = "Internal Server Error" } });
             }
         }
+
+
         [Authorize]
         [HttpGet("my-bookings")]
         public async Task<IActionResult> MyBookings()
@@ -2379,6 +2532,7 @@ namespace PickNBook.Api.Controllers.Public
         }
     }
 }
+
 
 
 

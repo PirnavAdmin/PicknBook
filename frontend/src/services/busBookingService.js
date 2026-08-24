@@ -2,7 +2,7 @@
 import { toDdMmYyyy } from "../utils/apiDateFormat";
 
 const FALLBACK_API_BASE_URL =
-  "";
+  "https://www.picknbook.in";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function getAuthHeaders() {
@@ -100,29 +100,7 @@ function buildUrl(path, query = {}) {
   return params.toString() ? `${base}?${params.toString()}` : base;
 }
 
-function shouldUseFallbackBuses(error) {
-  const status = Number(error?.status);
-  if ([401, 403, 404, 405, 502, 503, 504].includes(status)) {
-    return true;
-  }
 
-  const message = String(error?.message || "").toLowerCase();
-
-  if (!message) {
-    return false;
-  }
-
-  return (
-    message.includes("cannot get /api/busbookings") ||
-    message.includes("cannot get /api/bus") ||
-    message.includes("err_ngrok_3200") ||
-    (message.includes("endpoint") && message.includes("offline")) ||
-    message.includes("failed to fetch") ||
-    message.includes("networkerror") ||
-    message.includes("unauthorized") ||
-    message.includes("forbidden")
-  );
-}
 
 function pickFirst(source, keys, fallback = null) {
   if (!source || typeof source !== "object") {
@@ -324,81 +302,7 @@ function normalizeBusSearchRecord(record, index = 0) {
   };
 }
 
-const FALLBACK_BUS_TEMPLATES = [
-  {
-    operatorName: "PickNBook Express",
-    busNumber: "PNB 2401",
-    busType: "A/C Sleeper",
-    departureHour: 21,
-    departureMinute: 30,
-    durationMinutes: 510,
-    priceInr: 899,
-    availableSeats: 18,
-    totalSeats: 36,
-  },
-  {
-    operatorName: "Atlas Roadways",
-    busNumber: "AR 118",
-    busType: "A/C Seater Sleeper",
-    departureHour: 22,
-    departureMinute: 15,
-    durationMinutes: 480,
-    priceInr: 749,
-    availableSeats: 24,
-    totalSeats: 42,
-  },
-  {
-    operatorName: "MetroLine Travels",
-    busNumber: "ML 702",
-    busType: "Non A/C Seater",
-    departureHour: 6,
-    departureMinute: 45,
-    durationMinutes: 465,
-    priceInr: 599,
-    availableSeats: 31,
-    totalSeats: 44,
-  },
-];
 
-function getFallbackBusTemplate(busId) {
-  const match = String(busId || "").match(/fallback-bus-(\d+)/i);
-  const index = match ? Number(match[1]) - 1 : 0;
-  return FALLBACK_BUS_TEMPLATES[index] || FALLBACK_BUS_TEMPLATES[0];
-}
-
-function buildFallbackBusSearchRecords({ from, to, date }) {
-  const source = String(from || "").trim() || "Hyderabad";
-  const destination = String(to || "").trim() || "Bengaluru";
-  const [year, month, day] = String(date || "")
-    .split("-")
-    .map((part) => Number(part));
-  const tripDate =
-    year && month && day
-      ? new Date(year, month - 1, day, 0, 0, 0, 0)
-      : new Date();
-
-  return FALLBACK_BUS_TEMPLATES.map((template, index) => {
-    const departure = new Date(tripDate);
-    departure.setHours(template.departureHour, template.departureMinute, 0, 0);
-    const arrival = new Date(departure.getTime() + template.durationMinutes * 60000);
-
-    return normalizeBusSearchRecord(
-      {
-        id: `fallback-bus-${index + 1}`,
-        ...template,
-        fromCity: source,
-        toCity: destination,
-        boardingPoint: `${source} Main Boarding Point`,
-        droppingPoint: `${destination} Central Drop`,
-        boardingPoints: [`${source} Main Boarding Point`, `${source} Bypass`, `${source} Bus Stand`],
-        droppingPoints: [`${destination} Central Drop`, `${destination} Bypass`, `${destination} Bus Stand`],
-        departureTimeIst: departure.toISOString(),
-        arrivalTimeIst: arrival.toISOString(),
-      },
-      index
-    );
-  });
-}
 
 function normalizeBusSeatRecord(seat) {
   const seatCode = String(pickFirst(seat, ["seatCode", "SeatCode"], "") || "");
@@ -711,9 +615,14 @@ function normalizeBusPricingPreview(payload) {
   const gstAmount =
     Number(pickFirst(payload, ["gstAmount", "GstAmount"], 0)) || 0;
     
-  // Force subtotalBeforeCoupon to include API markup so the UI math adds up perfectly.
-  // Base Fare + Tax = Grand Total
-  const subtotalBeforeCoupon = finalAmount - gstAmount;
+  // Use the actual subtotalBeforeCoupon from the API when available.
+  // Only fall back to (finalAmount - gstAmount) when the API doesn't provide it
+  // (e.g. no coupon applied, so finalAmount already equals base + gst).
+  const rawSubtotalBeforeCoupon =
+    Number(pickFirst(payload, ["subtotalBeforeCoupon", "SubtotalBeforeCoupon"], 0)) || 0;
+  const subtotalBeforeCoupon = rawSubtotalBeforeCoupon > 0
+    ? rawSubtotalBeforeCoupon
+    : finalAmount - gstAmount;
 
   const taxableFare =
     Number(pickFirst(payload, ["taxableFare", "TaxableFare"], 0)) || 0;
@@ -778,19 +687,38 @@ function normalizeBusPricingPreview(payload) {
 }
 
 export function getBusPromotionDiscountAmount(pricingPreview, fallbackDiscount = 0) {
-  const totalDiscount = Number(pricingPreview?.totalDiscount) || 0;
-  const autoDiscount = Number(pricingPreview?.autoDiscountAmount) || 0;
+  if (!pricingPreview) return Number(fallbackDiscount) || 0;
+
+  const couponDiscount = Number(pricingPreview.couponDiscountAmount) || 0;
+  const manualDiscount = Number(pricingPreview.manualDiscountAmount) || 0;
+  const promoDiscount = Number(pricingPreview.promotionDiscountAmount) || Number(pricingPreview.discountAmount) || 0;
+  const rawCouponAmount = Number(pricingPreview.couponAmount) || 0;
+
+  const totalDiscount = Number(pricingPreview.totalDiscount) || 0;
+  const autoDiscount = Number(pricingPreview.autoDiscountAmount) || 0;
   const nonAutoDiscount = Math.max(0, totalDiscount - autoDiscount);
 
-  const explicitNonAuto =
-    (Number(pricingPreview?.couponDiscountAmount) || 0) +
-    (Number(pricingPreview?.manualDiscountAmount) || 0);
-
-  if (explicitNonAuto > 0) {
-    return explicitNonAuto;
+  if (couponDiscount + manualDiscount > 0) {
+    return couponDiscount + manualDiscount;
   }
 
-  return nonAutoDiscount || Number(fallbackDiscount) || 0;
+  if (promoDiscount > 0) {
+    return promoDiscount;
+  }
+
+  if (rawCouponAmount > 0) {
+    return rawCouponAmount;
+  }
+
+  if (nonAutoDiscount > 0) {
+    return nonAutoDiscount;
+  }
+
+  if (totalDiscount > 0) {
+    return totalDiscount;
+  }
+
+  return Number(fallbackDiscount) || 0;
 }
 
 export function calculateBusPayableAmount(pricingPreview, fallbackTotal = 0) {
@@ -1074,7 +1002,7 @@ function validateCouponRecord(coupon, { couponCode, totalFare } = {}) {
   if (minBookingAmount > 0 && fare < minBookingAmount) {
     return {
       valid: false,
-      message: `Minimum booking amount for this coupon is ₹ ${new Intl.NumberFormat(
+      message: `Minimum booking amount for this coupon is â‚¹ ${new Intl.NumberFormat(
         "en-IN"
       ).format(minBookingAmount)}.`,
     };
@@ -1333,107 +1261,37 @@ function toYyyyMmDdDate(inputDate) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-const POPULAR_BUS_CITY_MAP = {
-  bangalore: "4",
-  bengaluru: "4",
-  hyderabad: "9",
-  mumbai: "30",
-  chennai: "14",
-  pune: "24",
-  delhi: "2",
-  newdelhi: "2",
-  goa: "11",
-  ahmedabad: "1",
-  kolkata: "22",
-  jaipur: "17",
-  coimbatore: "12",
-  vijayawada: "39",
-  visakhapatnam: "40",
-  vizag: "40",
-  mysore: "28",
-  mysuru: "28",
-  kochi: "19",
-  cochin: "19",
-  trivandrum: "38",
-  thiruvananthapuram: "38",
-  madurai: "26",
-  trichy: "37",
-  tirupati: "36",
-  surat: "33",
-  vadodara: "34",
-  indore: "15",
-  bhopal: "8",
-  nagpur: "29",
-  nashik: "31",
-  aurangabad: "7",
-  hubli: "16",
-  mangalore: "27",
-  mangaluru: "27",
-  belgaum: "6",
-  gulbarga: "13",
-  shimoga: "32",
-  udupi: "35",
-};
 
-const RESOLVED_CITY_CODE_CACHE = new Map();
-const IN_FLIGHT_CITY_RESOLVE_MAP = new Map();
 
-async function resolveCityCode(cityInput) {
-  const value = String(cityInput || "").trim();
-  if (!value) return "";
-  if (/^\d+$/.test(value)) return value;
-
-  const key = value.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (POPULAR_BUS_CITY_MAP[key]) {
-    return POPULAR_BUS_CITY_MAP[key];
-  }
-
-  if (RESOLVED_CITY_CODE_CACHE.has(key)) {
-    return RESOLVED_CITY_CODE_CACHE.get(key);
-  }
-
-  if (IN_FLIGHT_CITY_RESOLVE_MAP.has(key)) {
-    return await IN_FLIGHT_CITY_RESOLVE_MAP.get(key);
-  }
-
-  const resolvePromise = (async () => {
-    try {
-      const cities = await searchBusCities(value);
-      if (Array.isArray(cities) && cities.length > 0) {
-        const match =
-          cities.find(
-            (c) =>
-              String(c?.cityName || "").toLowerCase() === value.toLowerCase() ||
-              String(c?.name || "").toLowerCase() === value.toLowerCase()
-          ) || cities[0];
-        const code = String(match?.cityId || match?.id || match?.cico_id || "");
-        if (/^\d+$/.test(code)) {
-          RESOLVED_CITY_CODE_CACHE.set(key, code);
-          return code;
-        }
-      }
-    } catch (err) {
-      console.warn("[busBookingService] resolveCityCode search failed:", err);
-    }
-    RESOLVED_CITY_CODE_CACHE.set(key, value);
-    return value;
-  })();
-
-  IN_FLIGHT_CITY_RESOLVE_MAP.set(key, resolvePromise);
+async function resolveCityCode(cityStrOrCode) {
+  if (!cityStrOrCode) return "";
+  const trimmed = String(cityStrOrCode).trim();
+  if (/^\d+$/.test(trimmed)) return trimmed;
+  
   try {
-    return await resolvePromise;
-  } finally {
-    IN_FLIGHT_CITY_RESOLVE_MAP.delete(key);
+    const cities = await searchBusCities(trimmed);
+    const match = cities.find(c => (c.cityName || c.name || "").toLowerCase() === trimmed.toLowerCase()) || cities[0];
+    if (match) {
+      return String(match.cityId || match.code || match.id || "").trim();
+    }
+  } catch(e) {
+    console.error("resolveCityCode error:", e);
   }
+  return trimmed;
 }
 
-export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) {
+export async function searchBuses({ from, to, date, fromCityCode, toCityCode, sourceCode, destinationCode }) {
   const formattedDate = toYyyyMmDdDate(date);
-  const rawFrom = fromCityCode || from;
-  const rawTo = toCityCode || to;
+  
+  const rawFromCode = fromCityCode || sourceCode || from;
+  const rawToCode = toCityCode || destinationCode || to;
 
-  const finalFromCode = await resolveCityCode(rawFrom);
-  const finalToCode = await resolveCityCode(rawTo);
+  const finalFromCode = await resolveCityCode(rawFromCode);
+  const finalToCode = await resolveCityCode(rawToCode);
+
+  if (!finalFromCode || !finalToCode) {
+    throw new Error("A valid source and destination city must be selected from the suggestions.");
+  }
 
   const postSearchUrl = `${BUS_BOOKINGS_ROOT}/search`;
 
@@ -1442,9 +1300,9 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        FromCityCode: finalFromCode,
-        ToCityCode: finalToCode,
-        DepartDate: formattedDate,
+        fromCityCode: finalFromCode,
+        toCityCode: finalToCode,
+        departDate: formattedDate,
       }),
     });
 
@@ -1458,7 +1316,7 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
     const extractArray = (obj) => {
       if (!obj || typeof obj !== "object") return null;
       if (Array.isArray(obj)) return obj;
-      // Check Result first — the SRDV response wraps the bus list in "Result"
+      // Check Result first â€” the SRDV response wraps the bus list in "Result"
       const priorityKeys = [
         "Result", "result",
         "buses", "Buses", "busList", "BusList", "items", "Items",
@@ -1483,10 +1341,28 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
         record.TravelsName || record.OperatorName || record.travelsName || record.operatorName || "Unknown Operator";
       const busType =
         record.BusType || record.busType || record.type || "";
-      const departureTime =
-        record.DepartureTime || record.departureTime || record.departure || "";
-      const arrivalTime =
-        record.ArrivalTime || record.arrivalTime || record.arrival || "";
+      const boardingPoints =
+        Array.isArray(record.BoardingPoints) ? record.BoardingPoints :
+        Array.isArray(record.boardingPoints) ? record.boardingPoints : [];
+      const droppingPoints =
+        Array.isArray(record.DroppingPoints) ? record.DroppingPoints :
+        Array.isArray(record.droppingPoints) ? record.droppingPoints : [];
+
+      let departureTime = record.DepartureTime || record.departureTime || record.departure || "";
+      if (boardingPoints.length > 0) {
+        const firstB = boardingPoints[0];
+        if (firstB && (firstB.Time || firstB.time)) {
+          departureTime = firstB.Time || firstB.time;
+        }
+      }
+
+      let arrivalTime = record.ArrivalTime || record.arrivalTime || record.arrival || "";
+      if (droppingPoints.length > 0) {
+        const lastD = droppingPoints[droppingPoints.length - 1];
+        if (lastD && (lastD.Time || lastD.time)) {
+          arrivalTime = lastD.Time || lastD.time;
+        }
+      }
 
       let busNumber = String(
         record.BusNumber ||
@@ -1577,12 +1453,7 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode }) 
         String(record.IsAC ?? record.isAC ?? "false").toLowerCase() === "true";
       const isSeater =
         String(record.Seater ?? record.seater ?? "false").toLowerCase() === "true";
-      const boardingPoints =
-        Array.isArray(record.BoardingPoints) ? record.BoardingPoints :
-        Array.isArray(record.boardingPoints) ? record.boardingPoints : [];
-      const droppingPoints =
-        Array.isArray(record.DroppingPoints) ? record.DroppingPoints :
-        Array.isArray(record.droppingPoints) ? record.droppingPoints : [];
+
       const amenities =
         Array.isArray(record.Amenities) ? record.Amenities :
         Array.isArray(record.amenities) ? record.amenities : [];
@@ -1905,18 +1776,30 @@ export async function getBusPricingPreview({
     finalFeaturedOfferId = null;
   }
 
-  if (finalFeaturedOfferId) {
-    finalCouponCode = null;
-  } else if (finalCouponCode) {
-    finalFeaturedOfferId = null;
+  // Cross-reference couponCode with featured offers if not already set
+  if (finalCouponCode && !finalFeaturedOfferId) {
+    try {
+      const offers = await getFeaturedBusOffers();
+      const matchingOffer = offers.find(
+        (o) => String(o.couponCode || "").toUpperCase() === finalCouponCode
+      );
+      if (matchingOffer) {
+        finalFeaturedOfferId = matchingOffer.id || matchingOffer.offerId || matchingOffer.selectedFeaturedOfferId || null;
+      }
+    } catch {
+      // Ignore lookup error
+    }
   }
 
   const seatsPayload = passengers.map(p => ({
     seatCode: p.seatNumber || p.seatName || p.seatCode,
     seatType: p.seatType || "Seater",
-    baseFare: Number(p.baseFare || 0),
-    externalGst: Number(p.tax || p.externalGst || 0)
+    baseFare: Number(p.baseFare || p.fareBeforeTax || p.priceInr || 0),
+    externalGst: Number(p.tax || p.externalGst || p.gstAmount || 0)
   }));
+
+  const calculatedBaseFare = seatsPayload.reduce((sum, s) => sum + Number(s.baseFare || 0), 0) || Number(totalFare || 0);
+  const calculatedTax = seatsPayload.reduce((sum, s) => sum + Number(s.externalGst || 0), 0);
 
   try {
     const data = await requestJsonWithFallback(
@@ -1935,15 +1818,104 @@ export async function getBusPricingPreview({
           departureTime: String(departureTime || ""),
           operatorName: String(operatorName || ""),
           busType: String(busType || ""),
-          totalFare: Number(totalFare || 0)
+          totalFare: calculatedBaseFare
         }),
       }
     );
 
     return normalizeBusPricingPreview(data && typeof data === "object" ? data : {});
   } catch (error) {
-    console.error("[busBookingService] getBusPricingPreview Error:", error);
-    throw error;
+    // If the API explicitly rejected the request (e.g. 400 validation error), throw it immediately.
+    // Do not bypass the backend's validation by using local coupon calculation!
+    if (error?.status >= 400 && error?.status < 500) {
+      throw error;
+    }
+
+    console.warn("[busBookingService] Remote pricing-preview failed, checking local coupon catalog:", error?.message || error);
+
+    // If coupon was provided and remote failed, validate locally against active coupons & offers
+    if (finalCouponCode || finalFeaturedOfferId) {
+      let matchedDiscount = 0;
+      let appliedPromoCode = finalCouponCode;
+
+      // 1. Check Bus Coupons
+      if (finalCouponCode) {
+        try {
+          const availableCoupons = await listAvailableBusCoupons();
+          const couponRecord = availableCoupons.find(
+            (c) => String(c.couponCode || "").toUpperCase() === finalCouponCode
+          );
+          if (couponRecord) {
+            const validation = validateCouponRecord(couponRecord, {
+              couponCode: finalCouponCode,
+              totalFare: calculatedBaseFare,
+            });
+            if (validation.valid && validation.discountAmount > 0) {
+              matchedDiscount = validation.discountAmount;
+              appliedPromoCode = finalCouponCode;
+            } else if (!validation.valid) {
+              throw new Error(validation.message || "Invalid or inactive coupon code.");
+            }
+          }
+        } catch (valErr) {
+          if (valErr.message && !valErr.message.includes("fetch")) {
+            throw valErr;
+          }
+        }
+      }
+
+      // 2. Check Featured Offers if not matched yet
+      if (matchedDiscount <= 0 && (finalFeaturedOfferId || finalCouponCode)) {
+        try {
+          const offers = await getFeaturedBusOffers();
+          const offerRecord = offers.find(
+            (o) =>
+              (finalFeaturedOfferId && (o.id === finalFeaturedOfferId || o.offerId === finalFeaturedOfferId)) ||
+              (finalCouponCode && String(o.couponCode || "").toUpperCase() === finalCouponCode)
+          );
+          if (offerRecord) {
+            const isPercent = offerRecord.isPercentageDiscount;
+            const val = Number(offerRecord.discountValue || 0);
+            matchedDiscount = isPercent ? Math.round((calculatedBaseFare * val) / 100) : val;
+            appliedPromoCode = offerRecord.couponCode || `OFFER-${offerRecord.id}`;
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      if (matchedDiscount > 0) {
+        const finalGrandTotal = Math.max(0, calculatedBaseFare - matchedDiscount + calculatedTax);
+        return normalizeBusPricingPreview({
+          subtotalBeforeCoupon: calculatedBaseFare,
+          taxableFare: calculatedBaseFare,
+          gstAmount: calculatedTax,
+          couponDiscountAmount: matchedDiscount,
+          promotionDiscountAmount: matchedDiscount,
+          totalDiscount: matchedDiscount,
+          finalAmount: finalGrandTotal,
+          grandTotal: finalGrandTotal,
+          appliedPromotionCode: appliedPromoCode,
+          seats: seatsPayload,
+        });
+      }
+
+      // If genuinely not found in active catalogs, throw clear error
+      throw new Error(error?.message || "Invalid or inactive coupon code.");
+    }
+
+    // Fallback if no coupon was requested but preview failed
+    const fallbackGrandTotal = calculatedBaseFare + calculatedTax;
+    return normalizeBusPricingPreview({
+      subtotalBeforeCoupon: calculatedBaseFare,
+      taxableFare: calculatedBaseFare,
+      gstAmount: calculatedTax,
+      couponDiscountAmount: 0,
+      totalDiscount: 0,
+      finalAmount: fallbackGrandTotal,
+      grandTotal: fallbackGrandTotal,
+      seats: seatsPayload,
+    });
   }
 }
 
