@@ -3,18 +3,25 @@ services:
     build:
       context: ./backend/PickNBook.Api
       dockerfile: Dockerfile
+
     env_file:
       - ./.env
+
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
+
+      # MySQL is running on the Ubuntu host
       ConnectionStrings__DefaultConnection: ${BACKEND_CONNECTION_STRING:?Set BACKEND_CONNECTION_STRING in .env}
+
       ApplyMigrations: ${APPLY_MIGRATIONS:-false}
       RepairMissingSchema: ${REPAIR_MISSING_SCHEMA:-false}
+
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
       Jwt__Issuer: ${JWT_ISSUER:-PickNBookApi}
       Jwt__Audience: ${JWT_AUDIENCE:-PickNBookUsers}
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
+
       Cors__AllowedOrigins__0: ${FRONTEND_PUBLIC_URL:-https://www.picknbook.in}
       Cors__AllowedOrigins__1: ${FRONTEND_PUBLIC_URL_ALT:-https://picknbook.in}
       Cors__AllowedOrigins__2: ${FRONTEND_PUBLIC_URL_HTTP:-http://www.picknbook.in}
@@ -23,32 +30,43 @@ services:
       Cors__AllowedOrigins__5: ${FRONTEND_LOCAL_URL_ALT:-http://127.0.0.1:3000}
       Cors__AllowedOrigins__6: ${FRONTEND_DEV_URL:-http://localhost:5173}
       Cors__AllowedOrigins__7: ${FRONTEND_DEV_URL_ALT:-http://127.0.0.1:5173}
+
       Amadeus__BaseUrl: ${AMADEUS_BASE_URL:-https://test.api.amadeus.com}
       Amadeus__ClientId: ${AMADEUS_CLIENT_ID:-OyZ3je6eRLoxKkWnRlJdmfFvGNhxcfAQ}
       Amadeus__ClientSecret: ${AMADEUS_CLIENT_SECRET:-IUmmOTXycK7A16CB}
+
       EmailSettings__SmtpServer: ${SMTP_SERVER:-smtp.gmail.com}
       EmailSettings__Port: ${SMTP_PORT:-587}
       EmailSettings__SenderName: ${SMTP_SENDER_NAME:-PickNBook}
       EmailSettings__SenderEmail: ${SMTP_SENDER_EMAIL:-picknbook123@gmail.com}
       EmailSettings__Username: ${SMTP_USERNAME:-picknbook123@gmail.com}
       EmailSettings__Password: ${SMTP_PASSWORD:-vwxw ytjl piwu guur}
+
       WhatsAppSettings__Enabled: ${WHATSAPP_ENABLED:-false}
       WhatsAppSettings__ApiBaseUrl: ${WHATSAPP_API_BASE_URL:-https://graph.facebook.com/v20.0}
       WhatsAppSettings__PhoneNumberId: ${WHATSAPP_PHONE_NUMBER_ID:-}
       WhatsAppSettings__AccessToken: ${WHATSAPP_ACCESS_TOKEN:-}
+
       Notifications__TicketEmailUrl: ${TICKET_EMAIL_URL:-}
+
     expose:
       - "8080"
+
+    # Allows the Docker container to access MySQL
+    # running directly on the Ubuntu host
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
     volumes:
       - backend_wwwroot:/app/wwwroot
+
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+
       args:
         REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-https://www.picknbook.in}
         REACT_APP_AUTH_API_BASE_URL: ${REACT_APP_AUTH_API_BASE_URL:-https://www.picknbook.in}
@@ -60,12 +78,16 @@ services:
         REACT_APP_PLACES_API_URL: ${REACT_APP_PLACES_API_URL:-/api/Places}
         REACT_APP_USE_DIRECT_API_IN_DEV: ${REACT_APP_USE_DIRECT_API_IN_DEV:-false}
         REACT_APP_DEFAULT_USER_ID: ${REACT_APP_DEFAULT_USER_ID:-user_123}
+
     env_file:
       - ./.env
+
     ports:
       - "${FRONTEND_PORT:-3000}:8080"
+
     depends_on:
       - backend
+
     restart: unless-stopped
 
 volumes:
