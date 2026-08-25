@@ -94,6 +94,31 @@ namespace PickNBook.Api.Services
 
         public async Task<PickNBookHotelSearchResponseDto> SearchHotelsMultiLevelAsync(SrdvHotelSearchRequestDto request)
         {
+            string guestDetails = "";
+            if (request.RoomGuests != null)
+            {
+                guestDetails = string.Join("_", request.RoomGuests.Select(rg => $"{rg.NoOfAdults}-{rg.NoOfChild}"));
+            }
+            var cacheKey = $"HotelSearch_{request.CityId}_{request.CheckInDate}_{request.CheckOutDate}_{request.NoOfRooms}_{guestDetails}";
+
+            if (_cache.TryGetValue(cacheKey, out PickNBookHotelSearchResponseDto? cachedResponse))
+            {
+                return cachedResponse!;
+            }
+
+            var response = await SearchHotelsMultiLevelRawAsync(request);
+            
+            // Only cache if there's no error
+            if (response != null && (response.Error == null || response.Error.ErrorCode == 0))
+            {
+                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(15));
+            }
+
+            return response ?? new PickNBookHotelSearchResponseDto();
+        }
+
+        private async Task<PickNBookHotelSearchResponseDto> SearchHotelsMultiLevelRawAsync(SrdvHotelSearchRequestDto request)
+        {
             request.ClientId = _settings.ClientId;
             request.UserName = _settings.UserName;
             request.Password = _settings.Password;
@@ -643,8 +668,8 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/Balance", requestBody, new JsonSerializerOptions { PropertyNamingPolicy = null });
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            using var json = JsonDocument.Parse(content);
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            using var json = await JsonDocument.ParseAsync(contentStream);
             
             var root = json.RootElement;
             var balanceDto = new PickNBookBalanceResponseDto();
@@ -689,8 +714,8 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/BalanceLog", requestBody, new JsonSerializerOptions { PropertyNamingPolicy = null });
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            using var json = JsonDocument.Parse(content);
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            using var json = await JsonDocument.ParseAsync(contentStream);
             var root = json.RootElement;
 
             var balanceLogDto = new PickNBookBalanceLogResponseDto { Success = true };
@@ -804,8 +829,8 @@ namespace PickNBook.Api.Services
                 var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/GetHotelInfo", request);
                 response.EnsureSuccessStatusCode();
 
-                var content = await response.Content.ReadAsStringAsync();
-                jsonDoc = JsonDocument.Parse(content);
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+            jsonDoc = await JsonDocument.ParseAsync(contentStream);
                 root = jsonDoc.RootElement;
             }
             catch (Exception ex)
@@ -1044,8 +1069,8 @@ namespace PickNBook.Api.Services
                 var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/GetHotelRoom", request);
                 response.EnsureSuccessStatusCode();
 
-                var content = await response.Content.ReadAsStringAsync();
-                jsonDoc = JsonDocument.Parse(content);
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+            jsonDoc = await JsonDocument.ParseAsync(contentStream);
                 root = jsonDoc.RootElement;
             }
             catch (Exception ex)
@@ -1447,8 +1472,8 @@ namespace PickNBook.Api.Services
                 var response = await _httpClient.PostAsJsonAsync($"{_settings.HotelBaseUrl}/BlockRoom", blockReq, new JsonSerializerOptions { PropertyNamingPolicy = null });
                 response.EnsureSuccessStatusCode();
 
-                var content = await response.Content.ReadAsStringAsync();
-                jsonDoc = JsonDocument.Parse(content);
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+            jsonDoc = await JsonDocument.ParseAsync(contentStream);
                 root = jsonDoc.RootElement;
             }
             catch (Exception ex)
@@ -1794,8 +1819,8 @@ namespace PickNBook.Api.Services
                     return errDto;
                 }
 
-                var contentStr = await httpRes.Content.ReadAsStringAsync();
-                jsonDoc = JsonDocument.Parse(contentStr);
+                using var contentStrStream = await httpRes.Content.ReadAsStreamAsync();
+            jsonDoc = await JsonDocument.ParseAsync(contentStrStream);
                 var root = jsonDoc.RootElement;
 
                 var responseDto = new PickNBookBookRoomResponseDto();
@@ -1890,8 +1915,8 @@ namespace PickNBook.Api.Services
                     return errDto;
                 }
 
-                var contentStr = await httpRes.Content.ReadAsStringAsync();
-                jsonDoc = System.Text.Json.JsonDocument.Parse(contentStr);
+                using var contentStrStream = await httpRes.Content.ReadAsStreamAsync();
+            jsonDoc = await JsonDocument.ParseAsync(contentStrStream);
                 var root = jsonDoc.RootElement;
 
                 var resDto = new SendChangeResponseDto();

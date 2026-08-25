@@ -186,8 +186,29 @@ namespace PickNBook.Api.Services
 
         public async Task<List<SrdvBusOfferDto>> SearchBusesAsync(string originId, string destinationId, string journeyDate)
         {
-            var (_, buses) = await SearchBusesWithRawAsync(originId, destinationId, journeyDate);
-            return buses;
+            var cacheKey = $"Bus_Search_{originId}_{destinationId}_{journeyDate}";
+            if (!_cache.TryGetValue(cacheKey, out List<SrdvBusOfferDto>? cachedBuses))
+            {
+                var (_, buses) = await SearchBusesWithRawAsync(originId, destinationId, journeyDate);
+                cachedBuses = buses;
+                _cache.Set(cacheKey, cachedBuses, TimeSpan.FromMinutes(15));
+            }
+            
+            // Dynamic Time Filtering for expired buses
+            var istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            var cutoffTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istZone).AddMinutes(-5);
+            DateTime.TryParseExact(journeyDate, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out DateTime parsedJourneyDate);
+
+            var validBuses = cachedBuses!.Where(bus => {
+                if (DateTime.TryParse(bus.DepartureTime, out DateTime deptTime))
+                {
+                    var fullDeptTime = new DateTime(parsedJourneyDate.Year, parsedJourneyDate.Month, parsedJourneyDate.Day, deptTime.Hour, deptTime.Minute, deptTime.Second);
+                    return fullDeptTime >= cutoffTime;
+                }
+                return true;
+            }).ToList();
+
+            return validBuses;
         }
 
         public async Task<(string RawJson, List<SrdvBusOfferDto> Buses)> SearchBusesWithRawAsync(string originId, string destinationId, string journeyDate)
@@ -208,8 +229,8 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.PostAsJsonAsync($"{_settings.BusBaseUrl}/Search", requestBody, _jsonOptions);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            var json = JsonDocument.Parse(content);
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            var json = await JsonDocument.ParseAsync(contentStream);
             
             var res = new List<SrdvBusOfferDto>();
 
@@ -300,10 +321,10 @@ namespace PickNBook.Api.Services
             }
             else
             {
-                throw new Exception($"SRDV Search failed. ErrorCode: {errorCode}. ErrorMessage: {errorMessage}. Raw Response: {content}");
+                throw new Exception($"SRDV Search failed. ErrorCode: {errorCode}. ErrorMessage: {errorMessage}. Raw Response: [Omitted]");
             }
 
-            return (content, res);
+            return (string.Empty, res);
         }
 
         public async Task<string> BlockBusProxyAsync(SrdvBusBookingRequestDto request)
@@ -495,8 +516,8 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.PostAsJsonAsync($"{_settings.BusBaseUrl}/GetBoardingPointDetails", requestBody, _jsonOptions);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            var json = JsonDocument.Parse(content);
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            var json = await JsonDocument.ParseAsync(contentStream);
             var result = new SrdvBoardingDroppingDetailsDto();
 
             if (json.RootElement.TryGetProperty("BoardingPoints", out var bpProp) && bpProp.ValueKind == JsonValueKind.Array)
@@ -549,8 +570,8 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.PostAsJsonAsync($"{_settings.BusBaseUrl}/GetSeatLayOut", requestBody, _jsonOptions);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            var json = JsonDocument.Parse(content);
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            var json = await JsonDocument.ParseAsync(contentStream);
             var res = new List<SrdvSeatDto>();
 
             if (json.RootElement.TryGetProperty("Result", out var resultProp) && resultProp.ValueKind == JsonValueKind.Object)
@@ -697,8 +718,8 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.PostAsJsonAsync($"{_settings.BusBaseUrl}/Cancel", requestBody, _jsonOptions);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            var json = JsonDocument.Parse(content);
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            var json = await JsonDocument.ParseAsync(contentStream);
 
             int errorCode = -1;
             string errorMessage = "Unknown SRDV Cancellation Error";

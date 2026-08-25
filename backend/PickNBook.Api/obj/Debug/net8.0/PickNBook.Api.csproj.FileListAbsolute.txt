@@ -309,4 +309,5 @@ C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debu
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\Data\srdv_hotel_cities_special.json
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\test.json
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\Data\srdv_bus_city_codes.json
+C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\Serilog.Sinks.Async.dll
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

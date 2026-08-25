@@ -78,14 +78,11 @@ public class SrdvHotelLoggingHandler : DelegatingHandler
     private string FormatJson(string json)
     {
         if (string.IsNullOrWhiteSpace(json)) return json;
-        try
+        const int maxLength = 10000;
+        if (json.Length > maxLength)
         {
-            var parsedJson = JsonDocument.Parse(json);
-            return JsonSerializer.Serialize(parsedJson, new JsonSerializerOptions { WriteIndented = true });
+            return json.Substring(0, maxLength) + $"\n...[truncated, original size: {json.Length} chars]";
         }
-        catch
-        {
-            return json; // Return original if not valid JSON
-        }
+        return json;
     }
 }

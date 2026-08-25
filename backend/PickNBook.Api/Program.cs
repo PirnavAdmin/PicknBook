@@ -25,7 +25,7 @@ Log.Logger = new LoggerConfiguration()
             evt.Properties.TryGetValue("SourceContext", out var ctx) && 
             (ctx.ToString().Contains("BusRequestLoggingMiddleware") || 
              ctx.ToString().Contains("SrdvBusLoggingHandler")))
-        .WriteTo.File("Logs/bus-api-.txt", rollingInterval: RollingInterval.Day)
+        .WriteTo.Async(a => a.File("Logs/bus-api-.txt", rollingInterval: RollingInterval.Day), blockWhenFull: false)
     )
     .WriteTo.Logger(lc => lc
         // Only capture our specific Flight loggers into the file
@@ -33,7 +33,7 @@ Log.Logger = new LoggerConfiguration()
             evt.Properties.TryGetValue("SourceContext", out var ctx) && 
             (ctx.ToString().Contains("FlightRequestLoggingMiddleware") || 
              ctx.ToString().Contains("SrdvFlightLoggingHandler")))
-        .WriteTo.File("Logs/flight-api-.txt", rollingInterval: RollingInterval.Day)
+        .WriteTo.Async(a => a.File("Logs/flight-api-.txt", rollingInterval: RollingInterval.Day), blockWhenFull: false)
     )
     .WriteTo.Logger(lc => lc
         // A dedicated file just for your current testing session so it's easy to find
@@ -41,7 +41,7 @@ Log.Logger = new LoggerConfiguration()
             evt.Properties.TryGetValue("SourceContext", out var ctx) && 
             (ctx.ToString().Contains("FlightRequestLoggingMiddleware") || 
              ctx.ToString().Contains("SrdvFlightLoggingHandler")))
-        .WriteTo.File("Logs/test-session-logs.txt", rollingInterval: RollingInterval.Infinite)
+        .WriteTo.Async(a => a.File("Logs/test-session-logs.txt", rollingInterval: RollingInterval.Infinite), blockWhenFull: false)
     )
     .WriteTo.Logger(lc => lc
         // Only capture our specific Hotel loggers into the file
@@ -49,7 +49,7 @@ Log.Logger = new LoggerConfiguration()
             evt.Properties.TryGetValue("SourceContext", out var ctx) && 
             (ctx.ToString().Contains("HotelRequestLoggingMiddleware") || 
              ctx.ToString().Contains("SrdvHotelLoggingHandler")))
-        .WriteTo.File("Logs/hotel-api-.txt", rollingInterval: RollingInterval.Day)
+        .WriteTo.Async(a => a.File("Logs/hotel-api-.txt", rollingInterval: RollingInterval.Day), blockWhenFull: false)
     )
     .CreateLogger();
 
@@ -61,12 +61,24 @@ builder.Services.Configure<PickNBook.Api.Models.Config.SrdvSettings>(
 
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
 builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+    })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
 builder.Services.AddHttpClient<IHotelService, SrdvHotelService>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+    })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
 builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+    })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
 
 builder.Services.AddSingleton<HotelCityCacheService>();

@@ -40,59 +40,85 @@ namespace PickNBook.Api.Middleware
             // 3. Identify Account from User context (Assumes JWT auth has populated User.Identity)
             string accountId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-            // 4. Check PERMANENT restrictions
-            var isPermanentlyBlocked = await dbContext.SecurityIpRules
-                .AnyAsync(r => r.IpAddress == ipAddress && r.BlockType == "PERMANENT" && (r.Status == "BLOCKED" || r.Status == "BLACKLISTED") && (r.Scope == scope || r.Scope == "ADMIN_USER"));
+            // 4, 5, 6. Check IP Restrictions using Cache
+            var ipCacheKey = $"SecurityIpRules_{ipAddress}_{scope}";
+            if (!memoryCache.TryGetValue(ipCacheKey, out IpSecurityStatus ipStatus))
+            {
+                ipStatus = new IpSecurityStatus();
+                
+                ipStatus.IsPermanentlyBlocked = await dbContext.SecurityIpRules
+                    .AnyAsync(r => r.IpAddress == ipAddress && r.BlockType == "PERMANENT" && (r.Status == "BLOCKED" || r.Status == "BLACKLISTED") && (r.Scope == scope || r.Scope == "ADMIN_USER"));
 
-            if (isPermanentlyBlocked)
+                ipStatus.IsWhitelisted = await dbContext.SecurityIpRules
+                    .AnyAsync(r => r.IpAddress == ipAddress && r.Action == "WHITELIST" && r.Status == "ACTIVE" && (r.Scope == scope || r.Scope == "ADMIN_USER"));
+
+                if (!ipStatus.IsWhitelisted)
+                {
+                    var tempBlock = await dbContext.SecurityIpRules
+                        .FirstOrDefaultAsync(r => r.IpAddress == ipAddress && r.BlockType == "TEMPORARY" && (r.Status == "BLOCKED" || r.Status == "BLACKLISTED") && (r.Scope == scope || r.Scope == "ADMIN_USER"));
+
+                    if (tempBlock != null)
+                    {
+                        ipStatus.IsTemporarilyBlocked = true;
+                        ipStatus.TempBlockExpiryTime = tempBlock.ExpiryTime;
+                    }
+                }
+
+                memoryCache.Set(ipCacheKey, ipStatus, TimeSpan.FromMinutes(5));
+            }
+
+            if (ipStatus.IsPermanentlyBlocked)
             {
                 await ReturnBlockedResponse(context, "IP_PERMANENTLY_BLOCKED", "Access denied by security policy.");
                 return;
             }
 
-            // 5. Check WHITELIST
-            var isWhitelisted = await dbContext.SecurityIpRules
-                .AnyAsync(r => r.IpAddress == ipAddress && r.Action == "WHITELIST" && r.Status == "ACTIVE" && (r.Scope == scope || r.Scope == "ADMIN_USER"));
-
-            // 6. Check TEMPORARY BLOCK
-            if (!isWhitelisted)
+            if (ipStatus.IsTemporarilyBlocked && !ipStatus.IsWhitelisted)
             {
-                var tempBlock = await dbContext.SecurityIpRules
-                    .FirstOrDefaultAsync(r => r.IpAddress == ipAddress && r.BlockType == "TEMPORARY" && (r.Status == "BLOCKED" || r.Status == "BLACKLISTED") && (r.Scope == scope || r.Scope == "ADMIN_USER"));
-
-                if (tempBlock != null)
+                if (ipStatus.TempBlockExpiryTime.HasValue && ipStatus.TempBlockExpiryTime.Value <= DateTime.UtcNow)
                 {
-                    if (tempBlock.ExpiryTime.HasValue && tempBlock.ExpiryTime.Value <= DateTime.UtcNow)
-                    {
-                        // Ignore, let background job expire it. But don't block.
-                    }
-                    else
-                    {
-                        await ReturnBlockedResponse(context, "IP_TEMPORARILY_BLOCKED", "Access temporarily restricted.", tempBlock.ExpiryTime);
-                        return;
-                    }
+                    // Ignore, let background job expire it. But don't block.
+                }
+                else
+                {
+                    await ReturnBlockedResponse(context, "IP_TEMPORARILY_BLOCKED", "Access temporarily restricted.", ipStatus.TempBlockExpiryTime);
+                    return;
                 }
             }
 
-            // 7. Check API Security Rules (Module F)
-            var apiRule = await dbContext.SecurityApiRules
-                .Where(r => path.StartsWith(r.UrlPattern.ToLower()))
-                .OrderByDescending(r => r.UrlPattern.Length)
-                .FirstOrDefaultAsync();
+            // 7. Check API Security Rules (Module F) using Cache
+            var apiRuleCacheKey = $"SecurityApiRule_{path}";
+            if (!memoryCache.TryGetValue(apiRuleCacheKey, out CachedApiRule cachedApiRule))
+            {
+                var apiRule = await dbContext.SecurityApiRules
+                    .Where(r => path.StartsWith(r.UrlPattern.ToLower()))
+                    .OrderByDescending(r => r.UrlPattern.Length)
+                    .FirstOrDefaultAsync();
+
+                cachedApiRule = new CachedApiRule();
+                if (apiRule != null)
+                {
+                    cachedApiRule.HasRule = true;
+                    cachedApiRule.RateLimitValue = apiRule.RateLimitValue;
+                    cachedApiRule.RateLimitPeriod = apiRule.RateLimitPeriod;
+                }
+
+                memoryCache.Set(apiRuleCacheKey, cachedApiRule, TimeSpan.FromMinutes(60));
+            }
 
             int rateLimitCount = 100;
             int rateLimitWindow = 1;
 
-            if (apiRule != null)
+            if (cachedApiRule.HasRule)
             {
-                if (apiRule.RateLimitValue.HasValue) rateLimitCount = apiRule.RateLimitValue.Value;
-                if (apiRule.RateLimitPeriod == "PER_HOUR") rateLimitWindow = 60;
-                else if (apiRule.RateLimitPeriod == "PER_DAY") rateLimitWindow = 1440;
+                if (cachedApiRule.RateLimitValue.HasValue) rateLimitCount = cachedApiRule.RateLimitValue.Value;
+                if (cachedApiRule.RateLimitPeriod == "PER_HOUR") rateLimitWindow = 60;
+                else if (cachedApiRule.RateLimitPeriod == "PER_DAY") rateLimitWindow = 1440;
                 else rateLimitWindow = 1;
             }
 
             // 8. API Rate Limiting Check
-            if (!isWhitelisted)
+            if (!ipStatus.IsWhitelisted)
             {
                 var cacheKey = $"RateLimit_{ipAddress}_{path}";
                 var requestCount = memoryCache.GetOrCreate(cacheKey, entry =>
@@ -165,6 +191,21 @@ namespace PickNBook.Api.Middleware
             };
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        }
+
+        private class IpSecurityStatus
+        {
+            public bool IsPermanentlyBlocked { get; set; }
+            public bool IsWhitelisted { get; set; }
+            public bool IsTemporarilyBlocked { get; set; }
+            public DateTime? TempBlockExpiryTime { get; set; }
+        }
+
+        private class CachedApiRule
+        {
+            public bool HasRule { get; set; }
+            public int? RateLimitValue { get; set; }
+            public string RateLimitPeriod { get; set; }
         }
     }
 }
