@@ -648,7 +648,7 @@ namespace PickNBook.Api.Models.DTOs
         public string CityId { get; set; } = string.Empty;
 
         [JsonPropertyName("ResultCount")]
-        public string ResultCount { get; set; } = "500";
+        public string ResultCount { get; set; } = "50";
 
         [JsonPropertyName("PreferredCurrency")]
         public string PreferredCurrency { get; set; } = "INR";

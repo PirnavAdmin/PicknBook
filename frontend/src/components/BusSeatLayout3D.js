@@ -169,36 +169,57 @@ function SeaterLayout({ section, selectedSeats, onSeatClick }) {
     return <div className="no-seats">No seats available</div>;
   }
 
-  // Group seats by row
-  const seatsByRow = {};
-  section.seats.forEach((seat) => {
-    const row = seat.row || 1;
-    if (!seatsByRow[row]) seatsByRow[row] = [];
-    seatsByRow[row].push(seat);
-  });
+  const seats = section.seats;
+  const maxRow = Math.max(...seats.map((s) => Number(s.row) || 1));
+  const maxCol = Math.max(...seats.map((s) => Number(s.column) || 1));
 
-  const sortedRows = Object.keys(seatsByRow).sort((a, b) => Number(a) - Number(b));
+  const seatGrid = {};
+  seats.forEach((seat) => {
+    const r = Number(seat.row) || 1;
+    const c = Number(seat.column) || 1;
+    seatGrid[`${r}-${c}`] = seat;
+  });
 
   return (
     <div className="seater-layout">
-      <div className="seats-grid seater-grid">
-        {sortedRows.map((rowNum) => (
-          <div key={`row-${rowNum}`} className="seat-row">
-            <span className="row-label">{rowNum}</span>
-            <div className="row-seats">
-              {seatsByRow[rowNum].map((seat) => (
-                <SeatButton
-                  key={seat.seatId}
-                  seat={seat}
-                  sectionId={section.id}
-                  selectedSeats={selectedSeats}
-                  onSeatClick={onSeatClick}
-                  type="seater"
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+      <div
+        className="seats-grid seater-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `32px repeat(${maxCol}, 44px)`,
+          gridTemplateRows: `repeat(${maxRow}, 44px)`,
+          columnGap: "6px",
+          rowGap: "10px",
+          alignItems: "center",
+        }}
+      >
+        {Array.from({ length: maxRow }, (_, rIdx) => {
+          const rowNum = rIdx + 1;
+          return (
+            <React.Fragment key={`row-${rowNum}`}>
+              <span className="row-label" style={{ gridRow: rowNum, gridColumn: 1 }}>
+                {rowNum}
+              </span>
+              {Array.from({ length: maxCol }, (_, cIdx) => {
+                const colNum = cIdx + 1;
+                const seat = seatGrid[`${rowNum}-${colNum}`];
+                return (
+                  <div key={`${rowNum}-${colNum}`} style={{ gridRow: rowNum, gridColumn: colNum + 1 }}>
+                    {seat ? (
+                      <SeatButton
+                        seat={seat}
+                        sectionId={section.id}
+                        selectedSeats={selectedSeats}
+                        onSeatClick={onSeatClick}
+                        type="seater"
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
@@ -212,42 +233,67 @@ function SleeperLayout({ section, selectedSeats, onSeatClick }) {
     return <div className="no-seats">No seats available</div>;
   }
 
-  // Group seats by position (top/bottom pairs)
-  const seatsByPosition = {};
-  section.seats.forEach((seat) => {
-    const key = `${seat.row}-${seat.column}`;
-    if (!seatsByPosition[key]) seatsByPosition[key] = [];
-    seatsByPosition[key].push(seat);
-  });
+  const seats = section.seats;
+  const maxRow = Math.max(...seats.map((s) => Number(s.row) || 1));
+  const maxCol = Math.max(...seats.map((s) => Number(s.column) || 1));
 
-  const sortedPositions = Object.keys(seatsByPosition).sort();
+  const bunkGrid = {};
+  seats.forEach((seat) => {
+    const r = Number(seat.row) || 1;
+    const c = Number(seat.column) || 1;
+    const key = `${r}-${c}`;
+    if (!bunkGrid[key]) bunkGrid[key] = [];
+    bunkGrid[key].push(seat);
+  });
 
   return (
     <div className="sleeper-layout">
-      <div className="sleeper-grid">
-        {sortedPositions.map((key) => {
-          const [rowNum] = key.split("-");
-          const pair = seatsByPosition[key].sort(
-            (a, b) =>
-              (a.position === "top" ? 0 : 1) - (b.position === "top" ? 0 : 1)
-          );
-
+      <div
+        className="sleeper-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `32px repeat(${maxCol}, 60px)`,
+          gridTemplateRows: `repeat(${maxRow}, 70px)`,
+          columnGap: "8px",
+          rowGap: "10px",
+          alignItems: "center",
+        }}
+      >
+        {Array.from({ length: maxRow }, (_, rIdx) => {
+          const rowNum = rIdx + 1;
           return (
-            <div key={key} className="sleeper-bunk">
-              <span className="bunk-label">{rowNum}</span>
-              <div className="bunk-seats">
-                {pair.map((seat) => (
-                  <SeatButton
-                    key={seat.seatId}
-                    seat={seat}
-                    sectionId={section.id}
-                    selectedSeats={selectedSeats}
-                    onSeatClick={onSeatClick}
-                    type="sleeper"
-                  />
-                ))}
-              </div>
-            </div>
+            <React.Fragment key={`row-${rowNum}`}>
+              <span className="bunk-label" style={{ gridRow: rowNum, gridColumn: 1 }}>
+                {rowNum}
+              </span>
+              {Array.from({ length: maxCol }, (_, cIdx) => {
+                const colNum = cIdx + 1;
+                const key = `${rowNum}-${colNum}`;
+                const pair = (bunkGrid[key] || []).sort(
+                  (a, b) => (a.position === "top" ? 0 : 1) - (b.position === "top" ? 0 : 1)
+                );
+                return (
+                  <div
+                    key={key}
+                    className="sleeper-bunk"
+                    style={{ gridRow: rowNum, gridColumn: colNum + 1 }}
+                  >
+                    <div className="bunk-seats">
+                      {pair.map((seat) => (
+                        <SeatButton
+                          key={seat.seatId}
+                          seat={seat}
+                          sectionId={section.id}
+                          selectedSeats={selectedSeats}
+                          onSeatClick={onSeatClick}
+                          type="sleeper"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </React.Fragment>
           );
         })}
       </div>

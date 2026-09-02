@@ -51,6 +51,14 @@ Log.Logger = new LoggerConfiguration()
              ctx.ToString().Contains("SrdvHotelLoggingHandler")))
         .WriteTo.Async(a => a.File("Logs/hotel-api-.txt", rollingInterval: RollingInterval.Day), blockWhenFull: false)
     )
+    .WriteTo.Logger(lc =>
+        // Dedicated SMS OTP log file — clean, shareable, no noise
+        lc.Filter.ByIncludingOnly(evt =>
+            evt.Properties.TryGetValue("SourceContext", out var ctx) &&
+            (ctx.ToString().Contains("SmsOtpRequestLoggingMiddleware") ||
+             ctx.ToString().Contains("PointerItLoggingHandler")))
+        .WriteTo.Async(a => a.File("Logs/sms-api-.txt", rollingInterval: RollingInterval.Day), blockWhenFull: false)
+    )
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -59,25 +67,39 @@ builder.Host.UseSerilog();
 builder.Services.Configure<PickNBook.Api.Models.Config.SrdvSettings>(
     builder.Configuration.GetSection("Srdv"));
 
+builder.Services.Configure<CashfreeSettings>(
+    builder.Configuration.GetSection("Cashfree"));
+
+builder.Services.AddHttpClient<ICashfreeService, CashfreeService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IBookingOrchestratorService, BookingOrchestratorService>();
+builder.Services.AddScoped<ICancellationRefundCalculator, CancellationRefundCalculator>();
+
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
 builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>()
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
-        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+        UseProxy = false,
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        AutomaticDecompression = System.Net.DecompressionMethods.All
     })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
 builder.Services.AddHttpClient<IHotelService, SrdvHotelService>()
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
-        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+        UseProxy = false,
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        AutomaticDecompression = System.Net.DecompressionMethods.All
     })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
 builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>()
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
-        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+        UseProxy = false,
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        AutomaticDecompression = System.Net.DecompressionMethods.All
     })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
 
@@ -108,12 +130,33 @@ builder.Services.Configure<WhatsAppSettings>(
     builder.Configuration.GetSection("WhatsAppSettings"));
 builder.Services.Configure<SmsSettings>(
     builder.Configuration.GetSection("SmsSettings"));
+builder.Services.Configure<PickNBook.Api.Models.Config.RefundPolicyOptions>(
+    builder.Configuration.GetSection("RefundPolicy"));
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<PickNBook.Api.Services.Notifications.Interfaces.IEmailProvider, EmailService>();
 builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.EmailReminderHostedService>();
 builder.Services.AddHttpClient<IWhatsAppService, WhatsAppService>();
 builder.Services.AddHttpClient<ISmsService, SmsService>();
+
+// Centralized Notification Architecture DI
+builder.Services.Configure<PickNBook.Api.Models.Config.PointerItSmsSettings>(
+    builder.Configuration.GetSection("PointerItSms"));
+builder.Services.Configure<PickNBook.Api.Models.Config.NotificationRoutingSettings>(
+    builder.Configuration.GetSection("NotificationRouting"));
+
+builder.Services.AddScoped<PickNBook.Api.Services.Notifications.Interfaces.INotificationService, PickNBook.Api.Services.Notifications.Implementations.NotificationService>();
+builder.Services.AddScoped<PickNBook.Api.Services.Notifications.Interfaces.IOtpService, PickNBook.Api.Services.Notifications.Implementations.OtpService>();
+builder.Services.AddSingleton<PickNBook.Api.Services.Notifications.Interfaces.ISmsProvider, PickNBook.Api.Services.Notifications.Providers.MockSmsProvider>();
+builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.PointerItLoggingHandler>();
+builder.Services.AddHttpClient(nameof(PickNBook.Api.Services.Notifications.Providers.PointerItSmsProvider))
+    .RemoveAllLoggers()
+    .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.PointerItLoggingHandler>();
+builder.Services.AddSingleton<PickNBook.Api.Services.Notifications.Interfaces.ISmsProvider, PickNBook.Api.Services.Notifications.Providers.PointerItSmsProvider>();
+builder.Services.AddSingleton<PickNBook.Api.Services.Notifications.Interfaces.IWhatsAppProvider, PickNBook.Api.Services.Notifications.Providers.MockWhatsAppProvider>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.NotificationOutboxWorker>();
+
 builder.Services.AddScoped<IExclusiveOfferSubscriptionService, ExclusiveOfferSubscriptionService>();
 builder.Services.AddScoped<ITicketPdfService, TicketPdfService>();
 builder.Services.AddScoped<ITicketEmailService, TicketEmailService>();
@@ -140,6 +183,8 @@ builder.Services.AddScoped<ISecurityService, SecurityService>();
 builder.Services.AddHostedService<SecurityNotificationHostedService>();
 builder.Services.AddScoped<ISecurityCounterService, SecurityCounterService>();
 builder.Services.AddHostedService<SecurityBackgroundService>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.HotelCacheWarmerHostedService>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.FulfillmentRecoveryWorker>();
 
 // Database
 
@@ -196,9 +241,19 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 
@@ -304,6 +359,12 @@ app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/flight", St
 app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/hotels", StringComparison.OrdinalIgnoreCase), appBuilder =>
 {
     appBuilder.UseMiddleware<PickNBook.Api.Middleware.HotelRequestLoggingMiddleware>();
+});
+
+// SMS OTP Logging Middleware — captures clean T1/T4 log for /api/Auth/send-login-otp
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/Auth/send-login-otp", StringComparison.OrdinalIgnoreCase), appBuilder =>
+{
+    appBuilder.UseMiddleware<PickNBook.Api.Middleware.SmsOtpRequestLoggingMiddleware>();
 });
 
 

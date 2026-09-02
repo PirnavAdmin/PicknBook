@@ -25,7 +25,7 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
 
   // Load the Google Maps JavaScript API
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: "AIzaSyDzC0NF0i5wRGpc-hYPBeS-SOOFVTK7ADg",
   });
 
   const onLoad = useCallback((mapInstance) => {

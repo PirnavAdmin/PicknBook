@@ -17,6 +17,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import "../../STYLES/FlightBookingFlow.css";
 import { getFlightSeatMap } from "../../services/flightBookingService";
 import {
@@ -664,7 +665,7 @@ export default function FlightSeatSelectionPage() {
             <button type="button" onClick={() => navigate("/search/flights")}>Go to Flight Search</button>
           </section>
         </div>
-      </main>
+    </main>
     );
   }
 
@@ -748,7 +749,8 @@ export default function FlightSeatSelectionPage() {
     };
 
     writeFlightBookingFlowState(flowPayload);
-    navigate("/flight/payment", { state: flowPayload });
+    setCheckoutPayload(flowPayload);
+    setIsModalOpen(true);
   };
 
   return (
@@ -1117,7 +1119,7 @@ export default function FlightSeatSelectionPage() {
                                 <div key={`aisle-${rowNumber}`} className="cabin-aisle">
                                   <span>AISLE</span>
                                 </div>
-                              );
+      );
                             }
 
                             const seat = seatsByLabel.get(`${rowNumber}${seatLetter}`);
@@ -1172,7 +1174,7 @@ export default function FlightSeatSelectionPage() {
                                   <span className="seat-letter-label">{seatLetter}</span>
                                 </button>
                               </div>
-                            );
+      );
                           });
 
                           return (
@@ -1188,7 +1190,7 @@ export default function FlightSeatSelectionPage() {
                                 {rowElements}
                               </div>
                             </div>
-                          );
+      );
                         })}
                       </div>
                     </div>
@@ -1529,6 +1531,18 @@ export default function FlightSeatSelectionPage() {
             </button>
           </div>
         </div>
+      )}
+        {isModalOpen && checkoutPayload && (
+        <BookingConfirmationModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          bookingType="Flight" 
+          flowState={checkoutPayload} 
+          onSuccess={(res) => {
+            // Agent wallet success fallback (Cashfree redirects on its own)
+            navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+          }} 
+        />
       )}
     </main>
   );

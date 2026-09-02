@@ -59,7 +59,16 @@ function formatCurrency(value) {
     maximumFractionDigits: 0,
   }).format(Number(value) || 0)}`;
 }
- 
+
+function calculateNights(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return 1;
+  const inDate = new Date(checkIn);
+  const outDate = new Date(checkOut);
+  const diffTime = outDate - inDate;
+  if (diffTime <= 0) return 1;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
 function buildPassengerDetailsQuery(hotel, offerId, searchContext) {
   const params = new URLSearchParams();
  
@@ -332,7 +341,7 @@ export default function HotelSearchResults() {
     return [...apiHotels]
       .map((hotelRecord, index) => {
         const hotelName = hotelRecord.hotelName || hotelRecord.name || "Hotel stay";
-        const basePrice = Number(hotelRecord.price?.offeredPrice || hotelRecord.price?.b2CBasePrice || 0);
+        const basePrice = Number(hotelRecord.price?.b2cFinalFare || hotelRecord.price?.B2CFinalFare || hotelRecord.price?.offeredPrice || hotelRecord.price?.b2CBasePrice || hotelRecord.offeredFare || 0);
         const visuals = getHotelVisuals(`${hotelRecord.hotelCode || hotelRecord.hotelId || hotelName}-${destination}-${index}`);
         const rating = Number(hotelRecord.starRating || hotelRecord.rating || 4.6) || 4.6;
         const reviewCount = 36 + ((index + 1) * 17) % 112;
@@ -621,7 +630,7 @@ export default function HotelSearchResults() {
                   <strong style={{ fontSize: "1rem", color: "#ffffff" }}>
                     {toDisplayDate(checkInDate) || "Select"} - {toDisplayDate(checkOutDate) || "dates"}
                   </strong>
-                  <span style={{ fontSize: "0.75rem", color: "#e2e8f0" }}>2 Nights</span>
+                  <span style={{ fontSize: "0.75rem", color: "#e2e8f0" }}>{calculateNights(checkInDate, checkOutDate)} Night{calculateNights(checkInDate, checkOutDate) > 1 ? 's' : ''}</span>
                 </div>
               </div>
               <div className="hotel-discover-searchcell" style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: "20px" }}>
@@ -963,7 +972,7 @@ export default function HotelSearchResults() {
                       }}
                       style={{ 
                         cursor: "pointer",
-                        animationDelay: `${index * 0.15}s`
+                        animationDelay: `${Math.min(index, 10) * 0.1}s`
                       }}
                     >
                       <div className="hotel-stay-media">

@@ -43,9 +43,19 @@ public class HotelRequestLoggingMiddleware
             correlationId, context.Request.Method, context.Request.Path, formattedRequestBody);
 
         // 3. Intercept Response Body
+        bool isLargePayloadEndpoint = context.Request.Path.Value != null && 
+            (context.Request.Path.Value.Contains("search", StringComparison.OrdinalIgnoreCase) || 
+             context.Request.Path.Value.Contains("gethotelroom", StringComparison.OrdinalIgnoreCase) ||
+             context.Request.Path.Value.Contains("gethotelinfo", StringComparison.OrdinalIgnoreCase));
+
         var originalBodyStream = context.Response.Body;
-        using var responseBodyStream = new MemoryStream();
-        context.Response.Body = responseBodyStream;
+        MemoryStream? responseBodyStream = null;
+        
+        if (!isLargePayloadEndpoint)
+        {
+            responseBodyStream = new MemoryStream();
+            context.Response.Body = responseBodyStream;
+        }
 
         try
         {
@@ -58,22 +68,33 @@ public class HotelRequestLoggingMiddleware
             _logger.LogError(ex, "[{CorrelationId}] Exception occurred during hotel request processing after {ElapsedMs}ms", 
                 correlationId, stopwatch.ElapsedMilliseconds);
             
-            // Restore stream before re-throwing
-            context.Response.Body = originalBodyStream;
+            if (!isLargePayloadEndpoint)
+            {
+                context.Response.Body = originalBodyStream;
+            }
             throw; 
         }
 
         // T4: Response Sent
         var elapsedMs = stopwatch.ElapsedMilliseconds;
-        
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var responseBodyText = await new StreamReader(context.Response.Body).ReadToEndAsync();
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        string formattedResponseBody;
 
-        await responseBodyStream.CopyToAsync(originalBodyStream);
-        context.Response.Body = originalBodyStream;
+        if (!isLargePayloadEndpoint && responseBodyStream != null)
+        {
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var responseBodyText = await new StreamReader(context.Response.Body).ReadToEndAsync();
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
 
-        string formattedResponseBody = FormatJson(responseBodyText);
+            await responseBodyStream.CopyToAsync(originalBodyStream);
+            context.Response.Body = originalBodyStream;
+
+            formattedResponseBody = FormatJson(responseBodyText);
+        }
+        else
+        {
+            formattedResponseBody = "[Response payload omitted for performance]";
+        }
+
         _logger.LogInformation(
             "[{CorrelationId}] [T4] Hotel Response Sent:\nStatus: {StatusCode}\nBackend Processing Time: {ElapsedMs}ms\nPayload:\n{Payload}\n==================================================", 
             correlationId, context.Response.StatusCode, elapsedMs, formattedResponseBody);

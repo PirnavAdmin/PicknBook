@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MapPin, Phone, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Facebook, Twitter, Instagram, Youtube, Building2, Send, Lock } from "lucide-react";
+import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Facebook, Twitter, Instagram, Youtube, Linkedin, Building2, Send, Lock } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -118,7 +118,6 @@ export default function SiteFooter() {
         const layout = await getActiveLayout();
         if (layout && layout.footer) {
           setFooterConfig(layout.footer);
-          // Sync to main layout cache too
           localStorage.setItem("b2c_layout_config", JSON.stringify(layout));
         }
       } catch (err) {
@@ -131,14 +130,12 @@ export default function SiteFooter() {
     loadFooterConfig();
   }, []);
 
-  // Reset scroll to top of modal body whenever the opened policy changes
   useEffect(() => {
     if (activePolicy && bodyRef.current) {
       bodyRef.current.scrollTop = 0;
     }
   }, [activePolicy]);
 
-  // Fetch blogs when Travel Guide modal is opened
   useEffect(() => {
     if (activePolicy === "travel-guide") {
       const fetchBlogs = async () => {
@@ -149,7 +146,6 @@ export default function SiteFooter() {
           setBlogs(list);
         } catch (e) {
           console.error("Error fetching travel guide blogs:", e);
-          // Standard fallbacks if server has no blogs or throws an error
           setBlogs([
             {
               id: 1,
@@ -182,17 +178,14 @@ export default function SiteFooter() {
     }
   }, [activePolicy]);
 
-  // Fetch policy page dynamically from CMS Page API only if it exists in the active pages list to prevent 404 console errors
   useEffect(() => {
     if (activePolicy) {
       const fetchDynamicPolicy = async () => {
         try {
-          // 1. Fetch the list of public pages to check if the slug actually exists
           const pages = await getPublicPages();
           const pageExists = Array.isArray(pages) && pages.some(p => p.slug === activePolicy);
 
           if (pageExists) {
-            // 2. Only fetch page by slug if it exists in the list
             const page = await getPublicPageBySlug(activePolicy);
             if (page) {
               setDynamicPolicies((prev) => ({
@@ -203,8 +196,6 @@ export default function SiteFooter() {
                 },
               }));
             }
-          } else {
-            console.log(`CMS page for slug "${activePolicy}" is not published. Using static fallback.`);
           }
         } catch (err) {
           console.warn(`CMS dynamic page search failed for: ${activePolicy}. Using static fallback.`, err);
@@ -214,7 +205,6 @@ export default function SiteFooter() {
     }
   }, [activePolicy]);
 
-  // Support closing modal with Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -237,7 +227,6 @@ export default function SiteFooter() {
       }
     }, 100);
   };
-
 
   const copyContact = async (value, type) => {
     try {
@@ -344,205 +333,362 @@ export default function SiteFooter() {
 
   const policyData = getPolicyData();
 
-  const footerStyle = {
-    backgroundImage: `url(${customFooterBg})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center bottom',
-    backgroundRepeat: 'no-repeat'
-  };
-  if (footerConfig) {
-    if (footerConfig.textColor) footerStyle.color = footerConfig.textColor;
-  }
-
   return (
-    <footer className="travel-footer upgraded-travel-footer" style={footerStyle}>
-      <div className="footer-shell upgraded-footer-shell">
+    <footer className="pnb-site-footer">
+      <div className="pnb-footer-wrapper">
 
-        {/* Top Newsletter & Brand Header Bar */}
-        <div className="upgraded-footer-top-bar">
-          <div className="upgraded-footer-brand-info">
-            <div className="upgraded-footer-brand-logo-wrap">
-              <img
-                src={pickNBookLogo}
-                alt="Pick N Book Logo"
-                className="upgraded-footer-brand-logo-img"
-              />
-            </div>
-            <p className="upgraded-footer-brand-desc">
-              India's most trusted travel platform for instant bus, flight, and hotel bookings with guaranteed low fares & 24/7 support.
-            </p>
-          </div>
-
-        </div>
-
-        <hr className="upgraded-footer-divider" />
-
-        {/* 4-Column Main Links Grid */}
-        <div className="upgraded-footer-grid">
-
-          {/* Column 1: Services */}
-          <div className="upgraded-footer-col">
-            <h4 className="upgraded-col-title">
-              <Bus size={16} className="col-title-icon" />
-              Our Services
-            </h4>
-            <ul className="upgraded-footer-links">
-              <li>
-                <button type="button" onClick={(e) => handleServiceClick("buses", e)} className="upgraded-footer-link">
-                  Bus Ticket Booking
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={(e) => handleServiceClick("flights", e)} className="upgraded-footer-link">
-                  Flight Booking
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={(e) => handleServiceClick("hotels", e)} className="upgraded-footer-link">
-                  Hotel Reservations
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => navigate("/offers")} className="upgraded-footer-link">
-                  Exclusive Offers
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 2: Quick Links */}
-          <div className="upgraded-footer-col">
-            <h4 className="upgraded-col-title">
-              <Plane size={16} className="col-title-icon" />
-              Quick Links
-            </h4>
-            <ul className="upgraded-footer-links">
-              <li>
-                <button type="button" onClick={() => navigate("/contact")} className="upgraded-footer-link">
-                  Contact Us
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => navigate("/travel-guide")} className="upgraded-footer-link">
-                  Travel Guide & Blogs
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => navigate("/fetch-ticket")} className="upgraded-footer-link">
-                  Track Booking Status
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => navigate("/print-ticket")} className="upgraded-footer-link">
-                  Print / Download E-Ticket
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Policies & Security */}
-          <div className="upgraded-footer-col">
-            <h4 className="upgraded-col-title">
-              <ShieldCheck size={16} className="col-title-icon" />
-              Policies & Help
-            </h4>
-            <ul className="upgraded-footer-links">
-              <li>
-                <button type="button" onClick={() => setActivePolicy("terms-conditions")} className="upgraded-footer-link">
-                  Terms & Conditions
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => setActivePolicy("privacy-policy")} className="upgraded-footer-link">
-                  Privacy Policy
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => setActivePolicy("refund-cancellation-policy")} className="upgraded-footer-link">
-                  Refund & Cancellation Policy
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => navigate("/contact")} className="upgraded-footer-link">
-                  24/7 Support Center
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Get In Touch */}
-          <div className="upgraded-footer-col upgraded-contact-col">
-            <h4 className="upgraded-col-title">
-              <Building2 size={16} className="col-title-icon" />
-              Get In Touch
-            </h4>
-            <div className="upgraded-contact-block">
-              <div className="upgraded-contact-item">
-                <MapPin size={16} className="upgraded-contact-icon" />
-                <span>Pirnav Software Solutions Pvt Ltd, 4th Floor, Jain Sadguru Capital Park, Madhapur, Hyderabad, Telangana 500081</span>
-              </div>
-              <div className="upgraded-contact-item">
-                <button
-                  type="button"
-                  className="upgraded-copy-phone-btn"
-                  onClick={() => copyContact("+91 999-999-9999", "phone")}
-                >
-                  <Phone size={16} className="upgraded-contact-icon" />
-                  <span>+91 999-999-9999</span>
-                  {copiedContact === "phone" && (
-                    <span className="upgraded-copy-bubble">Copied</span>
-                  )}
-                </button>
-              </div>
-              <div className="upgraded-contact-item">
-                <a href="mailto:contact@picknbook.in" className="upgraded-email-link">
-                  <Mail size={16} className="upgraded-contact-icon" />
-                  <span>contact@picknbook.in</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <hr className="upgraded-footer-divider" />
-
-        {/* Bottom Bar: Payments, Apps & Copyright */}
-        <div className="upgraded-footer-bottom-bar">
+        {/* ── 1. Top Trust Features Row (4 White Cards) ─────────── */}
+        <div className="pnb-footer-trust-row">
           
-          {/* We Accept & SSL Badge */}
-          <div className="upgraded-payment-group">
-            <span className="payment-label">We Accept:</span>
-            <div className="payment-logos-row">
-              <img src={mastercardSvg} alt="MasterCard" title="MasterCard" />
-              <img src={visaSvg} alt="Visa" title="Visa" />
-              <img src={rupaySvg} alt="RuPay" title="RuPay" />
-              <img src={maestroSvg} alt="Maestro" title="Maestro" />
-              <img src={amexSvg} alt="American Express" title="American Express" />
+          <div className="pnb-trust-card">
+            <div className="pnb-trust-icon-box">
+              <ShieldCheck size={26} className="pnb-trust-svg" />
+            </div>
+            <div className="pnb-trust-text">
+              <h4 className="pnb-trust-title">100% Safe &amp; Secure</h4>
+              <p className="pnb-trust-sub">Verified Payment Gateways</p>
             </div>
           </div>
 
-          {/* Apps Badges */}
-          <div className="upgraded-app-badges">
-            <a href="https://play.google.com" target="_blank" rel="noopener noreferrer" className="upgraded-app-btn">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                alt="Get it on Google Play"
-              />
-            </a>
-            <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer" className="upgraded-app-btn">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                alt="Download on App Store"
-              />
-            </a>
+          <div className="pnb-trust-card">
+            <div className="pnb-trust-icon-box">
+              <Sparkles size={26} className="pnb-trust-svg" />
+            </div>
+            <div className="pnb-trust-text">
+              <h4 className="pnb-trust-title">Best Price Guarantee</h4>
+              <p className="pnb-trust-sub">Unbeatable Low Fares</p>
+            </div>
           </div>
 
-          {/* Copyright */}
-          <div className="upgraded-copyright-text">
-            <span>{footerConfig?.bottomLineText || "© 2026 Pirnav Software Solutions. All rights reserved."}</span>
+          <div className="pnb-trust-card">
+            <div className="pnb-trust-icon-box">
+              <Plane size={26} className="pnb-trust-svg" />
+            </div>
+            <div className="pnb-trust-text">
+              <h4 className="pnb-trust-title">Instant Confirmation</h4>
+              <p className="pnb-trust-sub">E-Tickets on SMS &amp; WhatsApp</p>
+            </div>
           </div>
 
+          <div className="pnb-trust-card">
+            <div className="pnb-trust-icon-box">
+              <PhoneCall size={26} className="pnb-trust-svg" />
+            </div>
+            <div className="pnb-trust-text">
+              <h4 className="pnb-trust-title">24/7 Dedicated Support</h4>
+              <p className="pnb-trust-sub">Always Here to Help You</p>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── 2. Main Content Card (Large White Card) ──────────── */}
+        <div className="pnb-footer-main-card">
+          <div className="pnb-footer-main-grid">
+
+            {/* Column 1: Brand Info */}
+            <div className="pnb-footer-brand-col">
+              <div
+                className="pnb-footer-brand-logo-wrap"
+                onClick={() => navigate("/")}
+                role="button"
+                tabIndex={0}
+              >
+                <img
+                  src={pickNBookLogo}
+                  alt="PickNBook Logo"
+                  className="pnb-footer-brand-logo-img"
+                />
+              </div>
+              <p className="pnb-footer-brand-desc">
+                India's most trusted travel platform for instant bus, flight, and hotel bookings with guaranteed low fares &amp; 24/7 support.
+              </p>
+            </div>
+
+            {/* Column 2: Our Services */}
+            <div className="pnb-footer-links-col">
+              <h4 className="pnb-col-heading">
+                <Bus size={19} className="pnb-col-heading-icon" />
+                <span>Our Services</span>
+              </h4>
+              <ul className="pnb-col-links-list">
+                <li>
+                  <button
+                    type="button"
+                    onClick={(e) => handleServiceClick("buses", e)}
+                    className="pnb-footer-link pnb-link-active"
+                  >
+                    <span className="pnb-link-chevron">›</span> Bus Ticket Booking
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={(e) => handleServiceClick("flights", e)}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Flight Booking
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={(e) => handleServiceClick("hotels", e)}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Hotel Reservations
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/offers")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Exclusive Offers
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Quick Links */}
+            <div className="pnb-footer-links-col">
+              <h4 className="pnb-col-heading">
+                <Plane size={19} className="pnb-col-heading-icon" />
+                <span>Quick Links</span>
+              </h4>
+              <ul className="pnb-col-links-list">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/contact")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Contact Us
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/travel-guide")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Travel Guide &amp; Blogs
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/fetch-ticket")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Track Booking Status
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/print-ticket")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Print / Download E-Ticket
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Policies & Help */}
+            <div className="pnb-footer-links-col">
+              <h4 className="pnb-col-heading">
+                <ShieldCheck size={19} className="pnb-col-heading-icon" />
+                <span>Policies &amp; Help</span>
+              </h4>
+              <ul className="pnb-col-links-list">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActivePolicy("terms-conditions")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Terms &amp; Conditions
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActivePolicy("privacy-policy")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActivePolicy("refund-cancellation-policy")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Refund &amp; Cancellation Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/contact")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> 24/7 Support Center
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── 3. Payments, App & Social Bar (White Rounded Pill) ── */}
+        <div className="pnb-footer-bottom-pill">
+
+          {/* We Accept */}
+          <div className="pnb-pill-section pnb-pill-payments">
+            <span className="pnb-pill-label">We Accept:</span>
+            <div className="pnb-payment-badges-row">
+              <span className="pnb-pay-badge pnb-visa-badge">VISA</span>
+              <span className="pnb-pay-badge pnb-mc-badge">
+                <span className="mc-circle mc-red"></span>
+                <span className="mc-circle mc-yellow"></span>
+              </span>
+              <span className="pnb-pay-badge pnb-rupay-badge">
+                RuPay <span className="pnb-badge-chevron">›</span>
+              </span>
+              <span className="pnb-pay-badge pnb-upi-badge">
+                UPI <span className="pnb-badge-chevron">›</span>
+              </span>
+              <span className="pnb-pay-badge pnb-amex-badge">AMEX</span>
+            </div>
+          </div>
+
+          {/* Experience App */}
+          <div className="pnb-pill-section pnb-pill-apps">
+            <span className="pnb-pill-label">Experience App:</span>
+            <div className="pnb-app-badges-row">
+              <a
+                href="https://play.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-store-btn"
+              >
+                <svg className="pnb-store-icon" viewBox="0 0 24 24" width="18" height="18">
+                  <path fill="#34A853" d="M3.6 1.8l10.8 10.2-3.1 3.1L3.6 1.8z" />
+                  <path fill="#4285F4" d="M14.4 12L3.6 1.8c-.3.4-.6 1-.6 1.7v17c0 .7.3 1.3.6 1.7L14.4 12z" />
+                  <path fill="#FBBC05" d="M17.8 8.8l-3.4 3.2 3.4 3.2 3.8-2.2c1.1-.6 1.1-1.7 0-2.3l-3.8-1.9z" />
+                  <path fill="#EA4335" d="M14.4 12l-3.1-3.1L3.6 22.2l10.8-10.2z" />
+                </svg>
+                <div className="pnb-store-btn-text">
+                  <span className="pnb-store-sub">GET IT ON</span>
+                  <span className="pnb-store-name">Google Play</span>
+                </div>
+              </a>
+
+              <a
+                href="https://www.apple.com/app-store/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-store-btn"
+              >
+                <svg className="pnb-store-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.64-.78 1.08-1.86.96-2.95-1 .04-2.14.67-2.8 1.45-.58.67-1.1 1.77-.96 2.83 1.12.09 2.16-.55 2.8-1.33z" />
+                </svg>
+                <div className="pnb-store-btn-text">
+                  <span className="pnb-store-sub">DOWNLOAD ON THE</span>
+                  <span className="pnb-store-name">App Store</span>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          {/* Follow Us */}
+          <div className="pnb-pill-section pnb-pill-socials">
+            <span className="pnb-pill-label">Follow Us:</span>
+            <div className="pnb-social-circles-row">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-ig-circle"
+                title="Instagram"
+              >
+                <Instagram size={17} color="#ffffff" />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-fb-circle"
+                title="Facebook"
+              >
+                <Facebook size={17} color="#ffffff" />
+              </a>
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-yt-circle"
+                title="YouTube"
+              >
+                <Youtube size={17} color="#ffffff" />
+              </a>
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-li-circle"
+                title="LinkedIn"
+              >
+                <Linkedin size={17} color="#ffffff" />
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── 4. Bottom Copyright & Legal Line ─────────────────── */}
+        <div className="pnb-footer-bottom-line">
+          <span className="pnb-bottom-brand">PickNBook</span>
+          <span className="pnb-bottom-sep">|</span>
+          <span className="pnb-bottom-item">Explore</span>
+          <span className="pnb-bottom-sep">|</span>
+          <span className="pnb-bottom-item">Book</span>
+          <span className="pnb-bottom-sep">|</span>
+          <span className="pnb-bottom-item">Travel</span>
+          <span className="pnb-bottom-sep">|</span>
+          <span className="pnb-bottom-copyright">
+            {footerConfig?.bottomLineText || "© 2026 Pirnav Software Solutions Pvt. Ltd. All rights reserved."}
+          </span>
+          <span className="pnb-bottom-sep">|</span>
+          <button
+            type="button"
+            onClick={() => setActivePolicy("terms-conditions")}
+            className="pnb-bottom-link"
+          >
+            Terms
+          </button>
+          <span className="pnb-bottom-sep">|</span>
+          <button
+            type="button"
+            onClick={() => setActivePolicy("privacy-policy")}
+            className="pnb-bottom-link"
+          >
+            Privacy
+          </button>
+          <span className="pnb-bottom-sep">|</span>
+          <button
+            type="button"
+            onClick={() => setActivePolicy("refund-cancellation-policy")}
+            className="pnb-bottom-link"
+          >
+            Cancellation Policy
+          </button>
         </div>
 
       </div>

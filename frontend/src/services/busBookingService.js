@@ -2,7 +2,7 @@
 import { toDdMmYyyy } from "../utils/apiDateFormat";
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://humiliate-eatery-humvee.ngrok-free.dev";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function getAuthHeaders() {
@@ -1579,7 +1579,7 @@ export async function getBoardingPointsProxy({ traceId, srdvIndex, resultIndex }
   }
 }
 
-export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingPointId, droppingPointId, passengers }) {
+export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingPointId, droppingPointId, passengers, couponCode, promotionId, selectedFeaturedOfferId }) {
   try {
     const data = await requestJson(`${BUS_BOOKINGS_ROOT}/block`, {
       method: "POST",
@@ -1590,6 +1590,8 @@ export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingP
         srdvIndex: Number(srdvIndex),
         boardingPointId: String(boardingPointId),
         droppingPointId: String(droppingPointId),
+        couponCode: couponCode || null,
+        promotionId: promotionId || selectedFeaturedOfferId || null,
         passengers,
       }),
     });
@@ -1919,8 +1921,7 @@ export async function getBusPricingPreview({
   }
 }
 
-export async function bookBus({ busId, payload }) {
-
+export function buildBusPayload(payload) {
   const featuredOfferId = payload.selectedFeaturedOfferId || payload.promotionId;
   let finalCouponCode = payload.couponCode ? String(payload.couponCode).trim().toUpperCase() : null;
   let finalFeaturedOfferId = featuredOfferId ? Number(featuredOfferId) : null;
@@ -1959,31 +1960,29 @@ export async function bookBus({ busId, payload }) {
       seatNumber: p.seatNumber || p.seatName || p.SeatNumber || p.seatCode,
       isLadiesSeat: Boolean(p.isLadiesSeat),
       baseFare: Number(p.baseFare || p.BaseFare || 0),
-      seatType:
-        String(p.seatType || p.SeatType || "Seater").charAt(0).toUpperCase() +
-        String(p.seatType || p.SeatType || "Seater").slice(1),
+      seatType: String(p.seatType || p.SeatType || "Seater"),
       externalGst: Number(p.tax || p.externalGst || p.ExternalGst || 0),
       ...idProofProps
     };
   });
 
-  const updatedPayload = {
-    traceId: String(payload.traceId || payload.TraceId || ""),
-    resultIndex: String(payload.resultIndex || payload.ResultIndex || ""),
-    srdvIndex: Number(payload.srdvIndex || payload.SrdvIndex || 0),
+  return {
+    traceId: String(payload.traceId || payload.TraceId || payload.bus?.traceId || payload.bus?.tripId || ""),
+    resultIndex: String(payload.resultIndex || payload.ResultIndex || payload.bus?.resultIndex || payload.bus?.id || ""),
+    srdvIndex: Number(payload.srdvIndex || payload.SrdvIndex || payload.bus?.srdvIndex || 0),
     blockKey: String(payload.srdvBlockKey || payload.blockKey || payload.BlockKey || ""),
-    fromCity: String(payload.fromCity || ""),
-    toCity: String(payload.toCity || ""),
-    departureTime: String(payload.departureTime || ""),
-    arrivalTime: String(payload.arrivalTime || ""),
-    operatorName: String(payload.operatorName || ""),
-    busType: String(payload.busType || ""),
-    totalFare: Number(payload.totalFare || 0),
-    boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || ""),
-    boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || ""),
-    boardingPointTime: null,
-    droppingPointId: String(payload.droppingPointId || payload.DroppingPointId || ""),
-    droppingPointName: String(payload.droppingPointName || payload.DroppingPointName || ""),
+    fromCity: String(payload.fromCity || payload.bus?.fromCity || payload.searchContext?.fromCity?.name || payload.searchContext?.fromCity || ""),
+    toCity: String(payload.toCity || payload.bus?.toCity || payload.searchContext?.toCity?.name || payload.searchContext?.toCity || ""),
+    departureTime: String(payload.departureTime || payload.bus?.departureTimeUtc || payload.bus?.departureTimeIst || payload.bus?.departureTime || ""),
+    arrivalTime: String(payload.arrivalTime || payload.bus?.arrivalTimeUtc || payload.bus?.arrivalTimeIst || payload.bus?.arrivalTime || ""),
+    operatorName: String(payload.operatorName || payload.bus?.operatorName || ""),
+    busType: String(payload.busType || payload.bus?.busType || ""),
+    totalFare: Number(payload.totalFare || payload.bus?.priceInr || payload.bus?.displayFare || payload.bus?.fare || 0),
+    boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || payload.boardingPoint?.id || payload.boardingPoint?.pointId || ""),
+    boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || payload.boardingPoint?.name || ""),
+    boardingPointTime: null, // Always null as per Backend Option 1 to avoid C# parsing errors
+    droppingPointId: String(payload.droppingPointId || payload.DroppingPointId || payload.droppingPoint?.id || payload.droppingPoint?.pointId || ""),
+    droppingPointName: String(payload.droppingPointName || payload.DroppingPointName || payload.droppingPoint?.name || ""),
     droppingPointTime: null,
     passengerName: String(payload.passengerName || payload.PassengerName || ""),
     passengerPhone: String(payload.passengerPhone || payload.PassengerPhone || ""),
@@ -1995,6 +1994,10 @@ export async function bookBus({ busId, payload }) {
     passengers: passengersPayload,
     paymentMethod: String(payload.paymentMethod || "")
   };
+}
+
+export async function bookBus({ busId, payload }) {
+  const updatedPayload = buildBusPayload(payload);
 
   console.log("SENDING_TO_BACKEND", JSON.stringify(updatedPayload, null, 2));
 

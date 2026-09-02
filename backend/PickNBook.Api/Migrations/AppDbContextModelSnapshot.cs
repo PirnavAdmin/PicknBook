@@ -246,7 +246,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("AgentId");
 
-                    b.ToTable("AgentLedgerEntries", (string)null);
+                    b.ToTable("AgentLedgerEntries");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.AgentMarkupSetting", b =>
@@ -278,7 +278,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("AgentId");
 
-                    b.ToTable("AgentMarkupSettings", (string)null);
+                    b.ToTable("AgentMarkupSettings");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Airline", b =>
@@ -377,7 +377,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("B2BCommissionRules", (string)null);
+                    b.ToTable("B2BCommissionRules");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.BlogCategory", b =>
@@ -1336,6 +1336,9 @@ namespace PickNBook.Api.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<string>("CancellationPolicyJson")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("CancellationReason")
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
@@ -1800,6 +1803,159 @@ namespace PickNBook.Api.Migrations
                     b.ToTable("deposit_requests", (string)null);
                 });
 
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.AdminSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("admin_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_activity_at");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("longtext")
+                        .HasColumnName("user_agent");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminId", "Status")
+                        .HasDatabaseName("idx_admin_status");
+
+                    b.HasIndex("ExpiresAt", "Status")
+                        .HasDatabaseName("idx_admin_session_expiry");
+
+                    b.ToTable("admin_sessions");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.BookingCancellation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BookingReference")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("BookingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("CashfreeRefundId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("ConvenienceFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CouponForfeited")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("CustomerRefundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("FeeRefunded")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MarkupAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MarkupRefunded")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OriginalCustomerPaid")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SrdvChangeRequestId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("SrdvStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<decimal>("SupplierAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SupplierCancellationCharge")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SupplierRefundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashfreeRefundId")
+                        .IsUnique();
+
+                    b.ToTable("BookingCancellations");
+                });
+
             modelBuilder.Entity("PickNBook.Api.Models.Entities.BusBlockedSeatPrice", b =>
                 {
                     b.Property<int>("Id")
@@ -1811,10 +1967,23 @@ namespace PickNBook.Api.Migrations
                     b.Property<decimal>("BaseFare")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("CouponCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("GrandTotal")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("GstAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MarkupAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("PublishedFare")
@@ -1834,7 +2003,309 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("TraceId");
 
-                    b.ToTable("busblockedseatprices", (string)null);
+                    b.ToTable("busblockedseatprices");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.EmailHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("delivery_status");
+
+                    b.Property<string>("EmailType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("email_type");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("longtext")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("RecipientEmail")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("recipient_email");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int")
+                        .HasColumnName("retry_count");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SecurityEvent")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("security_event");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("subject");
+
+                    b.Property<int?>("TemplateId")
+                        .HasColumnType("int")
+                        .HasColumnName("template_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("email_history");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.EmailReminder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("CurrentReminderCount")
+                        .HasColumnType("int")
+                        .HasColumnName("current_reminder_count");
+
+                    b.Property<bool>("IncludeLoginLink")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("include_login_link");
+
+                    b.Property<int>("MaxReminderCount")
+                        .HasColumnType("int")
+                        .HasColumnName("max_reminder_count");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("longtext")
+                        .HasColumnName("message");
+
+                    b.Property<string>("RecipientEmail")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("recipient_email");
+
+                    b.Property<long?>("RelatedBlockId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("related_block_id");
+
+                    b.Property<int?>("ReminderBeforeExpiryMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("reminder_before_expiry_minutes");
+
+                    b.Property<string>("ReminderName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("reminder_name");
+
+                    b.Property<DateTime>("ScheduledTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("scheduled_time");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("subject");
+
+                    b.Property<int?>("TemplateId")
+                        .HasColumnType("int")
+                        .HasColumnName("template_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("email_reminders");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.EmailTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionLinkUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("action_link_url");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("body");
+
+                    b.Property<string>("BodyFormat")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("body_format");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IncludeLoginLink")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("include_login_link");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LoginButtonText")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("login_button_text");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SecurityEvent")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("security_event");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("template_key");
+
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("template_name");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("updated_by");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("email_templates");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.HotelBlockedPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("GrandTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("HotelCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<decimal>("MarkupAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OfferedPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ResultIndex")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TraceId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("hotel_blocked_prices");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Entities.HotelInfoCache", b =>
@@ -1961,6 +2432,2151 @@ namespace PickNBook.Api.Migrations
                     b.HasKey("HotelCode");
 
                     b.ToTable("hotel_info_caches", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.IpAccessRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("BlockedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("blocked_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<bool>("IsPermanent")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_permanent");
+
+                    b.Property<string>("ListType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("list_type");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("longtext")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IpAddress")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiresAt", "Status")
+                        .HasDatabaseName("idx_expires");
+
+                    b.HasIndex("IpAddress", "Status")
+                        .HasDatabaseName("idx_ip_status");
+
+                    b.ToTable("ip_access_rules");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.NotificationLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("delivered_at");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("event_type");
+
+                    b.Property<int>("OutboxId")
+                        .HasColumnType("int")
+                        .HasColumnName("outbox_id");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("provider_message_id");
+
+                    b.Property<string>("ProviderResponse")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("provider_response");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("RenderedContent")
+                        .HasColumnType("text")
+                        .HasColumnName("rendered_content");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("template_key");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("notification_logs");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.NotificationOutbox", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BookingId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("booking_id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTime?>("NextRetryAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("next_retry_at");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payload_json");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("processed_at");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("recipient");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int")
+                        .HasColumnName("retry_count");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("template_key");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("notification_outbox");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.NotificationTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("event_type");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("language");
+
+                    b.Property<string>("ProviderTemplateId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("provider_template_id");
+
+                    b.Property<string>("ProviderTemplateName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("provider_template_name");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("template_key");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("notification_templates");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.OtpRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeliveryMethod")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("delivery_method");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("Identifier")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("identifier");
+
+                    b.Property<string>("IdentifierType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("identifier_type");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_verified");
+
+                    b.Property<string>("OtpHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)")
+                        .HasColumnName("otp_hash");
+
+                    b.Property<string>("OtpId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("otp_id");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("purpose");
+
+                    b.Property<int>("ResendCount")
+                        .HasColumnType("int")
+                        .HasColumnName("resend_count");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Identifier", "Purpose", "IsVerified")
+                        .HasDatabaseName("idx_identifier_purpose");
+
+                    b.ToTable("otp_records");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityAccountLock", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AccountEmail")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("account_email");
+
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<string>("LockReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("lock_reason");
+
+                    b.Property<string>("LockStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("lock_status");
+
+                    b.Property<DateTime>("LockedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("locked_at");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SecurityTrigger")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("security_trigger");
+
+                    b.Property<DateTime?>("UnlockedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("unlocked_at");
+
+                    b.Property<string>("UnlockedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("unlocked_by");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("security_account_locks");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityApiRule", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ApiName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("api_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("HttpMethod")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("http_method");
+
+                    b.Property<bool>("IsBlockable")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_blockable");
+
+                    b.Property<bool>("IsException")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_exception");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_public");
+
+                    b.Property<string>("RateLimitPeriod")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("rate_limit_period");
+
+                    b.Property<int?>("RateLimitValue")
+                        .HasColumnType("int")
+                        .HasColumnName("rate_limit_value");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UrlPattern")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("url_pattern");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("security_api_rules");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityAuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("account_email");
+
+                    b.Property<long?>("AccountId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("longtext")
+                        .HasColumnName("new_value");
+
+                    b.Property<string>("PreviousValue")
+                        .HasColumnType("longtext")
+                        .HasColumnName("previous_value");
+
+                    b.Property<string>("ReasonDetails")
+                        .HasColumnType("longtext")
+                        .HasColumnName("reason_details");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("UserOrAdminId")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("user_or_admin_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType", "CreatedAt")
+                        .HasDatabaseName("idx_audit_event");
+
+                    b.HasIndex("IpAddress", "CreatedAt")
+                        .HasDatabaseName("idx_audit_ip");
+
+                    b.ToTable("security_audit_logs");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityAuthSetting", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("settings_json");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Scope", "Category")
+                        .IsUnique();
+
+                    b.ToTable("security_auth_settings");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityB2bWalletConfig", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("AppliesToAutoBlocks")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("applies_to_auto_blocks");
+
+                    b.Property<bool>("AppliesToRateLimit")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("applies_to_rate_limit");
+
+                    b.Property<bool>("AppliesToTempBlocks")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("applies_to_temp_blocks");
+
+                    b.Property<bool>("AutoUnblockEnabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("auto_unblock_enabled");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("EmailOnRestriction")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("email_on_restriction");
+
+                    b.Property<bool>("EmailOnUnblock")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("email_on_unblock");
+
+                    b.Property<long?>("EmailTemplateRestrictionId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("email_template_restriction_id");
+
+                    b.Property<long?>("EmailTemplateUnblockId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("email_template_unblock_id");
+
+                    b.Property<decimal>("MinWalletAmount")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("min_wallet_amount");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("security_b2b_wallet_config");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityCounter", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("CounterKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("counter_key");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("CurrentCount")
+                        .HasColumnType("int")
+                        .HasColumnName("current_count");
+
+                    b.Property<string>("DimensionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("dimension_type");
+
+                    b.Property<string>("DimensionValue")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("dimension_value");
+
+                    b.Property<DateTime?>("LastAttemptAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_attempt_at");
+
+                    b.Property<int>("LimitValue")
+                        .HasColumnType("int")
+                        .HasColumnName("limit_value");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("period_end");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("period_start");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("security_counters");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityIpRule", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AccountEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("account_email");
+
+                    b.Property<long?>("AccountId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("action");
+
+                    b.Property<string>("BlockType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("block_type");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("created_by");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<bool>("EmailSent")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("email_sent");
+
+                    b.Property<string>("EmailStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("email_status");
+
+                    b.Property<DateTime?>("ExpiryTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expiry_time");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("SecurityTrigger")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("security_trigger");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("source");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("start_time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("security_ip_rules");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityLimit", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AccountAction")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("account_action");
+
+                    b.Property<string>("BlockDurationUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("block_duration_unit");
+
+                    b.Property<int?>("BlockDurationValue")
+                        .HasColumnType("int")
+                        .HasColumnName("block_duration_value");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("EmailEnabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("email_enabled");
+
+                    b.Property<long?>("EmailTemplateId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("email_template_id");
+
+                    b.Property<string>("IpAction")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("ip_action");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_enabled");
+
+                    b.Property<int>("LimitValue")
+                        .HasColumnType("int")
+                        .HasColumnName("limit_value");
+
+                    b.Property<string>("ResetPeriodUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("reset_period_unit");
+
+                    b.Property<int?>("ResetPeriodValue")
+                        .HasColumnType("int")
+                        .HasColumnName("reset_period_value");
+
+                    b.Property<string>("RuleKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("rule_key");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("rule_name");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("TimePeriodUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("time_period_unit");
+
+                    b.Property<int?>("TimePeriodValue")
+                        .HasColumnType("int")
+                        .HasColumnName("time_period_value");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Scope", "RuleKey")
+                        .IsUnique();
+
+                    b.ToTable("security_limits");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "LOGIN_FAILURE",
+                            RuleName = "LOGIN FAILURE Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 2L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "INVALID_PASSWORD",
+                            RuleName = "INVALID PASSWORD Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 3L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "PASSWORD_MISMATCH",
+                            RuleName = "PASSWORD MISMATCH Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 4L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_GENERATION",
+                            RuleName = "OTP GENERATION Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 5L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_RESEND",
+                            RuleName = "OTP RESEND Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 6L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_MISMATCH",
+                            RuleName = "OTP MISMATCH Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 7L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_VERIFICATION",
+                            RuleName = "OTP VERIFICATION Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 8L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "REGISTRATION_ATTEMPT",
+                            RuleName = "REGISTRATION ATTEMPT Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 9L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "CREATED_ACCOUNT_PER_IP",
+                            RuleName = "CREATED ACCOUNT PER IP Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 10L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "FORGOT_PASSWORD_REQUEST",
+                            RuleName = "FORGOT PASSWORD REQUEST Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 11L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "PASSWORD_RESET_ATTEMPT",
+                            RuleName = "PASSWORD RESET ATTEMPT Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 12L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "DAILY_LOGIN",
+                            RuleName = "DAILY LOGIN Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 13L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "API_RATE_LIMIT",
+                            RuleName = "API RATE LIMIT Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 14L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_EXPIRY",
+                            RuleName = "OTP EXPIRY Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 15L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_COOLDOWN",
+                            RuleName = "OTP COOLDOWN Limit",
+                            Scope = "ADMIN",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 16L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "LOGIN_FAILURE",
+                            RuleName = "LOGIN FAILURE Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 17L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "INVALID_PASSWORD",
+                            RuleName = "INVALID PASSWORD Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 18L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "PASSWORD_MISMATCH",
+                            RuleName = "PASSWORD MISMATCH Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 19L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_GENERATION",
+                            RuleName = "OTP GENERATION Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 20L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_RESEND",
+                            RuleName = "OTP RESEND Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 21L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_MISMATCH",
+                            RuleName = "OTP MISMATCH Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 22L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_VERIFICATION",
+                            RuleName = "OTP VERIFICATION Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 23L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "REGISTRATION_ATTEMPT",
+                            RuleName = "REGISTRATION ATTEMPT Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 24L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "CREATED_ACCOUNT_PER_IP",
+                            RuleName = "CREATED ACCOUNT PER IP Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 25L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "FORGOT_PASSWORD_REQUEST",
+                            RuleName = "FORGOT PASSWORD REQUEST Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 26L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "PASSWORD_RESET_ATTEMPT",
+                            RuleName = "PASSWORD RESET ATTEMPT Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 27L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "DAILY_LOGIN",
+                            RuleName = "DAILY LOGIN Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 28L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "API_RATE_LIMIT",
+                            RuleName = "API RATE LIMIT Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 29L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_EXPIRY",
+                            RuleName = "OTP EXPIRY Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 30L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_COOLDOWN",
+                            RuleName = "OTP COOLDOWN Limit",
+                            Scope = "USER",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 31L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "LOGIN_FAILURE",
+                            RuleName = "LOGIN FAILURE Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 32L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "INVALID_PASSWORD",
+                            RuleName = "INVALID PASSWORD Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 33L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "PASSWORD_MISMATCH",
+                            RuleName = "PASSWORD MISMATCH Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 34L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_GENERATION",
+                            RuleName = "OTP GENERATION Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 35L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_RESEND",
+                            RuleName = "OTP RESEND Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 36L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_MISMATCH",
+                            RuleName = "OTP MISMATCH Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 37L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_VERIFICATION",
+                            RuleName = "OTP VERIFICATION Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 38L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "REGISTRATION_ATTEMPT",
+                            RuleName = "REGISTRATION ATTEMPT Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 39L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "CREATED_ACCOUNT_PER_IP",
+                            RuleName = "CREATED ACCOUNT PER IP Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 40L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "FORGOT_PASSWORD_REQUEST",
+                            RuleName = "FORGOT PASSWORD REQUEST Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 41L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "PASSWORD_RESET_ATTEMPT",
+                            RuleName = "PASSWORD RESET ATTEMPT Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 42L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "DAILY_LOGIN",
+                            RuleName = "DAILY LOGIN Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 43L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "API_RATE_LIMIT",
+                            RuleName = "API RATE LIMIT Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 44L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_EXPIRY",
+                            RuleName = "OTP EXPIRY Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        },
+                        new
+                        {
+                            Id = 45L,
+                            AccountAction = "NONE",
+                            BlockDurationUnit = "MINUTES",
+                            BlockDurationValue = 60,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EmailEnabled = true,
+                            IpAction = "NONE",
+                            IsEnabled = true,
+                            LimitValue = 5,
+                            ResetPeriodUnit = "MINUTES",
+                            ResetPeriodValue = 10,
+                            RuleKey = "OTP_COOLDOWN",
+                            RuleName = "OTP COOLDOWN Limit",
+                            Scope = "B2B",
+                            TimePeriodUnit = "MINUTES",
+                            TimePeriodValue = 10
+                        });
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CooldownKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)")
+                        .HasColumnName("cooldown_key");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("longtext")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("event_type");
+
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("failed_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("RecipientType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("recipient_type");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int")
+                        .HasColumnName("retry_count");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("TemplateId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("template_id");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CooldownKey", "CreatedAt")
+                        .HasDatabaseName("idx_cooldown");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("idx_notif_status");
+
+                    b.ToTable("security_notifications");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecurityNotificationMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CooldownSeconds")
+                        .HasColumnType("int")
+                        .HasColumnName("cooldown_seconds");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("TemplateId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("template_id");
+
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("template_name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType")
+                        .IsUnique();
+
+                    b.ToTable("security_notification_mappings");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SecuritySettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("settings_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("security_settings");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SupplierFulfillmentExecution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BookingType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReservationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SupplierBookingStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("SupplierReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("SupplierResponseJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique();
+
+                    b.ToTable("supplier_fulfillment_executions", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SystemAppLock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("EstimatedEndTime")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("estimated_end_time");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_blocked");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("message");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("system_app_lock");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.UserSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("varchar(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_activity_at");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("longtext")
+                        .HasColumnName("user_agent");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt", "Status")
+                        .HasDatabaseName("idx_session_expiry");
+
+                    b.HasIndex("UserId", "Status")
+                        .HasDatabaseName("idx_user_status");
+
+                    b.ToTable("user_sessions");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FeaturedOffer", b =>
@@ -2754,6 +5370,9 @@ namespace PickNBook.Api.Migrations
                     b.Property<string>("CancellationCharges")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("CancellationPolicyJson")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("CancellationReason")
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
@@ -3037,10 +5656,7 @@ namespace PickNBook.Api.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
-                        .HasDefaultValue("Booked");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TicketId")
                         .HasColumnType("longtext");
@@ -3068,19 +5684,16 @@ namespace PickNBook.Api.Migrations
 
                     b.Property<string>("Airline")
                         .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("ArrivalTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Baggage")
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("CabinBaggage")
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("DepartureTime")
                         .HasColumnType("datetime(6)");
@@ -3090,35 +5703,28 @@ namespace PickNBook.Api.Migrations
 
                     b.Property<string>("FlightNumber")
                         .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("varchar(40)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("FlightReservationId")
                         .HasColumnType("int");
 
                     b.Property<string>("FromCity")
                         .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Pnr")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("SegmentIndicator")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
-                        .HasDefaultValue("Booked");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ToCity")
                         .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("varchar(80)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("TripIndicator")
                         .HasColumnType("int");
@@ -3127,7 +5733,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasIndex("FlightReservationId");
 
-                    b.ToTable("flight_reservation_segments", (string)null);
+                    b.ToTable("FlightReservationSegment");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.FlightRouteStat", b =>
@@ -3893,6 +6499,209 @@ namespace PickNBook.Api.Migrations
                     b.ToTable("offersubscribers", (string)null);
                 });
 
+            modelBuilder.Entity("PickNBook.Api.Models.Payments.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BookingReferenceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BookingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("CashfreeCfOrderId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("CashfreeOrderId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("CashfreePaymentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<decimal>("ConvenienceFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CouponCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("INR");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("FinalPayableAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FulfillmentStatus")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("MarkupAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OfferCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("PaymentReference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("PaymentSessionId")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("RefundAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RefundId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RefundReason")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RefundStatus")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("WebhookReceivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashfreeCfOrderId");
+
+                    b.HasIndex("CashfreeOrderId")
+                        .IsUnique();
+
+                    b.HasIndex("FulfillmentStatus");
+
+                    b.HasIndex("PaymentReference");
+
+                    b.HasIndex("RefundStatus");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("payments", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Payments.PendingPaymentBooking", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BookingPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BookingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("INR");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PricingSnapshotJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId");
+
+                    b.ToTable("pending_payment_bookings", (string)null);
+                });
+
             modelBuilder.Entity("PickNBook.Api.Models.PendingAirline", b =>
                 {
                     b.Property<int>("Id")
@@ -3926,6 +6735,40 @@ namespace PickNBook.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("pending_airlines", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.PlaceSearchStat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CityName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("city_name");
+
+                    b.Property<long>("SelectionCount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("selection_count");
+
+                    b.Property<string>("TripType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("trip_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CityName", "TripType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_place_search_stats_city_name_trip_type");
+
+                    b.ToTable("place_search_stats", (string)null);
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.PopularDestination", b =>
@@ -4062,7 +6905,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Themes", (string)null);
+                    b.ToTable("Themes");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.ThemeConfig", b =>
@@ -4076,7 +6919,7 @@ namespace PickNBook.Api.Migrations
 
                     b.HasKey("Key");
 
-                    b.ToTable("ThemeConfigs", (string)null);
+                    b.ToTable("ThemeConfigs");
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Traveler", b =>
@@ -4156,6 +6999,48 @@ namespace PickNBook.Api.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("travelers", (string)null);
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.UserLockout", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LockedOn")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("MaxAllowedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UnlockAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserLockouts");
                 });
 
             modelBuilder.Entity("User", b =>
@@ -4437,6 +7322,17 @@ namespace PickNBook.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PickNBook.Api.Models.Entities.SupplierFulfillmentExecution", b =>
+                {
+                    b.HasOne("PickNBook.Api.Models.Payments.Payment", "Payment")
+                        .WithOne()
+                        .HasForeignKey("PickNBook.Api.Models.Entities.SupplierFulfillmentExecution", "PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
+                });
+
             modelBuilder.Entity("PickNBook.Api.Models.FeaturedOfferCondition", b =>
                 {
                     b.HasOne("PickNBook.Api.Models.FeaturedOffer", "FeaturedOffer")
@@ -4582,6 +7478,15 @@ namespace PickNBook.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PickNBook.Api.Models.Payments.PendingPaymentBooking", b =>
+                {
+                    b.HasOne("PickNBook.Api.Models.Payments.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PickNBook.Api.Models.Testimonial", b =>

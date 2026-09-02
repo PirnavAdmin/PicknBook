@@ -49,6 +49,7 @@ services:
 
       Notifications__TicketEmailUrl: ${TICKET_EMAIL_URL:-}
 
+
     expose:
       - "8080"
 

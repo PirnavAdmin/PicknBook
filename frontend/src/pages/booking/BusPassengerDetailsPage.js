@@ -4,6 +4,7 @@ import { Check, Copy, Mail, Phone, User, X, ShieldCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
 import BookingTimer from "./BookingTimer";
+import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
@@ -451,14 +452,7 @@ export default function BusPassengerDetailsPage() {
     return contextOffer;
   }, [contextOffer]);
 
-  useEffect(() => {
-    if (!isAgent) {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token || isTokenExpired(token)) {
-        navigate(`/login?returnTo=${encodeURIComponent("/bus/passenger-details")}`, { replace: true });
-      }
-    }
-  }, [isAgent, navigate]);
+
 
   useEffect(() => {
     if (contextOffer && !validatedContextOffer) {
@@ -672,6 +666,8 @@ export default function BusPassengerDetailsPage() {
     Boolean(flowState.agreedToFare)
   );
   const [formError, setFormError] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [checkoutPayload, setCheckoutPayload] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formErrorList, setFormErrorList] = useState([]);
@@ -892,8 +888,8 @@ export default function BusPassengerDetailsPage() {
             </button>
           </section>
         </div>
-      </main>
-    );
+        </main>
+      );
   }
 
   const updatePassenger = (index, field, value) => {
@@ -1532,7 +1528,7 @@ export default function BusPassengerDetailsPage() {
     if (!isAgent) {
       const token = localStorage.getItem("token");
       if (!token || isTokenExpired(token)) {
-        navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
     }
@@ -1577,6 +1573,8 @@ export default function BusPassengerDetailsPage() {
       srdvIndex: bus?.srdvIndex || 0,
       boardingPointId: flowState.boardingPoint?.id || flowState.boardingPoint?.pointId,
       droppingPointId: flowState.droppingPoint?.id || flowState.droppingPoint?.pointId,
+      couponCode: finalCouponCode,
+      selectedFeaturedOfferId: finalFeaturedOfferId,
       passengers: cleanedPassengers.map((p, i) => ({
         title: String(p.title || "Mr"),
         firstName: String(p.firstName || ""),
@@ -1637,7 +1635,8 @@ export default function BusPassengerDetailsPage() {
 
     writeBusBookingFlowState(payload);
     setIsCalculatingPrice(false);
-    navigate("/bus/payment", { state: payload });
+    setCheckoutPayload(payload);
+    setIsModalOpen(true);
   };
 
 
@@ -1750,7 +1749,7 @@ export default function BusPassengerDetailsPage() {
         </label>
 
       </div>
-    );
+      );
   };
 
   return (
@@ -1916,7 +1915,7 @@ export default function BusPassengerDetailsPage() {
                         renderPassengerFields(passenger, index)
                       )}
                     </div>
-                  );
+      );
                 })}
               </div>
             </article>
@@ -2032,11 +2031,18 @@ export default function BusPassengerDetailsPage() {
                       </svg>
                       <span>Please correct the following issues to proceed:</span>
                     </div>
-                    <ul className="error-summary-list">
-                      {formErrorList.map((err, i) => (
-                        <li key={i}>{err}</li>
-                      ))}
-                    </ul>
+                    {typeof formError === 'string' && (
+                      <div style={{ padding: '0 12px 12px', fontSize: '0.85rem', color: '#ef4444' }}>
+                        {formError}
+                      </div>
+                    )}
+                    {formErrorList && formErrorList.length > 0 && (
+                      <ul className="error-summary-list">
+                        {formErrorList.map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
 
@@ -2135,12 +2141,220 @@ export default function BusPassengerDetailsPage() {
               </div>
             </article>
 
-            {/* Coupons moved to Payment Page */}
+            {/* Coupons & Featured Offers */}
+            {(!b2bToken || b2bRole !== "agent" || activePortal !== "b2b") && (
+              <article className="flow-card coupon-sheet-card" style={{ marginBottom: "1rem" }}>
+                <header className="coupon-sheet-header">
+                  <span className="header-icon-wrap" style={{ marginRight: '8px', display: 'inline-flex', alignItems: 'center' }}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                  </span>
+                  <span>Apply Coupon</span>
+                  {(isLoadingCoupons || isLoadingOffers || isApplyingCoupon) && (
+                    <span className="coupon-sheet-loading">Loading...</span>
+                  )}
+                </header>
+                <div className="flow-card-body coupon-sheet-body">
+
+                  <div className={`coupon-manual-row ${couponMessageType === "error" ? "field-has-error" : ""}`}>
+                    <input
+                      type="text"
+                      placeholder="Enter Coupon code"
+                      value={manualCouponCode}
+                      onChange={handleCouponCodeChange}
+                      disabled={isApplyingCoupon || Boolean(selectedFeaturedOffer)}
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="coupon-action-button is-remove"
+                      >Remove</button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={isApplyingCoupon || !manualCouponCode.trim() || Boolean(selectedFeaturedOffer)}
+                        className="coupon-action-button is-apply"
+                      >{isApplyingCoupon ? "Applying..." : "APPLY"}</button>
+                    )}
+                  </div>
+                  
+                  {selectedFeaturedOffer && (
+                    <p className="coupon-featured-note">
+                      Featured offer applied. Remove it to use a manual coupon.
+                    </p>
+                  )}
+
+                  {couponMessage && (
+                    <p className={`coupon-sheet-message ${couponMessageType === "success" ? "is-success" : "is-error"}`}>
+                      {couponMessage}
+                    </p>
+                  )}
+
+                  {/* ── Featured Offer Cards ── */}
+                  {featuredOffers.length > 0 && (
+                    <div className="coupon-featured-block">
+                      <p className="coupon-section-label">Featured Offers:</p>
+                      <div
+                        className="coupon-featured-list"
+                        aria-label="Featured offers carousel"
+                      >
+                        {featuredOffers.map((offer) => {
+                          const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
+                          const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
+                          const discountLabel = offer.isPercentageDiscount
+                              ? `${offer.discountValue}% OFF`
+                              : `₹${offer.discountValue} OFF`;
+                          const appliedTitle = isThisSelected && pricingPreview?.appliedPromotionTitle
+                              ? pricingPreview.appliedPromotionTitle
+                              : offer.title;
+
+                          const code = offer.couponCode || "OFFER";
+
+                          return (
+                            <div
+                              key={offer.offerId || offer.id || offer.couponCode}
+                              className={`coupon-voucher-card coupon-featured-offer${isThisSelected ? " is-selected" : ""}${
+                                anotherOfferSelected ? " is-muted" : ""
+                              }`}
+                            >
+                              <div className="voucher-header">
+                                <span className="voucher-discount">{discountLabel}</span>
+                                <div className="voucher-code-wrapper">
+                                  <span className="voucher-code-badge">{code}</span>
+                                  <button
+                                    type="button"
+                                    className="voucher-copy-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(code);
+                                      setCopiedCode(code);
+                                      setTimeout(() => setCopiedCode(null), 2000);
+                                    }}
+                                    title="Copy Coupon Code"
+                                  >
+                                    {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="voucher-body">
+                                <div className="voucher-title">{appliedTitle}</div>
+                                <p className="voucher-description">{offer.subtitle || offer.description}</p>
+                                <div className="voucher-action-row">
+                                  {isThisSelected ? (
+                                    <button
+                                      type="button"
+                                      onClick={handleRemoveOffer}
+                                      disabled={isApplyingCoupon}
+                                      className="voucher-remove-btn"
+                                    >Remove</button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectOffer(offer)}
+                                      disabled={isApplyingCoupon || anotherOfferSelected}
+                                      className="voucher-apply-btn"
+                                    >{isApplyingCoupon && isThisSelected ? "Applying..." : "Apply"}</button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+      );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Coupon Cards ── */}
+                  {availableCoupons.length > 0 && (
+                    <div className="coupon-chip-block">
+                      <p className="coupon-section-label">Available Coupons:</p>
+                      <div
+                        className="coupon-chip-list"
+                        aria-label="Available coupons carousel"
+                      >
+                        {availableCoupons.map((coupon, idx) => {
+                          const code = coupon.couponCode || `Promo #${coupon.id}`;
+                          const discountLabel = getCouponDescription(coupon).split(" on")[0];
+                          const description = getCouponDescription(coupon);
+                          const isChipSelected = appliedCoupon?.couponCode === coupon.couponCode;
+                          const anotherOfferSelected = Boolean(selectedFeaturedOffer);
+
+                          return (
+                            <div
+                              key={coupon.id || idx}
+                              className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${
+                                anotherOfferSelected ? " is-muted" : ""
+                              }`}
+                            >
+                              <div className="voucher-header">
+                                <span className="voucher-discount">{discountLabel}</span>
+                                <div className="voucher-code-wrapper">
+                                  <span className="voucher-code-badge">{code}</span>
+                                  <button
+                                    type="button"
+                                    className="voucher-copy-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(code);
+                                      setCopiedCode(code);
+                                      setTimeout(() => setCopiedCode(null), 2000);
+                                    }}
+                                    title="Copy Coupon Code"
+                                  >
+                                    {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="voucher-body">
+                                <div className="voucher-title">{code}</div>
+                                <p className="voucher-description">{description}</p>
+                                <div className="voucher-action-row">
+                                  {isChipSelected ? (
+                                    <button
+                                      type="button"
+                                      onClick={handleRemoveCoupon}
+                                      disabled={isApplyingCoupon}
+                                      className="voucher-remove-btn"
+                                    >Remove</button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectCoupon(coupon)}
+                                      disabled={isApplyingCoupon || anotherOfferSelected}
+                                      className="voucher-apply-btn"
+                                    >Apply</button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+      );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </article>
+            )}
           </aside>
 
         </section>
 
       </div>
+        {isModalOpen && checkoutPayload && (
+        <BookingConfirmationModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          bookingType="Bus" 
+          flowState={checkoutPayload} 
+          onSuccess={(res) => {
+            navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+          }} 
+        />
+      )}
     </main>
   );
 }

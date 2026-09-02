@@ -1,0 +1,623 @@
+﻿/* ============================================================
+   UnifiedPaymentPage.css
+   Premium payment page styles — Atlas/dark-mode compatible
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* ── Variables ─────────────────────────────────────────────── */
+.upay-root {
+  --upay-bg: #0a0f1e;
+  --upay-surface: #111827;
+  --upay-surface-2: #1a2235;
+  --upay-border: rgba(255, 255, 255, 0.08);
+  --upay-border-active: rgba(99, 179, 237, 0.6);
+  --upay-accent: #4f9cf9;
+  --upay-accent-glow: rgba(79, 156, 249, 0.2);
+  --upay-success: #10b981;
+  --upay-danger: #ef4444;
+  --upay-warning: #f59e0b;
+  --upay-text: #e2e8f0;
+  --upay-text-muted: #94a3b8;
+  --upay-text-dim: #64748b;
+  --upay-radius: 14px;
+  --upay-radius-sm: 8px;
+  --upay-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --upay-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* ── Page Shell ─────────────────────────────────────────────── */
+.upay-root {
+  min-height: 100vh;
+  background: var(--upay-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(79, 156, 249, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
+  padding-bottom: 6rem;
+}
+
+.upay-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* ── Progress Steps ─────────────────────────────────────────── */
+.upay-progress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 1.5rem 0 0;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.upay-progress::-webkit-scrollbar { display: none; }
+
+.upay-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--upay-text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.upay-step.is-done { color: var(--upay-success); }
+.upay-step.is-active { color: var(--upay-accent); }
+
+.upay-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--upay-border);
+  background: var(--upay-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  transition: var(--upay-transition);
+  flex-shrink: 0;
+}
+.upay-step.is-done .upay-step-dot {
+  background: var(--upay-success);
+  border-color: var(--upay-success);
+  color: #fff;
+}
+.upay-step.is-active .upay-step-dot {
+  background: var(--upay-accent);
+  border-color: var(--upay-accent);
+  color: #fff;
+  box-shadow: 0 0 16px var(--upay-accent-glow);
+}
+
+.upay-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--upay-border);
+  margin: 0 6px;
+  min-width: 20px;
+}
+.upay-step-line.is-done { background: var(--upay-success); }
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.upay-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .upay-layout {
+    grid-template-columns: 1fr;
+  }
+  .upay-sidebar {
+    order: -1;
+  }
+}
+
+/* ── Card ───────────────────────────────────────────────────── */
+.upay-card {
+  background: var(--upay-surface);
+  border: 1px solid var(--upay-border);
+  border-radius: var(--upay-radius);
+  overflow: hidden;
+  box-shadow: var(--upay-shadow);
+}
+
+.upay-card-header {
+  padding: 1rem 1.25rem 0.9rem;
+  border-bottom: 1px solid var(--upay-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.upay-card-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--upay-text);
+  letter-spacing: -0.01em;
+}
+.upay-card-header-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--upay-accent-glow);
+  border: 1px solid rgba(79, 156, 249, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--upay-accent);
+  flex-shrink: 0;
+}
+
+.upay-card-body { padding: 1.25rem; }
+
+/* ── Section Label ──────────────────────────────────────────── */
+.upay-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--upay-text-dim);
+  margin-bottom: 0.75rem;
+}
+
+/* ── Method Grid ────────────────────────────────────────────── */
+.upay-method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.upay-method-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 14px 10px;
+  background: var(--upay-surface-2);
+  border: 1.5px solid var(--upay-border);
+  border-radius: var(--upay-radius-sm);
+  cursor: pointer;
+  transition: var(--upay-transition);
+  color: var(--upay-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+.upay-method-btn:hover {
+  border-color: rgba(79, 156, 249, 0.4);
+  color: var(--upay-text);
+  background: rgba(79, 156, 249, 0.06);
+}
+.upay-method-btn.is-active {
+  border-color: var(--upay-accent);
+  background: var(--upay-accent-glow);
+  color: var(--upay-accent);
+  box-shadow: 0 0 20px rgba(79, 156, 249, 0.15);
+}
+
+/* ── Cashfree Checkout Container ────────────────────────────── */
+.upay-cashfree-wrap {
+  margin-top: 1.25rem;
+  background: var(--upay-surface-2);
+  border: 1px solid var(--upay-border);
+  border-radius: var(--upay-radius);
+  overflow: hidden;
+  min-height: 80px;
+  transition: var(--upay-transition);
+}
+
+/* Cashfree drops its iframe here */
+#cashfree-checkout-container {
+  width: 100%;
+  min-height: 420px;
+}
+
+/* Loading Cashfree state */
+.upay-cf-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  gap: 14px;
+  color: var(--upay-text-muted);
+  font-size: 0.88rem;
+}
+.upay-cf-loading .upay-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--upay-border);
+  border-top-color: var(--upay-accent);
+  border-radius: 50%;
+  animation: upay-spin 0.8s linear infinite;
+}
+
+.upay-cf-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  gap: 12px;
+  color: var(--upay-text-muted);
+  font-size: 0.88rem;
+}
+.upay-cf-waiting .upay-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--upay-border);
+  border-top-color: var(--upay-accent);
+  border-radius: 50%;
+  animation: upay-spin 0.8s linear infinite;
+}
+
+/* ── Agent Wallet Section ───────────────────────────────────── */
+.upay-wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--upay-radius-sm);
+  margin-top: 1.25rem;
+}
+
+.upay-wallet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  color: var(--upay-text-muted);
+}
+.upay-wallet-row strong { color: var(--upay-text); font-weight: 600; }
+.upay-wallet-row.is-profit { color: var(--upay-success); }
+.upay-wallet-row.is-total strong { color: var(--upay-accent); font-size: 1rem; }
+
+.upay-wallet-divider {
+  height: 1px;
+  background: var(--upay-border);
+}
+
+.upay-balance-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--upay-border);
+  border-radius: var(--upay-radius-sm);
+}
+.upay-balance-amount {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.upay-balance-amount.is-ok { color: var(--upay-success); }
+.upay-balance-amount.is-low { color: var(--upay-danger); }
+
+.upay-alert {
+  font-size: 0.82rem;
+  padding: 10px 14px;
+  border-radius: var(--upay-radius-sm);
+}
+.upay-alert.is-danger {
+  color: var(--upay-danger);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.upay-alert.is-success {
+  color: var(--upay-success);
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* ── Sidebar: Booking Summary ───────────────────────────────── */
+.upay-sidebar { display: flex; flex-direction: column; gap: 1rem; }
+
+.upay-summary-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--upay-accent-glow);
+  color: var(--upay-accent);
+  border: 1px solid rgba(79, 156, 249, 0.25);
+  margin-bottom: 10px;
+}
+
+.upay-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--upay-text-muted);
+}
+.upay-summary-list .upay-summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.upay-summary-list .upay-summary-icon { color: var(--upay-text-dim); flex-shrink: 0; margin-top: 1px; }
+.upay-summary-list .upay-summary-val { color: var(--upay-text); font-weight: 500; }
+.upay-summary-list .upay-summary-main {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--upay-text);
+  margin-bottom: 2px;
+}
+
+/* ── Fare Summary ───────────────────────────────────────────── */
+.upay-fare-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.upay-fare-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--upay-text-muted);
+}
+.upay-fare-row strong { color: var(--upay-text); font-weight: 600; }
+.upay-fare-divider {
+  height: 1px;
+  background: var(--upay-border);
+  margin: 6px 0;
+}
+.upay-fare-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--upay-accent-glow);
+  border: 1px solid rgba(79, 156, 249, 0.25);
+  border-radius: var(--upay-radius-sm);
+  font-size: 0.95rem;
+  color: var(--upay-accent);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+}
+
+/* ── Trust Badges ───────────────────────────────────────────── */
+.upay-trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 12px;
+  background: var(--upay-surface-2);
+  border: 1px solid var(--upay-border);
+  border-radius: var(--upay-radius-sm);
+  font-size: 0.72rem;
+  color: var(--upay-text-dim);
+  font-weight: 600;
+}
+.upay-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.upay-trust-item svg { color: var(--upay-success); }
+
+/* ── Sticky Bottom Bar ──────────────────────────────────────── */
+.upay-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(10, 15, 30, 0.97);
+  border-top: 1px solid var(--upay-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  gap: 1rem;
+}
+
+.upay-bottom-amount-label {
+  font-size: 0.78rem;
+  color: var(--upay-text-dim);
+  font-weight: 500;
+}
+.upay-bottom-amount-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--upay-text);
+  letter-spacing: -0.02em;
+}
+
+/* ── Pay Button ─────────────────────────────────────────────── */
+.upay-pay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 2.2rem;
+  height: 50px;
+  min-width: 200px;
+  background: linear-gradient(135deg, #4f9cf9 0%, #6366f1 100%);
+  border: none;
+  border-radius: 25px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: var(--upay-transition);
+  box-shadow: 0 4px 20px rgba(79, 156, 249, 0.4);
+}
+.upay-pay-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(79, 156, 249, 0.55);
+}
+.upay-pay-btn:active:not(:disabled) { transform: translateY(0); }
+.upay-pay-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.upay-agent-pay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 2rem;
+  height: 48px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 25px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--upay-transition);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+  margin-top: 1rem;
+  width: 100%;
+}
+.upay-agent-pay-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+}
+.upay-agent-pay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Error ──────────────────────────────────────────────────── */
+.upay-error {
+  margin-top: 1rem;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--upay-radius-sm);
+  color: #fca5a5;
+  font-size: 0.84rem;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.upay-empty {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--upay-text-muted);
+  text-align: center;
+  padding: 2rem;
+}
+.upay-empty h2 { color: var(--upay-text); margin: 0; }
+.upay-empty p { margin: 0; font-size: 0.9rem; }
+.upay-empty-btn {
+  padding: 10px 24px;
+  background: var(--upay-accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+/* ── Timer pill ─────────────────────────────────────────────── */
+.upay-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--upay-warning);
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes upay-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes upay-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.upay-main { animation: upay-fade-up 0.35s ease forwards; }
+
+/* ── Cashfree Return Page ────────────────────────────────────── */
+.upay-return-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--upay-bg);
+  font-family: "Inter", system-ui, sans-serif;
+}
+.upay-return-card {
+  background: var(--upay-surface);
+  border: 1px solid var(--upay-border);
+  border-radius: var(--upay-radius);
+  padding: 3rem 2.5rem;
+  max-width: 440px;
+  width: 92%;
+  text-align: center;
+  box-shadow: var(--upay-shadow);
+}
+.upay-return-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+.upay-return-icon.is-processing {
+  background: rgba(245, 158, 11, 0.1);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  color: var(--upay-warning);
+}
+.upay-return-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--upay-text);
+  margin: 0 0 0.5rem;
+}
+.upay-return-sub {
+  font-size: 0.88rem;
+  color: var(--upay-text-muted);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}

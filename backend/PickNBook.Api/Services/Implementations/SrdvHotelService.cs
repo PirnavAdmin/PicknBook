@@ -30,6 +30,7 @@ namespace PickNBook.Api.Services
         {
             _httpClient = httpClient;
             _httpClient.Timeout = TimeSpan.FromSeconds(180); // Increased from 60s to handle slow responses
+            _httpClient.DefaultRequestHeaders.ExpectContinue = false;
             _settings = settings.Value;
             _cache = cache;
             _serviceProvider = serviceProvider;
@@ -1643,6 +1644,8 @@ namespace PickNBook.Api.Services
 
                 using var scope = _serviceProvider.CreateScope();
                 var markupService = scope.ServiceProvider.GetRequiredService<IHotelMarkupService>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<Data.AppDbContext>();
+
                 if (markupService != null)
                 {
                     decimal totalBaseFare = 0m;
@@ -1654,8 +1657,25 @@ namespace PickNBook.Api.Services
                             rm.OfferedPrice = rm.Price.OfferedPrice;
                             rm.B2CBasePrice = rm.Price.B2CBasePrice;
                             rm.B2CTotalPrice = rm.Price.B2CTotalPrice;
+
+                            // Securely save the HotelBlockedPrice to DB
+                            var blockedPrice = new PickNBook.Api.Models.Entities.HotelBlockedPrice
+                            {
+                                ResultIndex = request.ResultIndex,
+                                HotelCode = request.HotelCode,
+                                TraceId = request.TraceId,
+                                OfferedPrice = rm.Price.OfferedPrice,
+                                Tax = rm.Price.Tax + rm.Price.TotalGSTAmount, // Combined tax
+                                MarkupAmount = rm.Price.AgentMarkUp,
+                                DiscountAmount = rm.Price.Discount,
+                                GrandTotal = rm.Price.B2CTotalPrice,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            
+                            dbContext.HotelBlockedPrices.Add(blockedPrice);
                         }
                     }
+                    await dbContext.SaveChangesAsync();
                 }
                 
                 if (responseDto.BlockRoomResult != null && responseDto.BlockRoomResult.Error.ErrorCode == 0)
@@ -2076,7 +2096,7 @@ namespace PickNBook.Api.Services
 
                         if (booking.LastCancellationDate.HasValue && now <= booking.LastCancellationDate.Value)
                         {
-                            return (0m, booking.TotalPrice);
+                            return (0m, booking.Price);
                         }
 
                         HotelRoomCancellationPolicyDto? matchingPolicy = null;
@@ -2109,16 +2129,16 @@ namespace PickNBook.Api.Services
                             decimal penalty = 0m;
                             if (matchingPolicy.ChargeType == 1) // Percentage
                             {
-                                penalty = booking.TotalPrice * (matchingPolicy.Charge / 100m);
+                                penalty = booking.Price * (matchingPolicy.Charge / 100m);
                             }
                             else // Flat Amount
                             {
                                 penalty = matchingPolicy.Charge;
                             }
 
-                            penalty = Math.Min(booking.TotalPrice, Math.Max(0m, penalty));
+                            penalty = Math.Min(booking.Price, Math.Max(0m, penalty));
                             penalty = decimal.Round(penalty, 2, MidpointRounding.AwayFromZero);
-                            decimal refund = Math.Max(0m, booking.TotalPrice - penalty);
+                            decimal refund = Math.Max(0m, booking.Price - penalty);
 
                             return (penalty, refund);
                         }
@@ -2132,14 +2152,14 @@ namespace PickNBook.Api.Services
 
             if (booking.LastCancellationDate.HasValue && DateTime.UtcNow <= booking.LastCancellationDate.Value)
             {
-                return (0m, booking.TotalPrice);
+                return (0m, booking.Price);
             }
             if (DateTime.UtcNow < booking.CheckInDate)
             {
-                return (0m, booking.TotalPrice);
+                return (0m, booking.Price);
             }
 
-            return (booking.TotalPrice, 0m);
+            return (booking.Price, 0m);
         }
 
         private static string NormalizeTitle(string? title)

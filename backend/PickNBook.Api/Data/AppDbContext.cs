@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.Entities;
+using PickNBook.Api.Models.Payments;
 
 namespace PickNBook.Api.Data
 {
@@ -63,6 +64,7 @@ namespace PickNBook.Api.Data
         public DbSet<FlightAmendmentRequest> FlightAmendmentRequests => Set<FlightAmendmentRequest>();
         public DbSet<BusPromotion> BusPromotions => Set<BusPromotion>();
         public DbSet<HotelReservation> HotelReservations => Set<HotelReservation>();
+        public DbSet<HotelBlockedPrice> HotelBlockedPrices => Set<HotelBlockedPrice>();
         public DbSet<BusBookingSummary> BusBookingSummaries => Set<BusBookingSummary>();
         
         public DbSet<BusBlockedSeatPrice> BusBlockedSeatPrices => Set<BusBlockedSeatPrice>();
@@ -121,9 +123,80 @@ namespace PickNBook.Api.Data
         public DbSet<EmailReminder> EmailReminders => Set<EmailReminder>();
         public DbSet<EmailHistory> EmailHistory => Set<EmailHistory>();
 
+        // Cashfree Payments DbSets
+        public DbSet<Payment> Payments => Set<Payment>();
+        public DbSet<PendingPaymentBooking> PendingPaymentBookings => Set<PendingPaymentBooking>();
+        public DbSet<SupplierFulfillmentExecution> SupplierFulfillmentExecutions => Set<SupplierFulfillmentExecution>();
+
+        // Cancellations and Refunds
+        public DbSet<BookingCancellation> BookingCancellations => Set<BookingCancellation>();
+
+        // Centralized Notification Architecture DbSets
+        public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+        public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
+        public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // =============================
+            // CASHFREE PAYMENTS CONFIG
+            // =============================
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.ToTable("payments");
+                entity.Property(x => x.OriginalAmount).HasPrecision(18, 2);
+                entity.Property(x => x.MarkupAmount).HasPrecision(18, 2);
+                entity.Property(x => x.ConvenienceFee).HasPrecision(18, 2);
+                entity.Property(x => x.DiscountAmount).HasPrecision(18, 2);
+                entity.Property(x => x.FinalPayableAmount).HasPrecision(18, 2);
+                entity.Property(x => x.Status).HasMaxLength(20);
+                entity.Property(x => x.BookingType).HasMaxLength(20);
+                entity.Property(x => x.Currency).HasMaxLength(10).HasDefaultValue("INR");
+                entity.Property(x => x.PaymentReference).HasMaxLength(100);
+                entity.Property(x => x.CashfreeOrderId).HasMaxLength(100);
+                entity.Property(x => x.CashfreeCfOrderId).HasMaxLength(100);
+                entity.Property(x => x.PaymentSessionId).HasMaxLength(500);
+                entity.Property(x => x.CashfreePaymentId).HasMaxLength(100);
+                entity.Property(x => x.PaymentMethod).HasMaxLength(50);
+                entity.Property(x => x.CouponCode).HasMaxLength(50);
+                entity.Property(x => x.OfferCode).HasMaxLength(50);
+
+                entity.HasIndex(x => x.CashfreeOrderId).IsUnique();
+                entity.HasIndex(x => x.CashfreeCfOrderId);
+                entity.HasIndex(x => x.PaymentReference);
+                entity.HasIndex(x => x.UserId);
+                entity.HasIndex(x => x.Status);
+                entity.HasIndex(x => x.FulfillmentStatus);
+                entity.HasIndex(x => x.RefundStatus);
+            });
+
+            modelBuilder.Entity<PendingPaymentBooking>(entity =>
+            {
+                entity.ToTable("pending_payment_bookings");
+                entity.Property(x => x.Amount).HasPrecision(18, 2);
+                entity.Property(x => x.Status).HasMaxLength(20);
+                entity.Property(x => x.BookingType).HasMaxLength(20);
+                entity.Property(x => x.Currency).HasMaxLength(10).HasDefaultValue("INR");
+
+                entity.HasOne<Payment>()
+                      .WithMany()
+                      .HasForeignKey(x => x.PaymentId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(x => x.PaymentId);
+            });
+
+            modelBuilder.Entity<PickNBook.Api.Models.Entities.SupplierFulfillmentExecution>(entity =>
+            {
+                entity.ToTable("supplier_fulfillment_executions");
+                entity.HasIndex(x => x.PaymentId).IsUnique();
+                
+                entity.HasOne(x => x.Payment)
+                      .WithOne()
+                      .HasForeignKey<PickNBook.Api.Models.Entities.SupplierFulfillmentExecution>(x => x.PaymentId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
 
             // =============================
             // SECURITY SEED DATA

@@ -26,6 +26,18 @@ namespace PickNBook.Api.Models.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal PublishedFare { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal MarkupAmount { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DiscountAmount { get; set; }
+
+        [MaxLength(50)]
+        public string? CouponCode { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal GrandTotal { get; set; }
+
         public DateTime CreatedAtUtc { get; set; }
     }
 }

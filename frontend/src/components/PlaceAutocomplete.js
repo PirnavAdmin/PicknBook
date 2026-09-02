@@ -179,6 +179,7 @@ export default function PlaceAutocomplete({
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
+                boxShadow: 'none',
                 color: 'var(--hotel-muted)',
                 fontWeight: 600,
                 fontSize: '1.02rem',

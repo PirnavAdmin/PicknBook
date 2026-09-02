@@ -45,6 +45,25 @@ function SleeperIcon({ label }) {
   );
 }
 
+// SVG representing a bus vertical sleeper seat (vertical rectangle, pillow on the top)
+function VerticalSleeperIcon({ label }) {
+  return (
+    <svg
+      className="seat-icon seat-icon--vertical-sleeper"
+      viewBox="0 0 40 92"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect x="2" y="2" width="36" height="88" rx="6" className="seat-body" strokeWidth="2" />
+      <rect x="6" y="6" width="28" height="16" rx="3" className="sleeper-pillow" />
+      <text x="20" y="50" className="seat-label" textAnchor="middle">
+        {label}
+      </text>
+    </svg>
+  );
+}
+
 // SVG representing a flight seat (curved top backrest, slim armrests)
 function FlightSeatIcon({ label }) {
   return (
@@ -99,8 +118,10 @@ function normalizeSrdvSeatData(seatData) {
 
     const rawSeatType = String(seat.SeatType || seat.seatType || "").toLowerCase().trim();
     const isSemiSleeper = rawSeatType.includes("semi");
-    const isSleeper =
+    const isVerticalSleeper = rawSeatType.includes("vertical");
+    const isHorizontalSleeper =
       !isSemiSleeper &&
+      !isVerticalSleeper &&
       (rawSeatType.includes("sleeper") ||
        rawSeatType.includes("berth") ||
        String(seat.DoubleBirth).toLowerCase() === "true");
@@ -126,7 +147,7 @@ function normalizeSrdvSeatData(seatData) {
       isAvailable,
       isLadies,
       isMales,
-      kind: isSleeper ? "sleeper" : "seater",
+      kind: isVerticalSleeper ? "vertical-sleeper" : isHorizontalSleeper ? "sleeper" : "seater",
       width,
       length,
       fare,
@@ -404,33 +425,43 @@ export default function SeatSelection({
   );  const renderSrdvGridDeck = (deckSeats, deckLabel) => {
     if (!deckSeats || deckSeats.length === 0) return null;
 
+    const nonSeatPatterns = /EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/i;
     const validSeats = deckSeats.filter(
-      (s) => !String(s.label || "").toUpperCase().includes("EXIT") || s.fare > 0
+      (s) => !nonSeatPatterns.test(String(s.label || ""))
     );
 
     if (validSeats.length === 0) return null;
+    // Collect all unique rows/cols
+    const rowSet = new Set();
+    const colSet = new Set();
+    validSeats.forEach((s) => {
+      rowSet.add(s.rowNo || 0);
+      colSet.add(s.colNo || 0);
+    });
 
-    // --- Build row map: SRDV RowNo → CSS grid row index (with aisle gap detection) ---
-    const uniqueRows = [...new Set(validSeats.map((s) => s.rowNo))].sort((a, b) => a - b);
+    const uniqueRows = Array.from(rowSet).sort((a, b) => a - b);
     const rowMap = new Map();
     let gridRow = 1;
     uniqueRows.forEach((rowVal, idx) => {
       if (idx > 0 && rowVal - uniqueRows[idx - 1] > 1) {
-        // Gap in RowNo sequence means there's an aisle between seat groups
-        gridRow += 1; // extra empty row = aisle
+        gridRow += 1; // Create aisle gap
       }
       rowMap.set(rowVal, gridRow);
       gridRow += 1;
     });
     const maxGridRows = gridRow - 1;
 
-    // --- Build col map: SRDV ColumnNo → CSS grid column index ---
-    const uniqueCols = [...new Set(validSeats.map((s) => s.colNo))].sort((a, b) => a - b);
+    const uniqueCols = Array.from(colSet).sort((a, b) => a - b);
     const colMap = new Map();
+    let gridCol = 1;
     uniqueCols.forEach((colVal, idx) => {
-      colMap.set(colVal, idx + 1);
+      if (idx > 0 && colVal - uniqueCols[idx - 1] > 1) {
+        gridCol += 1; // Create aisle gap
+      }
+      colMap.set(colVal, gridCol);
+      gridCol += 1;
     });
-    const maxGridCols = uniqueCols.length;
+    const maxGridCols = gridCol - 1;
 
     const hasSeater = validSeats.some((s) => s.kind === "seater" || s.kind === "semi-sleeper");
     const isOnlySleeper = validSeats.every((s) => s.kind === "sleeper");
@@ -441,7 +472,7 @@ export default function SeatSelection({
     const gridStyle = {
       display: "grid",
       gridTemplateRows: `repeat(${maxGridRows}, auto)`,
-      gridTemplateColumns: `repeat(${maxGridCols}, auto)`,
+      gridTemplateColumns: `repeat(${maxGridCols}, 44px)`,
       gap: "18px 6px",
     };
 
@@ -478,7 +509,7 @@ export default function SeatSelection({
 
               const seatWrapperClass = [
                 "srdv-grid-seat-box",
-                seat.kind === "sleeper" ? "srdv-sleeper-cell" : "srdv-seater-cell",
+                seat.kind === "vertical-sleeper" ? "srdv-vertical-sleeper-cell" : seat.kind === "sleeper" ? "srdv-sleeper-cell" : "srdv-seater-cell",
                 statusClass,
                 genderClass,
                 isDimmed ? "opacity-40" : "",
@@ -486,15 +517,22 @@ export default function SeatSelection({
                 .filter(Boolean)
                 .join(" ");
 
-              const layoutRow = rowMap.get(seat.rowNo) || 1;
-              const layoutCol = colMap.get(seat.colNo) || 1;
+              const layoutRow = rowMap.get(seat.rowNo || 0) || 1;
+              const layoutCol = colMap.get(seat.colNo || 0) || 1;
 
-              const seatW = seat.kind === "sleeper" ? 84 : 44;
-              const seatH = seat.kind === "sleeper" ? 34 : 36;
+              const isVert = seat.kind === "vertical-sleeper";
+              const isHorz = seat.kind === "sleeper";
+
+              // Determine spanning: default to 2 for sleepers if API width/length is missing
+              const colSpan = seat.width > 1 ? seat.width : (isHorz ? 2 : 1);
+              const rowSpan = seat.length > 1 ? seat.length : (isVert ? 2 : 1);
+
+              const seatW = seat.kind === "vertical-sleeper" ? 44 : seat.kind === "sleeper" ? 84 : 44;
+              const seatH = seat.kind === "vertical-sleeper" ? 84 : seat.kind === "sleeper" ? 34 : 36;
 
               const seatItemStyle = {
-                gridRow: layoutRow,
-                gridColumn: layoutCol,
+                gridRow: `${layoutRow} / span ${rowSpan}`,
+                gridColumn: `${layoutCol} / span ${colSpan}`,
               };
 
               return (
@@ -507,7 +545,9 @@ export default function SeatSelection({
                   disabled={isBooked || isDimmed}
                   title={`Seat: ${seat.label} | Fare: ₹${seat.fare}`}
                 >
-                  {seat.kind === "sleeper" ? (
+                  {seat.kind === "vertical-sleeper" ? (
+                    <VerticalSleeperIcon label={seat.label} />
+                  ) : seat.kind === "sleeper" ? (
                     <SleeperIcon label={seat.label} />
                   ) : (
                     <SeaterIcon label={seat.label} />

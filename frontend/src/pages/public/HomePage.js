@@ -1391,7 +1391,7 @@ const HOME_MODE_CONTENT = {
     mode: "flights",
     Icon: Plane,
     heroTitleStart: "Pack Your Dreams, ",
-    heroTitleEnd: "Weâ€™ll Handle the Journey.",
+    heroTitleEnd: "We'll Handle the Journey.",
     heroSubtitle: "Book your next flight with ease.",
     heroTags: ["Domestic Flights", "International Routes", "Instant Booking"],
     valueProps: [
@@ -4407,17 +4407,30 @@ export default function HomePage() {
           .homepage-flights .search-panel .flight-search-bar-row .class-field {
             flex: 1 1 auto !important;
             min-width: 80px !important;
-            height: 48px !important;
+            height: 58px !important;
             background: transparent !important;
             border: none !important;
             border-right: 1px solid #e2e8f0 !important;
             border-radius: 0 !important;
-            padding: 2px 4px !important;
+            padding: 6px 12px !important;
             margin: 0 !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important;
             box-sizing: border-box !important;
+          }
+
+          /* Remove PlaceAutocomplete internal input fixed heights so it matches Departure/Travellers */
+          .homepage-flights .search-panel .flight-search-bar-row .field-control {
+            height: auto !important;
+            min-height: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            color: #1e293b !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
           }
 
           .homepage-flights .search-panel .flight-search-bar-row .source-field,
@@ -4931,603 +4944,603 @@ export default function HomePage() {
       </section>
 
       <section className="bus-offers-section">
-    <div className="bus-offers-banner-card">
-      <div className="bus-offers-banner-bg-graphic" />
-      <div className="bus-offers-content-shell">
-        {/* Top Header Row */}
-        <div className="bus-offers-header-row">
-          <div>
-            <span className="bus-offers-kicker">
-              <Tag size={13} />
-              THIS WEEK
-            </span>
-            <h2 className="bus-offers-title">Featured Offers</h2>
-            <p className="bus-offers-subtitle">
-              Best deals on buses. Grab them before they're gone!
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="bus-offers-view-all"
-            onClick={() => setIsDealsDialogOpen(true)}
-          >
-            <span>View all deals</span>
-            <ArrowRight size={15} />
-          </button>
-        </div>
-
-        {/* Category Filter Tabs Bar */}
-        <div className="bus-offers-tabs-bar">
-          <button
-            type="button"
-            className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
-            onClick={() => setOffersFilter("all")}
-          >
-            <Tag size={13} />
-            <span>All Offers</span>
-          </button>
-          <button
-            type="button"
-            className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
-            onClick={() => setOffersFilter("flight")}
-          >
-            <Plane size={13} />
-            <span>Flights</span>
-          </button>
-          <button
-            type="button"
-            className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
-            onClick={() => setOffersFilter("bus")}
-          >
-            <Bus size={13} />
-            <span>Buses</span>
-          </button>
-          <button
-            type="button"
-            className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
-            onClick={() => setOffersFilter("hotel")}
-          >
-            <Building2 size={13} />
-            <span>Hotels</span>
-          </button>
-        </div>
-
-        {/* Cards Carousel Grid with Floating Arrows */}
-        <div className="bus-offers-cards-carousel-container">
-          <button
-            type="button"
-            className="bus-offers-arrow prev"
-            aria-label="Previous offers"
-          >
-            <ChevronLeft size={18} />
-          </button>
-
-          <div className="bus-offers-scroll-grid">
-            {(filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS).slice(0, 4).map((offer, idx) => {
-              const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
-              const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
-              const code = offer.couponCode || offer.title || "BUSOFFER";
-              const badgeText = offer.badgeLabel || (idx === 1 ? "EXCLUSIVE OFFER" : idx === 2 ? "50% OFF" : "SPECIAL OFFER");
-
-              const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
-              let apiOfferImg = null;
-              if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
-                const trimmed = rawAdminImg.trim();
-                apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
-              }
-
-              return (
-                <article
-                  key={offer.id || idx}
-                  className={`bus-card-unit ${themeClass}`}
-                  onClick={() => setOfferForDetailPopup(offer)}
-                >
-                  {/* Top Bar: Icon + Category */}
-                  <div className="bus-card-top-bar">
-                    <div className="bus-card-icon-badge">
-                      <Bus size={15} />
-                    </div>
-                    <span className="bus-card-cat">BUS OFFER</span>
-                  </div>
-
-                  {/* Center Info: Code & Validity */}
-                  <div className="bus-card-center">
-                    <h3 className="bus-card-code">{code}</h3>
-                    <p className="bus-card-expiry">
-                      {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                    </p>
-                  </div>
-
-                  {/* Bottom Badge Pill */}
-                  <div className="bus-card-bottom-bar">
-                    <span className="bus-card-tag-pill">{badgeText}</span>
-                  </div>
-
-                  {/* Top Right Starburst / Badge Ribbon */}
-                  <div className="bus-card-starburst">
-                    {badgeText}
-                  </div>
-
-                  {/* Only API Provided Image (No Static Fallbacks) */}
-                  {apiOfferImg && (
-                    <img
-                      src={apiOfferImg}
-                      alt={offer.title || "Offer Graphic"}
-                      className="bus-card-vehicle-graphic"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  )}
-                </article>
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            className="bus-offers-arrow next"
-            aria-label="Next offers"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-
-        {/* Pagination Dots Bar */}
-        <div className="bus-offers-dots-bar">
-          <span className="bus-offers-dot active" />
-          <span className="bus-offers-dot" />
-          <span className="bus-offers-dot" />
-          <span className="bus-offers-dot" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {/* TRAVEL DESK SERVICES Banner Section - Dynamic per active tab */}
-  {(() => {
-    const isFlight = activeTab === "flights";
-    const isHotel = activeTab === "hotels";
-
-    const config = isFlight
-      ? {
-          headline: <>Your Flight.<br /><span className="td-highlight-red">Our Priority.</span></>,
-          subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
-          features: [
-            { icon: <Search size={17} />, title: "Smart Search", desc: "Find flights across hundreds of routes with smart filters." },
-            { icon: <Clock3 size={17} />, title: "Live Flight Status", desc: "Get real-time departure, arrival & delay updates instantly." },
-            { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
-            { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
-          ],
-          btnIcon: <Plane size={16} />,
-          btnLabel: "Search Flights Now",
-          btnAction: () => setActiveTab("flights"),
-          bgImage: sunsetHighwayBg,
-          vehicleImg: flightSectionBanner,
-          vehicleAlt: "Flight Booking Illustration",
-          vehicleTag: "PICK N BOOK",
-          stats: [
-            { color: "red", icon: <Plane size={15} />, value: "500+", label: "Airlines" },
-            { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
-            { color: "crimson", icon: <MapPin size={15} />, value: "300+", label: "Destinations" },
-            { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
-          ],
-          phoneGreeting: "Book Your Flight! âœˆï¸",
-          phoneSub: "Where are you flying to?",
-          phoneField1Icon: <Plane size={13} className="td-field-icon" />,
-          phoneField1Label: "From",
-          phoneField1Value: "Delhi",
-          phoneField2Icon: <Plane size={13} className="td-field-icon" />,
-          phoneField2Label: "To",
-          phoneField2Value: "Mumbai",
-          phoneDateLabel: "Travel Date",
-          phoneDateValue: "25 May, 2025",
-          phoneSubmitLabel: "Search Flights",
-        }
-      : isHotel
-      ? {
-          headline: <>Your Stay.<br /><span className="td-highlight-red">Our Priority.</span></>,
-          subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
-          features: [
-            { icon: <Search size={17} />, title: "Smart Search", desc: "Find hotels across hundreds of destinations with smart filters." },
-            { icon: <BedDouble size={17} />, title: "Room Availability", desc: "Get live room availability & pricing updates instantly." },
-            { icon: <Ticket size={17} />, title: "Best Rates", desc: "Compare prices and choose the best deals that fit your budget." },
-            { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
-          ],
-          btnIcon: <Building2 size={16} />,
-          btnLabel: "Search Hotels Now",
-          btnAction: () => setActiveTab("hotels"),
-          bgImage: sunsetHighwayBg,
-          vehicleImg: hotelSectionBanner,
-          vehicleAlt: "Hotel Booking Illustration",
-          vehicleTag: "PICK N BOOK",
-          stats: [
-            { color: "red", icon: <Building2 size={15} />, value: "2000+", label: "Hotels Listed" },
-            { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
-            { color: "crimson", icon: <MapPin size={15} />, value: "200+", label: "Cities Covered" },
-            { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
-          ],
-          phoneGreeting: "Book Your Hotel! ðŸ¨",
-          phoneSub: "Where are you staying?",
-          phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
-          phoneField1Label: "Destination",
-          phoneField1Value: "Goa",
-          phoneField2Icon: <BedDouble size={13} className="td-field-icon" />,
-          phoneField2Label: "Rooms",
-          phoneField2Value: "1 Room, 2 Adults",
-          phoneDateLabel: "Check-in Date",
-          phoneDateValue: "25 May, 2025",
-          phoneSubmitLabel: "Search Hotels",
-        }
-      : {
-          headline: <>Your Journey.<br /><span className="td-highlight-red">Our Priority.</span></>,
-          subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
-          features: [
-            { icon: <Search size={17} />, title: "Smart Search", desc: "Find buses across thousands of routes with smart filters." },
-            { icon: <Clock3 size={17} />, title: "Real-time Updates", desc: "Get live timings, seat availability & prices instantly." },
-            { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
-            { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
-          ],
-          btnIcon: <Bus size={16} />,
-          btnLabel: "Search Buses Now",
-          btnAction: () => openPopularBusRoutes(),
-          bgImage: sunsetHighwayBg,
-          vehicleImg: luxuryBusImg,
-          vehicleAlt: "Pick N Book Luxury Bus",
-          vehicleTag: "PICK N BOOK",
-          stats: [
-            { color: "red", icon: <MapPin size={15} />, value: "5000+", label: "Routes Covered" },
-            { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
-            { color: "crimson", icon: <Handshake size={15} />, value: "1000+", label: "Trusted Partners" },
-            { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
-          ],
-          phoneGreeting: "Hello, Traveller! ðŸ‘‹",
-          phoneSub: "Where are you going?",
-          phoneField1Icon: <Bus size={13} className="td-field-icon" />,
-          phoneField1Label: "From",
-          phoneField1Value: "City A",
-          phoneField2Icon: <Bus size={13} className="td-field-icon" />,
-          phoneField2Label: "To",
-          phoneField2Value: "City B",
-          phoneDateLabel: "Journey Date",
-          phoneDateValue: "25 May, 2025",
-          phoneSubmitLabel: "Search Buses",
-        };
-
-    return (
-      <section className="td-services-section section-shell">
-        <div className="td-services-card">
-          <div className="td-services-body-grid">
-            {/* Left White Copy & Features Column */}
-            <div className="td-services-left-col">
-              <h2 className="td-services-headline">{config.headline}</h2>
-              <div className="td-services-underline" />
-              <p className="td-services-paragraph">{config.subtitle}</p>
-
-              <div className="td-services-features-list">
-                {config.features.map((f, i) => (
-                  <div className="td-feature-item" key={i}>
-                    <div className="td-feature-icon-box">{f.icon}</div>
-                    <div className="td-feature-text">
-                      <strong>{f.title}</strong>
-                      <p>{f.desc}</p>
-                    </div>
-                  </div>
-                ))}
+        <div className="bus-offers-banner-card">
+          <div className="bus-offers-banner-bg-graphic" />
+          <div className="bus-offers-content-shell">
+            {/* Top Header Row */}
+            <div className="bus-offers-header-row">
+              <div>
+                <span className="bus-offers-kicker">
+                  <Tag size={13} />
+                  THIS WEEK
+                </span>
+                <h2 className="bus-offers-title">Featured Offers</h2>
+                <p className="bus-offers-subtitle">
+                  Best deals on buses. Grab them before they're gone!
+                </p>
               </div>
 
-              <div className="td-services-actions-row">
-                <button
-                  type="button"
-                  className="td-search-now-btn"
-                  onClick={config.btnAction}
-                >
-                  {config.btnIcon}
-                  <span>{config.btnLabel}</span>
-                  <ChevronRight size={16} className="td-btn-arrow" />
-                </button>
-                <div className="td-need-help-pill">
-                  <div className="td-help-icon-circle">
-                    <Headphones size={15} />
-                  </div>
-                  <div className="td-help-meta">
-                    <strong>Need Help?</strong>
-                    <span>24/7 Customer Support</span>
-                  </div>
-                </div>
-              </div>
+              <button
+                type="button"
+                className="bus-offers-view-all"
+                onClick={() => setIsDealsDialogOpen(true)}
+              >
+                <span>View all deals</span>
+                <ArrowRight size={15} />
+              </button>
             </div>
 
-            {/* Right Column: BG + Stats + Visual Mockup */}
-            <div className="td-services-right-col" style={{ backgroundImage: `url(${config.bgImage})` }}>
-              <div className="td-curved-divider-overlay" />
+            {/* Category Filter Tabs Bar */}
+            <div className="bus-offers-tabs-bar">
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
+                onClick={() => setOffersFilter("all")}
+              >
+                <Tag size={13} />
+                <span>All Offers</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
+                onClick={() => setOffersFilter("flight")}
+              >
+                <Plane size={13} />
+                <span>Flights</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
+                onClick={() => setOffersFilter("bus")}
+              >
+                <Bus size={13} />
+                <span>Buses</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
+                onClick={() => setOffersFilter("hotel")}
+              >
+                <Building2 size={13} />
+                <span>Hotels</span>
+              </button>
+            </div>
 
-              <div className="td-floating-stats-glass-bar">
-                {config.stats.map((s, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <div className="td-glass-stat-divider" />}
-                    <div className="td-glass-stat-item">
-                      <div className={`td-stat-icon-circle ${s.color}`}>{s.icon}</div>
-                      <div className="td-stat-info">
-                        <strong>{s.value}</strong>
-                        <span>{s.label}</span>
+            {/* Cards Carousel Grid with Floating Arrows */}
+            <div className="bus-offers-cards-carousel-container">
+              <button
+                type="button"
+                className="bus-offers-arrow prev"
+                aria-label="Previous offers"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="bus-offers-scroll-grid">
+                {(filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS).slice(0, 4).map((offer, idx) => {
+                  const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
+                  const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
+                  const code = offer.couponCode || offer.title || "BUSOFFER";
+                  const badgeText = offer.badgeLabel || (idx === 1 ? "EXCLUSIVE OFFER" : idx === 2 ? "50% OFF" : "SPECIAL OFFER");
+
+                  const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
+                  let apiOfferImg = null;
+                  if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
+                    const trimmed = rawAdminImg.trim();
+                    apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
+                  }
+
+                  return (
+                    <article
+                      key={offer.id || idx}
+                      className={`bus-card-unit ${themeClass}`}
+                      onClick={() => setOfferForDetailPopup(offer)}
+                    >
+                      {/* Top Bar: Icon + Category */}
+                      <div className="bus-card-top-bar">
+                        <div className="bus-card-icon-badge">
+                          <Bus size={15} />
+                        </div>
+                        <span className="bus-card-cat">BUS OFFER</span>
                       </div>
-                    </div>
-                  </React.Fragment>
-                ))}
+
+                      {/* Center Info: Code & Validity */}
+                      <div className="bus-card-center">
+                        <h3 className="bus-card-code">{code}</h3>
+                        <p className="bus-card-expiry">
+                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                        </p>
+                      </div>
+
+                      {/* Bottom Badge Pill */}
+                      <div className="bus-card-bottom-bar">
+                        <span className="bus-card-tag-pill">{badgeText}</span>
+                      </div>
+
+                      {/* Top Right Starburst / Badge Ribbon */}
+                      <div className="bus-card-starburst">
+                        {badgeText}
+                      </div>
+
+                      {/* Only API Provided Image (No Static Fallbacks) */}
+                      {apiOfferImg && (
+                        <img
+                          src={apiOfferImg}
+                          alt={offer.title || "Offer Graphic"}
+                          className="bus-card-vehicle-graphic"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      )}
+                    </article>
+                  );
+                })}
               </div>
 
-              <div className="td-services-visual-stage">
-                <div className="td-bus-visual-wrap">
-                  <div className="td-bus-display-tag">{config.vehicleTag}</div>
-                  <img src={config.vehicleImg} alt={config.vehicleAlt} className="td-stage-bus-img" />
-                </div>
+              <button
+                type="button"
+                className="bus-offers-arrow next"
+                aria-label="Next offers"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
 
-                <div className="td-phone-device-frame">
-                  <div className="td-phone-notch" />
-                  <div className="td-phone-inner-screen">
-                    <div className="td-phone-greeting">
-                      <span className="td-greeting-title">{config.phoneGreeting}</span>
-                      <span className="td-greeting-sub">{config.phoneSub}</span>
-                    </div>
-                    <div className="td-phone-field-box">
-                      {config.phoneField1Icon}
-                      <div className="td-field-labels">
-                        <span className="td-field-lbl">{config.phoneField1Label}</span>
-                        <strong>{config.phoneField1Value}</strong>
+            {/* Pagination Dots Bar */}
+            <div className="bus-offers-dots-bar">
+              <span className="bus-offers-dot active" />
+              <span className="bus-offers-dot" />
+              <span className="bus-offers-dot" />
+              <span className="bus-offers-dot" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRAVEL DESK SERVICES Banner Section - Dynamic per active tab */}
+      {(() => {
+        const isFlight = activeTab === "flights";
+        const isHotel = activeTab === "hotels";
+
+        const config = isFlight
+          ? {
+            headline: <>Your Flight.<br /><span className="td-highlight-red">Our Priority.</span></>,
+            subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
+            features: [
+              { icon: <Search size={17} />, title: "Smart Search", desc: "Find flights across hundreds of routes with smart filters." },
+              { icon: <Clock3 size={17} />, title: "Live Flight Status", desc: "Get real-time departure, arrival & delay updates instantly." },
+              { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
+              { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
+            ],
+            btnIcon: <Plane size={16} />,
+            btnLabel: "Search Flights Now",
+            btnAction: () => setActiveTab("flights"),
+            bgImage: sunsetHighwayBg,
+            vehicleImg: flightSectionBanner,
+            vehicleAlt: "Flight Booking Illustration",
+            vehicleTag: "PICK N BOOK",
+            stats: [
+              { color: "red", icon: <Plane size={15} />, value: "500+", label: "Airlines" },
+              { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
+              { color: "crimson", icon: <MapPin size={15} />, value: "300+", label: "Destinations" },
+              { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
+            ],
+            phoneGreeting: "Book Your Flight! âœˆï¸",
+            phoneSub: "Where are you flying to?",
+            phoneField1Icon: <Plane size={13} className="td-field-icon" />,
+            phoneField1Label: "From",
+            phoneField1Value: "Delhi",
+            phoneField2Icon: <Plane size={13} className="td-field-icon" />,
+            phoneField2Label: "To",
+            phoneField2Value: "Mumbai",
+            phoneDateLabel: "Travel Date",
+            phoneDateValue: "25 May, 2025",
+            phoneSubmitLabel: "Search Flights",
+          }
+          : isHotel
+            ? {
+              headline: <>Your Stay.<br /><span className="td-highlight-red">Our Priority.</span></>,
+              subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
+              features: [
+                { icon: <Search size={17} />, title: "Smart Search", desc: "Find hotels across hundreds of destinations with smart filters." },
+                { icon: <BedDouble size={17} />, title: "Room Availability", desc: "Get live room availability & pricing updates instantly." },
+                { icon: <Ticket size={17} />, title: "Best Rates", desc: "Compare prices and choose the best deals that fit your budget." },
+                { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
+              ],
+              btnIcon: <Building2 size={16} />,
+              btnLabel: "Search Hotels Now",
+              btnAction: () => setActiveTab("hotels"),
+              bgImage: sunsetHighwayBg,
+              vehicleImg: hotelSectionBanner,
+              vehicleAlt: "Hotel Booking Illustration",
+              vehicleTag: "PICK N BOOK",
+              stats: [
+                { color: "red", icon: <Building2 size={15} />, value: "2000+", label: "Hotels Listed" },
+                { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
+                { color: "crimson", icon: <MapPin size={15} />, value: "200+", label: "Cities Covered" },
+                { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
+              ],
+              phoneGreeting: "Book Your Hotel! ðŸ¨",
+              phoneSub: "Where are you staying?",
+              phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
+              phoneField1Label: "Destination",
+              phoneField1Value: "Goa",
+              phoneField2Icon: <BedDouble size={13} className="td-field-icon" />,
+              phoneField2Label: "Rooms",
+              phoneField2Value: "1 Room, 2 Adults",
+              phoneDateLabel: "Check-in Date",
+              phoneDateValue: "25 May, 2025",
+              phoneSubmitLabel: "Search Hotels",
+            }
+            : {
+              headline: <>Your Journey.<br /><span className="td-highlight-red">Our Priority.</span></>,
+              subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
+              features: [
+                { icon: <Search size={17} />, title: "Smart Search", desc: "Find buses across thousands of routes with smart filters." },
+                { icon: <Clock3 size={17} />, title: "Real-time Updates", desc: "Get live timings, seat availability & prices instantly." },
+                { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
+                { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
+              ],
+              btnIcon: <Bus size={16} />,
+              btnLabel: "Search Buses Now",
+              btnAction: () => openPopularBusRoutes(),
+              bgImage: sunsetHighwayBg,
+              vehicleImg: luxuryBusImg,
+              vehicleAlt: "Pick N Book Luxury Bus",
+              vehicleTag: "PICK N BOOK",
+              stats: [
+                { color: "red", icon: <MapPin size={15} />, value: "5000+", label: "Routes Covered" },
+                { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
+                { color: "crimson", icon: <Handshake size={15} />, value: "1000+", label: "Trusted Partners" },
+                { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
+              ],
+              phoneGreeting: "Hello, Traveller! ðŸ‘‹",
+              phoneSub: "Where are you going?",
+              phoneField1Icon: <Bus size={13} className="td-field-icon" />,
+              phoneField1Label: "From",
+              phoneField1Value: "City A",
+              phoneField2Icon: <Bus size={13} className="td-field-icon" />,
+              phoneField2Label: "To",
+              phoneField2Value: "City B",
+              phoneDateLabel: "Journey Date",
+              phoneDateValue: "25 May, 2025",
+              phoneSubmitLabel: "Search Buses",
+            };
+
+        return (
+          <section className="td-services-section section-shell">
+            <div className="td-services-card">
+              <div className="td-services-body-grid">
+                {/* Left White Copy & Features Column */}
+                <div className="td-services-left-col">
+                  <h2 className="td-services-headline">{config.headline}</h2>
+                  <div className="td-services-underline" />
+                  <p className="td-services-paragraph">{config.subtitle}</p>
+
+                  <div className="td-services-features-list">
+                    {config.features.map((f, i) => (
+                      <div className="td-feature-item" key={i}>
+                        <div className="td-feature-icon-box">{f.icon}</div>
+                        <div className="td-feature-text">
+                          <strong>{f.title}</strong>
+                          <p>{f.desc}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="td-phone-field-box">
-                      {config.phoneField2Icon}
-                      <div className="td-field-labels">
-                        <span className="td-field-lbl">{config.phoneField2Label}</span>
-                        <strong>{config.phoneField2Value}</strong>
-                      </div>
-                    </div>
-                    <div className="td-phone-field-box">
-                      <CalendarDays size={13} className="td-field-icon" />
-                      <div className="td-field-labels">
-                        <span className="td-field-lbl">{config.phoneDateLabel}</span>
-                        <strong>{config.phoneDateValue}</strong>
-                      </div>
-                    </div>
-                    <button type="button" className="td-phone-main-submit-btn">
-                      {config.phoneSubmitLabel}
+                    ))}
+                  </div>
+
+                  <div className="td-services-actions-row">
+                    <button
+                      type="button"
+                      className="td-search-now-btn"
+                      onClick={config.btnAction}
+                    >
+                      {config.btnIcon}
+                      <span>{config.btnLabel}</span>
+                      <ChevronRight size={16} className="td-btn-arrow" />
                     </button>
-                    <div className="td-phone-bottom-nav">
-                      <div className="td-nav-item active">
-                        <CalendarDays size={11} /><span>My Bookings</span>
+                    <div className="td-need-help-pill">
+                      <div className="td-help-icon-circle">
+                        <Headphones size={15} />
                       </div>
-                      <div className="td-nav-item">
-                        <Tag size={11} /><span>Offers</span>
-                      </div>
-                      <div className="td-nav-item">
-                        <Headphones size={11} /><span>Help Center</span>
+                      <div className="td-help-meta">
+                        <strong>Need Help?</strong>
+                        <span>24/7 Customer Support</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="td-stage-suitcase-graphic">
-                  <div className="td-straw-hat-decor" />
-                  <div className="td-suitcase-body" />
-                  <div className="td-plant-pot-decor" />
+                {/* Right Column: BG + Stats + Visual Mockup */}
+                <div className="td-services-right-col" style={{ backgroundImage: `url(${config.bgImage})` }}>
+                  <div className="td-curved-divider-overlay" />
+
+                  <div className="td-floating-stats-glass-bar">
+                    {config.stats.map((s, i) => (
+                      <React.Fragment key={i}>
+                        {i > 0 && <div className="td-glass-stat-divider" />}
+                        <div className="td-glass-stat-item">
+                          <div className={`td-stat-icon-circle ${s.color}`}>{s.icon}</div>
+                          <div className="td-stat-info">
+                            <strong>{s.value}</strong>
+                            <span>{s.label}</span>
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  <div className="td-services-visual-stage">
+                    <div className="td-bus-visual-wrap">
+                      <div className="td-bus-display-tag">{config.vehicleTag}</div>
+                      <img src={config.vehicleImg} alt={config.vehicleAlt} className="td-stage-bus-img" />
+                    </div>
+
+                    <div className="td-phone-device-frame">
+                      <div className="td-phone-notch" />
+                      <div className="td-phone-inner-screen">
+                        <div className="td-phone-greeting">
+                          <span className="td-greeting-title">{config.phoneGreeting}</span>
+                          <span className="td-greeting-sub">{config.phoneSub}</span>
+                        </div>
+                        <div className="td-phone-field-box">
+                          {config.phoneField1Icon}
+                          <div className="td-field-labels">
+                            <span className="td-field-lbl">{config.phoneField1Label}</span>
+                            <strong>{config.phoneField1Value}</strong>
+                          </div>
+                        </div>
+                        <div className="td-phone-field-box">
+                          {config.phoneField2Icon}
+                          <div className="td-field-labels">
+                            <span className="td-field-lbl">{config.phoneField2Label}</span>
+                            <strong>{config.phoneField2Value}</strong>
+                          </div>
+                        </div>
+                        <div className="td-phone-field-box">
+                          <CalendarDays size={13} className="td-field-icon" />
+                          <div className="td-field-labels">
+                            <span className="td-field-lbl">{config.phoneDateLabel}</span>
+                            <strong>{config.phoneDateValue}</strong>
+                          </div>
+                        </div>
+                        <button type="button" className="td-phone-main-submit-btn">
+                          {config.phoneSubmitLabel}
+                        </button>
+                        <div className="td-phone-bottom-nav">
+                          <div className="td-nav-item active">
+                            <CalendarDays size={11} /><span>My Bookings</span>
+                          </div>
+                          <div className="td-nav-item">
+                            <Tag size={11} /><span>Offers</span>
+                          </div>
+                          <div className="td-nav-item">
+                            <Headphones size={11} /><span>Help Center</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="td-stage-suitcase-graphic">
+                      <div className="td-straw-hat-decor" />
+                      <div className="td-suitcase-body" />
+                      <div className="td-plant-pot-decor" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-    );
-  })()}
+          </section>
+        );
+      })()}
 
-  {
-    activeTab === "buses" && (
-      <section className="popular-routes-section section-shell">
-        <div className="section-header">
-          <div>
-            <span className="section-kicker">POPULAR BUS ROUTES</span>
-            <h2>Most Booked Bus Routes</h2>
-          </div>
-        </div>
+      {
+        activeTab === "buses" && (
+          <section className="popular-routes-section section-shell">
+            <div className="section-header">
+              <div>
+                <span className="section-kicker">POPULAR BUS ROUTES</span>
+                <h2>Most Booked Bus Routes</h2>
+              </div>
+            </div>
 
-        {popularRoutesLoading ? (
-          <div className="popular-routes-loading">Loading popular routes...</div>
-        ) : popularRoutesError ? (
-          <div className="popular-routes-error">{popularRoutesError}</div>
-        ) : popularRoutes.length === 0 ? (
-          <div className="popular-routes-empty">No popular routes available.</div>
-        ) : (
-          <AutoMarquee
-            items={popularRoutes}
-            className="popular-routes-marquee"
-            duration={36}
-            renderItem={(route) => (
-              <article
-                className="pop-route-card"
-                key={route.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => handlePopularRouteBooking(route)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
-              >
-                <div className="pop-route-img-wrap">
-                  <img
-                    src={getCityImage(route.toCity, "bus_default")}
-                    alt={`${route.fromCity} to ${route.toCity}`}
-                    loading="lazy"
-                    onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.bus_default; }}
-                  />
-                  <div className="pop-route-img-overlay">
-                    <span className="pop-route-tag-search">BUS</span>
-                  </div>
-                </div>
-                <div className="pop-route-body">
-                  <div className="pop-route-cities-row">
-                    <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
-                    <div className="pop-route-icon-circle"><Bus size={13} /></div>
-                    <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
-                  </div>
-                </div>
-                <button type="button" className="pop-route-book-btn"
-                  onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
-                >BOOK BUS</button>
-              </article>
+            {popularRoutesLoading ? (
+              <div className="popular-routes-loading">Loading popular routes...</div>
+            ) : popularRoutesError ? (
+              <div className="popular-routes-error">{popularRoutesError}</div>
+            ) : popularRoutes.length === 0 ? (
+              <div className="popular-routes-empty">No popular routes available.</div>
+            ) : (
+              <AutoMarquee
+                items={popularRoutes}
+                className="popular-routes-marquee"
+                duration={36}
+                renderItem={(route) => (
+                  <article
+                    className="pop-route-card"
+                    key={route.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePopularRouteBooking(route)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
+                  >
+                    <div className="pop-route-img-wrap">
+                      <img
+                        src={getCityImage(route.toCity, "bus_default")}
+                        alt={`${route.fromCity} to ${route.toCity}`}
+                        loading="lazy"
+                        onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.bus_default; }}
+                      />
+                      <div className="pop-route-img-overlay">
+                        <span className="pop-route-tag-search">BUS</span>
+                      </div>
+                    </div>
+                    <div className="pop-route-body">
+                      <div className="pop-route-cities-row">
+                        <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
+                        <div className="pop-route-icon-circle"><Bus size={13} /></div>
+                        <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
+                      </div>
+                    </div>
+                    <button type="button" className="pop-route-book-btn"
+                      onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
+                    >BOOK BUS</button>
+                  </article>
+                )}
+              />
             )}
-          />
-        )}
-      </section>
-    )
-  }
+          </section>
+        )
+      }
 
-  { dealsDialog }
-  { offerDetailDialog }
+      {dealsDialog}
+      {offerDetailDialog}
 
 
 
-  {
-    activeTab === "flights" && (
-      <>
-        <section className="popular-section section-shell">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">Popular Picks</span>
-              <h2>Trending Flight Routes</h2>
-            </div>
-          </div>
+      {
+        activeTab === "flights" && (
+          <>
+            <section className="popular-section section-shell">
+              <div className="section-header">
+                <div>
+                  <span className="section-kicker">Popular Picks</span>
+                  <h2>Trending Flight Routes</h2>
+                </div>
+              </div>
 
-          {popularFlightsLoading ? (
-            <div className="popular-routes-loading">Loading popular flights...</div>
-          ) : popularFlightsError ? (
-            <div className="popular-routes-error">{popularFlightsError}</div>
-          ) : popularFlights.length === 0 ? (
-            <div className="popular-routes-empty">No popular flights available.</div>
-          ) : (
-            <AutoMarquee
-              items={popularFlights}
-              className="popular-routes-marquee flight-routes-marquee"
-              duration={38}
-              renderItem={(flight) => (
-                <article
-                  className="pop-route-card pop-flight-card"
-                  key={flight.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handlePopularFlightBooking(flight)}
-                >
-                  <div className="pop-route-img-wrap">
-                    <img
-                      src={getCityImage(flight.toCity, "flight_default")}
-                      alt={`${flight.fromCity} to ${flight.toCity}`}
-                      loading="lazy"
-                      onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.flight_default; }}
-                    />
-                    <div className="pop-route-img-overlay">
-                      <span className="pop-route-tag-search">FLIGHT</span>
-                    </div>
-                  </div>
-                  <div className="pop-route-body">
-                    <div className="pop-route-cities-row">
-                      <span className="pop-route-city from" title={flight.fromCity}>{flight.fromCity}</span>
-                      <div className="pop-route-icon-circle"><Plane size={13} /></div>
-                      <span className="pop-route-city to" title={flight.toCity}>{flight.toCity}</span>
-                    </div>
-                  </div>
-                  <button type="button" className="pop-route-book-btn"
-                    onClick={(e) => { e.stopPropagation(); handlePopularFlightBooking(flight); }}
-                  >BOOK FLIGHT</button>
-                </article>
-              )}
-            />
-          )}
-        </section>
-
-        <section className="brands-section section-shell">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">Trusted Partners</span>
-              <h2>Airline Brands</h2>
-            </div>
-          </div>
-
-          <AutoMarquee
-            items={AIRLINE_BRANDS}
-            className="brand-marquee"
-            duration={30}
-            renderItem={(brand) => (
-              <article className="brand-slide">
-                <img
-                  src={brand.image}
-                  alt={brand.name}
-                  className="brand-logo"
-                  style={{ "--brand-scale": brand.scale }}
+              {popularFlightsLoading ? (
+                <div className="popular-routes-loading">Loading popular flights...</div>
+              ) : popularFlightsError ? (
+                <div className="popular-routes-error">{popularFlightsError}</div>
+              ) : popularFlights.length === 0 ? (
+                <div className="popular-routes-empty">No popular flights available.</div>
+              ) : (
+                <AutoMarquee
+                  items={popularFlights}
+                  className="popular-routes-marquee flight-routes-marquee"
+                  duration={38}
+                  renderItem={(flight) => (
+                    <article
+                      className="pop-route-card pop-flight-card"
+                      key={flight.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handlePopularFlightBooking(flight)}
+                    >
+                      <div className="pop-route-img-wrap">
+                        <img
+                          src={getCityImage(flight.toCity, "flight_default")}
+                          alt={`${flight.fromCity} to ${flight.toCity}`}
+                          loading="lazy"
+                          onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.flight_default; }}
+                        />
+                        <div className="pop-route-img-overlay">
+                          <span className="pop-route-tag-search">FLIGHT</span>
+                        </div>
+                      </div>
+                      <div className="pop-route-body">
+                        <div className="pop-route-cities-row">
+                          <span className="pop-route-city from" title={flight.fromCity}>{flight.fromCity}</span>
+                          <div className="pop-route-icon-circle"><Plane size={13} /></div>
+                          <span className="pop-route-city to" title={flight.toCity}>{flight.toCity}</span>
+                        </div>
+                      </div>
+                      <button type="button" className="pop-route-book-btn"
+                        onClick={(e) => { e.stopPropagation(); handlePopularFlightBooking(flight); }}
+                      >BOOK FLIGHT</button>
+                    </article>
+                  )}
                 />
-                <span>{brand.name}</span>
-              </article>
-            )}
-          />
-        </section>
-      </>
-    )
-  }
+              )}
+            </section>
 
-  {
-    activeTab === "hotels" && (
-      <section className="popular-section hotel-popular-section section-shell">
-        <div className="section-header">
-          <div>
-            <span className="section-kicker">Popular Stays</span>
-            <h2>Trending Hotel Picks</h2>
-          </div>
-        </div>
+            <section className="brands-section section-shell">
+              <div className="section-header">
+                <div>
+                  <span className="section-kicker">Trusted Partners</span>
+                  <h2>Airline Brands</h2>
+                </div>
+              </div>
 
-        {popularHotelsLoading ? (
-          <div className="popular-routes-loading">Loading popular stays...</div>
-        ) : popularHotels.length === 0 ? (
-          <div className="popular-routes-empty">No popular stays available.</div>
-        ) : (
-          <AutoMarquee
-            items={popularHotels}
-            className="popular-routes-marquee hotel-routes-marquee"
-            duration={38}
-            renderItem={(hotel) => (
-              <article
-                className="pop-route-card pop-hotel-card"
-                key={hotel.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => handlePopularHotelBooking(hotel)}
-              >
-                <div className="pop-route-img-wrap">
-                  <img
-                    src={hotel.hotelImage || HOTEL_ROOM_IMAGES[0]}
-                    alt={`${hotel.name} â€“ ${hotel.city}`}
-                    loading="lazy"
-                    onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.hotel_default; }}
-                  />
-                  <div className="pop-route-img-overlay">
-                    <span className="pop-route-tag-search">STAY</span>
-                  </div>
-                </div>
-                <div className="pop-route-body">
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#1e2c3a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {hotel.name}
-                  </p>
-                  <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "#5a6a78" }}>
-                    {hotel.city} &nbsp;Â·&nbsp; From INR {hotel.price}
-                  </p>
-                </div>
-                <button type="button" className="pop-route-book-btn"
-                  onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}
-                >BOOK HOTEL</button>
-              </article>
+              <AutoMarquee
+                items={AIRLINE_BRANDS}
+                className="brand-marquee"
+                duration={30}
+                renderItem={(brand) => (
+                  <article className="brand-slide">
+                    <img
+                      src={brand.image}
+                      alt={brand.name}
+                      className="brand-logo"
+                      style={{ "--brand-scale": brand.scale }}
+                    />
+                    <span>{brand.name}</span>
+                  </article>
+                )}
+              />
+            </section>
+          </>
+        )
+      }
+
+      {
+        activeTab === "hotels" && (
+          <section className="popular-section hotel-popular-section section-shell">
+            <div className="section-header">
+              <div>
+                <span className="section-kicker">Popular Stays</span>
+                <h2>Trending Hotel Picks</h2>
+              </div>
+            </div>
+
+            {popularHotelsLoading ? (
+              <div className="popular-routes-loading">Loading popular stays...</div>
+            ) : popularHotels.length === 0 ? (
+              <div className="popular-routes-empty">No popular stays available.</div>
+            ) : (
+              <AutoMarquee
+                items={popularHotels}
+                className="popular-routes-marquee hotel-routes-marquee"
+                duration={38}
+                renderItem={(hotel) => (
+                  <article
+                    className="pop-route-card pop-hotel-card"
+                    key={hotel.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePopularHotelBooking(hotel)}
+                  >
+                    <div className="pop-route-img-wrap">
+                      <img
+                        src={hotel.hotelImage || HOTEL_ROOM_IMAGES[0]}
+                        alt={`${hotel.name} â€“ ${hotel.city}`}
+                        loading="lazy"
+                        onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.hotel_default; }}
+                      />
+                      <div className="pop-route-img-overlay">
+                        <span className="pop-route-tag-search">STAY</span>
+                      </div>
+                    </div>
+                    <div className="pop-route-body">
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#1e2c3a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {hotel.name}
+                      </p>
+                      <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "#5a6a78" }}>
+                        {hotel.city} &nbsp;Â·&nbsp; From INR {hotel.price}
+                      </p>
+                    </div>
+                    <button type="button" className="pop-route-book-btn"
+                      onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}
+                    >BOOK HOTEL</button>
+                  </article>
+                )}
+              />
             )}
-          />
-        )}
-      </section>
-    )
-  }
+          </section>
+        )
+      }
 
       <section className="travel-services-section section-shell">
         <div className="section-header">
@@ -5709,7 +5722,7 @@ export default function HomePage() {
         </div>
       </section>
 
-  {/* Upgraded What Travelers Say Testimonials Section */ }
+      {/* Upgraded What Travelers Say Testimonials Section */}
       <section className="reviews-section upgraded-reviews-section section-shell">
         <div className="upgraded-reviews-header">
           <div className="upgraded-reviews-title-box">
@@ -5744,10 +5757,10 @@ export default function HomePage() {
           renderItem={(review) => {
             const initials = review.author
               ? review.author
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
               : "TR";
 
             return (
@@ -5805,7 +5818,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
- 
+
 
       <section className="india-booking-section section-shell">
         <div className="india-faq-block">
@@ -5829,7 +5842,7 @@ export default function HomePage() {
           </div>
         </div>
 
-          <div className="india-app-card">
+        <div className="india-app-card">
           <div className="india-app-mark" aria-hidden="true">
             <HomeModeIcon size={42} />
             <span>APP</span>
@@ -5961,9 +5974,8 @@ export default function HomePage() {
               {aiChatMessages.map((message) => (
                 <div
                   key={message.id}
-                  className={`home-ai-chat-message ${
-                    message.role === "user" ? "user" : "assistant"
-                  }`}
+                  className={`home-ai-chat-message ${message.role === "user" ? "user" : "assistant"
+                    }`}
                 >
                   {message.text}
                 </div>

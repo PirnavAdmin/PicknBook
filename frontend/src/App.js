@@ -45,7 +45,7 @@ import EditProfile from "./pages/account/EditProfile";
 import FlightSearchResults from "./pages/booking/FlightSearchResults";
 import FlightSeatSelectionPage from "./pages/booking/FlightSeatSelectionPage";
 import FlightPassengerDetailsPage from "./pages/booking/FlightPassengerDetailsPage";
-import FlightPaymentPage from "./pages/booking/FlightPaymentPage";
+
 import HotelBookings from "./pages/booking/HotelBookings";
 import TicketConfirmationPage from "./pages/public/TicketConfirmationPage";
 import MyAccount from "./pages/account/MyAccount";
@@ -154,11 +154,12 @@ import "./STYLES/AtlasTheme.css";
 import BusSearchResults from "./pages/booking/BusSearchResults";
 import BusSeatSelectionPage from "./pages/booking/BusSeatSelectionPage";
 import BusPassengerDetailsPage from "./pages/booking/BusPassengerDetailsPage";
-import BusPaymentPage from "./pages/booking/BusPaymentPage";
+
 
 import HotelSearchResults from "./pages/booking/HotelSearchResults";
 import HotelPassengerDetailsPage from "./pages/booking/HotelPassengerDetailsPage";
-import HotelPaymentPage from "./pages/booking/HotelPaymentPage";
+
+import CashfreeReturnPage from "./pages/booking/CashfreeReturnPage";
 
 const ADMIN_PATHS = {
   base: "/admin",
@@ -167,9 +168,13 @@ const ADMIN_PATHS = {
 };
 
 const USER_PROTECTED_PATH_PREFIXES = [
+  "/bus/passenger-details",
+  "/flight/passenger-details",
+  "/hotel/passenger-details",
   "/bus/payment",
   "/flight/payment",
   "/hotel/payment",
+  "/payment/cashfree",
   "/dashboard",
   "/edit-profile",
   "/change-password",
@@ -224,6 +229,13 @@ const HIDE_TOPBAR_PATHS = new Set([
 const FORCE_FOOTER_PATHS = new Set([
   "/fetch-ticket",
   "/web-checkin",
+]);
+
+const HIDE_FOOTER_PATHS = new Set([
+  "/bus/payment",
+  "/flight/payment",
+  "/hotel/payment",
+  "/payment/cashfree/return",
 ]);
 
 const LEGACY_REDIRECTS = [
@@ -540,6 +552,7 @@ function AppContent() {
   const shouldShowFooter =
     !isAdminPath &&
     !isInsideB2B &&
+    !HIDE_FOOTER_PATHS.has(normalizedPath) &&
     (FORCE_FOOTER_PATHS.has(normalizedPath) || !HIDE_TOPBAR_PATHS.has(normalizedPath));
 
   return (
@@ -605,7 +618,7 @@ function AppContent() {
         <Route path="/flight/seats" element={<BookingRouteWrapper element={<FlightSeatSelectionPage />} />} />
         <Route path="/flight/seat-selection" element={<BookingRouteWrapper element={<FlightSeatSelectionPage />} />} />
         <Route path="/flight/passenger-details" element={<BookingRouteWrapper element={<FlightPassengerDetailsPage />} />} />
-        <Route path="/flight/payment" element={<BookingRouteWrapper element={<FlightPaymentPage />} />} />
+        
 
         {/* Bus search & checkout variants */}
         <Route path="/search/buses" element={<BookingRouteWrapper element={<BusSearchResults />} />} />
@@ -613,13 +626,16 @@ function AppContent() {
         <Route path="/bus/seats" element={<BookingRouteWrapper element={<BusSeatSelectionPage />} />} />
         <Route path="/bus/seat-selection" element={<BookingRouteWrapper element={<BusSeatSelectionPage />} />} />
         <Route path="/bus/passenger-details" element={<BookingRouteWrapper element={<BusPassengerDetailsPage />} />} />
-        <Route path="/bus/payment" element={<BookingRouteWrapper element={<BusPaymentPage />} />} />
+        
 
         {/* Hotel search & checkout variants */}
         <Route path="/search/hotels" element={<BookingRouteWrapper element={<HotelSearchResults />} />} />
         <Route path="/hotel/search" element={<BookingRouteWrapper element={<HotelSearchResults />} />} />
         <Route path="/hotel/passenger-details" element={<BookingRouteWrapper element={<HotelPassengerDetailsPage />} />} />
-        <Route path="/hotel/payment" element={<BookingRouteWrapper element={<HotelPaymentPage />} />} />
+        
+
+        {/* Cashfree return — Cashfree redirects here after checkout (success/failure/cancel) */}
+        <Route path="/payment/cashfree/return" element={<CashfreeReturnPage />} />
 
         {/* Confirmation variants */}
         <Route path="/booking/confirmation" element={<BookingRouteWrapper element={<BookingConfirmationPage />} />} />

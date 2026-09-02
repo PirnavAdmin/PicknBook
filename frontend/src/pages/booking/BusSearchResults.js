@@ -935,6 +935,8 @@ export default function BusSearchResults() {
           isAC: bus.isAC || false,
           isSleeper: bus.isSleeper || false,
           isSeater: bus.isSeater || false,
+          mTicketEnabled: bus.mTicketEnabled || false,
+          liveTracking: bus.liveTracking || false,
           tags: getBusTags(bus.busType),
         };
       }),
@@ -1629,9 +1631,15 @@ export default function BusSearchResults() {
                     <tbody>
                       {cancellationPolicies.map((item, idx) => {
                         const timeText = item.policyText || item.PolicyString || item.CancellationTime || (item.FromValue !== undefined ? `Between ${item.FromValue}h and ${item.ToValue}h before departure` : `Condition ${idx + 1}`);
-                        const chargeText = item.CancellationChargePercentage !== undefined 
-                          ? `${item.CancellationChargePercentage}% Charge` 
-                          : (item.CancellationCharge !== undefined ? `₹${item.CancellationCharge}` : (item.RefundPercentage !== undefined ? `${item.RefundPercentage}% Refund` : (item.charge || "As per policy")));
+                        let chargeText = item.charge || "As per policy";
+                        if (item.CancellationChargePercentage !== undefined) {
+                          chargeText = `${item.CancellationChargePercentage}% Charge`;
+                        } else if (item.CancellationCharge !== undefined) {
+                          const isPercent = String(item.CancellationChargeType || "").toLowerCase() === "percentage";
+                          chargeText = isPercent ? `${item.CancellationCharge}%` : `₹${item.CancellationCharge}`;
+                        } else if (item.RefundPercentage !== undefined) {
+                          chargeText = `${item.RefundPercentage}% Refund`;
+                        }
                         return (
                           <tr key={idx}>
                             <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>{timeText}</td>
@@ -1919,7 +1927,25 @@ export default function BusSearchResults() {
         <div>
           <h4 style={{ margin: 0, fontSize: "14.5px" }}>{bus.operatorName}</h4>
           <p style={{ margin: "2px 0 0", fontSize: "12px" }}>{bus.busType}</p>
-          <small style={{ display: "block", marginTop: "2px" }}>Bus No: {bus.busNumber}</small>
+          <small style={{ display: "block", marginTop: "2px", color: "#64748b" }}>Bus No: {bus.busNumber}</small>
+          
+          <div style={{ display: "flex", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
+            {bus.isAC && (
+              <span style={{ fontSize: "10px", background: "#f8fafc", color: "#475569", padding: "2px 6px", borderRadius: "4px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "4px", border: "1px solid #e2e8f0" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20"></path><path d="m8 10 4-4 4 4"></path><path d="m16 14-4 4-4-4"></path></svg> A/C
+              </span>
+            )}
+            {bus.mTicketEnabled && (
+              <span style={{ fontSize: "10px", background: "#ecfdf5", color: "#059669", padding: "2px 6px", borderRadius: "4px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "4px", border: "1px solid #a7f3d0" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> mTicket
+              </span>
+            )}
+            {bus.liveTracking && (
+              <span style={{ fontSize: "10px", background: "#eff6ff", color: "#2563eb", padding: "2px 6px", borderRadius: "4px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "4px", border: "1px solid #bfdbfe" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg> Live Track
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

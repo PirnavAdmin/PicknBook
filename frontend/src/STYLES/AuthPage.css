@@ -130,7 +130,7 @@
   inset: 0;
   z-index: 0;
   background-size: cover;
-  background-position: left center;
+  background-position: center bottom;
   background-repeat: no-repeat;
   overflow: hidden;
 }
@@ -139,7 +139,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25); /* Subtle dark overlay for contrast */
+  background: rgba(0, 0, 0, 0.08); /* Very light overlay to keep background vivid */
   pointer-events: none;
 }
 
@@ -698,4 +698,220 @@
   .auth-card-logo { animation: none; }
   .auth-primary-btn::after { display: none; }
   .auth-cinematic-canvas { opacity: 0.8; }
+}
+
+
+
+
+/* ═══ SCENIC LAYOUT ═══ */
+.scenic-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.scenic-layout {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 0;
+  gap: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ── LEFT PANE: top-aligned so bus/road stays visible below ── */
+.scenic-left-pane {
+  width: 52%;
+  max-width: 520px;
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 24px 20px 16px 36px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+/* ── BRAND LOGO (glassmorphic pill) ── */
+.scenic-brand-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 10px;
+  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid rgba(255,255,255,0.9);
+}
+.scenic-logo {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+/* ── HEADLINE (compact) ── */
+.scenic-headline {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.12;
+  margin: 0 0 3px 0;
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.2px;
+  text-shadow: 0 1px 4px rgba(255,255,255,0.5);
+}
+.scenic-text-black { color: #0f172a; }
+.scenic-text-red {
+  color: #dc1e26;
+  font-style: italic;
+  font-weight: 900;
+}
+
+/* ── SUBTITLE (single line) ── */
+.scenic-subtitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #334155;
+  margin: 0 0 12px 0;
+  line-height: 1.35;
+  font-family: 'Inter', sans-serif;
+  text-shadow: 0 1px 3px rgba(255,255,255,0.4);
+}
+
+/* ── SECTION TITLE ── */
+.scenic-section-title {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  font-family: 'Inter', sans-serif;
+  text-shadow: 0 1px 3px rgba(255,255,255,0.4);
+}
+
+/* ── SERVICE CARDS (glassmorphic, compact) ── */
+.scenic-services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.scenic-service-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 10px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.scenic-service-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.scenic-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 5px;
+  color: #ffffff !important;
+}
+.scenic-icon-circle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.scenic-service-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1px 0;
+  font-family: 'Inter', sans-serif;
+}
+.scenic-service-desc {
+  font-size: 0.52rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── TRUST BADGES (glassmorphic compact pill) ── */
+.scenic-trust-row {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 6px 14px;
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  white-space: nowrap;
+}
+.scenic-trust-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.56rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+.scenic-trust-badge svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* ── RIGHT SIDE: AUTH CARD ── */
+.auth-card-wrap {
+  max-width: 360px !important;
+  width: 360px !important;
+  margin: 0 !important;
+  margin-left: auto !important;
+  align-self: center !important;
+  flex-shrink: 0 !important;
+  padding: 0 20px 0 0 !important;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .scenic-left-pane { width: 48%; min-width: 300px; padding: 20px 14px 14px 24px; }
+  .scenic-services-grid { max-width: 340px; }
+  .scenic-headline { font-size: 1.35rem; }
+  .auth-card-wrap { width: 320px !important; max-width: 320px !important; }
+}
+@media (max-width: 900px) {
+  .scenic-layout { flex-direction: column; height: auto; min-height: 100vh; align-items: center; }
+  .scenic-left-pane { width: 100%; max-width: 100%; min-width: 0; align-items: center; text-align: center; padding: 20px; }
+  .scenic-services-grid { grid-template-columns: repeat(2, 1fr); max-width: 280px; }
+  .scenic-trust-row { flex-wrap: wrap; justify-content: center; }
+  .auth-card-wrap { width: 100% !important; max-width: 400px !important; padding: 0 20px !important; margin: 0 auto !important; }
 }

@@ -9,7 +9,7 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import "../../STYLES/AuthPage.css";
 import brandLogo from "../../assets/images/brand/pick-n-book-logo.png";
-import loginBg from "../../assets/images/new-landscape-bg.jpg";
+import loginBg from "../../assets/images/high-res-login-bg.jpg";
 import {
   requestAuth,
   readApiMessage,
@@ -447,6 +447,75 @@ export default function AuthPage() {
       <div className="auth-bg" aria-hidden="true" style={{ backgroundImage: `url(${loginBg})` }}></div>
 
       {/* ── Centered Glass Card ── */}
+      <div className="scenic-overlay"></div>
+      <div className="scenic-layout">
+        
+        {/* =========================================
+            LEFT PANEL: Value Proposition & Brand
+        =========================================== */}
+        <div className="scenic-left-pane">
+          {/* Logo */}
+          <div className="scenic-brand-header">
+            <img src={brandLogo} alt="PicknBook" className="scenic-logo" />
+          </div>
+
+          {/* Typography */}
+          <h1 className="scenic-headline">
+            Your Journey,<br />
+            <span className="scenic-text-black">All in </span>
+            <span className="scenic-text-red">One Place.</span>
+          </h1>
+          <p className="scenic-subtitle">
+            Flights, Hotels, Buses and more — Book with ease, travel with confidence.
+          </p>
+
+          <h3 className="scenic-section-title">Explore Our Services</h3>
+
+          {/* 4 Service Cards */}
+          <div className="scenic-services-grid">
+            <div className="scenic-service-card">
+              <div className="scenic-icon-circle" style={{ backgroundColor: "#ef4444", color: "#fff" }}>
+                <Plane size={24} />
+              </div>
+              <h4 className="scenic-service-title">Flights</h4>
+              <p className="scenic-service-desc">Book domestic &<br/>international flights</p>
+            </div>
+
+            <div className="scenic-service-card">
+              <div className="scenic-icon-circle" style={{ backgroundColor: "#8b5cf6", color: "#fff" }}>
+                <Building2 size={24} />
+              </div>
+              <h4 className="scenic-service-title">Hotels</h4>
+              <p className="scenic-service-desc">Find comfortable stays at<br/>best prices</p>
+            </div>
+
+            <div className="scenic-service-card">
+              <div className="scenic-icon-circle" style={{ backgroundColor: "#f97316", color: "#fff" }}>
+                <Bus size={24} />
+              </div>
+              <h4 className="scenic-service-title">Buses</h4>
+              <p className="scenic-service-desc">Find buses to your<br/>destinations</p>
+            </div>
+
+            <div className="scenic-service-card">
+              <div className="scenic-icon-circle" style={{ backgroundColor: "#0ea5e9", color: "#fff" }}>
+                <MapPin size={24} />
+              </div>
+              <h4 className="scenic-service-title">Holidays</h4>
+              <p className="scenic-service-desc">Plan travel experiences</p>
+            </div>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="scenic-trust-row">
+            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Best Prices Guaranteed</span>
+            <span className="scenic-trust-badge" style={{ borderLeft: "1px solid #cbd5e1", paddingLeft: "20px" }}><ShieldCheck size={14} color="#dc1e26" /> Safe & Secure Payments</span>
+            <span className="scenic-trust-badge" style={{ borderLeft: "1px solid #cbd5e1", paddingLeft: "20px" }}><Phone size={14} color="#dc1e26" /> 24/7 Customer Support</span>
+            <span className="scenic-trust-badge" style={{ borderLeft: "1px solid #cbd5e1", paddingLeft: "20px" }}><ShieldCheck size={14} color="#dc1e26" /> Easy Booking Experience</span>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: Auth Card Wrap */}
       <div className="auth-card-wrap">
         <div className="auth-card">
 
@@ -770,6 +839,7 @@ export default function AuthPage() {
           </div>{/* /auth-step-enter */}
         </div>{/* /auth-card */}
       </div>{/* /auth-card-wrap */}
+      </div>{/* /scenic-layout */}
 
     </div>
   );

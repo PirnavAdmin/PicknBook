@@ -934,6 +934,8 @@ export default function FlightSearchResults() {
         const result = await searchFlights({
           from: normalizeCity(sourceName),
           to: normalizeCity(destinationName),
+          fromCode: cityCode(sourceName, ""),
+          toCode: cityCode(destinationName, ""),
           date: formatDateInput(selectedDate),
           returnDate: tripType === "twoway" ? formatDateInput(selectedReturnDate) : undefined,
           tripType,

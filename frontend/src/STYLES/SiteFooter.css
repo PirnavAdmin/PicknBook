@@ -78,372 +78,453 @@
   line-height: 1.6;
 }
 
-/* ─── Upgraded Clean Luxury Footer Styling ─────────────────────────────────────── */
-.upgraded-travel-footer {
-  background: #09131f;
-  background-image: radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.06) 0%, transparent 40%);
-  color: #94a3b8;
+/* ═══════════════════════════════════════════════════════════════
+   PICKNBOOK CLEAN LUXURY 4-TIER FOOTER (INCREASED SIZE)
+═══════════════════════════════════════════════════════════════ */
+.pnb-site-footer {
+  background-color: #0b1120;
+  background-image: radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(220, 38, 38, 0.05) 0%, transparent 40%);
+  padding: 40px 24px 30px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #0f172a;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px 0 8px;
 }
 
-.upgraded-footer-shell {
-  max-width: 1280px;
+.pnb-footer-wrapper {
+  max-width: 1260px;
   margin: 0 auto;
-  padding: 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* Top Newsletter & Brand Header Bar */
-.upgraded-footer-top-bar {
+/* ── 1. Top Trust Features Row (4 White Cards) ─────────── */
+.pnb-footer-trust-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.pnb-trust-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
-.upgraded-footer-brand-info {
-  max-width: 440px;
+.pnb-trust-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
 }
 
-.upgraded-footer-brand-logo-wrap {
-  display: inline-flex;
+.pnb-trust-icon-box {
+  display: flex;
   align-items: center;
-  background: #ffffff;
-  padding: 4px 12px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-bottom: 4px;
-  max-width: 100%;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.upgraded-footer-brand-logo-img {
-  height: 32px;
+.pnb-trust-svg {
+  color: #dc2626;
+}
+
+.pnb-trust-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.pnb-trust-title {
+  margin: 0 0 2px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.pnb-trust-sub {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+/* ── 2. Main Content Card (Large White Card) ──────────── */
+.pnb-footer-main-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 36px 42px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+.pnb-footer-main-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr 1fr;
+  gap: 34px;
+}
+
+.pnb-footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.pnb-footer-brand-logo-wrap {
+  cursor: pointer;
+  display: inline-block;
+  margin-bottom: 12px;
+  width: fit-content;
+}
+
+.pnb-footer-brand-logo-img {
+  height: 40px;
   width: auto;
-  max-width: 100%;
   object-fit: contain;
   display: block;
 }
 
-.upgraded-footer-brand-desc {
-  font-size: 0.9rem;
+.pnb-footer-brand-desc {
+  font-size: 12.5px;
   line-height: 1.6;
-  color: #94a3b8;
+  color: #475569;
+  font-weight: 500;
   margin: 0;
-  font-weight: 400;
-  white-space: nowrap;
+  max-width: 320px;
 }
 
-/* Newsletter Box */
-.upgraded-footer-newsletter-box {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 380px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
-
-.newsletter-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #38bdf8;
-  letter-spacing: 0.06em;
-}
-
-.newsletter-title {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #f8fafc;
-  margin: 4px 0 0;
-}
-
-.upgraded-subscribe-form {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.subscribe-input-wrapper {
-  position: relative;
-  flex: 1;
-}
-
-.subscribe-mail-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-}
-
-.upgraded-subscribe-input {
-  width: 100%;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 8px 12px 8px 36px;
-  color: #f8fafc;
-  font-size: 0.85rem;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.upgraded-subscribe-input:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-}
-
-.upgraded-subscribe-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-  color: #ffffff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-}
-
-.upgraded-subscribe-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
-}
-
-.upgraded-footer-divider {
-  border: none;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-  margin: 8px 0;
-}
-
-/* 4-Column Main Grid */
-.upgraded-footer-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.upgraded-footer-col {
+.pnb-footer-links-col {
   display: flex;
   flex-direction: column;
 }
 
-.upgraded-col-title {
+.pnb-col-heading {
+  margin: 0 0 14px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.88rem;
+  gap: 7px;
+  font-size: 14.5px;
   font-weight: 800;
-  color: #f8fafc;
-  margin: 0 0 6px;
-  letter-spacing: 0.02em;
+  color: #0f172a;
+  letter-spacing: -0.01em;
 }
 
-.col-title-icon {
-  color: #38bdf8;
+.pnb-col-heading-icon {
+  color: #dc2626;
+  flex-shrink: 0;
 }
 
-.upgraded-footer-links {
+.pnb-col-links-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
 
-.upgraded-footer-link {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-}
-
-.upgraded-footer-link:hover {
-  color: #38bdf8;
-  transform: translateX(4px);
-}
-
-/* Contact Column */
-.upgraded-contact-block {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.upgraded-contact-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: #94a3b8;
-}
-
-.upgraded-contact-icon {
-  color: #38bdf8;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.upgraded-copy-phone-btn {
-  background: none;
+.pnb-footer-link {
+  background: transparent;
   border: none;
   padding: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #94a3b8;
-  font-size: 0.85rem;
   cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.upgraded-copy-phone-btn:hover {
-  color: #38bdf8;
-}
-
-.upgraded-copy-bubble {
-  background: #16a34a;
-  color: #ffffff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 4px;
-}
-
-.upgraded-email-link {
-  color: #94a3b8;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: color 0.2s ease;
-}
-
-.upgraded-email-link:hover {
-  color: #38bdf8;
-}
-
-/* Bottom Bar */
-.upgraded-footer-bottom-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding-top: 12px;
-}
-
-.upgraded-payment-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.payment-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.payment-logos-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.payment-logos-row img {
-  height: 24px;
-  width: auto;
-  object-fit: contain;
-  transition: all 0.22s ease;
-}
-
-.payment-logos-row img:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.ssl-security-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  color: #4ade80;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 999px;
-  margin-left: 8px;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: left;
 }
 
-.upgraded-app-badges {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.upgraded-app-btn img {
-  height: 24px;
-  width: auto;
-  border-radius: 4px;
+.pnb-link-chevron {
+  color: #dc2626;
+  font-size: 14.5px;
+  font-weight: 800;
+  line-height: 1;
   transition: transform 0.2s ease;
 }
 
-.upgraded-app-btn:hover img {
-  transform: scale(1.04);
+.pnb-footer-link:hover {
+  color: #dc2626;
+  transform: translateX(3px);
 }
 
-.upgraded-copyright-text {
-  font-size: 0.8rem;
-  color: #64748b;
+.pnb-link-active {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* ── 3. Payments, App & Social Bar (White Rounded Pill) ── */
+.pnb-footer-bottom-pill {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 13px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pnb-pill-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pnb-pill-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+/* Payment Badges */
+.pnb-payment-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pnb-pay-badge {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  user-select: none;
+}
+
+.pnb-visa-badge {
+  font-style: italic;
+  font-weight: 900;
+  color: #1a1f71;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.pnb-mc-badge {
+  padding: 3px 7px;
+}
+
+.mc-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.mc-red {
+  background: #eb001b;
+  margin-right: -5px;
+}
+
+.mc-yellow {
+  background: #f79e1b;
+  opacity: 0.95;
+}
+
+.pnb-badge-chevron {
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+.pnb-amex-badge {
+  color: #006fcf;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+/* App Store Badges */
+.pnb-app-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pnb-store-btn {
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.pnb-store-btn:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.pnb-store-icon {
+  flex-shrink: 0;
+}
+
+.pnb-store-btn-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.pnb-store-sub {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  opacity: 0.85;
+  line-height: 1;
+}
+
+.pnb-store-name {
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* Social Circles */
+.pnb-social-circles-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pnb-social-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.pnb-social-circle:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.pnb-ig-circle {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+}
+
+.pnb-fb-circle {
+  background: #1877f2;
+}
+
+.pnb-yt-circle {
+  background: #ff0000;
+}
+
+.pnb-li-circle {
+  background: #0a66c2;
+}
+
+/* ── 4. Bottom Copyright & Legal Line ─────────────────── */
+.pnb-footer-bottom-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: #94a3b8;
   font-weight: 500;
+  margin-top: 4px;
+  text-align: center;
 }
 
+.pnb-bottom-brand {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.pnb-bottom-sep {
+  color: #475569;
+}
+
+.pnb-bottom-item {
+  color: #94a3b8;
+}
+
+.pnb-bottom-copyright {
+  color: #94a3b8;
+}
+
+.pnb-bottom-link {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.2s ease;
+}
+
+.pnb-bottom-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
-  .upgraded-footer-grid {
+  .pnb-footer-trust-row {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .upgraded-footer-newsletter-box {
-    min-width: 100%;
+  .pnb-footer-main-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pnb-footer-bottom-pill {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
   }
 }
 
 @media (max-width: 640px) {
-  .upgraded-footer-grid {
+  .pnb-footer-trust-row {
     grid-template-columns: 1fr;
   }
 
-  .upgraded-footer-bottom-bar {
+  .pnb-footer-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pnb-footer-main-card {
+    padding: 26px 20px;
+  }
+
+  .pnb-footer-bottom-pill {
+    padding: 16px;
+  }
+
+  .pnb-pill-section {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    gap: 8px;
   }
 }

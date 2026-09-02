@@ -12,6 +12,15 @@ import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
 import { openAuthModal } from "../../utils/authModalEvents";
 
+function isRealSeat(rawSeat) {
+  const name = String(rawSeat?.SeatName || rawSeat?.seatName || rawSeat?.seatCode || rawSeat?.SeatCode || rawSeat?.label || "").trim().toUpperCase();
+  if (!name) return false;
+  // Exclude known structural/non-bookable markers (exits, aisles, driver area, etc.)
+  const nonSeatPatterns = /EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/;
+  if (nonSeatPatterns.test(name)) return false;
+  return true;
+}
+
 function formatCurrency(amount) {
   const value = Number(amount) || 0;
   return `\u20b9 ${new Intl.NumberFormat("en-IN", {
@@ -232,7 +241,7 @@ function getBackendSeatCodes(backendSeats) {
 
 function createDefinitionsFromBackendSeatMap(backendSeatMap, backendSeats = []) {
   const seatDefinitions = Array.isArray(backendSeatMap?.seatDefinitions)
-    ? backendSeatMap.seatDefinitions
+    ? backendSeatMap.seatDefinitions.filter(isRealSeat)
     : [];
   const sections = Array.isArray(backendSeatMap?.sections)
     ? backendSeatMap.sections
@@ -736,7 +745,7 @@ export default function BusSeatSelectionPage({
     }
 
     const backendSeats = Array.isArray(backendSeatMap?.seats)
-      ? backendSeatMap.seats
+      ? backendSeatMap.seats.filter(isRealSeat)
       : [];
 
     // If we have backend seat map, use it
@@ -831,12 +840,28 @@ export default function BusSeatSelectionPage({
     // can resolve labels clicked in the SeatSelection SRDV grid renderer.
     const rawLayout = backendSeatMap?.rawLayoutData;
     if (rawLayout) {
+      let filteredCount = 0;
+      const filteredNames = [];
+
       const parseSrdvSeats = (container, isUpper = false) => {
         if (!container || typeof container !== "object") return;
         if (container.SeatName || container.SeatNo || container.SeatType) {
+          if (!isRealSeat(container)) {
+            filteredCount++;
+            filteredNames.push(container.SeatName || container.seatName || "");
+            return;
+          }
+
           const seatName = String(container.SeatName || container.seatName || container.SeatNo || container.label || "").trim();
           if (!seatName) return;
-          const publishedFare = parseFloat(container?.Price?.PublishedFare || container?.Price?.BaseFare || container?.SeatFare || container?.fare || 0) || 0;
+          const publishedFare = parseFloat(
+            container?.Price?.B2CDisplayFare ||
+            container?.Price?.PublishedFare ||
+            container?.Price?.BaseFare ||
+            container?.SeatFare ||
+            container?.fare ||
+            0
+          ) || 0;
           const gstAmount = parseFloat(container?.Price?.Tax || container?.Price?.GSTAmount || container?.Price?.ServiceTaxAbsolute || 0) || 0;
           let trueBaseFare = parseFloat(container?.Price?.BaseFare || 0);
           if (!trueBaseFare) {
@@ -874,23 +899,35 @@ export default function BusSeatSelectionPage({
           }
           return;
         }
+        
+        // Branch node traversal (handles both arrays and keyed objects)
         const items = Array.isArray(container) ? container : Object.values(container);
         items.forEach((item) => {
-          if (!item || typeof item !== "object") return;
-          if (item.SeatName || item.SeatNo || item.SeatType) {
-            parseSrdvSeats(item, isUpper);
-          } else {
-            parseSrdvSeats(item, isUpper);
-          }
+          parseSrdvSeats(item, isUpper);
         });
       };
       if (rawLayout.Result) parseSrdvSeats(rawLayout.Result, false);
       if (rawLayout.ResultUpperSeat) parseSrdvSeats(rawLayout.ResultUpperSeat, true);
       if (map.size === 0) parseSrdvSeats(rawLayout, false);
+      
+      if (filteredCount > 0) {
+        console.log(`[SeatFilter] Filtered out ${filteredCount} non-seat structural items:`, filteredNames);
+      }
     }
 
     return map;
   }, [seatData.seats, backendSeatMap]);
+
+  const finalFareBands = useMemo(() => {
+    const fares = new Set();
+    seatsByLabel.forEach((seat) => {
+      if (seat.fare > 0) {
+        fares.add(seat.fare);
+      }
+    });
+    const sorted = [...fares].sort((a, b) => a - b);
+    return sorted.length > 0 ? sorted : seatData.fareBands;
+  }, [seatsByLabel, seatData.fareBands]);
 
   const boardingPoints = useMemo(() => {
     if (!bus) {
@@ -1581,7 +1618,7 @@ export default function BusSeatSelectionPage({
                     >
                       All
                     </button>
-                    {seatData.fareBands.map((fare) => (
+                    {finalFareBands.map((fare) => (
                       <button
                         type="button"
                         key={fare}

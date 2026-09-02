@@ -3,7 +3,7 @@ import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
 import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://humiliate-eatery-humvee.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function isLocalDevelopment() {
   if (process.env.NODE_ENV !== "development") {
@@ -3649,74 +3649,19 @@ export function updateLocalTicketStatus(bookingIdOrObj, status = "Cancelled") {
   } catch (e) { }
 }
 
-export async function listFlightBookings({ passengerPhone, status, userId } = {}) {
-  let bookings = [];
-
-  // Single primary collection endpoint with one clean fallback
-  const primaryEndpoint = "/api/FlightBookings";
-  const fallbackEndpoint = "/api/bookings/history";
-
+export async function listFlightBookings() {
   try {
-    const data = await requestJson(primaryEndpoint, { method: "GET" });
-    if (Array.isArray(data) && data.length > 0) {
-      bookings = data.map((record) => normalizeFlightBookingRecord(record));
-    }
+    const data = await requestJson("/api/flight/srdv/my-bookings", { method: "GET" });
+    const records = data?.tickets || data?.Tickets || data || [];
+    return Array.isArray(records) ? records.map(normalizeFlightBookingRecord) : [];
   } catch (err) {
-    // Attempt secondary fallback only if primary fails
-    try {
-      const fallbackData = await requestJson(fallbackEndpoint, { method: "GET" });
-      if (Array.isArray(fallbackData)) {
-        bookings = fallbackData.map((record) => normalizeFlightBookingRecord(record));
-      }
-    } catch (e) {
-      // Return empty array gracefully without candidate loop spam
-    }
+    console.error("[FlightService] Failed to load my-bookings from backend:", err);
+    return [];
   }
-
-  // Merge locally stored flight bookings so user bookings are always visible regardless of API state
-  if (typeof window !== "undefined") {
-    const localKeys = [
-      "confirmed_flight_bookings",
-      "my_flight_bookings",
-      "user_flight_tickets",
-      "mock_tickets",
-      "stored_tickets",
-      "pnb_flight_bookings",
-      "latest_ticket"
-    ];
-    localKeys.forEach((key) => {
-      try {
-        const raw = window.localStorage.getItem(key);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        const list = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === "object" ? [parsed] : []);
-        list.forEach((t, idx) => {
-          if (!t) return;
-          const norm = normalizeFlightBookingRecord(t);
-          const ref = String(norm.bookingReference || norm.bookingId || norm.pnr || "").trim().toLowerCase();
-          if (ref && !bookings.some(b => String(b.bookingReference || b.bookingId || b.pnr || "").trim().toLowerCase() === ref)) {
-            norm._localRank = idx;
-            bookings.push(norm);
-          }
-          if (String(norm.status || norm.Status || "").toLowerCase() === "cancelled") {
-            syncCancelledStatusToDatabase(norm).catch(() => {});
-          }
-        });
-      } catch (e) {}
-    });
-  }
-
-  // Filter in-memory if query parameters were passed
-  return bookings.filter((b) => {
-    if (passengerPhone && !String(b.passengerPhone || "").includes(passengerPhone)) return false;
-    if (status && status !== "All" && String(b.status || "").toLowerCase() !== String(status).toLowerCase()) return false;
-    if (userId && String(b.userId || "") !== String(userId)) return false;
-    return true;
-  });
 }
 
 export async function getFlightBookingById(bookingId, { userId } = {}) {
-  const allBookings = await listFlightBookings({ userId });
+  const allBookings = await listFlightBookings();
   const found = allBookings.find(
     (b) => String(b.bookingId || "").toLowerCase() === String(bookingId || "").toLowerCase() ||
       String(b.bookingReference || "").toLowerCase() === String(bookingId || "").toLowerCase()

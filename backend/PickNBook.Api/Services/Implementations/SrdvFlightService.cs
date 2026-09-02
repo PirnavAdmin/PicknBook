@@ -30,6 +30,7 @@ namespace PickNBook.Api.Services
         {
             _httpClient = httpClient;
             _httpClient.Timeout = TimeSpan.FromSeconds(180); // Increased from 60s to handle long GDS searches and seat map queries
+            _httpClient.DefaultRequestHeaders.ExpectContinue = false;
             _settings = settings.Value;
             _cache = cache;
 

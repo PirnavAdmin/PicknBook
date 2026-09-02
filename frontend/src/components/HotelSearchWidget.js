@@ -79,6 +79,66 @@ export default function HotelSearchWidget({
     return 0;
   });
 
+  const [childAges, setChildAges] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const ages = [];
+        parsed.forEach(r => {
+          if (r.childAges) ages.push(...r.childAges);
+        });
+        return ages;
+      }
+    }
+    return [];
+  });
+
+  const handleRoomsChange = (newCount) => {
+    setRooms(newCount);
+    if (newCount === 0) {
+      setAdults(0);
+      setChildren(0);
+      setChildAges([]);
+    } else if (newCount > 0 && adults === 0) {
+      setAdults(1);
+    }
+  };
+
+  const handleAdultsChange = (newCount) => {
+    setAdults(newCount);
+    if (newCount > 0 && rooms === 0) {
+      setRooms(1);
+    }
+  };
+
+  const handleChildrenChange = (newCount) => {
+    setChildren(newCount);
+    if (newCount > 0 && rooms === 0) {
+      setRooms(1);
+      if (adults === 0) setAdults(1);
+    }
+    setChildAges(prev => {
+      if (newCount > prev.length) {
+        return [...prev, ...Array(newCount - prev.length).fill(4)];
+      } else {
+        return prev.slice(0, newCount);
+      }
+    });
+  };
+
+  const handleChildAgeChange = (index, age) => {
+    setChildAges(prev => {
+      const newAges = [...prev];
+      newAges[index] = age;
+      return newAges;
+    });
+  };
+
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const guestsFieldRef = useRef(null);
 
@@ -140,7 +200,7 @@ export default function HotelSearchWidget({
       const dynamicRoomsConfig = [{
         adults: adults || 2,
         children: children || 0,
-        childAges: Array(children || 0).fill(4)
+        childAges: childAges
       }];
       onSearch({
         destination: destVal,
@@ -177,39 +237,37 @@ export default function HotelSearchWidget({
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
             <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Timeline</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
-              <input
-                type="date"
-                value={checkInDate}
-                onChange={(event) => setCheckInDate(event.target.value)}
-                style={{
-                  cursor: "pointer",
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: 'var(--hotel-muted)',
-                  fontWeight: 600,
-                  fontSize: '1.02rem',
-                  padding: 0,
-                  width: '120px'
-                }}
-              />
-              <span style={{ color: 'var(--hotel-muted)', fontWeight: 600 }}>-</span>
-              <input
-                type="date"
-                value={checkOutDate}
-                onChange={(event) => setCheckOutDate(event.target.value)}
-                style={{
-                  cursor: "pointer",
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: 'var(--hotel-muted)',
-                  fontWeight: 600,
-                  fontSize: '1.02rem',
-                  padding: 0,
-                  width: '120px'
-                }}
-              />
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{ cursor: "pointer", color: 'var(--hotel-muted)', fontWeight: 600, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                  onClick={() => document.getElementById("inline-checkin-date").showPicker?.()}
+                >
+                  {toDisplayDate(checkInDate) || "Select dates"}
+                </span>
+                <input
+                  id="inline-checkin-date"
+                  type="date"
+                  value={checkInDate}
+                  onChange={(event) => setCheckInDate(event.target.value)}
+                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
+                />
+              </div>
+              <span style={{ color: 'var(--hotel-muted)', fontWeight: 600, margin: '0 4px' }}>-</span>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{ cursor: "pointer", color: 'var(--hotel-muted)', fontWeight: 600, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                  onClick={() => document.getElementById("inline-checkout-date").showPicker?.()}
+                >
+                  {toDisplayDate(checkOutDate) || "Select dates"}
+                </span>
+                <input
+                  id="inline-checkout-date"
+                  type="date"
+                  value={checkOutDate}
+                  onChange={(event) => setCheckOutDate(event.target.value)}
+                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -271,7 +329,7 @@ export default function HotelSearchWidget({
             <Users size={18} color="var(--hotel-muted)" style={{ flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
               <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Guests</span>
-              <strong style={{ fontSize: '1.02rem', fontWeight: 600, color: 'var(--hotel-muted)', marginTop: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{guestSummary}</strong>
+              <span style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--hotel-muted)', marginTop: '5px', whiteSpace: 'nowrap' }}>{guestSummary}</span>
             </div>
           </div>
         ) : (
@@ -282,7 +340,7 @@ export default function HotelSearchWidget({
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1, overflow: "hidden" }}>
               <Users size={18} style={{ flexShrink: 0 }} />
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.85rem", fontWeight: 600, textTransform: "none" }}>{guestSummary}</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.85rem", fontWeight: 500, textTransform: "none" }}>{guestSummary}</span>
             </div>
             <ChevronDown size={16} className={`traveller-caret ${showGuestsDropdown ? "open" : ""}`} style={{ flexShrink: 0 }} />
           </div>
@@ -292,13 +350,13 @@ export default function HotelSearchWidget({
           <div
             className="traveller-dropdown hotel-guests-dropdown"
             style={{
-              width: "380px",
+              width: "260px",
               left: 0,
               right: "auto",
               border: "1px solid #cfcfcf",
-              borderRadius: "16px",
-              boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
-              padding: "20px",
+              borderRadius: "10px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+              padding: "12px",
               zIndex: 1400,
               background: "#ffffff",
               color: "#1e293b",
@@ -307,94 +365,95 @@ export default function HotelSearchWidget({
             }}
           >
             {/* Rooms Row */}
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", paddingBottom: "16px", borderBottom: "1px solid #e2e8f0", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "#f8fafc", borderRadius: "10px", color: "#d32f2f" }}>
-                <BedDouble size={22} />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0", marginBottom: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "20px", color: "#475569" }}>
+                <BedDouble size={18} strokeWidth={1.5} />
               </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#1e293b" }}>ROOMS</span>
-                <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>How many rooms do you need?</span>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "400", color: "#1e293b", textTransform: "uppercase" }}>ROOMS</span>
+                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>Minimum 1</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
                 <button
                   type="button"
-                  onClick={() => setRooms(Math.max(0, rooms - 1))}
+                  onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
                   disabled={rooms <= 0}
-                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: rooms <= 0 ? "not-allowed" : "pointer", opacity: rooms <= 0 ? 0.4 : 1, transition: "all 0.2s" }}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: rooms <= 0 ? "not-allowed" : "pointer", opacity: rooms <= 0 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
-                  <Minus size={16} />
+                  <Minus size={14} strokeWidth={2} />
                 </button>
-                <span style={{ fontSize: "1.05rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#0f172a" }}>{rooms}</span>
+                <span style={{ fontSize: "0.9rem", fontWeight: "600", minWidth: "16px", textAlign: "center", color: "#d32f2f" }}>{rooms}</span>
                 <button
                   type="button"
-                  onClick={() => setRooms(Math.min(8, rooms + 1))}
+                  onClick={() => handleRoomsChange(Math.min(8, rooms + 1))}
                   disabled={rooms >= 8}
-                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: rooms >= 8 ? "not-allowed" : "pointer", opacity: rooms >= 8 ? 0.4 : 1, transition: "all 0.2s" }}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: rooms >= 8 ? "not-allowed" : "pointer", opacity: rooms >= 8 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} strokeWidth={2} />
                 </button>
               </div>
             </div>
 
             {/* Adults Row */}
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", paddingBottom: "16px", borderBottom: "1px solid #e2e8f0", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "#f8fafc", borderRadius: "10px", color: "#d32f2f" }}>
-                <User size={22} />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0", marginBottom: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "20px", color: "#475569" }}>
+                <Users size={18} strokeWidth={1.5} />
               </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#1e293b" }}>ADULTS</span>
-                <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>18 years and above</span>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "400", color: "#1e293b", textTransform: "uppercase" }}>ADULTS</span>
+                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>13 years & above</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
                 <button
                   type="button"
-                  onClick={() => setAdults(Math.max(0, adults - 1))}
+                  onClick={() => handleAdultsChange(Math.max(0, adults - 1))}
                   disabled={adults <= 0}
-                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: adults <= 0 ? "not-allowed" : "pointer", opacity: adults <= 0 ? 0.4 : 1, transition: "all 0.2s" }}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: adults <= 0 ? "not-allowed" : "pointer", opacity: adults <= 0 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
-                  <Minus size={16} />
+                  <Minus size={14} strokeWidth={2} />
                 </button>
-                <span style={{ fontSize: "1.05rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#0f172a" }}>{adults}</span>
+                <span style={{ fontSize: "0.9rem", fontWeight: "600", minWidth: "16px", textAlign: "center", color: "#d32f2f" }}>{adults}</span>
                 <button
                   type="button"
-                  onClick={() => setAdults(Math.min(30, adults + 1))}
+                  onClick={() => handleAdultsChange(Math.min(30, adults + 1))}
                   disabled={adults >= 30}
-                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: adults >= 30 ? "not-allowed" : "pointer", opacity: adults >= 30 ? 0.4 : 1, transition: "all 0.2s" }}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: adults >= 30 ? "not-allowed" : "pointer", opacity: adults >= 30 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} strokeWidth={2} />
                 </button>
               </div>
             </div>
 
             {/* Children Row */}
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", paddingBottom: "16px", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "#f8fafc", borderRadius: "10px", color: "#d32f2f" }}>
-                <Baby size={22} />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px", borderBottom: children > 0 ? "1px solid #e2e8f0" : "none", marginBottom: children > 0 ? "10px" : "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "20px", color: "#475569" }}>
+                <Baby size={18} strokeWidth={1.5} />
               </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#1e293b" }}>CHILDREN</span>
-                <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>0 - 17 years</span>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "400", color: "#1e293b", textTransform: "uppercase" }}>CHILDREN</span>
+                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>0-12 years</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
                 <button
                   type="button"
-                  onClick={() => setChildren(Math.max(0, children - 1))}
+                  onClick={() => handleChildrenChange(Math.max(0, children - 1))}
                   disabled={children <= 0}
-                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: children <= 0 ? "not-allowed" : "pointer", opacity: children <= 0 ? 0.4 : 1, transition: "all 0.2s" }}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: children <= 0 ? "not-allowed" : "pointer", opacity: children <= 0 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
-                  <Minus size={16} />
+                  <Minus size={14} strokeWidth={2} />
                 </button>
-                <span style={{ fontSize: "1.05rem", fontWeight: "700", minWidth: "16px", textAlign: "center", color: "#0f172a" }}>{children}</span>
+                <span style={{ fontSize: "0.9rem", fontWeight: "600", minWidth: "16px", textAlign: "center", color: "#d32f2f" }}>{children}</span>
                 <button
                   type="button"
-                  onClick={() => setChildren(Math.min(10, children + 1))}
+                  onClick={() => handleChildrenChange(Math.min(10, children + 1))}
                   disabled={children >= 10}
-                  style={{ background: "transparent", border: "1px solid #e2e8f0", borderRadius: "8px", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: children >= 10 ? "not-allowed" : "pointer", opacity: children >= 10 ? 0.4 : 1, transition: "all 0.2s" }}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: children >= 10 ? "not-allowed" : "pointer", opacity: children >= 10 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} strokeWidth={2} />
                 </button>
               </div>
             </div>
+
 
             {/* Done Button */}
             <div>
@@ -403,29 +462,21 @@ export default function HotelSearchWidget({
                 onClick={() => setShowGuestsDropdown(false)}
                 style={{
                   width: "100%",
-                  padding: "12px",
+                  padding: "8px",
                   background: "#d32f2f",
                   color: "#fff",
                   border: "none",
-                  borderRadius: "10px",
-                  fontWeight: "700",
+                  borderRadius: "8px",
+                  fontWeight: "500",
                   cursor: "pointer",
-                  fontSize: "0.95rem",
+                  fontSize: "0.9rem",
                   boxShadow: "0 4px 10px rgba(211,47,47,0.3)",
                   transition: "all 0.2s",
-                  textTransform: "uppercase"
+                  textTransform: "none"
                 }}
               >
                 Done
               </button>
-            </div>
-
-            {/* Bedding Info Note */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginTop: "16px", padding: "8px", background: "#f8fafc", borderRadius: "8px" }}>
-              <Info size={14} color="#64748b" style={{ marginTop: "2px" }} />
-              <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>
-                Children under 6 years may stay free with existing bedding.
-              </span>
             </div>
           </div>
         )}

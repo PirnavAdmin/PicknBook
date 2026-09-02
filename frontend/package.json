@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.7",
     "@react-google-maps/api": "^2.20.8",
     "axios": "^1.16.0",
     "framer-motion": "^12.42.2",

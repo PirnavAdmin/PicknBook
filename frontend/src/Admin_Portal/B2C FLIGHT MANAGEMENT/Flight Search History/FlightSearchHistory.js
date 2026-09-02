@@ -103,7 +103,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://humiliate-eatery-humvee.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
 const DEFAULT_API_USER_ID =

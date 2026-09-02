@@ -25,6 +25,8 @@ namespace PickNBook.Api.Controllers
     ICurrentUserService currentUserService,
     ISrdvBusService srdvBusService,
     IMemoryCache cache,
+    PickNBook.Api.Services.Interfaces.ICancellationRefundCalculator refundCalculator,
+    PickNBook.Api.Services.Interfaces.ICashfreeService cashfreeService,
     ILogger<BusBookingsController> logger) : BaseApiController
     {
         //private const string UserIdHeaderName = "X-User-Id";
@@ -416,7 +418,10 @@ namespace PickNBook.Api.Controllers
                     var (seaterMarkup, sleeperMarkup) = await GetBothMarkupsAsync();
                     
                     var passengersArray = jsonObj["Passengers"]?.AsArray() ?? resultObj?["Passengers"]?.AsArray();
-                    
+
+                    var dbContext = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    var blockedSeatsInDb = await dbContext.BusBlockedSeatPrices.Where(x => x.TraceId == request.TraceId).ToListAsync();
+
                     if (passengersArray != null)
                     {
                         foreach (var passengerNode in passengersArray)
@@ -424,30 +429,46 @@ namespace PickNBook.Api.Controllers
                             var seatNode = passengerNode?["Seat"]?.AsObject();
                             if (seatNode != null)
                             {
+                                var seatNameStr = seatNode["SeatName"]?.ToString();
                                 var seatType = seatNode["SeatType"]?.ToString()?.ToLower() ?? "";
                                 var isSleeper = seatType.Contains("sleeper");
                                 var activeMarkup = isSleeper ? sleeperMarkup : seaterMarkup;
 
+                                decimal finalMarkup = 0m;
                                 if (activeMarkup != null)
                                 {
                                     var priceNode = seatNode["Price"]?.AsObject();
                                     if (priceNode != null && decimal.TryParse(priceNode["BaseFare"]?.ToString(), out decimal baseFare))
                                     {
-                                        var markupAmount = CalculateMarkupAmount(baseFare, activeMarkup);
-                                        priceNode["AgentMarkUp"] = markupAmount.ToString("F2");
+                                        finalMarkup = CalculateMarkupAmount(baseFare, activeMarkup);
+                                        priceNode["AgentMarkUp"] = finalMarkup.ToString("F2");
 
                                         if (decimal.TryParse(priceNode["PublishedFare"]?.ToString(), out decimal pubFare))
                                         {
-                                            priceNode["PublishedFare"] = (pubFare + markupAmount).ToString("F2");
+                                            priceNode["PublishedFare"] = (pubFare + finalMarkup).ToString("F2");
                                         }
 
                                         if (decimal.TryParse(seatNode["SeatFare"]?.ToString(), out decimal seatFare))
                                         {
-                                            seatNode["SeatFare"] = (seatFare + markupAmount).ToString("F2");
+                                            seatNode["SeatFare"] = (seatFare + finalMarkup).ToString("F2");
                                         }
                                     }
                                 }
+
+                                // Update the DB record with the exact breakdown, EVEN IF markup is 0
+                                var dbRecord = blockedSeatsInDb.FirstOrDefault(x => x.SeatName == seatNameStr);
+                                if (dbRecord != null)
+                                {
+                                    dbRecord.MarkupAmount = finalMarkup;
+                                    dbRecord.DiscountAmount = 0; // Handled later if coupon applied
+                                    dbRecord.GrandTotal = dbRecord.BaseFare + dbRecord.GstAmount + finalMarkup;
+                                }
                             }
+                        }
+                        
+                        if (blockedSeatsInDb.Any())
+                        {
+                            await dbContext.SaveChangesAsync();
                         }
                     }
                 }
@@ -1392,7 +1413,7 @@ namespace PickNBook.Api.Controllers
             var strategy = dbContext.Database.CreateExecutionStrategy();
             try
             {
-                var (result, cancelledPassengerIds, currentRefund) = await strategy.ExecuteAsync(async () =>
+                var executionResult = await strategy.ExecuteAsync(async () =>
                 {
                     await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -1424,6 +1445,9 @@ namespace PickNBook.Api.Controllers
                         .Where(x => !string.IsNullOrWhiteSpace(x.SeatNumber))
                         .Select(x => x.SeatNumber!)
                         .ToList();
+
+                    decimal srdvCancellationCharge = 0m;
+                    decimal srdvRefundAmount = 0m;
 
                     if (booking.BusBooking.BusNumber.StartsWith("SRDV-") && !string.IsNullOrEmpty(booking.BusBooking.TraceId))
                     {
@@ -1461,6 +1485,8 @@ namespace PickNBook.Api.Controllers
                                     if (cancelResult.Success)
                                     {
                                         successfullyCancelledPassengers.Add(p);
+                                        srdvCancellationCharge += cancelResult.CancellationCharge;
+                                        srdvRefundAmount += cancelResult.RefundAmount;
                                     }
                                     else
                                     {
@@ -1486,10 +1512,18 @@ namespace PickNBook.Api.Controllers
                                 {
                                     throw new Exception($"SRDV Provider Error: {cancelResult.ErrorMessage}");
                                 }
+                                srdvCancellationCharge += cancelResult.CancellationCharge;
+                                srdvRefundAmount += cancelResult.RefundAmount;
                             }
                         }
                     }
 
+                    bool requiresManualReview = false;
+                    if (srdvCancellationCharge == 0 && srdvRefundAmount == 0)
+                    {
+                        // DO NOT fabricate refunds. If both are 0, the SRDV response was likely ambiguous.
+                        requiresManualReview = true;
+                    }
 
 
                     // Mark passengers cancelled
@@ -1562,15 +1596,78 @@ namespace PickNBook.Api.Controllers
 
                     
                     // ── Dynamic SRDV Cancellation Policy ──
-                    var (refundAmount, cancellationCharge) = CalculateSrdvRefund(
-                        booking.BusBooking, 
-                        activePassengers, 
-                        booking.TotalPriceInr, 
-                        booking.ConvenienceFeeInr,
-                        booking.SeatsBooked);
+                    // ── Dynamic SRDV Cancellation Policy ──
+                    var refundInput = new PickNBook.Api.Models.DTOs.RefundCalculationInput
+                    {
+                        OriginalCustomerPaid = booking.TotalPriceInr,
+                        SupplierAmount = booking.NetFareInr,
+                        MarkupAmount = booking.MarkupAmountInr,
+                        DiscountAmount = booking.CouponDiscountAmountInr + booking.AutoDiscountAmountInr + booking.FeaturedOfferDiscountAmount,
+                        ConvenienceFee = booking.ConvenienceFeeInr,
+                        SupplierCancellationCharge = srdvCancellationCharge,
+                        SupplierRefundAmount = srdvRefundAmount
+                    };
 
-                    booking.CancellationChargeInr = (booking.CancellationChargeInr ?? 0m) + cancellationCharge;
-                    booking.RefundAmountInr = (booking.RefundAmountInr ?? 0m) + refundAmount;
+                    var calculatedRefund = refundCalculator.CalculateCustomerRefund(
+                        refundInput);
+
+                    booking.CancellationChargeInr = calculatedRefund.SupplierCancellationCharge + calculatedRefund.MarkupRetained;
+                    booking.RefundAmountInr = calculatedRefund.FinalCustomerRefundAmount;
+
+                    var cancellationAudit = new PickNBook.Api.Models.Entities.BookingCancellation
+                    {
+                        BookingType = "Bus",
+                        BookingReference = booking.BookingReference,
+                        UserId = booking.UserId,
+                        CreatedAtUtc = DateTime.UtcNow,
+                        OriginalCustomerPaid = booking.TotalPriceInr,
+                        SupplierAmount = booking.NetFareInr,
+                        MarkupAmount = booking.MarkupAmountInr,
+                        ConvenienceFee = booking.ConvenienceFeeInr,
+                        DiscountAmount = booking.CouponDiscountAmountInr + booking.AutoDiscountAmountInr + booking.FeaturedOfferDiscountAmount,
+                        SupplierRefundAmount = srdvRefundAmount,
+                        SupplierCancellationCharge = srdvCancellationCharge,
+                        MarkupRefunded = calculatedRefund.MarkupRefunded,
+                        FeeRefunded = calculatedRefund.FeeRefunded,
+                        CouponForfeited = calculatedRefund.CouponForfeited,
+                        CustomerRefundAmount = calculatedRefund.FinalCustomerRefundAmount,
+                        Status = "Pending"
+                    };
+                    dbContext.BookingCancellations.Add(cancellationAudit);
+                    await dbContext.SaveChangesAsync();
+
+                    if (requiresManualReview)
+                    {
+                        cancellationAudit.Status = "PendingReview";
+                        await dbContext.SaveChangesAsync();
+                    }
+                    else if (calculatedRefund.FinalCustomerRefundAmount > 0)
+                    {
+                        var payment = await dbContext.Payments.FirstOrDefaultAsync(p => p.UserId == booking.UserId && p.BookingReferenceId == booking.Id && p.BookingType == "Bus");
+                        if (payment != null && payment.CashfreeOrderId != null)
+                        {
+                            string refundId = $"REF-CANCEL-{booking.Id}-{cancellationAudit.Id}";
+                            cancellationAudit.CashfreeRefundId = refundId;
+                            cancellationAudit.PaymentId = payment.Id;
+                            try
+                            {
+                                await cashfreeService.InitiateRefundAsync(payment.CashfreeOrderId, calculatedRefund.FinalCustomerRefundAmount, refundId, "Bus Cancellation");
+                                cancellationAudit.Status = "RefundInitiated";
+                            }
+                            catch (Exception ex)
+                            {
+                                cancellationAudit.Status = "RefundFailed";
+                                cancellationAudit.FailureReason = ex.Message;
+                                logger.LogError(ex, "Failed to initiate Cashfree refund for Bus Booking {BookingId}", booking.Id);
+                            }
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        cancellationAudit.Status = "Completed";
+                        await dbContext.SaveChangesAsync();
+                    }
                     
 
 
@@ -1584,12 +1681,12 @@ namespace PickNBook.Api.Controllers
                         .ToListAsync();
 
                     var mapped = MapBusReservation(booking, booking.BusBooking, resultPassengers);
-                    return (mapped, activePassengers.Select(x => x.Id).ToList(), refundAmount);
+                    return new { Result = mapped, CancelledIds = activePassengers.Select(x => x.Id).ToList(), RefundAmount = calculatedRefund.FinalCustomerRefundAmount };
                 });
 
-                await TrySendBusCancellationNotificationsAsync(bookingId, userId!, cancelledPassengerIds, currentRefund);
+                await TrySendBusCancellationNotificationsAsync(bookingId, userId!, executionResult.CancelledIds, executionResult.RefundAmount);
 
-                return Ok(result);
+                return Ok(executionResult.Result);
             }
             catch (Exception ex)
             {
@@ -1614,7 +1711,7 @@ namespace PickNBook.Api.Controllers
             var strategy = dbContext.Database.CreateExecutionStrategy();
             try
             {
-                var (result, cancelledPassengerIds, currentRefund) = await strategy.ExecuteAsync(async () =>
+                var executionResult = await strategy.ExecuteAsync(async () =>
                 {
                     await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -1657,6 +1754,9 @@ namespace PickNBook.Api.Controllers
                         .Where(x => !string.IsNullOrWhiteSpace(x.SeatNumber))
                         .Select(x => x.SeatNumber!)
                         .ToList();
+
+                    decimal srdvCancellationCharge = 0m;
+                    decimal srdvRefundAmount = 0m;
 
                     if (booking.BusBooking.BusNumber.StartsWith("SRDV-") && !string.IsNullOrEmpty(booking.BusBooking.TraceId))
                     {
@@ -1705,6 +1805,8 @@ namespace PickNBook.Api.Controllers
                                     successfullyCancelledPassengers.Add(p);
                                     p.IsCancelled = true;
                                     p.CancelledAtUtc = DateTime.UtcNow;
+                                    srdvCancellationCharge += cancelResult.CancellationCharge;
+                                    srdvRefundAmount += cancelResult.RefundAmount;
                                 }
                                 else
                                 {
@@ -1729,7 +1831,15 @@ namespace PickNBook.Api.Controllers
                             }
                         }
                     }
-                    else
+
+                    bool requiresManualReview = false;
+                    if (booking.BusBooking.BusNumber.StartsWith("SRDV-") && srdvCancellationCharge == 0 && srdvRefundAmount == 0)
+                    {
+                        requiresManualReview = true;
+                    }
+
+                    // Non-SRDV booking logic is omitted above, so we handle refund based on defaults
+                    else if (!booking.BusBooking.BusNumber.StartsWith("SRDV-"))
                     {
                         // Non-SRDV booking
                         foreach (var p in targetPassengers)
@@ -1740,15 +1850,79 @@ namespace PickNBook.Api.Controllers
                     }
 
                     // ── Dynamic SRDV Cancellation Policy ──
-                    var (refundAmount, cancellationCharge) = CalculateSrdvRefund(
-                        booking.BusBooking, 
-                        targetPassengers, 
-                        booking.TotalPriceInr, 
-                        booking.ConvenienceFeeInr,
-                        booking.SeatsBooked);
+                    decimal proportion = (decimal)targetPassengers.Count / (booking.SeatsBooked > 0 ? booking.SeatsBooked : 1);
 
-                    booking.CancellationChargeInr = (booking.CancellationChargeInr ?? 0m) + cancellationCharge;
-                    booking.RefundAmountInr = (booking.RefundAmountInr ?? 0m) + refundAmount;
+                    var refundInput = new PickNBook.Api.Models.DTOs.RefundCalculationInput
+                    {
+                        OriginalCustomerPaid = booking.TotalPriceInr * proportion,
+                        SupplierAmount = booking.NetFareInr * proportion,
+                        MarkupAmount = booking.MarkupAmountInr * proportion,
+                        DiscountAmount = (booking.CouponDiscountAmountInr + booking.AutoDiscountAmountInr + booking.FeaturedOfferDiscountAmount) * proportion,
+                        ConvenienceFee = booking.ConvenienceFeeInr * proportion,
+                        SupplierCancellationCharge = srdvCancellationCharge,
+                        SupplierRefundAmount = srdvRefundAmount
+                    };
+
+                    var calculatedRefund = refundCalculator.CalculateCustomerRefund(
+                        refundInput);
+
+                    booking.CancellationChargeInr = (booking.CancellationChargeInr ?? 0m) + calculatedRefund.SupplierCancellationCharge + calculatedRefund.MarkupRetained;
+                    booking.RefundAmountInr = (booking.RefundAmountInr ?? 0m) + calculatedRefund.FinalCustomerRefundAmount;
+
+                    var cancellationAudit = new PickNBook.Api.Models.Entities.BookingCancellation
+                    {
+                        BookingType = "Bus",
+                        BookingReference = booking.BookingReference,
+                        UserId = booking.UserId,
+                        CreatedAtUtc = DateTime.UtcNow,
+                        OriginalCustomerPaid = refundInput.OriginalCustomerPaid,
+                        SupplierAmount = refundInput.SupplierAmount,
+                        MarkupAmount = refundInput.MarkupAmount,
+                        ConvenienceFee = refundInput.ConvenienceFee,
+                        DiscountAmount = refundInput.DiscountAmount,
+                        SupplierRefundAmount = srdvRefundAmount,
+                        SupplierCancellationCharge = srdvCancellationCharge,
+                        MarkupRefunded = calculatedRefund.MarkupRefunded,
+                        FeeRefunded = calculatedRefund.FeeRefunded,
+                        CouponForfeited = calculatedRefund.CouponForfeited,
+                        CustomerRefundAmount = calculatedRefund.FinalCustomerRefundAmount,
+                        Status = "Pending"
+                    };
+                    dbContext.BookingCancellations.Add(cancellationAudit);
+                    await dbContext.SaveChangesAsync();
+
+                    if (requiresManualReview)
+                    {
+                        cancellationAudit.Status = "PendingReview";
+                        await dbContext.SaveChangesAsync();
+                    }
+                    else if (calculatedRefund.FinalCustomerRefundAmount > 0)
+                    {
+                        var payment = await dbContext.Payments.FirstOrDefaultAsync(p => p.UserId == booking.UserId && p.BookingReferenceId == booking.Id && p.BookingType == "Bus");
+                        if (payment != null && payment.CashfreeOrderId != null)
+                        {
+                            string refundId = $"REF-CANCEL-{booking.Id}-{cancellationAudit.Id}";
+                            cancellationAudit.CashfreeRefundId = refundId;
+                            cancellationAudit.PaymentId = payment.Id;
+                            try
+                            {
+                                await cashfreeService.InitiateRefundAsync(payment.CashfreeOrderId, calculatedRefund.FinalCustomerRefundAmount, refundId, "Bus Partial Cancellation");
+                                cancellationAudit.Status = "RefundInitiated";
+                            }
+                            catch (Exception ex)
+                            {
+                                cancellationAudit.Status = "RefundFailed";
+                                cancellationAudit.FailureReason = ex.Message;
+                                logger.LogError(ex, "Failed to initiate Cashfree refund for Bus Booking {BookingId} (Partial)", booking.Id);
+                            }
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        cancellationAudit.Status = "Completed";
+                        await dbContext.SaveChangesAsync();
+                    }
 
                     // If all active passengers are now cancelled, set full booking status to Cancelled and cancel coupon/promo usages
                     var remainingActiveCount = activePassengersCount - targetPassengers.Count;
@@ -1817,12 +1991,13 @@ namespace PickNBook.Api.Controllers
                         .ToListAsync();
 
                     var mapped = MapBusReservation(booking, booking.BusBooking, resultPassengers);
-                    return (mapped, targetPassengers.Select(x => x.Id).ToList(), refundAmount);
+
+                    return new { Result = mapped, CancelledIds = targetPassengers.Select(x => x.Id).ToList(), RefundAmount = calculatedRefund.FinalCustomerRefundAmount };
                 });
 
-                await TrySendBusCancellationNotificationsAsync(bookingId, userId!, cancelledPassengerIds, currentRefund);
+                await TrySendBusCancellationNotificationsAsync(bookingId, userId!, executionResult.CancelledIds, executionResult.RefundAmount);
 
-                return Ok(result);
+                return Ok(executionResult.Result);
             }
             catch (Exception ex)
             {
@@ -2670,10 +2845,10 @@ Refund: ₹{currentRefundAmount}
             if (!sent)
                 logger.LogWarning("WhatsApp booking failed: {Message}", msg);
         }
-        private (decimal RefundAmount, decimal CancellationCharge) CalculateSrdvRefund(BusBooking bus, IReadOnlyList<BusReservationPassenger> cancelledPassengers, decimal totalPriceInr, decimal convenienceFee, int totalBookedSeats)
+        private (decimal RefundAmount, decimal CancellationCharge) CalculateSrdvRefund(BusBooking bus, IReadOnlyList<BusReservationPassenger> cancelledPassengers, decimal netFareInr, int totalBookedSeats)
         {
             var cancelledSeats = cancelledPassengers.Count;
-            var refundablePool = totalPriceInr - convenienceFee;
+            var refundablePool = netFareInr;
             var proportionalPrice = totalBookedSeats > 0 ? (refundablePool / totalBookedSeats) * cancelledSeats : 0m;
             var cancelledBaseFare = cancelledPassengers.Sum(p => p.BaseFareInr);
 

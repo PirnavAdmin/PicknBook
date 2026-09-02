@@ -60,17 +60,25 @@ public class SrdvBusLoggingHandler : DelegatingHandler
         
         stopwatch.Stop();
         
-        string responsePayload = string.Empty;
-        if (response.Content != null)
+        bool isLargePayloadEndpoint = request.RequestUri != null && 
+            (request.RequestUri.ToString().Contains("Search", System.StringComparison.OrdinalIgnoreCase) || 
+             request.RequestUri.ToString().Contains("GetSeatLayOut", System.StringComparison.OrdinalIgnoreCase));
+
+        string responsePayload;
+        if (!isLargePayloadEndpoint && response.Content != null)
         {
             responsePayload = await response.Content.ReadAsStringAsync(cancellationToken);
+            responsePayload = FormatJson(responsePayload);
+        }
+        else
+        {
+            responsePayload = "[Response payload omitted for performance]";
         }
 
         // T3: SRDV -> Backend Response
-        string formattedResponsePayload = FormatJson(responsePayload);
         _logger.LogInformation(
             "[{CorrelationId}] [T3] SRDV Bus -> Backend Response:\nStatus: {StatusCode}\nTime: {ElapsedMs}ms\nPayload:\n{Payload}\n==================================================", 
-            correlationId, response.StatusCode, stopwatch.ElapsedMilliseconds, formattedResponsePayload);
+            correlationId, response.StatusCode, stopwatch.ElapsedMilliseconds, responsePayload);
 
         return response;
     }

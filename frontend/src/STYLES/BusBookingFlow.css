@@ -3370,7 +3370,7 @@
 }
 
 .bus-flow-page .bus-flow-vertical-aisle {
-  width: var(--aisle-col);
+  width: var(--aisle-col, 32px);
   min-height: 100%;
 }
 
@@ -3386,13 +3386,19 @@
 
 .bus-flow-page .bus-flow-vertical-layout .bus-flow-seat--seater {
   width: clamp(36px, 4vw, 42px);
-  min-height: clamp(38px, 4vw, 44px);
+  min-height: clamp(48px, 5vw, 54px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   aspect-ratio: auto;
 }
 
 .bus-flow-page .bus-flow-vertical-layout .bus-flow-seat--sleeper {
   width: clamp(48px, 5vw, 54px);
-  min-height: clamp(72px, 8vw, 80px);
+  min-height: clamp(82px, 8vw, 90px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border-radius: 12px;
 }
 
@@ -5674,8 +5680,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
 }
 
 /* Deck wrapper fills its column naturally */

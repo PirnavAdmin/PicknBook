@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate } from "../../utils/apiDateFormat";
+import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import { openAuthModal } from "../../utils/authModalEvents";
 import { isTokenExpired } from "../../services/authSession";
 import { blockRoom, getHotelInfo, getHotelRoom } from "../../services/hotelBookingService";
@@ -169,7 +170,7 @@ function HotelDetailsPremiumLoader() {
         }
       `}</style>
     </div>
-  );
+      );
 }
 
 function parseSearchContext(params) {
@@ -558,10 +559,13 @@ export default function HotelPassengerDetailsPage() {
                     offers: allRooms.map((r, i) => {
                         const priceObj = r.price || r.Price || {};
                         const cancelPolicies = r.cancellationPolicies || r.CancellationPolicies || [];
+                        
+                        const extractedPrice = priceObj.b2cFinalFare || priceObj.B2CFinalFare || priceObj.offeredPriceRoundedOff || priceObj.OfferedPriceRoundedOff || priceObj.publishedPriceRoundedOff || priceObj.PublishedPriceRoundedOff || priceObj.roomPrice || priceObj.RoomPrice || (typeof priceObj === 'number' ? priceObj : 0);
+
                         return {
                             ...r,
                             offerId: r.roomId || r.RatePlanCode || `room-${i}`,
-                            price: priceObj.offeredPriceRoundedOff || priceObj.OfferedPriceRoundedOff || priceObj.publishedPriceRoundedOff || priceObj.PublishedPriceRoundedOff || (typeof priceObj === 'number' ? priceObj : 0),
+                            price: extractedPrice,
                             currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
                             roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
                             cancellationPolicy: cancelPolicies?.[0]?.charge || cancelPolicies?.[0]?.Charge ? `Charge: ${cancelPolicies[0].charge || cancelPolicies[0].Charge}` : "Refundable thresholds apply",
@@ -950,7 +954,8 @@ export default function HotelPassengerDetailsPage() {
     };
 
     writeHotelBookingFlowState(payloadState);
-    navigate("/hotel/payment", { state: payloadState });
+    setCheckoutPayload(payloadState);
+    setIsModalOpen(true);
   };
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -991,7 +996,17 @@ export default function HotelPassengerDetailsPage() {
   };
 
   if (!hotel) {
-    return <main className="hotel-checkout-page"><div className="hotel-checkout-shell hotel-checkout-shell--empty"><section className="hotel-checkout-empty"><h2>Stay details missing</h2><p>Select a stay before entering guest details.</p><button type="button" onClick={() => navigate("/search/hotels")}>Go to hotel search</button></section></div></main>;
+    return (
+      <main className="hotel-checkout-page">
+        <div className="hotel-checkout-shell hotel-checkout-shell--empty">
+          <section className="hotel-checkout-empty">
+            <h2>Stay details missing</h2>
+            <p>Select a stay before entering guest details.</p>
+            <button type="button" onClick={() => navigate("/search/hotels")}>Go to hotel search</button>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   if (isLoadingOffer) {
@@ -1388,7 +1403,7 @@ export default function HotelPassengerDetailsPage() {
                           )}
                         </div>
                       </div>
-                    );
+      );
                   })}
                 </section>
               )}
@@ -1837,6 +1852,17 @@ export default function HotelPassengerDetailsPage() {
             </button>
           </div>
         </div>
+      )}
+          {isModalOpen && checkoutPayload && (
+        <BookingConfirmationModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          bookingType="Hotel" 
+          flowState={checkoutPayload} 
+          onSuccess={(res) => {
+            navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+          }} 
+        />
       )}
     </main>
   );
