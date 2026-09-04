@@ -1,5 +1,5 @@
-/* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Check,
   Download,
@@ -8,6 +8,8 @@ import {
   SlidersHorizontal,
   Trash2,
   X,
+  ChevronDown,
+  Eye,
 } from "lucide-react";
 import "./HotelDiscountList.css";
 import AdminPagination from "../../../components/AdminPagination";
@@ -71,6 +73,7 @@ function createDefaultForm() {
 }
 
 export default function HotelDiscountList() {
+  const navigate = useNavigate();
   const [promotions, setPromotions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -85,6 +88,19 @@ export default function HotelDiscountList() {
   const [formError, setFormError] = useState("");
   const [editPromoId, setEditPromoId] = useState(null);
   const [deletePromo, setDeletePromo] = useState(null);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
+  const [viewingDiscount, setViewingDiscount] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.actions-dropdown-container')) {
+        setActiveDropdownId(null);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -98,8 +114,26 @@ export default function HotelDiscountList() {
     setLoadError("");
     try {
       const data = await listHotelPromotions();
-      // Filter for auto apply promotions
-      setPromotions(data.filter(p => p.isAutoApply));
+      const normalized = (data || []).map((item) => ({
+        id: item.id || '',
+        code: item.couponCode || item.code || '',
+        title: item.title || item.couponCode || item.code || '',
+        description: item.remark || item.description || '',
+        discountValue: Number(item.value !== undefined ? item.value : item.discountValue) || 0,
+        discountType: item.couponType || item.discountType || 'Percentage',
+        isAutoApply: item.isAutoApply !== undefined && item.isAutoApply !== null ? item.isAutoApply : false,
+        isExclusive: item.isExclusive !== undefined ? item.isExclusive : false,
+        priority: Number(item.priority) || 1,
+        minBookingAmount: Number(item.minBookingAmount) || 0,
+        maxDiscountAmount: item.maxDiscountAmount ? Number(item.maxDiscountAmount) : null,
+        startDateUtc: item.startDate || item.startDateUtc || null,
+        endDateUtc: item.expiryDate || item.endDateUtc || null,
+        maxUsage: item.useLimit !== undefined ? item.useLimit : item.maxUsage || null,
+        maxUsagePerUser: Number(item.maxUsagePerUser) || 1,
+        isActive: item.status ? item.status === "Active" : (item.isActive !== undefined ? item.isActive : true),
+        conditions: item.conditions || []
+      }));
+      setPromotions(normalized.filter(p => p.isAutoApply));
     } catch (error) {
       setPromotions([]);
       setLoadError(error.message || "Unable to load hotel discounts.");
@@ -202,6 +236,7 @@ export default function HotelDiscountList() {
 
   const openAddModal = () => {
     setFormError("");
+    setValidationErrors({});
     setEditPromoId(null);
     setForm(createDefaultForm());
     setIsModalOpen(true);
@@ -209,6 +244,7 @@ export default function HotelDiscountList() {
 
   const openEditModal = (p) => {
     setFormError("");
+    setValidationErrors({});
     setEditPromoId(p.id);
     setForm({
       code: p.code,
@@ -262,36 +298,36 @@ export default function HotelDiscountList() {
     const amount = Number(form.discountValue);
     const code = String(form.code || "").trim().toUpperCase().replace(/\s+/g, "");
 
-    if (!code) {
-      setFormError("Discount code reference is required.");
+    const errors = {};
+    if (!form.title.trim()) errors.title = true;
+    if (!Number.isFinite(amount) || amount <= 0) errors.discountValue = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setFormError("Please fill in all compulsory fields with valid values.");
       return;
     }
-    if (!form.title.trim()) {
-      setFormError("Title is required.");
-      return;
-    }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError("Enter a valid discount value.");
-      return;
-    }
+    setValidationErrors({});
+
+    const finalCode = code || generatePromoCode();
 
     const payload = {
-      code,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      promotionType: form.promotionType,
-      discountType: form.discountType,
-      discountValue: amount,
-      maxDiscountAmount: form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null,
+      couponCode: finalCode,
+      couponType: form.discountType,
+      value: amount,
       minBookingAmount: Number(form.minBookingAmount) || 0,
-      isActive: form.isActive,
-      isExclusive: form.isExclusive,
-      isAutoApply: form.isAutoApply,
-      priority: Number(form.priority) || 1,
-      maxUsage: form.maxUsage ? Number(form.maxUsage) : null,
+      maxDiscountAmount: form.maxDiscountAmount ? Number(form.maxDiscountAmount) : 0,
+      startDate: form.startDateUtc ? new Date(form.startDateUtc).toISOString() : null,
+      expiryDate: form.endDateUtc ? new Date(form.endDateUtc).toISOString() : null,
+      useLimit: form.maxUsage ? Number(form.maxUsage) : 0,
       maxUsagePerUser: Number(form.maxUsagePerUser) || 1,
-      startDateUtc: form.startDateUtc ? new Date(form.startDateUtc).toISOString() : null,
-      endDateUtc: form.endDateUtc ? new Date(form.endDateUtc).toISOString() : null,
+      status: form.isActive ? "Active" : "Inactive",
+      isFirstTimeUserOnly: false,
+      remark: form.description.trim() || null,
+      isAutoApply: true,
+      promotionType: form.promotionType || "AutoApply",
+      isExclusive: form.isExclusive,
+      priority: Number(form.priority) || 1,
       conditions: form.conditions
     };
 
@@ -320,38 +356,131 @@ export default function HotelDiscountList() {
   };
 
   const handleStatusToggle = async (promo) => {
+    // Optimistic status update
+    setPromotions(prev =>
+      prev.map(p => p.id === promo.id ? { ...p, isActive: !promo.isActive } : p)
+    );
     try {
       const payload = {
-        code: promo.code,
-        title: promo.title,
-        description: promo.description,
-        promotionType: promo.promotionType || "AutoApply",
-        discountType: promo.discountType,
-        discountValue: promo.discountValue,
-        maxDiscountAmount: promo.maxDiscountAmount,
+        couponCode: promo.code,
+        couponType: promo.discountType,
+        value: promo.discountValue,
         minBookingAmount: promo.minBookingAmount,
-        isActive: !promo.isActive,
+        maxDiscountAmount: promo.maxDiscountAmount || 0,
+        startDate: promo.startDateUtc || null,
+        expiryDate: promo.endDateUtc || null,
+        useLimit: promo.maxUsage || 0,
+        maxUsagePerUser: promo.maxUsagePerUser || 1,
+        status: !promo.isActive ? "Active" : "Inactive",
+        isFirstTimeUserOnly: false,
+        remark: promo.description || null,
+        isAutoApply: true,
         isExclusive: promo.isExclusive,
-        isAutoApply: promo.isAutoApply,
         priority: promo.priority,
-        maxUsage: promo.maxUsage,
-        maxUsagePerUser: promo.maxUsagePerUser,
-        startDateUtc: promo.startDateUtc,
-        endDateUtc: promo.endDateUtc,
         conditions: promo.conditions || []
       };
       await updateHotelPromotion(promo.id, payload);
       loadPromotions();
     } catch (err) {
+      // Revert status on error
+      setPromotions(prev =>
+        prev.map(p => p.id === promo.id ? { ...p, isActive: promo.isActive } : p)
+      );
       setLoadError(err.message || "Failed to update discount status.");
     }
   };
 
   return (
     <>
-      {isModalOpen ? (
-        <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-discount-shell">
-          <section className="admin-markup-coupon-table-wrap" style={{ padding: "24px", background: "var(--panel)", borderRadius: "16px", border: "1px solid var(--border)" }}>
+      <style>{`
+        .btn-hover {
+          transition: all 0.2s ease !important;
+        }
+        .btn-hover:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
+        }
+        .admin-markup-coupon-table tbody tr {
+          transition: background-color 0.2s ease !important;
+        }
+        .admin-markup-coupon-table tbody tr:hover {
+          background-color: rgba(165, 28, 73, 0.03) !important;
+        }
+        .actions-trigger-btn {
+          transition: all 0.2s ease !important;
+        }
+        .actions-trigger-btn:hover {
+          background-color: rgba(165, 28, 73, 0.08) !important;
+          border-color: #A51C49 !important;
+          color: #A51C49 !important;
+        }
+        .admin-markup-coupon-btn {
+          transition: all 0.2s ease !important;
+        }
+        .admin-markup-coupon-btn:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+        }
+        
+        .admin-markup-coupon-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.6) !important;
+          backdrop-filter: blur(4px) !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000 !important;
+        }
+        
+        .discount-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.6) !important;
+          backdrop-filter: blur(4px) !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000 !important;
+        }
+
+        /* Pill style for active and inactive status */
+        .status-pill-btn {
+          border-radius: 8px !important;
+          padding: 6px 12px !important;
+          font-weight: 600 !important;
+          font-size: 13px !important;
+          cursor: pointer !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          outline: none !important;
+          transition: all 0.2s ease !important;
+        }
+        .status-pill-btn.active {
+          border: 1px solid #10b981 !important;
+          background-color: #ecfdf5 !important;
+          color: #047857 !important;
+        }
+        .status-pill-btn.inactive {
+          border: 1px solid #ef4444 !important;
+          background-color: #fef2f2 !important;
+          color: #b91c1c !important;
+        }
+        .status-pill-btn:hover {
+          transform: scale(1.02) !important;
+        }
+      `}</style>
+      {isModalOpen && (
+        <div className="admin-markup-coupon-backdrop" onClick={() => setIsModalOpen(false)}>
+          <section className="admin-markup-coupon-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px", width: "90%", maxHeight: "90vh", overflowY: "auto", background: "#ffffff", borderRadius: "12px", padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border)", width: "100%" }}>
               <h1 className="form-title" style={{ color: "#A51C49", fontSize: "1.5rem", margin: 0, fontWeight: "700" }}>
                 {editPromoId ? "Edit Auto Discount" : "Add B2C Hotel Discount"}
@@ -361,8 +490,9 @@ export default function HotelDiscountList() {
                   type="button" 
                   className="admin-markup-coupon-btn" 
                   onClick={() => setIsModalOpen(false)}
+                  style={{ backgroundColor: "#A51C49", borderColor: "#A51C49", color: "#ffffff" }}
                 >
-                  Back to List
+                  Close Form
                 </button>
               </div>
             </div>
@@ -374,7 +504,7 @@ export default function HotelDiscountList() {
                   type="text"
                   value={form.code}
                   onChange={(e) => setForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                  style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", fontSize: "0.95rem", backgroundColor: "transparent" }}
+                  style={{ padding: "10px", borderRadius: "8px", border: validationErrors.code ? "1px solid red" : "1px solid var(--border)", fontSize: "0.95rem", backgroundColor: "transparent" }}
                 />
               </label>
               
@@ -384,7 +514,7 @@ export default function HotelDiscountList() {
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                  style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", fontSize: "0.95rem", backgroundColor: "transparent" }}
+                  style={{ padding: "10px", borderRadius: "8px", border: validationErrors.title ? "1px solid red" : "1px solid var(--border)", fontSize: "0.95rem", backgroundColor: "transparent" }}
                 />
               </label>
 
@@ -402,7 +532,7 @@ export default function HotelDiscountList() {
                   type="number"
                   value={form.discountValue}
                   onChange={(e) => setForm(prev => ({ ...prev, discountValue: e.target.value }))}
-                  style={{ padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", fontSize: "0.95rem", backgroundColor: "transparent" }}
+                  style={{ padding: "10px", borderRadius: "8px", border: validationErrors.discountValue ? "1px solid red" : "1px solid var(--border)", fontSize: "0.95rem", backgroundColor: "transparent" }}
                 />
               </label>
 
@@ -567,19 +697,32 @@ export default function HotelDiscountList() {
             {formError && <p className="admin-markup-coupon-error" style={{ margin: "20px 0 0", color: "var(--danger)", fontWeight: "500" }}>{formError}</p>}
 
             <footer style={{ marginTop: "30px", paddingTop: "20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setIsModalOpen(false)} style={{ padding: "10px 24px", fontSize: "1rem" }}>Cancel</button>
-              <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} style={{ padding: "10px 24px", fontSize: "1rem" }}>Save Discount</button>
+              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setIsModalOpen(false)} style={{ padding: "10px 24px", fontSize: "1rem", backgroundColor: "#f97316", borderColor: "#f97316", color: "#ffffff" }}>Cancel</button>
+              <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} style={{ padding: "10px 24px", fontSize: "1rem", backgroundColor: "#A51C49", borderColor: "#A51C49" }}>Save Changes</button>
             </footer>
           </section>
-        </section>
-      ) : (
-        <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-discount-shell">
+        </div>
+      )}
+
+      <section className="admin-b2c-page admin-b2c-hotel-page admin-hotel-discount-shell">
           <header className="admin-markup-coupon-header">
-            <div className="admin-markup-coupon-title-wrap">
-              <h2 style={{ fontWeight: 500 }}><span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Hotel</span> Auto Discount List</h2>
+            <div className="admin-markup-coupon-title-wrap" style={{ paddingTop: '16px', paddingBottom: '16px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: '28px' }}>
+                <span style={{ color: '#A51C49' }}>B2C Hotel</span> Discount List
+              </h2>
             </div>
 
             <div className="admin-markup-coupon-actions">
+              <button
+                type="button"
+                className="admin-markup-coupon-btn btn-hover"
+                style={{ backgroundColor: '#A51C49', borderColor: '#A51C49', color: '#ffffff' }}
+                onClick={() => navigate('/admin/b2c-bus/discount-mapping', { state: { from: 'hotel' } })}
+              >
+                <SlidersHorizontal size={15} />
+                <span>Discount Mapping</span>
+              </button>
+
               <button
                 type="button"
                 className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
@@ -589,15 +732,7 @@ export default function HotelDiscountList() {
                 <span>Filter</span>
               </button>
 
-              <button
-                type="button"
-                className="admin-markup-coupon-btn clear"
-                onClick={handleClearFilters}
-                disabled={sortBy === DEFAULT_SORT_BY && statusFilter === "all" && discountTypeFilter === "all"}
-              >
-                <X size={15} />
-                <span>Clear Filter</span>
-              </button>
+
 
               <button
                 type="button"
@@ -662,8 +797,6 @@ export default function HotelDiscountList() {
             </section>
           )}
 
-          {loadError && <p className="admin-markup-coupon-error">{loadError}</p>}
-
           <section className="admin-markup-coupon-table-wrap">
             <div className="admin-markup-coupon-table-scroll">
               <table className="admin-markup-coupon-table">
@@ -698,6 +831,12 @@ export default function HotelDiscountList() {
                         <p className="admin-markup-coupon-empty">Loading discounts from database...</p>
                       </td>
                     </tr>
+                  ) : loadError ? (
+                    <tr>
+                      <td colSpan={9}>
+                        <p className="admin-markup-coupon-empty" style={{ color: "red", fontWeight: "600" }}>{loadError}</p>
+                      </td>
+                    </tr>
                   ) : visiblePromotions.length === 0 ? (
                     <tr>
                       <td colSpan={9}>
@@ -719,21 +858,65 @@ export default function HotelDiscountList() {
                         <td>
                           <button
                             type="button"
-                            className={`admin-markup-coupon-status ${p.isActive ? "active" : "inactive"}`}
+                            className={`status-pill-btn ${p.isActive ? "active" : "inactive"}`}
                             onClick={() => handleStatusToggle(p)}
                           >
-                            {p.isActive ? <Check size={14} /> : <X size={14} />}
-                            <span>{p.isActive ? "Active" : "Inactive"}</span>
+                            {p.isActive ? "Active" : "Inactive"}
                           </button>
                         </td>
                         <td className="action-col">
-                          <div className="admin-markup-coupon-action-group" style={{ justifyContent: "center" }}>
-                            <button type="button" title="Edit" onClick={() => openEditModal(p)}>
-                              <Pencil size={14} />
+                          <div className="actions-dropdown-container">
+                            <button
+                              type="button"
+                              className={`actions-trigger-btn ${activeDropdownId === p.id ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === p.id ? null : p.id);
+                              }}
+                            >
+                              <span>Actions</span>
+                              <ChevronDown className="chevron-icon" size={12} />
                             </button>
-                            <button type="button" className="danger" title="Delete" onClick={() => setDeletePromo(p)}>
-                              <Trash2 size={14} />
-                            </button>
+                            {activeDropdownId === p.id && (
+                              <div className="actions-dropdown-menu">
+                                <button
+                                  type="button"
+                                  className="dropdown-item view"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setViewingDiscount(p);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <span>View Details</span>
+                                  <Eye className="item-icon" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditModal(p);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <span>Edit Discount</span>
+                                  <Pencil className="item-icon" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item delete"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletePromo(p);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <span>Delete Discount</span>
+                                  <Trash2 className="item-icon" size={12} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -753,7 +936,6 @@ export default function HotelDiscountList() {
             </div>
           </section>
         </section>
-      )}
 
       {/* Delete Confirmation Modal */}
       {deletePromo && (
@@ -766,28 +948,103 @@ export default function HotelDiscountList() {
               Are you sure you want to delete the discount <strong>{deletePromo.title}</strong>? This action cannot be undone.
             </div>
             <footer style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setDeletePromo(null)}>Cancel</button>
-              <button type="button" className="admin-markup-coupon-btn generate" style={{ backgroundColor: "#d32f2f", borderColor: "#d32f2f" }} onClick={handleDelete}>Delete</button>
+              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setDeletePromo(null)} style={{ backgroundColor: "#f97316", borderColor: "#f97316", color: "#ffffff" }}>Cancel</button>
+              <button type="button" className="admin-markup-coupon-btn generate" style={{ backgroundColor: "#ef4444", borderColor: "#ef4444", color: "#ffffff" }} onClick={handleDelete}>Delete</button>
             </footer>
           </section>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deletePromo && (
-        <div className="admin-markup-coupon-backdrop" onClick={() => setDeletePromo(null)}>
-          <section className="admin-markup-coupon-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px" }}>
-            <header className="generate-header">
-              <h2>Confirm Delete</h2>
-            </header>
-            <div style={{ padding: "20px", fontSize: "0.9rem" }}>
-              Are you sure you want to delete the discount <strong>{deletePromo.title}</strong>? This action cannot be undone.
+      {/* Discount Details View Modal */}
+      {viewingDiscount && (
+        <div className="discount-modal-overlay" onClick={() => setViewingDiscount(null)}>
+          <div className="discount-modal-container view-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px' }}>
+            <div className="modal-header" style={{ borderBottom: 'none', marginBottom: '8px' }}>
+              <h3 style={{ color: '#1e293b', fontWeight: '700' }}>Discount Detail View</h3>
+              <button
+                type="button"
+                onClick={() => setViewingDiscount(null)}
+                style={{
+                  border: 'none',
+                  background: '#1e3a8a',
+                  color: '#ffffff',
+                  borderRadius: '20px',
+                  padding: '6px 16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Close
+              </button>
             </div>
-            <footer style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setDeletePromo(null)}>Cancel</button>
-              <button type="button" className="admin-markup-coupon-btn generate" style={{ backgroundColor: "#d32f2f", borderColor: "#d32f2f" }} onClick={handleDelete}>Delete</button>
-            </footer>
-          </section>
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', justifyContent: 'flex-start' }}>
+              <span style={{ 
+                background: viewingDiscount.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)', 
+                color: viewingDiscount.isActive ? '#10b981' : '#64748b', 
+                padding: '4px 12px', 
+                borderRadius: '100px', 
+                fontWeight: '600', 
+                fontSize: '11px' 
+              }}>
+                {viewingDiscount.isActive ? 'Active' : 'Inactive'}
+              </span>
+              <span style={{ background: '#fdf2f8', color: '#A51C49', padding: '4px 12px', borderRadius: '100px', fontWeight: '700', fontSize: '11px', border: '1px solid rgba(165, 28, 73, 0.15)' }}>
+                {viewingDiscount.code}
+              </span>
+              <span style={{ background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', padding: '4px 12px', borderRadius: '100px', fontWeight: '600', fontSize: '11px' }}>
+                {viewingDiscount.discountType === 'Percentage' ? `${viewingDiscount.discountValue}%` : `INR ${viewingDiscount.discountValue}`}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', textAlign: 'left', overflowY: 'auto', maxHeight: '60vh', paddingRight: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DISCOUNT ID</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingDiscount.id}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PROMOTION TYPE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingDiscount.promotionType || "AutoApply"}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRIORITY</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingDiscount.priority || 1}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>START DATE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{formatCouponDate(viewingDiscount.startDateUtc)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>EXPIRY DATE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{formatCouponDate(viewingDiscount.endDateUtc)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MIN BOOKING AMOUNT</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>INR {viewingDiscount.minBookingAmount || 0}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 3' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TITLE</span>
+                <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{viewingDiscount.title || '--'}</span>
+              </div>
+              {viewingDiscount.conditions && viewingDiscount.conditions.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 3' }}>
+                  <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conditions</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {viewingDiscount.conditions.map((cond, idx) => (
+                      <span key={idx} style={{ background: '#f1f5f9', color: '#334155', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500' }}>
+                        {cond.conditionType} = {cond.value1}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 3' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPTION</span>
+                <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{viewingDiscount.description || '--'}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </>

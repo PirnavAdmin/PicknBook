@@ -135,10 +135,13 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
           const payload = await response.json();
           const rawList = Array.isArray(payload) ? payload : Array.isArray(payload?.value) ? payload.value : [];
           const normalized = rawList
-            .map((item) => ({ 
-               cityName: typeof item === "string" ? item : item?.cityName || "", 
-               cityId: typeof item === "object" ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
-               usageCount: typeof item === "object" && item?.usageCount ? item.usageCount : 0 
+            .map((item) => ({
+              cityName:    typeof item === "string" ? item : item?.cityName    || "",
+              cityId:      typeof item === "object"  ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
+              stateName:   typeof item === "object"  ? (item.stateName   || item.StateName   || "") : "",
+              airportCode: typeof item === "object"  ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
+              airportName: typeof item === "object"  ? (item.airportName || item.AirportName || "") : "",
+              usageCount:  typeof item === "object" && item?.usageCount ? item.usageCount : 0,
             }))
             .filter((item) => item.cityName);
           setResults(normalized);
@@ -171,7 +174,7 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
   };
 
   return (
-    <div className={`field place-autocomplete ${className || ""}`} ref={wrapperRef}>
+    <div className={`field place-autocomplete ${className || ""}`} ref={wrapperRef} style={{ position: "relative" }}>
       <label>{label}</label>
       <div className="control-wrap">
         {tripType === "flight" ? <Plane size={18} /> : tripType === "hotel" ? <Building2 size={18} /> : <Bus size={18} />}
@@ -195,11 +198,37 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
               <button
                 key={`${item.cityName}-${item.usageCount}`}
                 type="button"
-                className={tripType === "bus" || tripType === "buses" ? "bus-place-option" : "place-option"}
+                className="pnb-place-option"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(item)}
               >
-                {item.cityName}
+                <div className="pnb-place-icon-wrap">
+                  {tripType === "flight" ? (
+                    <Plane size={15} />
+                  ) : tripType === "hotel" ? (
+                    <Building2 size={15} />
+                  ) : (
+                    <Bus size={15} />
+                  )}
+                </div>
+                <div className="pnb-place-text">
+                  <div className="pnb-place-primary">
+                    <span className="pnb-place-city">{item.cityName}</span>
+                    {tripType === "flight" && item.airportCode && (
+                      <span className="pnb-place-code">{item.airportCode}</span>
+                    )}
+                  </div>
+                  {(tripType === "flight"
+                    ? [item.airportName, item.stateName].filter(Boolean).join(", ")
+                    : item.stateName
+                  ) && (
+                    <div className="pnb-place-secondary">
+                      {tripType === "flight"
+                        ? [item.airportName, item.stateName].filter(Boolean).join(", ")
+                        : item.stateName}
+                    </div>
+                  )}
+                </div>
               </button>
             ))
           ) : (

@@ -9,6 +9,7 @@ using PickNBook.Api.Services.Interfaces;
 using PickNBook.Api.Services;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace PickNBook.Api.Controllers
 {
@@ -22,9 +23,11 @@ namespace PickNBook.Api.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<CashfreePaymentController> _logger;
         private readonly IBusPromotionEngineService _busPricingService;
+        private readonly IBusCouponContextBuilder _busCouponContextBuilder;
         private readonly IFlightPricingService _flightPricingService;
         private readonly IHotelMarkupService _hotelMarkupService;
         private readonly AppDbContext _dbContext;
+        private readonly IMemoryCache _cache;
 
         public CashfreePaymentController(
             IOptions<CashfreeSettings> settings,
@@ -33,9 +36,11 @@ namespace PickNBook.Api.Controllers
             ICurrentUserService currentUserService,
             ILogger<CashfreePaymentController> logger,
             IBusPromotionEngineService busPricingService,
+            IBusCouponContextBuilder busCouponContextBuilder,
             IFlightPricingService flightPricingService,
             IHotelMarkupService hotelMarkupService,
-            AppDbContext dbContext)
+            AppDbContext dbContext,
+            IMemoryCache cache)
         {
             _settings = settings.Value;
             _cashfreeService = cashfreeService;
@@ -43,9 +48,11 @@ namespace PickNBook.Api.Controllers
             _currentUserService = currentUserService;
             _logger = logger;
             _busPricingService = busPricingService;
+            _busCouponContextBuilder = busCouponContextBuilder;
             _flightPricingService = flightPricingService;
             _hotelMarkupService = hotelMarkupService;
             _dbContext = dbContext;
+            _cache = cache;
         }
 
         [HttpPost("create-order")]
@@ -76,6 +83,7 @@ namespace PickNBook.Api.Controllers
                 decimal calculatedFinalAmount = 0m;
 
                 string? pricingSnapshotJson = null;
+                string? actualCouponCode = !string.IsNullOrWhiteSpace(request.CouponCode) ? request.CouponCode.Trim() : null;
 
                 if (!string.IsNullOrEmpty(request.BookingPayloadJson) && !string.IsNullOrEmpty(request.BookingType))
                 {
@@ -84,6 +92,28 @@ namespace PickNBook.Api.Controllers
                         var payload = JsonSerializer.Deserialize<CreateBusBookingRequestDto>(request.BookingPayloadJson, 
                             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (payload == null) return BadRequest(new { message = "Invalid Bus Payload" });
+
+                        var passengerSeats = payload.Passengers?
+                            .Where(p => !string.IsNullOrWhiteSpace(p.SeatNumber))
+                            .Select(p => p.SeatNumber!.Trim())
+                            .ToList() ?? new List<string>();
+
+                        if (!passengerSeats.Any())
+                        {
+                            return BadRequest(new { message = "At least one passenger with a valid seat number is required." });
+                        }
+
+                        // Reject duplicate passenger seat numbers
+                        var duplicateSeats = passengerSeats
+                            .GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
+                            .Where(g => g.Count() > 1)
+                            .Select(g => g.Key)
+                            .ToList();
+
+                        if (duplicateSeats.Any())
+                        {
+                            return BadRequest(new { message = $"Duplicate seat number(s) detected: {string.Join(", ", duplicateSeats)}. Each passenger must be assigned a unique seat." });
+                        }
 
                         var traceId = payload.TraceId ?? string.Empty;
                         var blockedSeats = await _dbContext.BusBlockedSeatPrices
@@ -95,19 +125,55 @@ namespace PickNBook.Api.Controllers
                             return BadRequest(new { message = "No active seat block found for this TraceId. Please try booking again." });
                         }
 
-                        var seatPreviews = payload.Passengers?
+                        // Strict check: every passenger seat must have an authoritative blocked price record with BaseFare > 0
+                        var missingBlockedSeats = passengerSeats
+                            .Where(seat => !blockedSeats.Any(b => b.SeatName.Equals(seat, StringComparison.OrdinalIgnoreCase) && b.BaseFare > 0))
+                            .ToList();
+
+                        if (missingBlockedSeats.Any())
+                        {
+                            return BadRequest(new { message = $"Authoritative blocked seat pricing is unavailable for seat(s): {string.Join(", ", missingBlockedSeats)}. Please refresh and block the seats again." });
+                        }
+
+                        // Authoritative seat layout resolution for SeatType
+                        Dictionary<string, BusSeatLayoutItemContext>? layoutMap = null;
+                        if (!string.IsNullOrEmpty(payload.TraceId) && !string.IsNullOrEmpty(payload.ResultIndex))
+                        {
+                            _cache.TryGetValue($"bus_seats_{payload.TraceId}_{payload.ResultIndex}", out layoutMap);
+                        }
+
+                        var missingLayoutSeats = passengerSeats
+                            .Where(seat => layoutMap == null || 
+                                           !layoutMap.TryGetValue(seat, out var layoutSeat) || 
+                                           string.IsNullOrWhiteSpace(layoutSeat.SeatType))
+                            .ToList();
+
+                        if (missingLayoutSeats.Any())
+                        {
+                            return BadRequest(new { 
+                                message = $"Authoritative seat layout information is unavailable for seat(s): {string.Join(", ", missingLayoutSeats)}. Please refresh the seat layout and block again." 
+                            });
+                        }
+
+                        var seatPreviews = payload.Passengers!
                             .Where(p => !string.IsNullOrWhiteSpace(p.SeatNumber))
                             .Select(p => {
-                                var blockedSeat = blockedSeats.FirstOrDefault(b => b.SeatName.Equals(p.SeatNumber, StringComparison.OrdinalIgnoreCase));
+                                var seatCode = p.SeatNumber!.Trim();
+                                var blockedSeat = blockedSeats
+                                    .OrderByDescending(b => b.Id)
+                                    .First(b => b.SeatName.Equals(seatCode, StringComparison.OrdinalIgnoreCase));
+
+                                var layoutSeat = layoutMap![seatCode];
+
                                 return new SeatPreviewDto 
                                 { 
-                                    SeatCode = p.SeatNumber!, 
-                                    BaseFare = blockedSeat?.BaseFare > 0 ? blockedSeat.BaseFare : p.BaseFare, 
-                                    SeatType = !string.IsNullOrWhiteSpace(p.SeatType) ? p.SeatType : (payload.BusType ?? "Unknown"),
-                                    ExternalGst = blockedSeat?.GstAmount > 0 ? blockedSeat.GstAmount : p.ExternalGst 
+                                    SeatCode = seatCode, 
+                                    BaseFare = blockedSeat.BaseFare, 
+                                    SeatType = layoutSeat.SeatType, // 100% authoritative from SRDV layout cache
+                                    ExternalGst = blockedSeat.GstAmount 
                                 };
                             })
-                            .ToList() ?? new List<SeatPreviewDto>();
+                            .ToList();
 
                         // Ensure pricing parity including dynamically applied checkout coupons/promotions
                         var dummyBus = new PickNBook.Api.Models.BusBooking
@@ -124,8 +190,25 @@ namespace PickNBook.Api.Controllers
                         int? parsedUserId = null;
                         if (int.TryParse(userIdStr, out var id)) parsedUserId = id;
 
-                        string? actualCouponCode = request.CouponCode != null ? request.CouponCode : payload.CouponCode;
+                        actualCouponCode = !string.IsNullOrWhiteSpace(request.CouponCode)
+                            ? request.CouponCode.Trim()
+                            : payload.CouponCode?.Trim();
+
+                        if (payload.CouponCode != actualCouponCode)
+                        {
+                            payload.CouponCode = actualCouponCode;
+                            request.BookingPayloadJson = JsonSerializer.Serialize(payload);
+                        }
+
                         int? actualPromoId = request.PromotionId != null ? request.PromotionId : payload.PromotionId;
+
+                        var seatCodes = payload.Passengers?.Where(p => !string.IsNullOrWhiteSpace(p.SeatNumber)).Select(p => p.SeatNumber!).ToList() ?? new();
+                        var validationContext = await _busCouponContextBuilder.BuildContextAsync(
+                            payload.TraceId,
+                            payload.ResultIndex,
+                            seatCodes,
+                            dummyBus,
+                            seatPreviews);
 
                         var pricing = await _busPricingService.CalculateAsync(
                             dummyBus,
@@ -133,13 +216,17 @@ namespace PickNBook.Api.Controllers
                             actualCouponCode,
                             actualPromoId,
                             parsedUserId,
-                            payload.SelectedFeaturedOfferId);
+                            payload.SelectedFeaturedOfferId,
+                            validationContext);
 
-                        providerAmount = blockedSeats.Sum(x => x.BaseFare) + blockedSeats.Sum(x => x.GstAmount);
+                        // Authoritative customer charge directly consumed from centralized pricing engine
+                        calculatedFinalAmount = pricing.FinalAmount;
+
+                        // Provider settlement / reconciliation amount for accounting only (never charged to customer)
+                        providerAmount = pricing.Seats.Sum(s => s.BaseFare) + pricing.GstAmount;
                         markupAmount = pricing.Seats.Sum(s => s.MarkupAmount);
                         discountAmount = pricing.TotalDiscount;
-                        convenienceFee = 0m;
-                        calculatedFinalAmount = pricing.GrandTotal;
+                        convenienceFee = pricing.ConvenienceFee;
                     }
                     else if (request.BookingType == BookingType.Hotel)
                     {
@@ -294,7 +381,7 @@ namespace PickNBook.Api.Controllers
                         ConvenienceFee = convenienceFee,
                         DiscountAmount = discountAmount,
                         SsrAmount = ssrAmount,
-                        CouponCode = request.CouponCode,
+                        CouponCode = actualCouponCode,
                         OfferCode = request.SelectedFeaturedOfferId?.ToString(),
                         FinalPayableAmount = calculatedFinalAmount,
                         CalculatedAtUtc = DateTime.UtcNow
@@ -309,7 +396,7 @@ namespace PickNBook.Api.Controllers
                 var payment = await _paymentService.CreatePaymentAsync(
                     userIdStr, request.BookingType,
                     providerAmount, markupAmount, convenienceFee, discountAmount, 
-                    request.CouponCode, request.SelectedFeaturedOfferId?.ToString(),
+                    actualCouponCode, request.SelectedFeaturedOfferId?.ToString(),
                     calculatedFinalAmount, request.OrderCurrency);
 
                 // Create Pending Booking
@@ -330,6 +417,10 @@ namespace PickNBook.Api.Controllers
                 await _paymentService.AssociateCashfreeOrderAsync(payment.Id, cfResponse.OrderId, cfResponse.CfOrderId, cfResponse.PaymentSessionId);
 
                 return Ok(cfResponse);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

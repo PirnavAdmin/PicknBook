@@ -425,3 +425,216 @@
   border-color: #a51c49 !important;
 }
 
+/* ── Always apply white theme to sidebar ── */
+.ds-sidebar {
+  background: #ffffff !important; /* white background */
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.ds-sidebar-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.ds-brand-icon {
+  background: #A41B48 !important;
+  box-shadow: 0 4px 12px rgba(164, 27, 72, 0.2) !important;
+}
+
+.ds-brand-name {
+  color: #1e293b !important;
+}
+
+.ds-search-input {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.ds-search-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.ds-search-input:focus {
+  border-color: #A41B48 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(164, 27, 72, 0.08) !important;
+}
+
+.ds-nav-row {
+  color: #475569 !important;
+}
+
+.ds-nav-row:hover {
+  color: #1e293b !important;
+  background: #f1f5f9 !important;
+}
+
+.ds-nav-row.ds-active {
+  color: #a51c49 !important;
+  background: #fff0f3 !important; /* soft pink/cherry red active */
+  font-weight: 600 !important;
+  border-radius: 0 10px 10px 0 !important;
+}
+
+.ds-nav-row.ds-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 4px;
+  background: #a51c49 !important;
+}
+
+.ds-icon-active {
+  background: transparent !important;
+  color: #a51c49 !important;
+  box-shadow: none !important;
+}
+
+/* ── Level 1 Submenu Container (inside Bookings) ── */
+.ds-submenu {
+  background: transparent !important;
+  border-left: 1.5px solid #fecdd3 !important; /* Soft crimson vertical tree guide line */
+  margin-left: 26px !important;
+  padding-left: 4px !important;
+  position: relative;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ds-submenu-open {
+  max-height: 2400px;
+}
+
+.ds-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155 !important;
+  padding: 7px 12px !important;
+  border-radius: 8px !important;
+  margin: 2px 0;
+}
+
+.ds-sub-row:hover {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+}
+
+.ds-sub-row.ds-sub-active {
+  color: #a51c49 !important;
+  background: #fff0f3 !important; /* soft crimson active pill */
+  font-weight: 600 !important;
+}
+
+.ds-sub-active .ds-sub-dot {
+  background: transparent !important;
+  border-color: #a51c49 !important;
+  opacity: 1 !important;
+}
+
+/* ── Nested Level 2 Parent Row (All Bookings / Cancellations / Search History) ── */
+.ds-sub-parent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px !important;
+  color: #334155 !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: color 0.18s ease, background 0.18s ease;
+  border-radius: 8px !important;
+  margin: 2px 0;
+}
+
+.ds-sub-parent-row:hover {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+}
+
+.ds-sub-parent-row .ds-sub-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1.5px solid #94a3b8;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.ds-sub-parent-row.ds-active {
+  color: #a51c49 !important;
+  font-weight: 600 !important;
+}
+
+.ds-sub-parent-row.ds-active .ds-sub-dot {
+  border-color: #a51c49 !important;
+}
+
+/* ── Nested Level 3 Container ── */
+.ds-nested-submenu {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent !important;
+  border-left: 1.5px solid #cbd5e1 !important; /* Slate vertical tree guide line */
+  margin-left: 12px !important;
+  padding-left: 6px !important;
+  position: relative;
+}
+
+.ds-nested-submenu.ds-submenu-open {
+  max-height: 500px;
+}
+
+/* ── Nested Level 3 Row Item (Flight / Bus / Hotel) ── */
+.ds-sub-nested-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px !important;
+  color: #334155 !important;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.18s ease;
+  border-radius: 8px !important;
+  margin: 2px 0;
+}
+
+.ds-sub-nested-row .ds-sub-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1.5px solid #94a3b8;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.ds-sub-nested-row:hover {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+}
+
+.ds-sub-nested-row.ds-sub-active {
+  color: #a51c49 !important;
+  background: #fff0f3 !important; /* Soft Pink Active Pill */
+  font-weight: 700 !important;
+}
+
+.ds-sub-nested-row.ds-sub-active .ds-sub-dot {
+  border-color: #a51c49 !important;
+}
+
+

@@ -421,6 +421,8 @@ export default function FlightSeatSelectionPage() {
     flowState.zeroCancellationAdded || false
   );
   const [activeInsuranceTerms, setActiveInsuranceTerms] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [checkoutPayload, setCheckoutPayload] = useState(null);
 
   const handleFilterToggle = (filterType) => {
     setActiveSeatFilter((prev) => (prev === filterType ? null : filterType));

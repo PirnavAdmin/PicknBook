@@ -58,7 +58,7 @@
   grid-template-columns: 0.72fr 1fr 1.25fr 1fr 0.85fr 0.7fr 0.58fr;
   gap: 8px;
   padding: 8px;
-  background: #be185d !important; /* solid cerise pink */
+  background: #A41B48 !important; /* solid primary crimson */
 }
 
 /* Remove separate block backgrounds in heading, center text */
@@ -84,35 +84,60 @@
   gap: 8px;
   padding: 8px;
   border-top: 1px solid var(--admin-border);
+  align-items: stretch;
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-cancel-table-row:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  transform: translateY(-1px);
+}
+
+.admin-cancel-table-row:hover .admin-cancel-cell {
+  background: #f8fafc !important;
+  border-color: rgba(165, 28, 73, 0.25) !important;
 }
 
 /* Center all data vertically and horizontally inside card cells */
 .admin-cancel-cell {
-  min-height: 56px;
+  min-height: 50px;
   border: 1px solid var(--admin-border);
-  border-radius: 10px;
-  background: var(--admin-surface);
-  padding: 8px;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 4px 8px;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
   text-align: center !important;
-  gap: 3px;
+  gap: 2px;
   color: var(--admin-text);
-  font-size: 0.81rem;
+  font-size: 0.74rem;
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
 }
 
 .admin-cancel-cell strong {
   color: var(--admin-text);
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+  font-weight: 500;
 }
 
 .admin-cancel-cell small {
   color: var(--admin-muted);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
 }
 
 .admin-cancel-empty {
@@ -178,9 +203,9 @@
 
 /* Filter button */
 .admin-cancel-toolbar .admin-actions-row button:first-of-type {
-  background: #ffffff !important;
-  color: #be185d !important;
-  border: 1.5px solid #be185d !important;
+  background: #A41B48 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #A41B48 !important;
   border-radius: 20px !important;
   padding: 6px 16px !important;
   font-weight: 600 !important;
@@ -189,9 +214,10 @@
 }
 
 .admin-cancel-toolbar .admin-actions-row button:first-of-type:hover {
-  background: #be185d !important;
+  background: #851237 !important;
+  border-color: #851237 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.3) !important;
 }
 
 /* Clear Filter button */
@@ -213,19 +239,21 @@
 
 /* Export button */
 .admin-cancel-toolbar .admin-actions-row button:last-of-type {
-  background: #ffffff !important;
-  color: #be185d !important;
-  border: 1.5px solid #be185d !important;
+  background: #137333 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #137333 !important;
   border-radius: 20px !important;
   padding: 6px 16px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 
 .admin-cancel-toolbar .admin-actions-row button:last-of-type:hover {
-  background: #be185d !important;
+  background: #0f5d29 !important;
+  border-color: #0f5d29 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(19, 115, 51, 0.3) !important;
 }
 
 /* Modal Detail Pop-up Overlay */
@@ -342,4 +370,41 @@
   padding: 12px 16px !important;
   background: var(--admin-soft) !important;
   display: grid !important;
+}
+
+/* Action button view */
+.admin-cancel-view-btn {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  padding: 4px 12px !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+  outline: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-cancel-view-btn:hover {
+  background-color: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
+  color: #1e293b !important;
+  transform: translateY(-1px) !important;
+}
+
+/* View button completed state (blue) */
+.admin-cancel-view-btn.completed-state {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.admin-cancel-view-btn.completed-state:hover {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
 }

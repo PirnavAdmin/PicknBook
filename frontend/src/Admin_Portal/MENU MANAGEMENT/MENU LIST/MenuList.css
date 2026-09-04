@@ -14,7 +14,7 @@
 .menu-list-container {
   border-radius: 12px !important;
   background: #ffffff !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
   border: 1px solid #e2e8f0;
   margin-top: 0px !important;
@@ -68,6 +68,47 @@ body .admin-markup-table thead,
   background-color: #A51C49 !important;
   background-image: none !important;
   color: #ffffff !important;
+}
+
+.menu-list-table th,
+.admin-markup-table th {
+  padding: 12px 10px !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+}
+
+/* ── Solid white popup modal container ── */
+.admin-markup-modal-backdrop {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.admin-markup-modal {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  opacity: 1 !important;
+}
+
+/* ── Modal Details: Headings in Black & Data in Light Color ── */
+.admin-markup-modal-grid span {
+  display: block;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.admin-markup-modal-grid strong {
+  display: block;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
 }
 
 /* ── Hide old toolbar if present ── */

@@ -214,69 +214,27 @@ function getAdminProfile() {
 
 const SEARCHABLE_PAGES = [
     { label: 'Dashboard', category: 'General', path: '/admin' },
-    { label: 'Bus Bookings List', category: 'Bus Management', path: '/admin/b2c-bus/booking-list' },
-    { label: 'Bus Discount List', category: 'Bus Management', path: '/admin/b2c-bus/discount-list' },
-    { label: 'Add Bus Discount', category: 'Bus Management', path: '/admin/b2c-bus/add-discount' },
-    { label: 'Bus Discount Mapping', category: 'Bus Management', path: '/admin/b2c-bus/discount-mapping' },
-    { label: 'Bus Markup List', category: 'Bus Management', path: '/admin/b2c-bus/markup-list' },
-    { label: 'Bus GST Settings', category: 'Bus Management', path: '/admin/b2c-bus/gst-settings' },
-    { label: 'Bus Coupon List', category: 'Bus Management', path: '/admin/b2c-bus/coupon-list' },
-    { label: 'Bus Used Coupon List', category: 'Bus Management', path: '/admin/b2c-bus/used-coupon-list' },
-    { label: 'Bus Convenience Fee', category: 'Bus Management', path: '/admin/b2c-bus/convenience-fee' },
-    { label: 'Edit Bus Convenience Fee', category: 'Bus Management', path: '/admin/b2c-bus/convenience-fee/edit' },
-    { label: 'Bus Cancellation List', category: 'Bus Management', path: '/admin/b2c-bus/cancellation-list' },
-    { label: 'Bus Search History', category: 'Bus Management', path: '/admin/b2c-bus/search-history' },
-    { label: 'Bus Voucher Settings', category: 'Bus Management', path: '/admin/b2c-bus/voucher-settings' },
-    { label: 'Popular Bus Routes', category: 'Bus Management', path: '/admin/b2c-bus/popular-routes' },
-
-    { label: 'Flight Booking List', category: 'Flight Management', path: '/admin/b2c-flight/booking-list' },
-    { label: 'Flight Discount List', category: 'Flight Management', path: '/admin/b2c-flight/discount-list' },
-    { label: 'Add Flight Discount', category: 'Flight Management', path: '/admin/b2c-flight/add-discount' },
-    { label: 'Flight Markup List', category: 'Flight Management', path: '/admin/b2c-flight/markup-list' },
-    { label: 'Flight Coupon List', category: 'Flight Management', path: '/admin/b2c-flight/coupon-list' },
-    { label: 'Flight Used Coupon List', category: 'Flight Management', path: '/admin/b2c-flight/used-coupon-list' },
-    { label: 'Flight Convenience Fee', category: 'Flight Management', path: '/admin/b2c-flight/convenience-fee' },
-    { label: 'Add Flight Convenience Fee', category: 'Flight Management', path: '/admin/b2c-flight/convenience-fee/add' },
-    { label: 'Edit Flight Convenience Fee', category: 'Flight Management', path: '/admin/b2c-flight/convenience-fee/edit' },
-    { label: 'Flight Cancellation Request List', category: 'Flight Management', path: '/admin/b2c-flight/cancellation-requests' },
-    { label: 'Flight Remark List', category: 'Flight Management', path: '/admin/b2c-flight/remark-list' },
-    { label: 'Add Flight Remark', category: 'Flight Management', path: '/admin/b2c-flight/remark-list/add' },
-    { label: 'Edit Flight Remark', category: 'Flight Management', path: '/admin/b2c-flight/remark-list/edit' },
-    { label: 'Flight Amendments List', category: 'Flight Management', path: '/admin/b2c-flight/amendments' },
-    { label: 'Flight Allowed Fare Types', category: 'Flight Management', path: '/admin/b2c-flight/allowed-fare-types' },
-    { label: 'Flight Search History', category: 'Flight Management', path: '/admin/b2c-flight/search-history' },
-    { label: 'Flight Pending Airline List', category: 'Flight Management', path: '/admin/b2c-flight/pending-airlines' },
-    { label: 'Add Flight Pending Airline', category: 'Flight Management', path: '/admin/b2c-flight/pending-airlines/add' },
-    { label: 'Edit Flight Pending Airline', category: 'Flight Management', path: '/admin/b2c-flight/pending-airlines/edit' },
-    { label: 'Flight Airline Web Check Links', category: 'Flight Management', path: '/admin/b2c-flight/airline-webcheck-links' },
-    { label: 'Flight Airline Brand List', category: 'Flight Management', path: '/admin/b2c-flight/airline-brands' },
-    { label: 'Popular Flight Routes', category: 'Flight Management', path: '/admin/b2c-flight/popular-routes' },
-    { label: 'Popular Flight Destinations', category: 'Flight Management', path: '/admin/b2c-flight/popular-destinations' },
-
-    { label: 'Blog List', category: 'Blog Management', path: '/admin/blog-management/blog-list' },
-    { label: 'Add Blog', category: 'Blog Management', path: '/admin/blog-management/add-blog' },
-    { label: 'Blog Sub Category List', category: 'Blog Management', path: '/admin/blog-management/blog-sub-category-list' },
-    { label: 'Add Blog Sub Category', category: 'Blog Management', path: '/admin/blog-management/add-blog-sub-category' },
-    { label: 'Blog Category List', category: 'Blog Management', path: '/admin/blog-management/blog-category-list' },
-    { label: 'Add Blog Category', category: 'Blog Management', path: '/admin/blog-management/add-blog-category' },
-
     { label: 'Customer List', category: 'Customer Management', path: '/admin/customer-management/customer-list' },
-    { label: 'Add New Customer', category: 'Customer Management', path: '/admin/customer-management/add-new-customer' },
     { label: 'Deposit Request List', category: 'Customer Management', path: '/admin/customer-management/deposit-request-list' },
-
-    { label: 'All Page List', category: 'Page Management', path: '/admin/page-management/pages' },
-    { label: 'Add New Page', category: 'Page Management', path: '/admin/page-management/pages/new' },
-
+    { label: 'Contact Queries List', category: 'Query Management', path: '/admin/query-management/query-list' },
+    { label: 'IP Management', category: 'Security Management', path: '/admin/security-management/ip-management' },
+    { label: 'White List IP', category: 'Security Management', path: '/admin/security-management/white-list-ip' },
+    { label: 'Black List IP', category: 'Security Management', path: '/admin/security-management/black-list-ip' },
+    { label: 'Email Logs', category: 'Email Management', path: '/admin/email-management/email-logs' },
+    { label: 'Email Templates', category: 'Email Management', path: '/admin/email-management/email-templates' },
+    { label: 'All Page List', category: 'Page Management', path: '/admin/page-management/all-pages' },
+    { label: 'Add New Page', category: 'Page Management', path: '/admin/page-management/add-page' },
+    { label: 'About Us', category: 'Page Management', path: '/admin/page-management/about-us' },
+    { label: 'Blog List', category: 'Blog Management', path: '/admin/blog-management/blog-list' },
+    { label: 'Blog Category List', category: 'Blog Management', path: '/admin/blog-management/blog-category-list' },
+    { label: 'Blog Sub Category List', category: 'Blog Management', path: '/admin/blog-management/blog-sub-category-list' },
     { label: 'Menu List', category: 'Menu Management', path: '/admin/menu-management/menus' },
-    { label: 'Add Menu', category: 'Menu Management', path: '/admin/menu-management/menus/new' },
-
     { label: 'Offer List', category: 'Offer Management', path: '/admin/offer-management/offers' },
-    { label: 'Add New Offer', category: 'Offer Management', path: '/admin/offer-management/offers/new' },
-
-    { label: 'Query List', category: 'Query Management', path: '/admin/query-management/query-list' },
-
-    { label: 'Testimonial List', category: 'Testimonial Management', path: '/admin/testimonial-management/testimonial-list' },
-    { label: 'Add Testimonial', category: 'Testimonial Management', path: '/admin/testimonial-management/add-testimonial' }
+    { label: 'Transaction Log', category: 'Account Management', path: '/admin/account-management/transaction-log' },
+    { label: 'Bank List', category: 'Account Management', path: '/admin/account-management/bank-list' },
+    { label: 'QrCode List', category: 'Account Management', path: '/admin/account-management/qrcode-list' },
+    { label: 'Payment Upload List', category: 'Account Management', path: '/admin/account-management/payment-upload-list' },
+    { label: 'Balance Sheet', category: 'Account Management', path: '/admin/account-management/balance-sheet' },
 ];
 
 function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleTheme }) {
@@ -1091,7 +1049,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                             </span>
                             <input
                                 type="text"
-                                placeholder="Search anything..."
+                                placeholder="Search for pages..."
                                 value={searchQuery || ''}
                                 onChange={(e) => {
                                     setSearchQuery(e.target.value);

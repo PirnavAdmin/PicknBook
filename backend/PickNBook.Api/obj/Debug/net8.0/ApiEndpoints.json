@@ -463,7 +463,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "category",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -477,6 +483,43 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BusCouponRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "GetCouponConditions",
+    "RelativePath": "api/admin/bus/coupons/{couponId}/conditions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "couponId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "CreateCouponCondition",
+    "RelativePath": "api/admin/bus/coupons/{couponId}/conditions",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "couponId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CreateBusCouponConditionDto",
         "IsRequired": true
       }
     ],
@@ -537,6 +580,43 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "UpdateCouponCondition",
+    "RelativePath": "api/admin/bus/coupons/conditions/{conditionId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conditionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.UpdateBusCouponConditionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "DeleteCouponCondition",
+    "RelativePath": "api/admin/bus/coupons/conditions/{conditionId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conditionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
     "Method": "GetUsedCoupons",
     "RelativePath": "api/admin/bus/coupons/used",
     "HttpMethod": "GET",
@@ -557,159 +637,6 @@
         "Name": "limit",
         "Type": "System.Int32",
         "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "GetDiscounts",
-    "RelativePath": "api/admin/bus/discounts",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "CreateDiscount",
-    "RelativePath": "api/admin/bus/discounts",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.BusDiscountRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "AddDiscountCondition",
-    "RelativePath": "api/admin/bus/discounts/{discountId}/conditions",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "discountId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.CreateBusDiscountConditionDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "GetDiscountConditions",
-    "RelativePath": "api/admin/bus/discounts/{discountId}/conditions",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "discountId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "GetDiscountById",
-    "RelativePath": "api/admin/bus/discounts/{id}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "UpdateDiscount",
-    "RelativePath": "api/admin/bus/discounts/{id}",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.BusDiscountRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "DeleteDiscount",
-    "RelativePath": "api/admin/bus/discounts/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "DeleteDiscountCondition",
-    "RelativePath": "api/admin/bus/discounts/conditions/{conditionId}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "conditionId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
-    "Method": "UpdateDiscountCondition",
-    "RelativePath": "api/admin/bus/discounts/conditions/{conditionId}",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "conditionId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.UpdateBusDiscountConditionDto",
-        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -2787,6 +2714,56 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.AdminMasterDataController",
+    "Method": "ImportAll",
+    "RelativePath": "api/admin/master-data/import/all",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminMasterDataController",
+    "Method": "ImportBusCities",
+    "RelativePath": "api/admin/master-data/import/bus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminMasterDataController",
+    "Method": "ImportFlightData",
+    "RelativePath": "api/admin/master-data/import/flight",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminMasterDataController",
+    "Method": "ImportHotelCities",
+    "RelativePath": "api/admin/master-data/import/hotel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminMasterDataController",
+    "Method": "GetStatus",
+    "RelativePath": "api/admin/master-data/status",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.Admin.ThemesController",
     "Method": "GetFooterConfig",
     "RelativePath": "api/admin/theme-configs/footer",
@@ -3381,6 +3358,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.AuthController",
+    "Method": "SendLoginOtp",
+    "RelativePath": "api/Auth/send-login-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SendLoginOtpRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AuthController",
     "Method": "SendRegistrationOtp",
     "RelativePath": "api/Auth/send-registration-otp",
     "HttpMethod": "POST",
@@ -3390,6 +3383,22 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.SendRegistrationOtpRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AuthController",
+    "Method": "VerifyLoginOtp",
+    "RelativePath": "api/Auth/verify-login-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.VerifyLoginOtpRequest",
         "IsRequired": true
       }
     ],
@@ -4230,6 +4239,69 @@
     "Method": "GetAvailableCoupons",
     "RelativePath": "api/BusBookings/user/available",
     "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "category",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "traceId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "resultIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "seatCodes",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.CashfreePaymentController",
+    "Method": "CreateOrder",
+    "RelativePath": "api/cashfree/create-order",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.Payments.CreateCashfreeOrderRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.CashfreePaymentController",
+    "Method": "VerifyPayment",
+    "RelativePath": "api/cashfree/orders/{orderId}/payments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.CashfreeWebhookController",
+    "Method": "Webhook",
+    "RelativePath": "api/cashfree/webhook",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
@@ -5602,6 +5674,11 @@
       },
       {
         "Name": "field",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "requestType",
         "Type": "System.String",
         "IsRequired": false
       },

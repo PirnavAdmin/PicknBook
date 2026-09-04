@@ -282,16 +282,14 @@ export default function AdminOfferCategoryListPage({ onAddCategory }) {
               )}
             </tbody>
           </table>
-          <div style={{ marginTop: "16px", padding: "0 24px 24px" }}>
-            <AdminPagination
-              currentPage={currentPage}
-              totalItems={filteredCategories.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={setItemsPerPage}
-              itemName="categories"
-            />
-          </div>
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={filteredCategories.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="categories"
+          />
         </section>
       </section>
 

@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { getPendingBookingReturn, clearPendingBookingReturn } from "../../utils/authNavigation";
 import {
   LockKeyhole, Mail, Phone, ShieldCheck,
   Eye, EyeOff, User, ArrowLeft, Facebook,
@@ -9,13 +10,15 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import "../../STYLES/AuthPage.css";
 import brandLogo from "../../assets/images/brand/pick-n-book-logo.png";
-import loginBg from "../../assets/images/high-res-login-bg.jpg";
+import loginBg from "../../assets/images/illustrations/image.png";
 import {
   requestAuth,
   readApiMessage,
   loginUser,
   sendRegistrationOtp,
   verifyRegistrationOtp,
+  sendLoginOtp,
+  verifyLoginOtp,
   registerCustomer,
   forgotPasswordSendOtp,
   forgotPasswordVerifyOtp,
@@ -136,11 +139,44 @@ function StatusBanner({ status }) {
   return <div className={`auth-page-status ${status.type === "success" ? "is-success" : "is-error"}`} role="alert">{status.message}</div>;
 }
 
+/* ─── Password Requirements ───────────────────────────────── */
+function PasswordRequirements({ password }) {
+  if (!password) return null;
+  const reqs = [
+    { label: "8-64 characters", valid: password.length >= 8 && password.length <= 64 },
+    { label: "1 uppercase letter", valid: /[A-Z]/.test(password) },
+    { label: "1 lowercase letter", valid: /[a-z]/.test(password) },
+    { label: "1 number", valid: /\d/.test(password) },
+    { label: "1 special character", valid: /[\W_]/.test(password) },
+    { label: "No spaces", valid: !/\s/.test(password) && password.length > 0 }
+  ];
+
+  return (
+    <div style={{ marginTop: "6px", padding: "10px", background: "#f8fafc", borderRadius: "8px", fontSize: "0.75rem", color: "#64748b" }}>
+      <div style={{ fontWeight: 600, marginBottom: "8px", color: "#334155" }}>Password Requirements:</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+        {reqs.map((req, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", color: req.valid ? "#10b981" : "#64748b" }}>
+            {req.valid ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ) : (
+              <span style={{ width: "10px", height: "10px", borderRadius: "50%", border: "1px solid #cbd5e1" }} />
+            )}
+            <span style={{ lineHeight: 1 }}>{req.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════ */
 export default function AuthPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "";
+  const { returnTo: pendingReturnTo, bookingContext: pendingBookingContext } = getPendingBookingReturn(location, searchParams);
+  const returnTo = pendingReturnTo || searchParams.get("returnTo") || "";
   const initialMode = searchParams.get("mode") || "login";
 
   /* ── Existing login/register state (UNCHANGED) ─────────── */
@@ -157,7 +193,7 @@ export default function AuthPage() {
   const [loading, setLoading]             = useState(false);
   const [viewMode, setViewMode]           = useState(initialMode === "register" ? "register" : "login");
   const [showPassword, setShowPassword]   = useState(false);
-  const [keepSignedIn, setKeepSignedIn]   = useState(true);
+  const [keepSignedIn, setKeepSignedIn]   = useState(false);
   const [adminChallengeId, setAdminChallengeId] = useState("");
 
   /* ── NEW: Forgot-password state ─────────────────────────── */
@@ -195,19 +231,35 @@ export default function AuthPage() {
 
   const formatTime = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  const goBack = () => { if (returnTo && returnTo.startsWith("/")) navigate(returnTo); else navigate(-1); };
+  const goBack = () => { 
+    if (returnTo && returnTo.startsWith("/")) {
+      navigate(returnTo, { state: pendingBookingContext || undefined });
+    } else {
+      navigate(-1);
+    }
+  };
 
-  /* ── completeLogin (UNCHANGED) ─────────────────────────── */
+  /* ── completeLogin ────────────────────────────────────────── */
   const completeLogin = (message) => {
     window.dispatchEvent(new Event("storage"));
     setStatus({ type: "success", message });
+
+    const targetReturn = returnTo;
+    const targetContext = pendingBookingContext;
+    clearPendingBookingReturn();
+
     window.setTimeout(() => {
       const role = (localStorage.getItem("role") || sessionStorage.getItem("role")) || "";
-      if (returnTo && returnTo.startsWith("/")) window.location.href = returnTo;
-      else if (role === "Admin") window.location.href = "/admin";
-      else if (role === "Agent" || role === "B2B") window.location.href = "/b2b/dashboard";
-      else window.location.href = "/";
-    }, 500);
+      if (targetReturn && targetReturn.startsWith("/")) {
+        navigate(targetReturn, { state: targetContext || undefined, replace: true });
+      } else if (role === "Admin") {
+        navigate("/admin", { replace: true });
+      } else if (role === "Agent" || role === "B2B") {
+        navigate("/b2b/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }, 400);
   };
 
   /* ── Input handlers (UNCHANGED) ─────────────────────────── */
@@ -231,35 +283,52 @@ export default function AuthPage() {
     bump();
   };
 
-  /* ── sendOtp (UNCHANGED) ────────────────────────────────── */
+  /* ── sendOtp ────────────────────────────────────────────── */
   const sendOtp = async (e) => {
     if (e) e.preventDefault();
     if (loading) return;
     if (!/^[6-9]\d{9}$/.test(mobile)) { setErrors({ mobile: "Enter a valid 10-digit mobile number" }); return; }
     setLoading(true); setStatus({type:"",message:""});
     try {
-      const payload = await sendRegistrationOtp({ phoneNumber: mobile, channel: "Mobile" });
+      const payload = await sendLoginOtp({ phoneNumber: mobile });
       setOtpSent(true); setOtp(""); setTimeLeft(300);
       setStatus({ type:"success", message: readApiMessage(payload, "OTP sent to your mobile number.") });
     } catch (error) {
-      setStatus({ type:"error", message: error?.message || "Mobile OTP login is not available for this number yet." });
+      setStatus({ type:"error", message: error?.message || "Mobile number not registered." });
     } finally { setLoading(false); }
   };
 
-  /* ── verifyOtp (UNCHANGED) ──────────────────────────────── */
+  /* ── verifyOtp ───────────────────────────────────────────── */
   const verifyOtp = async (e) => {
     e.preventDefault(); if (loading) return;
     if (!/^\d{6}$/.test(otp)) { setErrors({ otp: "Enter the 6-digit OTP" }); return; }
     setLoading(true); setStatus({type:"",message:""});
     try {
-      await verifyRegistrationOtp({ phoneNumber: mobile, channel: "Mobile", otp });
-      const storage = keepSignedIn ? localStorage : sessionStorage;
-      const guestUser = buildGuestUserFromMobile(mobile);
-      storage.setItem("user", JSON.stringify(guestUser)); storage.setItem("userId", guestUser.userId);
-      storage.setItem("token", "otp-verified-session");
-      localStorage.removeItem("role"); localStorage.removeItem("challengeId");
-      sessionStorage.removeItem("role"); sessionStorage.removeItem("challengeId");
-      completeLogin("Mobile verified. Login successful.");
+      const guestId = localStorage.getItem("guest_id") || sessionStorage.getItem("guest_id") || null;
+      const payload = await verifyLoginOtp({ phoneNumber: mobile, otp }, guestId);
+      
+      const token = extractToken(payload);
+      const user = buildUserFromEmailLogin(payload, mobile);
+      const userRole = user.role || "Customer";
+      
+      localStorage.setItem("user", JSON.stringify(user)); 
+      localStorage.setItem("userId", user.userId); 
+      localStorage.setItem("role", userRole);
+      sessionStorage.setItem("user", JSON.stringify(user)); 
+      sessionStorage.setItem("userId", user.userId); 
+      sessionStorage.setItem("role", userRole);
+      
+      if (token) {
+        localStorage.setItem("token", token);
+        sessionStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+      }
+      
+      localStorage.removeItem("challengeId"); 
+      sessionStorage.removeItem("challengeId");
+      completeLogin(readApiMessage(payload, "Mobile verified. Login successful."));
     } catch (error) {
       setStatus({ type:"error", message: error?.message || "Invalid or expired OTP." });
     } finally { setLoading(false); }
@@ -272,6 +341,12 @@ export default function AuthPage() {
     if (!/^[6-9]\d{9}$/.test(mobile)) { setErrors({ mobile:"Enter a valid 10-digit mobile number" }); return; }
     const registerEmailVal = validateEmailAddress(email);
     if (!registerEmailVal.valid) { setErrors({ email: registerEmailVal.error }); return; }
+    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[^\s]{8,64}$/;
+    if (!pwdRegex.test(password)) {
+      setErrors({ password: "Password does not meet all requirements." });
+      setStatus({type:"error", message:"Please fix the password requirements."});
+      return;
+    }
     setLoading(true); setStatus({type:"",message:""});
     try {
       const payload = await sendRegistrationOtp({ email, channel: "Email" });
@@ -308,8 +383,8 @@ export default function AuthPage() {
         const rawToken = data?.token || data?.Token || data?.tokenString || data?.data?.token || "";
         const rawRole  = data?.role  || data?.Role  || data?.data?.role  || "admin";
         const rawName  = data?.name  || data?.fullName || data?.email || data?.data?.name || "Admin";
-        const storage = keepSignedIn ? localStorage : sessionStorage;
-        storage.setItem("adminToken",rawToken); storage.setItem("adminRole",rawRole); storage.setItem("adminName",rawName); storage.setItem("role","Admin");
+        localStorage.setItem("adminToken", rawToken); localStorage.setItem("adminRole", rawRole); localStorage.setItem("adminName", rawName); localStorage.setItem("role", "Admin");
+        sessionStorage.setItem("adminToken", rawToken); sessionStorage.setItem("adminRole", rawRole); sessionStorage.setItem("adminName", rawName); sessionStorage.setItem("role", "Admin");
         localStorage.removeItem("challengeId"); sessionStorage.removeItem("challengeId");
         completeLogin("Admin login successful.");
       } catch (error) { setStatus({type:"error", message: error?.message || "Invalid OTP"}); } finally { setLoading(false); }
@@ -328,15 +403,24 @@ export default function AuthPage() {
       const user     = buildUserFromEmailLogin(payload, trimmedEmail);
       const userRole = user.role || "Customer";
       const roleLower = userRole.toLowerCase();
-      const storage = keepSignedIn ? localStorage : sessionStorage;
       if (roleLower === "agent" || roleLower === "b2b") {
-        storage.setItem("b2b_user", JSON.stringify(user)); storage.setItem("b2b_userId", user.userId);
-        storage.setItem("b2b_role","Agent"); if (token) storage.setItem("b2b_token",token); storage.setItem("role","Agent");
+        localStorage.setItem("b2b_user", JSON.stringify(user)); localStorage.setItem("b2b_userId", user.userId);
+        localStorage.setItem("b2b_role", "Agent"); if (token) localStorage.setItem("b2b_token", token); localStorage.setItem("role", "Agent");
+        sessionStorage.setItem("b2b_user", JSON.stringify(user)); sessionStorage.setItem("b2b_userId", user.userId);
+        sessionStorage.setItem("b2b_role", "Agent"); if (token) sessionStorage.setItem("b2b_token", token); sessionStorage.setItem("role", "Agent");
       } else if (roleLower === "admin") {
-        storage.setItem("adminRole","admin"); if (token) storage.setItem("adminToken",token); storage.setItem("role","Admin");
+        localStorage.setItem("adminRole", "admin"); if (token) localStorage.setItem("adminToken", token); localStorage.setItem("role", "Admin");
+        sessionStorage.setItem("adminRole", "admin"); if (token) sessionStorage.setItem("adminToken", token); sessionStorage.setItem("role", "Admin");
       } else {
-        storage.setItem("user", JSON.stringify(user)); storage.setItem("userId",user.userId); storage.setItem("role",userRole);
-        if (token) { storage.setItem("token",token); } else { localStorage.removeItem("token"); sessionStorage.removeItem("token"); }
+        localStorage.setItem("user", JSON.stringify(user)); localStorage.setItem("userId", user.userId); localStorage.setItem("role", userRole);
+        sessionStorage.setItem("user", JSON.stringify(user)); sessionStorage.setItem("userId", user.userId); sessionStorage.setItem("role", userRole);
+        if (token) { 
+          localStorage.setItem("token", token); 
+          sessionStorage.setItem("token", token); 
+        } else { 
+          localStorage.removeItem("token"); 
+          sessionStorage.removeItem("token"); 
+        }
       }
       localStorage.removeItem("challengeId"); sessionStorage.removeItem("challengeId");
       completeLogin(readApiMessage(payload, "Login successful."));
@@ -399,7 +483,10 @@ export default function AuthPage() {
   const fpDoResetPassword = async (e) => {
     e.preventDefault(); if (fpLoading) return;
     const errs = {};
-    if (!fpNewPassword || fpNewPassword.length < 6) errs.newPassword = "Password must be at least 6 characters";
+    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[^\s]{8,64}$/;
+    if (!pwdRegex.test(fpNewPassword)) {
+      errs.newPassword = "Password does not meet all requirements.";
+    }
     if (fpNewPassword !== fpConfirmPassword) errs.confirmPassword = "Passwords do not match";
     if (Object.keys(errs).length) { setFpErrors(errs); return; }
     setFpLoading(true); setFpStatus({type:"",message:""}); setFpErrors({});
@@ -454,10 +541,8 @@ export default function AuthPage() {
             LEFT PANEL: Value Proposition & Brand
         =========================================== */}
         <div className="scenic-left-pane">
-          {/* Logo */}
-          <div className="scenic-brand-header">
-            <img src={brandLogo} alt="PicknBook" className="scenic-logo" />
-          </div>
+          {/* Logo - single element */}
+          <img src={brandLogo} alt="Pick N Book" className="scenic-logo" />
 
           {/* Typography */}
           <h1 className="scenic-headline">
@@ -473,23 +558,7 @@ export default function AuthPage() {
 
           {/* 4 Service Cards */}
           <div className="scenic-services-grid">
-            <div className="scenic-service-card">
-              <div className="scenic-icon-circle" style={{ backgroundColor: "#ef4444", color: "#fff" }}>
-                <Plane size={24} />
-              </div>
-              <h4 className="scenic-service-title">Flights</h4>
-              <p className="scenic-service-desc">Book domestic &<br/>international flights</p>
-            </div>
-
-            <div className="scenic-service-card">
-              <div className="scenic-icon-circle" style={{ backgroundColor: "#8b5cf6", color: "#fff" }}>
-                <Building2 size={24} />
-              </div>
-              <h4 className="scenic-service-title">Hotels</h4>
-              <p className="scenic-service-desc">Find comfortable stays at<br/>best prices</p>
-            </div>
-
-            <div className="scenic-service-card">
+            <div className="scenic-service-card" style={{ cursor: "pointer" }} onClick={() => navigate("/?tab=buses")}>
               <div className="scenic-icon-circle" style={{ backgroundColor: "#f97316", color: "#fff" }}>
                 <Bus size={24} />
               </div>
@@ -497,21 +566,29 @@ export default function AuthPage() {
               <p className="scenic-service-desc">Find buses to your<br/>destinations</p>
             </div>
 
-            <div className="scenic-service-card">
-              <div className="scenic-icon-circle" style={{ backgroundColor: "#0ea5e9", color: "#fff" }}>
-                <MapPin size={24} />
+            <div className="scenic-service-card" style={{ cursor: "pointer" }} onClick={() => navigate("/?tab=flights")}>
+              <div className="scenic-icon-circle" style={{ backgroundColor: "#ef4444", color: "#fff" }}>
+                <Plane size={24} />
               </div>
-              <h4 className="scenic-service-title">Holidays</h4>
-              <p className="scenic-service-desc">Plan travel experiences</p>
+              <h4 className="scenic-service-title">Flights</h4>
+              <p className="scenic-service-desc">Book domestic &<br/>international flights</p>
+            </div>
+
+            <div className="scenic-service-card" style={{ cursor: "pointer" }} onClick={() => navigate("/?tab=hotels")}>
+              <div className="scenic-icon-circle" style={{ backgroundColor: "#8b5cf6", color: "#fff" }}>
+                <Building2 size={24} />
+              </div>
+              <h4 className="scenic-service-title">Hotels</h4>
+              <p className="scenic-service-desc">Find comfortable stays at<br/>best prices</p>
             </div>
           </div>
 
           {/* Trust Badges */}
           <div className="scenic-trust-row">
             <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Best Prices Guaranteed</span>
-            <span className="scenic-trust-badge" style={{ borderLeft: "1px solid #cbd5e1", paddingLeft: "20px" }}><ShieldCheck size={14} color="#dc1e26" /> Safe & Secure Payments</span>
-            <span className="scenic-trust-badge" style={{ borderLeft: "1px solid #cbd5e1", paddingLeft: "20px" }}><Phone size={14} color="#dc1e26" /> 24/7 Customer Support</span>
-            <span className="scenic-trust-badge" style={{ borderLeft: "1px solid #cbd5e1", paddingLeft: "20px" }}><ShieldCheck size={14} color="#dc1e26" /> Easy Booking Experience</span>
+            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Safe & Secure Payments</span>
+            <span className="scenic-trust-badge"><Phone size={14} color="#dc1e26" /> 24/7 Customer Support</span>
+            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Easy Booking Experience</span>
           </div>
         </div>
 
@@ -519,13 +596,6 @@ export default function AuthPage() {
       <div className="auth-card-wrap">
         <div className="auth-card">
 
-          {/* Top row: back + logo */}
-          <div className="auth-card-top">
-            <button type="button" className="auth-back-pill" onClick={goBack} aria-label="Go back">
-              <ArrowLeft size={14} /><span>Back</span>
-            </button>
-            <img src={brandLogo} alt="Pick N Book" className="auth-card-logo" />
-          </div>
 
           {/* Step dots — forgot-password only */}
           {viewMode === "forgot-password" && <StepDots total={3} current={fpStep} />}
@@ -691,12 +761,20 @@ export default function AuthPage() {
                       {showPassword ? <EyeOff size={15}/> : <Eye size={15}/>}
                     </button>
                   </div>
+                  <PasswordRequirements password={password} />
                 </div>
-                <button type="button" className="auth-back-btn" onClick={() => switchView("login")}>← Back to Login</button>
                 <button type="submit" className="auth-primary-btn" disabled={loading}>
                   {loading ? <><Spinner />Please wait…</> : "Send OTP"}
                 </button>
                 <p className="auth-terms">By continuing you agree to our <a href="/online/terms">Terms &amp; Privacy Policy</a></p>
+                <button
+                  type="button"
+                  className="auth-back-btn"
+                  style={{ marginTop: "10px", width: "100%", justifyContent: "center" }}
+                  onClick={() => switchView("login")}
+                >
+                  ← Back to Login
+                </button>
               </form>
             )}
 
@@ -769,7 +847,14 @@ export default function AuthPage() {
                     <button type="submit" className="auth-primary-btn" disabled={fpLoading}>
                       {fpLoading ? <><Spinner />Sending OTP…</> : "Send Reset OTP"}
                     </button>
-                    <button type="button" className="auth-back-btn" onClick={() => switchView("login")}>← Back to Login</button>
+                    <button
+                      type="button"
+                      className="auth-back-btn"
+                      style={{ marginTop: "14px", width: "100%", justifyContent: "center" }}
+                      onClick={() => switchView("login")}
+                    >
+                      ← Back to Login
+                    </button>
                   </form>
                 )}
 
@@ -815,6 +900,7 @@ export default function AuthPage() {
                           {fpShowNewPwd ? <EyeOff size={15}/> : <Eye size={15}/>}
                         </button>
                       </div>
+                      <PasswordRequirements password={fpNewPassword} />
                       {fpErrors.newPassword && <span className="auth-field-error">{fpErrors.newPassword}</span>}
                     </div>
                     <div className="auth-field-group">
@@ -831,12 +917,28 @@ export default function AuthPage() {
                     <button type="submit" className="auth-primary-btn" disabled={fpLoading}>
                       {fpLoading ? <><Spinner />Resetting…</> : "Reset Password"}
                     </button>
+                    <button
+                      type="button"
+                      className="auth-back-btn"
+                      style={{ marginTop: "14px", width: "100%", justifyContent: "center" }}
+                      onClick={() => switchView("login")}
+                    >
+                      ← Back to Login
+                    </button>
                   </form>
                 )}
               </>
             )}
 
           </div>{/* /auth-step-enter */}
+
+          {/* Bottom back button - login view only */}
+          {viewMode === "login" && (
+            <button type="button" className="auth-back-pill auth-back-bottom" onClick={goBack} aria-label="Go back">
+              <ArrowLeft size={14} /><span>Back</span>
+            </button>
+          )}
+
         </div>{/* /auth-card */}
       </div>{/* /auth-card-wrap */}
       </div>{/* /scenic-layout */}

@@ -3,7 +3,7 @@ import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
 import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
 
 const FALLBACK_API_BASE_URL =
-  "https://humiliate-eatery-humvee.ngrok-free.dev";
+  "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function isLocalDevelopment() {
   if (process.env.NODE_ENV !== "development") {
@@ -2032,10 +2032,6 @@ export async function searchFlights(searchParams) {
   });
 
   const payload = {
-    EndUserIp: searchParams.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     AdultCount: Number(searchParams.adults !== undefined ? searchParams.adults : 1),
     ChildCount: Number(searchParams.children !== undefined ? searchParams.children : 0),
     InfantCount: Number(searchParams.infants !== undefined ? searchParams.infants : 0),
@@ -2043,7 +2039,6 @@ export async function searchFlights(searchParams) {
     ...(resolvedJourneyType !== 3
       ? {
           DirectFlight: Boolean(searchParams.directFlight ?? false),
-          OneStopFlight: Boolean(searchParams.oneStopFlight ?? false),
         }
       : {}),
     Segments: segments,
@@ -2395,10 +2390,6 @@ export async function getFlightSeatMap(paramsOrTrace = {}, resultIdx = null, srd
   }
 
   const payload = {
-    EndUserIp: paramObj?.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     SrdvType: activeSrdvType,
@@ -2476,7 +2467,7 @@ export function formatPassengerMeals(selectedMealsForPax, flight = {}) {
           Code: code,
           Description: String(meal.Description || meal.AirlineDescription || meal.description || "Meal").trim(),
           Price: Number(meal.Price ?? meal.Amount ?? meal.price ?? 0),
-          Quantity: "1", // âœ… CRITICAL: Always 1 per duplicate object (as string)
+          Quantity: "1", // ✅ CRITICAL: Always 1 per duplicate object (as string)
           Origin: String(meal.Origin || meal.origin || flight.sourceCode || flight.Origin || "").toUpperCase(),
           Destination: String(meal.Destination || meal.destination || flight.destinationCode || flight.Destination || "").toUpperCase()
         });
@@ -2501,7 +2492,7 @@ export function formatPassengerMeals(selectedMealsForPax, flight = {}) {
           Code: mealCode,
           Description: String(rawMeal.Description || rawMeal.description || "Meal").trim(),
           Price: Number(rawMeal.Price ?? rawMeal.Amount ?? rawMeal.price ?? 0),
-          Quantity: "1", // âœ… CRITICAL: Always 1 (as string)
+          Quantity: "1", // ✅ CRITICAL: Always 1 (as string)
           Origin: String(rawMeal.Origin || rawMeal.origin || flight.sourceCode || "").toUpperCase(),
           Destination: String(rawMeal.Destination || rawMeal.destination || flight.destinationCode || "").toUpperCase()
         });
@@ -2694,10 +2685,6 @@ export async function ticketLCC(params = {}) {
     : mapPassengersForApi(rawPassengers, params.baseFare, params.tax, params.flight, params.fareDetails);
 
   const innerPayload = {
-    EndUserIp: params.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     SrdvType: activeSrdvType,
@@ -2779,10 +2766,6 @@ export async function holdGDS(params = {}) {
     : mapPassengersForApi(rawPassengers, params.baseFare, params.tax, params.flight);
 
   const innerPayload = {
-    EndUserIp: params.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     JourneyType: journeyTypeVal,
@@ -2823,10 +2806,6 @@ export async function ticketGDS(params = {}) {
     : mapPassengersForApi(rawPassengers, params.baseFare, params.tax, params.flight);
 
   const innerPayload = {
-    EndUserIp: params.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     PNR: String(params.pnr || params.PNR || ""),
@@ -2859,7 +2838,6 @@ export async function ticketGDS(params = {}) {
 
 export async function getCancellationCharges(params = {}) {
   const payload = {
-    EndUserIp: "127.0.0.1",
     RequestType: Number(params.requestType || params.RequestType || 1),
     TraceId: String(params.traceId || params.TraceId || ""),
     BookingId: String(params.bookingId || params.BookingId || ""),
@@ -2886,7 +2864,6 @@ export async function getCancellationCharges(params = {}) {
 
 export async function sendCancelRequest(params = {}) {
   const payload = {
-    EndUserIp: "127.0.0.1",
     BookingId: String(params.bookingId || params.BookingId || ""),
     PNR: String(params.pnr || params.PNR || ""),
     RequestType: String(params.requestType || params.RequestType || "2"),
@@ -2925,7 +2902,6 @@ export async function getCancelStatus(params = {}) {
     : String(params || "");
 
   const payload = {
-    EndUserIp: "127.0.0.1",
     ChangeRequestId: String(changeRequestId),
   };
 
@@ -2966,10 +2942,6 @@ export async function getCalendarFare(searchParams = {}) {
   const cabinClassCode = toCabinClassCode(searchParams.travelClass || searchParams.flightCabinClass);
 
   const payload = {
-    EndUserIp: searchParams.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     JourneyType: Number(searchParams.journeyType || 1),
     FareType: Number(searchParams.fareType || 1),
     Segments: [

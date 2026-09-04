@@ -10,22 +10,65 @@
 
 .admin-booking-page .admin-table-head {
   background: linear-gradient(135deg, #A51C49, #851237);
+  display: grid;
+  grid-template-columns: 0.9fr 1.4fr 1.3fr 1.0fr 1.5fr 1.3fr 0.7fr 0.9fr 0.6fr;
+  gap: 6px;
+  align-items: center;
 }
 
 .admin-booking-page .admin-table-head span {
   background: transparent !important;
   box-shadow: none !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: center;
+}
+
+.admin-booking-page .admin-table-head span:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
 .admin-booking-page .admin-table-row {
   border-top-color: var(--admin-border);
+  display: grid;
+  grid-template-columns: 0.9fr 1.4fr 1.3fr 1.0fr 1.5fr 1.3fr 0.7fr 0.9fr 0.6fr;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--admin-surface);
+  align-items: stretch;
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-booking-page .admin-table-row:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  transform: translateY(-1px);
+}
+
+.admin-booking-page .admin-table-row:hover .admin-table-cell {
+  background: #f8fafc;
+  border-color: rgba(165, 28, 73, 0.25);
 }
 
 .admin-booking-page .admin-table-cell {
-  border-color: var(--admin-border);
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
   background: #ffffff;
   color: var(--admin-text);
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
+  text-align: center;
 }
 
 .admin-booking-page .admin-table-cell strong {
@@ -35,16 +78,27 @@
   text-overflow: ellipsis;
   max-width: 100%;
   display: block;
+  font-weight: 500;
+  font-size: 0.76rem;
+  text-align: center;
 }
 
 .admin-booking-page .admin-table-cell small {
   color: var(--admin-muted);
+  font-size: 0.65rem;
+  font-weight: 400;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
 }
 
 .admin-booking-page .admin-status-pill.success {
   background: #e6f4ea;
   color: #137333;
-  border: 1.5px solid #137333;
+  border: 1px solid #137333;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
@@ -57,7 +111,7 @@
 .admin-booking-page .admin-status-pill.pending {
   background: #fff3cd;
   color: #b06000;
-  border: 1.5px solid #b06000;
+  border: 1px solid #b06000;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
@@ -70,7 +124,7 @@
 .admin-booking-page .admin-status-pill.cancelled {
   background: #fce8e6;
   color: #c5221f;
-  border: 1.5px solid #c5221f;
+  border: 1px solid #c5221f;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
@@ -110,7 +164,7 @@
 
 .admin-booking-page .admin-stat-grid {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: stretch;
   flex-wrap: wrap;
 }
@@ -118,100 +172,40 @@
 .admin-booking-page .admin-stat-card {
   border: 1px solid var(--admin-border);
   background: var(--admin-surface);
-  border-radius: 14px;
-  padding: 14px;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.03);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.02);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
   flex: 1;
-  min-width: 180px;
+  min-width: 140px;
 }
 
 .admin-booking-page .admin-stat-card strong {
-  font-size: 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--admin-primary);
 }
 
 .admin-booking-page .admin-stat-card span {
-  font-size: 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 400;
   color: var(--admin-muted);
-}
-
-.admin-booking-page .admin-stat-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content: space-between;
-  flex: 1;
-  min-width: 180px;
-}
-
-.admin-booking-page .admin-stat-stack button {
-  flex: 1;
-  border: 1.5px solid #A51C49;
-  background: #ffffff;
-  color: #000000;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  transition: all 0.2s ease-in-out;
-}
-
-.admin-booking-page .admin-stat-stack button:hover {
-  background: #A51C49;
-  color: #ffffff;
-}
-
-.admin-booking-page .admin-table-head {
-  display: grid;
-  grid-template-columns: 0.6fr 1.4fr 1.3fr 1.0fr 1.8fr 1.3fr 0.7fr 0.9fr 0.6fr;
-  gap: 8px;
-  align-items: center;
 }
 
 .admin-booking-page .admin-table-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-}
-
-.admin-booking-page .admin-table-row {
-  display: grid;
-  grid-template-columns: 0.6fr 1.4fr 1.3fr 1.0fr 1.8fr 1.3fr 0.7fr 0.9fr 0.6fr;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 14px;
-  background: var(--admin-surface);
-  align-items: stretch; /* Stretch cells to equal height */
-}
-
-.admin-booking-page .admin-table-cell {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  min-width: 0;
-  border: 1px solid var(--admin-border);
-  background: #ffffff;
-}
-
-.admin-booking-page .admin-table-cell small {
-  font-size: 0.75rem;
+  gap: 6px;
+  padding: 8px;
 }
 
 .admin-booking-page .admin-cell-centered {
   text-align: center;
   align-items: center;
+  justify-content: center;
 }
 
 /* Style specific columns for better readability and fitting */
@@ -221,7 +215,7 @@
 
 .admin-booking-page .admin-table-cell:nth-child(5) strong {
   font-family: monospace;
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   letter-spacing: -0.01em;
 }
 
@@ -229,20 +223,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  padding: 2px 6px;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 500;
   text-transform: capitalize;
 }
 
 .admin-booking-page .admin-action-btn {
-  border: 1.5px solid #1a73e8;
+  border: 1px solid #1a73e8;
   background: #e8f0fe;
   color: #1a73e8;
-  padding: 6px 12px;
-  border-radius: 10px;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.72rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
@@ -256,7 +251,7 @@
   padding: 16px;
   text-align: center;
   color: var(--admin-muted);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .admin-booking-page .admin-view-backdrop {
@@ -397,54 +392,58 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
+  height: 30px;
   box-sizing: border-box;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   border-radius: 999px; /* Make buttons also pills to align beautifully with chips */
-  padding: 0 16px;
+  padding: 0 12px;
   transition: all 0.2s ease-in-out;
 }
 
 .admin-booking-page .admin-chip {
   background: #ffffff;
   color: #A51C49;
-  border: 1.5px solid #A51C49 !important;
+  border: 1px solid #A51C49 !important;
 }
 
 /* Specific styling for the total chip */
 .admin-booking-page .admin-total-chip {
   background: #A51C49 !important;
   color: #ffffff !important;
-  border: 1.5px solid #A51C49 !important;
+  border: 1px solid #A51C49 !important;
 }
 
 /* Open Filter / Close Filter button */
 .admin-booking-page .admin-actions-row button:first-child {
-  background: #ffffff;
-  color: #000000;
-  border: 1.5px solid #A51C49;
+  background: #A51C49;
+  color: #ffffff;
+  border: 1px solid #A51C49;
   cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
 .admin-booking-page .admin-actions-row button:first-child:hover {
-  background: #A51C49;
+  background: #851237;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2);
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Export button */
 .admin-booking-page .admin-actions-row button:last-child {
-  background: #ffffff;
-  color: #000000;
-  border: 1.5px solid #A51C49;
+  background: #137333;
+  color: #ffffff;
+  border: 1px solid #137333;
   cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
 .admin-booking-page .admin-actions-row button:last-child:hover {
-  background: #A51C49;
+  background: #0f5d29;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2);
+  box-shadow: 0 4px 12px rgba(19, 115, 51, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Pagination container styles */
@@ -531,32 +530,70 @@
 
 /* Route Segment & Date styles */
 .admin-route-segment {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 700;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 500;
   color: var(--admin-text);
-  font-size: 0.9rem;
-  flex-wrap: wrap;
+  font-size: 0.76rem;
+  flex-wrap: nowrap;
 }
 
 .admin-segment-arrow {
   color: var(--admin-primary);
   font-weight: bold;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
 
 .admin-date-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 4px;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 0;
   color: var(--admin-muted);
-  font-size: 0.76rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 400;
+  white-space: nowrap !important;
 }
 
 .admin-calendar-emoji {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+}
+
+/* Compact Filters Small UI styles */
+.admin-booking-page .admin-ops-filters {
+  padding: 8px 12px !important;
+  gap: 12px !important;
+  border-radius: 8px !important;
+}
+
+.admin-booking-page .admin-ops-filters label {
+  min-width: 130px !important;
+  max-width: 180px !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+.admin-booking-page .admin-ops-filters input,
+.admin-booking-page .admin-ops-filters select {
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  height: 28px !important;
+}
+
+.admin-booking-page .admin-ops-filters .filters-actions {
+  gap: 6px !important;
+}
+
+.admin-booking-page .admin-ops-filters .filters-actions button {
+  height: 28px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
 }
 

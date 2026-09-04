@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -37,6 +38,10 @@ import {
   Handshake,
   Star,
   Quote,
+  Mail,
+  Gift,
+  Sparkles,
+  Send,
 } from "lucide-react";
 import HotelSearchWidget from "../../components/HotelSearchWidget";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
@@ -57,9 +62,15 @@ import hotelServiceSearch from "../../assets/images/illustrations/hotel-service-
 import hotelServiceRooms from "../../assets/images/illustrations/hotel-service-rooms.png";
 import hotelServiceCheckin from "../../assets/images/illustrations/hotel-service-checkin.png";
 import flightSectionBanner from "../../assets/images/illustrations/flight-section-banner.png";
+import flightSectionNewBanner from "../../assets/images/image.png";
 import flightHeroThemeImg from "../../assets/images/illustrations/flight-hero-theme.png";
-import flightHeroThemeVideo from "../../assets/images/illustrations/flight-hero-theme.mp4";
-import hotelSectionBanner from "../../assets/images/illustrations/hotel-section-banner.png";
+import flightHeroThemeVideo from "../../assets/images/Give_me_a_background_screen_HD_1080p.mp4";
+import busHeroVideo from "../../assets/images/PickNBook_SingleScreen_Color_HD.mp4";
+import hotelHeroVideo from "../../assets/images/remove_cotage_make_different_HD_no_Gemini.mp4";
+import hotelSectionBanner from "../../assets/images/illustrations/hotel-reception-banner.jpg";
+import busCoastBanner from "../../assets/images/illustrations/bus-coast-banner.jpg";
+import picknbookLogin from "../../assets/images/picknbook-login.png";
+import picknbookAllTravelBanner from "../../assets/images/illustrations/picknbook-all-travel-banner.jpg";
 import airIndiaExpress from "../../assets/images/brands/air-india-express.png";
 import airIndia from "../../assets/images/brands/air-india.png";
 import akasaAir from "../../assets/images/brands/akasa-air.png";
@@ -78,6 +89,8 @@ import { listHotFlightRoutes } from "../../services/flightBookingService";
 import { searchHotels } from "../../services/hotelBookingService";
 import { toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
+
+const hikerLandscapeBg = picknbookAllTravelBanner;
 
 
 function AiFlightLogoIcon({ className, size = 32 }) {
@@ -478,21 +491,21 @@ const CITY_IMAGES = {
   mumbai: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
   bombay: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
   bom: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=560&q=75&fit=crop&auto=format",
-  /* â”€â”€ Delhi / New Delhi â”€â”€ */
+  /* ─── Delhi / New Delhi ─── */
   delhi: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   "new delhi": "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   del: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
   ixi: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=560&q=75&fit=crop&auto=format",
-  /* â”€â”€ Bengaluru / Bangalore â”€â”€ */
-  bengaluru: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
-  bangalore: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
-  blr: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
-  bng: "https://images.unsplash.com/photo-1445991842772-097fea258e7b?w=560&q=75&fit=crop&auto=format",
-  /* â”€â”€ Chennai â”€â”€ */
-  chennai: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
-  madras: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
-  maa: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=560&q=75&fit=crop&auto=format",
-  /* â”€â”€ Kolkata â”€â”€ */
+  /* ─── Bengaluru / Bangalore ─── */
+  bengaluru: "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=560&q=75&fit=crop&auto=format",
+  bangalore: "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=560&q=75&fit=crop&auto=format",
+  blr: "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=560&q=75&fit=crop&auto=format",
+  bng: "https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=560&q=75&fit=crop&auto=format",
+  /* ─── Chennai ─── */
+  chennai: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=560&q=75&fit=crop&auto=format",
+  madras: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=560&q=75&fit=crop&auto=format",
+  maa: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=560&q=75&fit=crop&auto=format",
+  /* ─── Kolkata ─── */
   kolkata: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
   calcutta: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
   ccu: "https://images.unsplash.com/photo-1558431382-27e303142255?w=560&q=75&fit=crop&auto=format",
@@ -1340,9 +1353,9 @@ const HOME_MODE_CONTENT = {
   buses: {
     mode: "buses",
     Icon: Bus,
-    heroTitleStart: "Travel Beyond ",
-    heroTitleEnd: "Where Roads Lead",
-    heroSubtitle: "Book your bus tickets easily with lowest fares, live tracking, easy cancellation, and secure booking.",
+    heroTitleStart: "Collect Moments, ",
+    heroTitleEnd: "Not Just Miles.",
+    heroSubtitle: "The best journeys aren’t measured in kilometres. They’re measured in the moments that quietly stay with us.",
     heroTags: ["Live Bus Tracking", "Seat Selection", "Boarding Clarity"],
     valueProps: [
       { icon: Bus, title: "Comfortable Journey", desc: "Spacious seats and premium comfort" },
@@ -1386,6 +1399,16 @@ const HOME_MODE_CONTENT = {
       "Pick N Book bus booking mode helps you compare routes, fares, travel duration, and seat availability from top private operators and state transport corporations.",
       "With direct operator mappings, clear cancellation terms, boarding clarity, and secure payments, we make city-to-city road travel easy and reliable."
     ],
+    bannerBadge: "INTERCITY BUS & SEAT GUARANTEE",
+    bannerTitle: "Book Bus Tickets Smarter. Travel Farther.",
+    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick N Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes.",
+    bannerStats: [
+      ["99.8%", "On-Time Departure"],
+      ["5,000+", "Daily Bus Routes"],
+      ["0%", "Hidden Fees"],
+    ],
+    bannerImage: busCoastBanner,
+    bannerAlt: "Luxury Bus Travel",
   },
   flights: {
     mode: "flights",
@@ -1436,6 +1459,16 @@ const HOME_MODE_CONTENT = {
       "Pick N Book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
       "Manage booking passenger details, select your seats, view cabin class conditions, and complete check-in procedures directly from your personalized portal."
     ],
+    bannerBadge: "FLIGHT DESK & PASSENGER GUARANTEE",
+    bannerTitle: "Book Flights Smarter. Fly Higher.",
+    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick N Book for domestic & international flights with real-time fare comparison and web check-in.",
+    bannerStats: [
+      ["99.9%", "Flight Reliability"],
+      ["500+", "Global Airlines"],
+      ["0%", "Hidden Fees"],
+    ],
+    bannerImage: flightSectionNewBanner,
+    bannerAlt: "Worldwide Flight Desk",
   },
   hotels: {
     mode: "hotels",
@@ -1486,6 +1519,16 @@ const HOME_MODE_CONTENT = {
       "Pick N Book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
       "Whether it is a business trip, weekend break, family stay, or stopover, hotel mode keeps room choices, stay dates, amenities, and booking details easy to compare.",
     ],
+    bannerBadge: "STAY & ROOM CONFIRMATION GUARANTEE",
+    bannerTitle: "Book Hotels Smarter. Stay Better.",
+    bannerText: "Join over 10 Lakh+ happy travelers who trust Pick N Book for verified hotel stays, luxury resorts, and instant check-in confirmation.",
+    bannerStats: [
+      ["100%", "Stay Assurance"],
+      ["10,000+", "Verified Stays"],
+      ["0%", "Hidden Fees"],
+    ],
+    bannerImage: hotelSectionBanner,
+    bannerAlt: "Luxury Hotel Stays",
   },
 };
 
@@ -1903,7 +1946,7 @@ function normalizeFeaturedOffer(offer, index) {
   };
 }
 
-function AutoMarquee({ items, className, duration, renderItem }) {
+function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = true }) {
   const marqueeRef = useRef(null);
   const animationFrameRef = useRef(null);
   const draggedClickRef = useRef(false);
@@ -1965,7 +2008,7 @@ function AutoMarquee({ items, className, duration, renderItem }) {
           if (Math.abs(momentumRef.current) > 0.02) {
             currentNode.scrollLeft += momentumRef.current * elapsed;
             momentumRef.current *= Math.pow(0.92, elapsed / 16.67);
-          } else if (!hoveredRef.current) {
+          } else if (!pauseOnHover || !hoveredRef.current) {
             const loopWidth = currentNode.scrollWidth / 3;
             const pixelsPerMs = loopWidth / Math.max(duration * 1000, 1);
             currentNode.scrollLeft += pixelsPerMs * elapsed;
@@ -4216,7 +4259,8 @@ export default function HomePage() {
 
           /* â”€â”€â”€ Flight Video & Hero Wallpaper Styles (21:9 Aspect Ratio) â”€â”€â”€ */
           /* â”€â”€â”€ 18:6 Ultra-Wide Flight Hero & Horizontal Search Bar â”€â”€â”€ */
-          .homepage-flights.hero-section {
+          .homepage-flights.hero-section,
+          .homepage-buses.hero-section {
             position: relative !important;
             overflow: visible !important;
             width: 100% !important;
@@ -4244,12 +4288,13 @@ export default function HomePage() {
           .flight-hero-wallpaper-video {
             width: 100% !important;
             height: 100% !important;
+            min-height: 100% !important;
             object-fit: cover !important;
             object-position: center !important;
-            aspect-ratio: 18 / 5.5 !important;
-            filter: contrast(1.03) saturate(1.05) !important;
+            aspect-ratio: auto !important;
+            filter: none !important;
             opacity: 1 !important;
-            transform: scale(1.08) !important;
+            transform: none !important;
           }
 
           .home-ai-chat,
@@ -4268,30 +4313,36 @@ export default function HomePage() {
             z-index: 10 !important;
             width: 100% !important;
           }
-          .homepage-flights .flight-hero-title,
-          .homepage-flights .flight-hero-title *,
-          .homepage-flights .flight-hero-title-highlight {
+          .homepage-flights .flight-hero-title {
             font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
             font-size: clamp(28px, 4vw, 44px) !important;
             font-weight: 900 !important;
-            color: #0f172a !important;
-            text-shadow: 0 4px 30px rgba(255, 255, 255, 0.8), 0 1px 12px rgba(255, 255, 255, 0.9) !important;
+            color: #ffffff !important;
+            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.6) !important;
             margin-bottom: 8px !important;
             letter-spacing: -0.01em !important;
             line-height: 1.2 !important;
             text-transform: none !important;
           }
+
+          .homepage-flights .flight-hero-title-highlight {
+            color: #dc1e26 !important;
+            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+          }
+
           .homepage-flights .flight-hero-subtitle {
             font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
             font-size: clamp(15px, 1.8vw, 20px) !important;
             font-weight: 700 !important;
-            color: #dc1e26 !important;
-            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.95), 0 1px 2px rgba(255, 255, 255, 1) !important;
+            color: rgba(255, 255, 255, 0.95) !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
             margin-top: 4px !important;
             opacity: 1 !important;
             letter-spacing: 0.02em !important;
           }
-          .homepage-flights.hero-section {
+          .homepage-flights.hero-section,
+          .homepage-buses.hero-section,
+          .homepage-hotels.hero-section {
             width: 100% !important;
             height: auto !important;
             min-height: 480px !important;
@@ -4301,19 +4352,20 @@ export default function HomePage() {
             padding: 60px 20px 20px !important;
             box-sizing: border-box !important;
             z-index: 40 !important;
+            position: relative !important;
           }
 
-          .homepage-flights .hero-content {
-            width: 100% !important;
-            max-width: 1240px !important;
+          .homepage-flights .flight-hero-header {
+            position: absolute !important;
+            top: 40px !important;
+            left: 40px !important;
+            right: auto !important;
+            text-align: left !important;
+            max-width: 600px !important;
+            margin: 0 !important;
             padding: 0 !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            position: relative !important;
-            z-index: 5 !important;
+            width: auto !important;
+            z-index: 50 !important;
           }
 
           .homepage-flights .hero-grid {
@@ -4323,29 +4375,163 @@ export default function HomePage() {
             box-sizing: border-box !important;
           }
 
-          /* â”€â”€â”€ Premium High-Contrast Flight Search Bar â”€â”€â”€ */
+          /* Premium Glassy Flight Search Bar */
           .homepage-flights .search-panel {
             width: 100% !important;
             max-width: 1240px !important;
             height: auto !important;
             min-height: 95px !important;
-            background: #ffffff !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.2)) !important;
+            backdrop-filter: blur(24px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
             border-radius: 24px !important;
             padding: 16px 24px !important;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.95) !important;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
+            border-left: 1px solid rgba(255, 255, 255, 0.85) !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important;
             box-sizing: border-box !important;
-            margin: 16px auto 0 !important;
+            position: relative !important;
+            z-index: 20 !important;
+          }
+
+          .homepage-buses .hero-content,
+          .homepage-flights .hero-content,
+          .homepage-hotels .hero-content {
+            width: 100% !important;
+            max-width: 1240px !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
+            position: static !important;
+            height: 100% !important;
+            align-self: stretch !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+          }
+
+          .homepage-buses .hero-header-left,
+          .homepage-hotels .hero-header-left {
+            position: absolute !important;
+            top: 40px !important;
+            left: 40px !important;
+            right: auto !important;
+            text-align: left !important;
+            max-width: 600px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* ── Premium Glassmorphic Bus & Hotel Search Bar ── */
+          .homepage-buses .hero-grid,
+          .homepage-hotels .hero-grid {
+            width: 100% !important;
+            max-width: 1220px !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
+          }
+
+          .homepage-buses .search-panel,
+          .homepage-flights .search-panel,
+          .homepage-hotels .search-panel {
+            width: 100% !important;
+            max-width: 1240px !important;
+            height: auto !important;
+            min-height: 95px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15)) !important;
+            backdrop-filter: blur(28px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+            border-radius: 24px !important;
+            padding: 16px 24px !important;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
+            border-left: 1px solid rgba(255, 255, 255, 0.85) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+            margin: 16px auto -230px !important;
+            transform: translateY(30px) !important;
             position: relative !important;
             z-index: 20 !important;
           }
 
           .homepage-flights .search-panel .tabs-wrap,
+          .homepage-buses .search-panel .tabs-wrap,
+          .homepage-hotels .search-panel .tabs-wrap,
           .homepage-flights .search-panel .popular-searches-row {
             display: none !important;
+          }
+
+          .homepage-flights .search-panel {
+            margin: 16px auto -250px !important;
+            transform: translateY(50px) !important;
+          }
+
+          .homepage-hotels .hero-header-left {
+            position: absolute !important;
+            top: 40px !important;
+            left: 40px !important;
+            right: auto !important;
+            text-align: left !important;
+            max-width: 600px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .homepage-hotels .hero-title-left {
+            color: #ffffff !important;
+            font-size: clamp(34px, 4.4vw, 56px) !important;
+            font-weight: 800 !important;
+            line-height: 1.12 !important;
+            letter-spacing: -0.02em !important;
+            margin-bottom: 12px !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
+          }
+
+          .homepage-hotels .hero-title-left .hero-title-highlight {
+            color: #dc2626 !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+            display: inline !important;
+          }
+
+          .homepage-hotels .hero-subtitle-left {
+            color: #ffffff !important;
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            line-height: 1.45 !important;
+            max-width: 440px !important;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55) !important;
+            margin: 0 !important;
+            opacity: 0.95 !important;
+          }
+
+          .homepage-hotels .search-panel {
+            width: 100% !important;
+            max-width: 1240px !important;
+            height: auto !important;
+            min-height: 95px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15)) !important;
+            backdrop-filter: blur(28px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+            border-radius: 24px !important;
+            padding: 16px 24px !important;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
+            border-left: 1px solid rgba(255, 255, 255, 0.85) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+            margin: 16px auto -230px !important;
+            transform: translateY(30px) !important;
+            position: relative !important;
+            z-index: 20 !important;
           }
 
           /* Left-aligned Trip Chips */
@@ -4383,7 +4569,7 @@ export default function HomePage() {
           }
 
           /* Single Line Row Layout */
-          .homepage-flights .search-panel .flight-search-bar-row {
+          .search-panel .flight-search-bar-row {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
@@ -4395,16 +4581,16 @@ export default function HomePage() {
             background: transparent !important;
           }
 
-          .homepage-flights .search-panel .flight-search-bar-row > * {
+          .search-panel .flight-search-bar-row > * {
             margin: 0 !important;
             flex-shrink: 1 !important;
           }
 
           /* Seamless Flat Fields with Vertical Line Dividers */
-          .homepage-flights .search-panel .flight-search-bar-row .field,
-          .homepage-flights .search-panel .flight-search-bar-row .place-autocomplete,
-          .homepage-flights .search-panel .flight-search-bar-row .traveller-field,
-          .homepage-flights .search-panel .flight-search-bar-row .class-field {
+          .search-panel .flight-search-bar-row .field,
+          .search-panel .flight-search-bar-row .place-autocomplete,
+          .search-panel .flight-search-bar-row .traveller-field,
+          .search-panel .flight-search-bar-row .class-field {
             flex: 1 1 auto !important;
             min-width: 80px !important;
             height: 58px !important;
@@ -4418,56 +4604,107 @@ export default function HomePage() {
             flex-direction: column !important;
             justify-content: center !important;
             box-sizing: border-box !important;
+            position: relative !important;
           }
 
           /* Remove PlaceAutocomplete internal input fixed heights so it matches Departure/Travellers */
-          .homepage-flights .search-panel .flight-search-bar-row .field-control {
+          .search-panel .flight-search-bar-row .field-control {
             height: auto !important;
             min-height: 0 !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
-            color: #1e293b !important;
-            font-size: 0.85rem !important;
+            color: #334155 !important;
+            font-size: 0.92rem !important;
             font-weight: 500 !important;
           }
 
-          .homepage-flights .search-panel .flight-search-bar-row .source-field,
-          .homepage-flights .search-panel .flight-search-bar-row .destination-field {
+          .search-panel .flight-search-bar-row .field-control::placeholder {
+            color: #334155 !important;
+            font-weight: 500 !important;
+            opacity: 0.9 !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-placeholder,
+          .search-panel .flight-search-bar-row .date-main-bold,
+          .search-panel .flight-search-bar-row .traveller-summary span,
+          .search-panel .flight-search-bar-row .class-summary span {
+            color: #334155 !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+          }
+
+          .search-panel .flight-search-bar-row .source-field,
+          .search-panel .flight-search-bar-row .destination-field {
             flex: 1.2 1 auto !important;
           }
 
-          .homepage-flights .search-panel .flight-search-bar-row .source-field {
+          .search-panel .flight-search-bar-row .source-field {
             padding-left: 2px !important;
             border-right: none !important;
           }
 
-          .homepage-flights .search-panel .flight-search-bar-row .destination-field {
+          .search-panel .flight-search-bar-row .destination-field {
             padding-left: 12px !important;
           }
 
+          .search-panel .flight-search-bar-row .hotel-destination-field {
+            flex: 1.35 1 auto !important;
+            padding-left: 8px !important;
+            border-right: 1px solid #e2e8f0 !important;
+          }
+
+          .search-panel .flight-search-bar-row .hotel-guests-field {
+            flex: 1.15 1 auto !important;
+            border-right: none !important;
+            padding-left: 12px !important;
+            padding-right: 8px !important;
+          }
+
+          .search-panel .flight-search-bar-row.hotel-search-bar-row .checkin-field,
+          .search-panel .flight-search-bar-row.hotel-search-bar-row .checkout-field {
+            border-right: 1px solid #e2e8f0 !important;
+          }
+
+          .search-panel .flight-search-bar-row .hotel-destination-field svg,
+          .search-panel .flight-search-bar-row .checkin-field svg,
+          .search-panel .flight-search-bar-row .checkout-field svg,
+          .search-panel .flight-search-bar-row .hotel-guests-field svg:first-child {
+            color: #dc1e26 !important;
+            stroke: #dc1e26 !important;
+            flex-shrink: 0 !important;
+          }
+
+          .search-panel .flight-search-bar-row.hotel-search-bar-row .hotel-guest-summary-text {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 140px !important;
+            display: inline-block !important;
+          }
+
           /* Ensure dropdowns aren't covered by subsequent sibling elements with explicit z-indices */
-          .homepage-flights .search-panel .flight-search-bar-row .traveller-field {
+          .search-panel .flight-search-bar-row .traveller-field {
             z-index: 30 !important;
           }
-          .homepage-flights .search-panel .flight-search-bar-row .class-field {
+          .search-panel .flight-search-bar-row .class-field {
             z-index: 25 !important;
           }
-          .homepage-flights .search-panel .flight-search-bar-row .traveller-field:focus-within,
-          .homepage-flights .search-panel .flight-search-bar-row .class-field:focus-within {
+          .search-panel .flight-search-bar-row .traveller-field:focus-within,
+          .search-panel .flight-search-bar-row .class-field:focus-within {
             z-index: 1200 !important;
           }
 
           /* Circular Swap Button overlapping boundary */
-          .homepage-flights .search-panel .flight-search-bar-row .swap-field {
+          .search-panel .flight-search-bar-row .swap-field {
             flex: 0 0 auto !important;
             margin: 0 -10px !important;
             z-index: 10 !important;
             align-self: center !important;
           }
 
-          .homepage-flights .search-panel .flight-search-bar-row .swap-btn {
+          .search-panel .flight-search-bar-row .swap-btn {
             width: 26px !important;
             height: 26px !important;
             border-radius: 50% !important;
@@ -4480,25 +4717,25 @@ export default function HomePage() {
             justify-content: center !important;
           }
 
-          /* Field Labels (FROM, TO, DEPARTURE, TRAVELLERS, CLASS) */
-          .homepage-flights .search-panel .flight-search-bar-row .field label,
-          .homepage-flights .search-panel .flight-search-bar-row .traveller-field label,
-          .homepage-flights .search-panel .flight-search-bar-row .class-field label {
-            color: #475569 !important;
-            font-size: 0.6rem !important;
-            font-weight: 800 !important;
-            letter-spacing: 0.06em !important;
-            margin-bottom: 1px !important;
+          /* Field Labels (SOURCE, DESTINATION, DEPARTURE, TRAVELLERS, CLASS) - Bold & Dark */
+          .search-panel .flight-search-bar-row .field label,
+          .search-panel .flight-search-bar-row .traveller-field label,
+          .search-panel .flight-search-bar-row .class-field label {
+            color: #0f172a !important;
+            font-size: 0.68rem !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.07em !important;
+            margin-bottom: 2px !important;
             text-transform: uppercase !important;
             white-space: nowrap !important;
           }
           
-          .homepage-flights .search-panel .flight-search-bar-row .date-display-wrapper span {
+          .search-panel .flight-search-bar-row .date-display-wrapper span {
             white-space: nowrap !important;
           }
 
           /* Red Search Button */
-          .homepage-flights .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
+          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
             flex: 0 0 auto !important;
             width: auto !important;
             min-width: 100px !important;
@@ -4527,24 +4764,239 @@ export default function HomePage() {
             box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
           }
 
+          /* Red Search Hotels Button */
+          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn,
+          .search-panel .hotel-search-submit-btn {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: 140px !important;
+            height: 38px !important;
+            background: #dc2626 !important;
+            color: #ffffff !important;
+            border-radius: 12px !important;
+            font-weight: 800 !important;
+            font-size: 0.72rem !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 7px !important;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
+            transition: all 0.2s ease !important;
+            margin-left: 10px !important;
+            padding: 0 22px !important;
+            cursor: pointer !important;
+            border: none !important;
+          }
+
+          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn:hover,
+          .search-panel .hotel-search-submit-btn:hover {
+            background: #b91c1c !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45) !important;
+          }
+
+          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn svg,
+          .search-panel .hotel-search-submit-btn svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+          }
+
+          /* ─── Premium Place Autocomplete Dropdown ─── */
+          .place-dropdown,
+          .bus-place-dropdown {
+            position: absolute !important;
+            top: calc(100% + 6px) !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            max-height: 320px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            background: #ffffff !important;
+            border-radius: 16px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+            padding: 6px !important;
+            z-index: 9999 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+            box-sizing: border-box !important;
+          }
+
+          .place-dropdown::-webkit-scrollbar,
+          .bus-place-dropdown::-webkit-scrollbar {
+            width: 5px !important;
+          }
+          .place-dropdown::-webkit-scrollbar-thumb,
+          .bus-place-dropdown::-webkit-scrollbar-thumb {
+            background: #cbd5e1 !important;
+            border-radius: 4px !important;
+          }
+
+          .pnb-place-option {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 12px !important;
+            width: 100% !important;
+            min-height: 48px !important;
+            padding: 8px 12px !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 10px !important;
+            cursor: pointer !important;
+            text-align: left !important;
+            transition: all 0.15s ease !important;
+            box-sizing: border-box !important;
+            outline: none !important;
+            color: #1e293b !important;
+          }
+
+          .pnb-place-option:hover,
+          .pnb-place-option:focus {
+            background: #f8fafc !important;
+            transform: none !important;
+          }
+
+          .pnb-place-option:hover .pnb-place-icon-wrap {
+            background: #fee2e2 !important;
+            color: #dc2626 !important;
+          }
+
+          .pnb-place-icon-wrap {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 8px !important;
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            transition: all 0.15s ease !important;
+          }
+
+          .pnb-place-text {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            gap: 2px !important;
+            min-width: 0 !important;
+            flex: 1 !important;
+          }
+
+          .pnb-place-primary {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-size: 0.88rem !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          .pnb-place-city {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            text-transform: capitalize !important;
+          }
+
+          .pnb-place-code {
+            font-size: 0.68rem !important;
+            font-weight: 800 !important;
+            background: #fee2e2 !important;
+            color: #dc2626 !important;
+            padding: 1px 6px !important;
+            border-radius: 4px !important;
+            letter-spacing: 0.04em !important;
+            flex-shrink: 0 !important;
+          }
+
+          .pnb-place-secondary {
+            font-size: 0.74rem !important;
+            font-weight: 500 !important;
+            color: #64748b !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          .place-meta,
+          .bus-place-meta {
+            padding: 16px 12px !important;
+            text-align: center !important;
+            font-size: 0.82rem !important;
+            font-weight: 500 !important;
+            color: #94a3b8 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+
+          /* Ensure hotel destination input is 100% clean and transparent on focus */
+          .search-panel .flight-search-bar-row .hotel-destination-field,
+          .search-panel .flight-search-bar-row .hotel-destination-field:focus-within,
+          .search-panel .flight-search-bar-row .hotel-destination-field .control-wrap,
+          .search-panel .flight-search-bar-row .hotel-destination-field:focus-within .control-wrap,
+          .search-panel .flight-search-bar-row .field-control,
+          .search-panel .flight-search-bar-row .field-control:focus,
+          .search-panel .flight-search-bar-row .place-input,
+          .search-panel .flight-search-bar-row .place-input:focus {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+          }
+
           @media (max-width: 100px) {
             /* Disabled the flex wrap so it stays on 1 line even on very small preview screens */
           }
         `}</style>
-      <section className={`hero-section ${activeTab === "flights" ? "homepage-flights" : ""}`}>
-        {activeTab === "flights" && (
+      <section className={`hero-section ${activeTab === "flights" ? "homepage-flights" : ""} ${activeTab === "buses" ? "homepage-buses" : ""} ${activeTab === "hotels" ? "homepage-hotels" : ""}`}>
+        {(activeTab === "flights" || activeTab === "buses" || activeTab === "hotels") && (
           <div className="flight-hero-wallpaper">
             <video
               className="flight-hero-wallpaper-video"
+              style={{ display: activeTab === "flights" ? "block" : "none" }}
               autoPlay
               loop
               muted
               playsInline
               preload="auto"
-            >
-              <source src="/home_flight.mp4" type="video/mp4" />
-              <source src="/Give_me_a_background_screen_fo.mp4" type="video/mp4" />
-            </video>
+              src={flightHeroThemeVideo}
+            />
+            <video
+              className="flight-hero-wallpaper-video"
+              style={{ display: activeTab === "buses" ? "block" : "none" }}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              src={busHeroVideo}
+            />
+            <video
+              className="flight-hero-wallpaper-video"
+              style={{ display: activeTab === "hotels" ? "block" : "none" }}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              src={hotelHeroVideo}
+            />
           </div>
         )}
         <div className="hero-content">
@@ -4553,6 +5005,7 @@ export default function HomePage() {
             <div className="flight-hero-header">
               <h1 className="flight-hero-title">
                 {homeContent.heroTitleStart}
+                <br />
                 <span className="flight-hero-title-highlight">{homeContent.heroTitleEnd}</span>
               </h1>
               {homeContent.heroSubtitle && (
@@ -4837,7 +5290,7 @@ export default function HomePage() {
               ) : activeTab === "buses" ? (
                 <div className="booking-content">
 
-                  <div className={`search-grid bus-standard-grid ${isBusTwoWay ? "two-way" : "one-way"}`}>
+                  <div className={`flight-search-bar-row ${isBusTwoWay ? "two-way" : "one-way"}`}>
                     <PlaceAutocomplete
                       label="Source"
                       value={busFrom}
@@ -4921,7 +5374,7 @@ export default function HomePage() {
 
                     <button
                       type="button"
-                      className="search-btn bus-grid-search-btn"
+                      className="search-btn flight-grid-search-btn"
                       onClick={handleSearch}
                     >
                       <Search size={16} />
@@ -4943,158 +5396,136 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bus-offers-section">
-        <div className="bus-offers-banner-card">
-          <div className="bus-offers-banner-bg-graphic" />
-          <div className="bus-offers-content-shell">
-            {/* Top Header Row */}
-            <div className="bus-offers-header-row">
-              <div>
-                <span className="bus-offers-kicker">
-                  <Tag size={13} />
-                  THIS WEEK
-                </span>
-                <h2 className="bus-offers-title">Featured Offers</h2>
-                <p className="bus-offers-subtitle">
-                  Best deals on buses. Grab them before they're gone!
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="bus-offers-view-all"
-                onClick={() => setIsDealsDialogOpen(true)}
-              >
-                <span>View all deals</span>
-                <ArrowRight size={15} />
-              </button>
+      <section className="bus-offers-section section-shell">
+        <div className="bus-offers-content-shell">
+          {/* Top Header Row */}
+          <div className="bus-offers-header-row">
+            <div>
+              <h2 className="bus-offers-title">Featured Offers</h2>
+              <p className="bus-offers-subtitle">
+                Best deals on buses. Grab them before they're gone!
+              </p>
             </div>
 
-            {/* Category Filter Tabs Bar */}
-            <div className="bus-offers-tabs-bar">
-              <button
-                type="button"
-                className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
-                onClick={() => setOffersFilter("all")}
-              >
-                <Tag size={13} />
-                <span>All Offers</span>
-              </button>
-              <button
-                type="button"
-                className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
-                onClick={() => setOffersFilter("flight")}
-              >
-                <Plane size={13} />
-                <span>Flights</span>
-              </button>
-              <button
-                type="button"
-                className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
-                onClick={() => setOffersFilter("bus")}
-              >
-                <Bus size={13} />
-                <span>Buses</span>
-              </button>
-              <button
-                type="button"
-                className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
-                onClick={() => setOffersFilter("hotel")}
-              >
-                <Building2 size={13} />
-                <span>Hotels</span>
-              </button>
-            </div>
-
-            {/* Cards Carousel Grid with Floating Arrows */}
-            <div className="bus-offers-cards-carousel-container">
-              <button
-                type="button"
-                className="bus-offers-arrow prev"
-                aria-label="Previous offers"
-              >
-                <ChevronLeft size={18} />
-              </button>
-
-              <div className="bus-offers-scroll-grid">
-                {(filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS).slice(0, 4).map((offer, idx) => {
-                  const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
-                  const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
-                  const code = offer.couponCode || offer.title || "BUSOFFER";
-                  const badgeText = offer.badgeLabel || (idx === 1 ? "EXCLUSIVE OFFER" : idx === 2 ? "50% OFF" : "SPECIAL OFFER");
-
-                  const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
-                  let apiOfferImg = null;
-                  if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
-                    const trimmed = rawAdminImg.trim();
-                    apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
-                  }
-
-                  return (
-                    <article
-                      key={offer.id || idx}
-                      className={`bus-card-unit ${themeClass}`}
-                      onClick={() => setOfferForDetailPopup(offer)}
-                    >
-                      {/* Top Bar: Icon + Category */}
-                      <div className="bus-card-top-bar">
-                        <div className="bus-card-icon-badge">
-                          <Bus size={15} />
-                        </div>
-                        <span className="bus-card-cat">BUS OFFER</span>
-                      </div>
-
-                      {/* Center Info: Code & Validity */}
-                      <div className="bus-card-center">
-                        <h3 className="bus-card-code">{code}</h3>
-                        <p className="bus-card-expiry">
-                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                        </p>
-                      </div>
-
-                      {/* Bottom Badge Pill */}
-                      <div className="bus-card-bottom-bar">
-                        <span className="bus-card-tag-pill">{badgeText}</span>
-                      </div>
-
-                      {/* Top Right Starburst / Badge Ribbon */}
-                      <div className="bus-card-starburst">
-                        {badgeText}
-                      </div>
-
-                      {/* Only API Provided Image (No Static Fallbacks) */}
-                      {apiOfferImg && (
-                        <img
-                          src={apiOfferImg}
-                          alt={offer.title || "Offer Graphic"}
-                          className="bus-card-vehicle-graphic"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                          }}
-                        />
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                className="bus-offers-arrow next"
-                aria-label="Next offers"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-
-            {/* Pagination Dots Bar */}
-            <div className="bus-offers-dots-bar">
-              <span className="bus-offers-dot active" />
-              <span className="bus-offers-dot" />
-              <span className="bus-offers-dot" />
-              <span className="bus-offers-dot" />
-            </div>
+            <button
+              type="button"
+              className="bus-offers-view-all"
+              onClick={() => setIsDealsDialogOpen(true)}
+            >
+              <span>View all deals</span>
+              <ArrowRight size={15} />
+            </button>
           </div>
+
+          {/* Category Filter Tabs Bar */}
+          <div className="bus-offers-tabs-bar">
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
+              onClick={() => setOffersFilter("all")}
+            >
+              <Tag size={13} />
+              <span>All Offers</span>
+            </button>
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
+              onClick={() => setOffersFilter("flight")}
+            >
+              <Plane size={13} />
+              <span>Flights</span>
+            </button>
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
+              onClick={() => setOffersFilter("bus")}
+            >
+              <Bus size={13} />
+              <span>Buses</span>
+            </button>
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
+              onClick={() => setOffersFilter("hotel")}
+            >
+              <Building2 size={13} />
+              <span>Hotels</span>
+            </button>
+          </div>
+
+          {/* Auto-Scrolling Featured Offers Marquee */}
+          <AutoMarquee
+            items={filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS}
+            className="offer-marquee"
+            duration={24}
+            pauseOnHover={false}
+            renderItem={(offer, idx) => {
+              const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
+              const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
+
+              const rawCode = offer.couponCode || offer.code || offer.title || "BUSOFFER";
+              let code = rawCode;
+              if (!rawCode || /^coupon[_-]?code/i.test(rawCode)) {
+                const sampleCodes = ["SAVER500", "FESTIVE15", "SUPERBUS", "LUXURY25", "ACVOLVO100", "NIGHTS50"];
+                code = sampleCodes[idx % sampleCodes.length];
+              }
+
+              const badgeText = offer.badgeLabel || (idx % 3 === 0 ? "SPECIAL OFFER" : idx % 3 === 1 ? "EXCLUSIVE OFFER" : "50% OFF");
+
+              const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
+              let apiOfferImg = null;
+              if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
+                const trimmed = rawAdminImg.trim();
+                apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
+              }
+
+              return (
+                <article
+                  key={offer.id || idx}
+                  className={`bus-card-unit ${themeClass}`}
+                  onClick={() => setOfferForDetailPopup(offer)}
+                >
+                  {/* Top Bar: Icon + Category */}
+                  <div className="bus-card-top-bar">
+                    <div className="bus-card-icon-badge">
+                      <Bus size={15} />
+                    </div>
+                    <span className="bus-card-cat">BUS OFFER</span>
+                  </div>
+
+                  {/* Center Info: Code & Validity */}
+                  <div className="bus-card-center">
+                    <h3 className="bus-card-code">{code}</h3>
+                    <p className="bus-card-expiry">
+                      {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                    </p>
+                  </div>
+
+                  {/* Bottom Badge Pill */}
+                  <div className="bus-card-bottom-bar">
+                    <span className="bus-card-tag-pill">{badgeText}</span>
+                  </div>
+
+                  {/* Top Right Starburst / Badge Ribbon */}
+                  <div className="bus-card-starburst">
+                    {badgeText}
+                  </div>
+
+                  {/* Only API Provided Image (No Static Fallbacks) */}
+                  {apiOfferImg && (
+                    <img
+                      src={apiOfferImg}
+                      alt={offer.title || "Offer Graphic"}
+                      className="bus-card-vehicle-graphic"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  )}
+                </article>
+              );
+            }}
+          />
         </div>
       </section>
 
@@ -5106,7 +5537,7 @@ export default function HomePage() {
         const config = isFlight
           ? {
             headline: <>Your Flight.<br /><span className="td-highlight-red">Our Priority.</span></>,
-            subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
+            subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable - all in one place.",
             features: [
               { icon: <Search size={17} />, title: "Smart Search", desc: "Find flights across hundreds of routes with smart filters." },
               { icon: <Clock3 size={17} />, title: "Live Flight Status", desc: "Get real-time departure, arrival & delay updates instantly." },
@@ -5117,16 +5548,16 @@ export default function HomePage() {
             btnLabel: "Search Flights Now",
             btnAction: () => setActiveTab("flights"),
             bgImage: sunsetHighwayBg,
-            vehicleImg: flightSectionBanner,
+            vehicleImg: flightSectionNewBanner,
             vehicleAlt: "Flight Booking Illustration",
-            vehicleTag: "PICK N BOOK",
+            vehicleTag: "",
             stats: [
               { color: "red", icon: <Plane size={15} />, value: "500+", label: "Airlines" },
               { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
               { color: "crimson", icon: <MapPin size={15} />, value: "300+", label: "Destinations" },
               { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
             ],
-            phoneGreeting: "Book Your Flight! âœˆï¸",
+            phoneGreeting: "Book Your Flight!",
             phoneSub: "Where are you flying to?",
             phoneField1Icon: <Plane size={13} className="td-field-icon" />,
             phoneField1Label: "From",
@@ -5141,7 +5572,7 @@ export default function HomePage() {
           : isHotel
             ? {
               headline: <>Your Stay.<br /><span className="td-highlight-red">Our Priority.</span></>,
-              subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
+              subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable - all in one place.",
               features: [
                 { icon: <Search size={17} />, title: "Smart Search", desc: "Find hotels across hundreds of destinations with smart filters." },
                 { icon: <BedDouble size={17} />, title: "Room Availability", desc: "Get live room availability & pricing updates instantly." },
@@ -5154,14 +5585,14 @@ export default function HomePage() {
               bgImage: sunsetHighwayBg,
               vehicleImg: hotelSectionBanner,
               vehicleAlt: "Hotel Booking Illustration",
-              vehicleTag: "PICK N BOOK",
+              vehicleTag: "",
               stats: [
                 { color: "red", icon: <Building2 size={15} />, value: "2000+", label: "Hotels Listed" },
                 { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
                 { color: "crimson", icon: <MapPin size={15} />, value: "200+", label: "Cities Covered" },
                 { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
               ],
-              phoneGreeting: "Book Your Hotel! ðŸ¨",
+              phoneGreeting: "Book Your Hotel!",
               phoneSub: "Where are you staying?",
               phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
               phoneField1Label: "Destination",
@@ -5175,7 +5606,7 @@ export default function HomePage() {
             }
             : {
               headline: <>Your Journey.<br /><span className="td-highlight-red">Our Priority.</span></>,
-              subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable â€“ all in one place.",
+              subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable - all in one place.",
               features: [
                 { icon: <Search size={17} />, title: "Smart Search", desc: "Find buses across thousands of routes with smart filters." },
                 { icon: <Clock3 size={17} />, title: "Real-time Updates", desc: "Get live timings, seat availability & prices instantly." },
@@ -5186,16 +5617,16 @@ export default function HomePage() {
               btnLabel: "Search Buses Now",
               btnAction: () => openPopularBusRoutes(),
               bgImage: sunsetHighwayBg,
-              vehicleImg: luxuryBusImg,
+              vehicleImg: busCoastBanner,
               vehicleAlt: "Pick N Book Luxury Bus",
-              vehicleTag: "PICK N BOOK",
+              vehicleTag: "",
               stats: [
                 { color: "red", icon: <MapPin size={15} />, value: "5000+", label: "Routes Covered" },
                 { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
                 { color: "crimson", icon: <Handshake size={15} />, value: "1000+", label: "Trusted Partners" },
                 { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
               ],
-              phoneGreeting: "Hello, Traveller! ðŸ‘‹",
+              phoneGreeting: "Hello, Traveller!",
               phoneSub: "Where are you going?",
               phoneField1Icon: <Bus size={13} className="td-field-icon" />,
               phoneField1Label: "From",
@@ -5273,7 +5704,7 @@ export default function HomePage() {
 
                   <div className="td-services-visual-stage">
                     <div className="td-bus-visual-wrap">
-                      <div className="td-bus-display-tag">{config.vehicleTag}</div>
+                      {config.vehicleTag && <div className="td-bus-display-tag">{config.vehicleTag}</div>}
                       <img src={config.vehicleImg} alt={config.vehicleAlt} className="td-stage-bus-img" />
                     </div>
 
@@ -5356,38 +5787,49 @@ export default function HomePage() {
                 items={popularRoutes}
                 className="popular-routes-marquee"
                 duration={36}
-                renderItem={(route) => (
-                  <article
-                    className="pop-route-card"
-                    key={route.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handlePopularRouteBooking(route)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
-                  >
-                    <div className="pop-route-img-wrap">
-                      <img
-                        src={getCityImage(route.toCity, "bus_default")}
-                        alt={`${route.fromCity} to ${route.toCity}`}
-                        loading="lazy"
-                        onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.bus_default; }}
-                      />
-                      <div className="pop-route-img-overlay">
-                        <span className="pop-route-tag-search">BUS</span>
+                renderItem={(route, idx) => {
+                  const BUS_PHOTOS = [
+                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=600&q=80&fit=crop&auto=format"
+                  ];
+                  const cityImg = getCityImage(route.toCity || route.fromCity, "");
+                  const busImg = cityImg || BUS_PHOTOS[idx % BUS_PHOTOS.length];
+
+                  return (
+                    <article
+                      className="pop-route-card"
+                      key={route.id || idx}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handlePopularRouteBooking(route)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
+                    >
+                      <div className="pop-route-img-wrap">
+                        <img
+                          src={busImg}
+                          alt={`${route.fromCity} to ${route.toCity}`}
+                          loading="lazy"
+                          onError={(e) => { e.target.onerror = null; e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length]; }}
+                        />
+                        <div className="pop-route-img-overlay">
+                          <span className="pop-route-tag-search">BUS</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="pop-route-body">
-                      <div className="pop-route-cities-row">
-                        <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
-                        <div className="pop-route-icon-circle"><Bus size={13} /></div>
-                        <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
+                      <div className="pop-route-body">
+                        <div className="pop-route-cities-row">
+                          <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
+                          <div className="pop-route-icon-circle"><Bus size={13} /></div>
+                          <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
+                        </div>
                       </div>
-                    </div>
-                    <button type="button" className="pop-route-book-btn"
-                      onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
-                    >BOOK BUS</button>
-                  </article>
-                )}
+                      <button type="button" className="pop-route-book-btn"
+                        onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
+                      >BOOK BUS</button>
+                    </article>
+                  );
+                }}
               />
             )}
           </section>
@@ -5459,7 +5901,6 @@ export default function HomePage() {
             <section className="brands-section section-shell">
               <div className="section-header">
                 <div>
-                  <span className="section-kicker">Trusted Partners</span>
                   <h2>Airline Brands</h2>
                 </div>
               </div>
@@ -5504,32 +5945,28 @@ export default function HomePage() {
                 items={popularHotels}
                 className="popular-routes-marquee hotel-routes-marquee"
                 duration={38}
-                renderItem={(hotel) => (
+                renderItem={(hotel, idx) => (
                   <article
                     className="pop-route-card pop-hotel-card"
-                    key={hotel.id}
+                    key={hotel.id || idx}
                     role="button"
                     tabIndex={0}
                     onClick={() => handlePopularHotelBooking(hotel)}
                   >
                     <div className="pop-route-img-wrap">
                       <img
-                        src={hotel.hotelImage || HOTEL_ROOM_IMAGES[0]}
-                        alt={`${hotel.name} â€“ ${hotel.city}`}
+                        src={hotel.hotelImage || hotel.image || hotel.imageUrl || HOTEL_ROOM_IMAGES[idx % HOTEL_ROOM_IMAGES.length] || hotelSectionBanner}
+                        alt={`${hotel.name} - ${hotel.city}`}
                         loading="lazy"
-                        onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.hotel_default; }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = hotelSectionBanner; }}
                       />
                       <div className="pop-route-img-overlay">
                         <span className="pop-route-tag-search">STAY</span>
                       </div>
                     </div>
                     <div className="pop-route-body">
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#1e2c3a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {hotel.name}
-                      </p>
-                      <p style={{ margin: "3px 0 0", fontSize: "0.78rem", color: "#5a6a78" }}>
-                        {hotel.city} &nbsp;Â·&nbsp; From INR {hotel.price}
-                      </p>
+                      <p className="pop-hotel-name">{hotel.name}</p>
+                      <p className="pop-hotel-sub">{hotel.city} &nbsp;•&nbsp; From INR {hotel.price}</p>
                     </div>
                     <button type="button" className="pop-route-book-btn"
                       onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}
@@ -5542,279 +5979,237 @@ export default function HomePage() {
         )
       }
 
-      <section className="travel-services-section section-shell">
-        <div className="section-header">
-          <div>
-            <span className="section-kicker">Booking Services</span>
-            <h2>{homeContent.serviceHeading}</h2>
-          </div>
-        </div>
-
-        <div className="travel-services-grid">
-          {homeContent.services.map((block) => (
-            <article
-              className={`travel-service-card ${block.visual}`}
-              key={block.id}
-            >
-              <div className="travel-service-copy">
-                <span className="service-kicker">{block.kicker}</span>
-                <h3>{block.title}</h3>
-                <p>{block.text}</p>
-                <ul
-                  className={
-                    block.id === "fares"
-                      ? "service-pill-list"
-                      : "service-check-list"
-                  }
-                >
-                  {block.points.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="travel-service-visual">
-                <span className="service-spark one" aria-hidden="true" />
-                <span className="service-spark two" aria-hidden="true" />
-                <span className="service-spark three" aria-hidden="true" />
-                <img
-                  className="travel-service-image"
-                  src={block.image}
-                  alt={block.imageAlt}
-                  loading="lazy"
-                />
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="booking-guide-section section-shell">
-        <div className="section-header">
-          <div>
-            <span className="section-kicker">Booking Guide</span>
-            <h2>{homeContent.guideHeading}</h2>
-          </div>
-        </div>
-
-        <div className="booking-guide-hero">
-          <div className="booking-guide-visual" aria-hidden="true">
-            <div className="booking-route-map">
-              <span className="route-node start">From</span>
-              <span className="route-line" />
-              <span className="route-bus">
-                <HomeModeIcon size={18} />
-              </span>
-              <span className="route-node end">To</span>
-            </div>
-            <div className="booking-visual-steps">
-              {homeContent.bookingSteps.map((step, index) => (
-                <span key={step.id} style={{ "--step-index": index }}>
-                  {step.title}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="booking-guide-copy">
-            <p>{homeContent.guideIntro}</p>
-            <div className="booking-step-grid">
-              {homeContent.bookingSteps.map((step, index) => (
-                <article className="booking-step-card" key={step.id}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="booking-note-grid">
-          {homeContent.guideNotes.map((item) => (
-            <article className="booking-note-card" key={item.id}>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
+      {/* Assurance Paragraph Card Section */}
       <section className="assurance-section section-shell">
-        <div className="assurance-banner">
-          <div className="assurance-panel">
+        <div className="assurance-paragraph-card">
+          <div className="assurance-paragraph-header">
             <span className="assurance-badge">
-              <ShieldCheck size={17} />
+              <ShieldCheck size={16} />
               {homeContent.assuranceBadge}
             </span>
-
-            <div className="assurance-list">
-              {homeContent.assurancePoints.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <article className="assurance-item" key={item.id}>
-                    <span className="assurance-icon">
-                      <Icon size={18} />
-                    </span>
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.text}</p>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <p className="assurance-ending">
+            <h2 className="assurance-paragraph-title">
               {homeContent.assuranceEnding}
-            </p>
+            </h2>
           </div>
-
-          <div className="assurance-visual" aria-hidden="true">
-            <span className="assurance-glow" />
-
-            <div className="assurance-story-board">
-              <div className="assurance-map-card">
-                <div className="assurance-map-header">
-                  <span>{homeContent.assuranceMapLabel}</span>
-                  <strong>3 checks passed</strong>
-                </div>
-                <div className="assurance-map-path">
-                  <span className="map-pin source">Start</span>
-                  <span className="map-line" />
-                  <span className="map-bus">
-                    <HomeModeIcon size={24} />
-                  </span>
-                  <span className="map-pin destination">Arrive</span>
-                </div>
-                <div className="assurance-map-grid">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-
-              <div className="assurance-proof-grid">
-                {homeContent.assuranceProofs.map(([title, text], index) => {
-                  const proofIcons = [ShieldCheck, Clock3, RefreshCw, Search];
-                  const ProofIcon = proofIcons[index] || ShieldCheck;
-                  const proofClasses = ["verified", "timing", "support", "ticket"];
-
-                  return (
-                    <div
-                      className={`assurance-proof-card ${proofClasses[index] || "verified"}`}
-                      key={title}
-                    >
-                      <span className="assurance-proof-icon">
-                        <ProofIcon size={index === 0 ? 20 : 18} />
-                      </span>
-                      <div>
-                        <strong>{title}</strong>
-                        <span>{text}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <p className="assurance-paragraph-text">
+            Every booking made through Pick N Book undergoes real-time verification, transparent fare comparison, and instant confirmation. From exact travel dates, passenger counts, and room amenity conditions to live seat selection and flexible cancellation policies, we ensure your trip parameters are completely validated before you pay. Enjoy complete peace of mind with 24/7 dedicated support.
+          </p>
         </div>
       </section>
 
-      {/* Upgraded What Travelers Say Testimonials Section */}
-      <section className="reviews-section upgraded-reviews-section section-shell">
-        <div className="upgraded-reviews-header">
-          <div className="upgraded-reviews-title-box">
-            <span className="upgraded-reviews-kicker">
-              <MessageSquareText size={13} />
-              REAL TRAVELER EXPERIENCES
-            </span>
-            <h2 className="upgraded-reviews-heading">What Travelers Say</h2>
-            <p className="upgraded-reviews-subtext">
-              Over 10 Lakh+ happy journeys booked with Pick N Book. Real reviews from verified passengers.
-            </p>
-          </div>
-
-          <div className="upgraded-reviews-overall-badge">
-            <div className="upgraded-rating-score-box">
-              <span className="upgraded-score-num">4.9</span>
-              <span className="upgraded-score-max">/ 5.0</span>
-            </div>
-            <div className="upgraded-stars-row">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={15} className="upgraded-star-icon" fill="#f59e0b" stroke="#f59e0b" />
+      {/* Highlight Banner Split Card Section - Dynamic per Tab */}
+      <section className="world-class-services-section section-shell" style={{ paddingTop: 0 }}>
+        <div className="world-class-banner-card">
+          <div className="world-class-banner-copy">
+            <span className="banner-badge">{homeContent.bannerBadge || "INTERCITY BUS & SEAT GUARANTEE"}</span>
+            <h2>{homeContent.bannerTitle || "Book Bus Tickets Smarter. Travel Farther."}</h2>
+            <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick N Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
+            <div className="banner-stats-row">
+              {(homeContent.bannerStats || [
+                ["99.8%", "On-Time Departure"],
+                ["5,000+", "Daily Bus Routes"],
+                ["0%", "Hidden Fees"],
+              ]).map(([val, lbl], index, arr) => (
+                <React.Fragment key={lbl}>
+                  <div className="banner-stat-item">
+                    <strong>{val}</strong>
+                    <span>{lbl}</span>
+                  </div>
+                  {index < arr.length - 1 && <div className="banner-stat-divider" />}
+                </React.Fragment>
               ))}
             </div>
-            <span className="upgraded-verified-count">Based on 50,000+ verified reviews</span>
+          </div>
+          <div className="world-class-banner-visual">
+            <img
+              src={homeContent.bannerImage || busCoastBanner}
+              alt={homeContent.bannerAlt || "Travel Banner"}
+              className="world-class-banner-img"
+            />
           </div>
         </div>
-
-        <AutoMarquee
-          items={homeContent.reviews}
-          className="review-marquee upgraded-review-marquee"
-          duration={38}
-          renderItem={(review) => {
-            const initials = review.author
-              ? review.author
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-              : "TR";
-
-            return (
-              <article className="review-slide upgraded-review-card">
-                <Quote size={32} className="upgraded-quote-watermark" />
-
-                {/* Top Badge & Rating */}
-                <div className="upgraded-card-top-bar">
-                  <span className="upgraded-review-type-pill">
-                    <Bus size={12} />
-                    {review.type || "BUS BOOKING"}
-                  </span>
-                  <div className="upgraded-card-stars">
-                    {[...Array(5)].map((_, idx) => (
-                      <Star key={idx} size={13} fill="#f59e0b" stroke="#f59e0b" />
-                    ))}
-                    <span className="upgraded-card-rating-num">{review.rating}</span>
-                  </div>
-                </div>
-
-                {/* Comment Text */}
-                <p className="upgraded-review-comment">"{review.comment}"</p>
-
-                {/* Author Footer */}
-                <div className="upgraded-review-footer">
-                  <div className="upgraded-author-profile">
-                    <div className="upgraded-author-avatar">{initials}</div>
-                    <div className="upgraded-author-meta">
-                      <strong className="upgraded-author-name">{review.author}</strong>
-                      <span className="upgraded-verified-tag">âœ“ Verified Traveler</span>
-                    </div>
-                  </div>
-                  <span className="upgraded-booking-tag">Verified Trip</span>
-                </div>
-              </article>
-            );
-          }}
-        />
       </section>
 
-      <section className="signup-section section-shell">
-        <div className="signup-card">
-          <div className="signup-copy">
-            <h2>Sign Up For Exclusive Offers</h2>
-            <p>Exclusive access to coupons, special offers and promotions.</p>
+      {/* Testimonials Section - Matching Image 1 Design Mockup */}
+      <section className="client-testimonials-section section-shell">
+        <div className="client-testimonials-container">
+          {/* Left Scenic Hiker Image Card with Floating Glass Badge */}
+          <div className="client-testimonial-left-visual">
+            <img
+              src={picknbookAllTravelBanner}
+              alt="5000+ Satisfied Customers"
+              className="client-testimonial-landscape-img"
+            />
+            {/* Floating Glass Pill Badge */}
+            <div className="client-testimonial-badge-pill">
+              <div className="client-avatar-stack">
+                <span className="avatar-circle av1">AM</span>
+                <span className="avatar-circle av2">AJ</span>
+                <span className="avatar-circle av3">MK</span>
+              </div>
+              <div className="client-badge-text">
+                <strong>5000+</strong>
+                <span>Satisfied Customers</span>
+              </div>
+            </div>
           </div>
-          <div className="signup-action">
-            <button
-              type="button"
-              className="signup-login-btn"
-              onClick={() => navigate("/login")}
-            >
-              Login / Sign Up
-            </button>
+
+          {/* Right Dark Navy Container */}
+          <div className="client-testimonials-right-dark-box">
+            <div className="client-testimonials-header">
+              <h2 className="client-testimonial-title">
+                What Our Client <span className="client-title-muted">Say About Us</span>
+              </h2>
+            </div>
+
+            {/* Testimonials Auto-Scrolling Marquee */}
+            <AutoMarquee
+              items={[
+                {
+                  comment: "Booking our adventure tour with PickNBook was the best decision! Every moment was filled with excitement and wonder.",
+                  author: "Alex Martinez",
+                  role: "Travel Blogger",
+                  initials: "AM",
+                },
+                {
+                  comment: "The hotel booking process was seamless with instant confirmation. Great discounts and zero hidden convenience charges!",
+                  author: "Priya Sharma",
+                  role: "Corporate Traveler",
+                  initials: "PS",
+                },
+                {
+                  comment: "Comparing domestic flight timings and fares on PickNBook is so clear. Best price guarantee really works!",
+                  author: "Rahul Verma",
+                  role: "Frequent Flyer",
+                  initials: "RV",
+                },
+                {
+                  comment: "I travel intercity by Volvo buses often. Live bus tracking and seat selection on PickNBook make every journey smooth.",
+                  author: "Sarah Jenkins",
+                  role: "Digital Nomad",
+                  initials: "SJ",
+                },
+                {
+                  comment: "Booked our resort stay in Goa through PickNBook. Fantastic room options and transparent cancellation terms.",
+                  author: "David Chen",
+                  role: "Family Traveler",
+                  initials: "DC",
+                },
+                {
+                  comment: "Fast customer support and instant refund tracking gave me full confidence for all my trip bookings!",
+                  author: "Ananya Roy",
+                  role: "Backpacker",
+                  initials: "AR",
+                },
+                {
+                  comment: "The UI is so clean and fast. Found cheap flights to Mumbai in under 2 minutes!",
+                  author: "Vikram Malhotra",
+                  role: "Tech Lead",
+                  initials: "VM",
+                },
+                {
+                  comment: "Super convenient seat selection for luxury sleeper buses. Highly recommended for weekend trips!",
+                  author: "Sneha Patel",
+                  role: "Weekend Explorer",
+                  initials: "SP",
+                },
+                {
+                  comment: "Great package deals on luxury hotels in Jaipur. Saved over 30% compared to other platforms.",
+                  author: "Rohan Gupta",
+                  role: "Luxury Traveler",
+                  initials: "RG",
+                },
+                {
+                  comment: "Seamless mobile booking experience! Received e-tickets instantly via SMS and email.",
+                  author: "Meera Nair",
+                  role: "Solo Traveler",
+                  initials: "MN",
+                },
+              ]}
+              className="client-testimonials-marquee"
+              duration={12}
+              pauseOnHover={false}
+              renderItem={(review, idx) => (
+                <article className="client-testimonial-card" key={idx}>
+                  <div className="client-card-stars-row">
+                    {[...Array(5)].map((_, sIdx) => (
+                      <Star key={sIdx} size={14} fill="#f59e0b" stroke="#f59e0b" />
+                    ))}
+                  </div>
+                  <p className="client-card-comment">"{review.comment}"</p>
+                  <div className="client-card-author-row">
+                    <div className="client-card-avatar">{review.initials}</div>
+                    <div className="client-card-author-meta">
+                      <strong className="client-card-author-name">{review.author}</strong>
+                      <span className="client-card-author-role">{review.role}</span>
+                    </div>
+                  </div>
+                </article>
+              )}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Modern Exclusive Offers Newsletter Banner */}
+      <section className="modern-signup-section section-shell">
+        <div className="modern-signup-card">
+          {/* Background Decorative Glow Elements */}
+          <div className="modern-signup-glow-circle glow-1" aria-hidden="true" />
+          <div className="modern-signup-glow-circle glow-2" aria-hidden="true" />
+
+          <div className="modern-signup-content">
+            {/* Left Copy */}
+            <div className="modern-signup-copy">
+              <h2 className="modern-signup-heading">
+                Unlock <span className="highlight-red-text">Exclusive Offers</span> On Your Next Journey
+              </h2>
+              <p className="modern-signup-subtext">
+                Sign up to receive secret flight deals, hotel discount coupons & promo codes directly in your inbox.
+              </p>
+              <div className="modern-signup-trust-row">
+                <span><ShieldCheck size={14} className="trust-icon" /> No Spam Guarantee</span>
+                <span className="trust-dot">•</span>
+                <span><Tag size={14} className="trust-icon" /> Instant Promo Codes</span>
+                <span className="trust-dot">•</span>
+                <span><Clock size={14} className="trust-icon" /> Cancel Anytime</span>
+              </div>
+            </div>
+
+            {/* Right Action Box: Interactive Email Input + Button */}
+            <div className="modern-signup-action-box">
+              <form
+                className="modern-signup-email-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  navigate("/login");
+                }}
+              >
+                <div className="modern-email-input-wrap">
+                  <Mail size={18} className="email-field-icon" />
+                  <input
+                    type="email"
+                    placeholder="Enter your email address..."
+                    className="modern-email-input"
+                    required
+                  />
+                </div>
+                <button type="submit" className="modern-signup-submit-btn">
+                  <span>Get Secret Deals</span>
+                  <ArrowRight size={16} />
+                </button>
+              </form>
+              <div className="modern-signup-or-login">
+                <span>Already a member?</span>
+                <button
+                  type="button"
+                  className="modern-login-link-btn"
+                  onClick={() => navigate("/login")}
+                >
+                  Login / Sign Up →
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -5879,25 +6274,6 @@ export default function HomePage() {
               <span>Get app link</span>
             </div>
 
-            <div className="india-app-downloads" aria-label="Mobile app download links">
-              <a className="store-badge play-store-badge" href="#google-play" aria-label="Get it on Google Play">
-                <img
-                  className="store-badge-img google-play-badge-img"
-                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Google_Play_Store_badge_EN.svg"
-                  alt="Get it on Google Play"
-                  loading="lazy"
-                />
-              </a>
-
-              <a className="store-badge app-store-badge" href="#app-store" aria-label="Download on the App Store">
-                <img
-                  className="store-badge-img app-store-badge-img"
-                  src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Download_on_the_App_Store_Badge_US-UK_RGB_blk.svg"
-                  alt="Download on the App Store"
-                  loading="lazy"
-                />
-              </a>
-            </div>
           </div>
         </div>
 

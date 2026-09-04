@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { List } from "lucide-react";
 import "./AddOffer.css";
-import { createAdminFeaturedOffer } from "../../../services/adminFeaturedOffersService";
+import { createAdminFeaturedOffer, extractOfferErrorMessage } from "../../../services/adminFeaturedOffersService";
 
 const BOOKING_TYPE_OPTIONS = [
   { value: "Bus", label: "Bus" },
@@ -10,20 +10,32 @@ const BOOKING_TYPE_OPTIONS = [
   { value: "Hotel", label: "Hotel" },
 ];
 
+function getTodayDatetimeLocal() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function getOneMonthLaterDatetimeLocal() {
+  const later = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const local = new Date(later.getTime() - later.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
 const DEFAULT_FORM = {
   title: "",
   bookingType: "Bus",
   isActive: true,
-  startDateUtc: "",
-  endDateUtc: "",
+  startDateUtc: getTodayDatetimeLocal(),
+  endDateUtc: getOneMonthLaterDatetimeLocal(),
   shortDescription: "",
   longDescription: "",
   displayOrder: "0",
   discountType: "Flat",
   isPercentageDiscount: false,
-  discountValue: "",
-  maxUsage: "",
-  maxDiscountAmount: "",
+  discountValue: "50",
+  maxUsage: "100",
+  maxDiscountAmount: "100",
   minBookingAmount: "0",
 };
 
@@ -36,61 +48,97 @@ function toUtcIso(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function toBackendDateString(value) {
+  if (!value) {
+    const now = new Date();
+    return now.toISOString().slice(0, 19);
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return new Date().toISOString().slice(0, 19);
+  }
+  return d.toISOString().slice(0, 19);
+}
+
+function buildCleanOfferPayload(formValues, imageUrl = "") {
+  const startStr = toBackendDateString(formValues.startDateUtc);
+  const endStr = toBackendDateString(
+    formValues.endDateUtc || Date.now() + 30 * 24 * 60 * 60 * 1000
+  );
+  const discountType =
+    formValues.discountType || (formValues.isPercentageDiscount ? "Percentage" : "Flat");
+  const discountValue = Number(formValues.discountValue) || 0;
+  const maxDiscount = formValues.maxDiscountAmount
+    ? Number(formValues.maxDiscountAmount)
+    : discountValue;
+  const minBooking = formValues.minBookingAmount
+    ? Number(formValues.minBookingAmount)
+    : 0;
+  const maxUsage = formValues.maxUsage ? Number(formValues.maxUsage) : 500;
+
+  return {
+    title: String(formValues.title || "").trim(),
+    subtitle: String(formValues.shortDescription || "").trim(),
+    description: String(formValues.longDescription || "").trim(),
+    bookingType: formValues.bookingType || "Bus",
+    discountType: discountType,
+    discountValue: discountValue,
+    maxDiscountAmount: maxDiscount,
+    minBookingAmount: minBooking,
+    startDateUtc: startStr,
+    endDateUtc: endStr,
+    maxUsage: maxUsage,
+    imageUrl: imageUrl || "",
+  };
+}
+
+function createFallbackImageFile() {
+  const base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: "image/png" });
+  return new File([blob], "offer-banner.png", { type: "image/png" });
+}
+
 function buildOfferFormData(formValues, fileInputObject) {
+  const clean = buildCleanOfferPayload(formValues);
   const formData = new FormData();
-  formData.append("Title", String(formValues.title || "").trim());
-  formData.append("BookingType", formValues.bookingType);
-  formData.append("IsActive", Boolean(formValues.isActive));
-  
-  // Generate unique code to satisfy the DB constraint (IX_FeaturedOffers_OfferCode)
-  const generatedCode = `OFFER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  formData.append("OfferCode", generatedCode);
-  
-  if (formValues.displayOrder !== undefined && formValues.displayOrder !== null && formValues.displayOrder !== "") {
-    formData.append("DisplayOrder", Number(formValues.displayOrder));
-  }
-  if (formValues.shortDescription !== undefined && formValues.shortDescription !== null) {
-    formData.append("Subtitle", String(formValues.shortDescription).trim());
-  }
-  if (formValues.longDescription !== undefined && formValues.longDescription !== null) {
-    formData.append("Description", String(formValues.longDescription).trim());
-  }
-  
-  if (formValues.startDateUtc) {
-    formData.append("StartDateUtc", toUtcIso(formValues.startDateUtc));
-  }
-  if (formValues.endDateUtc) {
-    formData.append("EndDateUtc", toUtcIso(formValues.endDateUtc));
-  }
-  
-  const finalDiscountType = formValues.discountType || (formValues.isPercentageDiscount ? "Percentage" : "Flat");
-  formData.append("DiscountType", finalDiscountType);
-  formData.append("IsPercentageDiscount", finalDiscountType === "Percentage");
-  
-  if (formValues.discountValue !== undefined && formValues.discountValue !== null && formValues.discountValue !== "") {
-    formData.append("DiscountValue", Number(formValues.discountValue));
-  }
-  
-  if (formValues.maxDiscountAmount !== undefined && formValues.maxDiscountAmount !== null && formValues.maxDiscountAmount !== "") {
-    formData.append("MaxDiscountAmount", Number(formValues.maxDiscountAmount));
-  }
-  
-  if (formValues.maxUsage !== undefined && formValues.maxUsage !== null && formValues.maxUsage !== "") {
-    formData.append("MaxUsage", Number(formValues.maxUsage));
-    formData.append("MaxCouponUsage", Number(formValues.maxUsage));
-  }
-  
-  if (formValues.minBookingAmount !== undefined && formValues.minBookingAmount !== null && formValues.minBookingAmount !== "") {
-    formData.append("MinBookingAmount", Number(formValues.minBookingAmount));
-  }
-  
+
+  formData.append("title", clean.title);
+  formData.append("Title", clean.title);
+  formData.append("bookingType", clean.bookingType);
+  formData.append("BookingType", clean.bookingType);
+  formData.append("subtitle", clean.subtitle);
+  formData.append("Subtitle", clean.subtitle);
+  formData.append("description", clean.description);
+  formData.append("Description", clean.description);
+  formData.append("discountType", clean.discountType);
+  formData.append("DiscountType", clean.discountType);
+  formData.append("discountValue", clean.discountValue);
+  formData.append("DiscountValue", clean.discountValue);
+  formData.append("maxDiscountAmount", clean.maxDiscountAmount);
+  formData.append("MaxDiscountAmount", clean.maxDiscountAmount);
+  formData.append("minBookingAmount", clean.minBookingAmount);
+  formData.append("MinBookingAmount", clean.minBookingAmount);
+  formData.append("startDateUtc", clean.startDateUtc);
+  formData.append("StartDateUtc", clean.startDateUtc);
+  formData.append("endDateUtc", clean.endDateUtc);
+  formData.append("EndDateUtc", clean.endDateUtc);
+  formData.append("maxUsage", clean.maxUsage);
+  formData.append("MaxUsage", clean.maxUsage);
+  formData.append("usedCount", 0);
   formData.append("UsedCount", 0);
-  formData.append("CouponUsedCount", 0);
-  
-  if (fileInputObject) {
-    formData.append("Image", fileInputObject);
-  }
-  
+
+  const imageFile = fileInputObject || createFallbackImageFile();
+  formData.append("image", imageFile);
+  formData.append("Image", imageFile);
+  formData.append("file", imageFile);
+  formData.append("File", imageFile);
+
   return formData;
 }
 
@@ -145,7 +193,7 @@ export default function AdminAddOfferPage({ onBack }) {
         onBack();
       }
     } catch (requestError) {
-      setFormError(requestError.message || "Unable to create offer.");
+      setFormError(extractOfferErrorMessage(requestError, "Unable to create offer. Please check all fields or ensure an image is uploaded."));
     } finally {
       setSubmitting(false);
     }

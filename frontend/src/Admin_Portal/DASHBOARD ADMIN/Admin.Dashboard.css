@@ -100,8 +100,20 @@
 /* Dashboard Columns Layout */
 .dashboard-row-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(12, 1fr);
     gap: 20px;
+}
+
+.dashboard-card-shell.revenue-box {
+    grid-column: span 5;
+}
+
+.dashboard-card-shell.funnel-box {
+    grid-column: span 4;
+}
+
+.dashboard-card-shell.today-status-box {
+    grid-column: span 3;
 }
 
 .dashboard-card-shell {
@@ -113,6 +125,69 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card-shell:hover {
+    box-shadow: 0 8px 30px rgba(30, 117, 255, 0.08);
+    border-color: var(--admin-primary);
+}
+
+/* Glass mini-stat cards (2 new cards in revenue row) */
+.glass-mini-stat-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0;
+}
+
+.glass-mini-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 14px 0 10px;
+    border-bottom: 1px solid rgba(30, 117, 255, 0.1);
+    gap: 4px;
+}
+
+.glass-mini-stat:last-child {
+    border-bottom: none;
+}
+
+.glass-mini-stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--admin-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.glass-mini-stat-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--admin-text);
+    letter-spacing: -0.02em;
+}
+
+.glass-mini-stat-trend {
+    font-size: 0.72rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.glass-mini-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    color: #fff;
 }
 
 .card-title-bar {
@@ -140,9 +215,9 @@
 
 /* World Map Plotted */
 .live-bookings-map-container {
-    height: 220px;
+    height: 240px;
     position: relative;
-    background: radial-gradient(circle at center, rgba(30, 117, 255, 0.05), transparent 70%);
+    background: radial-gradient(circle at center, rgba(30, 117, 255, 0.04), transparent 70%);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -150,7 +225,11 @@
 .map-svg-bg {
     width: 100%;
     height: 100%;
-    opacity: 0.2;
+    opacity: 0.9;
+}
+
+.map-route-dash-flow {
+    animation: dashFlow 20s linear infinite;
 }
 
 .map-point-pulse {
@@ -159,6 +238,7 @@
     flex-direction: column;
     align-items: center;
     transform: translate(-50%, -50%);
+    z-index: 10;
 }
 
 .pulse-dot {
@@ -180,12 +260,23 @@
     border-radius: 4px;
     border: 1px solid var(--admin-border);
     white-space: nowrap;
+    z-index: 11;
 }
 
 @keyframes pulse {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 117, 255, 0.7); }
     70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(30, 117, 255, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 117, 255, 0); }
+}
+
+@keyframes dashFlow {
+    from { stroke-dashoffset: 200; }
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* Booking Funnel */
@@ -206,6 +297,7 @@
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .funnel-stage.s1 { background: #3b82f6; width: 95%; margin: 0 auto; }
@@ -384,17 +476,45 @@
 
 /* Responsive Overrides */
 @media (max-width: 1400px) {
-    /* Kept 6 columns for metrics grid as requested */
+    .dashboard-row-layout {
+        grid-template-columns: repeat(12, 1fr);
+    }
+    .dashboard-card-shell.revenue-box {
+        grid-column: span 5;
+    }
+    .dashboard-card-shell.funnel-box {
+        grid-column: span 4;
+    }
+    .dashboard-card-shell.today-status-box {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 1100px) {
+    .dashboard-row-layout {
+        grid-template-columns: repeat(12, 1fr);
+    }
+    .dashboard-card-shell.revenue-box {
+        grid-column: span 12;
+    }
+    .dashboard-card-shell.funnel-box {
+        grid-column: span 7;
+    }
+    .dashboard-card-shell.today-status-box {
+        grid-column: span 5;
+    }
 }
 
 @media (max-width: 1000px) {
     .dashboard-metrics-grid {
-        grid-template-columns: repeat(3, 1fr); /* At very small screens, fallback to 3 */
+        grid-template-columns: repeat(3, 1fr);
     }
     .dashboard-row-layout {
         grid-template-columns: 1fr;
     }
-    .dashboard-card-shell.funnel-box {
+    .dashboard-card-shell.revenue-box,
+    .dashboard-card-shell.funnel-box,
+    .dashboard-card-shell.today-status-box {
         grid-column: span 1;
     }
     .dashboard-four-cols {

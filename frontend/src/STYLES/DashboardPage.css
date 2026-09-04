@@ -887,39 +887,56 @@
 }
 
 .dashboard-home .dashboard-header {
-  min-height: 173px;
-  border-color: #ffad72;
-  border-radius: 24px;
-  background: linear-gradient(105deg, #eaf5d0 0%, #fed8ab 42%, #c7d5eb 100%);
+  min-height: auto;
+  border: 1.5px solid #ffad72;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #dff0d8 0%, #fee0ba 48%, #cfddf2 100%);
   box-shadow: none;
-  padding: 20px 24px;
+  padding: 24px 32px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dashboard-home .dashboard-header-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .dashboard-home .dashboard-header h1 {
-  color: #123764;
-  font-size: 30px;
-  letter-spacing: 0;
+  margin: 0 0 6px 0;
+  color: #0f355c;
+  font-family: var(--dashboard-heading-font, "Outfit", sans-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 
 .dashboard-home .dashboard-header p {
-  color: #315f95;
-  font-size: 15px;
+  margin: 0;
+  color: #366896;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 400;
+  max-width: 820px;
 }
 
-.dashboard-home .dashboard-header-meta > span {
-  border-color: #d5e5fb;
-  background: rgba(255, 255, 255, 0.82);
-  color: #24486f;
-  min-height: 35px;
-  padding: 0 16px;
-}
-
-.dashboard-home .dashboard-meta-button {
-  min-height: 36px;
-  padding: 0 18px;
-  border-color: #e24d31;
-  background: linear-gradient(135deg, #ff6044, #f04423);
+.dashboard-home .dashboard-time-badge {
+  background: #ffffff;
+  color: #0f355c;
+  border-radius: 9999px;
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(15, 53, 92, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dashboard-home .dashboard-kpi-grid {
@@ -1362,44 +1379,10 @@
   }
 }
 
-.dashboard-home .dashboard-header {
-  min-height: 118px;
-  border-radius: 18px;
-  padding: 14px 18px;
-}
-
 .dashboard-eyebrow {
   min-height: 24px;
   padding: 0 10px;
   font-size: 8px;
-}
-
-.dashboard-home .dashboard-header h1 {
-  margin-top: 8px;
-  font-size: 24px;
-}
-
-.dashboard-home .dashboard-header p {
-  margin-top: 4px;
-  max-width: 760px;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.dashboard-header-meta {
-  gap: 6px;
-}
-
-.dashboard-home .dashboard-header-meta > span {
-  min-height: 29px;
-  padding: 0 13px;
-  font-size: 10px;
-}
-
-.dashboard-home .dashboard-meta-button {
-  min-height: 31px;
-  padding: 0 15px;
-  font-size: 10px;
 }
 
 .dashboard-home .dashboard-kpi-grid,
@@ -1516,4 +1499,51 @@
 
 .chart-legend-list {
   gap: 6px;
+}
+
+/* ==========================================================================
+   Global Dashboard Table Headers - Guaranteed Visibility Across All Sections
+   ========================================================================== */
+.dashboard-layout table thead,
+.dashboard-main table thead,
+.dashboard-layout .ops-table thead,
+.dashboard-layout .traveler-table thead,
+.dashboard-layout .deposit-table thead,
+.dashboard-layout .statement-table thead,
+.dashboard-layout .bank-table thead,
+.dashboard-layout .qr-table thead {
+  background: #981b3d !important;
+  color: #ffffff !important;
+}
+
+.dashboard-layout table thead tr th,
+.dashboard-main table thead tr th,
+.dashboard-layout table th,
+.dashboard-main table th,
+.dashboard-layout .ops-table th,
+.dashboard-layout .traveler-table th,
+.dashboard-layout .deposit-table th,
+.dashboard-layout .statement-table th,
+.dashboard-layout .bank-table th,
+.dashboard-layout .qr-table th {
+  background: #981b3d !important;
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 14px 16px !important;
+  white-space: nowrap !important;
+  border: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: table-cell !important;
+  text-align: left !important;
+  vertical-align: middle !important;
+  text-shadow: none !important;
+}
+
+.dashboard-layout .traveler-table th,
+.dashboard-layout .deposit-table th {
+  text-align: center !important;
 }

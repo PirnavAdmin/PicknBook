@@ -1,5 +1,5 @@
 .bus-discount-mapping-page-container {
-  --admin-primary: #A51C49 !important;
+  --admin-primary: #A41B48 !important;
   --admin-primary-strong: #851237 !important;
 }
 
@@ -163,9 +163,9 @@
   margin-top: 10px;
 }
 
-.primary-btn {
-  border: 1.5px solid #A51C49 !important;
-  background: #A51C49 !important;
+body .bus-discount-mapping-page-container .primary-btn {
+  border: 1.5px solid #A41B48 !important;
+  background: #A41B48 !important;
   color: #fff !important;
   padding: 12px 20px;
   border-radius: 12px;
@@ -181,7 +181,7 @@
   transition: all 0.25s ease !important;
 }
 
-.primary-btn:hover {
+body .bus-discount-mapping-page-container .primary-btn:hover {
   background: #851237 !important;
   border-color: #851237 !important;
   transform: translateY(-3px) !important;
@@ -294,8 +294,8 @@
 }
 
 .table-actions .ghost-btn.small.icon-btn {
-  background: #A51C49 !important;
-  border-color: #A51C49 !important;
+  background: #A41B48 !important;
+  border-color: #A41B48 !important;
   color: #ffffff !important;
   transition: all 0.25s ease !important;
   box-shadow: 0 2px 6px rgba(194, 24, 91, 0.15) !important;
@@ -308,8 +308,8 @@
 }
 
 .table-actions .danger-btn.small.icon-btn {
-  background: #A51C49 !important;
-  border-color: #A51C49 !important;
+  background: #A41B48 !important;
+  border-color: #A41B48 !important;
   color: #ffffff !important;
   transition: all 0.25s ease !important;
   box-shadow: 0 2px 6px rgba(194, 24, 91, 0.15) !important;

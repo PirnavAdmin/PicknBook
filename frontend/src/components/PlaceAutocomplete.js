@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Plane, Building2, Bus } from "lucide-react";
+import { Plane, Building2, Bus, MapPin } from "lucide-react";
 
 
 const USE_DIRECT_API_IN_DEV =
@@ -107,12 +107,12 @@ export default function PlaceAutocomplete({
 
           const normalized = rawList
             .map((item) => ({
-              cityName: typeof item === "string" ? item : item?.cityName || "",
-              cityId: typeof item === "object" ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
-              usageCount:
-                typeof item === "object" && item?.usageCount
-                  ? item.usageCount
-                  : 0,
+              cityName:    typeof item === "string" ? item : item?.cityName    || "",
+              cityId:      typeof item === "object"  ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
+              stateName:   typeof item === "object"  ? (item.stateName   || item.StateName   || "") : "",
+              airportCode: typeof item === "object"  ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
+              airportName: typeof item === "object"  ? (item.airportName || item.AirportName || "") : "",
+              usageCount:  typeof item === "object" && item?.usageCount ? item.usageCount : 0,
             }))
             .filter((item) => item.cityName);
 
@@ -154,40 +154,45 @@ export default function PlaceAutocomplete({
   const isBusMode = tripType === "bus" || tripType === "buses";
 
   return (
-    <div className={`${isInline ? "" : "field"} place-autocomplete ${className || ""}`} ref={wrapperRef} style={isInline ? { width: '100%', position: 'relative' } : {}}>
+    <div className={`${isInline ? "" : "field"} place-autocomplete ${className || ""}`} ref={wrapperRef} style={{ position: "relative", width: isInline ? "100%" : undefined }}>
       {label && <label>{label}</label>}
       <div className={isInline ? "inline-autocomplete-wrap" : "control-wrap"} style={isInline ? { display: 'flex', alignItems: 'center', gap: '8px', width: '100%' } : {}}>
         {tripType === "flight" ? (
-          <Plane size={18} color={isInline ? "var(--hotel-muted)" : "currentColor"} />
+          <Plane size={18} color={isInline ? "#ffffff" : "currentColor"} />
         ) : tripType === "hotel" ? (
-          <Building2 size={18} color={isInline ? "var(--hotel-muted)" : "currentColor"} />
+          <MapPin size={18} color={isInline ? "#ffffff" : "#dc2626"} />
         ) : (
-          <Bus size={18} color={isInline ? "var(--hotel-muted)" : "currentColor"} />
+          <Bus size={18} color={isInline ? "#ffffff" : "currentColor"} />
         )}
         {isInline ? (
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Stay destination</span>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              {label || "STAY DESTINATION"}
+            </span>
             <input
               type="text"
               value={inputValue}
               onChange={handleInputChange}
               onFocus={() => setOpen(inputValue.trim().length > 0)}
               className={`inline-autocomplete-input ${error ? "error" : ""}`}
-              placeholder={placeholder}
+              placeholder={placeholder || "Enter city, area or hotel"}
               autoComplete="off"
               style={{
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
                 boxShadow: 'none',
-                color: 'var(--hotel-muted)',
-                fontWeight: 600,
+                color: '#ffffff',
+                fontWeight: 700,
                 fontSize: '1.02rem',
                 padding: 0,
-                marginTop: '5px',
+                margin: '2px 0',
                 width: '100%'
               }}
             />
+            <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              ENTER CITY, AREA OR HOTEL
+            </span>
           </div>
         ) : (
           <input
@@ -211,11 +216,37 @@ export default function PlaceAutocomplete({
               <button
                 key={`${item.cityName}-${item.usageCount || idx}`}
                 type="button"
-                className={isBusMode ? "bus-place-option" : "place-option"}
+                className="pnb-place-option"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => handleSelect(item)}
               >
-                {item.cityName}
+                <div className="pnb-place-icon-wrap">
+                  {tripType === "flight" ? (
+                    <Plane size={15} />
+                  ) : tripType === "hotel" ? (
+                    <Building2 size={15} />
+                  ) : (
+                    <Bus size={15} />
+                  )}
+                </div>
+                <div className="pnb-place-text">
+                  <div className="pnb-place-primary">
+                    <span className="pnb-place-city">{item.cityName}</span>
+                    {tripType === "flight" && item.airportCode && (
+                      <span className="pnb-place-code">{item.airportCode}</span>
+                    )}
+                  </div>
+                  {(tripType === "flight"
+                    ? [item.airportName, item.stateName].filter(Boolean).join(", ")
+                    : item.stateName
+                  ) && (
+                    <div className="pnb-place-secondary">
+                      {tripType === "flight"
+                        ? [item.airportName, item.stateName].filter(Boolean).join(", ")
+                        : item.stateName}
+                    </div>
+                  )}
+                </div>
               </button>
             ))
           ) : (

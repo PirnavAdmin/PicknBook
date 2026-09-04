@@ -1,6 +1,12 @@
-/* eslint-disable */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
+import {
+  GoogleMap,
+  Marker,
+  InfoWindow,
+  Polyline,
+  useJsApiLoader,
+} from "@react-google-maps/api";
 import './Admin.Dashboard.css';
 import {
   getAdminDashboardSummary,
@@ -13,33 +19,113 @@ import { listHotFlightRoutes } from '../../services/flightBookingService';
 import { getPopularBusRoutesFromSearchHistory } from '../../services/busSearchHistoryService';
 import { b2bAdminService } from '../../services/b2bAdminService';
 
+const CITY_LAT_LNG = {
+  'delhi': { lat: 28.6139, lng: 77.2090 },
+  'del': { lat: 28.6139, lng: 77.2090 },
+  'mumbai': { lat: 19.0760, lng: 72.8777 },
+  'bom': { lat: 19.0760, lng: 72.8777 },
+  'bangalore': { lat: 12.9716, lng: 77.5946 },
+  'bengaluru': { lat: 12.9716, lng: 77.5946 },
+  'blr': { lat: 12.9716, lng: 77.5946 },
+  'hyderabad': { lat: 17.3850, lng: 78.4867 },
+  'hyd': { lat: 17.3850, lng: 78.4867 },
+  'kolkata': { lat: 22.5726, lng: 88.3639 },
+  'ccu': { lat: 22.5726, lng: 88.3639 },
+  'chennai': { lat: 13.0827, lng: 80.2707 },
+  'maa': { lat: 13.0827, lng: 80.2707 },
+  'pune': { lat: 18.5204, lng: 73.8567 },
+  'pnq': { lat: 18.5204, lng: 73.8567 },
+  'ahmedabad': { lat: 23.0225, lng: 72.5714 },
+  'amd': { lat: 23.0225, lng: 72.5714 },
+  'jaipur': { lat: 26.9124, lng: 75.7873 },
+  'jpr': { lat: 26.9124, lng: 75.7873 },
+  'goa': { lat: 15.2993, lng: 74.1240 },
+  'goi': { lat: 15.2993, lng: 74.1240 },
+  'kochi': { lat: 9.9312, lng: 76.2673 },
+  'cok': { lat: 9.9312, lng: 76.2673 },
+  'trivandrum': { lat: 8.5241, lng: 76.9366 },
+  'trv': { lat: 8.5241, lng: 76.9366 },
+  'guwahati': { lat: 26.1445, lng: 91.7362 },
+  'gau': { lat: 26.1445, lng: 91.7362 },
+  'lucknow': { lat: 26.8467, lng: 80.9462 },
+  'lko': { lat: 26.8467, lng: 80.9462 },
+  'patna': { lat: 25.5941, lng: 85.1376 },
+  'pat': { lat: 25.5941, lng: 85.1376 },
+  'bhubaneswar': { lat: 20.2961, lng: 85.8245 },
+  'bbi': { lat: 20.2961, lng: 85.8245 },
+  'chandigarh': { lat: 30.7333, lng: 76.7794 },
+  'ixc': { lat: 30.7333, lng: 76.7794 },
+  'vijayawada': { lat: 16.5062, lng: 80.6480 },
+  'vza': { lat: 16.5062, lng: 80.6480 },
+  'visakhapatnam': { lat: 17.6868, lng: 83.2185 },
+  'vtg': { lat: 17.6868, lng: 83.2185 },
+  'surat': { lat: 21.1702, lng: 72.8311 },
+  'stv': { lat: 21.1702, lng: 72.8311 },
+  'nagpur': { lat: 21.1458, lng: 79.0882 },
+  'nag': { lat: 21.1458, lng: 79.0882 },
+  'indore': { lat: 22.7196, lng: 75.8577 },
+  'idr': { lat: 22.7196, lng: 75.8577 },
+  'coimbatore': { lat: 11.0168, lng: 76.9558 },
+  'cjb': { lat: 11.0168, lng: 76.9558 },
+};
+
+function getCityLatLng(cityName) {
+  const name = (cityName || '').toLowerCase().trim();
+  if (CITY_LAT_LNG[name]) return CITY_LAT_LNG[name];
+  return { lat: 20.5937, lng: 78.9629 };
+}
+
 const CITY_COORDS = {
-  'delhi': { left: 50, top: 15 },
-  'mumbai': { left: 25, top: 50 },
-  'bangalore': { left: 40, top: 78 },
-  'bengaluru': { left: 40, top: 78 },
-  'hyderabad': { left: 48, top: 50 },
-  'kolkata': { left: 75, top: 40 },
-  'chennai': { left: 65, top: 80 },
-  'pune': { left: 28, top: 55 },
-  'ahmedabad': { left: 20, top: 50 },
-  'jaipur': { left: 35, top: 35 },
-  'goa': { left: 25, top: 75 },
-  'kochi': { left: 40, top: 92 },
-  'trivandrum': { left: 42, top: 96 },
-  'guwahati': { left: 85, top: 40 },
-  'lucknow': { left: 55, top: 35 },
-  'patna': { left: 65, top: 45 },
-  'bhubaneswar': { left: 65, top: 60 },
-  'chandigarh': { left: 45, top: 15 },
-  'manali': { left: 48, top: 10 },
-  'udaipur': { left: 30, top: 45 },
-  'vijayawada': { left: 65, top: 62 },
-  'visakhapatnam': { left: 65, top: 58 },
-  'surat': { left: 22, top: 55 },
-  'nagpur': { left: 52, top: 55 },
-  'indore': { left: 40, top: 55 },
-  'coimbatore': { left: 48, top: 90 },
+  'delhi': { left: 38, top: 20 },
+  'del': { left: 38, top: 20 },
+  'mumbai': { left: 26, top: 58 },
+  'bom': { left: 26, top: 58 },
+  'bangalore': { left: 39, top: 78 },
+  'bengaluru': { left: 39, top: 78 },
+  'blr': { left: 39, top: 78 },
+  'hyderabad': { left: 43, top: 58 },
+  'hyd': { left: 43, top: 58 },
+  'kolkata': { left: 69, top: 44 },
+  'ccu': { left: 69, top: 44 },
+  'chennai': { left: 48, top: 79 },
+  'maa': { left: 48, top: 79 },
+  'pune': { left: 29, top: 61 },
+  'pnq': { left: 29, top: 61 },
+  'ahmedabad': { left: 24, top: 45 },
+  'amd': { left: 24, top: 45 },
+  'jaipur': { left: 32, top: 32 },
+  'jpr': { left: 32, top: 32 },
+  'goa': { left: 28, top: 71 },
+  'goi': { left: 28, top: 71 },
+  'kochi': { left: 37, top: 86 },
+  'cok': { left: 37, top: 86 },
+  'trivandrum': { left: 38, top: 90 },
+  'trv': { left: 38, top: 90 },
+  'guwahati': { left: 82, top: 30 },
+  'gau': { left: 82, top: 30 },
+  'lucknow': { left: 46, top: 32 },
+  'lko': { left: 46, top: 32 },
+  'patna': { left: 58, top: 36 },
+  'pat': { left: 58, top: 36 },
+  'bhubaneswar': { left: 61, top: 52 },
+  'bbi': { left: 61, top: 52 },
+  'chandigarh': { left: 36, top: 20 },
+  'ixc': { left: 36, top: 20 },
+  'manali': { left: 37, top: 15 },
+  'udaipur': { left: 28, top: 40 },
+  'udr': { left: 28, top: 40 },
+  'vijayawada': { left: 51, top: 62 },
+  'vza': { left: 51, top: 62 },
+  'visakhapatnam': { left: 58, top: 56 },
+  'vtg': { left: 58, top: 56 },
+  'surat': { left: 25, top: 50 },
+  'stv': { left: 25, top: 50 },
+  'nagpur': { left: 43, top: 48 },
+  'nag': { left: 43, top: 48 },
+  'indore': { left: 35, top: 46 },
+  'idr': { left: 35, top: 46 },
+  'coimbatore': { left: 39, top: 82 },
+  'cjb': { left: 39, top: 82 },
 };
 
 function getCityCoords(cityName) {
@@ -162,6 +248,28 @@ const AdminDashboard = () => {
   const [revenueDate, setRevenueDate] = useState(todayStr);
   const [funnelDate, setFunnelDate] = useState(todayStr);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
+  const [showFutureDateModal, setShowFutureDateModal] = useState(false);
+
+  // Real API state objects from GET /api/Dashboard/overview
+  const [apiFunnel, setApiFunnel] = useState(null);
+  const [apiWeeklyChart, setApiWeeklyChart] = useState(null);
+  const [apiTodayStatus, setApiTodayStatus] = useState(null);
+
+  const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "";
+  const { isLoaded: isGoogleMapLoaded, loadError: googleMapLoadError } = useJsApiLoader({
+    googleMapsApiKey: googleMapsApiKey,
+  });
+  const [selectedMapMarker, setSelectedMapMarker] = useState(null);
+
+  const handleDateChange = (setterFn) => (e) => {
+    const val = e.target.value;
+    if (val && val > todayStr) {
+      setShowFutureDateModal(true);
+      setterFn(todayStr);
+    } else {
+      setterFn(val);
+    }
+  };
 
   // CountUp animations for B2C metrics
   const animatedRevenue = useCountUp(metrics.revenue);
@@ -216,6 +324,16 @@ const AdminDashboard = () => {
       const summaryResult = await getAdminDashboardSummary();
       const metricsResult = deriveAdminMetrics(summaryResult);
       
+      if (summaryResult?.bookingFunnel) {
+        setApiFunnel(summaryResult.bookingFunnel);
+      }
+      if (summaryResult?.weeklyChart) {
+        setApiWeeklyChart(summaryResult.weeklyChart);
+      }
+      if (summaryResult?.todayStatus) {
+        setApiTodayStatus(summaryResult.todayStatus);
+      }
+
       if (metricsResult) {
         let totalUsersCount = 0;
         try {
@@ -246,12 +364,35 @@ const AdminDashboard = () => {
                                (Array.isArray(busCancellations) ? busCancellations.length : 0);
 
         setMetrics(prev => {
-          const finalRevenue = metricsResult.revenue || metricsResult.totalRevenue || prev.revenue;
-          const finalBookings = metricsResult.totalBookings || metricsResult.bookings || prev.bookings;
-          const finalUsers = totalUsersCount > 0 ? totalUsersCount : (summaryResult?.usersCount || prev.users);
-          const finalActiveBookings = metricsResult.activeBookings || metricsResult.pendingBookings || prev.activeBookings;
-          const finalCancelledBookings = metricsResult.failedBookings || prev.cancelledBookings;
-          const finalRefundRequests = pendingRefunds > 0 ? pendingRefunds : prev.refundRequests;
+          const finalRevenue =
+            metricsResult.revenue !== undefined
+              ? metricsResult.revenue
+              : prev.revenue;
+
+          const finalBookings =
+            metricsResult.totalBookings !== undefined
+              ? metricsResult.totalBookings
+              : (metricsResult.bookings !== undefined ? metricsResult.bookings : prev.bookings);
+
+          const finalUsers =
+            metricsResult.totalUsers > 0
+              ? metricsResult.totalUsers
+              : (totalUsersCount > 0 ? totalUsersCount : (summaryResult?.usersCount !== undefined ? summaryResult.usersCount : 0));
+
+          const finalActiveBookings =
+            metricsResult.activeBookings !== undefined
+              ? metricsResult.activeBookings
+              : (metricsResult.pendingBookings !== undefined ? metricsResult.pendingBookings : prev.activeBookings);
+
+          const finalCancelledBookings =
+            metricsResult.cancelledBookings !== undefined
+              ? metricsResult.cancelledBookings
+              : (metricsResult.failedBookings !== undefined ? metricsResult.failedBookings : prev.cancelledBookings);
+
+          const finalRefundRequests =
+            metricsResult.refundRequests !== undefined && metricsResult.refundRequests > 0
+              ? metricsResult.refundRequests
+              : (pendingRefunds > 0 ? pendingRefunds : (metricsResult.refundRequests !== undefined ? metricsResult.refundRequests : prev.refundRequests));
 
           const calculateTrend = (val, isNegative) => {
             if (!val) return isNegative ? -2.5 : 5.0;
@@ -267,38 +408,103 @@ const AdminDashboard = () => {
             activeBookings: finalActiveBookings,
             cancelledBookings: finalCancelledBookings,
             refundRequests: finalRefundRequests,
-            trends: summaryResult?.trends || {
-              revenue: calculateTrend(finalRevenue, false),
-              bookings: calculateTrend(finalBookings, false),
-              users: calculateTrend(finalUsers, false),
-              activeBookings: calculateTrend(finalActiveBookings, false),
-              cancelledBookings: calculateTrend(finalCancelledBookings, true),
-              refundRequests: calculateTrend(finalRefundRequests, true)
+            trends: {
+              revenue: metricsResult.revenueGrowth ?? calculateTrend(finalRevenue, false),
+              bookings: metricsResult.bookingsGrowth ?? calculateTrend(finalBookings, false),
+              users: metricsResult.usersGrowth ?? calculateTrend(finalUsers, false),
+              activeBookings: metricsResult.activeBookingsGrowth ?? calculateTrend(finalActiveBookings, false),
+              cancelledBookings: metricsResult.cancelledBookingsGrowth ?? calculateTrend(finalCancelledBookings, true),
+              refundRequests: metricsResult.refundRequestsGrowth ?? calculateTrend(finalRefundRequests, true)
             }
           };
         });
       }
 
-      try {
-        const flights = await listHotFlightRoutes();
-        setTopFlights(Array.isArray(flights) ? flights : []);
-      } catch (e) {
-        console.error('Flights fetch error:', e);
-      } finally {
+      if (summaryResult?.topSellingRoutes?.flights && Array.isArray(summaryResult.topSellingRoutes.flights) && summaryResult.topSellingRoutes.flights.length > 0) {
+        setTopFlights(summaryResult.topSellingRoutes.flights);
         setIsLoadingFlights(false);
+      } else {
+        try {
+          const flights = await listHotFlightRoutes();
+          setTopFlights(Array.isArray(flights) ? flights : []);
+        } catch (e) {
+          console.error('Flights fetch error:', e);
+        } finally {
+          setIsLoadingFlights(false);
+        }
       }
 
-      try {
-        const buses = await getPopularBusRoutesFromSearchHistory({ limit: 5 });
-        setTopBuses(Array.isArray(buses) ? buses : []);
-      } catch (e) {
-        console.error('Buses fetch error:', e);
-      } finally {
+      if (summaryResult?.topSellingRoutes?.buses && Array.isArray(summaryResult.topSellingRoutes.buses) && summaryResult.topSellingRoutes.buses.length > 0) {
+        setTopBuses(summaryResult.topSellingRoutes.buses);
         setIsLoadingBuses(false);
+      } else {
+        try {
+          const buses = await getPopularBusRoutesFromSearchHistory({ limit: 5 });
+          if (Array.isArray(buses) && buses.length > 0) {
+            setTopBuses(buses);
+          } else {
+            setTopBuses([
+              { fromCity: 'Hyderabad', toCity: 'Vijayawada', bookingCount: 0 },
+              { fromCity: 'Hyderabad', toCity: 'Bengaluru', bookingCount: 0 },
+              { fromCity: 'Delhi', toCity: 'Mumbai', bookingCount: 0 },
+              { fromCity: 'Bengaluru', toCity: 'Chennai', bookingCount: 0 }
+            ]);
+          }
+        } catch (e) {
+          setTopBuses([
+            { fromCity: 'Hyderabad', toCity: 'Vijayawada', bookingCount: 0 },
+            { fromCity: 'Hyderabad', toCity: 'Bengaluru', bookingCount: 0 },
+            { fromCity: 'Delhi', toCity: 'Mumbai', bookingCount: 0 },
+            { fromCity: 'Bengaluru', toCity: 'Chennai', bookingCount: 0 }
+          ]);
+        } finally {
+          setIsLoadingBuses(false);
+        }
+      }
+
+      if (summaryResult?.topHotels && Array.isArray(summaryResult.topHotels) && summaryResult.topHotels.length > 0) {
+        const maxVal = Math.max(...summaryResult.topHotels.map(h => h.bookingCount || h.count || 1), 1);
+        setTopHotels(summaryResult.topHotels.map(h => ({
+          name: h.hotelName || h.name || 'Hotel',
+          count: h.bookingCount || h.count || 0,
+          width: Math.max(10, Math.min(100, ((h.bookingCount || h.count || 1) / maxVal) * 100))
+        })));
+      } else {
+        try {
+          const hotelBookings = getStoredValue('hotel-bookings', []) || getStoredValue('hotelBookings', []) || getStoredValue('hotel_bookings', []);
+          if (Array.isArray(hotelBookings) && hotelBookings.length > 0) {
+            const hotelMap = {};
+            hotelBookings.forEach(b => {
+              const hName = b.hotelName || b.name || b.hotel_name || 'Taj Mahal Palace';
+              hotelMap[hName] = (hotelMap[hName] || 0) + 1;
+            });
+            const maxVal = Math.max(...Object.values(hotelMap), 1);
+            const topList = Object.entries(hotelMap).map(([name, count]) => ({
+              name,
+              count,
+              width: Math.max(10, Math.min(100, (count / maxVal) * 100))
+            })).sort((a, b) => b.count - a.count).slice(0, 5);
+            setTopHotels(topList);
+          } else {
+            setTopHotels([
+              { name: 'Taj Mahal Palace', count: 0, width: 10 },
+              { name: 'The Leela Palace', count: 0, width: 10 },
+              { name: 'ITC Grand Chola', count: 0, width: 10 },
+              { name: 'Oberoi Trident', count: 0, width: 10 }
+            ]);
+          }
+        } catch (e) {
+          setTopHotels([
+            { name: 'Taj Mahal Palace', count: 0, width: 10 },
+            { name: 'The Leela Palace', count: 0, width: 10 },
+            { name: 'ITC Grand Chola', count: 0, width: 10 },
+            { name: 'Oberoi Trident', count: 0, width: 10 }
+          ]);
+        }
       }
 
       try {
-        const activities = await getAdminDashboardRecentActivity();
+        const activities = await getAdminDashboardRecentActivity(summaryResult);
         if (Array.isArray(activities) && activities.length > 0) {
           setRecentActivities(activities);
         }
@@ -465,18 +671,18 @@ const AdminDashboard = () => {
      const color = colors[i % colors.length];
      return (
        <div className="map-point-pulse" style={{ left: `${coords.left}%`, top: `${coords.top}%` }} key={cityName}>
-         <div className="pulse-dot" style={{ backgroundColor: color, width: '12px', height: '12px', borderRadius: '50%', boxShadow: '0 0 0 3px rgba(255,255,255,0.4)' }}></div>
+         <div className="pulse-dot" style={{ backgroundColor: color, width: '10px', height: '10px', borderRadius: '50%', boxShadow: `0 0 0 3px ${color}44` }}></div>
          <div className="map-point-label" style={{ 
-            fontSize: '0.75rem', 
+            fontSize: '0.7rem', 
             fontWeight: '600', 
             color: 'var(--admin-text)', 
             backgroundColor: 'var(--admin-surface)',
             border: '1px solid var(--admin-border)',
-            borderRadius: '4px',
+            borderRadius: '5px',
             padding: '2px 6px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
             whiteSpace: 'nowrap',
-            transform: 'translateX(-50%) translateY(8px)',
+            transform: 'translateX(-50%) translateY(6px)',
             position: 'absolute'
           }}>
            {cityName} {bookings > 0 ? `(${formatNumber(bookings)})` : ''}
@@ -488,16 +694,28 @@ const AdminDashboard = () => {
   const svgPaths = allRoutes.map((route, i) => {
      const fromC = getCityCoords(route.fromCity);
      const toC = getCityCoords(route.toCity);
-     const x1 = (fromC.left / 100) * 400;
-     const y1 = (fromC.top / 100) * 220;
-     const x2 = (toC.left / 100) * 400;
-     const y2 = (toC.top / 100) * 220;
+     const x1 = (fromC.left / 100) * 800;
+     const y1 = (fromC.top / 100) * 900;
+     const x2 = (toC.left / 100) * 800;
+     const y2 = (toC.top / 100) * 900;
      const colors = ['#1e75ff', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b'];
      const color = colors[i % colors.length];
      const cx = (x1 + x2) / 2;
-     const cy = Math.min(y1, y2) - 40; 
+     const cy = Math.min(y1, y2) - 50; 
 
-     return <path key={i} d={`M${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} fill="none" stroke={color} strokeWidth="5.5" strokeDasharray="12,6" opacity="0.9" strokeLinecap="round" />;
+     return (
+       <path 
+         key={i} 
+         d={`M${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`} 
+         fill="none" 
+         stroke={color} 
+         strokeWidth="4" 
+         strokeDasharray="8,5" 
+         className="map-route-dash-flow" 
+         opacity="0.9" 
+         strokeLinecap="round" 
+       />
+     );
   });
 
   // ─── Revenue line points generator ───
@@ -516,32 +734,86 @@ const AdminDashboard = () => {
 
   const rawWeights = Array.from({ length: 5 }).map((_, i) => 1.0 + getSeededRandom(revMonthSeed, i) * 3.0);
   const sumWeights = rawWeights.reduce((a, b) => a + b, 0);
-  const baseTotalRev = viewMode === 'b2c' ? (metrics.revenue > 0 ? metrics.revenue : 587915) : b2bMetrics.revenue;
+  const baseTotalRev = viewMode === 'b2c' ? (metrics.revenue > 0 ? metrics.revenue : 0) : (b2bMetrics.revenue > 0 ? b2bMetrics.revenue : 0);
 
-  const currentRevData = rawWeights.map((w, i) => {
-    const weekRev = (w / sumWeights) * baseTotalRev;
-    const isHighlighted = i === selectedWeekIndex;
-    const dayRev = weekRev / 7;
-    const labelText = isHighlighted 
-      ? `${formattedSelectedDate} (${formatRevCompact(dayRev)})` 
-      : formatRevCompact(weekRev);
+  const [revenueTimeframe, setRevenueTimeframe] = useState('weekly'); // 'weekly', 'monthly', 'quarterly', 'yearly'
 
-    return {
-      week: `W${i + 1}`,
-      value: weekRev,
-      label: labelText,
-      isHighlighted
-    };
-  });
+  const currentRevData = useMemo(() => {
+    if (revenueTimeframe === 'weekly' && viewMode === 'b2c' && apiWeeklyChart && Array.isArray(apiWeeklyChart.revenueInr) && apiWeeklyChart.revenueInr.length > 0) {
+      const labels = apiWeeklyChart.labels || ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const revArray = apiWeeklyChart.revenueInr;
+      return revArray.map((rev, i) => ({
+        week: labels[i] || `D${i + 1}`,
+        value: Number(rev) || 0,
+        label: formatRevCompact(Number(rev) || 0),
+        isHighlighted: i === revArray.length - 1
+      }));
+    }
 
-  const maxRev = Math.max(...currentRevData.map(d => d.value), baseTotalRev / 3);
+    if (revenueTimeframe === 'monthly') {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return months.map((m, i) => {
+        const val = baseTotalRev > 0 ? Math.floor((baseTotalRev / 12) * (0.6 + (i % 5) * 0.2)) : 0;
+        return {
+          week: m,
+          value: val,
+          label: formatRevCompact(val),
+          isHighlighted: i === new Date().getMonth()
+        };
+      });
+    }
+
+    if (revenueTimeframe === 'quarterly') {
+      const quarters = ["Q1", "Q2", "Q3", "Q4"];
+      return quarters.map((q, i) => {
+        const val = baseTotalRev > 0 ? Math.floor((baseTotalRev / 4) * (0.8 + (i % 3) * 0.2)) : 0;
+        return {
+          week: q,
+          value: val,
+          label: formatRevCompact(val),
+          isHighlighted: i === Math.floor(new Date().getMonth() / 3)
+        };
+      });
+    }
+
+    if (revenueTimeframe === 'yearly') {
+      const currYr = new Date().getFullYear();
+      const years = [currYr - 3, currYr - 2, currYr - 1, currYr];
+      return years.map((yr, i) => {
+        const val = baseTotalRev > 0 ? Math.floor(baseTotalRev * (0.5 + i * 0.2)) : 0;
+        return {
+          week: String(yr),
+          value: val,
+          label: formatRevCompact(val),
+          isHighlighted: i === years.length - 1
+        };
+      });
+    }
+
+    // Default Weekly View (W1, W2, W3, W4, W5)
+    const weeks = ["W1", "W2", "W3", "W4", "W5"];
+    return weeks.map((w, i) => {
+      const weekRev = baseTotalRev > 0 ? Math.floor(baseTotalRev / 5) : 0;
+      return {
+        week: w,
+        value: weekRev,
+        label: formatRevCompact(weekRev),
+        isHighlighted: i === selectedWeekIndex
+      };
+    });
+  }, [revenueTimeframe, viewMode, apiWeeklyChart, baseTotalRev, selectedWeekIndex]);
+
+  const [hoveredRevPoint, setHoveredRevPoint] = useState(null);
+
+  const maxRev = Math.max(...currentRevData.map(d => d.value), baseTotalRev > 0 ? baseTotalRev / 3 : 100);
   const revPointsAll = currentRevData.map((d, i) => {
-    const x = i * (330 / 4) + 10;
-    const y = 160 - (d.value / maxRev) * 100; 
+    const totalCols = currentRevData.length > 1 ? currentRevData.length - 1 : 1;
+    const x = i * (285 / totalCols) + 50;
+    const y = 165 - (maxRev > 0 ? (d.value / maxRev) * 115 : 0); 
     return { ...d, x, y, originalIndex: i };
   });
 
-  const revPoints = revPointsAll.filter(p => p.originalIndex <= selectedWeekIndex);
+  const revPoints = revPointsAll.filter(p => p.originalIndex <= selectedWeekIndex || apiWeeklyChart || revenueTimeframe !== 'weekly');
   const getSmoothPath = (points) => {
     if (points.length === 0) return '';
     if (points.length === 1) return `M${points[0].x},${points[0].y}`;
@@ -556,26 +828,32 @@ const AdminDashboard = () => {
   };
 
   const smoothRevPath = getSmoothPath(revPoints);
-  const lastX = revPoints.length > 0 ? revPoints[revPoints.length - 1].x : 10;
-  const areaRevPath = revPoints.length > 0 ? `${smoothRevPath} L${lastX},180 L10,180 Z` : '';
+  const lastX = revPoints.length > 0 ? revPoints[revPoints.length - 1].x : 50;
+  const firstX = revPoints.length > 0 ? revPoints[0].x : 50;
+  const areaRevPath = revPoints.length > 0 ? `${smoothRevPath} L${lastX},170 L${firstX},170 Z` : '';
 
   // ─── Booking Funnel Calculations ───
-  const activeBookingsCount = viewMode === 'b2c' ? (metrics.bookings > 0 ? metrics.bookings : 93) : b2bMetrics.bookings;
-  const funnelS1 = viewMode === 'b2c' 
-    ? (actualBookings => actualBookings * 45 + Math.floor(getSeededRandom(funnelDate, 100) * 10000))(activeBookingsCount)
-    : 1800; // Searches B2B
-  const funnelS2 = viewMode === 'b2c' 
-    ? Math.floor(funnelS1 * (0.30 + getSeededRandom(funnelDate, 101) * 0.15))
-    : Math.floor(funnelS1 * 0.42); // Selected B2B
-  const funnelS3 = viewMode === 'b2c' 
-    ? Math.floor(funnelS2 * (0.45 + getSeededRandom(funnelDate, 102) * 0.15))
-    : Math.floor(funnelS2 * 0.58); // Passenger B2B
-  const funnelS4 = viewMode === 'b2c' 
-    ? Math.floor(funnelS3 * (0.45 + getSeededRandom(funnelDate, 103) * 0.15))
-    : Math.floor(funnelS3 * 0.55); // Payment B2B
-  const funnelS5 = viewMode === 'b2c' 
-    ? activeBookingsCount + Math.floor(getSeededRandom(funnelDate, 104) * (activeBookingsCount * 0.1))
-    : activeBookingsCount; // Completed B2B
+  const activeBookingsCount = viewMode === 'b2c' ? (metrics.bookings > 0 ? metrics.bookings : 0) : (b2bMetrics.bookings > 0 ? b2bMetrics.bookings : 0);
+  
+  const funnelS1 = viewMode === 'b2c' && apiFunnel?.searches !== undefined
+    ? Number(apiFunnel.searches)
+    : (activeBookingsCount > 0 ? Math.floor(activeBookingsCount * 45) : 0);
+
+  const funnelS2 = viewMode === 'b2c' && apiFunnel?.selected !== undefined
+    ? Number(apiFunnel.selected)
+    : (funnelS1 > 0 ? Math.floor(funnelS1 * 0.42) : 0);
+
+  const funnelS3 = viewMode === 'b2c' && (apiFunnel?.passengerDetails !== undefined || apiFunnel?.passenger !== undefined)
+    ? Number(apiFunnel.passengerDetails ?? apiFunnel.passenger)
+    : (funnelS2 > 0 ? Math.floor(funnelS2 * 0.55) : 0);
+
+  const funnelS4 = viewMode === 'b2c' && (apiFunnel?.paymentAttempted !== undefined || apiFunnel?.payment !== undefined)
+    ? Number(apiFunnel.paymentAttempted ?? apiFunnel.payment)
+    : (funnelS3 > 0 ? Math.floor(funnelS3 * 0.55) : 0);
+
+  const funnelS5 = viewMode === 'b2c' && apiFunnel?.completed !== undefined
+    ? Number(apiFunnel.completed)
+    : activeBookingsCount;
 
   const animatedFunnelS1 = useCountUp(funnelS1, 800);
   const animatedFunnelS2 = useCountUp(funnelS2, 800);
@@ -584,62 +862,14 @@ const AdminDashboard = () => {
   const animatedFunnelS5 = useCountUp(funnelS5, 800);
 
   return (
-    <div className="dash-page" style={{ padding: '0px 10px 24px' }}>
-      
-      {/* ─── Premium Header with toggle buttons ─── */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '6px', marginBottom: '6px', flexWrap: 'wrap', gap: '16px' }}>
-        
-        {/* Toggle Pills */}
-        <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--admin-surface)', border: '1px solid var(--admin-border)', borderRadius: '100px', padding: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <button
-            onClick={() => setViewMode('b2c')}
-            style={{
-              border: 'none',
-              background: viewMode === 'b2c' ? '#1e75ff' : 'none',
-              color: viewMode === 'b2c' ? '#ffffff' : 'var(--admin-text)',
-              padding: '8px 18px',
-              borderRadius: '100px',
-              fontSize: '0.82rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease-in-out'
-            }}
-          >
-            🌐 B2C Retail
-          </button>
-          <button
-            onClick={() => setViewMode('b2b')}
-            style={{
-              border: 'none',
-              background: viewMode === 'b2b' ? '#1e75ff' : 'none',
-              color: viewMode === 'b2b' ? '#ffffff' : 'var(--admin-text)',
-              padding: '8px 18px',
-              borderRadius: '100px',
-              fontSize: '0.82rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease-in-out'
-            }}
-          >
-            💼 B2B Agents
-          </button>
-        </div>
-      </div>
-
-      {viewMode === 'b2c' ? (
-        /* ════════════════════════════════════════════════════════════ */
-        /*                          B2C LAYOUT                          */
-        /* ════════════════════════════════════════════════════════════ */
-        <>
-          <section className="dashboard-metrics-grid">
+    <div className="dash-page" style={{ padding: '18px 14px 28px' }}>
+      <>
+        <section className="dashboard-metrics-grid">
             {/* Total Revenue */}
             <div className="metric-card-premium" style={getCardStyle("Total Revenue", String(metrics.revenue))}>
               <div className="metric-card-header">
                 <div className="metric-icon-circle revenue">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                  </svg>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1 }}>₹</span>
                 </div>
                 <span className="metric-title-text">Total Revenue</span>
               </div>
@@ -741,38 +971,52 @@ const AdminDashboard = () => {
           </section>
 
           <section className="dashboard-row-layout">
-            {/* Live Bookings Overview MAP */}
-            <div className="dashboard-card-shell">
-              <div className="card-title-bar">
-                <h3>Live Bookings Overview</h3>
-                <input 
-                  type="date" 
-                  className="card-title-select" 
-                  style={{ width: '120px', padding: '4px 8px', fontSize: '0.8rem', fontFamily: 'inherit' }}
-                  value={liveBookingsDate}
-                  onChange={(e) => setLiveBookingsDate(e.target.value)}
-                />
-              </div>
-              <div className="live-bookings-map-container">
-                <svg viewBox="0 0 400 220" className="map-svg-bg" style={{ overflow: 'visible' }}>
-                  <path d="M50 40 L150 40 L190 70 L230 40 L350 40 L350 180 L50 180 Z" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4,4" opacity="0.4" />
-                  {svgPaths}
-                </svg>
-                {cityNodes}
-              </div>
-            </div>
-
-            {/* Revenue Overview LINE CHART */}
-            <div className="dashboard-card-shell">
+            {/* Revenue Overview LINE CHART — with Tableau Style View Timeframe Dropdown */}
+            <div className="dashboard-card-shell revenue-box">
               <div className="card-title-bar">
                 <h3>Revenue Overview</h3>
-                <input 
-                  type="date" 
-                  className="card-title-select" 
-                  style={{ width: '120px', padding: '4px 8px', fontSize: '0.8rem', fontFamily: 'inherit' }}
-                  value={revenueDate}
-                  onChange={(e) => setRevenueDate(e.target.value)}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <select
+                    className="card-title-select"
+                    style={{
+                      height: '30px',
+                      padding: '2px 8px',
+                      fontSize: '0.78rem',
+                      fontFamily: 'inherit',
+                      fontWeight: 600,
+                      borderRadius: '6px',
+                      border: '1px solid var(--admin-border)',
+                      background: 'var(--admin-soft)',
+                      color: 'var(--admin-text)',
+                      cursor: 'pointer',
+                      boxSizing: 'border-box'
+                    }}
+                    value={revenueTimeframe}
+                    onChange={(e) => setRevenueTimeframe(e.target.value)}
+                  >
+                    <option value="weekly">Weekly View</option>
+                    <option value="monthly">Monthly View</option>
+                    <option value="quarterly">Quarterly View</option>
+                    <option value="yearly">Yearly View</option>
+                  </select>
+                  <input 
+                    type="date" 
+                    className="card-title-select" 
+                    style={{ 
+                      height: '30px', 
+                      width: '120px', 
+                      padding: '2px 8px', 
+                      fontSize: '0.78rem', 
+                      fontFamily: 'inherit',
+                      borderRadius: '6px',
+                      border: '1px solid var(--admin-border)',
+                      boxSizing: 'border-box'
+                    }}
+                    value={revenueDate}
+                    max={todayStr}
+                    onChange={handleDateChange(setRevenueDate)}
+                  />
+                </div>
               </div>
               <div style={{ position: 'relative', height: '220px', width: '100%' }}>
                 <svg viewBox="0 0 350 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
@@ -801,28 +1045,110 @@ const AdminDashboard = () => {
                       <stop offset="100%" stopColor="#1e75ff" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <line x1="10" y1="50" x2="340" y2="50" stroke="var(--admin-border)" strokeWidth="1" />
-                  <line x1="10" y1="90" x2="340" y2="90" stroke="var(--admin-border)" strokeWidth="1" />
-                  <line x1="10" y1="130" x2="340" y2="130" stroke="var(--admin-border)" strokeWidth="1" />
-                  <line x1="10" y1="170" x2="340" y2="170" stroke="var(--admin-border)" strokeWidth="1" />
+                  
+                  {/* Grid Lines */}
+                  <line x1="45" y1="50" x2="340" y2="50" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="45" y1="90" x2="340" y2="90" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="45" y1="130" x2="340" y2="130" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="45" y1="170" x2="340" y2="170" stroke="var(--admin-border)" strokeWidth="1" />
+                  
+                  {/* Vertical Left Y-Axis Scale Line */}
+                  <line x1="45" y1="30" x2="45" y2="170" stroke="var(--admin-border)" strokeWidth="1.5" />
+
+                  {/* Y-Axis Labels (Amount Scale) */}
+                  <text x="40" y="54" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev)}</text>
+                  <text x="40" y="94" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev * 0.66)}</text>
+                  <text x="40" y="134" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev * 0.33)}</text>
+                  <text x="40" y="173" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">₹0</text>
+
+                  {/* Vertical dashed guide line on hover */}
+                  {hoveredRevPoint && (
+                    <line 
+                      x1={hoveredRevPoint.x} 
+                      y1="30" 
+                      x2={hoveredRevPoint.x} 
+                      y2="170" 
+                      stroke="#10b981" 
+                      strokeWidth="1.5" 
+                      strokeDasharray="4 4" 
+                    />
+                  )}
 
                   {areaRevPath && <path d={areaRevPath} fill="url(#areaGrad)" className="fade-anim" />}
                   {smoothRevPath && <path d={smoothRevPath} fill="none" stroke="#1e75ff" strokeWidth="3.5" strokeLinecap="round" className="draw-anim" />}
 
                   {revPointsAll.map((p, i) => {
+                    const isHovered = hoveredRevPoint?.week === p.week;
                     if (i > selectedWeekIndex) {
                        return (
                          <text key={i} x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
                        );
                     }
+                    const textAnchorVal = i === 0 ? "start" : i === revPointsAll.length - 1 ? "end" : "middle";
                     return (
-                      <g key={i} className="fade-anim">
-                        <circle cx={p.x} cy={p.y} r={p.isHighlighted ? "7" : "5"} fill={p.isHighlighted ? "#f97316" : "#1e75ff"} stroke="#ffffff" strokeWidth="2" />
-                        <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#f97316" : "var(--admin-text)"} fontWeight="bold" textAnchor="middle">{p.label}</text>
-                        <text x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
+                      <g 
+                        key={i} 
+                        className="fade-anim" 
+                        style={{ cursor: 'pointer' }}
+                        onMouseEnter={() => setHoveredRevPoint(p)}
+                        onMouseLeave={() => setHoveredRevPoint(null)}
+                      >
+                        {/* Larger hit target circle */}
+                        <circle cx={p.x} cy={p.y} r="14" fill="transparent" />
+                        <circle cx={p.x} cy={p.y} r={isHovered ? "8" : (p.isHighlighted ? "7" : "5")} fill={isHovered ? "#10b981" : (p.isHighlighted ? "#f97316" : "#1e75ff")} stroke="#ffffff" strokeWidth="2" />
+                        {!isHovered && (
+                          <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#f97316" : "var(--admin-text)"} fontWeight="bold" textAnchor={textAnchorVal}>{p.label}</text>
+                        )}
+                        <text x={p.x} y="190" fontSize="10" fill={isHovered ? "#10b981" : "var(--admin-muted)"} fontWeight={isHovered ? "bold" : "normal"} textAnchor="middle">{p.week}</text>
                       </g>
                     );
                   })}
+
+                  {/* Clean SVG Native Hover Tooltip Box */}
+                  {hoveredRevPoint && (() => {
+                    const boxWidth = 124;
+                    const boxHeight = 36;
+                    let boxX = hoveredRevPoint.x - boxWidth / 2;
+                    if (boxX < 46) boxX = 46;
+                    if (boxX + boxWidth > 340) boxX = 340 - boxWidth;
+                    const boxY = Math.max(5, hoveredRevPoint.y - 44);
+
+                    return (
+                      <g className="fade-anim" style={{ pointerEvents: 'none' }}>
+                        <rect 
+                          x={boxX} 
+                          y={boxY} 
+                          width={boxWidth} 
+                          height={boxHeight} 
+                          rx="6" 
+                          fill="#0f172a" 
+                          opacity="0.95" 
+                          stroke="#38bdf8"
+                          strokeWidth="1"
+                        />
+                        <text 
+                          x={boxX + boxWidth / 2} 
+                          y={boxY + 14} 
+                          fontSize="9" 
+                          fontWeight="bold" 
+                          fill="#38bdf8" 
+                          textAnchor="middle"
+                        >
+                          {hoveredRevPoint.week} Revenue Data
+                        </text>
+                        <text 
+                          x={boxX + boxWidth / 2} 
+                          y={boxY + 28} 
+                          fontSize="10" 
+                          fontWeight="bold" 
+                          fill="#ffffff" 
+                          textAnchor="middle"
+                        >
+                          Amount: {formatCurrency(hoveredRevPoint.value)}
+                        </text>
+                      </g>
+                    );
+                  })()}
                 </svg>
               </div>
             </div>
@@ -834,9 +1160,19 @@ const AdminDashboard = () => {
                 <input 
                   type="date" 
                   className="card-title-select" 
-                  style={{ width: '120px', padding: '4px 8px', fontSize: '0.8rem', fontFamily: 'inherit' }}
+                  style={{ 
+                    height: '30px', 
+                    width: '120px', 
+                    padding: '2px 8px', 
+                    fontSize: '0.78rem', 
+                    fontFamily: 'inherit',
+                    borderRadius: '6px',
+                    border: '1px solid var(--admin-border)',
+                    boxSizing: 'border-box'
+                  }}
                   value={funnelDate}
-                  onChange={(e) => setFunnelDate(e.target.value)}
+                  max={todayStr}
+                  onChange={handleDateChange(setFunnelDate)}
                 />
               </div>
               <div className="funnel-container" key={funnelDate} style={{ gap: '4px' }}>
@@ -845,20 +1181,54 @@ const AdminDashboard = () => {
                   <strong>{formatNumber(animatedFunnelS1)}</strong>
                 </div>
                 <div className="funnel-stage s2">
-                  <span>Selected ({((funnelS2 / funnelS1) * 100).toFixed(1)}%)</span>
+                  <span>Selected ({funnelS1 > 0 ? ((funnelS2 / funnelS1) * 100).toFixed(1) : '0.0'}%)</span>
                   <strong>{formatNumber(animatedFunnelS2)}</strong>
                 </div>
                 <div className="funnel-stage s3">
-                  <span>Passenger ({((funnelS3 / funnelS2) * 100).toFixed(1)}%)</span>
+                  <span>Passenger ({funnelS2 > 0 ? ((funnelS3 / funnelS2) * 100).toFixed(1) : '0.0'}%)</span>
                   <strong>{formatNumber(animatedFunnelS3)}</strong>
                 </div>
                 <div className="funnel-stage s4">
-                  <span>Payment ({((funnelS4 / funnelS3) * 100).toFixed(1)}%)</span>
+                  <span>Payment ({funnelS3 > 0 ? ((funnelS4 / funnelS3) * 100).toFixed(1) : '0.0'}%)</span>
                   <strong>{formatNumber(animatedFunnelS4)}</strong>
                 </div>
                 <div className="funnel-stage s5">
-                  <span>Completed ({((funnelS5 / funnelS4) * 100).toFixed(1)}%)</span>
+                  <span>Completed ({funnelS4 > 0 ? ((funnelS5 / funnelS4) * 100).toFixed(1) : '0.0'}%)</span>
                   <strong>{formatNumber(animatedFunnelS5)}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Today's Status Overview Card (3rd API Card) */}
+            <div className="dashboard-card-shell today-status-box">
+              <div className="card-title-bar">
+                <h3>Today's Status</h3>
+                <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>Live API</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', height: '100%' }}>
+                <div style={{ background: 'var(--admin-soft)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--admin-border)' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--admin-muted)', fontWeight: 600, letterSpacing: '0.04em' }}>TODAY'S REVENUE</span>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', marginTop: '2px' }}>
+                    {formatCurrency(apiTodayStatus?.revenueInr ?? 0)}
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--admin-muted)' }}>
+                    Expected: {formatCurrency(apiTodayStatus?.expectedRevenueInr ?? 0)}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', background: '#ecfdf5', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+                    <span style={{ display: 'block', fontSize: '0.68rem', color: '#047857', fontWeight: 600 }}>Success</span>
+                    <strong style={{ fontSize: '1.1rem', color: '#065f46' }}>{apiTodayStatus?.successfulBookings ?? 0}</strong>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                    <span style={{ display: 'block', fontSize: '0.68rem', color: '#b91c1c', fontWeight: 600 }}>Failed</span>
+                    <strong style={{ fontSize: '1.1rem', color: '#991b1b' }}>{apiTodayStatus?.failedBookings ?? 0}</strong>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', background: '#fffbe6', borderRadius: '8px', border: '1px solid #ffe58f' }}>
+                    <span style={{ display: 'block', fontSize: '0.68rem', color: '#d48806', fontWeight: 600 }}>Pending</span>
+                    <strong style={{ fontSize: '1.1rem', color: '#ad6800' }}>{apiTodayStatus?.pendingWorks ?? 0}</strong>
+                  </div>
                 </div>
               </div>
             </div>
@@ -866,6 +1236,7 @@ const AdminDashboard = () => {
 
           <section className="dashboard-four-cols">
             {/* Top Selling Flights */}
+
             <div className="dashboard-card-shell">
               <div className="card-title-bar">
                 <h3>Top Selling Routes (Flights)</h3>
@@ -975,13 +1346,15 @@ const AdminDashboard = () => {
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {topHotels.slice(hotelsPage * 5, (hotelsPage + 1) * 5).map((hotel, index) => (
+                {topHotels.length > 0 ? topHotels.slice(hotelsPage * 5, (hotelsPage + 1) * 5).map((hotel, index) => (
                   <div className="route-list-item" key={index}>
                     <span className="route-label-bold" style={{ flex: '0 0 50%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: '10px' }}>{hotel.name}</span>
                     <div className="route-progress-bar" style={{ flex: '1', width: 'auto' }}><div className="route-progress-fill" style={{ width: `${hotel.width}%`, background: '#10b981' }}></div></div>
                     <span style={{ flex: '0 0 20%', textAlign: 'right' }}>{formatNumber(hotel.count)}</span>
                   </div>
-                ))}
+                )) : (
+                  <div style={{ padding: '10px 0', fontSize: '0.8rem', color: 'var(--admin-muted)' }}>No API Data</div>
+                )}
               </div>
             </div>
 
@@ -992,17 +1365,21 @@ const AdminDashboard = () => {
               </div>
               <div className="activity-feed-container">
                 {recentActivities.length > 0 ? recentActivities.slice(activityPage * 5, (activityPage + 1) * 5).map((activity, index) => {
+                  const norm = (activity.type || '').toLowerCase().replace(/[^a-z]/g, '');
                   const colorMap = {
                     booking: '#10b981',
+                    flightbooking: '#8b5cf6',
+                    flight: '#8b5cf6',
+                    busbooking: '#f43f5e',
+                    bus: '#f43f5e',
+                    hotelbooking: '#ec4899',
+                    hotel: '#ec4899',
                     cancellation: '#ef4444',
                     refund: '#f97316',
                     user: '#3b82f6',
-                    hotel: '#ec4899',
-                    flight: '#8b5cf6',
-                    bus: '#f43f5e',
                     payment: '#10b981',
                   };
-                  const bgColor = colorMap[(activity.type || '').toLowerCase()] || '#ef4444';
+                  const bgColor = colorMap[norm] || (norm.includes('flight') ? '#8b5cf6' : norm.includes('bus') ? '#f43f5e' : norm.includes('cancel') ? '#ef4444' : '#10b981');
                   return (
                     <div className="activity-feed-item" key={index}>
                       <div className="activity-dot-circle" style={{ backgroundColor: bgColor }}></div>
@@ -1037,294 +1414,86 @@ const AdminDashboard = () => {
             </div>
           </section>
         </>
-      ) : (
-        /* ════════════════════════════════════════════════════════════ */
-        /*                          B2B LAYOUT                          */
-        /* ════════════════════════════════════════════════════════════ */
-        <>
-          <section className="dashboard-metrics-grid">
-            {/* Agent Revenue */}
-            <div className="metric-card-premium" style={getCardStyle("Agent Revenue", String(b2bMetrics.revenue))}>
-              <div className="metric-card-header">
-                <div className="metric-icon-circle revenue">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                  </svg>
-                </div>
-                <span className="metric-title-text">Agent Revenue</span>
-              </div>
-              <div className="metric-card-body">
-                <span className="metric-value-huge">{formatCurrency(animatedB2bRevenue)}</span>
-                {renderTrend(b2bMetrics.trends.revenue, "vs last month")}
-              </div>
+
+      {/* Future Date Alert Modal Popup */}
+      {showFutureDateModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setShowFutureDateModal(false)}
+        >
+          <div 
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              padding: '28px 24px',
+              textAlign: 'center',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.2)',
+              border: '1px solid #e2e8f0',
+              animation: 'popIn 0.25s ease-out'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: '#fef3c7',
+              color: '#d97706',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+              fontSize: '28px'
+            }}>
+              📅
             </div>
-
-            {/* Agent Bookings */}
-            <div className="metric-card-premium" style={getCardStyle("Agent Bookings", String(b2bMetrics.bookings))}>
-              <div className="metric-card-header">
-                <div className="metric-icon-circle bookings">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                </div>
-                <span className="metric-title-text">Agent Bookings</span>
-              </div>
-              <div className="metric-card-body">
-                <span className="metric-value-huge">{formatNumber(animatedB2bBookings)}</span>
-                {renderTrend(b2bMetrics.trends.bookings, "vs last month")}
-              </div>
-            </div>
-
-            {/* Total Agents */}
-            <div className="metric-card-premium" style={getCardStyle("Total Agents", String(b2bMetrics.agentsCount))}>
-              <div className="metric-card-header">
-                <div className="metric-icon-circle users">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-                <span className="metric-title-text">Total Agents</span>
-              </div>
-              <div className="metric-card-body">
-                <span className="metric-value-huge">{formatNumber(animatedB2bAgents)}</span>
-                {renderTrend(b2bMetrics.trends.agentsCount, "vs last month")}
-              </div>
-            </div>
-
-            {/* Active Agents */}
-            <div className="metric-card-premium" style={getCardStyle("Active Agents", String(b2bMetrics.activeAgents))}>
-              <div className="metric-card-header">
-                <div className="metric-icon-circle active">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                </div>
-                <span className="metric-title-text">Active Agents</span>
-              </div>
-              <div className="metric-card-body">
-                <span className="metric-value-huge">{formatNumber(animatedB2bActive)}</span>
-                {renderTrend(b2bMetrics.trends.activeAgents, "vs yesterday")}
-              </div>
-            </div>
-
-            {/* Agent Deposits */}
-            <div className="metric-card-premium" style={getCardStyle("Agent Deposits", String(b2bMetrics.deposits))}>
-              <div className="metric-card-header">
-                <div className="metric-icon-circle cancelled">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                  </svg>
-                </div>
-                <span className="metric-title-text">Agent Deposits</span>
-              </div>
-              <div className="metric-card-body">
-                <span className="metric-value-huge">{formatCurrency(animatedB2bDeposits)}</span>
-                {renderTrend(b2bMetrics.trends.deposits, "vs yesterday")}
-              </div>
-            </div>
-
-            {/* B2B Cancellations */}
-            <div className="metric-card-premium" style={getCardStyle("Agent Cancellations", String(b2bMetrics.refunds))}>
-              <div className="metric-card-header">
-                <div className="metric-icon-circle refund">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                </div>
-                <span className="metric-title-text">Agent Cancelled</span>
-              </div>
-              <div className="metric-card-body">
-                <span className="metric-value-huge">{formatNumber(animatedB2bRefunds)}</span>
-                {renderTrend(b2bMetrics.trends.refunds, "vs yesterday")}
-              </div>
-            </div>
-          </section>
-
-          <section className="dashboard-row-layout">
-            {/* B2B Live Bookings Overview MAP */}
-            <div className="dashboard-card-shell">
-              <div className="card-title-bar">
-                <h3>Agent Bookings Overview</h3>
-              </div>
-              <div className="live-bookings-map-container">
-                <svg viewBox="0 0 400 220" className="map-svg-bg" style={{ overflow: 'visible' }}>
-                  <path d="M50 40 L150 40 L190 70 L230 40 L350 40 L350 180 L50 180 Z" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4,4" opacity="0.4" />
-                  {svgPaths}
-                </svg>
-                {cityNodes}
-              </div>
-            </div>
-
-            {/* Agent Revenue Overview LINE CHART */}
-            <div className="dashboard-card-shell">
-              <div className="card-title-bar">
-                <h3>Agent Revenue Overview</h3>
-              </div>
-              <div style={{ position: 'relative', height: '220px', width: '100%' }}>
-                <svg viewBox="0 0 350 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                  <defs>
-                    <linearGradient id="areaGradB2B" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1e75ff" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#1e75ff" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <line x1="10" y1="50" x2="340" y2="50" stroke="var(--admin-border)" strokeWidth="1" />
-                  <line x1="10" y1="90" x2="340" y2="90" stroke="var(--admin-border)" strokeWidth="1" />
-                  <line x1="10" y1="130" x2="340" y2="130" stroke="var(--admin-border)" strokeWidth="1" />
-                  <line x1="10" y1="170" x2="340" y2="170" stroke="var(--admin-border)" strokeWidth="1" />
-
-                  {areaRevPath && <path d={areaRevPath} fill="url(#areaGradB2B)" className="fade-anim" />}
-                  {smoothRevPath && <path d={smoothRevPath} fill="none" stroke="#1e75ff" strokeWidth="3.5" strokeLinecap="round" className="draw-anim" />}
-
-                  {revPointsAll.map((p, i) => {
-                    if (i > selectedWeekIndex) {
-                       return (
-                         <text key={i} x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
-                       );
-                    }
-                    return (
-                      <g key={i} className="fade-anim">
-                        <circle cx={p.x} cy={p.y} r={p.isHighlighted ? "7" : "5"} fill={p.isHighlighted ? "#f97316" : "#1e75ff"} stroke="#ffffff" strokeWidth="2" />
-                        <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#f97316" : "var(--admin-text)"} fontWeight="bold" textAnchor="middle">{p.label}</text>
-                        <text x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            </div>
-
-            {/* B2B Agent Booking Funnel */}
-            <div className="dashboard-card-shell funnel-box">
-              <div className="card-title-bar">
-                <h3>Agent Booking Funnel</h3>
-              </div>
-              <div className="funnel-container" key={funnelDate} style={{ gap: '4px' }}>
-                <div className="funnel-stage s1">
-                  <span>Searches</span>
-                  <strong>{formatNumber(animatedFunnelS1)}</strong>
-                </div>
-                <div className="funnel-stage s2">
-                  <span>Selected ({((funnelS2 / funnelS1) * 100).toFixed(1)}%)</span>
-                  <strong>{formatNumber(animatedFunnelS2)}</strong>
-                </div>
-                <div className="funnel-stage s3">
-                  <span>Passenger ({((funnelS3 / funnelS2) * 100).toFixed(1)}%)</span>
-                  <strong>{formatNumber(animatedFunnelS3)}</strong>
-                </div>
-                <div className="funnel-stage s4">
-                  <span>Payment ({((funnelS4 / funnelS3) * 100).toFixed(1)}%)</span>
-                  <strong>{formatNumber(animatedFunnelS4)}</strong>
-                </div>
-                <div className="funnel-stage s5">
-                  <span>Completed ({((funnelS5 / funnelS4) * 100).toFixed(1)}%)</span>
-                  <strong>{formatNumber(animatedFunnelS5)}</strong>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="dashboard-four-cols">
-            {/* Top Agencies */}
-            <div className="dashboard-card-shell">
-              <div className="card-title-bar">
-                <h3>Top Agencies by Revenue</h3>
-                {topAgencies.length > 5 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button 
-                      onClick={() => setAgenciesPage(p => Math.max(0, p - 1))} 
-                      disabled={agenciesPage === 0}
-                      style={{ background: 'none', border: 'none', cursor: agenciesPage === 0 ? 'default' : 'pointer', color: agenciesPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-                    <button 
-                      onClick={() => setAgenciesPage(p => Math.min(Math.ceil(topAgencies.length / 5) - 1, p + 1))} 
-                      disabled={agenciesPage >= Math.ceil(topAgencies.length / 5) - 1}
-                      style={{ background: 'none', border: 'none', cursor: agenciesPage >= Math.ceil(topAgencies.length / 5) - 1 ? 'default' : 'pointer', color: agenciesPage >= Math.ceil(topAgencies.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {topAgencies.slice(agenciesPage * 5, (agenciesPage + 1) * 5).map((agency, index) => (
-                  <div className="route-list-item" key={index}>
-                    <span className="route-label-bold" style={{ flex: '0 0 50%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: '10px' }}>{agency.name}</span>
-                    <div className="route-progress-bar" style={{ flex: '1', width: 'auto' }}><div className="route-progress-fill" style={{ width: `${agency.width}%`, background: '#10b981' }}></div></div>
-                    <span style={{ flex: '0 0 20%', textAlign: 'right' }}>{formatCurrency(agency.count)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* B2B Live Activity Feed */}
-            <div className="dashboard-card-shell">
-              <div className="card-title-bar">
-                <h3>Agent Activity Feed</h3>
-              </div>
-              <div className="activity-feed-container">
-                {b2bRecentActivities.length > 0 ? b2bRecentActivities.slice(b2bActivityPage * 5, (b2bActivityPage + 1) * 5).map((activity, index) => {
-                  const colorMap = {
-                    booking: '#10b981',
-                    cancellation: '#ef4444',
-                    refund: '#f97316',
-                    user: '#3b82f6',
-                    hotel: '#ec4899',
-                    flight: '#8b5cf6',
-                    bus: '#f43f5e',
-                    payment: '#10b981',
-                  };
-                  const bgColor = colorMap[(activity.type || '').toLowerCase()] || '#ef4444';
-                  return (
-                    <div className="activity-feed-item" key={index}>
-                      <div className="activity-dot-circle" style={{ backgroundColor: bgColor }}></div>
-                      <div className="activity-content-box">
-                        <strong>{activity.message || activity.description || 'Agent activity'}</strong>
-                        <span className="activity-time-stamp">{activity.timeAgo || 'Just now'}</span>
-                      </div>
-                    </div>
-                  );
-                }) : (
-                  <div style={{ padding: '10px 0', fontSize: '0.8rem', color: 'var(--admin-muted)' }}>No agent activities logged</div>
-                )}
-              </div>
-              {b2bRecentActivities.length > 5 && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-                  <button 
-                    onClick={() => setB2bActivityPage(p => Math.max(0, p - 1))} 
-                    disabled={b2bActivityPage === 0}
-                    style={{ background: 'none', border: 'none', cursor: b2bActivityPage === 0 ? 'default' : 'pointer', color: b2bActivityPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: '4px' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                  </button>
-                  <button 
-                    onClick={() => setB2bActivityPage(p => Math.min(Math.ceil(b2bRecentActivities.length / 5) - 1, p + 1))} 
-                    disabled={b2bActivityPage >= Math.ceil(b2bRecentActivities.length / 5) - 1}
-                    style={{ background: 'none', border: 'none', cursor: b2bActivityPage >= Math.ceil(b2bRecentActivities.length / 5) - 1 ? 'default' : 'pointer', color: b2bActivityPage >= Math.ceil(b2bRecentActivities.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: '4px' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
-        </>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
+              Future Date Selected
+            </h3>
+            <p style={{ margin: '0 0 20px 0', fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5 }}>
+              Future booking data is not available yet. Only daily historical and today's live bookings (<strong>{todayStr}</strong>) can be displayed.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowFutureDateModal(false)}
+              style={{
+                width: '100%',
+                padding: '11px 20px',
+                backgroundColor: '#1e75ff',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#155dfc')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1e75ff')}
+            >
+              Understand & Show Today's Data
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
 export default AdminDashboard;
+

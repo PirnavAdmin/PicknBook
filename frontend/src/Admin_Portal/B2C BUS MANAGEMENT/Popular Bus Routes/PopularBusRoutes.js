@@ -42,6 +42,48 @@ const INITIAL_BUS_POPULAR_ROUTES = [
     bookingCount: 22,
     score: 115,
   },
+  {
+    fromCity: "Bangalore",
+    toCity: "Goa",
+    searches: 180,
+    bookingCount: 20,
+    score: 111,
+  },
+  {
+    fromCity: "Pune",
+    toCity: "Goa",
+    searches: 150,
+    bookingCount: 18,
+    score: 120,
+  },
+  {
+    fromCity: "Kolkata",
+    toCity: "Digha",
+    searches: 140,
+    bookingCount: 15,
+    score: 107,
+  },
+  {
+    fromCity: "Chennai",
+    toCity: "Coimbatore",
+    searches: 130,
+    bookingCount: 14,
+    score: 108,
+  },
+  {
+    fromCity: "Mumbai",
+    toCity: "Shirdi",
+    searches: 120,
+    bookingCount: 13,
+    score: 108,
+  },
+  {
+    fromCity: "Bangalore",
+    toCity: "Mangalore",
+    searches: 110,
+    bookingCount: 12,
+    score: 109,
+  },
 ];
 
 export default function AdminBusPopularRoutesPage() {
@@ -215,6 +257,58 @@ export default function AdminBusPopularRoutesPage() {
     return "Active";
   };
 
+  if (error) {
+    return (
+      <section className="admin-markup-popular-shell">
+        <header className="admin-markup-popular-header">
+          <div className="admin-markup-popular-title-wrap">
+            <h1>
+              <span style={{ color: "#A51C49", fontWeight: 700 }}>B2C Bus</span> Popular Routes
+            </h1>
+          </div>
+        </header>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 20px',
+          background: 'var(--panel)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginTop: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={20} />
+            <span>Network Error</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={handleRefresh}
+            style={{
+              background: '#A41B48',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            title="Retry Connection"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="admin-markup-popular-shell">
       <header className="admin-markup-popular-header">
@@ -243,7 +337,7 @@ export default function AdminBusPopularRoutesPage() {
             title="Export routes to CSV"
           >
             <Download size={15} />
-            <span>Export CSV</span>
+            <span>Export</span>
           </button>
         </div>
       </header>

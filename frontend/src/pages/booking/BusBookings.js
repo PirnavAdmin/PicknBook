@@ -27,6 +27,22 @@ function formatCurrency(value) {
   }).format(Math.round(Number(value) || 0))}`;
 }
 
+function formatBookedAt(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    return `${day}-${month}-${year}, ${hours}:${mins}`;
+  } catch {
+    return String(dateStr);
+  }
+}
+
 function getStatusClassName(status) {
   const norm = String(status || "").trim().toLowerCase();
   if (norm.includes("cancel")) {
@@ -442,45 +458,48 @@ export default function BusBookings() {
             <table className="ops-table">
               <thead>
                 <tr>
-                  <th>Booking Ref</th>
-                  <th>Passenger</th>
-                  <th>Route</th>
-                  <th>Departure</th>
-                  <th>Seats</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>BOOKING REF / DATE</th>
+                  <th>PASSENGER</th>
+                  <th>ROUTE</th>
+                  <th>DEPARTURE</th>
+                  <th>SEATS</th>
+                  <th>TOTAL</th>
+                  <th>STATUS</th>
+                  <th>ACTION</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredBookings.map((booking) => {
                   const displayStatus = getDisplayStatus(booking);
+                  const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
+                  const totalFormatted = Number(booking.totalPriceInr || booking.totalAmount || 0).toLocaleString("en-IN");
 
                   return (
-                  <tr key={booking.bookingId}>
+                  <tr key={booking.bookingId || booking.bookingReference}>
                     <td>
-                      <span>{booking.bookingReference}</span>
+                      <strong>{booking.bookingReference}</strong>
                       <small>ID: {booking.bookingId}</small>
+                      {bookedAt && <small>Booked: {bookedAt}</small>}
                     </td>
                     <td>
-                      <span>{booking.passengerName || "--"}</span>
+                      <strong>{booking.passengerName || "--"}</strong>
                       <small>{booking.passengerPhone || "--"}</small>
                     </td>
                     <td>
-                      <span>
+                      <strong>
                         {booking.fromCity} to {booking.toCity}
-                      </span>
-                      <small>{booking.providerName}</small>
+                      </strong>
+                      <small>{booking.providerName || "Bus Service"}</small>
                     </td>
                     <td>
-                      <span>{formatDateTime(booking.departureTimeUtc)}</span>
+                      <strong>{formatDateTime(booking.departureTimeUtc || booking.departureDate)}</strong>
                     </td>
                     <td>
-                      <span>{booking.seatsBooked}</span>
-                      <small>{booking.tripNumber}</small>
+                      <strong>{booking.seatsBooked || "1"}</strong>
+                      <small>{booking.tripNumber || booking.seatNumbers || "--"}</small>
                     </td>
                     <td>
-                      <span>{formatCurrency(booking.totalPriceInr)}</span>
+                      <strong>INR {totalFormatted}</strong>
                     </td>
                     <td>
                       <span className={`status-badge ${getStatusClassName(displayStatus)}`}>
@@ -491,6 +510,7 @@ export default function BusBookings() {
                       <div className="table-actions">
                         <button
                           type="button"
+                          className="ops-btn-action-view"
                           title="View details"
                           onClick={() => handleViewDetails(booking.bookingId)}
                           disabled={loadingDetailFor === booking.bookingId}
@@ -499,23 +519,6 @@ export default function BusBookings() {
                             <Loader2 size={15} className="spin" />
                           ) : (
                             <Eye size={15} />
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          title="Cancel booking"
-                          onClick={() => triggerCancelBooking(booking.bookingId)}
-                          disabled={
-                            displayStatus === "Cancelled" ||
-                            displayStatus === "Completed" ||
-                            cancellingBookingId === booking.bookingId
-                          }
-                        >
-                          {cancellingBookingId === booking.bookingId ? (
-                            <Loader2 size={15} className="spin" />
-                          ) : (
-                            <ShieldX size={15} />
                           )}
                         </button>
                       </div>

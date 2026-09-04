@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./BookingList.css";
+import { Filter, Download } from "lucide-react";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import { listAdminBusBookings } from "../../../services/adminBusService";
 import AdminPagination from "../../../components/AdminPagination";
@@ -930,7 +931,7 @@ export default function AdminB2CBookingListPage() {
 
   return (
     <section className="admin-b2c-page admin-booking-page">
-      <header className="admin-b2c-header">
+      <header className="admin-b2c-header" style={{ marginBottom: "12px" }}>
         <h1><span className="admin-heading-red">B2C Bus</span> Booking List</h1>
       </header>
 
@@ -943,12 +944,52 @@ export default function AdminB2CBookingListPage() {
           </span>
         </div>
 
-        <div className="admin-actions-row">
-          <button type="button" onClick={() => setIsFiltersOpen((current) => !current)}>
-            {isFiltersOpen ? "Close Filter" : "Open Filter"}
+        <div className="admin-actions-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            onClick={() => setIsFiltersOpen((current) => !current)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: '#A51C49',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '8px 16px',
+              fontWeight: '600',
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Filter size={15} />
+            <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
-          <button type="button" onClick={handleExport}>
-            Export
+          <button 
+            type="button" 
+            onClick={handleExport}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '8px 16px',
+              fontWeight: '600',
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Download size={15} />
+            <span>Export</span>
           </button>
         </div>
       </div>
@@ -1019,24 +1060,7 @@ export default function AdminB2CBookingListPage() {
         </section>
       ) : null}
 
-      <section className="admin-stat-grid" aria-label="Booking summary cards">
-        <article className="admin-stat-card">
-          <strong className="text-success">{filteredBookings.filter((item) => mapAdminStatusClass(item.status) === "success").length}</strong>
-          <span>Filtered Booked</span>
-        </article>
-        <article className="admin-stat-card">
-          <strong className="text-warning">{filteredBookings.filter((item) => mapAdminStatusClass(item.status) === "pending").length}</strong>
-          <span>Filtered Pending</span>
-        </article>
-        <article className="admin-stat-card">
-          <strong className={getProfitClassName(filteredProfit)}>{adminProfitFormatter.format(filteredProfit)}</strong>
-          <span>Current Filter Profit</span>
-        </article>
-        <div className="admin-stat-stack">
-          <button type="button">Today Profit {adminProfitFormatter.format(todayProfit)}</button>
-          <button type="button">Month Profit {adminProfitFormatter.format(monthProfit)}</button>
-        </div>
-      </section>
+
 
       <section className="admin-table-shell">
         <header className="admin-table-head">
@@ -1061,7 +1085,7 @@ export default function AdminB2CBookingListPage() {
                   <div className="admin-table-cell">
                     <strong>{safeValue(booking.id)}</strong>
                     <div className="admin-date-badge">
-                      <span className="admin-calendar-emoji">📅</span>
+                      <span className="admin-calendar-emoji">🗓️</span>
                       <span>{formatAdminDate(booking.createdAt)}</span>
                     </div>
                   </div>
@@ -1078,7 +1102,7 @@ export default function AdminB2CBookingListPage() {
                       <span>{safeValue(booking.to)}</span>
                     </div>
                     <div className="admin-date-badge">
-                      <span className="admin-calendar-emoji">📅</span>
+                      <span className="admin-calendar-emoji">🗓️</span>
                       <span>{formatAdminDate(booking.journeyDate)}</span>
                     </div>
                   </div>
@@ -1140,10 +1164,6 @@ export default function AdminB2CBookingListPage() {
         ) : (
           <div className="admin-table-empty">No bookings available for the selected filters.</div>
         )}
-
-        <footer className="admin-table-footnote">
-          JD: Journey Date, CF: Customer Fare, NF: Net Fare, D: Depart A: Arrive.
-        </footer>
       </section>
 
       {selectedBooking ? (

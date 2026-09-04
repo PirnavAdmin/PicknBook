@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FaEdit, FaTrashAlt, FaTimes } from 'react-icons/fa';
-import { useLocation } from 'react-router-dom';
+import { FaEdit, FaTrashAlt, FaTimes, FaSync } from 'react-icons/fa';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './DiscountMapping.css';
 import AdminPagination from '../../../components/AdminPagination';
 import {
@@ -32,6 +32,7 @@ const POPULAR_ROUTES = [
 
 function DiscountMapping() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Discounts selection list
   const [discounts, setDiscounts] = useState([]);
@@ -381,10 +382,44 @@ function DiscountMapping() {
 
   return (
     <div className="admin-b2c-page bus-discount-mapping-page-container">
-      <section className="discount-heading">
-        <p className="discount-heading-main">
-          B2C Bus <span className="discount-heading-sub">Discount Mapping / Conditions</span>
+      <section className="discount-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '-2px', marginBottom: '-2px' }}>
+        <p className="discount-heading-main" style={{ margin: 0 }}>
+          {location.state?.from === 'hotel' ? 'B2C Hotel' : 'B2C Bus'} <span className="discount-heading-sub">Discount Mapping / Conditions</span>
         </p>
+        <button
+          type="button"
+          className="primary-btn"
+          onClick={() => navigate(location.state?.from === 'hotel' ? '/admin/b2c-hotel/discount-list' : '/admin/b2c-bus/discount-list')}
+          style={{
+            backgroundColor: '#A51C49',
+            borderColor: '#A51C49',
+            color: '#ffffff',
+            height: '38px',
+            borderRadius: '8px',
+            padding: '0 18px',
+            fontSize: '13px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: '0 4px 10px rgba(15, 23, 42, 0.08)',
+            border: '1.5px solid #A51C49'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#851237';
+            e.currentTarget.style.borderColor = '#851237';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#A51C49';
+            e.currentTarget.style.borderColor = '#A51C49';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          Discount List
+        </button>
       </section>
 
       {/* Select Discount Card */}
@@ -484,8 +519,8 @@ function DiscountMapping() {
                   className="primary-btn"
                   disabled={savingCondition}
                   style={{
-                    backgroundColor: '#A51C49',
-                    borderColor: '#A51C49',
+                    backgroundColor: '#A41B48',
+                    borderColor: '#A41B48',
                     color: '#ffffff',
                     transition: 'all 0.25s ease'
                   }}
@@ -495,8 +530,8 @@ function DiscountMapping() {
                     e.currentTarget.style.transform = 'translateY(-3px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#A51C49';
-                    e.currentTarget.style.borderColor = '#A51C49';
+                    e.currentTarget.style.backgroundColor = '#A41B48';
+                    e.currentTarget.style.borderColor = '#A41B48';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >

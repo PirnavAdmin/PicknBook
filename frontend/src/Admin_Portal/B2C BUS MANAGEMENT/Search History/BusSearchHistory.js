@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import adminFeaturedOffersService from "../../../services/adminFeaturedOffersService";
 import "./BusSearchHistory.css";
 import AdminPagination from "../../../components/AdminPagination";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 const DEFAULT_FILTERS = {
   query: "",
@@ -102,10 +103,10 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://humiliate-eatery-humvee.ngrok-free.dev";
+  "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const BUS_BOOKINGS_ROOT = "/api/BusBookings";
-const BUS_SEARCH_LOGS_ROOT = "/api/BusSearchLogs";
+const BUS_SEARCH_LOGS_ROOT = "/api/admin/bus-search-logs";
 const DEFAULT_API_USER_ID =
   String(process.env.REACT_APP_API_USER_ID || "").trim() || "user_123";
 
@@ -306,10 +307,85 @@ function pickFirst(source, keys, fallback = null) {
 }
 
 function normalizeBusSearchHistoryRecord(record, index = 0) {
+  const customerNameDirect = pickFirst(
+    record,
+    [
+      "customerName",
+      "CustomerName",
+      "userName",
+      "UserName",
+      "passengerName",
+      "PassengerName",
+      "name",
+      "Name",
+      "fullName",
+      "FullName",
+      "createdBy",
+      "CreatedBy",
+      "email",
+      "Email",
+      "customerEmail",
+      "CustomerEmail",
+      "userEmail",
+      "UserEmail",
+    ],
+    null
+  );
+
+  let resolvedCustomerName = "No Login";
+  if (typeof customerNameDirect === "string" && customerNameDirect.trim()) {
+    resolvedCustomerName = customerNameDirect.trim();
+  } else if (record?.user && typeof record.user === "object") {
+    resolvedCustomerName =
+      record.user.fullName ||
+      record.user.FullName ||
+      record.user.userName ||
+      record.user.UserName ||
+      record.user.email ||
+      record.user.Email ||
+      "No Login";
+  } else if (record?.User && typeof record.User === "object") {
+    resolvedCustomerName =
+      record.User.FullName ||
+      record.User.fullName ||
+      record.User.UserName ||
+      record.User.userName ||
+      record.User.Email ||
+      record.User.email ||
+      "No Login";
+  }
+
+  const customerIdDirect = pickFirst(
+    record,
+    [
+      "customerId",
+      "CustomerId",
+      "userId",
+      "UserId",
+      "createdById",
+      "CreatedById",
+      "userGuid",
+      "UserGuid",
+    ],
+    null
+  );
+
+  let resolvedCustomerId = "0";
+  if (customerIdDirect !== null && customerIdDirect !== undefined && String(customerIdDirect).trim()) {
+    resolvedCustomerId = String(customerIdDirect).trim();
+  } else if (record?.user && typeof record.user === "object") {
+    resolvedCustomerId = String(record.user.id || record.user.Id || record.user.userId || record.user.UserId || "0");
+  } else if (record?.User && typeof record.User === "object") {
+    resolvedCustomerId = String(record.User.Id || record.User.id || record.User.UserId || record.User.userId || "0");
+  }
+
   return {
     id:
-      pickFirst(record, ["id", "Id", "searchId", "SearchId"], null) ||
-      `bus-search-${index + 1}`,
+      pickFirst(
+        record,
+        ["id", "Id", "searchId", "SearchId", "busSearchLogId", "BusSearchLogId", "logId", "LogId"],
+        null
+      ) || `bus-search-${index + 1}`,
     searchDateUtc:
       pickFirst(
         record,
@@ -324,6 +400,8 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
           "CreatedDateUtc",
           "searchDate",
           "SearchDate",
+          "searchedAt",
+          "SearchedAt",
           "searchedOn",
           "SearchedOn",
           "searchTime",
@@ -345,12 +423,14 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
           "DepartDate",
           "departureDate",
           "DepartureDate",
+          "journeyDate",
+          "JourneyDate",
+          "dateOfJourney",
+          "DateOfJourney",
           "travelDate",
           "TravelDate",
           "onwardDate",
           "OnwardDate",
-          "journeyDate",
-          "JourneyDate",
           "tripDate",
           "TripDate",
           "date",
@@ -364,8 +444,12 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
         [
           "fromCity",
           "FromCity",
+          "fromCityName",
+          "FromCityName",
           "sourceCity",
           "SourceCity",
+          "sourceCityName",
+          "SourceCityName",
           "sourceName",
           "SourceName",
           "originCity",
@@ -386,8 +470,12 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
         [
           "toCity",
           "ToCity",
+          "toCityName",
+          "ToCityName",
           "destinationCity",
           "DestinationCity",
+          "destinationCityName",
+          "DestinationCityName",
           "destinationName",
           "DestinationName",
           "arrivalCity",
@@ -401,42 +489,53 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
       ) || ""
     ),
     fromCityCode: String(
-      pickFirst(record, ["fromCityCode", "FromCityCode", "fromCode", "FromCode"], "") ||
-      ""
-    ),
-    toCityCode: String(
-      pickFirst(record, ["toCityCode", "ToCityCode", "toCode", "ToCode"], "") || ""
-    ),
-    customerName: String(
       pickFirst(
         record,
         [
-          "customerName",
-          "CustomerName",
-          "userName",
-          "UserName",
-          "passengerName",
-          "PassengerName",
-          "name",
-          "Name",
-          "fullName",
-          "FullName",
-          "createdBy",
-          "CreatedBy",
-          "email",
-          "Email",
-          "customerEmail",
-          "CustomerEmail",
+          "fromCityCode",
+          "FromCityCode",
+          "sourceCityCode",
+          "SourceCityCode",
+          "sourceCode",
+          "SourceCode",
+          "fromCode",
+          "FromCode",
+          "fromCityId",
+          "FromCityId",
+          "sourceId",
+          "SourceId",
         ],
-        "No Login"
-      ) || "No Login"
+        ""
+      ) || ""
     ),
-    customerId: String(
+    toCityCode: String(
       pickFirst(
         record,
-        ["customerId", "CustomerId", "userId", "UserId", "createdById", "CreatedById"],
-        "0"
-      ) || "0"
+        [
+          "toCityCode",
+          "ToCityCode",
+          "destinationCityCode",
+          "DestinationCityCode",
+          "destinationCode",
+          "DestinationCode",
+          "toCode",
+          "ToCode",
+          "toCityId",
+          "ToCityId",
+          "destinationId",
+          "DestinationId",
+        ],
+        ""
+      ) || ""
+    ),
+    customerName: resolvedCustomerName,
+    customerId: resolvedCustomerId,
+    resultsCount: normalizeCount(
+      pickFirst(
+        record,
+        ["resultsCount", "ResultsCount", "resultCount", "ResultCount", "totalBuses", "TotalBuses", "busCount", "BusCount"],
+        0
+      )
     ),
     searchType: "Bus",
     raw: record,
@@ -604,13 +703,28 @@ async function listAdminBusSearchHistory({
   toDate,
   limit = 500,
 } = {}) {
+  const queryParams = {};
+  if (limit) queryParams.limit = limit;
+  if (query && String(query).trim()) queryParams.query = String(query).trim();
+  if (customerName && String(customerName).trim()) queryParams.customerName = String(customerName).trim();
+  if (fromDate && String(fromDate).trim()) queryParams.fromDate = String(fromDate).trim();
+  if (toDate && String(toDate).trim()) queryParams.toDate = String(toDate).trim();
+
   try {
-    const response = await adminFeaturedOffersService.get(BUS_SEARCH_LOGS_ROOT);
+    const response = await adminFeaturedOffersService.get(BUS_SEARCH_LOGS_ROOT, {
+      params: queryParams,
+    });
     const records = extractArrayPayload(response?.data);
 
-    return records.map((record, index) =>
-      normalizeBusSearchHistoryRecord(record, index)
-    );
+    if (records.length > 0) {
+      return records.map((record, index) =>
+        normalizeBusSearchHistoryRecord(record, index)
+      );
+    }
+
+    if (Array.isArray(records)) {
+      return [];
+    }
   } catch (error) {
     if (!shouldTryNextSearchHistoryEndpoint(error)) {
       throw error;
@@ -618,37 +732,27 @@ async function listAdminBusSearchHistory({
   }
 
   const candidateEndpoints = [
-    `${BUS_BOOKINGS_ROOT}/admin/search-history`,
-    `${BUS_BOOKINGS_ROOT}/admin/searches`,
-    `${BUS_BOOKINGS_ROOT}/admin/bus-search-history`,
-    `${BUS_BOOKINGS_ROOT}/admin/search_history`,
-    `${BUS_BOOKINGS_ROOT}/admin/bus_search_history`,
-    `${BUS_BOOKINGS_ROOT}/search-history`,
-    `${BUS_BOOKINGS_ROOT}/searches`,
-    `${BUS_BOOKINGS_ROOT}/bus-search-history`,
-    `${BUS_BOOKINGS_ROOT}/search_history`,
-    `${BUS_BOOKINGS_ROOT}/bus_search_history`,
+    BUS_SEARCH_LOGS_ROOT,
+    "/api/BusSearchLogs",
     "/api/admin/bus/search-history",
     "/api/admin/bus/searches",
     "/api/admin/bus/bus-search-history",
-    "/api/admin/bus/search_history",
-    "/api/admin/bus/bus_search_history",
     "/api/admin/bus-search-history",
     "/api/BusSearchHistory",
     "/api/BusSearchHistories",
+    `${BUS_BOOKINGS_ROOT}/admin/search-history`,
+    `${BUS_BOOKINGS_ROOT}/admin/searches`,
+    `${BUS_BOOKINGS_ROOT}/admin/bus-search-history`,
+    `${BUS_BOOKINGS_ROOT}/search-history`,
+    `${BUS_BOOKINGS_ROOT}/searches`,
+    `${BUS_BOOKINGS_ROOT}/bus-search-history`,
   ];
 
   let lastError = null;
   let emptyRecords = null;
 
   for (const endpoint of candidateEndpoints) {
-    const url = buildUrl(endpoint, {
-      query,
-      customerName,
-      fromDate,
-      toDate,
-      limit,
-    });
+    const url = buildUrl(endpoint, queryParams);
 
     try {
       const payload = await requestJson(url, { method: "GET" });
@@ -660,6 +764,10 @@ async function listAdminBusSearchHistory({
         return records.map((record, index) =>
           normalizeBusSearchHistoryRecord(record, index)
         );
+      }
+
+      if (Array.isArray(records)) {
+        return [];
       }
 
       emptyRecords = records;
@@ -1017,11 +1125,62 @@ export default function AdminSearchHistoryPage() {
     setInfoMessage("Visible search records removed from this view.");
   };
 
+  if (errorMessage) {
+    return (
+      <section className="admin-b2c-page admin-search-history-page">
+        <header className="admin-b2c-header admin-search-history-header">
+          <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
+            <span style={{ color: "#A51C49" }}>B2C Bus </span>
+            <span style={{ color: "black" }}>Search List</span>
+          </h1>
+        </header>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 20px',
+          background: 'var(--panel)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginTop: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={20} />
+            <span>Network Error</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => loadSearchHistory(filters)}
+            style={{
+              background: '#A41B48',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            title="Retry Connection"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="admin-b2c-page admin-search-history-page">
       <header className="admin-b2c-header admin-search-history-header">
         <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
-          <span style={{ color: "#be185d" }}>B2C Bus </span>
+          <span style={{ color: "#A51C49" }}>B2C Bus </span>
           <span style={{ color: "black" }}>Search List</span>
         </h1>
       </header>
@@ -1034,13 +1193,10 @@ export default function AdminSearchHistoryPage() {
         </div>
 
         <div className="admin-actions-row">
-          <button type="button" onClick={() => setIsFiltersOpen((current) => !current)}>
+          <button type="button" className="admin-search-history-filter-btn" onClick={() => setIsFiltersOpen((current) => !current)}>
             {isFiltersOpen ? "Close Filter" : "Filter"}
           </button>
-          <button type="button" className="admin-cancel-clear-btn" onClick={clearFilters}>
-            Clear Filter
-          </button>
-          <button type="button" onClick={handleExport}>
+          <button type="button" className="admin-search-history-export-btn" onClick={handleExport}>
             Export
           </button>
           <button type="button" className="admin-search-history-delete" onClick={handleDeleteAll}>

@@ -1,20 +1,19 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { getAdminQueries, updateQueryStatus, deleteAdminQuery } from "../../../services/queryService";
-import { Eye, Edit2, Trash2, X, Search } from "lucide-react";
+import { Eye, Edit2, Trash2, X, Search, ChevronDown, Filter, Download } from "lucide-react";
 
 const formatDate = (dateString) => {
-  if (!dateString) return "-";
+  if (!dateString || dateString === "-") return "-";
   try {
     const date = new Date(dateString);
-    return date.toLocaleString("en-GB", {
-      day: "2-digit",
+    if (isNaN(date.getTime())) return dateString;
+    const formatted = date.toLocaleDateString("en-GB", {
+      day: "numeric",
       month: "short",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    }).replace(",", "");
+    });
+    return `🗓️ ${formatted}`;
   } catch {
     return dateString;
   }
@@ -27,12 +26,15 @@ export default function AdminQueryList() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterName, setFilterName] = useState("");
+  const [filterMobile, setFilterMobile] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [viewQuery, setViewQuery] = useState(null);
   const [editStatusQuery, setEditStatusQuery] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [toast, setToast] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -63,7 +65,7 @@ export default function AdminQueryList() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, statusFilter, typeFilter]);
+  }, [searchQuery, statusFilter, typeFilter, filterName, filterMobile]);
 
   const handleStatusUpdateSubmit = async (e) => {
     e.preventDefault();
@@ -99,25 +101,30 @@ export default function AdminQueryList() {
 
   const handleClearFilters = () => {
     setSearchQuery("");
+    setFilterName("");
+    setFilterMobile("");
     setStatusFilter("All");
     setTypeFilter("All");
     setFilterOpen(false);
-    showToast("Filters cleared.", "info");
   };
 
   const filteredQueries = queries
     .filter((q) => {
-      const s = searchQuery.toLowerCase();
+      if (!searchQuery || !searchQuery.trim()) return true;
+      const s = searchQuery.trim().toLowerCase();
       return (
         (q.name || "").toLowerCase().includes(s) ||
         (q.email || "").toLowerCase().includes(s) ||
         (q.phoneNo || "").toLowerCase().includes(s) ||
         (q.subject || "").toLowerCase().includes(s) ||
-        (q.message || "").toLowerCase().includes(s)
+        (q.message || "").toLowerCase().includes(s) ||
+        (q.status || "").toLowerCase().includes(s)
       );
     })
-    .filter((q) => (statusFilter === "All" ? true : (q.status || "").toLowerCase() === statusFilter.toLowerCase()))
-    .filter((q) => (typeFilter === "All" ? true : (q.subject || "").toLowerCase() === typeFilter.toLowerCase()));
+    .filter((q) => (!filterName.trim() ? true : (q.name || "").toLowerCase().includes(filterName.trim().toLowerCase())))
+    .filter((q) => (!filterMobile.trim() ? true : (q.phoneNo || "").toLowerCase().includes(filterMobile.trim().toLowerCase())))
+    .filter((q) => (statusFilter === "All" || !statusFilter ? true : (q.status || "").toLowerCase() === statusFilter.toLowerCase()))
+    .filter((q) => (typeFilter === "All" || !typeFilter ? true : (q.subject || "").toLowerCase() === typeFilter.toLowerCase()));
 
   // Unique query types (subjects) for dropdown filter
   const queryTypes = Array.from(new Set(queries.map((q) => q.subject).filter(Boolean)));
@@ -567,16 +574,11 @@ export default function AdminQueryList() {
               style={styles.searchBox}
             />
             <button
-              style={{ ...styles.button, ...styles.filterBtn }}
+              style={{ ...styles.button, ...styles.filterBtn, display: "inline-flex", alignItems: "center", gap: "6px" }}
               onClick={() => setFilterOpen(!filterOpen)}
             >
-              Filter
-            </button>
-            <button
-              style={{ ...styles.button, ...styles.clearBtn }}
-              onClick={handleClearFilters}
-            >
-              Clear Filter
+              <Filter size={16} />
+              <span>Filter</span>
             </button>
             <div
               style={{
@@ -594,36 +596,86 @@ export default function AdminQueryList() {
             </div>
             <button
               type="button"
-              style={{ ...styles.button, ...styles.exportBtn }}
+              style={{ ...styles.button, ...styles.exportBtn, display: "inline-flex", alignItems: "center", gap: "6px" }}
               onClick={handleExport}
             >
-              Export
+              <Download size={16} />
+              <span>Export</span>
             </button>
           </div>
         </div>
 
         {filterOpen && (
-          <div style={styles.filterPanel}>
-            <div style={styles.filterRow}>
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>Status</label>
+          <div style={{
+            background: "#ffffff",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border)",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+            marginBottom: "20px",
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "12px",
+              flexWrap: "wrap",
+              width: "100%"
+            }}>
+              <div style={{ flex: 1, minWidth: "120px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)" }}>Name</label>
+                <input
+                  type="text"
+                  placeholder="Filter by name..."
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  style={{
+                    width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--border)",
+                    background: "var(--surface-soft)", color: "var(--text-primary)", fontSize: "0.82rem", outline: "none", height: "38px"
+                  }}
+                />
+              </div>
+
+              <div style={{ flex: 1, minWidth: "120px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)" }}>Mobile Number</label>
+                <input
+                  type="text"
+                  placeholder="Filter by mobile..."
+                  value={filterMobile}
+                  onChange={(e) => setFilterMobile(e.target.value)}
+                  style={{
+                    width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--border)",
+                    background: "var(--surface-soft)", color: "var(--text-primary)", fontSize: "0.82rem", outline: "none", height: "38px"
+                  }}
+                />
+              </div>
+
+              <div style={{ flex: 1, minWidth: "120px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)" }}>Status</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  style={styles.filterSelect}
+                  style={{
+                    width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--border)",
+                    background: "var(--surface-soft)", color: "var(--text-primary)", fontSize: "0.82rem", outline: "none", height: "38px"
+                  }}
                 >
                   <option value="All">All Status</option>
                   <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
-                  <option value="Replied">Replied</option>
+                  <option value="Closed">Closed</option>
                 </select>
               </div>
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>Query Type</label>
+
+              <div style={{ flex: 1, minWidth: "120px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)" }}>Query Type</label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  style={styles.filterSelect}
+                  style={{
+                    width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--border)",
+                    background: "var(--surface-soft)", color: "var(--text-primary)", fontSize: "0.82rem", outline: "none", height: "38px"
+                  }}
                 >
                   <option value="All">All Types</option>
                   {queryTypes.map((type) => (
@@ -632,6 +684,74 @@ export default function AdminQueryList() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Action Buttons in single line: Apply Filter (Blue) and Reset (Gray) */}
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "38px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPage(1);
+                    setFilterOpen(false);
+                  }}
+                  style={{
+                    height: "38px",
+                    padding: "0 18px",
+                    borderRadius: "8px",
+                    border: "1px solid #2563eb",
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    boxShadow: "0 2px 4px rgba(37, 99, 235, 0.2)",
+                    whiteSpace: "nowrap"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#1d4ed8";
+                    e.currentTarget.style.borderColor = "#1d4ed8";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#2563eb";
+                    e.currentTarget.style.borderColor = "#2563eb";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  Apply Filter
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  style={{
+                    height: "38px",
+                    padding: "0 18px",
+                    borderRadius: "8px",
+                    border: "1px solid #64748b",
+                    background: "#64748b",
+                    color: "#ffffff",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    boxShadow: "0 2px 4px rgba(100, 116, 139, 0.2)",
+                    whiteSpace: "nowrap"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#475569";
+                    e.currentTarget.style.borderColor = "#475569";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#64748b";
+                    e.currentTarget.style.borderColor = "#64748b";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  Reset
+                </button>
               </div>
             </div>
           </div>
@@ -655,7 +775,7 @@ export default function AdminQueryList() {
                 </tr>
               </thead>
               <tbody>
-                {filteredQueries.slice((page - 1) * pageSize, page * pageSize).map((q) => (
+                {filteredQueries.slice((page - 1) * pageSize, page * pageSize).map((q, index) => (
                   <tr
                     key={q.id}
                     style={styles.tr}
@@ -682,61 +802,77 @@ export default function AdminQueryList() {
                       </span>
                     </td>
                     <td style={styles.td}>
-                      <div style={styles.actionButtons}>
+                      <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
                         <button
                           type="button"
-                          style={styles.actionBtn}
-                          title="View Details"
-                          onClick={() => setViewQuery(q)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(74, 15, 26, 0.15)";
-                            e.currentTarget.style.borderColor = "var(--primary)";
-                            e.currentTarget.style.transform = "scale(1.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "var(--surface-soft)";
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
+                          className={`actions-trigger-btn ${openMenuId === q.id ? "active" : ""}`}
+                          onClick={() => setOpenMenuId(openMenuId === q.id ? null : q.id)}
                         >
-                          <Eye size={16} strokeWidth={2} />
+                          <span>Actions</span> <ChevronDown size={14} />
                         </button>
-                         <button
-                          type="button"
-                          style={styles.actionBtn}
-                          title="Edit Status"
-                          onClick={() => setEditStatusQuery(q)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(74, 15, 26, 0.15)";
-                            e.currentTarget.style.borderColor = "var(--primary)";
-                            e.currentTarget.style.transform = "scale(1.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "var(--surface-soft)";
-                            e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
-                        >
-                          <Edit2 size={16} strokeWidth={2} />
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...styles.actionBtn, ...styles.deleteBtn }}
-                          title="Delete Query"
-                          onClick={() => handleDelete(q.id)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(217, 48, 37, 0.22)";
-                            e.currentTarget.style.borderColor = "var(--danger)";
-                            e.currentTarget.style.transform = "scale(1.08)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "rgba(217, 48, 37, 0.15)";
-                            e.currentTarget.style.borderColor = "rgba(217, 48, 37, 0.35)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
-                        >
-                          <Trash2 size={16} strokeWidth={2} />
-                        </button>
+
+                        {openMenuId === q.id && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              ...(index >= filteredQueries.slice((page - 1) * pageSize, page * pageSize).length - 2 || filteredQueries.slice((page - 1) * pageSize, page * pageSize).length <= 3
+                                ? { bottom: '100%', marginBottom: '6px' }
+                                : { top: '100%', marginTop: '6px' }),
+                              right: 0,
+                              background: '#ffffff',
+                              borderRadius: '12px',
+                              border: '1px solid #e2e8f0',
+                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                              zIndex: 99999,
+                              minWidth: '160px',
+                              width: 'max-content',
+                              padding: '6px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px'
+                            }}
+                          >
+                            <button
+                              type="button"
+                              style={{
+                                border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                              onClick={() => { setOpenMenuId(null); setViewQuery(q); }}
+                            >
+                              <Eye size={15} /> <span>View Details</span>
+                            </button>
+                            <button
+                              type="button"
+                              style={{
+                                border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                              onClick={() => { setOpenMenuId(null); setEditStatusQuery(q); }}
+                            >
+                              <Edit2 size={15} /> <span>Edit Status</span>
+                            </button>
+                            <button
+                              type="button"
+                              style={{
+                                border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#ef4444',
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                              onClick={() => { setOpenMenuId(null); handleDelete(q.id); }}
+                            >
+                              <Trash2 size={15} /> <span>Delete Query</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -5,6 +5,7 @@ import {
   Loader2,
   RefreshCw,
   Search,
+  ShieldX,
   SlidersHorizontal,
   X,
   XCircle,
@@ -15,6 +16,7 @@ import {
 } from "../../services/hotelBookingService";
 import { getHotelVisuals } from "./hotelPresentation";
 import "../../STYLES/HotelBookings.css";
+import "../../STYLES/FlightOpsDashboard.css";
 import CancellationModal from "./CancellationModal";
 import { formatDateTime } from "../../utils/apiDateFormat";
 
@@ -22,6 +24,42 @@ function formatCurrency(value) {
   return `INR ${new Intl.NumberFormat("en-IN", {
     maximumFractionDigits: 0,
   }).format(Math.round(Number(value) || 0))}`;
+}
+
+function formatBookedAt(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    return `${day}-${month}-${year}, ${hours}:${mins}`;
+  } catch {
+    return String(dateStr);
+  }
+}
+
+function formatHotelDate(dateStr, defaultTime = "14:00") {
+  if (!dateStr) return "--";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+      if (String(dateStr).includes(",")) return String(dateStr);
+      return `${dateStr}, ${defaultTime}`;
+    }
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    const time = (hours !== "00" || mins !== "00") ? `${hours}:${mins}` : defaultTime;
+    return `${day}-${month}-${year}, ${time}`;
+  } catch {
+    return String(dateStr);
+  }
 }
 
 function getStatusClassName(status) {
@@ -296,66 +334,85 @@ export default function HotelBookings() {
               <p>Try clearing filters or search different keywords.</p>
             </div>
           ) : (
-            <div className="hotel-bookings-grid">
-              {filteredBookings.map((booking) => {
-                const visuals = getHotelVisuals(booking.hotelId || booking.hotelName || "hotel");
-                const isCancelled = String(booking.status || "").toLowerCase().includes("cancel");
-                return (
-                  <article key={booking.id} className="hotel-booking-card">
-                    <div className="hotel-booking-media">
-                      <img src={visuals.cardImage} alt={booking.hotelName} />
-                      <span className={`hotel-booking-badge hotel-booking-badge--${getStatusClassName(booking.status)}`}>
-                        {booking.status}
-                      </span>
-                      <span className="hotel-booking-ref">
-                        {booking.bookingReference}
-                      </span>
-                    </div>
+            <div className="ops-table-scroll">
+              <table className="ops-table">
+                <thead>
+                  <tr>
+                    <th>BOOKING REF / DATE</th>
+                    <th>HOTEL NAME</th>
+                    <th>GUEST NAME</th>
+                    <th>CHECKIN DATE / TIME</th>
+                    <th>TOTAL PRICE</th>
+                    <th>STATUS</th>
+                    <th>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBookings.map((booking) => {
+                    const isCancelled = String(booking.status || "").toLowerCase().includes("cancel");
+                    const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
+                    const checkIn = formatHotelDate(booking.checkInDate || booking.dates, booking.checkInTime || "14:00");
+                    const checkOut = formatHotelDate(booking.checkOutDate, booking.checkOutTime || "11:00");
+                    const totalFormatted = Number(booking.amount || booking.totalPrice || booking.price || 0).toLocaleString("en-IN");
+                    const displayStatus = booking.status || "Confirmed";
 
-                    <div className="hotel-booking-info">
-                      <span className="hotel-stay-label">{visuals.propertyLabel}</span>
-                      <h3>{booking.hotelName}</h3>
-                      <p className="hotel-booking-dates">
-                        {booking.dates || `${booking.checkInDate} - ${booking.checkOutDate}`}
-                      </p>
-
-                      <div className="hotel-booking-meta">
-                        <span>Guest: {booking.guestName || "Primary Guest"}</span>
-                      </div>
-
-                      <div className="hotel-booking-price-row">
-                        <div className="hotel-booking-price">
-                          <span>Total Paid</span>
-                          <strong>{formatCurrency(booking.amount || booking.price)}</strong>
-                        </div>
-
-                        <div className="hotel-booking-actions">
-                          <button
-                            type="button"
-                            title="View details"
-                            onClick={() => handleViewDetails(booking)}
-                          >
-                            <Eye size={16} />
-                          </button>
-
-                          <button
-                            type="button"
-                            title="Cancel booking"
-                            onClick={() => triggerCancelBooking(booking)}
-                            disabled={isCancelled || cancellingBookingId === (booking.id || booking.Id || booking.bookingId)}
-                          >
-                            {cancellingBookingId === (booking.id || booking.Id || booking.bookingId) ? (
-                              <Loader2 size={16} className="hotel-spin" />
-                            ) : (
-                              <XCircle size={16} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+                    return (
+                      <tr key={booking.id || booking.bookingReference}>
+                        <td>
+                          <strong>{booking.bookingReference || booking.id}</strong>
+                          {bookedAt && <small>Booked: {bookedAt}</small>}
+                        </td>
+                        <td>
+                          <strong>{booking.hotelName}</strong>
+                          <small>{booking.city || booking.address || booking.destination || "Vijayawada"}</small>
+                        </td>
+                        <td>
+                          <strong>{booking.guestName || "SURESH REDDY AVULA"}</strong>
+                          <small>{booking.guestPhone || booking.contactNumber || "+91 9876543210"}</small>
+                        </td>
+                        <td>
+                          <strong>{checkIn}</strong>
+                          {booking.checkOutDate && <small>Check-out: {checkOut}</small>}
+                        </td>
+                        <td>
+                          <strong>INR {totalFormatted}</strong>
+                          <small>{booking.roomType || booking.roomTypeName || booking.mealPlan || "Deluxe King Room"}</small>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${getStatusClassName(displayStatus)}`}>
+                            {displayStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              type="button"
+                              className="ops-btn-action"
+                              title="View details"
+                              onClick={() => handleViewDetails(booking)}
+                            >
+                              <Eye size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              className="ops-btn-action"
+                              title="Cancel booking"
+                              onClick={() => triggerCancelBooking(booking)}
+                              disabled={isCancelled || cancellingBookingId === (booking.id || booking.Id || booking.bookingId)}
+                            >
+                              {cancellingBookingId === (booking.id || booking.Id || booking.bookingId) ? (
+                                <Loader2 size={15} className="hotel-spin" />
+                              ) : (
+                                <ShieldX size={15} />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </section>

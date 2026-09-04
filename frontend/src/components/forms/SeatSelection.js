@@ -102,6 +102,16 @@ function normalizeSrdvSeatData(seatData) {
     const seatName = String(seat.SeatName || seat.seatName || seat.SeatNo || seat.label || "").trim();
     if (!seatName) return;
 
+    const upperName = seatName.toUpperCase();
+    const isStructuralMarker =
+      ["T", "WC", "D", "DR", "E", "EX", "NA", "BLANK", "EMPTY"].includes(upperName) ||
+      /^(T|WC|D|DR|NA|EX|ST)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i.test(upperName) ||
+      String(seat.SeatType || seat.seatType || "").trim() === "0";
+
+    if (isStructuralMarker) {
+      return;
+    }
+
     const rowNo = parseInt(seat.RowNo ?? seat.rowNo ?? 0, 10);
     const colNo = parseInt(seat.ColumnNo ?? seat.columnNo ?? 0, 10);
     const isUpper =
@@ -109,7 +119,18 @@ function normalizeSrdvSeatData(seatData) {
         ? forceUpper
         : Boolean(seat.IsUpper) || String(seat.IsUpper).toLowerCase() === "true";
 
-    const isAvailable = String(seat.SeatStatus ?? seat.seatStatus ?? "true").toLowerCase() === "true";
+    const fare =
+      parseFloat(
+        seat?.Price?.B2CDisplayFare ||
+          seat?.Price?.PublishedFare ||
+          seat?.Price?.BaseFare ||
+          seat?.SeatFare ||
+          seat?.fare ||
+          0
+      ) || 0;
+
+    const isAvailable =
+      fare > 0 && String(seat.SeatStatus ?? seat.seatStatus ?? "true").toLowerCase() === "true";
     const isLadies = String(seat.IsLadiesSeat ?? seat.isLadiesSeat ?? "false").toLowerCase() === "true";
     const isMales = String(seat.IsMalesSeat ?? seat.isMalesSeat ?? "false").toLowerCase() === "true";
 
@@ -125,16 +146,6 @@ function normalizeSrdvSeatData(seatData) {
       (rawSeatType.includes("sleeper") ||
        rawSeatType.includes("berth") ||
        String(seat.DoubleBirth).toLowerCase() === "true");
-
-    const fare =
-      parseFloat(
-        seat?.Price?.B2CDisplayFare ||
-          seat?.Price?.PublishedFare ||
-          seat?.Price?.BaseFare ||
-          seat?.SeatFare ||
-          seat?.fare ||
-          0
-      ) || 0;
 
     seats.push({
       raw: seat,

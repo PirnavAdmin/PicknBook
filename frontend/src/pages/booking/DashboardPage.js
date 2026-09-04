@@ -301,7 +301,31 @@ function ChartCard({ title, subtitle, data }) {
   );
 }
 
+function formatDashboardDateTime(date = new Date()) {
+  const day = String(date.getDate()).padStart(2, "0");
+  const monthNames = [
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+    "JUL", "AUG", "SEPT", "OCT", "NOV", "DEC"
+  ];
+  const month = monthNames[date.getMonth()];
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? String(hours).padStart(2, "0") : "12";
+  return `${day} ${month}, ${hours}:${minutes} ${ampm}`;
+}
+
 export default function DashboardPage() {
+  const [currentDateTime, setCurrentDateTime] = useState(() => formatDashboardDateTime());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(formatDashboardDateTime());
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [currentOffer, setCurrentOffer] = useState(0);
   const [summary, setSummary] = useState(null);
   const [busBookings, setBusBookings] = useState([]);
@@ -561,53 +585,14 @@ export default function DashboardPage() {
     <div className="dashboard-content dashboard-home">
       <header className="dashboard-header">
         <div className="dashboard-header-copy">
-          <span className="dashboard-eyebrow">Operations Center</span>
           <h1>Travel Booking Dashboard</h1>
           <p>
-            Track booking health, monitor pending actions, and quickly navigate
-            to operational modules.
+            Track booking health, monitor pending actions, and quickly navigate to operational modules.
           </p>
-          {(summaryError || summaryNotice) && (
-            <div className="dashboard-feedback-row">
-              {summaryError && (
-                <div className="dashboard-feedback error">
-                  <span>{summaryError}</span>
-                  <button
-  type="button"
-  className="dashboard-meta-button"
-  onClick={() => setRefreshKey((previous) => previous + 1)}
-  disabled={loadingSummary}
->
-  <span className={loadingSummary ? "btn-spin-icon" : ""}>
-    <RefreshCw size={11} />
-  </span>
-  {loadingSummary ? "Syncing..." : "Refresh Data"}
-</button>
-                </div>
-              )}
-              {summaryNotice && (
-                <div className="dashboard-feedback">
-                  <span>{summaryNotice}</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
-        <div className="dashboard-header-meta">
-  <span>{summaryViewLabel}</span>
-  <span>{lastSyncedAt ? `Updated ${lastSyncedAt}` : "Rolling 30-Day Window"}</span>
-  <button
-    type="button"
-    className="dashboard-meta-button"
-    onClick={() => setRefreshKey((previous) => previous + 1)}
-    disabled={loadingSummary}
-  >
-    <span className={loadingSummary ? "btn-spin-icon" : ""}>
-      <RefreshCw size={11} />
-    </span>
-    {loadingSummary ? "Syncing..." : "Refresh Data"}
-  </button>
-</div>
+        <div className="dashboard-time-badge">
+          {currentDateTime}
+        </div>
       </header>
 
       <section className="dashboard-kpi-grid">

@@ -10,14 +10,14 @@ import {
 } from "./busBookingFlowStore";
 import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
-import { openAuthModal } from "../../utils/authModalEvents";
 
 function isRealSeat(rawSeat) {
   const name = String(rawSeat?.SeatName || rawSeat?.seatName || rawSeat?.seatCode || rawSeat?.SeatCode || rawSeat?.label || "").trim().toUpperCase();
   if (!name) return false;
-  // Exclude known structural/non-bookable markers (exits, aisles, driver area, etc.)
-  const nonSeatPatterns = /EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/;
+  // Exclude known structural/non-bookable markers (exits, aisles, driver area, toilets, etc.)
+  const nonSeatPatterns = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
   if (nonSeatPatterns.test(name)) return false;
+  if (String(rawSeat?.SeatType || rawSeat?.seatType || "").trim() === "0") return false;
   return true;
 }
 
@@ -812,12 +812,18 @@ export default function BusSeatSelectionPage({
           status,
           bookedGender,
           seatType: backendSeat?.seatType || "",
-          baseFare: Number(backendSeat?.baseFare) || seatFareBeforeTax,
+          baseFare: Number(backendSeat?.supplierBaseFare ?? backendSeat?.baseFare) || (seatFareBeforeTax - (Number(backendSeat?.markupAmount) || 0)),
+          supplierBaseFare: Number(backendSeat?.supplierBaseFare ?? backendSeat?.baseFare) || (seatFareBeforeTax - (Number(backendSeat?.markupAmount) || 0)),
+          srdvBaseFare: Number(backendSeat?.srdvBaseFare ?? backendSeat?.supplierBaseFare ?? backendSeat?.baseFare) || (seatFareBeforeTax - (Number(backendSeat?.markupAmount) || 0)),
+          b2cDisplayFare: seatFareBeforeTax,
           markupAmount: Number(backendSeat?.markupAmount) || 0,
           fareBeforeTax: seatFareBeforeTax,
-          priceInr: Number(backendSeat?.priceInr) || seatFareBeforeTax + (Number(backendSeat?.markupAmount) || 0),
-          tax: Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0,
-          fare: seatFareBeforeTax + (Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0),
+          priceInr: Number(backendSeat?.priceInr) || seatFareBeforeTax,
+          tax: Number(backendSeat?.externalGst) || Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0,
+          externalGst: Number(backendSeat?.externalGst) || Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0,
+          srdvTax: Number(backendSeat?.srdvTax) || Number(backendSeat?.externalGst) || Number(backendSeat?.tax) || 0,
+          fare: Number(backendSeat?.publishedFare) || (seatFareBeforeTax + (Number(backendSeat?.externalGst) || Number(backendSeat?.tax) || 0)),
+          publishedFare: Number(backendSeat?.publishedFare) || (seatFareBeforeTax + (Number(backendSeat?.externalGst) || Number(backendSeat?.tax) || 0)),
         };
       });
 
@@ -854,25 +860,34 @@ export default function BusSeatSelectionPage({
 
           const seatName = String(container.SeatName || container.seatName || container.SeatNo || container.label || "").trim();
           if (!seatName) return;
+          const gstAmount = parseFloat(container?.Price?.Tax || container?.Price?.GSTAmount || container?.Price?.ServiceTaxAbsolute || 0) || 0;
+          const rawBaseFare = parseFloat(container?.Price?.BaseFare || 0);
+          const markupVal = parseFloat(container?.Price?.AgentMarkUp || container?.Price?.MarkUp || 0) || 0;
+          const b2cDisplayFare = parseFloat(container?.Price?.B2CDisplayFare || 0) || (rawBaseFare > 0 && markupVal > 0 ? rawBaseFare + markupVal : 0) || rawBaseFare || 0;
           const publishedFare = parseFloat(
-            container?.Price?.B2CDisplayFare ||
             container?.Price?.PublishedFare ||
-            container?.Price?.BaseFare ||
-            container?.SeatFare ||
+            (b2cDisplayFare > 0 ? b2cDisplayFare + gstAmount : 0) ||
+            container?.Price?.SeatFare ||
             container?.fare ||
             0
-          ) || 0;
-          const gstAmount = parseFloat(container?.Price?.Tax || container?.Price?.GSTAmount || container?.Price?.ServiceTaxAbsolute || 0) || 0;
-          let trueBaseFare = parseFloat(container?.Price?.BaseFare || 0);
-          if (!trueBaseFare) {
-            trueBaseFare = publishedFare - gstAmount;
-          }
+          ) || (b2cDisplayFare + gstAmount);
+          const customerBaseFare = b2cDisplayFare > 0 ? b2cDisplayFare : (publishedFare > gstAmount ? publishedFare - gstAmount : rawBaseFare);
+          const supplierBase = rawBaseFare > 0 ? rawBaseFare : (customerBaseFare > markupVal ? customerBaseFare - markupVal : customerBaseFare);
 
           if (map.has(seatName)) {
             const existing = map.get(seatName);
-            existing.srdvBaseFare = trueBaseFare;
+            existing.supplierBaseFare = supplierBase;
+            existing.srdvBaseFare = supplierBase;
+            existing.baseFare = supplierBase;
             existing.srdvTax = gstAmount;
+            existing.externalGst = gstAmount;
+            existing.b2cDisplayFare = customerBaseFare;
+            existing.markupAmount = markupVal;
+            existing.tax = gstAmount;
             existing.fare = publishedFare;
+            existing.publishedFare = publishedFare;
+            existing.seatFare = customerBaseFare;
+            existing.priceInr = customerBaseFare;
           } else {
             const rawSeatType = String(container.SeatType || container.seatType || "").toLowerCase();
             const isSleeper = rawSeatType.includes("sleeper") || rawSeatType.includes("berth");
@@ -886,14 +901,20 @@ export default function BusSeatSelectionPage({
               kind: isSleeper ? "sleeper" : "seater",
               status: isAvailable ? "available" : "booked",
               seatType: String(container.SeatType || container.seatType || "Seater"),
-              baseFare: trueBaseFare,
-              markupAmount: 0,
-              fareBeforeTax: publishedFare,
+              baseFare: supplierBase,
+              supplierBaseFare: supplierBase,
+              srdvBaseFare: supplierBase,
+              b2cDisplayFare: customerBaseFare,
+              markupAmount: markupVal,
+              fareBeforeTax: customerBaseFare,
+              priceInr: customerBaseFare,
               tax: gstAmount,
+              externalGst: gstAmount,
               fare: publishedFare,
+              publishedFare: publishedFare,
+              seatFare: customerBaseFare,
               row: parseInt(container.RowNo ?? container.rowNo ?? 0, 10),
               column: parseInt(container.ColumnNo ?? container.columnNo ?? 0, 10),
-              srdvBaseFare: trueBaseFare,
               srdvTax: gstAmount,
             });
           }
@@ -1146,19 +1167,6 @@ export default function BusSeatSelectionPage({
       return;
     }
 
-    const b2bToken = localStorage.getItem("b2b_token");
-    const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-    const activePortal = sessionStorage.getItem("active_portal");
-    const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
-
-    if (!isAgent) {
-      const token = localStorage.getItem("token");
-      if (!token || isTokenExpired(token)) {
-        openAuthModal("login");
-        return;
-      }
-    }
-
     const seatCodes = selectedSeats.map((seat) => seat.label).filter(Boolean);
 
     // Build fareSummary directly from seat data (no API call needed here –
@@ -1175,23 +1183,22 @@ export default function BusSeatSelectionPage({
       gender: "",
     }));
 
-    const seatTotal = selectedSeatsWithAdjacency.reduce(
-      (sum, seat) => sum + (Number(seat.seatFare) || Number(seat.priceInr) || Number(seat.fare) || 0),
-      0
-    );
     const seatBaseFare = selectedSeatsWithAdjacency.reduce(
-      (sum, seat) => sum + (Number(seat.baseFare) || Number(seat.seatFare) || Number(seat.fare) || 0),
+      (sum, seat) => sum + (Number(seat.b2cDisplayFare) || Number(seat.baseFare) || Number(seat.fareBeforeTax) || 0),
       0
     );
     const seatTax = selectedSeatsWithAdjacency.reduce(
       (sum, seat) => sum + (Number(seat.tax) || Number(seat.gstAmount) || 0),
       0
     );
-
-    const displayTotal = seatTotal;
+    const displayTotal = seatBaseFare + seatTax;
 
     const flowData = {
-      bus,
+      bus: {
+        ...bus,
+        resultIndex: bus?.resultIndex || bus?.ResultIndex || bus?.id,
+        srdvIndex: bus?.srdvIndex !== undefined && bus?.srdvIndex !== null ? bus.srdvIndex : (bus?.SrdvIndex ?? 0),
+      },
       searchContext,
       selectedSeatLabels,
       selectedSeatPassengers,

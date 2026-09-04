@@ -19,7 +19,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-      const storedUser = JSON.parse(window.localStorage.getItem("user") || "{}");
+      const storedUser = JSON.parse(window.localStorage.getItem("user") || window.sessionStorage.getItem("user") || "{}");
       return storedUser && typeof storedUser === "object"
         ? { ...emptyProfile, ...storedUser }
         : emptyProfile;
@@ -35,6 +35,7 @@ export const UserProvider = ({ children }) => {
       if (typeof window !== "undefined") {
         try {
           window.localStorage.setItem("user", JSON.stringify(nextUserData));
+          window.sessionStorage.setItem("user", JSON.stringify(nextUserData));
         } catch {
           // Ignore storage failures and keep the in-memory profile updated.
         }

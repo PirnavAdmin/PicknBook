@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/pick-n-book-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#dc1e26" />
     <meta
       name="description"
       content="PickNBook Travel Booking Portal"
@@ -25,19 +25,105 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>PickNBook</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #F3F4F6;
+        font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #162126;
+      }
+      #root {
+        min-height: 100%;
+      }
+      /* Production Instant Preloader (renders in 0ms before JS bundle loads) */
+      .pnb-initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at 50% 35%, rgba(220, 30, 38, 0.06) 0%, transparent 50%),
+          linear-gradient(135deg, #f9fafb 0%, #F3F4F6 100%);
+        z-index: 999999;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .pnb-loader-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        padding: 32px 40px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 20px 45px rgba(17, 24, 39, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        animation: pnbFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .pnb-loader-logo {
+        height: 44px;
+        width: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 8px rgba(220, 30, 38, 0.12));
+      }
+      .pnb-loader-bar-wrap {
+        width: 140px;
+        height: 4px;
+        background: rgba(220, 30, 38, 0.12);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+      }
+      .pnb-loader-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 45%;
+        background: linear-gradient(90deg, #dc1e26, #b8141b);
+        border-radius: 999px;
+        animation: pnbShimmer 1.1s infinite ease-in-out;
+      }
+      .pnb-loader-text {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: #64748b;
+        margin-top: -4px;
+      }
+      @keyframes pnbShimmer {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(110%); width: 55%; }
+        100% { transform: translateX(260%); width: 40%; }
+      }
+      @keyframes pnbFadeIn {
+        from { opacity: 0; transform: scale(0.97); }
+        to { opacity: 1; transform: scale(1); }
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    <div id="root">
+      <div class="pnb-initial-loader">
+        <div class="pnb-loader-card">
+          <img
+            src="%PUBLIC_URL%/pick-n-book-logo.png"
+            alt="PickNBook"
+            class="pnb-loader-logo"
+          />
+          <div class="pnb-loader-bar-wrap">
+            <div class="pnb-loader-bar"></div>
+          </div>
+          <span class="pnb-loader-text">Loading PickNBook...</span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

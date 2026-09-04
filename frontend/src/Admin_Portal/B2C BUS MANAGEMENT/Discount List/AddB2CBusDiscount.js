@@ -366,6 +366,9 @@ function AddB2CBusDiscount() {
             <button type="button" className="ghost-btn" onClick={handleReset} disabled={submitting}>
               Reset
             </button>
+            <button type="button" className="ghost-btn" onClick={() => navigate('/admin/b2c-bus/discount-list')} disabled={submitting}>
+              B2C Discount List
+            </button>
           </div>
         </form>
       </section>

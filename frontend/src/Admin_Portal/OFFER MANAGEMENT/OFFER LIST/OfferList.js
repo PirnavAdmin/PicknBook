@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Filter, Pencil, Plus, RefreshCw, Trash2, X, ZoomIn, Sliders } from "lucide-react";
+import { Check, Filter, Pencil, Plus, RefreshCw, Trash2, X, ZoomIn, Sliders, ChevronDown } from "lucide-react";
 import "./OfferList.css";
 import {
   getAdminFeaturedOffers,
@@ -11,6 +11,7 @@ import {
   addOfferCondition,
   updateOfferCondition,
   deleteOfferCondition,
+  extractOfferErrorMessage,
 } from "../../../services/adminFeaturedOffersService";
 import { toApiUrl } from "../../../services/apiClient";
 import AdminPagination from "../../../components/AdminPagination";
@@ -156,60 +157,107 @@ function normalizeOffer(raw) {
 
 function buildOfferFormData(formValues, fileInputObject) {
   const formData = new FormData();
-  formData.append("Title", String(formValues.title || "").trim());
-  formData.append("BookingType", normalizeBookingType(formValues.bookingType));
-  formData.append("IsActive", Boolean(formValues.isActive));
+  const title = String(formValues.title || "").trim();
+  const bookingType = normalizeBookingType(formValues.bookingType);
+  const isActive = Boolean(formValues.isActive);
+  const code = formValues.offerCode
+    ? String(formValues.offerCode).trim()
+    : `OFFER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const displayOrder = formValues.displayOrder !== undefined && formValues.displayOrder !== null && formValues.displayOrder !== ""
+    ? Number(formValues.displayOrder)
+    : 0;
+  const subtitle = String(formValues.shortDescription || "").trim();
+  const description = String(formValues.longDescription || "").trim();
 
-  if (formValues.offerCode) {
-    formData.append("OfferCode", String(formValues.offerCode).trim());
-  } else {
-    const generatedCode = `OFFER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    formData.append("OfferCode", generatedCode);
-  }
-
-  if (formValues.displayOrder !== undefined && formValues.displayOrder !== null && formValues.displayOrder !== "") {
-    formData.append("DisplayOrder", Number(formValues.displayOrder));
-  }
-  if (formValues.shortDescription !== undefined && formValues.shortDescription !== null) {
-    formData.append("Subtitle", String(formValues.shortDescription).trim());
-  }
-  if (formValues.longDescription !== undefined && formValues.longDescription !== null) {
-    formData.append("Description", String(formValues.longDescription).trim());
-  }
-
-  if (formValues.startDateUtc) {
-    formData.append("StartDateUtc", toUtcIso(formValues.startDateUtc));
-  }
-  if (formValues.endDateUtc) {
-    formData.append("EndDateUtc", toUtcIso(formValues.endDateUtc));
-  }
+  const nowIso = new Date().toISOString();
+  const oneYearLaterIso = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const startIso = formValues.startDateUtc ? toUtcIso(formValues.startDateUtc) : nowIso;
+  const endIso = formValues.endDateUtc ? toUtcIso(formValues.endDateUtc) : oneYearLaterIso;
 
   const finalDiscountType = formValues.discountType || (formValues.isPercentageDiscount ? "Percentage" : "Flat");
-  formData.append("DiscountType", finalDiscountType);
-  formData.append("IsPercentageDiscount", finalDiscountType === "Percentage");
+  const discountVal = formValues.discountValue !== undefined && formValues.discountValue !== null && formValues.discountValue !== ""
+    ? Number(formValues.discountValue)
+    : 0;
+  const minBooking = formValues.minBookingAmount !== undefined && formValues.minBookingAmount !== null && formValues.minBookingAmount !== ""
+    ? Number(formValues.minBookingAmount)
+    : 0;
+  const maxUsageVal = formValues.maxUsage !== undefined && formValues.maxUsage !== null && formValues.maxUsage !== ""
+    ? Number(formValues.maxUsage)
+    : 500;
+  const usedCountVal = Number(formValues.couponUsedCount) || 0;
 
-  if (formValues.discountValue !== undefined && formValues.discountValue !== null && formValues.discountValue !== "") {
-    formData.append("DiscountValue", Number(formValues.discountValue));
+  formData.append("title", title);
+  formData.append("Title", title);
+
+  formData.append("bookingType", bookingType);
+  formData.append("BookingType", bookingType);
+
+  formData.append("isActive", isActive);
+  formData.append("IsActive", isActive);
+
+  formData.append("offerCode", code);
+  formData.append("OfferCode", code);
+  formData.append("code", code);
+  formData.append("Code", code);
+
+  formData.append("displayOrder", displayOrder);
+  formData.append("DisplayOrder", displayOrder);
+
+  if (subtitle) {
+    formData.append("subtitle", subtitle);
+    formData.append("Subtitle", subtitle);
+    formData.append("shortDescription", subtitle);
+    formData.append("ShortDescription", subtitle);
   }
 
+  if (description) {
+    formData.append("description", description);
+    formData.append("Description", description);
+    formData.append("longDescription", description);
+    formData.append("LongDescription", description);
+  }
+
+  formData.append("startDateUtc", startIso);
+  formData.append("StartDateUtc", startIso);
+  formData.append("startDate", startIso);
+  formData.append("StartDate", startIso);
+
+  formData.append("endDateUtc", endIso);
+  formData.append("EndDateUtc", endIso);
+  formData.append("endDate", endIso);
+  formData.append("EndDate", endIso);
+
+  formData.append("discountType", finalDiscountType);
+  formData.append("DiscountType", finalDiscountType);
+  formData.append("isPercentageDiscount", finalDiscountType === "Percentage");
+  formData.append("IsPercentageDiscount", finalDiscountType === "Percentage");
+
+  formData.append("discountValue", discountVal);
+  formData.append("DiscountValue", discountVal);
+
   if (formValues.maxDiscountAmount !== undefined && formValues.maxDiscountAmount !== null && formValues.maxDiscountAmount !== "") {
+    formData.append("maxDiscountAmount", Number(formValues.maxDiscountAmount));
     formData.append("MaxDiscountAmount", Number(formValues.maxDiscountAmount));
   }
 
-  if (formValues.minBookingAmount !== undefined && formValues.minBookingAmount !== null && formValues.minBookingAmount !== "") {
-    formData.append("MinBookingAmount", Number(formValues.minBookingAmount));
-  }
+  formData.append("minBookingAmount", minBooking);
+  formData.append("MinBookingAmount", minBooking);
 
-  if (formValues.maxUsage !== undefined && formValues.maxUsage !== null && formValues.maxUsage !== "") {
-    formData.append("MaxUsage", Number(formValues.maxUsage));
-    formData.append("MaxCouponUsage", Number(formValues.maxUsage));
-  }
+  formData.append("maxUsage", maxUsageVal);
+  formData.append("MaxUsage", maxUsageVal);
+  formData.append("maxCouponUsage", maxUsageVal);
+  formData.append("MaxCouponUsage", maxUsageVal);
 
-  formData.append("UsedCount", Number(formValues.couponUsedCount) || 0);
-  formData.append("CouponUsedCount", Number(formValues.couponUsedCount) || 0);
+  formData.append("usedCount", usedCountVal);
+  formData.append("UsedCount", usedCountVal);
+  formData.append("couponUsedCount", usedCountVal);
+  formData.append("CouponUsedCount", usedCountVal);
 
   if (fileInputObject) {
+    formData.append("image", fileInputObject);
     formData.append("Image", fileInputObject);
+    formData.append("file", fileInputObject);
+    formData.append("File", fileInputObject);
   }
 
   return formData;
@@ -231,6 +279,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
   const [deleteOffer, setDeleteOffer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
 
   // Condition Management State
   const [conditionsOffer, setConditionsOffer] = useState(null);
@@ -321,7 +370,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
         previous?.id === offer.id ? { ...previous, isActive: !previous.isActive } : previous
       );
     } catch (requestError) {
-      setError(requestError.message || "Unable to update offer status.");
+      setError(extractOfferErrorMessage(requestError, "Unable to update offer status."));
     } finally {
       setBusyId(null);
     }
@@ -606,7 +655,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
       setEditOffer(null);
       await loadOffers();
     } catch (requestError) {
-      setEditError(requestError.message || "Unable to save offer.");
+      setEditError(extractOfferErrorMessage(requestError, "Unable to save offer."));
     } finally {
       setBusyId(null);
     }
@@ -761,14 +810,6 @@ export default function AdminOfferListPage({ onAddOffer }) {
                 <Filter size={16} />
                 <span>Filter</span>
               </button>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={handleClearFilters}>
-                <X size={16} />
-                <span>Clear Filter</span>
-              </button>
-              <button type="button" className="admin-markup-coupon-btn clear" onClick={loadOffers}>
-                <RefreshCw size={16} />
-                <span>Refresh</span>
-              </button>
               {onAddOffer && (
                 <button type="button" className="admin-markup-coupon-btn generate" onClick={onAddOffer}>
                   <Plus size={16} />
@@ -879,45 +920,93 @@ export default function AdminOfferListPage({ onAddOffer }) {
                         </button>
                       </td>
                       <td className="action-col">
-                        <div className="markup-action-group" aria-label="Offer actions">
+                        <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
                           <button
                             type="button"
-                            className="offer-details-trigger"
-                            title="Zoom In"
-                            aria-label={`Open details for ${offer.title}`}
-                            onClick={() => setDetailsOffer(offer)}
+                            className={`offer-action-btn-trigger ${activeDropdownId === offer.id ? "active" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdownId(activeDropdownId === offer.id ? null : offer.id);
+                            }}
                           >
-                            <ZoomIn size={14} />
+                            <span>Actions</span> <ChevronDown size={14} />
                           </button>
-                          <button
-                            type="button"
-                            className="offer-conditions-trigger"
-                            title="Manage Conditions"
-                            aria-label={`Manage conditions for ${offer.title}`}
-                            onClick={() => openConditionsModal(offer)}
-                            style={{ color: "#3b82f6" }}
-                          >
-                            <Sliders size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Edit"
-                            aria-label={`Edit ${offer.title}`}
-                            onClick={() => openEditModal(offer)}
-                            disabled={busyId === offer.id}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            aria-label={`Delete ${offer.title}`}
-                            className="danger"
-                            onClick={() => setDeleteOffer(offer)}
-                            disabled={busyId === offer.id}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+
+                          {activeDropdownId === offer.id && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                ...(index >= paginatedOffers.length - 2 || paginatedOffers.length <= 3
+                                  ? { bottom: '100%', marginBottom: '6px' }
+                                  : { top: '100%', marginTop: '6px' }),
+                                right: 0,
+                                background: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                zIndex: 99999,
+                                minWidth: '170px',
+                                width: 'max-content',
+                                padding: '6px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px'
+                              }}
+                            >
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setActiveDropdownId(null); setDetailsOffer(offer); }}
+                              >
+                                <ZoomIn size={15} /> <span>View Details</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setActiveDropdownId(null); openConditionsModal(offer); }}
+                              >
+                                <Sliders size={15} /> <span>Manage Conditions</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setActiveDropdownId(null); openEditModal(offer); }}
+                              >
+                                <Pencil size={15} /> <span>Edit Offer</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#ef4444',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setActiveDropdownId(null); setDeleteOffer(offer); }}
+                              >
+                                <Trash2 size={15} /> <span>Delete Offer</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -925,16 +1014,14 @@ export default function AdminOfferListPage({ onAddOffer }) {
                 )}
               </tbody>
             </table>
-            <div style={{ marginTop: "16px", padding: "0 24px 24px" }}>
-              <AdminPagination
-                currentPage={currentPage}
-                totalItems={filteredOffers.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
-                itemName="offers"
-              />
-            </div>
+            <AdminPagination
+              currentPage={currentPage}
+              totalItems={filteredOffers.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemName="offers"
+            />
           </section>
         </section>
       )}

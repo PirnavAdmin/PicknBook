@@ -4,12 +4,12 @@ import { NavLink } from "react-router-dom";
 import {
   BedDouble,
   BusFront,
-  KeyRound,
   LayoutDashboard,
   PlaneTakeoff,
   UserRound,
   Users,
   Ticket,
+  Wallet,
 } from "lucide-react";
 
 const MAIN_LINKS = [
@@ -43,28 +43,24 @@ const MAIN_LINKS = [
   },
   {
     id: "nav-6",
-    to: "/web-checkin",
+    to: "/dashboard/web-checkin",
     label: "Web Check-in",
     description: "Check-in online",
     icon: Ticket,
   },
   {
     id: "nav-7",
-    to: "/fetch-ticket",
+    to: "/dashboard/fetch-ticket",
     label: "Print Ticket",
     description: "Retrieve travel ticket",
     icon: Ticket,
   },
-];
-
-
-const PROFILE_LINKS = [
   {
-    id: "profile-2",
-    to: "/change-password",
-    label: "Change Password",
-    description: "Update login security",
-    icon: KeyRound,
+    id: "nav-8",
+    to: "/dashboard/wallet",
+    label: "Wallet",
+    description: "Manage balance & transactions",
+    icon: Wallet,
   },
 ];
 
@@ -94,18 +90,6 @@ export default function DashboardSidebar() {
           </NavLink>
         ))}
 
-        <div className="sidebar-divider" />
-
-        {PROFILE_LINKS.map((item) => (
-          <NavLink key={item.id} to={item.to} className={navItemClassName} title={item.label}>
-            <item.icon size={16} />
-            <span className="sidebar-copy">
-              <strong>{item.label}</strong>
-              <small>{item.description}</small>
-            </span>
-          </NavLink>
-        ))}
-
         <NavLink to="/dashboard/my-account" className={navItemClassName} title="My Account">
           <UserRound size={16} />
           <span className="sidebar-copy">
@@ -114,6 +98,6 @@ export default function DashboardSidebar() {
           </span>
         </NavLink>
       </nav>
-    </aside >
+    </aside>
   );
 }

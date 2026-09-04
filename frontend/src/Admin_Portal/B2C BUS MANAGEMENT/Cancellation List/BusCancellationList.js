@@ -1,9 +1,11 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import "./BusCancellationList.css";
-import { useAdminList } from "../../../utils/adminPortalStorage";
+import "../Booking List/BookingList.css";
+import { useAdminList, getStoredValue, setStoredValue } from "../../../utils/adminPortalStorage";
 import { getCancellationReports, listAdminBusBookings } from "../../../services/adminBusService";
 import AdminPagination from "../../../components/AdminPagination";
+import { RefreshCw, AlertCircle, Filter, Download } from "lucide-react";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -21,6 +23,19 @@ const DEFAULT_FILTERS = {
 const normalizeText = (value, fallback = "") => {
   const text = String(value ?? "").trim();
   return text || fallback;
+};
+
+const formatDateCell = (value) => {
+  if (!value || value === "--" || value === "-") return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
 };
 
 function shouldUseFallbackBusBookings(error) {
@@ -434,6 +449,10 @@ const toAdminStatusLabel = (statusValue) => {
 const mapAdminStatusClass = (statusValue) => {
   const key = normalizeText(statusValue, "").toLowerCase();
 
+  if (CANCELLED_STATUS_SET.has(key)) {
+    return "cancelled";
+  }
+
   if (PENDING_STATUS_SET.has(key)) {
     return "pending";
   }
@@ -485,8 +504,20 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const initialPaymentStatus = rawPayload?.paymentStatus || (mapAdminStatusClass(record?.status) === "cancelled" ? "Completed" : "Pending");
 
   // Get fromCity and toCity safely
-  const fromCity = record?.fromCity || rawPayload?.fromCity || rawPayload?.source || rawPayload?.sourceCity || "--";
-  const toCity = record?.toCity || rawPayload?.toCity || rawPayload?.destination || rawPayload?.destinationCity || "--";
+  let fromCity = record?.fromCity || rawPayload?.fromCity || rawPayload?.source || rawPayload?.sourceCity || "";
+  let toCity = record?.toCity || rawPayload?.toCity || rawPayload?.destination || rawPayload?.destinationCity || "";
+  
+  if ((!fromCity || fromCity === "--") && record?.segment) {
+    const parts = record.segment.split(/[-–]| to /i);
+    if (parts.length === 2) {
+      fromCity = parts[0].trim();
+      toCity = parts[1].trim();
+    } else {
+      fromCity = record.segment;
+    }
+  }
+  if (!fromCity) fromCity = "--";
+  if (!toCity) toCity = "--";
 
   return {
     id: bookingReference || bookingId || "--",
@@ -501,7 +532,7 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     to: normalizeText(toCity, "--"),
     journeyDate: toDateKey(departureValue),
     journeyTime,
-    pnr: bookingReference || tripNumber || bookingId || "--",
+    pnr: record?.pnr || bookingReference || tripNumber || bookingId || "--",
     status,
     operator: normalizeText(record?.providerName, "--"),
     vehicleType: normalizeText(record?.travelClass, safeSourceType),
@@ -568,6 +599,7 @@ export default function AdminCancellationListPage() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -605,7 +637,15 @@ export default function AdminCancellationListPage() {
         }
 
         const merged = rawResults
-          .map((record) => toUnifiedAdminBooking(record, "Bus"))
+          .map((record) => {
+            const unified = toUnifiedAdminBooking(record, "Bus");
+            const keyOverride = `payment_status_override_${unified.bookingReference || unified.bookingId}`;
+            const localStatus = getStoredValue(keyOverride, null);
+            if (localStatus) {
+              unified.paymentStatus = localStatus;
+            }
+            return unified;
+          })
           .filter((record) => mapAdminStatusClass(record.status) === "cancelled")
           .map((record) => toCancellationRecord(record))
           .sort((first, second) => {
@@ -623,14 +663,25 @@ export default function AdminCancellationListPage() {
     }
 
     loadCancellationBookings(filters);
-  }, [filters, setCancellationBookings]);
+  }, [filters, setCancellationBookings, refreshTrigger]);
 
   const handleUpdatePaymentStatus = (id, newStatus) => {
     setCancellationBookings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, paymentStatus: newStatus } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          const keyOverride = `payment_status_override_${item.bookingReference || item.bookingId}`;
+          setStoredValue(keyOverride, newStatus);
+          return { ...item, paymentStatus: newStatus };
+        }
+        return item;
+      })
     );
     if (selectedCancellation && selectedCancellation.id === id) {
-      setSelectedCancellation((prev) => ({ ...prev, paymentStatus: newStatus }));
+      setSelectedCancellation((prev) => {
+        const keyOverride = `payment_status_override_${prev.bookingReference || prev.bookingId}`;
+        setStoredValue(keyOverride, newStatus);
+        return { ...prev, paymentStatus: newStatus };
+      });
     }
   };
 
@@ -761,11 +812,62 @@ export default function AdminCancellationListPage() {
     URL.revokeObjectURL(downloadUrl);
   };
 
+  if (errorMessage) {
+    return (
+      <section className="admin-b2c-page admin-cancel-page" style={{ padding: "28px 32px", fontFamily: "'Inter', sans-serif" }}>
+        <header className="admin-b2c-header admin-cancel-header" style={{ marginBottom: "5px" }}>
+          <h1 style={{ fontWeight: 700, margin: 0, fontSize: "1.85rem" }}>
+            <span style={{ color: "#A51C49" }}>B2C Bus </span>
+            <span style={{ color: "black" }}>Cancellation List</span>
+          </h1>
+        </header>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 20px',
+          background: 'var(--panel)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginTop: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={20} />
+            <span>Network Error</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            style={{
+              background: '#A41B48',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            title="Retry Connection"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="admin-b2c-page admin-cancel-page" style={{ padding: "28px 32px", fontFamily: "'Inter', sans-serif" }}>
-      <header className="admin-b2c-header admin-cancel-header" style={{ marginBottom: "5px" }}>
+      <header className="admin-b2c-header admin-cancel-header" style={{ marginBottom: "12px" }}>
         <h1 style={{ fontWeight: 700, margin: 0, fontSize: "1.85rem" }}>
-          <span style={{ color: "#be185d" }}>B2C Bus </span>
+          <span style={{ color: "#A51C49" }}>B2C Bus </span>
           <span style={{ color: "black" }}>Cancellation List</span>
         </h1>
       </header>
@@ -773,63 +875,59 @@ export default function AdminCancellationListPage() {
       {/* Toolbar controls */}
       <div className="admin-toolbar-row admin-cancel-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <div className="admin-chip-row">
-          <span className="admin-chip admin-cancel-chip" style={{ color: "#be185d", borderColor: "#be185d", backgroundColor: "rgba(190, 24, 93, 0.05)", fontWeight: "600", padding: "6px 14px", borderRadius: "100px", fontSize: "0.85rem" }}>
-            Cancelled Records: {filteredCancellations.length}
+          <span className="admin-chip">Today Cancelled: {filteredCancellations.filter(c => c.paymentStatus === "Completed").length}</span>
+          <span className="admin-chip">Today Pending: {filteredCancellations.filter(c => c.paymentStatus === "Pending").length}</span>
+          <span className="admin-chip admin-total-chip">
+            Total Records: {filteredCancellations.length}
           </span>
         </div>
 
-        <div className="admin-actions-row" style={{ display: "flex", gap: "10px" }}>
+        <div className="admin-actions-row" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
             type="button"
             onClick={() => setIsFiltersOpen((current) => !current)}
             style={{
-              padding: "8px 18px",
-              borderRadius: "100px",
-              border: "1.5px solid #be185d",
-              background: "#be185d",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#A51C49",
               color: "#ffffff",
-              fontSize: "0.85rem",
+              fontSize: "0.88rem",
               fontWeight: "600",
               cursor: "pointer",
+              whiteSpace: "nowrap",
               transition: "all 0.2s"
             }}
           >
-            {isFiltersOpen ? "Hide Filter" : "Filter"}
-          </button>
-          <button
-            type="button"
-            className="admin-cancel-clear-btn"
-            onClick={clearFilters}
-            style={{
-              padding: "8px 18px",
-              borderRadius: "100px",
-              border: "1.5px solid var(--border, #cbd5e1)",
-              background: "transparent",
-              color: "var(--text-secondary, #475569)",
-              fontSize: "0.85rem",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            Clear Filter
+            <Filter size={15} />
+            <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
           <button
             type="button"
             onClick={handleExport}
             style={{
-              padding: "8px 18px",
-              borderRadius: "100px",
-              border: "1.5px solid #2563eb",
-              background: "#2563eb",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#10b981",
               color: "#ffffff",
-              fontSize: "0.85rem",
+              fontSize: "0.88rem",
               fontWeight: "600",
               cursor: "pointer",
+              whiteSpace: "nowrap",
               transition: "all 0.2s"
             }}
           >
-            Export
+            <Download size={15} />
+            <span>Export</span>
           </button>
         </div>
       </div>
@@ -907,14 +1005,15 @@ export default function AdminCancellationListPage() {
 
       {/* Grid Table Card-Rows */}
       <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1fr 1.2fr 1.5fr 1.2fr 1fr 1.2fr 1fr 0.8fr" }}>
-          <span>ID</span>
-          <span>PNR / Date</span>
-          <span>Segment / Journey</span>
-          <span>Passenger Name</span>
-          <span>Amount</span>
-          <span>Payment Info</span>
-          <span>Payment Status</span>
+        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
+          <span>B. ID / Date</span>
+          <span>Name</span>
+          <span>Segment / Date</span>
+          <span>Time</span>
+          <span>PNR / Status</span>
+          <span>Operator / Type</span>
+          <span>Fare</span>
+          <span>Calculated Profit</span>
           <span>Action</span>
         </header>
 
@@ -923,57 +1022,52 @@ export default function AdminCancellationListPage() {
         ) : filteredCancellations.length ? (
           <div className="admin-cancel-table-body">
             {paginatedCancellations.map((booking) => (
-              <article key={booking.id} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1fr 1.2fr 1.5fr 1.2fr 1fr 1.2fr 1fr 0.8fr" }}>
+              <article key={booking.id} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.id)}</strong>
-                </div>
-
-                <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.pnr)}</strong>
+                  <strong>{safeValue(booking.bookingId || booking.id)}</strong>
                   <div className="admin-date-badge">
-                    <span className="admin-calendar-emoji">📅</span>
-                    <span>{booking.createdAt}</span>
-                  </div>
-                </div>
-
-                <div className="admin-cancel-cell">
-                  <div className="admin-route-segment">
-                    <span style={{ fontWeight: "700" }}>{booking.from} to {booking.to}</span>
-                  </div>
-                  <div className="admin-date-badge">
-                    <span className="admin-calendar-emoji">📅</span>
-                    <span>{booking.journeyDate} | {booking.journeyTime}</span>
+                    <span className="admin-calendar-emoji">🗓️</span>
+                    <span>{formatDateCell(booking.createdAt)}</span>
                   </div>
                 </div>
 
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.passengerName)}</strong>
-                  <small>{safeValue(booking.passengerPhone)}</small>
+                  {booking.passengerPhone && booking.passengerPhone !== "--" && (
+                    <small>{booking.passengerPhone}</small>
+                  )}
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>RA {adminCurrencyFormatter.format(booking.refundAmount)}</strong>
-                  <small>CC {adminCurrencyFormatter.format(booking.cancellationCharge)}</small>
+                  <div className="admin-route-segment">
+                    <span style={{ fontWeight: "600" }}>{booking.from} ➔ {booking.to}</span>
+                  </div>
+                  <div className="admin-date-badge">
+                    <span className="admin-calendar-emoji">🗓️</span>
+                    <span>{formatDateCell(booking.journeyDate)}</span>
+                  </div>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>Method:</strong> {safeValue(booking.paymentMethod)}
-                  <small style={{ wordBreak: "break-all" }}><strong>Txn:</strong> {safeValue(booking.paymentDetails)}</small>
+                  <strong>{safeValue(booking.journeyTime)}</strong>
                 </div>
 
                 <div className="admin-cancel-cell">
+                  <strong>{safeValue(booking.pnr)}</strong>
                   <select
                     value={booking.paymentStatus}
                     onChange={(e) => handleUpdatePaymentStatus(booking.id, e.target.value)}
                     style={{
-                      padding: "4px 8px",
+                      padding: "2px 6px",
                       borderRadius: "6px",
-                      border: "1px solid var(--border)",
+                      border: booking.paymentStatus === "Completed" ? "1px solid #10b981" : "1px solid #d97706",
                       backgroundColor: booking.paymentStatus === "Completed" ? "#ecfdf5" : "#fffbeb",
                       color: booking.paymentStatus === "Completed" ? "#10b981" : "#d97706",
-                      fontSize: "0.8rem",
+                      fontSize: "0.72rem",
                       fontWeight: "600",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      outline: "none",
+                      marginTop: "2px"
                     }}
                   >
                     <option value="Pending">Pending</option>
@@ -981,23 +1075,25 @@ export default function AdminCancellationListPage() {
                   </select>
                 </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
+                <div className="admin-cancel-cell">
+                  <strong>{safeValue(booking.providerName || booking.operator || "Bus Service")}</strong>
+                  <small>{safeValue(booking.travelClass || "Bus")}</small>
+                </div>
+
+                <div className="admin-cancel-cell">
+                  <strong>{adminCurrencyFormatter.format(booking.fare)}</strong>
+                  <small>Refund: {adminCurrencyFormatter.format(booking.refundAmount)}</small>
+                </div>
+
+                <div className="admin-cancel-cell">
+                  <strong style={{ color: "#d97706" }}>Charge: {adminCurrencyFormatter.format(booking.cancellationCharge)}</strong>
+                </div>
+
+                <div className="admin-cancel-cell">
                   <button
                     type="button"
-                    className="admin-action-btn"
+                    className={`admin-cancel-view-btn ${booking.paymentStatus === "Completed" ? "completed-state" : ""}`}
                     onClick={() => setSelectedCancellation(booking)}
-                    style={{
-                      backgroundColor: "#be185d",
-                      borderColor: "#be185d",
-                      color: "#ffffff",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "6px 16px",
-                      fontSize: "0.8rem",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      transition: "all 0.2s"
-                    }}
                   >
                     View
                   </button>

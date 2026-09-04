@@ -68,10 +68,6 @@ export async function searchHotels(options) {
   const nights = Math.max(1, Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / 86400000));
   
   const payload = {
-    EndUserIp: "192.168.1.1",
-    ClientId: "180232",
-    UserName: "PickNBk6",
-    Password: "PickNB@486",
     CheckInDate: checkInDate,
     CheckOutDate: checkOutDate,
     NoOfNights: String(nights),
@@ -128,10 +124,6 @@ export async function searchHotels(options) {
 
 export async function getHotelInfo(payload) {
   const fullPayload = {
-    EndUserIp: "192.168.1.1",
-    ClientId: "180232",
-    UserName: "PickNBk6",
-    Password: "PickNB@486",
     TraceId: payload.TraceId || payload.traceId || "",
     SrdvType: payload.SrdvType || payload.srdvType || "MixAPI",
     SrdvIndex: payload.SrdvIndex || payload.srdvIndex || "",
@@ -153,10 +145,6 @@ export async function getHotelInfo(payload) {
 
 export async function getHotelRoom(payload) {
   const fullPayload = {
-    EndUserIp: "192.168.1.1",
-    ClientId: "180232",
-    UserName: "PickNBk6",
-    Password: "PickNB@486",
     TraceId: payload.TraceId || payload.traceId || "",
     SrdvType: payload.SrdvType || payload.srdvType || "MixAPI",
     SrdvIndex: payload.SrdvIndex || payload.srdvIndex || "",
@@ -178,10 +166,6 @@ export async function getHotelRoom(payload) {
 
 export async function blockRoom(payload) {
   const fullPayload = {
-    EndUserIp: "192.168.1.1",
-    ClientId: "180232",
-    UserName: "PickNBk6",
-    Password: "PickNB@486",
     TraceId: payload.TraceId || payload.traceId || "",
     SrdvType: payload.SrdvType || payload.srdvType || "MixAPI",
     SrdvIndex: String(payload.SrdvIndex || payload.srdvIndex || ""),
@@ -210,10 +194,6 @@ export async function blockRoom(payload) {
 
 export async function bookHotelRoom(payload) {
   const fullPayload = {
-    EndUserIp: "192.168.1.1",
-    ClientId: "180232",
-    UserName: "PickNBk6",
-    Password: "PickNB@486",
     TraceId: payload.TraceId || payload.traceId || "",
     SrdvType: payload.SrdvType || payload.srdvType || "MixAPI",
     SrdvIndex: String(payload.SrdvIndex || payload.srdvIndex || ""),

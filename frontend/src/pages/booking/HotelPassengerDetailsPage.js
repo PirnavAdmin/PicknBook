@@ -1,12 +1,12 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   ArrowLeft, CalendarDays, CheckCircle2, Clock3, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate } from "../../utils/apiDateFormat";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
-import { openAuthModal } from "../../utils/authModalEvents";
+import { navigateWithAuth, isUserAuthenticated } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
 import { blockRoom, getHotelInfo, getHotelRoom } from "../../services/hotelBookingService";
 import { listTravelers } from "../../services/travelerService";
@@ -216,6 +216,26 @@ export default function HotelPassengerDetailsPage() {
   const [specialRequests, setSpecialRequests] = useState([]);
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [gstNumber, setGstNumber] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [checkoutPayload, setCheckoutPayload] = useState(null);
+
+  const autoContinueProcessed = useRef(false);
+  useEffect(() => {
+    const isAutoContinue =
+      location.state?.autoContinue ||
+      searchParams.get("autoContinue") === "true";
+
+    if (isAutoContinue && isUserAuthenticated() && !autoContinueProcessed.current) {
+      autoContinueProcessed.current = true;
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.delete("autoContinue");
+      const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
+      navigate(`/hotel/passenger-details${nextSearch}`, { replace: true, state: {} });
+      setTimeout(() => {
+        handleContinue();
+      }, 150);
+    }
+  }, [location, searchParams]);
 
   // Parse roomsConfig and guest counts
   const roomsConfig = useMemo(() => {
@@ -644,15 +664,6 @@ export default function HotelPassengerDetailsPage() {
   }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse]);
 
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
-    const activePortal = sessionStorage.getItem("active_portal");
-    const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
-    const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
-    if (!token || isTokenExpired(token)) {
-      sessionStorage.setItem("pending_hotel_offer", JSON.stringify(roomOffer));
-      navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-      return;
-    }
-
     const newSelection = [...selectedMultiRooms, roomOffer];
     
     if (newSelection.length < roomsCount) {
@@ -911,12 +922,7 @@ export default function HotelPassengerDetailsPage() {
       setFormError("Please correct the highlighted guest details."); 
       return; 
     }
-    const token = isAgent ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
-    if (!token || isTokenExpired(token)) { 
-      alert("Login is mandatory to proceed to payment. Opening login window.");
-      navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); 
-      return; 
-    }
+
     const hotelImg = hotel?.image || hotel?.cardImage || (Array.isArray(hotel?.images) ? hotel.images[0] : null) || offer?.image || null;
     const hotelImgs = Array.isArray(hotel?.images) && hotel.images.length > 0 ? hotel.images : (hotelImg ? [hotelImg] : []);
 
@@ -953,7 +959,25 @@ export default function HotelPassengerDetailsPage() {
       } 
     };
 
+    // Save in-progress state FIRST
     writeHotelBookingFlowState(payloadState);
+
+    const currentParams = new URLSearchParams(location.search);
+    currentParams.set("autoContinue", "true");
+    const nextRoute = `/hotel/passenger-details?${currentParams.toString()}`;
+
+    const authenticated = navigateWithAuth({
+      navigate,
+      location,
+      nextRoute,
+      bookingContext: { autoContinue: true, ...payloadState },
+      bookingType: "hotel",
+    });
+
+    if (!authenticated) {
+      return; 
+    }
+
     setCheckoutPayload(payloadState);
     setIsModalOpen(true);
   };
@@ -1022,15 +1046,6 @@ export default function HotelPassengerDetailsPage() {
   }
 
   const handleSetCurrentStep = (step) => {
-    if (step === 2) {
-      const activePortal = sessionStorage.getItem("active_portal");
-      const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
-      const token = isAgentUser ? localStorage.getItem("b2b_token") : localStorage.getItem("token");
-      if (!token || isTokenExpired(token)) {
-        navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-        return;
-      }
-    }
     setCurrentStep(step);
   };
 

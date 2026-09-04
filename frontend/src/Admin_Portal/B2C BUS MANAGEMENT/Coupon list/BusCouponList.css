@@ -1,7 +1,7 @@
 .admin-markup-coupon-shell {
-  --admin-primary: #A51C49 !important;
+  --admin-primary: #A41B48 !important;
   --admin-primary-strong: #851237 !important;
-  --primary: #A51C49 !important;
+  --primary: #A41B48 !important;
   --primary-strong: #851237 !important;
   display: grid;
   gap: 16px;
@@ -59,8 +59,32 @@
   transition: 0.2s ease;
 }
 
-.admin-markup-coupon-btn.filter.active,
-.admin-markup-coupon-btn:hover {
+.admin-markup-coupon-btn.filter {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.admin-markup-coupon-btn.filter:hover,
+.admin-markup-coupon-btn.filter.active {
+  background-color: var(--primary-strong);
+  border-color: var(--primary-strong);
+  color: #ffffff;
+}
+
+.admin-markup-coupon-btn.used-coupons-nav-btn {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.admin-markup-coupon-btn.used-coupons-nav-btn:hover {
+  background-color: var(--primary-strong);
+  border-color: var(--primary-strong);
+  color: #ffffff;
+}
+
+.admin-markup-coupon-btn.clear:hover {
   border-color: var(--primary);
   color: var(--primary);
   background: var(--surface-soft);
@@ -117,7 +141,7 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--panel);
-  overflow: hidden;
+  overflow: visible !important;
   box-shadow: var(--shadow-sm);
   width: 100%;
   max-width: 100%;
@@ -126,7 +150,7 @@
 }
 
 .admin-markup-coupon-table-scroll {
-  overflow-x: auto;
+  overflow: visible !important;
   width: 100%;
 }
 
@@ -155,7 +179,18 @@
   color: #ffffff;
 }
 
-.admin-markup-coupon-table th,
+.admin-markup-coupon-table th {
+  padding: 14px 8px !important;
+  border-bottom: 1px solid var(--border);
+  text-align: center !important;
+  vertical-align: middle !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+
 .admin-markup-coupon-table td {
   padding: 8px 6px !important;
   border-bottom: 1px solid var(--border);
@@ -169,6 +204,7 @@
 .admin-markup-coupon-table th.action-col,
 .admin-markup-coupon-table td.action-col {
   text-align: center;
+  overflow: visible !important;
 }
 
 .admin-markup-coupon-empty {
@@ -191,26 +227,27 @@
   border: 1px solid var(--border);
   background: var(--surface-soft);
   color: var(--text-primary);
-  padding: 6px 10px;
-  border-radius: 999px;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  justify-content: center;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
 .admin-markup-coupon-status.active {
-  background: var(--success-soft);
-  color: var(--success);
-  border-color: rgba(30, 142, 62, 0.35);
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #10b981 !important;
 }
 
 .admin-markup-coupon-status.inactive {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-color: rgba(180, 35, 24, 0.35);
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #ef4444 !important;
 }
 
 .admin-markup-coupon-remark span {
@@ -359,9 +396,9 @@
 
 .admin-markup-coupon-modal-actions .primary,
 .admin-markup-coupon-modal-actions .primary.generate-submit {
-  background: #A51C49 !important;
+  background: #A41B48 !important;
   color: #ffffff !important;
-  border-color: #A51C49 !important;
+  border-color: #A41B48 !important;
   box-shadow: 0 4px 12px rgba(194, 24, 91, 0.15) !important;
 }
 
@@ -437,5 +474,262 @@
   .admin-markup-coupon-table td {
     border-bottom: 0;
   }
+}
+
+/* Actions Dropdown Container */
+.actions-dropdown-container {
+  position: relative !important;
+  display: inline-block !important;
+}
+
+.actions-trigger-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  border-radius: 14px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  color: var(--text-primary) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.actions-trigger-btn:hover,
+.actions-trigger-btn.active {
+  border-color: #A41B48 !important;
+  color: #A41B48 !important;
+  background: var(--surface-soft) !important;
+}
+
+.actions-trigger-btn .chevron-icon {
+  transition: transform 0.2s ease !important;
+}
+
+.actions-trigger-btn.active .chevron-icon {
+  transform: rotate(180deg) !important;
+}
+
+.actions-dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  margin-top: 4px !important;
+  width: 140px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  z-index: 1000 !important;
+  overflow: hidden !important;
+}
+
+.dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  color: #64748b !important;
+  transition: all 0.15s ease !important;
+}
+
+.dropdown-item .item-icon {
+  font-size: 11px !important;
+  transition: color 0.15s ease !important;
+}
+
+.dropdown-item:hover {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+.dropdown-item:hover .item-icon {
+  color: #2563eb !important;
+}
+
+/* Modals Overlay */
+.discount-modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+}
+
+.discount-modal-container {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  width: 90% !important;
+  max-width: 640px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.discount-modal-container.edit-modal {
+  max-width: 640px !important;
+}
+
+.discount-modal-container.delete-modal {
+  max-width: 480px !important;
+}
+
+.modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 16px !important;
+}
+
+.modal-header h3 {
+  margin: 0 !important;
+  color: #A41B48 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+
+.close-x {
+  background: transparent !important;
+  border: none !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+  color: #94a3b8 !important;
+  transition: color 0.2s !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.close-x:hover {
+  color: #475569 !important;
+}
+
+.modal-body-scroll {
+  overflow-y: auto !important;
+  padding-right: 6px !important;
+  flex: 1 !important;
+}
+
+.discount-form-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  text-align: left !important;
+}
+
+.modal-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  text-align: left !important;
+}
+
+.modal-field.wide {
+  grid-column: span 2 !important;
+}
+
+.modal-field span {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.modal-field input,
+.modal-field select,
+.modal-field textarea {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  color: #334155 !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-height: 38px !important;
+  transition: border-color 0.2s !important;
+}
+
+.modal-field input:focus,
+.modal-field select:focus,
+.modal-field textarea:focus {
+  border-color: #A41B48 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(165, 28, 73, 0.1) !important;
+}
+
+.modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  margin-top: 20px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  padding-top: 16px !important;
+}
+
+.modal-btn {
+  height: 38px !important;
+  padding: 0 20px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: all 0.2s !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.modal-btn.save-btn {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.modal-btn.save-btn:hover {
+  background: #1d4ed8 !important;
+}
+
+.modal-btn.cancel-btn {
+  background: #f97316 !important;
+  color: #ffffff !important;
+}
+
+.modal-btn.cancel-btn:hover {
+  background: #ea580c !important;
+}
+
+.modal-form-error {
+  color: #ef4444 !important;
+  font-size: 13px !important;
+  background: #fef2f2 !important;
+  padding: 10px !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  text-align: left !important;
 }
 

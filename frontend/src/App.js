@@ -57,6 +57,7 @@ import BlogListPage from "./pages/public/BlogListPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
 
 import AdminLayout from "./Admin_Portal/adminlayout";
+import AdminLogin from "./Admin_Portal/ADMIN_AUTH/AdminLogin";
 import AdminSectionPlaceholder from "./Admin_Portal/PLACEHOLDERS/SectionPlaceholder";
 import AdminDashboard from "./Admin_Portal/DASHBOARD ADMIN/Admin.Dashbaord";
 import DiscountList from "./Admin_Portal/B2C BUS MANAGEMENT/Discount List/DiscountList";
@@ -77,8 +78,8 @@ import BusPopularRoutes from "./Admin_Portal/B2C BUS MANAGEMENT/Popular Bus Rout
 import FlightDiscountList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Discount List/DiscountList";
 import AddB2CFlightDiscount from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Discount List/AddB2CFlightDiscount";
 import HotelEditConvenienceFee from "./Admin_Portal/B2C HOTEL MANAGEMENT/convenience fee/HotelEditConvenienceFee";
-import HotelVoucherSettings from "./Admin_Portal/HOTEL MANAGEMENT/Voucher Settings/HotelVoucherSettings";
-import HotelPopularDestinations from "./Admin_Portal/HOTEL MANAGEMENT/Popular Destinations/HotelPopularDestinations";
+import HotelVoucherSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/Voucher Settings/HotelVoucherSettings";
+import HotelPopularDestinations from "./Admin_Portal/B2C HOTEL MANAGEMENT/Popular Destinations/HotelPopularDestinations";
 import AdminAboutUsPage from "./Admin_Portal/PAGE MANAGEMENT/AboutUs/aboutus";
 import AdminTestimonialList from "./Admin_Portal/TESTIMONIAL MANAGEMENT/TESTIMONIAL LIST/Admin.TestimonialList";
 import AdminAddTestimonial from "./Admin_Portal/TESTIMONIAL MANAGEMENT/ADD TESTIMONIAL/Admin.AddTestimonial";
@@ -106,9 +107,9 @@ import HotelDiscountList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Discount List
 import HotelCouponList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Coupon List/HotelCouponList";
 import HotelConvenienceFee from "./Admin_Portal/B2C HOTEL MANAGEMENT/convenience fee/HotelConvenienceFee";
 import HotelGstSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/GstSettings/HotelGstSettings";
-import HotelBookingList from "./Admin_Portal/HOTEL MANAGEMENT/Booking List/HotelBookingList";
-import HotelCancellationList from "./Admin_Portal/HOTEL MANAGEMENT/Cancellation List/HotelCancellationList";
-import HotelSearchHistory from "./Admin_Portal/HOTEL MANAGEMENT/Search History/HotelSearchHistory";
+import HotelBookingList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Booking List/HotelBookingList";
+import HotelCancellationList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Cancellation List/HotelCancellationList";
+import HotelSearchHistory from "./Admin_Portal/B2C HOTEL MANAGEMENT/Search History/HotelSearchHistory";
 import TaxManagement from "./Admin_Portal/PAYMENT MANAGEMENT/Tax Management/TaxManagement";
 import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
@@ -646,8 +647,8 @@ function AppContent() {
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/change-password" element={<ChangePassword />} />
 
-        <Route path={ADMIN_PATHS.login} element={<Navigate to="/login" replace />} />
-        <Route path={ADMIN_PATHS.pin} element={<Navigate to="/login" replace />} />
+        <Route path={ADMIN_PATHS.login} element={<AdminLogin />} />
+        <Route path={ADMIN_PATHS.pin} element={<Navigate to={ADMIN_PATHS.login} replace />} />
         <Route
           path={ADMIN_PATHS.base}
           element={
@@ -835,6 +836,9 @@ function AppContent() {
           <Route path="bus-cancel" element={<BusCancel />} />
           <Route path="hotel-bookings" element={<HotelBookings />} />
           <Route path="account-statement" element={<AccountStatement />} />
+          <Route path="web-checkin" element={<WebCheckinPage />} />
+          <Route path="fetch-ticket" element={<FetchTicket />} />
+          <Route path="wallet" element={<DepositRequest />} />
           <Route path="my-account" element={<MyAccount />} />
           <Route path="edit-profile" element={<Navigate to="/edit-profile" replace />} />
           <Route path="change-password" element={<Navigate to="/change-password" replace />} />

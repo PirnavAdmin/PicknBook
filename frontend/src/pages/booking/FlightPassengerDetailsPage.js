@@ -7,7 +7,7 @@ import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
 } from "./flightBookingFlowStore";
-import { openAuthModal } from "../../utils/authModalEvents";
+import { navigateWithAuth } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
 import { getFlightPricingPreview, getFlightPromotions, bookFlight, listFlightCoupons, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
 import { toApiUrl } from "../../services/apiClient";
@@ -941,16 +941,48 @@ export default function FlightPassengerDetailsPage() {
       return;
     }
 
-    const b2bToken = localStorage.getItem("b2b_token");
-    const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-    const isAgent = !localStorage.getItem("token") && b2bToken && b2bRole === "agent";
+    const finalFareSummary = {
+      baseFare,
+      seatSurcharge: flowState.fareSummary?.seatSurcharge || 0,
+      mealFee: flowState.fareSummary?.mealFee || 0,
+      baggageFee: flowState.fareSummary?.baggageFee || 0,
+      tax,
+      markup,
+      convenienceFee,
+      discount: totalDiscount,
+      assuredFee: 0,
+      tripSecureFee,
+      totalFare: finalPayable,
+    };
 
-    if (!isAgent) {
-      const token = localStorage.getItem("token");
-      if (!token || isTokenExpired(token)) {
-        openAuthModal("login");
-        return;
-      }
+    const payload = {
+      ...flowState,
+      passengers,
+      contact,
+      specialAssistance,
+      couponCode: couponCode.trim().toUpperCase(),
+      selectedFeaturedOfferId,
+      couponDiscount: totalDiscount,
+      agreedToTerms,
+      payableAmount: finalPayable,
+      fareSummary: finalFareSummary,
+      tripSecureAdded,
+      tripSecureFee,
+    };
+
+    // Save in-progress state FIRST
+    writeFlightBookingFlowState(payload);
+
+    const authenticated = navigateWithAuth({
+      navigate,
+      location,
+      nextRoute: "/flight/seats",
+      bookingContext: payload,
+      bookingType: "flight",
+    });
+
+    if (!authenticated) {
+      return;
     }
 
     setFormError("");

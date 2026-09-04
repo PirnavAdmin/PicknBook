@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
-import { Download, Loader2, SlidersHorizontal, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Download, Loader2, SlidersHorizontal, X, RefreshCw, AlertCircle } from "lucide-react";
 import "./BusUsedCouponsList.css";
 import { csvCell, formatCouponDateTime, formatCurrency } from "../../../utils/adminPortalUtils";
 import { listBusUsedCoupons } from "../../../services/busBookingService";
@@ -27,9 +28,11 @@ function getUsedCouponSortValue(record, sortBy) {
 }
 
 export default function AdminBusUsedCouponListPage() {
+  const navigate = useNavigate();
   const [usedCoupons, setUsedCoupons] = useState([]);
   const [isLoadingUsedCoupons, setIsLoadingUsedCoupons] = useState(false);
   const [usedCouponError, setUsedCouponError] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [sortBy, setSortBy] = useState(DEFAULT_USED_COUPON_SORT_BY);
   const [sortOrder, setSortOrder] = useState(DEFAULT_USED_COUPON_SORT_ORDER);
@@ -71,7 +74,7 @@ export default function AdminBusUsedCouponListPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshTrigger]);
 
   const availableBookingStatuses = useMemo(() => {
     const uniqueStatuses = new Set(
@@ -186,6 +189,96 @@ export default function AdminBusUsedCouponListPage() {
     URL.revokeObjectURL(fileUrl);
   };
 
+  const stats = useMemo(() => {
+    let totalRevenue = 0;
+    let totalCpnAmount = 0;
+    let totalCpnValue = 0;
+    let todayUsedCount = 0;
+    const uniqueUsers = new Set();
+    const totalUsedCount = visibleUsedCoupons.length;
+
+    const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    visibleUsedCoupons.forEach((record) => {
+      totalRevenue += Number(record.totalFare) || 0;
+      totalCpnAmount += Number(record.cpnAmount) || 0;
+      totalCpnValue += Number(record.cpnValue) || 0;
+      
+      if (record.userId) {
+        uniqueUsers.add(String(record.userId));
+      }
+
+      if (record.usedDate) {
+        const usedDateStr = new Date(record.usedDate).toISOString().slice(0, 10);
+        if (usedDateStr === todayStr) {
+          todayUsedCount += 1;
+        }
+      }
+    });
+
+    return {
+      totalRevenue,
+      totalCpnAmount,
+      totalCpnValue,
+      todayUsedCount,
+      uniqueUsersCount: uniqueUsers.size,
+      totalUsedCount
+    };
+  }, [visibleUsedCoupons]);
+
+  if (usedCouponError) {
+    return (
+      <section className="admin-b2c-page admin-markup-used-shell">
+        <header className="admin-markup-used-header">
+          <div className="admin-markup-used-title-wrap">
+            <h1>
+              <span style={{ color: '#A51C49' }}>B2C Bus </span>
+              <span style={{ color: '#000000' }}>Used Coupon List</span>
+            </h1>
+          </div>
+        </header>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 20px',
+          background: 'var(--panel)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginTop: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={20} />
+            <span>Network Error</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            style={{
+              background: '#A41B48',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            title="Retry Connection"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="admin-b2c-page admin-markup-used-shell">
       <header className="admin-markup-used-header">
@@ -210,6 +303,14 @@ export default function AdminBusUsedCouponListPage() {
 
           <button
             type="button"
+            className="admin-markup-used-btn coupon-list-nav-btn"
+            onClick={() => navigate("/admin/b2c-bus/coupon-list")}
+          >
+            <span>Coupon List</span>
+          </button>
+
+          <button
+            type="button"
             className="admin-markup-used-btn clear"
             onClick={handleClearFilters}
             disabled={!hasActiveFilters}
@@ -229,6 +330,39 @@ export default function AdminBusUsedCouponListPage() {
           </button>
         </div>
       </header>
+
+      {/* Stats Cards Row */}
+      <div className="admin-markup-used-stats-row">
+        <div className="admin-markup-used-stat-card">
+          <div className="stat-label">Total Revenue</div>
+          <div className="stat-value">{formatCurrency(stats.totalRevenue)}</div>
+          <div className="stat-desc">From bookings using coupons</div>
+        </div>
+
+        <div className="admin-markup-used-stat-card">
+          <div className="stat-label">Total Coupon Amount</div>
+          <div className="stat-value">{formatCurrency(stats.totalCpnAmount)}</div>
+          <div className="stat-desc">Total discount given</div>
+        </div>
+
+        <div className="admin-markup-used-stat-card">
+          <div className="stat-label">Total Coupon Value</div>
+          <div className="stat-value">{formatCurrency(stats.totalCpnValue)}</div>
+          <div className="stat-desc">Total nominal face value</div>
+        </div>
+
+        <div className="admin-markup-used-stat-card">
+          <div className="stat-label">Today Used</div>
+          <div className="stat-value">{stats.todayUsedCount}</div>
+          <div className="stat-desc">Coupons applied today</div>
+        </div>
+
+        <div className="admin-markup-used-stat-card">
+          <div className="stat-label">Total Members</div>
+          <div className="stat-value">{stats.uniqueUsersCount}</div>
+          <div className="stat-desc">Unique users using coupons</div>
+        </div>
+      </div>
 
       {isFilterPanelOpen && (
         <section className="admin-markup-used-filter" id="admin-markup-used-filter">

@@ -11,6 +11,7 @@ import {
 } from "./busBookingFlowStore";
 
 import { isTokenExpired } from "../../services/authSession";
+import { navigateWithAuth, isUserAuthenticated } from "../../utils/authNavigation";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import {
   getBusPricingPreview,
@@ -423,18 +424,31 @@ export default function BusPassengerDetailsPage() {
   const incomingState = location.state || {};
   const flowState = incomingState.bus ? incomingState : persistedState || {};
 
+  const autoContinueProcessed = useRef(false);
+  useEffect(() => {
+    const isAutoContinue =
+      location.state?.autoContinue ||
+      new URLSearchParams(location.search).get("autoContinue") === "true";
+
+    if (isAutoContinue && isUserAuthenticated() && !autoContinueProcessed.current) {
+      autoContinueProcessed.current = true;
+      navigate("/bus/passenger-details", { replace: true, state: {} });
+      setTimeout(() => {
+        handleOpenConfirmation();
+      }, 150);
+    }
+  }, [location]);
+
   const b2bToken = localStorage.getItem("b2b_token");
   const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
   const activePortal = sessionStorage.getItem("active_portal");
   const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
 
   const bus = flowState.bus || null;
-  const isIdProofRequired = Boolean(
-    bus?.idProofRequired ||
-    bus?.IdProofRequired ||
-    bus?.isIdProofRequired ||
-    bus?.IsIdProofRequired
-  );
+  const searchContext = flowState.searchContext || {};
+  const busId = bus?.tripId || bus?.traceId || bus?.id || bus?.resultIndex || flowState.bus?.id || flowState.bus?.traceId;
+  // Always required for SRDV upstream Block & Booking API validation
+  const isIdProofRequired = true;
   const selectedSeats = flowState.selectedSeats || [];
   const boardingPoint = flowState.boardingPoint || null;
   const droppingPoint = flowState.droppingPoint || null;
@@ -460,36 +474,47 @@ export default function BusPassengerDetailsPage() {
     }
   }, [contextOffer, validatedContextOffer, clearSelectedOffer]);
 
-  // Resolves the correct customer-facing fare for a single seat.
-  // seat.seatFare = Price.PublishedFare (markup-included) from the normalized seat layout.
-  // However if the session pre-dates the normalization fix, seatFare may still be the raw
-  // SRDV SeatFare token (e.g. ₹50). We detect this by checking seatFare < baseFare and
-  // fall back to real API values baseFare + tax in that case.
-  const resolvedSeatFare = (seat) => {
-    const sf = Number(seat.seatFare) || 0;
-    const bf = Number(seat.baseFare) || 0;
-    const tx = Number(seat.tax) || 0;
-    return sf > 0 && sf >= bf ? sf : bf + tx;
+  // Resolves the correct customer-facing base fare for a single seat (Price.B2CDisplayFare = Base + Markup).
+  const resolvedSeatBaseFare = (seat) => {
+    const b2c = Number(seat?.b2cDisplayFare) || Number(seat?.fareBeforeTax) || Number(seat?.Price?.B2CDisplayFare);
+    if (b2c > 0) return b2c;
+    const bf = Number(seat?.baseFare) || Number(seat?.priceInr) || 0;
+    const mu = Number(seat?.markupAmount) || 0;
+    if (mu > 0) return bf + mu;
+    const sf = Number(seat?.seatFare) || 0;
+    const tx = Number(seat?.tax) || 0;
+    if (sf > 0 && sf > tx) return sf;
+    return bf;
   };
 
   const initialFareSummary = flowState.fareSummary || (() => {
-    const seatTotal   = selectedSeats.reduce((sum, seat) => sum + resolvedSeatFare(seat), 0);
-    const taxSum      = selectedSeats.reduce((sum, seat) => sum + (Number(seat.tax) || 0), 0);
-    const total       = seatTotal;
-    const baseFareSum = total - taxSum; // Includes API markup so math is perfect
-    return { baseFare: baseFareSum, tax: taxSum, convenienceFee: 0, totalFare: total, grandTotal: total };
+    const baseFareSum = selectedSeats.reduce((sum, seat) => sum + resolvedSeatBaseFare(seat), 0);
+    const taxSum      = selectedSeats.reduce((sum, seat) => sum + (Number(seat?.tax) || Number(seat?.gstAmount) || 0), 0);
+    const total       = baseFareSum + taxSum;
+    return { baseFare: baseFareSum, subtotalBeforeCoupon: baseFareSum, tax: taxSum, gstAmount: taxSum, convenienceFee: 0, totalFare: total, grandTotal: total };
   })();
+
   const [pricingPreview, setPricingPreview] = useState(() => {
-    if (flowState.pricingPreview) return flowState.pricingPreview;
-    const seatTotal    = selectedSeats.reduce((sum, seat) => sum + resolvedSeatFare(seat), 0);
-    const seatTax      = selectedSeats.reduce((sum, seat) => sum + (Number(seat.tax) || 0), 0);
-    
-    const grandTotal   = seatTotal;
-    const seatBaseFare = grandTotal - seatTax; // Roll all API markup into base fare so math is perfect
+    const baseFareSum  = selectedSeats.reduce((sum, seat) => sum + resolvedSeatBaseFare(seat), 0);
+    const seatTax      = selectedSeats.reduce((sum, seat) => sum + (Number(seat?.tax) || Number(seat?.gstAmount) || 0), 0);
+    const grandTotal   = baseFareSum + seatTax;
+
+    if (flowState.pricingPreview) {
+      const p = flowState.pricingPreview;
+      return {
+        ...p,
+        subtotalBeforeCoupon: Math.max(Number(p.subtotalBeforeCoupon) || 0, baseFareSum),
+        taxableFare: Math.max(Number(p.taxableFare) || 0, baseFareSum),
+        gstAmount: Number(p.gstAmount) > 0 ? Number(p.gstAmount) : seatTax,
+        grandTotal: Math.max(Number(p.grandTotal || p.finalAmount) || 0, grandTotal - (Number(p.totalDiscount) || 0)),
+        finalAmount: Math.max(Number(p.finalAmount || p.grandTotal) || 0, grandTotal - (Number(p.totalDiscount) || 0)),
+      };
+    }
+
     return {
-      subtotalBeforeCoupon: seatBaseFare,
+      subtotalBeforeCoupon: baseFareSum,
       couponAmount: 0,
-      taxableFare: seatBaseFare,
+      taxableFare: baseFareSum,
       gstPercent: 5,
       gstAmount: seatTax,
       convenienceFee: 0,
@@ -748,14 +773,24 @@ export default function BusPassengerDetailsPage() {
   const loadPricingPreview = async (
     { selectedFeaturedOfferId = null, promotionId = null, couponCode = null } = {}
   ) => {
-    const busId = bus?.id ?? bus?.busId;
-    const seatCodes = selectedSeats
-      .map((seat) => seat.label || seat.seatCode || seat)
-      .map((seatCode) => String(seatCode || "").trim())
+    const isRealSeatCode = (seatCode) => {
+      const code = String(seatCode || "").trim().toUpperCase();
+      if (!code) return false;
+      const nonSeatPatterns = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
+      return !nonSeatPatterns.test(code);
+    };
+
+    const validSeats = selectedSeats.filter((seat) => {
+      const code = String(seat?.label || seat?.seatCode || seat || "").trim();
+      return isRealSeatCode(code);
+    });
+
+    const seatCodes = validSeats
+      .map((seat) => String(seat?.label || seat?.seatCode || seat || "").trim())
       .filter(Boolean);
 
     if (!busId || seatCodes.length === 0) {
-      throw new Error("Seat selection is missing. Please select seats again.");
+      throw new Error("Seat selection is missing or invalid. Please select your seats again.");
     }
 
     const featuredOfferIdParam =
@@ -772,15 +807,66 @@ export default function BusPassengerDetailsPage() {
 
     setIsCalculatingPrice(true);
     try {
-      const passengersPayload = selectedSeats.map((seat) => ({
-        seatNumber: seat.label || seat.seatCode || "",
-        seatType: seat.seatType || "Seater",
-        baseFare: Number(seat.baseFare) || 0,
-        tax: Number(seat.tax) || Number(seat.externalGst) || 0
-      }));
+      const passengersPayload = validSeats.map((seat) => {
+        const seatNum = String(seat?.label || seat?.seatCode || seat || "").trim();
+        const rawSupplierBase =
+          Number(seat?.supplierBaseFare) ||
+          Number(seat?.srdvBaseFare) ||
+          Number(seat?.Price?.BaseFare) ||
+          (Number(seat?.b2cDisplayFare) && Number(seat?.markupAmount)
+            ? Number(seat.b2cDisplayFare) - Number(seat.markupAmount)
+            : null) ||
+          (Number(seat?.fareBeforeTax) && Number(seat?.markupAmount)
+            ? Number(seat.fareBeforeTax) - Number(seat.markupAmount)
+            : null) ||
+          Number(seat?.baseFare) ||
+          0;
+        const taxVal =
+          Number(seat?.externalGst) ||
+          Number(seat?.tax) ||
+          Number(seat?.srdvTax) ||
+          Number(seat?.Price?.Tax) ||
+          Number(seat?.Price?.GSTAmount) ||
+          0;
+        const markupVal =
+          Number(seat?.markupAmount) ||
+          Number(seat?.Price?.AgentMarkUp) ||
+          Number(seat?.Price?.MarkUp) ||
+          0;
+        const b2cDisplayFareVal =
+          Number(seat?.b2cDisplayFare) ||
+          Number(seat?.fareBeforeTax) ||
+          Number(seat?.Price?.B2CDisplayFare) ||
+          (rawSupplierBase + markupVal) ||
+          0;
+        const seatPayable =
+          Number(seat?.publishedFare) ||
+          Number(seat?.Price?.PublishedFare) ||
+          (rawSupplierBase + markupVal + taxVal);
+
+        return {
+          seatCode: seatNum,
+          seatNumber: seatNum,
+          seatType: String(seat?.seatType || "Seater"),
+          baseFare: rawSupplierBase,
+          supplierBaseFare: rawSupplierBase,
+          externalGst: taxVal,
+          tax: taxVal,
+          markupAmount: markupVal,
+          b2cDisplayFare: b2cDisplayFareVal,
+          publishedFare: seatPayable,
+        };
+      });
+
+      const totalSupplierBaseFare = passengersPayload.reduce((sum, p) => sum + Number(p.baseFare || 0), 0);
+      const totalTax = passengersPayload.reduce((sum, p) => sum + Number(p.externalGst || 0), 0);
+      const totalCustomerBase = passengersPayload.reduce((sum, p) => sum + Number(p.b2cDisplayFare || 0), 0);
+      const totalPayableBeforeDiscounts = passengersPayload.reduce((sum, p) => sum + Number(p.publishedFare || 0), 0);
 
       const preview = await getBusPricingPreview({
         traceId: bus?.tripId || bus?.traceId,
+        resultIndex: bus?.resultIndex || bus?.ResultIndex || bus?.id,
+        srdvIndex: bus?.srdvIndex !== undefined && bus?.srdvIndex !== null ? bus.srdvIndex : (bus?.SrdvIndex ?? 0),
         couponCode: couponCodeParam,
         selectedFeaturedOfferId: featuredOfferIdParam,
         passengers: passengersPayload,
@@ -789,18 +875,28 @@ export default function BusPassengerDetailsPage() {
         departureTime: bus?.departureTimeUtc || bus?.departureTimeIst || bus?.departureTime,
         operatorName: bus?.operatorName,
         busType: bus?.busType,
-        totalFare: bus?.priceInr || bus?.displayFare || bus?.fare
+        totalFare: Number(totalPayableBeforeDiscounts.toFixed(2))
       });
 
-      setBasePricingPreview(preview);
-      setPricingPreview(preview);
-      
-      const appliedDisc = preview.totalDiscount || 0;
+      const appliedDisc = Number(preview.totalDiscount) || 0;
+      const calculatedGrandTotal = Number(preview.grandTotal || preview.finalAmount) || (totalPayableBeforeDiscounts - appliedDisc);
+
+      const adjustedPreview = {
+        ...preview,
+        subtotalBeforeCoupon: Math.max(Number(preview.subtotalBeforeCoupon) || 0, totalCustomerBase),
+        taxableFare: Math.max(Number(preview.taxableFare) || 0, totalCustomerBase),
+        gstAmount: Number(preview.gstAmount) > 0 ? Number(preview.gstAmount) : totalTax,
+        grandTotal: Math.max(calculatedGrandTotal, totalPayableBeforeDiscounts - appliedDisc),
+        finalAmount: Math.max(calculatedGrandTotal, totalPayableBeforeDiscounts - appliedDisc),
+      };
+
+      setBasePricingPreview(adjustedPreview);
+      setPricingPreview(adjustedPreview);
       setCouponDiscount(appliedDisc);
 
       writeBusBookingFlowState({
         ...flowState,
-        pricingPreview: preview,
+        pricingPreview: adjustedPreview,
         couponCode: couponCodeParam,
         promotionId: featuredOfferIdParam,
         selectedFeaturedOfferId: featuredOfferIdParam,
@@ -809,7 +905,7 @@ export default function BusPassengerDetailsPage() {
         selectedOffer: featuredOfferIdParam ? { id: featuredOfferIdParam } : null,
       });
 
-      return preview;
+      return adjustedPreview;
     } catch (err) {
       console.error("Pricing preview API error:", err);
       throw err;
@@ -1086,16 +1182,18 @@ export default function BusPassengerDetailsPage() {
         errorDetails.push(`${seatLabel}: Gender selection is required.`);
       }
 
-      const idNumDigits = String(passenger.idNumber || "").replace(/\D/g, "");
-      if (!idNumDigits) {
-        newErrors[`${prefix}idNumber`] = "Required";
-        errorDetails.push(`${seatLabel}: 12-digit Aadhaar Card number is required.`);
-      } else if (idNumDigits.length !== 12) {
-        newErrors[`${prefix}idNumber`] = "Must be 12 digits";
-        errorDetails.push(`${seatLabel}: Aadhaar Card number must be exactly 12 numeric digits.`);
-      } else if (!validateAadhaar(idNumDigits)) {
-        newErrors[`${prefix}idNumber`] = "Invalid Aadhaar";
-        errorDetails.push(`${seatLabel}: The Aadhaar number entered is mathematically invalid. Please enter a real Aadhaar number.`);
+      if (isIdProofRequired) {
+        const idNumDigits = String(passenger.idNumber || "").replace(/\D/g, "");
+        if (!idNumDigits) {
+          newErrors[`${prefix}idNumber`] = "Required";
+          errorDetails.push(`${seatLabel}: 12-digit Aadhaar Card number is required.`);
+        } else if (idNumDigits.length !== 12) {
+          newErrors[`${prefix}idNumber`] = "Must be 12 digits";
+          errorDetails.push(`${seatLabel}: Aadhaar Card number must be exactly 12 numeric digits.`);
+        } else if (!validateAadhaar(idNumDigits)) {
+          newErrors[`${prefix}idNumber`] = "Invalid Aadhaar";
+          errorDetails.push(`${seatLabel}: The Aadhaar number entered is mathematically invalid. Please enter a real Aadhaar number.`);
+        }
       }
 
     });
@@ -1520,27 +1618,16 @@ export default function BusPassengerDetailsPage() {
   };
 
   const handleProceedPayment = async () => {
-    const b2bToken = localStorage.getItem("b2b_token");
-    const b2bRole = (localStorage.getItem("b2b_role") || "").toLowerCase();
-    const activePortal = sessionStorage.getItem("active_portal");
-    const isAgent = b2bToken && b2bRole === "agent" && activePortal === "b2b";
-
-    if (!isAgent) {
-      const token = localStorage.getItem("token");
-      if (!token || isTokenExpired(token)) {
-        navigate(`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-        return;
-      }
-    }
+    if (isCalculatingPrice) return;
 
     const cleanedPassengers = passengers.map((passenger, i) => {
       const ageNumber = Number(passenger.age);
-      return {
+      const cleanId = String(passenger.idNumber || "").replace(/\D/g, "");
+      const shouldIncludeId = isIdProofRequired && Boolean(cleanId);
+      const basePassenger = {
         ...passenger,
         firstName: String(passenger.firstName || "").trim(),
         lastName: String(passenger.lastName || "").trim(),
-        idNumber: String(passenger.idNumber || "").replace(/\D/g, ""),
-        idType: String(passenger.idType || "Aadhar"),
         email: String(passenger.email || "").trim(),
         mobile: String(passenger.mobile || passenger.phone || "").trim(),
         phone: String(passenger.mobile || passenger.phone || "").trim(),
@@ -1552,8 +1639,38 @@ export default function BusPassengerDetailsPage() {
         seatType: String(selectedSeats[i]?.seatType || "Seater"),
         seatNumber: String(selectedSeats[i]?.label || selectedSeats[i]?.seatCode || ""),
       };
+
+      if (shouldIncludeId) {
+        basePassenger.idNumber = cleanId;
+        basePassenger.idType = String(passenger.idType || "Aadhar");
+      } else {
+        delete basePassenger.idNumber;
+        delete basePassenger.idType;
+      }
+
+      return basePassenger;
     });
     const bookingContact = buildContactFromPassenger(cleanedPassengers[0], contact);
+
+    // Save in-progress state FIRST before authentication gate
+    writeBusBookingFlowState({
+      ...flowState,
+      passengers: cleanedPassengers,
+      contact: bookingContact,
+    });
+
+    // Central authentication gate
+    const authenticated = navigateWithAuth({
+      navigate,
+      location,
+      nextRoute: "/bus/passenger-details?autoContinue=true",
+      bookingContext: { autoContinue: true },
+      bookingType: "bus",
+    });
+
+    if (!authenticated) {
+      return;
+    }
 
     const isFeatured = Boolean(selectedFeaturedOffer);
     const finalCouponCode = isFeatured ? null : (appliedCoupon?.couponCode || manualCouponCode || null);
@@ -1575,22 +1692,37 @@ export default function BusPassengerDetailsPage() {
       droppingPointId: flowState.droppingPoint?.id || flowState.droppingPoint?.pointId,
       couponCode: finalCouponCode,
       selectedFeaturedOfferId: finalFeaturedOfferId,
-      passengers: cleanedPassengers.map((p, i) => ({
-        title: String(p.title || "Mr"),
-        firstName: String(p.firstName || ""),
-        lastName: String(p.lastName || ""),
-        age: Number(p.age),
-        gender: String(p.gender).toLowerCase() === "female" ? "2" : "1",
-        seatName: String(p.seatNumber || selectedSeats[i]?.seatCode || ""),
-        fare: Number(selectedSeats[i]?.baseFare || 0),
-        address: String(bookingContact.address || ""),
-        city: String(bookingContact.city || ""),
-        state: String(bookingContact.state || ""),
-        contactNo: String(bookingContact.mobile || bookingContact.phone || ""),
-        email: String(bookingContact.email || ""),
-        idType: String(p.idType || "Aadhar"),
-        idNumber: String(p.idNumber || "").replace(/\D/g, ""),
-      }))
+      passengers: cleanedPassengers.map((p, i) => {
+        const cleanIdNumber = String(p.idNumber || "").replace(/\D/g, "");
+        const idProofProps = isIdProofRequired && cleanIdNumber ? {
+          idType: String(p.idType || "Aadhar"),
+          idNumber: cleanIdNumber,
+        } : {};
+        return {
+          title: String(p.title || "Mr"),
+          firstName: String(p.firstName || ""),
+          lastName: String(p.lastName || ""),
+          age: Number(p.age),
+          gender: String(p.gender).toLowerCase() === "female" ? "2" : "1",
+          seatName: String(p.seatNumber || selectedSeats[i]?.seatCode || ""),
+          fare: Number(
+            selectedSeats[i]?.supplierBaseFare ??
+            selectedSeats[i]?.srdvBaseFare ??
+            selectedSeats[i]?.Price?.BaseFare ??
+            (selectedSeats[i]?.b2cDisplayFare && selectedSeats[i]?.markupAmount
+              ? Number(selectedSeats[i].b2cDisplayFare) - Number(selectedSeats[i].markupAmount)
+              : null) ??
+            selectedSeats[i]?.baseFare ??
+            0
+          ),
+          address: String(bookingContact.address || ""),
+          city: String(bookingContact.city || ""),
+          state: String(bookingContact.state || ""),
+          contactNo: String(bookingContact.mobile || bookingContact.phone || ""),
+          email: String(bookingContact.email || ""),
+          ...idProofProps,
+        };
+      })
     };
 
     let blockKey = null;
@@ -1732,21 +1864,23 @@ export default function BusPassengerDetailsPage() {
           )}
         </label>
 
-        <label className="passenger-field passenger-field-aadhaar">
-          <span>Aadhaar Card Number *</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={12}
-            placeholder="Enter 12-digit Aadhaar number *"
-            value={passenger.idNumber || ""}
-            onChange={(e) => updatePassenger(index, "idNumber", e.target.value.replace(/\D/g, "").slice(0, 12))}
-            className={errors[`passenger_${index}_idNumber`] ? "field-has-error" : ""}
-          />
-          {errors[`passenger_${index}_idNumber`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_idNumber`]}</span>
-          )}
-        </label>
+        {isIdProofRequired && (
+          <label className="passenger-field passenger-field-aadhaar">
+            <span>Aadhaar Card Number *</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={12}
+              placeholder="Enter 12-digit Aadhaar number *"
+              value={passenger.idNumber || ""}
+              onChange={(e) => updatePassenger(index, "idNumber", e.target.value.replace(/\D/g, "").slice(0, 12))}
+              className={errors[`passenger_${index}_idNumber`] ? "field-has-error" : ""}
+            />
+            {errors[`passenger_${index}_idNumber`] && (
+              <span className="field-error-text">{errors[`passenger_${index}_idNumber`]}</span>
+            )}
+          </label>
+        )}
 
       </div>
       );

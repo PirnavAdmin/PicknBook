@@ -129,8 +129,8 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-size: cover;
-  background-position: center bottom;
+  background-size: 100% 100%;
+  background-position: center top;
   background-repeat: no-repeat;
   overflow: hidden;
 }
@@ -189,10 +189,18 @@
   margin-bottom: 22px;
 }
 
+.auth-card-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 18px;
+}
+
 .auth-card-logo {
-  height: 36px;
+  height: 48px;
   width: auto;
-  animation: float-logo 4s ease-in-out infinite;
+  object-fit: contain;
+  display: block;
 }
 
 /* Back button (top-left in card) */
@@ -216,6 +224,20 @@
   color: #000000;
   transform: translateX(-2px);
 }
+.auth-back-bottom {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  margin-top: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0,0,0,0.1);
+}
+.auth-back-bottom:hover {
+  transform: none;
+  background: rgba(0,0,0,0.08);
+}
+
 
 /* ── Card Header ── */
 .auth-card-header { margin-bottom: 25px; text-align: left; }
@@ -739,23 +761,16 @@
   overflow: visible;
 }
 
-/* ── BRAND LOGO (glassmorphic pill) ── */
-.scenic-brand-header {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 10px;
-  padding: 5px 12px;
-  display: inline-flex;
-  align-items: center;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  border: 1px solid rgba(255,255,255,0.9);
-}
+/* ── BRAND LOGO (single element) ── */
 .scenic-logo {
-  height: 22px;
+  height: 52px;
   width: auto;
   display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  margin-bottom: 12px;
+  object-fit: contain;
 }
 
 /* ── HEADLINE (compact) ── */
@@ -780,7 +795,7 @@
 .scenic-subtitle {
   font-size: 0.72rem;
   font-weight: 500;
-  color: #334155;
+  color: #000;
   margin: 0 0 12px 0;
   line-height: 1.35;
   font-family: 'Inter', sans-serif;
@@ -800,11 +815,11 @@
 /* ── SERVICE CARDS (glassmorphic, compact) ── */
 .scenic-services-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 7px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 16px;
   width: 100%;
-  max-width: 400px;
+  max-width: 520px;
 }
 
 .scenic-service-card {
@@ -813,7 +828,7 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 12px;
-  padding: 10px 4px 8px;
+  padding: 16px 8px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -828,32 +843,32 @@
 }
 
 .scenic-icon-circle {
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   color: #ffffff !important;
 }
 .scenic-icon-circle svg {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
 }
 
 .scenic-service-title {
-  font-size: 0.66rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 1px 0;
+  color: #000;
+  margin: 0 0 4px 0;
   font-family: 'Inter', sans-serif;
 }
 .scenic-service-desc {
-  font-size: 0.52rem;
-  color: #64748b;
+  font-size: 0.65rem;
+  color: #1a1a1a;
   font-weight: 500;
-  line-height: 1.15;
+  line-height: 1.25;
   margin: 0;
   font-family: 'Inter', sans-serif;
 }
@@ -864,25 +879,26 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 20px;
-  padding: 6px 14px;
-  display: inline-flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 10px;
+  border-radius: 12px;
+  padding: 6px 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   align-items: center;
+  justify-items: start;
+  gap: 8px 16px;
+  width: 100%;
+  max-width: 520px;
+  box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  white-space: nowrap;
 }
 .scenic-trust-badge {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.56rem;
+  font-size: 0.66rem;
   font-weight: 700;
   color: #1e293b;
   font-family: 'Inter', sans-serif;
-  white-space: nowrap;
 }
 .scenic-trust-badge svg {
   width: 12px;
@@ -904,14 +920,15 @@
 /* ── RESPONSIVE ── */
 @media (max-width: 1100px) {
   .scenic-left-pane { width: 48%; min-width: 300px; padding: 20px 14px 14px 24px; }
-  .scenic-services-grid { max-width: 340px; }
+  .scenic-services-grid { max-width: 480px; }
+  .scenic-trust-row { max-width: 480px; }
   .scenic-headline { font-size: 1.35rem; }
   .auth-card-wrap { width: 320px !important; max-width: 320px !important; }
 }
 @media (max-width: 900px) {
   .scenic-layout { flex-direction: column; height: auto; min-height: 100vh; align-items: center; }
   .scenic-left-pane { width: 100%; max-width: 100%; min-width: 0; align-items: center; text-align: center; padding: 20px; }
-  .scenic-services-grid { grid-template-columns: repeat(2, 1fr); max-width: 280px; }
-  .scenic-trust-row { flex-wrap: wrap; justify-content: center; }
+  .scenic-services-grid { grid-template-columns: repeat(3, 1fr); max-width: 480px; }
+  .scenic-trust-row { flex-wrap: wrap; justify-content: center; gap: 8px; }
   .auth-card-wrap { width: 100% !important; max-width: 400px !important; padding: 0 20px !important; margin: 0 auto !important; }
 }

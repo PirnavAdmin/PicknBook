@@ -28,11 +28,11 @@ const accountCards = [
     action: "passenger",
   },
   {
-    id: "Change Password",
-    icon: "CP",
-    title: "Change Password",
-    desc: "Update your password and secure your account.",
-    action: "security",
+    id: "Wallet",
+    icon: "WT",
+    title: "Wallet",
+    desc: "Manage balance & transactions.",
+    action: "wallet",
   },
 ];
 
@@ -136,6 +136,11 @@ const MyAccount = () => {
 
     if (action === "passenger") {
       navigate("/dashboard/traveler-list");
+      return;
+    }
+
+    if (action === "wallet") {
+      navigate("/dashboard/wallet");
       return;
     }
 

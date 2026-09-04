@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
-import { Check, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Check, Eye, Pencil, Plus, Trash2, X, ChevronDown } from "lucide-react";
 import "./MenuList.css";
 import { getAdminMenuItems, updateMenuItem, deleteMenuItem } from "../../../services/menuService";
 import AdminPagination from "../../../components/AdminPagination";
@@ -36,6 +37,7 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
   const [editForm, setEditForm] = useState(DEFAULT_EDIT_FORM);
   const [editError, setEditError] = useState("");
   const [deleteItem, setDeleteItem] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -183,34 +185,51 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
           </button>
         </div>
 
-        <section className="admin-markup-table-wrap menu-list-container">
-          {loading ? (
-            <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading menus...</p>
-          ) : (
-            <table className="admin-markup-table menu-list-table">
-              <colgroup>
-                {colWidths.map((width, index) => (
-                  <col key={`${width}-${index}`} style={{ width }} />
+        <section className="admin-markup-table-wrap menu-list-container" style={{ overflow: 'visible' }}>
+          <table className="admin-markup-table menu-list-table">
+            <colgroup>
+              {colWidths.map((width, index) => (
+                <col key={`${width}-${index}`} style={{ width }} />
+              ))}
+            </colgroup>
+            <thead style={{ background: '#A51C49', backgroundColor: '#A51C49' }}>
+              <tr style={{ background: '#A51C49', backgroundColor: '#A51C49' }}>
+                {headers.map((header) => (
+                  <th
+                    key={header}
+                    className={header === "Action" ? "action-col" : undefined}
+                    style={{
+                      background: '#A51C49',
+                      backgroundColor: '#A51C49',
+                      color: '#ffffff',
+                      verticalAlign: 'middle',
+                      textAlign: 'center',
+                      padding: '12px 10px',
+                      lineHeight: '1.2'
+                    }}
+                  >
+                    {header}
+                  </th>
                 ))}
-              </colgroup>
-              <thead style={{ background: '#A51C49', backgroundColor: '#A51C49' }}>
-                <tr style={{ background: '#A51C49', backgroundColor: '#A51C49' }}>
-                  {headers.map((header) => (
-                    <th key={header} className={header === "Action" ? "action-col" : undefined} style={{ background: '#A51C49', backgroundColor: '#A51C49', color: '#ffffff' }}>
-                      {header}
-                    </th>
-                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "var(--text-secondary)" }}>
+                    Loading menus...
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {menuItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={headers.length}>
-                      <p className="admin-markup-empty">No menu records found.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedMenus.map((item, index) => (
+              ) : menuItems.length === 0 ? (
+                <tr>
+                  <td colSpan={headers.length}>
+                    <p className="admin-markup-empty">No menu records found.</p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedMenus.map((item, index) => {
+                  const isLowerRow = index >= paginatedMenus.length - 2 || paginatedMenus.length <= 3;
+                  return (
                     <tr key={item.id}>
                       <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td>{item.name}</td>
@@ -233,56 +252,128 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
                         </button>
                       </td>
                       <td className="action-col">
-                        <div className="markup-action-group" aria-label="Menu actions">
+                        <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
                           <button
                             type="button"
-                            title="View"
-                            aria-label={`View menu ${item.name}`}
-                            onClick={() => setViewItem(item)}
+                            className={`actions-trigger-btn ${openMenuId === item.id ? "active" : ""}`}
+                            onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
                           >
-                            <Eye size={14} />
+                            <span>Actions</span> <ChevronDown size={14} />
                           </button>
-                          <button
-                            type="button"
-                            title="Edit"
-                            aria-label={`Edit menu ${item.name}`}
-                            onClick={() => onEditMenu ? onEditMenu(item) : openEditModal(item)}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            aria-label={`Delete menu ${item.name}`}
-                            className="danger"
-                            onClick={() => setDeleteItem(item)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+
+                          {openMenuId === item.id && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                ...(isLowerRow ? { bottom: '100%', top: 'auto', marginBottom: '6px' } : { top: 'calc(100% + 6px)' }),
+                                right: 0,
+                                left: 'auto',
+                                background: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                zIndex: 99999,
+                                minWidth: '150px',
+                                width: 'max-content',
+                                padding: '6px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px'
+                              }}
+                            >
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  textAlign: 'left',
+                                  padding: '9px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 500,
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setOpenMenuId(null); setViewItem(item); }}
+                              >
+                                <Eye size={15} /> <span>View Details</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  textAlign: 'left',
+                                  padding: '9px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 500,
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setOpenMenuId(null); onEditMenu ? onEditMenu(item) : openEditModal(item); }}
+                              >
+                                <Pencil size={15} /> <span>Edit Menu</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  textAlign: 'left',
+                                  padding: '9px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 500,
+                                  color: '#ef4444',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                onClick={() => { setOpenMenuId(null); setDeleteItem(item); }}
+                              >
+                                <Trash2 size={15} /> <span>Delete Menu</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
+                  );
+                })
+              )}
+            </tbody>
+          </table>
 
-          <div style={{ marginTop: '16px', padding: '0 20px 20px' }}>
-            <AdminPagination
-              currentPage={currentPage}
-              totalItems={menuItems.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={setItemsPerPage}
-              itemName="menus"
-            />
-          </div>
+          <AdminPagination
+            currentPage={currentPage}
+            totalItems={menuItems.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+            itemName="menus"
+          />
         </section>
       </section>
 
-      {viewItem && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setViewItem(null)}>
+      {viewItem && createPortal(
+        <div className="admin-markup-modal-backdrop" style={{ zIndex: 999999 }} onClick={() => setViewItem(null)}>
           <section
             className="admin-markup-modal"
             role="dialog"
@@ -348,11 +439,12 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
               </button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {editItem && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setEditItem(null)}>
+      {editItem && createPortal(
+        <div className="admin-markup-modal-backdrop" style={{ zIndex: 999999 }} onClick={() => setEditItem(null)}>
           <section
             className="admin-markup-modal fullscreen"
             role="dialog"
@@ -460,11 +552,12 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
               </button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {deleteItem && (
-        <div className="admin-markup-modal-backdrop" onClick={() => setDeleteItem(null)}>
+      {deleteItem && createPortal(
+        <div className="admin-markup-modal-backdrop" style={{ zIndex: 999999 }} onClick={() => setDeleteItem(null)}>
           <section
             className="admin-markup-modal small"
             role="dialog"
@@ -492,7 +585,8 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
               </button>
             </div>
           </section>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

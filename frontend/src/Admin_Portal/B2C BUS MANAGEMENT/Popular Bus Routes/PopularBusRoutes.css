@@ -21,20 +21,20 @@
 
 .admin-markup-popular-title-wrap h1 {
   margin: 0;
-  font-size: 1.85rem !important;
+  font-size: 1.4rem !important;
   color: var(--text-primary);
-  font-weight: 800 !important;
+  font-weight: 600 !important;
 }
 
 .admin-markup-popular-title-wrap strong {
-  color: #be185d;
+  color: #A41B48;
   font-weight: 600;
 }
 
 .admin-markup-popular-title-line {
   height: 4px;
   width: 60px;
-  background: #be185d;
+  background: #A41B48;
   border-radius: 999px;
 }
 
@@ -45,9 +45,9 @@
 }
 
 .admin-markup-popular-btn {
-  border: 1.5px solid #be185d;
+  border: 1.5px solid #A41B48;
   background: transparent;
-  color: #be185d;
+  color: #A41B48;
   padding: 7px 14px;
   border-radius: 100px;
   font-weight: 600;
@@ -60,7 +60,7 @@
 }
 
 .admin-markup-popular-btn:hover:not(:disabled) {
-  background: #be185d;
+  background: #A41B48;
   color: #ffffff;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2);
@@ -69,6 +69,19 @@
 .admin-markup-popular-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+body .admin-markup-popular-shell .admin-markup-popular-btn.export {
+  border: 1.5px solid #10b981 !important;
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+body .admin-markup-popular-shell .admin-markup-popular-btn.export:hover:not(:disabled) {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
 }
 
 /* Stats Summary Cards */
@@ -299,7 +312,7 @@
 }
 
 .metric-box.highlighted .metric-val {
-  color: #be185d;
+  color: #A41B48;
 }
 
 /* Filters & Search */
@@ -341,14 +354,14 @@
 }
 
 .search-input-wrapper input:focus {
-  border-color: #be185d;
+  border-color: #A41B48;
   box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.15);
 }
 
 /* Detailed Routes Table */
 .admin-markup-popular-table-wrap {
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--panel);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -357,7 +370,7 @@
 .admin-markup-popular-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .admin-markup-popular-table thead {
@@ -366,19 +379,20 @@
 }
 
 .admin-markup-popular-table th {
-  padding: 14px 16px;
+  padding: 8px 12px !important;
   color: var(--text-secondary);
   font-weight: 600;
   text-align: left;
-  font-size: 0.82rem;
+  font-size: 0.76rem !important;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .admin-markup-popular-table td {
-  padding: 14px 16px;
+  padding: 8px 12px !important;
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
+  font-size: 0.78rem !important;
 }
 
 .admin-markup-popular-table tr:last-child td {
@@ -394,17 +408,18 @@
 }
 
 .rank-cell {
-  font-weight: 700;
-  color: var(--text-secondary);
+  font-weight: 500 !important;
+  color: var(--text-secondary) !important;
 }
 
 .city-cell {
-  font-weight: 600;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
 }
 
 .score-cell {
-  font-weight: 700;
-  color: #be185d;
+  font-weight: 600 !important;
+  color: #A41B48 !important;
 }
 
 /* Popularity Pills */
@@ -420,7 +435,7 @@
 
 .popularity-pill.high {
   background: rgba(190, 24, 93, 0.1);
-  color: #be185d;
+  color: #A41B48;
 }
 
 .popularity-pill.medium {
@@ -455,7 +470,7 @@
 }
 
 .admin-popular-error-state button {
-  background: #be185d;
+  background: #A41B48;
   color: white;
   border: none;
   padding: 8px 24px;

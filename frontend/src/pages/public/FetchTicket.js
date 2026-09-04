@@ -12,6 +12,9 @@ import {
   Tag
 } from "lucide-react";
 import { fetchTicketByContact } from "../../services/ticketService";
+import hotelPreview from "../../assets/images/illustrations/hotel-section-banner.png";
+import busPreview from "../../assets/images/illustrations/bus-hero-theme.png";
+import flightPreview from "../../assets/images/illustrations/flight-hero-theme.jpg";
 import "../../STYLES/FetchTicket.css";
 
 // Mockup 3 Category data
@@ -20,21 +23,21 @@ const CATEGORIES = {
     id: "hotel",
     label: "HOTELS",
     title: "Comfortable stays, memorable experiences",
-    image: "/hotel_preview.jpg",
+    image: hotelPreview,
     icon: Hotel
   },
   bus: {
     id: "bus",
     label: "BUSES",
     title: "Premium bus journeys, on-time arrivals",
-    image: "/bus_preview.jpg",
+    image: busPreview,
     icon: BusFront
   },
   flight: {
     id: "flight",
     label: "FLIGHTS",
     title: "Seamless flights, unlimited destinations",
-    image: "/flight_preview.jpg",
+    image: flightPreview,
     icon: Plane
   }
 };

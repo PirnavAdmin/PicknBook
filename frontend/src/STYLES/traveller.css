@@ -300,57 +300,160 @@
 
 /* ── Table ── */
 .traveller-container .table-wrapper {
-  background-color: white;
-  border: 1px solid var(--trav-border);
-  border-radius: 12px;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
   overflow-x: auto;
   overflow-y: hidden;
-  box-shadow: var(--trav-shadow-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+  margin-top: 16px;
 }
 
 .traveller-container .traveler-table {
   width: 100%;
-  min-width: 860px;
+  min-width: 750px;
   border-collapse: collapse;
 }
 
 .traveller-container .traveler-table thead {
-  background: var(--theme-primary-soft, #fef2f2) !important;
+  background: #981b3d !important;
 }
 
 .traveller-container .traveler-table th {
-  padding: 10px;
-  font-size: 0.666rem;
+  padding: 14px 18px;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #7c3f2b !important;
+  letter-spacing: 0.08em;
+  color: #ffffff !important;
+  text-align: center;
+  border: none;
+}
+
+.traveller-container .traveler-table th:first-child {
+  width: 80px;
+}
+
+.traveller-container .traveler-table th:last-child {
+  width: 130px;
 }
 
 .traveller-container .traveler-table td {
-  padding: 10px 8px;
-  border-top: 1px solid #e6edf6;
-  color: #25436a;
+  padding: 16px 14px;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: none;
+  color: #334155;
   text-align: center;
-  font-size: 0.756rem;
-  vertical-align: top;
-  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  vertical-align: middle;
 }
 
-.traveller-container .traveler-table td:first-child {
+.traveller-container .traveler-table .traveler-sr {
+  color: #b91c1c !important;
   font-weight: 700;
+  font-size: 0.85rem;
 }
 
-.traveller-container .traveler-table tr:hover {
-  background: #f6f9fe;
+.traveller-container .traveler-table .traveler-name {
+  color: #1e293b;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.traveller-container .traveler-table .traveler-type,
+.traveller-container .traveler-table .traveler-gender {
+  color: #475569;
+  font-weight: 400;
+}
+
+.traveller-container .traveler-table tr:hover td {
+  background: #fafbfc;
 }
 
 .traveller-container .table-empty {
   min-height: 70px;
   color: var(--trav-muted);
   font-weight: 600;
+  padding: 30px;
 }
 
-/* ── Icon Buttons ── */
+.traveller-container .traveler-actions-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.traveller-container .traveler-btn-edit {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.traveller-container .traveler-btn-edit:hover {
+  background: #bae6fd;
+}
+
+.traveller-container .traveler-btn-delete {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #fee2e2;
+  color: #ef4444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.traveller-container .traveler-btn-delete:hover {
+  background: #fecaca;
+}
+
+.traveller-container .btn-filter {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.traveller-container .btn-filter:hover {
+  background: #f8fafc;
+}
+
+.traveller-container .btn-add-traveler {
+  background: #b91c1c;
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 8px 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.25);
+  transition: all 0.15s ease;
+}
+
+.traveller-container .btn-add-traveler:hover {
+  background: #991b1b;
+}
+
+/* ── Icon Buttons for inline edit ── */
 .traveller-container .icon-btn {
   width: 30px;
   height: 30px;
@@ -362,10 +465,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    background-color 0.18s ease;
+  transition: all 0.18s ease;
 }
 
 .traveller-container .icon-btn:hover {
@@ -378,8 +478,6 @@
   margin-left: 6px;
 }
 
-.traveller-container .icon-edit   { color: var(--theme-primary, #dc1e26); }
-.traveller-container .icon-delete { color: var(--theme-primary-strong, #b8141b); }
 .traveller-container .icon-save   { color: var(--theme-primary, #dc1e26); }
 .traveller-container .icon-cancel { color: #5a7394; }
 

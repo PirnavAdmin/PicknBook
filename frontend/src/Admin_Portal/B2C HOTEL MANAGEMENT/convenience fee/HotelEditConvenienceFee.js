@@ -48,14 +48,32 @@ export default function AdminHotelEditConvenienceFeePage() {
 
   return (
     <section className="admin-b2c-page admin-hotel-fee-edit-page">
-      <div className="admin-hotel-fee-edit-head-row">
-        <header className="admin-b2c-header admin-hotel-fee-edit-header">
-          <h1>Add B2C Hotel Convenience Fee</h1>
+      <style>{`
+        .admin-hotel-fee-list-btn {
+          transition: all 0.2s ease !important;
+        }
+        .admin-hotel-fee-list-btn:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+        }
+        .admin-hotel-fee-update-btn {
+          transition: all 0.2s ease !important;
+        }
+        .admin-hotel-fee-update-btn:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+        }
+      `}</style>
+      <div className="admin-hotel-fee-edit-head-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px' }}>
+        <header className="admin-b2c-header admin-hotel-fee-edit-header" style={{ margin: 0 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: '28px' }}>
+            Add <span style={{ color: '#A51C49' }}>B2C Hotel</span> Convenience Fee
+          </h1>
         </header>
         <div className="admin-hotel-fee-edit-head-actions">
           <button
             type="button"
-            className="admin-hotel-fee-list-btn"
+            className="admin-hotel-fee-list-btn btn-hover"
             onClick={() => navigate("/admin/b2c-hotel/convenience-fee")}
           >
             <List size={16} /> Convenience Fee List

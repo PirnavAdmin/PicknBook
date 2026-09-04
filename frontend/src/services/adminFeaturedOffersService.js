@@ -157,4 +157,22 @@ export async function deleteOfferCondition(offerId, conditionId) {
   return response.data;
 }
 
+export function extractOfferErrorMessage(error, fallback = "An unexpected error occurred.") {
+  if (!error) return fallback;
+  if (typeof error === "string") return error;
+  if (error.response?.data) {
+    const data = error.response.data;
+    if (typeof data === "string") return data;
+    if (data.message || data.Message) return data.message || data.Message;
+    if (data.error || data.Error) return data.error || data.Error;
+    if (data.title || data.Title) return data.title || data.Title;
+    if (data.errors && typeof data.errors === "object") {
+      const messages = Object.values(data.errors).flat().filter(Boolean);
+      if (messages.length > 0) return messages.join(", ");
+    }
+  }
+  return error.message || fallback;
+}
+
 export default offersApi;
+

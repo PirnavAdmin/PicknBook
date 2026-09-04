@@ -1,5 +1,5 @@
 .bus-gst-settings-page-container {
-  --admin-primary: #A51C49 !important;
+  --admin-primary: #A41B48 !important;
   --admin-primary-strong: #851237 !important;
   padding-top: 24px !important;
 }
@@ -126,8 +126,8 @@
 
 /* Primary "Add New" button */
 .markup-primary-btn {
-  border: 1.5px solid #A51C49 !important;
-  background: #A51C49 !important;
+  border: 1.5px solid #A41B48 !important;
+  background: #A41B48 !important;
   color: #fff !important;
   padding: 10px 16px;
   border-radius: 10px;
@@ -151,8 +151,8 @@
 
 /* Export button */
 .markup-export-btn {
-  border: 1.5px solid #A51C49 !important;
-  background: #A51C49 !important;
+  border: 1.5px solid #10b981 !important;
+  background: #10b981 !important;
   color: #fff !important;
   padding: 10px 16px;
   border-radius: 10px;
@@ -163,15 +163,15 @@
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(194, 24, 91, 0.15) !important;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15) !important;
   transition: all 0.25s ease !important;
 }
 
 .markup-export-btn:hover:not(:disabled) {
-  background: #851237 !important;
-  border-color: #851237 !important;
+  background: #059669 !important;
+  border-color: #059669 !important;
   transform: translateY(-3px) !important;
-  box-shadow: 0 6px 18px rgba(194, 24, 91, 0.3) !important;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.3) !important;
 }
 
 .markup-export-btn:disabled {
@@ -914,9 +914,9 @@
 }
 
 .admin-markup-modal-actions button.primary {
-  background: #A51C49 !important;
+  background: #A41B48 !important;
   color: white !important;
-  border-color: #A51C49 !important;
+  border-color: #A41B48 !important;
   box-shadow: 0 4px 12px rgba(194, 24, 91, 0.15) !important;
 }
 

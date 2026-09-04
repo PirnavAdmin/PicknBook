@@ -1,5 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Check,
   Download,
@@ -8,6 +10,10 @@ import {
   SlidersHorizontal,
   Trash2,
   X,
+  ChevronDown,
+  Eye,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import "./BusCouponList.css";
 import { csvCell, formatCouponDate, formatCouponDateTime } from "../../../utils/adminPortalUtils";
@@ -69,13 +75,13 @@ function createDefaultCouponForm() {
     cpnType: "",
     startDate: "",
     expiryDate: "",
-    couponCode: generateCouponCode(),
+    couponCode: "",
     useLimit: "",
-    maxUsagePerUser: "1",
+    maxUsagePerUser: "",
     isAutoApply: false,
     isExclusive: true,
-    priority: "0",
-    minBookingAmount: "0",
+    priority: "",
+    minBookingAmount: "",
     status: "Active",
     remark: "",
   };
@@ -83,9 +89,11 @@ function createDefaultCouponForm() {
 
 
 export default function AdminBusCouponListPage() {
+  const navigate = useNavigate();
   const [coupons, setCoupons] = useState([]);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [couponLoadError, setCouponLoadError] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [sortBy, setSortBy] = useState(DEFAULT_COUPON_SORT_BY);
   const [sortOrder, setSortOrder] = useState(DEFAULT_COUPON_SORT_ORDER);
@@ -98,7 +106,19 @@ export default function AdminBusCouponListPage() {
   const [editError, setEditError] = useState("");
   const [deleteCoupon, setDeleteCoupon] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
+  const [viewingCoupon, setViewingCoupon] = useState(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.actions-dropdown-container')) {
+        setActiveDropdownId(null);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -129,7 +149,7 @@ export default function AdminBusCouponListPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshTrigger]);
 
   const availableStatuses = useMemo(() => {
     const uniqueStatus = new Set(
@@ -438,405 +458,62 @@ export default function AdminBusCouponListPage() {
     }
   };
 
+  if (couponLoadError) {
+    return (
+      <section className="admin-b2c-page admin-markup-coupon-shell">
+        <header className="admin-markup-coupon-header">
+          <div className="admin-markup-coupon-title-wrap">
+            <h1>
+              <span style={{ color: '#A51C49' }}>B2C Bus </span>
+              <span style={{ color: '#000000' }}>Coupon List</span>
+            </h1>
+          </div>
+        </header>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 20px',
+          background: 'var(--panel)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginTop: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={20} />
+            <span>Network Error</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            style={{
+              background: '#A41B48',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            title="Retry Connection"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <>
-      {isGenerateModalOpen ? (
-        <section className="admin-markup-coupon-shell inline-generate-page" style={{ paddingTop: '24px' }}>
-          <section className="admin-markup-coupon-modal generate inline-card-container">
-            <header className="generate-header">
-              <h2>
-                <span style={{ color: '#A51C49' }}>Add B2C </span>
-                <span>Generate Coupon</span>
-              </h2>
-            </header>
-
-            <div className="admin-markup-coupon-form admin-markup-coupon-generate-form">
-              <label>
-                <span>Coupon Type :</span>
-                <select
-                  value={generateForm.cpnType}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, cpnType: event.target.value }))
-                  }
-                >
-                  <option value="">---Select Amount Type---</option>
-                  <option value="Fixed">Fixed</option>
-                  <option value="Percentage">Percentage</option>
-                </select>
-              </label>
-              <label>
-                <span>Value:</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="Enter value"
-                  value={generateForm.value}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, value: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Start Date :</span>
-                <input
-                  type="date"
-                  placeholder="Select Start Date"
-                  value={generateForm.startDate}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, startDate: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Expiry Date :</span>
-                <input
-                  type="date"
-                  placeholder="Select Expiry Date"
-                  value={generateForm.expiryDate}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({
-                      ...previous,
-                      expiryDate: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Coupon Code :</span>
-                <input
-                  type="text"
-                  placeholder="Enter coupon code"
-                  value={generateForm.couponCode}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({
-                      ...previous,
-                      couponCode: event.target.value.toUpperCase().replace(/\s+/g, ""),
-                    }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Coupon Use Limit:</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="Enter use limit"
-                  value={generateForm.useLimit}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, useLimit: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Max Usage Per User:</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="e.g. 1"
-                  value={generateForm.maxUsagePerUser}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, maxUsagePerUser: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label>
-                <span>Auto Apply:</span>
-                <select
-                  value={String(generateForm.isAutoApply)}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({
-                      ...previous,
-                      isAutoApply: event.target.value === "true",
-                    }))
-                  }
-                >
-                  <option value="false">No</option>
-                  <option value="true">Yes</option>
-                </select>
-              </label>
-              <label>
-                <span>Exclusive:</span>
-                <select
-                  value={String(generateForm.isExclusive)}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({
-                      ...previous,
-                      isExclusive: event.target.value === "true",
-                    }))
-                  }
-                >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </label>
-              <label>
-                <span>Priority:</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="e.g. 0"
-                  value={generateForm.priority}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, priority: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Min Booking Amount (INR):</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="e.g. 1000"
-                  value={generateForm.minBookingAmount}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, minBookingAmount: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Status:</span>
-                <select
-                  value={generateForm.status}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, status: event.target.value }))
-                  }
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </label>
-              <label className="remark-field">
-                <span>Coupon Remark:</span>
-                <input
-                  type="text"
-                  placeholder="Enter remark"
-                  value={generateForm.remark}
-                  onChange={(event) =>
-                    setGenerateForm((previous) => ({ ...previous, remark: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
-
-            {generateError && <p className="admin-markup-coupon-error">{generateError}</p>}
-
-            <div className="admin-markup-coupon-modal-actions generate-actions">
-              <button
-                type="button"
-                className="primary generate-submit"
-                onClick={handleGenerateCoupon}
-              >
-                <Check size={16} />
-                <span>Generate</span>
-              </button>
-              <button
-                type="button"
-                className="danger generate-cancel"
-                onClick={() => setIsGenerateModalOpen(false)}
-              >
-                <X size={16} />
-                <span>Cancel</span>
-              </button>
-            </div>
-          </section>
-        </section>
-      ) : editCoupon ? (
-        <section className="admin-markup-coupon-shell inline-generate-page" style={{ paddingTop: '24px' }}>
-          <section className="admin-markup-coupon-modal generate inline-card-container">
-            <header className="generate-header">
-              <h2>
-                <span style={{ color: '#A51C49' }}>Edit B2C </span>
-                <span>Generate Coupon</span>
-              </h2>
-            </header>
-
-            <div className="admin-markup-coupon-form admin-markup-coupon-generate-form">
-              <label>
-                <span>ID</span>
-                <input type="text" value={editCoupon.id} disabled />
-              </label>
-              <label>
-                <span>Coupon Code</span>
-                <input type="text" value={editCoupon.couponCode} disabled />
-              </label>
-              <label>
-                <span>Coupon Type :</span>
-                <select
-                  value={editCoupon.cpnType}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, cpnType: event.target.value }))
-                  }
-                >
-                  <option value="Fixed">Fixed</option>
-                  <option value="Percentage">Percentage</option>
-                </select>
-              </label>
-              <label>
-                <span>Value:</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={editCoupon.value}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, value: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Start Date :</span>
-                <input
-                  type="date"
-                  value={editCoupon.startDate}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, startDate: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Expiry Date :</span>
-                <input
-                  type="date"
-                  value={editCoupon.expiryDate}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, expiryDate: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Coupon Use Limit:</span>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={editCoupon.useLimit}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, useLimit: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Max Usage Per User:</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={editCoupon.maxUsagePerUser}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, maxUsagePerUser: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label>
-                <span>Auto Apply:</span>
-                <select
-                  value={String(editCoupon.isAutoApply)}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({
-                      ...previous,
-                      isAutoApply: event.target.value === "true",
-                    }))
-                  }
-                >
-                  <option value="false">No</option>
-                  <option value="true">Yes</option>
-                </select>
-              </label>
-              <label>
-                <span>Exclusive:</span>
-                <select
-                  value={String(editCoupon.isExclusive)}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({
-                      ...previous,
-                      isExclusive: event.target.value === "true",
-                    }))
-                  }
-                >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </label>
-              <label>
-                <span>Priority:</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={editCoupon.priority}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, priority: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Min Booking Amount (INR):</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={editCoupon.minBookingAmount}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, minBookingAmount: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Status:</span>
-                <select
-                  value={editCoupon.status}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, status: event.target.value }))
-                  }
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </label>
-              <label className="remark-field">
-                <span>Coupon Remark:</span>
-                <input
-                  type="text"
-                  value={editCoupon.remark}
-                  onChange={(event) =>
-                    setEditCoupon((previous) => ({ ...previous, remark: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
-
-            {editError && <p className="admin-markup-coupon-error">{editError}</p>}
-
-            <div className="admin-markup-coupon-modal-actions generate-actions">
-              <button
-                type="button"
-                className="primary generate-submit"
-                onClick={handleEditSave}
-              >
-                <Check size={16} />
-                <span>Save Changes</span>
-              </button>
-              <button
-                type="button"
-                className="danger generate-cancel"
-                onClick={() => setEditCoupon(null)}
-              >
-                <X size={16} />
-                <span>Cancel</span>
-              </button>
-            </div>
-          </section>
-        </section>
-      ) : (
-        <section className="admin-b2c-page admin-markup-coupon-shell">
-          <header className="admin-markup-coupon-header">
+    <section className="admin-b2c-page admin-markup-coupon-container">
+      <header className="admin-markup-coupon-header">
             <div className="admin-markup-coupon-title-wrap">
               <h1>
                 <span style={{ color: '#A51C49' }}>B2C Bus </span>
@@ -864,6 +541,14 @@ export default function AdminBusCouponListPage() {
               >
                 <X size={15} />
                 <span>Clear Filter</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-markup-coupon-btn used-coupons-nav-btn"
+                onClick={() => navigate("/admin/b2c-bus/used-coupon-list")}
+              >
+                <span>Used Coupons List</span>
               </button>
 
               <button
@@ -979,128 +664,735 @@ export default function AdminBusCouponListPage() {
                   </tr>
                 </thead>
                 <tbody>
-                {isLoadingCoupons ? (
-                  <tr>
-                    <td colSpan={11}>
-                      <p className="admin-markup-coupon-empty">Loading coupons from backend...</p>
-                    </td>
-                  </tr>
-                ) : visibleCoupons.length === 0 ? (
-                  <tr>
-                    <td colSpan={11}>
-                      <p className="admin-markup-coupon-empty">No coupons found for current filters.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedCoupons.map((coupon) => (
-                    <tr key={coupon.id}>
-                      <td>{coupon.id}</td>
-                      <td>{`INR ${coupon.value}`}</td>
-                      <td>{coupon.cpnType}</td>
-                      <td>
-                        <span className="admin-markup-coupon-code">{coupon.couponCode}</span>
-                      </td>
-                      <td>{formatCouponDate(coupon.startDate)}</td>
-                      <td>{formatCouponDate(coupon.expiryDate)}</td>
-                      <td>{coupon.useLimit}</td>
-                      <td className="status-col">
-                        <button
-                          type="button"
-                          className={`admin-markup-coupon-status ${coupon.status}`}
-                          onClick={() => handleCouponStatusToggle(coupon.id)}
-                          aria-label={`Set coupon ${coupon.couponCode} to ${
-                            coupon.status === "active" ? "inactive" : "active"
-                          }`}
-                        >
-                          {coupon.status === "active" ? <Check size={14} /> : <X size={14} />}
-                          <span>{coupon.status === "active" ? "Active" : "Inactive"}</span>
-                        </button>
-                      </td>
-                      <td>{formatCouponDateTime(coupon.entryDate)}</td>
-                      <td className="admin-markup-coupon-remark">
-                        <span>{coupon.remark || "--"}</span>
-                      </td>
-                      <td className="action-col">
-                        <div className="admin-markup-coupon-action-group">
-                          <button
-                            type="button"
-                            title="Edit"
-                            aria-label={`Edit coupon ${coupon.id}`}
-                            onClick={() => openEditModal(coupon)}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            aria-label={`Delete coupon ${coupon.id}`}
-                            className="danger"
-                            onClick={() => setDeleteCoupon(coupon)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                  {isLoadingCoupons ? (
+                    <tr>
+                      <td colSpan={11}>
+                        <p className="admin-markup-coupon-empty">Loading coupons from backend...</p>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : visibleCoupons.length === 0 ? (
+                    <tr>
+                      <td colSpan={11}>
+                        <p className="admin-markup-coupon-empty">No coupons found for current filters.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCoupons.map((coupon) => (
+                      <tr key={coupon.id}>
+                        <td>{coupon.id}</td>
+                        <td>{`INR ${coupon.value}`}</td>
+                        <td>{coupon.cpnType}</td>
+                        <td>
+                          <span className="admin-markup-coupon-code">{coupon.couponCode}</span>
+                        </td>
+                        <td>{formatCouponDate(coupon.startDate)}</td>
+                        <td>{formatCouponDate(coupon.expiryDate)}</td>
+                        <td>{coupon.useLimit}</td>
+                        <td className="status-col">
+                          <button
+                            type="button"
+                            className={`admin-markup-coupon-status ${coupon.status}`}
+                            onClick={() => handleCouponStatusToggle(coupon.id)}
+                            aria-label={`Set coupon ${coupon.couponCode} to ${coupon.status === "active" ? "inactive" : "active"
+                              }`}
+                          >
+                            <span>{coupon.status === "active" ? "Active" : "Inactive"}</span>
+                          </button>
+                        </td>
+                        <td>{formatCouponDateTime(coupon.entryDate)}</td>
+                        <td className="admin-markup-coupon-remark">
+                          <span>{coupon.remark || "--"}</span>
+                        </td>
+                        <td className="action-col">
+                          <div className="actions-dropdown-container">
+                            <button
+                              type="button"
+                              className={`actions-trigger-btn ${activeDropdownId === coupon.id ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === coupon.id ? null : coupon.id);
+                              }}
+                            >
+                              <span>Actions</span>
+                              <ChevronDown className="chevron-icon" size={12} />
+                            </button>
+                            {activeDropdownId === coupon.id && (
+                              <div className="actions-dropdown-menu">
+                                <button
+                                  type="button"
+                                  className="dropdown-item view"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setViewingCoupon(coupon);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <span>View Details</span>
+                                  <Eye className="item-icon" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditModal(coupon);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <span>Edit Coupon</span>
+                                  <Pencil className="item-icon" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="dropdown-item delete"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteCoupon(coupon);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <span>Delete Coupon</span>
+                                  <Trash2 className="item-icon" size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-          {visibleCoupons.length > 0 && (
-            <AdminPagination
-              currentPage={currentPage}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              itemName="bus coupons"
-            />
-          )}
-        </section>
-      </section>
-      )}
+            {visibleCoupons.length > 0 && (
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemName="bus coupons"
+              />
+            )}
+          </section>
 
-
-
-
-
-      {deleteCoupon && (
-        <div className="admin-markup-coupon-backdrop" onClick={() => setDeleteCoupon(null)}>
-          <section
-            className="admin-markup-coupon-modal small"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Delete coupon"
-            onClick={(event) => event.stopPropagation()}
+      {isGenerateModalOpen && (
+        <div 
+          className="admin-markup-coupon-backdrop" 
+          onClick={() => setIsGenerateModalOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 10000
+          }}
+        >
+          <section 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ 
+              maxWidth: "800px", 
+              width: "90%", 
+              maxHeight: "90vh", 
+              overflowY: "auto", 
+              background: "#ffffff", 
+              borderRadius: "12px", 
+              padding: "24px" 
+            }}
           >
-            <header>
-              <h2>Delete Coupon</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h1 style={{ color: "#A51C49", fontSize: "1.6rem", margin: 0, fontWeight: "700" }}>
+                Generate B2C Bus Coupon
+              </h1>
               <button
                 type="button"
-                onClick={() => setDeleteCoupon(null)}
-                aria-label="Close delete dialog"
+                onClick={() => setIsGenerateModalOpen(false)}
+                style={{ 
+                  backgroundColor: "#A51C49", 
+                  color: "#ffffff",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "none",
+                  fontWeight: "600",
+                  cursor: "pointer"
+                }}
               >
-                <X size={16} />
-              </button>
-            </header>
-
-            <p className="admin-markup-coupon-delete-copy">
-              Are you sure you want to delete coupon <strong>{deleteCoupon.couponCode}</strong>?
-            </p>
-
-            <div className="admin-markup-coupon-modal-actions">
-              <button type="button" className="secondary" onClick={() => setDeleteCoupon(null)}>
-                Cancel
-              </button>
-              <button type="button" className="danger" onClick={handleDeleteCoupon}>
-                Delete
+                Close Form
               </button>
             </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleGenerateCoupon(); }}>
+              {generateError && (
+                <p style={{ color: "red", margin: "15px 0", fontWeight: "600", fontSize: "0.9rem" }}>
+                  {generateError}
+                </p>
+              )}
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+                <label className="modal-field">
+                  <span>Coupon Code *</span>
+                  <input
+                    type="text"
+                    placeholder="Enter coupon code"
+                    value={generateForm.couponCode}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({
+                        ...previous,
+                        couponCode: event.target.value.toUpperCase().replace(/\s+/g, ""),
+                      }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Coupon Type *</span>
+                  <select
+                    value={generateForm.cpnType}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, cpnType: event.target.value }))
+                    }
+                    required
+                  >
+                    <option value="">---Select Amount Type---</option>
+                    <option value="Fixed">Fixed</option>
+                    <option value="Percentage">Percentage</option>
+                  </select>
+                </label>
+                <label className="modal-field">
+                  <span>Value *</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Enter value"
+                    value={generateForm.value}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, value: event.target.value }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Coupon Use Limit *</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Enter use limit"
+                    value={generateForm.useLimit}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, useLimit: event.target.value }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Max Usage Per User</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 1"
+                    value={generateForm.maxUsagePerUser}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, maxUsagePerUser: event.target.value }))
+                    }
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Priority</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="e.g. 0"
+                    value={generateForm.priority}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, priority: event.target.value }))
+                    }
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Auto Apply</span>
+                  <select
+                    value={String(generateForm.isAutoApply)}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({
+                        ...previous,
+                        isAutoApply: event.target.value === "true",
+                      }))
+                    }
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </label>
+                <label className="modal-field">
+                  <span>Exclusive</span>
+                  <select
+                    value={String(generateForm.isExclusive)}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({
+                        ...previous,
+                        isExclusive: event.target.value === "true",
+                      }))
+                    }
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </label>
+                <label className="modal-field">
+                  <span>Status</span>
+                  <select
+                    value={generateForm.status}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, status: event.target.value }))
+                    }
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </label>
+                <label className="modal-field">
+                  <span>Start Date *</span>
+                  <input
+                    type="date"
+                    value={generateForm.startDate}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, startDate: event.target.value }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Expiry Date *</span>
+                  <input
+                    type="date"
+                    value={generateForm.expiryDate}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({
+                        ...previous,
+                        expiryDate: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="modal-field">
+                  <span>Min Booking Amount (INR)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="e.g. 1000"
+                    value={generateForm.minBookingAmount}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, minBookingAmount: event.target.value }))
+                    }
+                  />
+                </label>
+                <label className="modal-field wide" style={{ gridColumn: "span 3" }}>
+                  <span>Coupon Remark</span>
+                  <textarea
+                    placeholder="Enter remark"
+                    value={generateForm.remark}
+                    onChange={(event) =>
+                      setGenerateForm((previous) => ({ ...previous, remark: event.target.value }))
+                    }
+                    rows={3}
+                    style={{ borderRadius: "10px", padding: "8px", width: "100%", height: "75px", fontFamily: "inherit" }}
+                  />
+                </label>
+              </div>
+
+              <footer style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsGenerateModalOpen(false)} 
+                  style={{ backgroundColor: "#f97316", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", border: "none", fontWeight: "600", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ backgroundColor: "#A51C49", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", border: "none", fontWeight: "600", cursor: "pointer" }}
+                >
+                  Generate
+                </button>
+              </footer>
+            </form>
           </section>
         </div>
       )}
-    </>
+
+      {editCoupon && createPortal(
+        <div 
+          className="admin-markup-coupon-backdrop" 
+          onClick={() => setEditCoupon(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 100000,
+            padding: "16px"
+          }}
+        >
+          <section 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ 
+              maxWidth: "760px", 
+              width: "100%", 
+              background: "#ffffff", 
+              borderRadius: "12px", 
+              padding: "16px 20px",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+              boxSizing: "border-box"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <h1 style={{ color: "#A51C49", fontSize: "1.3rem", margin: 0, fontWeight: "700" }}>
+                Edit B2C Bus Coupon
+              </h1>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}>
+              {editError && (
+                <p style={{ color: "red", margin: "8px 0", fontWeight: "600", fontSize: "0.85rem", textAlign: "left" }}>
+                  {editError}
+                </p>
+              )}
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px 12px" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>ID</span>
+                  <input type="text" value={editCoupon.id} disabled style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none", backgroundColor: "#f1f5f9" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Coupon Code</span>
+                  <input type="text" value={editCoupon.couponCode} disabled style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none", backgroundColor: "#f1f5f9" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Coupon Type *</span>
+                  <select
+                    value={editCoupon.cpnType}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, cpnType: event.target.value }))
+                    }
+                    required
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  >
+                    <option value="Fixed">Fixed</option>
+                    <option value="Percentage">Percentage</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Value *</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editCoupon.value}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, value: event.target.value }))
+                    }
+                    required
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Coupon Use Limit *</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editCoupon.useLimit}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, useLimit: event.target.value }))
+                    }
+                    required
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Max Usage Per User</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={editCoupon.maxUsagePerUser}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, maxUsagePerUser: event.target.value }))
+                    }
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Auto Apply</span>
+                  <select
+                    value={String(editCoupon.isAutoApply)}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({
+                        ...previous,
+                        isAutoApply: event.target.value === "true",
+                      }))
+                    }
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Exclusive</span>
+                  <select
+                    value={String(editCoupon.isExclusive)}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({
+                        ...previous,
+                        isExclusive: event.target.value === "true",
+                      }))
+                    }
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Status</span>
+                  <select
+                    value={editCoupon.status}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, status: event.target.value }))
+                    }
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Start Date *</span>
+                  <input
+                    type="date"
+                    value={editCoupon.startDate}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, startDate: event.target.value }))
+                    }
+                    required
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Expiry Date *</span>
+                  <input
+                    type="date"
+                    value={editCoupon.expiryDate}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, expiryDate: event.target.value }))
+                    }
+                    required
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Min Booking Amount (INR)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={editCoupon.minBookingAmount}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, minBookingAmount: event.target.value }))
+                    }
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
+                  <span>Priority</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={editCoupon.priority}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, priority: event.target.value }))
+                    }
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "28px", minHeight: "28px", boxSizing: "border-box", width: "100%", outline: "none" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b", gridColumn: "span 2" }}>
+                  <span>Coupon Remark</span>
+                  <textarea
+                    value={editCoupon.remark}
+                    onChange={(event) =>
+                      setEditCoupon((previous) => ({ ...previous, remark: event.target.value }))
+                    }
+                    rows={2}
+                    style={{ border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", height: "44px", minHeight: "44px", boxSizing: "border-box", width: "100%", outline: "none", fontFamily: "inherit" }}
+                  />
+                </label>
+              </div>
+
+              <footer style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                <button 
+                  type="button" 
+                  onClick={() => setEditCoupon(null)} 
+                  style={{ backgroundColor: "#f97316", color: "#ffffff", padding: "5px 12px", borderRadius: "6px", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "12px" }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ backgroundColor: "#A51C49", color: "#ffffff", padding: "5px 12px", borderRadius: "6px", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "12px" }}
+                >
+                  Save Changes
+                </button>
+              </footer>
+            </form>
+          </section>
+        </div>,
+        document.body
+      )}
+
+      {viewingCoupon && (
+        <div className="discount-modal-overlay">
+          <div className="discount-modal-container view-modal" style={{ maxWidth: '680px' }}>
+            <div className="modal-header" style={{ borderBottom: 'none', marginBottom: '8px' }}>
+              <h3 style={{ color: '#1e293b', fontWeight: '700' }}>Coupon Detail View</h3>
+              <button
+                type="button"
+                onClick={() => setViewingCoupon(null)}
+                style={{
+                  border: '1.5px solid #2563eb',
+                  background: '#ffffff',
+                  color: '#2563eb',
+                  borderRadius: '20px',
+                  padding: '6px 16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', justifyContent: 'flex-start' }}>
+              <span style={{ background: viewingCoupon.status === 'active' || viewingCoupon.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)', color: viewingCoupon.status === 'active' || viewingCoupon.status === 'Active' ? '#10b981' : '#64748b', padding: '4px 12px', borderRadius: '100px', fontWeight: '600', fontSize: '11px' }}>
+                {viewingCoupon.status === 'active' || viewingCoupon.status === 'Active' ? 'Active' : 'Inactive'}
+              </span>
+              <span style={{ background: '#fdf2f8', color: '#A41B48', padding: '4px 12px', borderRadius: '100px', fontWeight: '700', fontSize: '11px', border: '1px solid rgba(165, 28, 73, 0.15)' }}>
+                {viewingCoupon.couponCode}
+              </span>
+              <span style={{ background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', padding: '4px 12px', borderRadius: '100px', fontWeight: '600', fontSize: '11px' }}>
+                {viewingCoupon.cpnType === 'Percentage' ? `${viewingCoupon.value}%` : `INR ${viewingCoupon.value}`}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', textAlign: 'left', overflowY: 'auto', maxHeight: '60vh', paddingRight: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>COUPON ID</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.id}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>COUPON TYPE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.cpnType}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>USE LIMIT</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.useLimit}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>START DATE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{formatCouponDate(viewingCoupon.startDate)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>EXPIRY DATE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{formatCouponDate(viewingCoupon.expiryDate)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MAX USAGE PER USER</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.maxUsagePerUser}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AUTO APPLY</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.isAutoApply ? "Yes" : "No"}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>EXCLUSIVE APPLY</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.isExclusive ? "Yes" : "No"}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRIORITY</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingCoupon.priority}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MIN BOOKING AMOUNT</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>INR {viewingCoupon.minBookingAmount}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ENTRY DATE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{formatCouponDateTime(viewingCoupon.entryDate)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>UPDATED BY</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>--</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 3' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>REMARK</span>
+                <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{viewingCoupon.remark || '--'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteCoupon && (
+        <div className="discount-modal-overlay" onClick={() => setDeleteCoupon(null)}>
+          <div className="discount-modal-container delete-modal" onClick={(event) => event.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <h3 style={{ color: '#1e293b', fontWeight: '700' }}>Delete Coupon</h3>
+              <button
+                type="button"
+                className="close-x"
+                onClick={() => setDeleteCoupon(null)}
+                aria-label="Close delete dialog"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ padding: '8px 0 20px', textAlign: 'left', fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>
+              Are you sure you want to delete coupon <strong>{deleteCoupon.couponCode}</strong>?
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="modal-btn" onClick={() => setDeleteCoupon(null)} style={{ background: '#f97316', color: '#ffffff' }}>
+                Cancel
+              </button>
+              <button type="button" className="modal-btn delete-confirm-btn" onClick={handleDeleteCoupon} style={{ background: '#ef4444', color: '#ffffff' }}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

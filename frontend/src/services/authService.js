@@ -1,6 +1,6 @@
 /* eslint-disable */
 const FALLBACK_API_BASE_URL =
-  "https://humiliate-eatery-humvee.ngrok-free.dev";
+  "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 
 function isLocalDevelopment() {
@@ -157,6 +157,25 @@ export async function requestAuth(
 // ---------------------------------------------------------
 // B2C (Customer) Authentication API Methods
 // ---------------------------------------------------------
+
+export async function sendLoginOtp(payload) {
+  return requestAuth("/api/auth/send-login-otp", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function verifyLoginOtp(payload, guestId = null) {
+  const headers = {};
+  if (guestId) {
+    headers["X-Guest-Id"] = guestId;
+  }
+  return requestAuth("/api/auth/verify-login-otp", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload)
+  });
+}
 
 export async function sendRegistrationOtp(payload) {
   return requestAuth("/api/auth/send-registration-otp", {

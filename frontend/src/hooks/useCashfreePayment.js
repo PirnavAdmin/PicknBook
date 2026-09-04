@@ -11,7 +11,7 @@ import { createCashfreeOrder } from "../services/paymentService";
 import { load } from "@cashfreepayments/cashfree-js";
 
 export function useCashfreePayment() {
-  const [cfStatus, setCfStatus] = useState("idle");
+  const [cfStatus, setCfStatus] = useState("idle"); 
   const [paymentError, setPaymentError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const cfInstanceRef = useRef(null);
@@ -49,11 +49,11 @@ export function useCashfreePayment() {
             mobile: customerPhone,
           })
         );
-      } catch { }
+      } catch {}
 
       const cashfree = await load({ mode: "production" });
       cfInstanceRef.current = cashfree;
-
+      
       setCfStatus("ready");
       setIsSubmitting(false);
       return { paymentSessionId: orderData.payment_session_id, cashfree };

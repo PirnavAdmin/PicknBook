@@ -112,15 +112,11 @@ const WebCheckInPage = () => {
           --web-navy: var(--theme-navy, #1f2a44);
           --web-muted: #596985;
           --web-border: #E5E7EB;
-          --web-bg-image: url(${travelBg});
           min-height: calc(100vh - 88px);
           padding: 18px 14px 30px;
           font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
           color: var(--web-navy);
-          background:
-            linear-gradient(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.5)),
-            var(--web-bg-image) center / cover no-repeat,
-            linear-gradient(180deg, #F3F4F6 0%, #ffffff 100%);
+          background: #f8fafc;
         }
 
         .web-checkin-shell {

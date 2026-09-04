@@ -39,3 +39,18 @@
 .admin-markup-coupon-form textarea.validation-error {
   border: 1px solid red !important;
 }
+
+/* Make export buttons green consistently */
+.admin-hotel-coupon-shell .admin-markup-coupon-btn.export,
+.admin-hotel-discount-shell .admin-markup-coupon-btn.export {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+.admin-hotel-coupon-shell .admin-markup-coupon-btn.export:hover,
+.admin-hotel-discount-shell .admin-markup-coupon-btn.export:hover {
+  background: #15803d !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+}

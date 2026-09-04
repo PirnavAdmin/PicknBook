@@ -27,6 +27,41 @@ function formatCurrency(value) {
   }).format(Math.round(Number(value) || 0))}`;
 }
 
+function formatSplitDeparture(dateStr) {
+  if (!dateStr) return { date: "--", time: "" };
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+      const parts = String(dateStr).split(",");
+      return { date: parts[0]?.trim() ? `${parts[0].trim()},` : "--", time: parts[1]?.trim() || "" };
+    }
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    return { date: `${day}-${month}-${year},`, time: `${hours}:${mins}` };
+  } catch {
+    return { date: String(dateStr), time: "" };
+  }
+}
+
+function formatBookedAt(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    return `${day}-${month}-${year}, ${hours}:${mins}`;
+  } catch {
+    return String(dateStr);
+  }
+}
+
 function getStatusClassName(status) {
   if (status === "Cancelled") {
     return "danger";
@@ -487,22 +522,27 @@ export default function FlightBookings() {
             <table className="ops-table">
               <thead>
                 <tr>
-                  <th>Booking Ref</th>
-                  <th>Passenger</th>
-                  <th>Segment</th>
-                  <th>Departure</th>
-                  <th>Seats</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>BOOKING REF / DATE</th>
+                  <th>PASSENGER</th>
+                  <th>SEGMENT</th>
+                  <th>DEPARTURE</th>
+                  <th>SEATS</th>
+                  <th>TOTAL</th>
+                  <th>STATUS</th>
+                  <th>ACTION</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.map((booking) => (
-                  <tr key={booking.bookingId}>
+                {filteredBookings.map((booking) => {
+                  const dep = formatSplitDeparture(booking.departureTimeUtc || booking.departureDate);
+                  const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
+                  const totalFormatted = Number(booking.totalPriceInr || booking.totalAmount || 0).toLocaleString("en-IN");
+                  return (
+                  <tr key={booking.bookingId || booking.bookingReference}>
                     <td>
                       <strong>{booking.bookingReference}</strong>
                       <small>ID: {booking.bookingId}</small>
+                      {bookedAt && <small>Booked: {bookedAt}</small>}
                     </td>
                     <td>
                       <strong>{booking.passengerName || "--"}</strong>
@@ -525,33 +565,32 @@ export default function FlightBookings() {
                           <strong>
                             {booking.fromCity} to {booking.toCity}
                           </strong>
-                          <small>{booking.providerName || booking.travelClass || "--"}</small>
+                          <small>{booking.providerName || booking.airline || "SRDV Flight"}</small>
                         </>
                       )}
                     </td>
                     <td>
-                      <strong>{formatDateTime(booking.departureTimeUtc)}</strong>
+                      <strong>{dep.date}</strong>
+                      {dep.time && <strong>{dep.time}</strong>}
                     </td>
                     <td>
-                      <strong>{booking.seatsBooked || "--"}</strong>
-                      <small>
-                        {Array.isArray(booking.segments) && booking.segments.length > 1
-                          ? booking.segments.map(s => s.tripNumber || s.flightNumber).filter(Boolean).join(" / ") || `${booking.segments.length} Flights`
-                          : (booking.tripNumber || booking.travelClass || "--")}
-                      </small>
+                      <strong>{booking.seatsBooked || "1"}</strong>
+                      <small>{booking.travelClass || "Economy"}</small>
                     </td>
                     <td>
-                      <strong>{formatCurrency(booking.totalPriceInr)}</strong>
+                      <strong>INR</strong>
+                      <strong>{totalFormatted}</strong>
                     </td>
                     <td>
                       <span className={`status-badge ${getStatusClassName(booking.status)}`}>
-                        {booking.status === "Pending" ? "Processing" : booking.status}
+                        {booking.status === "Pending" ? "Processing" : (booking.status || "Booked")}
                       </span>
                     </td>
                     <td>
                       <div className="table-actions">
                         <button
                           type="button"
+                          className="ops-btn-action"
                           title="View details"
                           onClick={() => handleViewDetails(booking)}
                           disabled={loadingDetailFor === booking.bookingId || loadingDetailFor === booking.bookingReference}
@@ -565,6 +604,7 @@ export default function FlightBookings() {
                         {booking.status !== "Pending" && (
                           <button
                             type="button"
+                            className="ops-btn-action"
                             title="Cancel flight booking"
                             onClick={() => triggerCancelBooking(booking)}
                             disabled={
@@ -582,7 +622,8 @@ export default function FlightBookings() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>

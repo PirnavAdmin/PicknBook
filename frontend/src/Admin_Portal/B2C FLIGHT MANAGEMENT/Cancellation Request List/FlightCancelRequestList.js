@@ -1,6 +1,8 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./FlightCancelRequestList.css";
+import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
+import { Filter, Download } from "lucide-react";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import AdminPagination from "../../../components/AdminPagination";
 
@@ -10,15 +12,13 @@ const safeValue = (val, fallback = "--") =>
 const formatRequestDate = (rawDate) => {
   if (!rawDate) return "--";
   const parsed = new Date(rawDate);
-  if (Number.isNaN(parsed.getTime())) return "--";
-  return parsed.toLocaleString("en-IN", {
-    day: "2-digit",
+  if (Number.isNaN(parsed.getTime())) return String(rawDate);
+  const formatted = parsed.toLocaleDateString("en-GB", {
+    day: "numeric",
     month: "short",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
   });
+  return `🗓️ ${formatted}`;
 };
 
 const toNumberDate = (rawDate) => {
@@ -46,7 +46,7 @@ const normalizeText = (value, fallback = "") => {
 };
 
 const FALLBACK_API_BASE_URL =
-  "https://humiliate-eatery-humvee.ngrok-free.dev";
+  "https://www.picknbook.in";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
@@ -806,41 +806,68 @@ export default function AdminFlightCancellationRequestListPage() {
 
   return (
     <section className="admin-b2c-page admin-cancel-page admin-flight-cancel-page">
-      <header className="admin-b2c-header admin-cancel-header admin-flight-cancel-header">
-        <h1 className="admin-flight-cancel-title" style={{ fontWeight: 500 }}>
+      <header className="admin-b2c-header admin-flight-cancel-header" style={{ marginBottom: "12px" }}>
+        <h1 className="admin-flight-cancel-title" style={{ fontWeight: 500, margin: 0 }}>
           <span style={{ color: "#be185d", fontWeight: 700 }}>B2C Flight </span>
           <span style={{ color: "black" }}>Cancellation List</span>
         </h1>
       </header>
 
-      <div className="admin-toolbar-row admin-cancel-toolbar">
+      <div className="admin-toolbar-row admin-cancel-toolbar" style={{ marginBottom: "16px" }}>
         <div className="admin-chip-row">
-          <span className="admin-chip admin-cancel-chip">
-            Cancelled Records: {filteredRequests.length}
+          <span className="admin-chip">Today Cancelled: {filteredRequests.filter(r => r.paymentStatus === "Completed").length}</span>
+          <span className="admin-chip">Today Pending: {filteredRequests.filter(r => r.paymentStatus === "Pending").length}</span>
+          <span className="admin-chip admin-total-chip">
+            Total Records: {filteredRequests.length}
           </span>
         </div>
 
-        <div className="admin-actions-row admin-flight-cancel-actions">
+        <div className="admin-actions-row admin-flight-cancel-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             type="button"
-            className="admin-flight-btn admin-flight-btn-filter"
             onClick={() => setIsFiltersOpen((current) => !current)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: '#A51C49',
+              color: '#ffffff',
+              fontSize: '0.88rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s'
+            }}
           >
-            {isFiltersOpen ? "Close Filter" : "Filter"}
+            <Filter size={15} />
+            <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
           <button
             type="button"
-            className="admin-flight-btn admin-flight-btn-clear"
-            onClick={clearFilters}
-          >
-            Clear Filter
-          </button>
-          <button
-            type="button"
-            className="admin-flight-btn admin-flight-btn-export"
             onClick={handleExport}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: '#10b981',
+              color: '#ffffff',
+              fontSize: '0.88rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s'
+            }}
           >
-            Export
+            <Download size={15} />
+            <span>Export</span>
           </button>
         </div>
       </div>
@@ -901,16 +928,16 @@ export default function AdminFlightCancellationRequestListPage() {
       ) : null}
 
       <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head admin-flight-cancel-table-head" style={{ gridTemplateColumns: "1.2fr 1.2fr 1.2fr 1fr 1fr 1fr 1fr 1.2fr 0.8fr" }}>
-          <span>Id &amp; Request Date</span>
-          <span>Segment</span>
-          <span>Customer</span>
-          <span>B2B Amount</span>
-          <span>Admin Amount</span>
-          <span>Payment Info</span>
-          <span>Payment Status</span>
-          <span>Remark</span>
-          <span>Details</span>
+        <header className="admin-cancel-table-head admin-flight-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
+          <span>B. ID / Date</span>
+          <span>Name</span>
+          <span>Segment / Date</span>
+          <span>Time</span>
+          <span>PNR / Status</span>
+          <span>Operator / Type</span>
+          <span>Fare</span>
+          <span>Calculated Profit</span>
+          <span>Action</span>
         </header>
 
         {isLoading ? (
@@ -921,7 +948,7 @@ export default function AdminFlightCancellationRequestListPage() {
               <article
                 key={`flight-cancel-${booking.id}-${booking.createdAt}`}
                 className="admin-cancel-table-row admin-flight-cancel-table-row"
-                style={{ gridTemplateColumns: "1.2fr 1.2fr 1.2fr 1fr 1fr 1fr 1fr 1.2fr 0.8fr" }}
+                style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}
               >
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.id)}</strong>
@@ -931,45 +958,38 @@ export default function AdminFlightCancellationRequestListPage() {
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>
-                    {safeValue(booking.from)} to {safeValue(booking.to)}
-                  </strong>
-                  <small>
-                    {safeValue(booking.journeyDate)} | {safeValue(booking.journeyTime)}
-                  </small>
-                </div>
-
-                <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.passengerName)}</strong>
                   <small>{safeValue(booking.passengerPhone)}</small>
                 </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>CRA {adminCurrencyFormatter.format(booking.refundAmount)}</strong>
+                <div className="admin-cancel-cell">
+                  <strong>
+                    {safeValue(booking.from)} ➔ {safeValue(booking.to)}
+                  </strong>
+                  <small>
+                    {safeValue(booking.journeyDate)}
+                  </small>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>CCC {adminCurrencyFormatter.format(booking.cancellationCharge)}</strong>
+                  <strong>{safeValue(booking.journeyTime) || "--:--"}</strong>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>Method:</strong> {safeValue(booking.paymentMethod)}
-                  <small style={{ wordBreak: "break-all" }}><strong>Txn:</strong> {safeValue(booking.paymentDetails)}</small>
-                </div>
-
-                <div className="admin-cancel-cell">
+                  <strong>{safeValue(booking.pnr)}</strong>
                   <select
                     value={booking.paymentStatus}
                     onChange={(e) => handleUpdatePaymentStatus(booking.bookingId, e.target.value)}
                     style={{
-                      padding: "4px 8px",
+                      padding: "2px 6px",
                       borderRadius: "6px",
                       border: "1px solid var(--border)",
                       backgroundColor: booking.paymentStatus === "Completed" ? "#ecfdf5" : "#fffbeb",
                       color: booking.paymentStatus === "Completed" ? "#10b981" : "#d97706",
-                      fontSize: "0.8rem",
+                      fontSize: "0.72rem",
                       fontWeight: "600",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      marginTop: "2px"
                     }}
                   >
                     <option value="Pending">Pending</option>
@@ -978,15 +998,24 @@ export default function AdminFlightCancellationRequestListPage() {
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.cancellationReason, "--")}</strong>
-                  <small>PNR {safeValue(booking.pnr)}</small>
+                  <strong>{safeValue(booking.operator || "Airline")}</strong>
+                  <small>{safeValue(booking.vehicleType || "Flight")}</small>
+                </div>
+
+                <div className="admin-cancel-cell admin-cell-centered">
+                  <strong>{adminCurrencyFormatter.format(booking.fare || 0)}</strong>
+                  <small>Refund: {adminCurrencyFormatter.format(booking.refundAmount)}</small>
+                </div>
+
+                <div className="admin-cancel-cell admin-cell-centered">
+                  <strong style={{ color: "#d97706" }}>Charge: {adminCurrencyFormatter.format(booking.cancellationCharge)}</strong>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
                   <button
                     type="button"
-                    className="admin-action-btn"
-                    onClick={() => setSelectedCancellation(booking)}
+                    className="admin-cancel-view-btn"
+                    onClick={() => setSelectedRequest(booking)}
                   >
                     View
                   </button>

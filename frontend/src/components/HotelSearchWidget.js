@@ -1,13 +1,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { CalendarDays, Search, Users, MapPin, ChevronDown, Plus, Minus, BedDouble, User, Baby, Info } from "lucide-react";
+import { CalendarDays, CalendarRange, Search, Users, ChevronDown, Plus, Minus, BedDouble, Baby } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
-
-function getDateInputValue(offsetDays = 0) {
-  const date = new Date();
-  date.setDate(date.getDate() + offsetDays);
-  return date.toISOString().split("T")[0];
-}
 
 function toDisplayDate(isoString) {
   if (!isoString) return "";
@@ -16,6 +10,15 @@ function toDisplayDate(isoString) {
     return `${parts[2]}-${parts[1]}-${parts[0]}`;
   }
   return isoString;
+}
+
+function calculateNights(checkIn, checkOut) {
+  if (!checkIn || !checkOut) return 1;
+  const inDate = new Date(checkIn);
+  const outDate = new Date(checkOut);
+  const diffTime = outDate - inDate;
+  if (diffTime <= 0) return 1;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 export default function HotelSearchWidget({
@@ -185,7 +188,7 @@ export default function HotelSearchWidget({
   };
 
   const guestSummary = (rooms === 0 && adults === 0)
-    ? "Add Guests"
+    ? "Add Gues..."
     : `${rooms} Room${rooms > 1 ? 's' : ''}, ${adults} Adult${adults > 1 ? 's' : ''}${children > 0 ? `, ${children} Child${children > 1 ? 'ren' : ''}` : ""}`;
 
   const handleSubmit = () => {
@@ -219,64 +222,81 @@ export default function HotelSearchWidget({
 
   const innerContent = (
     <>
-      <PlaceAutocomplete
-        label={isInline ? "" : "Destination"}
-        value={destination}
-        onChange={handleDestinationChange}
-        tripType="hotel"
-        field="destination"
-        placeholder="City or hotel area"
-        error={destinationError}
-        className={isInline ? "hotel-discover-searchcell" : "hotel-destination-field"}
-        isInline={isInline}
-      />
+      <div className={isInline ? "hotel-discover-searchcell" : ""} style={isInline ? { display: 'flex', alignItems: 'center', gap: '12px', flex: '1.3 1 auto', minWidth: 0, position: 'relative' } : {}}>
+        <PlaceAutocomplete
+          label={isInline ? "STAY DESTINATION" : "DESTINATION"}
+          value={destination}
+          onChange={handleDestinationChange}
+          tripType="hotel"
+          field="destination"
+          placeholder="Enter city, area or hotel"
+          error={destinationError}
+          className={isInline ? "hotel-discover-searchcell-autocomplete" : "hotel-destination-field"}
+          isInline={isInline}
+        />
+      </div>
 
       {isInline ? (
-        <div className="hotel-discover-searchcell" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-          <CalendarDays size={18} color="var(--hotel-muted)" />
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Timeline</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
-              <div style={{ position: "relative" }}>
-                <span
-                  style={{ cursor: "pointer", color: 'var(--hotel-muted)', fontWeight: 600, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
-                  onClick={() => document.getElementById("inline-checkin-date").showPicker?.()}
-                >
-                  {toDisplayDate(checkInDate) || "Select dates"}
-                </span>
-                <input
-                  id="inline-checkin-date"
-                  type="date"
-                  value={checkInDate}
-                  onChange={(event) => setCheckInDate(event.target.value)}
-                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
-                />
-              </div>
-              <span style={{ color: 'var(--hotel-muted)', fontWeight: 600, margin: '0 4px' }}>-</span>
-              <div style={{ position: "relative" }}>
-                <span
-                  style={{ cursor: "pointer", color: 'var(--hotel-muted)', fontWeight: 600, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
-                  onClick={() => document.getElementById("inline-checkout-date").showPicker?.()}
-                >
-                  {toDisplayDate(checkOutDate) || "Select dates"}
-                </span>
-                <input
-                  id="inline-checkout-date"
-                  type="date"
-                  value={checkOutDate}
-                  onChange={(event) => setCheckOutDate(event.target.value)}
-                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
-                />
-              </div>
+        <div
+          className="hotel-discover-searchcell"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            flex: '1.2 1 auto',
+            borderLeft: "1px solid rgba(255,255,255,0.15)",
+            paddingLeft: "20px",
+            cursor: 'pointer',
+            minWidth: 0,
+            position: 'relative'
+          }}
+          onClick={() => document.getElementById("inline-checkin-date")?.showPicker?.()}
+        >
+          <CalendarRange size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              TIMELINE
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
+              <span
+                style={{ cursor: "pointer", color: '#ffffff', fontWeight: 700, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                onClick={(e) => { e.stopPropagation(); document.getElementById("inline-checkin-date")?.showPicker?.(); }}
+              >
+                {toDisplayDate(checkInDate) || "Select"}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
+              <span
+                style={{ cursor: "pointer", color: '#ffffff', fontWeight: 700, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                onClick={(e) => { e.stopPropagation(); document.getElementById("inline-checkout-date")?.showPicker?.(); }}
+              >
+                {toDisplayDate(checkOutDate) || "dates"}
+              </span>
             </div>
+            <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              {calculateNights(checkInDate, checkOutDate)} {calculateNights(checkInDate, checkOutDate) === 1 ? 'NIGHT' : 'NIGHTS'}
+            </span>
+            <input
+              id="inline-checkin-date"
+              type="date"
+              value={checkInDate}
+              onChange={(event) => setCheckInDate(event.target.value)}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
+            />
+            <input
+              id="inline-checkout-date"
+              type="date"
+              value={checkOutDate}
+              onChange={(event) => setCheckOutDate(event.target.value)}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
+            />
           </div>
         </div>
       ) : (
         <>
           <div className="field field-with-icon checkin-field" style={{ position: "relative" }}>
-            <label>Check-in</label>
-            <div className="control-wrap">
-              <CalendarDays size={18} />
+            <label>CHECK-IN</label>
+            <div className="control-wrap" onClick={() => document.getElementById("hotel-checkin-date")?.showPicker?.()} style={{ cursor: "pointer" }}>
+              <CalendarDays size={18} color="#dc2626" />
               <input
                 type="text"
                 readOnly
@@ -284,7 +304,6 @@ export default function HotelSearchWidget({
                 placeholder="DD-MM-YYYY"
                 className="field-control with-leading-icon"
                 style={{ cursor: "pointer" }}
-                onClick={() => document.getElementById("hotel-checkin-date").showPicker?.()}
               />
             </div>
             <input
@@ -297,9 +316,9 @@ export default function HotelSearchWidget({
           </div>
 
           <div className="field field-with-icon checkout-field" style={{ position: "relative" }}>
-            <label>Check-out</label>
-            <div className="control-wrap">
-              <CalendarDays size={18} />
+            <label>CHECK-OUT</label>
+            <div className="control-wrap" onClick={() => document.getElementById("hotel-checkout-date")?.showPicker?.()} style={{ cursor: "pointer" }}>
+              <CalendarDays size={18} color="#dc2626" />
               <input
                 type="text"
                 readOnly
@@ -307,7 +326,6 @@ export default function HotelSearchWidget({
                 placeholder="DD-MM-YYYY"
                 className="field-control with-leading-icon"
                 style={{ cursor: "pointer" }}
-                onClick={() => document.getElementById("hotel-checkout-date").showPicker?.()}
               />
             </div>
             <input
@@ -321,15 +339,16 @@ export default function HotelSearchWidget({
         </>
       )}
 
-      <div className={isInline ? "hotel-discover-searchcell" : "field traveller-field"} ref={guestsFieldRef} style={{ position: "relative" }}>
-        {!isInline && <label>Rooms & Guests</label>}
+      <div className={isInline ? "hotel-discover-searchcell" : "field traveller-field hotel-guests-field"} ref={guestsFieldRef} style={isInline ? { display: 'flex', alignItems: 'center', gap: '12px', flex: '1.1 1 auto', borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: "20px", cursor: 'pointer', minWidth: 0, position: 'relative' } : { position: "relative" }}>
+        {!isInline && <label>ROOMS & GUESTS</label>}
 
         {isInline ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', cursor: 'pointer', minWidth: 0 }} onClick={toggleGuestsDropdown}>
-            <Users size={18} color="var(--hotel-muted)" style={{ flexShrink: 0 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', cursor: 'pointer', minWidth: 0 }} onClick={toggleGuestsDropdown}>
+            <Users size={18} color="#ffffff" style={{ flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#222' }}>Guests</span>
-              <span style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--hotel-muted)', marginTop: '5px', whiteSpace: 'nowrap' }}>{guestSummary}</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>GUESTS</span>
+              <span style={{ fontSize: '1.02rem', fontWeight: 700, color: '#ffffff', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{guestSummary}</span>
+              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>ROOMS & GUESTS</span>
             </div>
           </div>
         ) : (
@@ -339,29 +358,32 @@ export default function HotelSearchWidget({
             style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1, overflow: "hidden" }}>
-              <Users size={18} style={{ flexShrink: 0 }} />
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.85rem", fontWeight: 500, textTransform: "none" }}>{guestSummary}</span>
+              <Users size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+              <span className="hotel-guest-summary-text" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.92rem", fontWeight: 500, color: (rooms === 0 && adults === 0) ? "#64748b" : "#0f172a" }}>
+                {guestSummary}
+              </span>
             </div>
-            <ChevronDown size={16} className={`traveller-caret ${showGuestsDropdown ? "open" : ""}`} style={{ flexShrink: 0 }} />
+            <ChevronDown size={14} color="#64748b" className={`traveller-caret ${showGuestsDropdown ? "open" : ""}`} style={{ flexShrink: 0 }} />
           </div>
         )}
 
         {showGuestsDropdown && (
           <div
             className="traveller-dropdown hotel-guests-dropdown"
+            onClick={(e) => e.stopPropagation()}
             style={{
-              width: "260px",
-              left: 0,
-              right: "auto",
-              border: "1px solid #cfcfcf",
-              borderRadius: "10px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-              padding: "12px",
-              zIndex: 1400,
+              width: "280px",
+              left: isInline ? "auto" : 0,
+              right: isInline ? 0 : "auto",
+              border: "1px solid #e2e8f0",
+              borderRadius: "16px",
+              boxShadow: "0 16px 40px rgba(15,23,42,0.18)",
+              padding: "16px",
+              zIndex: 9999,
               background: "#ffffff",
               color: "#1e293b",
               position: "absolute",
-              top: isInline ? 'calc(100% + 10px)' : undefined,
+              top: isInline ? 'calc(100% + 14px)' : undefined,
             }}
           >
             {/* Rooms Row */}
@@ -370,15 +392,15 @@ export default function HotelSearchWidget({
                 <BedDouble size={18} strokeWidth={1.5} />
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "400", color: "#1e293b", textTransform: "uppercase" }}>ROOMS</span>
-                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>Minimum 1</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "#1e293b" }}>ROOMS</span>
+                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal" }}>Max 8 rooms</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
                 <button
                   type="button"
-                  onClick={() => handleRoomsChange(Math.max(0, rooms - 1))}
-                  disabled={rooms <= 0}
-                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: rooms <= 0 ? "not-allowed" : "pointer", opacity: rooms <= 0 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
+                  onClick={() => handleRoomsChange(Math.max(1, rooms - 1))}
+                  disabled={rooms <= 1}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: rooms <= 1 ? "not-allowed" : "pointer", opacity: rooms <= 1 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
                   <Minus size={14} strokeWidth={2} />
                 </button>
@@ -400,15 +422,15 @@ export default function HotelSearchWidget({
                 <Users size={18} strokeWidth={1.5} />
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "400", color: "#1e293b", textTransform: "uppercase" }}>ADULTS</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "#1e293b" }}>ADULTS</span>
                 <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>13 years & above</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
                 <button
                   type="button"
-                  onClick={() => handleAdultsChange(Math.max(0, adults - 1))}
-                  disabled={adults <= 0}
-                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: adults <= 0 ? "not-allowed" : "pointer", opacity: adults <= 0 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
+                  onClick={() => handleAdultsChange(Math.max(1, adults - 1))}
+                  disabled={adults <= 1}
+                  style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", color: "#d32f2f", cursor: adults <= 1 ? "not-allowed" : "pointer", opacity: adults <= 1 ? 0.4 : 1, transition: "all 0.2s", padding: 0 }}
                 >
                   <Minus size={14} strokeWidth={2} />
                 </button>
@@ -425,13 +447,13 @@ export default function HotelSearchWidget({
             </div>
 
             {/* Children Row */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px", borderBottom: children > 0 ? "1px solid #e2e8f0" : "none", marginBottom: children > 0 ? "10px" : "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0", marginBottom: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "20px", color: "#475569" }}>
                 <Baby size={18} strokeWidth={1.5} />
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "400", color: "#1e293b", textTransform: "uppercase" }}>CHILDREN</span>
-                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>0-12 years</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "#1e293b" }}>CHILDREN</span>
+                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal", textTransform: "none", whiteSpace: "nowrap" }}>0 - 12 years</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
                 <button
@@ -454,25 +476,22 @@ export default function HotelSearchWidget({
               </div>
             </div>
 
-
             {/* Done Button */}
-            <div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
               <button
                 type="button"
                 onClick={() => setShowGuestsDropdown(false)}
                 style={{
-                  width: "100%",
-                  padding: "8px",
-                  background: "#d32f2f",
-                  color: "#fff",
+                  background: "#dc2626",
+                  color: "#ffffff",
                   border: "none",
                   borderRadius: "8px",
-                  fontWeight: "500",
+                  padding: "6px 18px",
+                  fontWeight: "600",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
-                  boxShadow: "0 4px 10px rgba(211,47,47,0.3)",
+                  fontSize: "0.85rem",
+                  boxShadow: "0 4px 10px rgba(220,38,38,0.3)",
                   transition: "all 0.2s",
-                  textTransform: "none"
                 }}
               >
                 Done
@@ -483,14 +502,34 @@ export default function HotelSearchWidget({
       </div>
 
       {isInline ? (
-        <button type="button" className="hotel-discover-searchbutton" onClick={handleSubmit}>
-          <Search size={17} />
-          <span>Search</span>
+        <button
+          type="button"
+          className="hotel-discover-searchbutton"
+          onClick={handleSubmit}
+          style={{
+            borderRadius: "32px",
+            padding: "0 24px",
+            height: "46px",
+            fontSize: "0.95rem",
+            fontWeight: 700,
+            background: "linear-gradient(135deg, #dc1e26, #991b1b)",
+            boxShadow: "0 4px 15px rgba(220, 30, 38, 0.4)",
+            color: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            cursor: "pointer",
+            border: "none",
+            flexShrink: 0
+          }}
+        >
+          <Search size={18} />
+          <span>Search Hotels</span>
         </button>
       ) : (
-        <button type="button" className="search-btn" onClick={handleSubmit}>
-          <Search size={16} />
-          <span>Search Hotels</span>
+        <button type="button" className="search-btn hotel-search-submit-btn" onClick={handleSubmit}>
+          <Search size={16} strokeWidth={2.5} />
+          <span>SEARCH HOTELS</span>
         </button>
       )}
     </>
@@ -501,7 +540,24 @@ export default function HotelSearchWidget({
       <form
         className="hotel-discover-searchbar"
         onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
-        style={{ overflow: 'visible' }}
+        style={{
+          background: "rgba(255, 255, 255, 0.18)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderRadius: "40px",
+          padding: "10px 16px",
+          border: "1px solid rgba(255, 255, 255, 0.25)",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          maxWidth: "1100px",
+          margin: "0 auto",
+          boxSizing: "border-box",
+          position: "relative",
+          overflow: "visible"
+        }}
       >
         {innerContent}
       </form>
@@ -510,7 +566,7 @@ export default function HotelSearchWidget({
 
   return (
     <div className="booking-content hotel-booking-content">
-      <div className="search-grid hotel-standard-grid">
+      <div className="flight-search-bar-row hotel-search-bar-row">
         {innerContent}
       </div>
     </div>

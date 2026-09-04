@@ -1,3 +1,13 @@
+import { mapPassengersForApi } from "../services/flightBookingService";
+
+function resolveCleanTravelClass(travelClass) {
+  if (!travelClass) return "Economy";
+  const tc = travelClass.toString().toLowerCase();
+  if (tc.includes("business")) return "Business";
+  if (tc.includes("first")) return "First";
+  if (tc.includes("premium")) return "PremiumEconomy";
+  return "Economy";
+}
 
 // Extracted payload builders
 function buildFlightBookingPayload(flowState) {
@@ -148,9 +158,29 @@ function buildBookingPayload(flowState) {
               passengerGender ||
               (normalizedTitle === "mr" ? "Male" : "Female"),
             ...(seatNumber ? { seatNumber, SeatNumber: seatNumber } : {}),
-            BaseFare: Number(selectedSeats[index]?.srdvBaseFare !== undefined ? selectedSeats[index]?.srdvBaseFare : (selectedSeats[index]?.fare || selectedSeats[index]?.baseFare || 0)),
+            BaseFare: Number(
+              selectedSeats[index]?.supplierBaseFare ??
+              selectedSeats[index]?.srdvBaseFare ??
+              selectedSeats[index]?.Price?.BaseFare ??
+              (selectedSeats[index]?.b2cDisplayFare && selectedSeats[index]?.markupAmount
+                ? Number(selectedSeats[index].b2cDisplayFare) - Number(selectedSeats[index].markupAmount)
+                : null) ??
+              selectedSeats[index]?.baseFare ??
+              0
+            ),
             SeatType: String(selectedSeats[index]?.seatType || selectedSeats[index]?.kind || "Seater"),
-            ExternalGst: Number(selectedSeats[index]?.srdvTax !== undefined ? selectedSeats[index]?.srdvTax : (selectedSeats[index]?.tax || 0))
+            ExternalGst: Number(
+              selectedSeats[index]?.externalGst ??
+              selectedSeats[index]?.srdvTax ??
+              selectedSeats[index]?.tax ??
+              selectedSeats[index]?.Price?.Tax ??
+              selectedSeats[index]?.Price?.GSTAmount ??
+              0
+            ),
+            ...(passenger.idNumber ? {
+              idType: String(passenger.idType || "Aadhar"),
+              idNumber: String(passenger.idNumber).replace(/\D/g, "")
+            } : {})
           };
         })
       : fallbackPassengers;
@@ -189,7 +219,11 @@ function buildBookingPayload(flowState) {
     seatCodes: selectedSeats
       .map((seat) => seat.label || seat.seatCode || seat)
       .map((seatCode) => String(seatCode || "").trim())
-      .filter(Boolean),
+      .filter((code) => {
+        if (!code) return false;
+        const nonSeat = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
+        return !nonSeat.test(code);
+      }),
     passengerWhatsapp: String(
       flowState.contact?.whatsappNumber || flowState.contact?.mobile || ""
     ).trim(),
@@ -208,8 +242,18 @@ function buildBookingPayload(flowState) {
     arrivalTime: String(flowState.bus?.arrivalTimeUtc || flowState.bus?.arrivalTimeIst || flowState.bus?.arrivalTime || ""),
     operatorName: String(flowState.bus?.operatorName || ""),
     busType: String(flowState.bus?.busType || ""),
-    isIdProofRequired: Boolean(flowState.bus?.idProofRequired || flowState.bus?.IdProofRequired || flowState.bus?.isIdProofRequired || flowState.bus?.IsIdProofRequired),
-    totalFare: Number(flowState.bus?.priceInr || flowState.bus?.displayFare || flowState.bus?.fare || 0),
+    isIdProofRequired: true,
+    totalFare: Number(
+      flowState.pricingPreview?.finalAmount ||
+      flowState.pricingPreview?.grandTotal ||
+      flowState.fareSummary?.grandTotal ||
+      flowState.fareSummary?.totalFare ||
+      flowState.payableAmount ||
+      flowState.bus?.priceInr ||
+      flowState.bus?.displayFare ||
+      flowState.bus?.fare ||
+      0
+    ),
     BoardingPointId: flowState.boardingPoint?.id ? String(flowState.boardingPoint.id) : null,
     boardingPointName: String(flowState.boardingPoint?.name || flowState.boardingPointName || ""),
     boardingPointTime: null,
@@ -218,6 +262,5 @@ function buildBookingPayload(flowState) {
     droppingPointTime: null,
   };
 }
-
 
 export { buildFlightBookingPayload, buildBookingPayload };

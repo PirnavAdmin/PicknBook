@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using PickNBook.Api.Data;
@@ -5,338 +9,160 @@ using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
 using PickNBook.Api.Models.Entities;
 
-namespace PickNBook.Api.Services;
-
-public class BusPromotionEngineService
-    : IBusPromotionEngineService
+namespace PickNBook.Api.Services
 {
-    private readonly AppDbContext _db;
-    private readonly IUserBookingHistoryService _bookingHistoryService;
-    private readonly IMemoryCache _cache;
-
-    private static readonly TimeSpan IndiaOffset =
-        TimeSpan.FromHours(5.5);
-
-    public BusPromotionEngineService(AppDbContext db, IUserBookingHistoryService bookingHistoryService, IMemoryCache cache)
+    public class BusPromotionEngineService : IBusPromotionEngineService
     {
-        _db = db;
-        _bookingHistoryService = bookingHistoryService;
-        _cache = cache;
-    }
+        private readonly AppDbContext _db;
+        private readonly IUserBookingHistoryService _bookingHistoryService;
+        private readonly IMemoryCache _cache;
 
-    public async Task<BusPricingPreviewResponseDto> CalculateAsync(
-        BusBooking bus,
-        List<SeatPreviewDto> seats,
-        string? couponCode,
-        int? promotionId,
-        int? userId = null,
-         int? selectedFeaturedOfferId = null)
-    {
-        User? userObj = null;
-        string? userPhone = null;
-        bool isAgent = false;
-        if (userId.HasValue)
+        private static readonly TimeSpan IndiaOffset = TimeSpan.FromHours(5.5);
+
+        public BusPromotionEngineService(
+            AppDbContext db,
+            IUserBookingHistoryService bookingHistoryService,
+            IMemoryCache cache)
         {
-            userObj = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value);
-            isAgent = (userObj != null && userObj.Role == AuthRoles.Agent);
-            userPhone = userObj?.PhoneNumber;
+            _db = db;
+            _bookingHistoryService = bookingHistoryService;
+            _cache = cache;
         }
 
-        if (isAgent)
+        public async Task<BusPricingPreviewResponseDto> CalculateAsync(
+            BusBooking bus,
+            List<SeatPreviewDto> seats,
+            string? couponCode,
+            int? promotionId = null,
+            int? userId = null,
+            int? selectedFeaturedOfferId = null,
+            BusCouponValidationContext? validationContext = null)
         {
-            couponCode = null;
-            promotionId = null;
-            selectedFeaturedOfferId = null;
-        }
+            User? userObj = null;
+            string? userPhone = null;
+            bool isAgent = false;
+            if (userId.HasValue)
+            {
+                userObj = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value);
+                isAgent = (userObj != null && userObj.Role == AuthRoles.Agent);
+                userPhone = userObj?.PhoneNumber;
+            }
 
-        var response =
-            new BusPricingPreviewResponseDto
+            if (isAgent)
+            {
+                couponCode = null;
+            }
+
+            var response = new BusPricingPreviewResponseDto
             {
                 CouponAllowed = true
             };
 
-        decimal subtotal = 0m;
-        decimal totalExternalGst = 0m;
+            decimal subtotal = 0m;
+            decimal totalExternalGst = 0m;
 
-        var allMarkups = await _db.BusMarkupSettings
-            .AsNoTracking()
-            .Where(x => x.Status == "Active")
-            .ToListAsync();
+            var allMarkups = await _db.BusMarkupSettings
+                .AsNoTracking()
+                .Where(x => x.Status == "Active")
+                .ToListAsync();
 
-        foreach (var seat in seats)
-        {
-            // Use the per-seat pricing data from SeatPreviewDto (already resolved by the controller)
-            // No fallback to generic bus.PriceInr — if seat pricing is missing, fail loudly
-            if (seat.BaseFare <= 0)
-                throw new Exception($"Seat pricing data unavailable for seat {seat.SeatCode}. Please refresh the seat layout and try again.");
-
-            var currentBaseFare = seat.BaseFare;
-            totalExternalGst += seat.ExternalGst;
-
-            var isSleeper = seat.SeatType.Contains("sleeper", StringComparison.OrdinalIgnoreCase);
-            var normalizedSeatType = isSleeper ? "Sleeper" : "Seater";
-
-            var markup = allMarkups.FirstOrDefault(x =>
-                x.SeatType.Equals(normalizedSeatType, StringComparison.OrdinalIgnoreCase));
-
-            decimal markupAmount = 0m;
-
-            if (markup != null)
+            foreach (var seat in seats)
             {
-                markupAmount =
-                    markup.MarkupType.Equals(
-                        "Percentage",
-                        StringComparison.OrdinalIgnoreCase)
-                    ? currentBaseFare * markup.Value / 100m
-                    : markup.Value;
-            }
+                if (seat.BaseFare <= 0)
+                    throw new Exception($"Seat pricing data unavailable for seat {seat.SeatCode}. Please refresh the seat layout and try again.");
 
-            var fareBeforeTax =
-                currentBaseFare + markupAmount;
+                var currentBaseFare = seat.BaseFare;
+                totalExternalGst += seat.ExternalGst;
 
-            subtotal += fareBeforeTax;
+                decimal markupAmount = ResolveApplicableMarkup(currentBaseFare, seat.SeatType, allMarkups);
 
-            response.Seats.Add(
-                new BusSeatPriceBreakdownDto
+                var fareBeforeTax = currentBaseFare + markupAmount;
+                subtotal += fareBeforeTax;
+
+                response.Seats.Add(new BusSeatPriceBreakdownDto
                 {
                     SeatCode = seat.SeatCode,
                     SeatType = seat.SeatType,
                     BaseFare = currentBaseFare,
-                    MarkupAmount = decimal.Round(
-                        markupAmount,
-                        2),
-                    FareBeforeTax = decimal.Round(
-                        fareBeforeTax,
-                        2)
+                    MarkupAmount = decimal.Round(markupAmount, 2),
+                    FareBeforeTax = decimal.Round(fareBeforeTax, 2)
                 });
-        }
-
-        response.SubtotalBeforeCoupon =
-     decimal.Round(subtotal, 2);
-        FeaturedOffer? selectedOffer = null;
-
-        if (selectedFeaturedOfferId.HasValue)
-        {
-            selectedOffer = await _db.FeaturedOffers
-                .Include(x => x.Conditions)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == selectedFeaturedOfferId.Value &&
-                    x.IsActive);
-
-            if (selectedOffer == null)
-                throw new Exception("Selected offer is invalid or inactive");
-        }
-        // ========================================
-        // AUTO APPLY PROMOTIONS
-        // ========================================
-
-        // ========================================
-        // BEST AUTO APPLY PROMOTION ONLY
-        // ========================================
-
-        decimal autoDiscount = 0m;
-
-        BusPromotion? bestAutoPromotion = null;
-
-        decimal bestAutoDiscount = 0m;
-        var promoNowUtc = DateTime.UtcNow;
-        if (!_cache.TryGetValue("BusAutoPromotions", out List<BusPromotion>? allAutoPromotions))
-        {
-            allAutoPromotions = await _db.BusPromotions
-                .Include(x => x.Conditions)
-                .AsNoTracking()
-                .Where(x => x.IsActive && x.IsAutoApply)
-                .OrderByDescending(x => x.Priority)
-                .ToListAsync();
-            _cache.Set("BusAutoPromotions", allAutoPromotions, TimeSpan.FromMinutes(5));
-        }
-
-        var autoPromotions = allAutoPromotions!
-            .Where(x =>
-                (!x.StartDateUtc.HasValue || x.StartDateUtc <= promoNowUtc) &&
-                (!x.EndDateUtc.HasValue || x.EndDateUtc >= promoNowUtc))
-            .ToList();
-
-        foreach (var promo in autoPromotions)
-        {
-            if (!ValidatePromotionConditions(
-                    promo,
-                    bus,
-                    seats))
-            {
-                continue;
             }
 
-            if (promo.MinBookingAmount > 0m &&
-      subtotal < promo.MinBookingAmount)
-            {
-                continue;
-            }
+            response.SubtotalBeforeCoupon = decimal.Round(subtotal, 2);
 
-            if (promo.IsFirstTimeUserOnly)
+            // Ensure validationContext is constructed and booking fare matches current subtotal
+            if (validationContext == null)
             {
-                var hasPrior = await _bookingHistoryService.HasPriorBookingAsync(userId?.ToString() ?? string.Empty, userPhone);
-                if (hasPrior)
+                var istDeparture = DateTime.SpecifyKind(bus.DepartureTime, DateTimeKind.Utc).Add(IndiaOffset);
+                validationContext = new BusCouponValidationContext
                 {
-                    continue;
-                }
+                    OperatorName = bus.OperatorName,
+                    BusType = bus.BusType,
+                    SourceCity = bus.FromCity,
+                    DestinationCity = bus.ToCity,
+                    TravelDate = istDeparture,
+                    DayOfWeek = istDeparture.DayOfWeek,
+                    BookingFare = subtotal,
+                    SelectedSeats = seats.Select(s => new BusCouponSeatContext
+                    {
+                        SeatName = s.SeatCode,
+                        SeatType = s.SeatType,
+                        Fare = s.BaseFare
+                    }).ToList()
+                };
             }
-
-            decimal amount =
-                promo.DiscountType.Equals(
-                    "Percentage",
-                    StringComparison.OrdinalIgnoreCase)
-                ? subtotal * promo.DiscountValue / 100m
-                : promo.DiscountValue;
-
-            if (promo.MaxDiscountAmount.HasValue)
+            else
             {
-                amount = Math.Min(
-                    amount,
-                    promo.MaxDiscountAmount.Value);
+                validationContext.BookingFare = subtotal;
             }
 
-            if (amount > bestAutoDiscount)
-            {
-                bestAutoDiscount = amount;
-                bestAutoPromotion = promo;
-            }
-        }
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.Add(IndiaOffset));
 
-        autoDiscount = bestAutoDiscount;
+            // =========================================================================
+            // MANUAL COUPON EVALUATION (Sole source of Bus discounts)
+            // =========================================================================
+            decimal couponDiscount = 0m;
+            BusCoupon? appliedCoupon = null;
 
-        bool skipCouponValidation = false;
-
-        if (bestAutoPromotion != null)
-        {
-            response.AutoPromotionCode =
-                bestAutoPromotion.Code;
-
-            // Exclusive auto discounts should block
-            // ONLY manual coupons,
-            // NOT featured-offer-linked coupons.
-
-            if (bestAutoPromotion.IsExclusive &&
-                selectedOffer == null)
-            {
-                skipCouponValidation = true;
-            }
-        }
-
-        // ========================================
-        // BEST AUTO DISCOUNT (already calculated above)
-        // ========================================
-
-        // ========================================
-        // USER COUPON / MANUAL PROMOTION
-        // ========================================
-
-        BusPromotion? manualPromotion = null;
-        decimal manualDiscount = 0m;
-
-        decimal couponDiscount = 0m;
-        decimal offerDiscount = 0m;
-
-        if (selectedOffer != null)
-        {
             if (!string.IsNullOrWhiteSpace(couponCode))
             {
-                throw new Exception("Featured offers cannot stack with manual coupons");
-            }
+                var normalizedCode = couponCode.Trim().ToUpperInvariant();
+                appliedCoupon = await _db.BusCoupons
+                    .Include(x => x.Conditions)
+                    .FirstOrDefaultAsync(x => x.CouponCode == normalizedCode);
 
-            if (promotionId.HasValue)
-            {
-                throw new Exception("Only one manual promotion/offer can be applied.");
-            }
+                if (appliedCoupon == null || !appliedCoupon.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception("Invalid or inactive coupon code.");
+                }
 
-            // Validate featured offer
-            var nowUtc = DateTime.UtcNow;
-            if (selectedOffer.StartDateUtc.HasValue && selectedOffer.StartDateUtc.Value > nowUtc)
-            {
-                throw new Exception("Featured offer has not started yet.");
-            }
-            if (selectedOffer.EndDateUtc.HasValue && selectedOffer.EndDateUtc.Value < nowUtc)
-            {
-                throw new Exception("Featured offer has expired.");
-            }
-            if (selectedOffer.MaxUsage.HasValue && selectedOffer.UsedCount >= selectedOffer.MaxUsage.Value)
-            {
-                throw new Exception("Featured offer usage limit has been reached.");
-            }
-            if (selectedOffer.MinBookingAmount > 0m && subtotal < selectedOffer.MinBookingAmount)
-            {
-                throw new Exception($"Minimum booking amount of INR {selectedOffer.MinBookingAmount} is required.");
-            }
-            if (!ValidateFeaturedOfferConditions(selectedOffer, bus, seats))
-            {
-                throw new Exception("Featured offer conditions not met.");
-            }
+                if (appliedCoupon.StartDate > today)
+                {
+                    throw new Exception("Coupon has not started yet.");
+                }
 
-            bool isPercentage = selectedOffer.DiscountType.Equals("Percentage", StringComparison.OrdinalIgnoreCase);
-            offerDiscount = isPercentage
-                ? subtotal * selectedOffer.DiscountValue / 100m
-                : selectedOffer.DiscountValue;
+                if (appliedCoupon.ExpiryDate < today)
+                {
+                    throw new Exception("Coupon has expired.");
+                }
 
-            if (selectedOffer.MaxDiscountAmount.HasValue)
-            {
-                offerDiscount = Math.Min(offerDiscount, selectedOffer.MaxDiscountAmount.Value);
-            }
+                if (appliedCoupon.UseLimit > 0 && appliedCoupon.UsedCount >= appliedCoupon.UseLimit)
+                {
+                    throw new Exception("Coupon usage limit has been reached.");
+                }
 
-            response.DiscountSource = "Offer";
-            response.DiscountLabel = selectedOffer.Title;
-            response.AppliedPromotionTitle = selectedOffer.Title;
-            response.AppliedPromotionType = "Offer";
-        }
-        else if (!skipCouponValidation && !string.IsNullOrWhiteSpace(couponCode))
-        {
-            var normalizedCoupon = couponCode.Trim().ToUpperInvariant();
-            var promoByCode = await _db.BusPromotions
-                .Include(x => x.Conditions)
-                .FirstOrDefaultAsync(x =>
-                    x.Code == normalizedCoupon &&
-                    x.IsActive &&
-                    !x.IsAutoApply);
+                if (userId.HasValue && appliedCoupon.MaxUsagePerUser > 0)
+                {
+                    var userCount = await _db.BusCouponUsages
+                        .CountAsync(x => x.CouponCode == appliedCoupon.CouponCode && x.UserId == userId.Value.ToString() && x.BookingStatus == "Booked");
+                    if (userCount >= appliedCoupon.MaxUsagePerUser)
+                    {
+                        throw new Exception("Your usage limit for this coupon has been reached.");
+                    }
+                }
 
-            if (promoByCode == null)
-            {
-                throw new Exception("Invalid or inactive coupon");
-            }
-
-            if (promotionId.HasValue && promotionId.Value != promoByCode.Id)
-            {
-                throw new Exception("Only one manual promotion/offer can be applied.");
-            }
-
-            manualPromotion = promoByCode;
-        }
-        else if (promotionId.HasValue)
-        {
-            var promoById = await _db.BusPromotions
-                .Include(x => x.Conditions)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == promotionId.Value &&
-                    x.IsActive &&
-                    !x.IsAutoApply);
-
-            if (promoById == null)
-            {
-                throw new Exception("Invalid or inactive promotion");
-            }
-
-            manualPromotion = promoById;
-        }
-
-        if (manualPromotion != null)
-        {
-            bool valid =
-                ValidatePromotionConditions(
-                    manualPromotion,
-                    bus,
-                    seats);
-
-            if (valid)
-            {
-                if (manualPromotion.IsFirstTimeUserOnly)
+                if (appliedCoupon.IsFirstTimeUserOnly)
                 {
                     var hasPrior = await _bookingHistoryService.HasPriorBookingAsync(userId?.ToString() ?? string.Empty, userPhone);
                     if (hasPrior)
@@ -345,413 +171,386 @@ public class BusPromotionEngineService
                     }
                 }
 
-                // Validate min booking amount
-                if (manualPromotion.MinBookingAmount > 0m && subtotal < manualPromotion.MinBookingAmount)
+                if (appliedCoupon.MinBookingAmount > 0m && subtotal < appliedCoupon.MinBookingAmount)
                 {
-                    throw new Exception($"Minimum booking amount of INR {manualPromotion.MinBookingAmount} is required.");
+                    throw new Exception($"Minimum booking amount of INR {appliedCoupon.MinBookingAmount} is required.");
                 }
 
-                manualDiscount =
-                    manualPromotion.DiscountType.Equals(
-                        "Percentage",
-                        StringComparison.OrdinalIgnoreCase)
-                    ? subtotal *
-                        manualPromotion.DiscountValue / 100m
-                    : manualPromotion.DiscountValue;
+                if (!ValidateCouponConditions(appliedCoupon.Conditions, validationContext))
+                {
+                    throw new Exception("Coupon conditions not met.");
+                }
 
-                if (manualPromotion.MaxDiscountAmount.HasValue)
-                {
-                    manualDiscount = Math.Min(
-                        manualDiscount,
-                        manualPromotion.MaxDiscountAmount.Value);
-                }
-                // SET APPLIED PROMOTION DETAILS
-                response.AppliedPromotionCode = manualPromotion.Code;
-                response.AppliedPromotionTitle = manualPromotion.Title;
-                response.AppliedPromotionType = manualPromotion.PromotionType;
-                response.DiscountSource = manualPromotion.PromotionType;
-                response.DiscountLabel = manualPromotion.Title;
+                couponDiscount = appliedCoupon.CouponType.Equals("Percentage", StringComparison.OrdinalIgnoreCase)
+                    ? subtotal * appliedCoupon.Value / 100m
+                    : appliedCoupon.Value;
 
-                // SPLIT MANUAL DISCOUNT BY TYPE
-                if (manualPromotion.PromotionType.Equals(
-                        "Coupon",
-                        StringComparison.OrdinalIgnoreCase))
+                if (appliedCoupon.MaxDiscountAmount.HasValue)
                 {
-                    couponDiscount = manualDiscount;
+                    couponDiscount = Math.Min(couponDiscount, appliedCoupon.MaxDiscountAmount.Value);
                 }
-                else
-                {
-                    offerDiscount = manualDiscount;
-                }
+
+                couponDiscount = Math.Min(couponDiscount, subtotal);
+                couponDiscount = decimal.Round(couponDiscount, 2, MidpointRounding.AwayFromZero);
+
+                response.AppliedPromotionCode = appliedCoupon.CouponCode;
+                response.AppliedPromotionTitle = appliedCoupon.Title ?? appliedCoupon.CouponCode;
+                response.AppliedPromotionType = "Coupon";
+                response.DiscountSource = "Coupon";
+                response.DiscountLabel = appliedCoupon.Title ?? appliedCoupon.CouponCode;
             }
-            else
-            {
-                throw new Exception("Promotion conditions not met.");
-            }
+
+            response.AutoPromotionCode = null;
+            response.AutoDiscountAmount = 0m;
+            response.ManualDiscountAmount = 0m;
+            response.CouponDiscountAmount = couponDiscount;
+            response.CouponAmount = couponDiscount;
+            response.TotalDiscount = couponDiscount;
+
+            var taxableFare = subtotal - response.TotalDiscount;
+            response.TaxableFare = decimal.Round(taxableFare, 2);
+
+            response.GstPercent = 0m;
+            response.GstAmount = decimal.Round(totalExternalGst, 2);
+            response.ConvenienceFee = 0m;
+
+            response.GrandTotal = decimal.Round(taxableFare + response.GstAmount, 2);
+            response.FinalAmount = response.GrandTotal;
+
+            return response;
         }
 
-        // ========================================
-        // ROUNDING
-        // ========================================
-
-        autoDiscount =
-            decimal.Round(
-                autoDiscount,
-                2,
-                MidpointRounding.AwayFromZero);
-
-        couponDiscount =
-            decimal.Round(
-                couponDiscount,
-                2,
-                MidpointRounding.AwayFromZero);
-
-        offerDiscount =
-            decimal.Round(
-                offerDiscount,
-                2,
-                MidpointRounding.AwayFromZero);
-
-        // ========================================
-        // RESPONSE DISCOUNT FIELDS
-        // ========================================
-
-        response.AutoDiscountAmount =
-            autoDiscount;
-
-        response.CouponDiscountAmount =
-            couponDiscount;
-
-        response.ManualDiscountAmount =
-            offerDiscount;
-
-        var totalDiscount =
-            Math.Min(
-                autoDiscount +
-                couponDiscount +
-                offerDiscount,
-                subtotal);
-
-        response.CouponAmount =
-            totalDiscount;
-
-        response.TotalDiscount =
-            totalDiscount;
-
-      
-
-        // ========================================
-        // TAXABLE FARE
-        // ========================================
-
-        var taxableFare =
-            subtotal - totalDiscount;
-
-        response.TaxableFare =
-            decimal.Round(
-                taxableFare,
-                2);
-
-        // ========================================
-        // GST (EXTERNAL FROM SRDV)
-        // ========================================
-        
-        // SRDV DisplayFare already includes GST. 
-        // We do not add the ExternalGst again to avoid double charging.
-
-        response.GstPercent = 0m; // Not driven by local percentage anymore
-        response.GstAmount = decimal.Round(totalExternalGst, 2);
-
-        // ========================================
-        // CONVENIENCE FEE (Removed per requirements)
-        // ========================================
-
-        response.ConvenienceFee = 0m;
-
-        // ========================================
-        // GRAND TOTAL
-        // ========================================
-
-        response.GrandTotal =
-            decimal.Round(
-                taxableFare +
-                response.GstAmount,
-                2);
-        response.FinalAmount =response.GrandTotal;
-
-        return response;
-    }
-
-    private bool ValidatePromotionConditions(
-        BusPromotion promotion,
-        BusBooking bus,
-        List<SeatPreviewDto> seats)
-    {
-        if (promotion.Conditions == null ||
-            promotion.Conditions.Count == 0)
-            return true;
-
-        var istDeparture =
-            DateTime.SpecifyKind(
-                bus.DepartureTime,
-                DateTimeKind.Utc)
-            .Add(IndiaOffset);
-
-        foreach (var condition in promotion.Conditions)
+        public static decimal ResolveApplicableMarkup(
+            decimal baseFare,
+            string? seatType,
+            IEnumerable<BusMarkupSetting> activeMarkups)
         {
-            switch (condition.ConditionType)
+            var isSleeper = (seatType ?? "").Contains("sleeper", StringComparison.OrdinalIgnoreCase);
+            var normalizedSeatType = isSleeper ? "Sleeper" : "Seater";
+
+            var markup = activeMarkups.FirstOrDefault(x =>
+                x.SeatType.Equals(normalizedSeatType, StringComparison.OrdinalIgnoreCase));
+
+            if (markup != null && baseFare > 0)
             {
-                case "DayOfWeek":
-
-                    if (!istDeparture.DayOfWeek
-                        .ToString()
-                        .Equals(
-                            condition.Value1,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-
-                    break;
-
-                case "SourceCity":
-
-                    if (!bus.FromCity.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-
-                    break;
-
-                case "DestinationCity":
-
-                    if (!bus.ToCity.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-
-                    break;
-
-                case "SeatType":
-
-                    if (!seats.Any(x =>
-                        x.SeatType.Equals(
-                            condition.Value1,
-                            StringComparison.OrdinalIgnoreCase)))
-                    {
-                        return false;
-                    }
-
-                    break;
-
-                case "BusType":
-
-                    if (!bus.BusType.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-
-                    break;
-
-                case "OperatorName":
-
-                    if (!bus.OperatorName.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-
-                    break;
-                case "MinimumFare":
-
-                    decimal currentFare =
-                        seats.Count * bus.PriceInr;
-
-                    decimal value1 =
-                        decimal.Parse(condition.Value1);
-
-                    decimal value2 =
-                        string.IsNullOrWhiteSpace(condition.Value2)
-                        ? 0
-                        : decimal.Parse(condition.Value2);
-
-                    switch (condition.ConditionOperator)
-                    {
-                        case ">":
-
-                            if (!(currentFare > value1))
-                                return false;
-
-                            break;
-
-                        case ">=":
-
-                            if (!(currentFare >= value1))
-                                return false;
-
-                            break;
-
-                        case "<":
-
-                            if (!(currentFare < value1))
-                                return false;
-
-                            break;
-
-                        case "<=":
-
-                            if (!(currentFare <= value1))
-                                return false;
-
-                            break;
-
-                        case "Between":
-
-                            if (!(currentFare >= value1 &&
-                                  currentFare <= value2))
-                            {
-                                return false;
-                            }
-
-                            break;
-                    }
-
-                    break;
+                return markup.MarkupType.Equals("Percentage", StringComparison.OrdinalIgnoreCase)
+                    ? baseFare * markup.Value / 100m
+                    : markup.Value;
             }
+
+            return 0m;
         }
 
-        return true;
-    }
-
-    private bool ValidateFeaturedOfferConditions(
-        FeaturedOffer offer,
-        BusBooking bus,
-        List<SeatPreviewDto> seats)
-    {
-        if (offer.Conditions == null ||
-            offer.Conditions.Count == 0)
-            return true;
-
-        var istDeparture =
-            DateTime.SpecifyKind(
-                bus.DepartureTime,
-                DateTimeKind.Utc)
-            .Add(IndiaOffset);
-
-        foreach (var condition in offer.Conditions)
+        public bool ValidateCouponConditions(
+            IEnumerable<BusCouponCondition>? conditions,
+            BusBooking bus,
+            List<SeatPreviewDto> seats)
         {
-            if (!condition.IsActive)
-                continue;
+            var istDeparture = DateTime.SpecifyKind(bus.DepartureTime, DateTimeKind.Utc).Add(IndiaOffset);
 
-            switch (condition.ConditionType)
+            var allMarkups = _db.BusMarkupSettings
+                .AsNoTracking()
+                .Where(x => x.Status == "Active")
+                .ToList();
+
+            decimal preDiscountFare = 0m;
+            foreach (var seat in seats)
             {
-                case "DayOfWeek":
-                    if (!istDeparture.DayOfWeek
-                        .ToString()
-                        .Equals(
-                            condition.Value1,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case "SourceCity":
-                    if (!bus.FromCity.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case "DestinationCity":
-                    if (!bus.ToCity.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case "SeatType":
-                    if (!seats.Any(x =>
-                        x.SeatType.Equals(
-                            condition.Value1,
-                            StringComparison.OrdinalIgnoreCase)))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case "BusType":
-                    if (!bus.BusType.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case "OperatorName":
-                    if (!bus.OperatorName.Equals(
-                        condition.Value1,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case "MinimumFare":
-                    decimal currentFare =
-                        seats.Count * bus.PriceInr;
-
-                    decimal value1 =
-                        decimal.Parse(condition.Value1);
-
-                    decimal value2 =
-                        string.IsNullOrWhiteSpace(condition.Value2)
-                        ? 0
-                        : decimal.Parse(condition.Value2);
-
-                    if (string.IsNullOrWhiteSpace(condition.Value2))
-                    {
-                        if (currentFare < value1)
-                            return false;
-                    }
-                    else
-                    {
-                        if (currentFare < value1 || currentFare > value2)
-                            return false;
-                    }
-                    break;
-
-                case "TravelDate":
-                    var depDate = bus.DepartureTime.Date;
-                    if (DateTime.TryParse(condition.Value1, out var date1))
-                    {
-                        if (string.IsNullOrWhiteSpace(condition.Value2))
-                        {
-                            if (depDate != date1.Date)
-                                return false;
-                        }
-                        else if (DateTime.TryParse(condition.Value2, out var date2))
-                        {
-                            if (depDate < date1.Date || depDate > date2.Date)
-                                return false;
-                        }
-                    }
-                    break;
+                var markupAmount = ResolveApplicableMarkup(seat.BaseFare, seat.SeatType, allMarkups);
+                preDiscountFare += (seat.BaseFare + markupAmount);
             }
+
+            if (preDiscountFare <= 0 && bus.PriceInr > 0)
+            {
+                preDiscountFare = bus.PriceInr;
+            }
+
+            var context = new BusCouponValidationContext
+            {
+                OperatorName = bus.OperatorName,
+                BusType = bus.BusType,
+                SourceCity = bus.FromCity,
+                DestinationCity = bus.ToCity,
+                TravelDate = istDeparture,
+                DayOfWeek = istDeparture.DayOfWeek,
+                BookingFare = preDiscountFare,
+                SelectedSeats = seats.Select(s => new BusCouponSeatContext
+                {
+                    SeatName = s.SeatCode,
+                    SeatType = s.SeatType,
+                    Fare = s.BaseFare
+                }).ToList()
+            };
+
+            return ValidateCouponConditions(conditions, context);
         }
 
-        return true;
+        public bool ValidateCouponConditions(
+            IEnumerable<BusCouponCondition>? conditions,
+            BusCouponValidationContext context)
+        {
+            if (conditions == null || !conditions.Any())
+                return true;
+
+            foreach (var condition in conditions)
+            {
+                // Unrestricted/ALL sentinel check: Short-circuit immediately without parsing
+                if (string.IsNullOrWhiteSpace(condition.Value1) ||
+                    string.Equals(condition.Value1.Trim(), "ALL", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var trimmedVal1 = condition.Value1.Trim();
+                var op = string.IsNullOrWhiteSpace(condition.ConditionOperator) ? "Equals" : condition.ConditionOperator.Trim();
+
+                switch (condition.ConditionType)
+                {
+                    case "OperatorName":
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (!string.Equals(context.OperatorName, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (string.Equals(context.OperatorName, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "Contains":
+                                if (context.OperatorName == null || !context.OperatorName.Contains(trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "BusType":
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (!string.Equals(context.BusType, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (string.Equals(context.BusType, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "Contains":
+                                if (context.BusType == null || !context.BusType.Contains(trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "SeatType":
+                        // Strict rule: ALL selected seats must match the configured SeatType condition
+                        if (context.SelectedSeats == null || !context.SelectedSeats.Any())
+                        {
+                            return false;
+                        }
+
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (!context.SelectedSeats.All(s => string.Equals(s.SeatType, trimmedVal1, StringComparison.OrdinalIgnoreCase)))
+                                    return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (!context.SelectedSeats.All(s => !string.Equals(s.SeatType, trimmedVal1, StringComparison.OrdinalIgnoreCase)))
+                                    return false;
+                                break;
+                            case "Contains":
+                                if (!context.SelectedSeats.All(s => s.SeatType != null && s.SeatType.Contains(trimmedVal1, StringComparison.OrdinalIgnoreCase)))
+                                    return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "SourceCity":
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (!string.Equals(context.SourceCity, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (string.Equals(context.SourceCity, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "Contains":
+                                if (context.SourceCity == null || !context.SourceCity.Contains(trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "DestinationCity":
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (!string.Equals(context.DestinationCity, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (string.Equals(context.DestinationCity, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "Contains":
+                                if (context.DestinationCity == null || !context.DestinationCity.Contains(trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "DayOfWeek":
+                        if (context.DayOfWeek == null)
+                        {
+                            return false;
+                        }
+
+                        var dayName = context.DayOfWeek.Value.ToString();
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (!string.Equals(dayName, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (string.Equals(dayName, trimmedVal1, StringComparison.OrdinalIgnoreCase))
+                                    return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "TravelDate":
+                        if (context.TravelDate == null)
+                        {
+                            return false;
+                        }
+
+                        // Configured condition date must be parseable; if not, reject
+                        if (!DateTime.TryParse(trimmedVal1, out var date1))
+                        {
+                            return false;
+                        }
+
+                        var depDate = context.TravelDate.Value.Date;
+                        switch (op)
+                        {
+                            case "Equals":
+                            case "=":
+                            case "==":
+                                if (depDate != date1.Date) return false;
+                                break;
+                            case "NotEquals":
+                            case "!=":
+                                if (depDate == date1.Date) return false;
+                                break;
+                            case ">":
+                            case "GreaterThan":
+                                if (depDate <= date1.Date) return false;
+                                break;
+                            case ">=":
+                            case "GreaterThanOrEqual":
+                                if (depDate < date1.Date) return false;
+                                break;
+                            case "<":
+                            case "LessThan":
+                                if (depDate >= date1.Date) return false;
+                                break;
+                            case "<=":
+                            case "LessThanOrEqual":
+                                if (depDate > date1.Date) return false;
+                                break;
+                            case "Between":
+                                if (string.IsNullOrWhiteSpace(condition.Value2) ||
+                                    !DateTime.TryParse(condition.Value2.Trim(), out var date2))
+                                {
+                                    return false;
+                                }
+                                if (depDate < date1.Date || depDate > date2.Date) return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    case "MinimumFare":
+                        decimal currentFare = context.BookingFare;
+                        if (!decimal.TryParse(trimmedVal1, out var val1))
+                        {
+                            return false; // Malformed MinimumFare condition
+                        }
+
+                        switch (op)
+                        {
+                            case ">":
+                            case "GreaterThan":
+                                if (!(currentFare > val1)) return false;
+                                break;
+                            case ">=":
+                            case "GreaterThanOrEqual":
+                            case "Equals":
+                            case "=":
+                                if (!(currentFare >= val1)) return false;
+                                break;
+                            case "<":
+                            case "LessThan":
+                                if (!(currentFare < val1)) return false;
+                                break;
+                            case "<=":
+                            case "LessThanOrEqual":
+                                if (!(currentFare <= val1)) return false;
+                                break;
+                            case "Between":
+                                if (string.IsNullOrWhiteSpace(condition.Value2) ||
+                                    !decimal.TryParse(condition.Value2.Trim(), out var val2))
+                                {
+                                    return false;
+                                }
+                                if (!(currentFare >= val1 && currentFare <= val2)) return false;
+                                break;
+                            default:
+                                return false; // Unsupported operator
+                        }
+                        break;
+
+                    default:
+                        return false; // Unknown/unsupported condition type must NEVER silently pass
+                }
+            }
+
+            return true;
+        }
     }
 }

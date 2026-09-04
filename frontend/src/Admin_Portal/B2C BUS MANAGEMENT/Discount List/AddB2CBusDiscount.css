@@ -1,5 +1,5 @@
 .admin-b2c-page {
-  --admin-primary: #A51C49 !important;
+  --admin-primary: #A41B48 !important;
   --admin-primary-strong: #851237 !important;
 }
 
@@ -135,14 +135,14 @@
 
 /* Button stylings */
 .primary-btn {
-  border: 1.5px solid #A51C49 !important;
-  background: #A51C49 !important;
+  border: 1.5px solid #2563eb !important;
+  background: #2563eb !important;
   color: #fff !important;
   padding: 10px 22px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15) !important;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -151,9 +151,9 @@
 }
 
 .primary-btn:hover {
-  background: #851237 !important;
-  border-color: #851237 !important;
-  box-shadow: 0 6px 18px rgba(165, 28, 73, 0.3) !important;
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3) !important;
   transform: translateY(-3px) !important;
   color: #ffffff !important;
 }
@@ -163,35 +163,36 @@
 }
 
 .ghost-btn {
-  border: 1px solid var(--border);
-  background: #ffffff;
-  color: var(--text);
+  border: 1px solid #64748b !important;
+  background: #64748b !important;
+  color: #ffffff !important;
   padding: 10px 20px;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15) !important;
 }
 
 .ghost-btn:hover {
-  background: var(--admin-soft);
-  border-color: #A51C49 !important;
-  color: #A51C49 !important;
+  background: #475569 !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
   transform: translateY(-3px) !important;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 .add-discount-header .ghost-btn {
-  border: 1.5px solid #A51C49 !important;
-  color: #A51C49 !important;
+  border: 1.5px solid #A41B48 !important;
+  color: #A41B48 !important;
   background: transparent !important;
   font-weight: 600 !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .add-discount-header .ghost-btn:hover {
-  background: #A51C49 !important;
-  border-color: #A51C49 !important;
+  background: #A41B48 !important;
+  border-color: #A41B48 !important;
   color: #ffffff !important;
   transform: translateY(-3px) !important;
   box-shadow: 0 6px 14px rgba(165, 28, 73, 0.2) !important;

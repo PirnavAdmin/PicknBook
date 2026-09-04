@@ -1610,6 +1610,25 @@
   box-shadow: none !important;
 }
 
+.hotel-discover-searchbar .place-dropdown,
+.hotel-discover-searchbar .hotel-guests-dropdown {
+  color: #1e293b !important;
+}
+
+.hotel-discover-searchbar .place-dropdown span,
+.hotel-discover-searchbar .hotel-guests-dropdown span {
+  color: inherit !important;
+}
+
+.hotel-discover-searchbar .place-dropdown .pnb-place-primary,
+.hotel-discover-searchbar .place-dropdown .pnb-place-city {
+  color: #0f172a !important;
+}
+
+.hotel-discover-searchbar .place-dropdown .pnb-place-secondary {
+  color: #64748b !important;
+}
+
 /* Custom scrollbar for glass filters */
 .hotel-sidebar-filters-inline::-webkit-scrollbar {
   width: 4px;

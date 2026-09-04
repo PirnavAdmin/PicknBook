@@ -11,6 +11,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models.Entities;
 
@@ -48,37 +49,28 @@ namespace PickNBook.Api.Services
                         var cityList = new List<BusCityDto>();
                         try
                         {
-                            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "srdv_bus_cities.json");
-                            if (System.IO.File.Exists(filePath))
+                            using (var scope = _scopeFactory.CreateScope())
                             {
-                                var jsonString = System.IO.File.ReadAllText(filePath);
-                                using var jsonDoc = JsonDocument.Parse(jsonString);
-                                foreach (var rootElement in jsonDoc.RootElement.EnumerateArray())
+                                var dbContext = scope.ServiceProvider.GetService<AppDbContext>();
+                                if (dbContext != null)
                                 {
-                                    if (rootElement.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "table")
+                                    var dbCities = dbContext.BusCities.AsNoTracking().Where(c => c.IsActive).ToList();
+                                    if (dbCities.Count > 0)
                                     {
-                                        if (rootElement.TryGetProperty("data", out var dataProp))
+                                        foreach (var city in dbCities)
                                         {
-                                            foreach (var city in dataProp.EnumerateArray())
+                                            if (!string.IsNullOrEmpty(city.CityName) && !string.IsNullOrEmpty(city.CityCode))
                                             {
-                                                var name = city.GetProperty("cico_city_name").GetString();
-                                                var id = city.GetProperty("cico_id").GetString();
-                                                var stateName = city.TryGetProperty("cico_state_name", out var s) ? s.GetString() : string.Empty;
-                                                
-                                                if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(id))
+                                                if (!mapping.ContainsKey(city.CityName))
                                                 {
-                                                    if (!mapping.ContainsKey(name))
-                                                    {
-                                                        cityList.Add(new BusCityDto { CityId = id, CityName = name, StateName = stateName ?? string.Empty });
-                                                    }
+                                                    cityList.Add(new BusCityDto { CityId = city.CityCode, CityName = city.CityName, StateName = city.StateName ?? string.Empty });
+                                                }
 
-                                                    mapping[name] = id;
-                                                    
-                                                    var cleanName = name.Split('(')[0].Trim();
-                                                    if (!mapping.ContainsKey(cleanName))
-                                                    {
-                                                        mapping[cleanName] = id;
-                                                    }
+                                                mapping[city.CityName] = city.CityCode;
+                                                var cleanName = city.CityName.Split('(')[0].Trim();
+                                                if (!mapping.ContainsKey(cleanName))
+                                                {
+                                                    mapping[cleanName] = city.CityCode;
                                                 }
                                             }
                                         }
@@ -88,7 +80,55 @@ namespace PickNBook.Api.Services
                         }
                         catch
                         {
-                            // Fallback
+                            // Ignore and fallback to file
+                        }
+
+                        if (cityList.Count == 0)
+                        {
+                            try
+                            {
+                                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "srdv_bus_cities.json");
+                                if (System.IO.File.Exists(filePath))
+                                {
+                                    var jsonString = System.IO.File.ReadAllText(filePath);
+                                    using var jsonDoc = JsonDocument.Parse(jsonString);
+                                    foreach (var rootElement in jsonDoc.RootElement.EnumerateArray())
+                                    {
+                                        if (rootElement.TryGetProperty("type", out var typeProp) && typeProp.GetString() == "table")
+                                        {
+                                            if (rootElement.TryGetProperty("data", out var dataProp))
+                                            {
+                                                foreach (var city in dataProp.EnumerateArray())
+                                                {
+                                                    var name = city.GetProperty("cico_city_name").GetString();
+                                                    var id = city.GetProperty("cico_id").GetString();
+                                                    var stateName = city.TryGetProperty("cico_state_name", out var s) ? s.GetString() : string.Empty;
+                                                    
+                                                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(id))
+                                                    {
+                                                        if (!mapping.ContainsKey(name))
+                                                        {
+                                                            cityList.Add(new BusCityDto { CityId = id, CityName = name, StateName = stateName ?? string.Empty });
+                                                        }
+
+                                                        mapping[name] = id;
+                                                        
+                                                        var cleanName = name.Split('(')[0].Trim();
+                                                        if (!mapping.ContainsKey(cleanName))
+                                                        {
+                                                            mapping[cleanName] = id;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // Fallback
+                            }
                         }
                         _cityMapping = mapping;
                         _busCitiesList = cityList;
@@ -343,25 +383,44 @@ namespace PickNBook.Api.Services
                 BoardingPointId = request.BoardingPointId,
                 DroppingPointId = request.DroppingPointId,
                 RefId = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                Passengers = request.Passengers.Select((p, idx) => new
+                Passengers = request.Passengers.Select((p, idx) =>
                 {
-                    Title = p.Title,
-                    FirstName = p.FirstName,
-                    LastName = p.LastName,
-                    Gender = p.Gender.ToString(),
-                    Age = p.Age.ToString(),
-                    Email = p.Email,
-                    PhoneNo = p.ContactNo,
-                    LeadPassenger = (idx == 0) ? "true" : "false",
-                    IdNumber = string.IsNullOrWhiteSpace(p.IdNumber) ? null : p.IdNumber,
-                    IdType = string.IsNullOrWhiteSpace(p.IdType) ? null : p.IdType,
-                    Address = string.IsNullOrWhiteSpace(p.Address) ? "Default Address" : p.Address,
-                    SeatName = p.SeatName,
-                    GSTCompanyAddress = p.GSTCompanyAddress,
-                    GSTCompanyContactNumber = p.GSTCompanyContactNumber,
-                    GSTCompanyName = p.GSTCompanyName,
-                    GSTNumber = p.GSTNumber,
-                    GSTCompanyEmail = p.GSTCompanyEmail
+                    var pax = new Dictionary<string, object?>
+                    {
+                        ["Title"] = p.Title,
+                        ["FirstName"] = p.FirstName,
+                        ["LastName"] = p.LastName,
+                        ["Gender"] = p.Gender.ToString(),
+                        ["Age"] = p.Age.ToString(),
+                        ["Email"] = p.Email,
+                        ["PhoneNo"] = p.ContactNo,
+                        ["LeadPassenger"] = (idx == 0) ? "true" : "false",
+                        ["Address"] = string.IsNullOrWhiteSpace(p.Address) ? "Default Address" : p.Address,
+                        ["SeatName"] = p.SeatName
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(p.IdType))
+                    {
+                        pax["IdType"] = p.IdType.Trim();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(p.IdNumber))
+                    {
+                        pax["IdNumber"] = p.IdNumber.Trim();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyAddress))
+                        pax["GSTCompanyAddress"] = p.GSTCompanyAddress.Trim();
+                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyContactNumber))
+                        pax["GSTCompanyContactNumber"] = p.GSTCompanyContactNumber.Trim();
+                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyName))
+                        pax["GSTCompanyName"] = p.GSTCompanyName.Trim();
+                    if (!string.IsNullOrWhiteSpace(p.GSTNumber))
+                        pax["GSTNumber"] = p.GSTNumber.Trim();
+                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyEmail))
+                        pax["GSTCompanyEmail"] = p.GSTCompanyEmail.Trim();
+
+                    return pax;
                 }).ToList()
             };
 

@@ -163,7 +163,6 @@ export default function HotelSearchResults() {
 
   const [sortKey, setSortKey] = useState("recommended");
   const [collectionKey, setCollectionKey] = useState("all");
-  const [isModifying, setIsModifying] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -211,7 +210,6 @@ export default function HotelSearchResults() {
         internalCityId: resolvedCityId 
       } 
     });
-    setIsModifying(false);
   };
   const [apiHotels, setApiHotels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -601,52 +599,17 @@ export default function HotelSearchResults() {
             </p>
           </div>
 
-          {isModifying ? (
-            <div className="inline-modify-container" style={{ padding: 0 }}>
-              <HotelSearchWidget
-                isInline={true}
-                initialDestination={destination}
-                initialInternalCityId={internalCityId}
-                initialCheckIn={checkInDate}
-                initialCheckOut={checkOutDate}
-                initialRoomsConfig={roomsConfig}
-                onSearch={handleModifySearch}
-              />
-            </div>
-          ) : (
-            <div className="hotel-discover-searchbar" style={{ background: "rgba(255, 255, 255, 0.18)", backdropFilter: "blur(20px)", borderRadius: "40px", padding: "10px 16px", border: "1px solid rgba(255, 255, 255, 0.25)", boxShadow: "0 10px 40px rgba(0,0,0,0.15)" }}>
-              <div className="hotel-discover-searchcell">
-                <MapPin size={18} color="#ffffff" />
-                <div>
-                  <span style={{ color: "#cbd5e1", fontWeight: 500 }}>STAY DESTINATION</span>
-                  <strong style={{ fontSize: "1rem", color: "#ffffff" }}>{destination}</strong>
-                  <span style={{ fontSize: "0.75rem", color: "#e2e8f0" }}>Enter city, area or hotel</span>
-                </div>
-              </div>
-              <div className="hotel-discover-searchcell" style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: "20px" }}>
-                <CalendarRange size={18} color="#ffffff" />
-                <div>
-                  <span style={{ color: "#cbd5e1", fontWeight: 500 }}>TIMELINE</span>
-                  <strong style={{ fontSize: "1rem", color: "#ffffff" }}>
-                    {toDisplayDate(checkInDate) || "Select"} - {toDisplayDate(checkOutDate) || "dates"}
-                  </strong>
-                  <span style={{ fontSize: "0.75rem", color: "#e2e8f0" }}>{calculateNights(checkInDate, checkOutDate)} Night{calculateNights(checkInDate, checkOutDate) > 1 ? 's' : ''}</span>
-                </div>
-              </div>
-              <div className="hotel-discover-searchcell" style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: "20px" }}>
-                <Users size={18} color="#ffffff" />
-                <div>
-                  <span style={{ color: "#cbd5e1", fontWeight: 500 }}>GUESTS</span>
-                  <strong style={{ fontSize: "1rem", color: "#ffffff" }}>{guests}</strong>
-                  <span style={{ fontSize: "0.75rem", color: "#e2e8f0" }}>Rooms & Guests</span>
-                </div>
-              </div>
-              <button type="button" className="hotel-discover-searchbutton" onClick={() => setIsModifying(true)} style={{ borderRadius: "32px", padding: "0 24px", height: "46px", fontSize: "0.95rem", background: "linear-gradient(135deg, #dc1e26, #991b1b)", boxShadow: "0 4px 15px rgba(220, 30, 38, 0.4)", color: "#ffffff" }}>
-                <Search size={18} />
-                <span>Search Hotels</span>
-              </button>
-            </div>
-          )}
+          <div className="inline-modify-container" style={{ padding: 0, width: "100%", maxWidth: "1100px", margin: "0 auto" }}>
+            <HotelSearchWidget
+              isInline={true}
+              initialDestination={destination}
+              initialInternalCityId={internalCityId}
+              initialCheckIn={checkInDate}
+              initialCheckOut={checkOutDate}
+              initialRoomsConfig={roomsConfig}
+              onSearch={handleModifySearch}
+            />
+          </div>
 
 
   

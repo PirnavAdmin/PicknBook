@@ -38,7 +38,7 @@
   grid-template-columns: 0.42fr 0.88fr 0.78fr 1.8fr 0.9fr;
   gap: 8px;
   padding: 8px;
-  background: #be185d !important;
+  background: #A51C49 !important;
 }
 
 .admin-search-history-table-head span {
@@ -156,8 +156,8 @@
 
 .admin-search-history-chip {
   background: rgba(190, 24, 93, 0.05) !important;
-  border-color: #be185d !important;
-  color: #be185d !important;
+  border-color: #A51C49 !important;
+  color: #A51C49 !important;
   padding: 6px 14px !important;
   border-radius: 100px !important;
   font-weight: 600 !important;
@@ -165,8 +165,8 @@
 
 .admin-search-history-toolbar .admin-actions-row button {
   background: #ffffff !important;
-  color: #be185d !important;
-  border: 1.5px solid #be185d !important;
+  color: #A51C49 !important;
+  border: 1.5px solid #A51C49 !important;
   border-radius: 20px !important;
   padding: 6px 16px !important;
   font-weight: 600 !important;
@@ -175,15 +175,15 @@
 }
 
 .admin-search-history-toolbar .admin-actions-row button:hover {
-  background: #be185d !important;
+  background: #A51C49 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
 }
 
 .admin-search-history-delete {
-  background: #be185d !important;
+  background: #A51C49 !important;
   color: #ffffff !important;
-  border: 1.5px solid #be185d !important;
+  border: 1.5px solid #A51C49 !important;
   border-radius: 20px !important;
   padding: 6px 16px !important;
   font-weight: 600 !important;
@@ -192,7 +192,33 @@
 }
 
 .admin-search-history-delete:hover {
-  background: #9d124d !important;
-  border-color: #9d124d !important;
-  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
+  background: #851237 !important;
+  border-color: #851237 !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.2) !important;
+}
+
+.admin-search-history-toolbar .admin-actions-row button.admin-search-history-export-btn {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.admin-search-history-toolbar .admin-actions-row button.admin-search-history-export-btn:hover {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.admin-search-history-toolbar .admin-actions-row button.admin-search-history-filter-btn {
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+}
+
+.admin-search-history-toolbar .admin-actions-row button.admin-search-history-filter-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.2) !important;
 }

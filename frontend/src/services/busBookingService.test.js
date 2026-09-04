@@ -17,6 +17,66 @@ describe("busBookingService Contract tests", () => {
     jest.restoreAllMocks();
   });
 
+  test("getBusPricingPreview matches Trace 206305 contract (with resultIndex, srdvIndex, supplier baseFare, externalGst, totalFare)", async () => {
+    const passengers = [
+      {
+        seatCode: "S",
+        seatNumber: "S",
+        seatType: "Horizontal Sleeper",
+        baseFare: 3777,
+        supplierBaseFare: 3777,
+        b2cDisplayFare: 3877,
+        markupAmount: 100,
+        tax: 188.85,
+        externalGst: 188.85,
+        publishedFare: 4065.85,
+      }
+    ];
+
+    await getBusPricingPreview({
+      traceId: "206305",
+      resultIndex: "1000005757371156200",
+      srdvIndex: 39,
+      couponCode: null,
+      passengers,
+      fromCity: "Hyderabad",
+      toCity: "Bangalore",
+      departureTime: "01:00",
+      operatorName: "Shree Savariya Travels & Transport",
+      busType: "A/C Seater / Sleeper (2+2)",
+      totalFare: 4065.85
+    });
+
+    const pricingCall = global.fetch.mock.calls.find(c => String(c[0]).includes("pricing-preview"));
+    expect(pricingCall).toBeDefined();
+    const fetchCallUrl = pricingCall[0];
+    const fetchCallOptions = pricingCall[1];
+
+    expect(fetchCallUrl).toMatch(/\/pricing-preview$/);
+    const body = JSON.parse(fetchCallOptions.body);
+
+    expect(body).toEqual({
+      traceId: "206305",
+      resultIndex: "1000005757371156200",
+      srdvIndex: 39,
+      couponCode: null,
+      seats: [
+        {
+          seatCode: "S",
+          seatType: "Horizontal Sleeper",
+          baseFare: 3777,
+          externalGst: 188.85
+        }
+      ],
+      fromCity: "Hyderabad",
+      toCity: "Bangalore",
+      departureTime: "01:00",
+      operatorName: "Shree Savariya Travels & Transport",
+      busType: "A/C Seater / Sleeper (2+2)",
+      totalFare: 4065.85
+    });
+  });
+
   test("getBusPricingPreview builds the correct payload (no busId, no markupAmount)", async () => {
     const passengers = [
       {
@@ -40,9 +100,10 @@ describe("busBookingService Contract tests", () => {
       totalFare: 550
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const fetchCallUrl = global.fetch.mock.calls[0][0];
-    const fetchCallOptions = global.fetch.mock.calls[0][1];
+    const pricingCall = global.fetch.mock.calls.find(c => String(c[0]).includes("pricing-preview"));
+    expect(pricingCall).toBeDefined();
+    const fetchCallUrl = pricingCall[0];
+    const fetchCallOptions = pricingCall[1];
 
     // Assert URL does not have busId or {busId}
     expect(fetchCallUrl).not.toContain("{busId}");

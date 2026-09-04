@@ -1,7 +1,7 @@
 .admin-markup-used-shell {
-  --admin-primary: #A51C49 !important;
+  --admin-primary: #A41B48 !important;
   --admin-primary-strong: #851237 !important;
-  --primary: #A51C49 !important;
+  --primary: #A41B48 !important;
   --primary-strong: #851237 !important;
   display: grid;
   gap: 16px;
@@ -59,8 +59,32 @@
   transition: 0.2s ease;
 }
 
-.admin-markup-used-btn.filter.active,
-.admin-markup-used-btn:hover {
+.admin-markup-used-btn.filter {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.admin-markup-used-btn.filter:hover,
+.admin-markup-used-btn.filter.active {
+  background-color: var(--primary-strong);
+  border-color: var(--primary-strong);
+  color: #ffffff;
+}
+
+.admin-markup-used-btn.coupon-list-nav-btn {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.admin-markup-used-btn.coupon-list-nav-btn:hover {
+  background-color: var(--primary-strong);
+  border-color: var(--primary-strong);
+  color: #ffffff;
+}
+
+.admin-markup-used-btn.clear:hover {
   border-color: var(--primary);
   color: var(--primary);
   background: var(--surface-soft);
@@ -148,7 +172,18 @@
   color: #ffffff;
 }
 
-.admin-markup-used-table th,
+.admin-markup-used-table th {
+  padding: 14px 8px !important;
+  border-bottom: 1px solid var(--border);
+  text-align: center !important;
+  vertical-align: middle !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+
 .admin-markup-used-table td {
   padding: 8px 6px !important;
   border-bottom: 1px solid var(--border);
@@ -177,17 +212,19 @@
   text-transform: capitalize;
 }
 
-.admin-markup-used-status.success {
-  background: var(--success-soft);
-  color: var(--success);
-  border-color: rgba(30, 142, 62, 0.35);
+.admin-markup-used-status.success,
+.admin-markup-used-status.booked {
+  background: #ecfdf5 !important;
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
 }
 
 .admin-markup-used-status.cancelled,
-.admin-markup-used-status.failed {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-color: rgba(180, 35, 24, 0.35);
+.admin-markup-used-status.failed,
+.admin-markup-used-status.pending {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
 }
 
 .admin-markup-used-table .action-col {
@@ -270,6 +307,52 @@
   .admin-markup-used-table td {
     border-bottom: 0;
   }
+}
+
+/* Stats Cards Row styling */
+.admin-markup-used-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.admin-markup-used-stat-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-markup-used-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.admin-markup-used-stat-card .stat-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-markup-used-stat-card .stat-value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-markup-used-stat-card .stat-desc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
 }
 
 

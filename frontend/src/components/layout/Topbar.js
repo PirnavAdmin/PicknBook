@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import '../../STYLES/Topbar.css';
-import { clearAuthSession } from "../../services/authSession";
+import { clearAuthSession, subscribeAuthSession } from "../../services/authSession";
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
 
 
@@ -53,14 +53,14 @@ function pickFirst(values, fallback = "") {
 }
 
 function getAuthProfile() {
-  const rawUser = localStorage.getItem("user");
-  const token = localStorage.getItem("token");
+  const rawUser = localStorage.getItem("user") || localStorage.getItem("b2b_user") || sessionStorage.getItem("user") || sessionStorage.getItem("b2b_user");
+  const token = localStorage.getItem("token") || localStorage.getItem("b2b_token") || localStorage.getItem("authToken") || sessionStorage.getItem("token");
   const tokenPayload = decodeJwtPayload(token);
 
   let parsedUser = {};
   if (rawUser) {
     try {
-      parsedUser = JSON.parse(rawUser) || {};
+      parsedUser = typeof rawUser === "object" ? rawUser : JSON.parse(rawUser) || {};
     } catch {
       parsedUser = { name: rawUser };
     }
@@ -70,6 +70,7 @@ function getAuthProfile() {
     [
       parsedUser.email,
       parsedUser.Email,
+      parsedUser.userEmail,
       tokenPayload.email,
       tokenPayload.upn,
       tokenPayload.unique_name,
@@ -83,24 +84,34 @@ function getAuthProfile() {
       parsedUser.FirstName,
       parsedUser.name,
       parsedUser.Name,
+      parsedUser.fullName,
+      parsedUser.userName,
       tokenPayload.given_name,
       tokenPayload.name,
-      email.split("@")[0],
+      email ? email.split("@")[0] : "",
     ],
     "User"
   );
 
+  const hasSession = Boolean(rawUser || token);
+
   return {
-    isLoggedIn: Boolean(rawUser || token),
+    isLoggedIn: hasSession,
     displayName: displayName.charAt(0).toUpperCase() + displayName.slice(1),
     email,
   };
 }
 
+const EmojiBus = ({ size }) => <span style={{ fontSize: size, lineHeight: 1, filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.15))" }}>🚌</span>;
+const EmojiPlane = ({ size }) => <span style={{ fontSize: size, lineHeight: 1, filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.15))" }}>✈️</span>;
+const EmojiHotel = ({ size }) => <span style={{ fontSize: size, lineHeight: 1, filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.15))" }}>🏨</span>;
+const EmojiTicket = ({ size }) => <span style={{ fontSize: size, lineHeight: 1, filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.15))" }}>🎫</span>;
+const EmojiHelp = ({ size }) => <span style={{ fontSize: size, lineHeight: 1, filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.15))" }}>❓</span>;
+
 const NAV_ITEMS = [
-  { id: "buses",   label: "Buses",   tab: "buses",   icon: Bus       },
-  { id: "flights", label: "Flights", tab: "flights", icon: Plane     },
-  { id: "hotels",  label: "Hotels",  tab: "hotels",  icon: Building2 },
+  { id: "buses",   label: "Buses",   tab: "buses",   icon: EmojiBus },
+  { id: "flights", label: "Flights", tab: "flights", icon: EmojiPlane },
+  { id: "hotels",  label: "Hotels",  tab: "hotels",  icon: EmojiHotel },
 ];
 
 export default function Topbar() {
@@ -134,9 +145,17 @@ export default function Topbar() {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
-    const handleStorage = () => syncAuthState();
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    const handleAuth = () => syncAuthState();
+    window.addEventListener("storage", handleAuth);
+    window.addEventListener("authChange", handleAuth);
+    window.addEventListener("focus", handleAuth);
+    const unsubscribe = subscribeAuthSession(handleAuth);
+    return () => {
+      window.removeEventListener("storage", handleAuth);
+      window.removeEventListener("authChange", handleAuth);
+      window.removeEventListener("focus", handleAuth);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -232,8 +251,8 @@ export default function Topbar() {
                 >
                   <motion.div
                     className="tab-icon-wrap"
-                    animate={isActive ? { scale: [1, 1.2, 1], rotate: [0, -5, 0] } : { scale: 1, rotate: 0 }}
-                    transition={{ duration: 0.3 }}
+                    animate={isActive ? { y: [0, -3, 0], scale: [1, 1.1, 1] } : { y: 0, scale: 1 }}
+                    transition={isActive ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }}
                   >
                     <ItemIcon size={18} />
                   </motion.div>
@@ -259,7 +278,7 @@ export default function Topbar() {
             className="topbar-nav-link"
             onClick={() => navigate("/fetch-ticket")}
           >
-            <Ticket size={18} />
+            <EmojiTicket size={20} />
             <span>Fetch Ticket</span>
           </button>
 
@@ -271,7 +290,7 @@ export default function Topbar() {
               navigate("/contact");
             }}
           >
-            <HelpCircle size={18} />
+            <EmojiHelp size={20} />
             <span>Help</span>
           </a>
 

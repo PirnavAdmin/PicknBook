@@ -54,7 +54,7 @@ function getStoredValue(key) {
   }
 
   try {
-    return normalizeText(window.localStorage.getItem(key));
+    return normalizeText(window.localStorage.getItem(key) || window.sessionStorage.getItem(key));
   } catch {
     return "";
   }
@@ -328,10 +328,10 @@ export function isTokenExpired(token) {
   
   const payload = decodeJwtPayload(cleanToken);
   if (!payload || !payload.exp) {
-    return true;
+    return false;
   }
   // exp is in seconds, Date.now() in milliseconds
-  return payload.exp * 1000 < Date.now();
+  return typeof payload.exp === "number" && payload.exp * 1000 < Date.now();
 }
 
  

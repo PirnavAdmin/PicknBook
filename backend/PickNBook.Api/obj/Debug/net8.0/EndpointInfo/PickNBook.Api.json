@@ -638,131 +638,6 @@
         }
       }
     },
-    "/api/admin/bus/discounts": {
-      "get": {
-        "tags": [
-          "AdminBus"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "AdminBus"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusDiscountRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusDiscountRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusDiscountRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/admin/bus/discounts/{id}": {
-      "get": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusDiscountRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusDiscountRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/BusDiscountRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
     "/api/admin/bus/markup-settings": {
       "get": {
         "tags": [
@@ -1018,6 +893,15 @@
         "tags": [
           "AdminBus"
         ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -1123,6 +1007,132 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/bus/coupons/{couponId}/conditions": {
+      "get": {
+        "tags": [
+          "AdminBus"
+        ],
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminBus"
+        ],
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusCouponConditionDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusCouponConditionDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusCouponConditionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/bus/coupons/conditions/{conditionId}": {
+      "put": {
+        "tags": [
+          "AdminBus"
+        ],
+        "parameters": [
+          {
+            "name": "conditionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusCouponConditionDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusCouponConditionDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusCouponConditionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminBus"
+        ],
+        "parameters": [
+          {
+            "name": "conditionId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1255,132 +1265,6 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/admin/bus/discounts/{discountId}/conditions": {
-      "post": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "discountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBusDiscountConditionDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBusDiscountConditionDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBusDiscountConditionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "discountId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/admin/bus/discounts/conditions/{conditionId}": {
-      "delete": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "conditionId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "AdminBus"
-        ],
-        "parameters": [
-          {
-            "name": "conditionId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBusDiscountConditionDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBusDiscountConditionDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBusDiscountConditionDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success"
@@ -4314,6 +4198,66 @@
         }
       }
     },
+    "/api/admin/master-data/import/bus": {
+      "post": {
+        "tags": [
+          "AdminMasterData"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/master-data/import/hotel": {
+      "post": {
+        "tags": [
+          "AdminMasterData"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/master-data/import/flight": {
+      "post": {
+        "tags": [
+          "AdminMasterData"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/master-data/import/all": {
+      "post": {
+        "tags": [
+          "AdminMasterData"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/master-data/status": {
+      "get": {
+        "tags": [
+          "AdminMasterData"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/AgentPortal/profile/logo": {
       "put": {
         "tags": [
@@ -4788,6 +4732,68 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Auth/send-login-otp": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLoginOtpRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLoginOtpRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLoginOtpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Auth/verify-login-otp": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyLoginOtpRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyLoginOtpRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyLoginOtpRequest"
               }
             }
           }
@@ -5951,6 +5957,36 @@
         "tags": [
           "BusBookings"
         ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "traceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resultIndex",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seatCodes",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -6340,6 +6376,71 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/cashfree/create-order": {
+      "post": {
+        "tags": [
+          "CashfreePayment"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCashfreeOrderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCashfreeOrderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCashfreeOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/cashfree/orders/{orderId}/payments": {
+      "get": {
+        "tags": [
+          "CashfreePayment"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/cashfree/webhook": {
+      "post": {
+        "tags": [
+          "CashfreeWebhook"
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -8528,6 +8629,13 @@
             "schema": {
               "type": "string",
               "default": "all"
+            }
+          },
+          {
+            "name": "requestType",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -11910,6 +12018,18 @@
       "BusCouponRequestDto": {
         "type": "object",
         "properties": {
+          "promotionCategory": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
           "value": {
             "type": "number",
             "format": "double"
@@ -11920,6 +12040,11 @@
           },
           "couponCode": {
             "type": "string",
+            "nullable": true
+          },
+          "maxDiscountAmount": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "startDate": {
@@ -11944,6 +12069,9 @@
           "isAutoApply": {
             "type": "boolean"
           },
+          "isFirstTimeUserOnly": {
+            "type": "boolean"
+          },
           "priority": {
             "type": "integer",
             "format": "int32"
@@ -11959,68 +12087,6 @@
           "minBookingAmount": {
             "type": "number",
             "format": "double"
-          }
-        },
-        "additionalProperties": false
-      },
-      "BusDiscountRequestDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "nullable": true
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "value": {
-            "type": "number",
-            "format": "double"
-          },
-          "discountType": {
-            "type": "string",
-            "nullable": true
-          },
-          "isAutoApply": {
-            "type": "boolean"
-          },
-          "isExclusive": {
-            "type": "boolean"
-          },
-          "priority": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "minBookingAmount": {
-            "type": "number",
-            "format": "double"
-          },
-          "startDateUtc": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "endDateUtc": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "updatedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "remark": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12086,6 +12152,15 @@
         "properties": {
           "traceId": {
             "type": "string",
+            "nullable": true
+          },
+          "resultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "srdvIndex": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "couponCode": {
@@ -12405,7 +12480,7 @@
         },
         "additionalProperties": false
       },
-      "CreateBusDiscountConditionDto": {
+      "CreateBusCouponConditionDto": {
         "type": "object",
         "properties": {
           "conditionType": {
@@ -12457,6 +12532,66 @@
           "externalGst": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateCashfreeOrderRequest": {
+        "type": "object",
+        "properties": {
+          "orderAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderCurrency": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "returnUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "notifyUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bookingType": {
+            "type": "string",
+            "nullable": true
+          },
+          "couponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "promotionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "selectedFeaturedOfferId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "bookingPayloadJson": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -15206,6 +15341,20 @@
         },
         "additionalProperties": false
       },
+      "SendLoginOtpRequest": {
+        "required": [
+          "phoneNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "minLength": 1,
+            "pattern": "^\\d{10}$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "SendRegistrationOtpRequest": {
         "type": "object",
         "properties": {
@@ -15714,7 +15863,7 @@
         },
         "additionalProperties": false
       },
-      "UpdateBusDiscountConditionDto": {
+      "UpdateBusCouponConditionDto": {
         "type": "object",
         "properties": {
           "conditionType": {
@@ -16250,6 +16399,24 @@
             "minimum": 0.01,
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VerifyLoginOtpRequest": {
+        "required": [
+          "otp",
+          "phoneNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "otp": {
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false

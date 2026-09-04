@@ -20,6 +20,7 @@ namespace PickNBook.Api.Controllers
     public class BusBookingsController(
     AppDbContext dbContext,
       IBusPromotionEngineService promotionEngine,
+    IBusCouponContextBuilder couponContextBuilder,
     ITicketEmailService ticketEmailService,
     IWhatsAppService whatsAppService,
     ICurrentUserService currentUserService,
@@ -31,7 +32,9 @@ namespace PickNBook.Api.Controllers
     {
         //private const string UserIdHeaderName = "X-User-Id";
         private readonly IBusPromotionEngineService _promotionEngine = promotionEngine;
+        private readonly IBusCouponContextBuilder _couponContextBuilder = couponContextBuilder;
         private readonly ISrdvBusService _srdvBusService = srdvBusService;
+        private readonly IMemoryCache _cache = cache;
 
         private static readonly TimeSpan IndiaOffset = TimeSpan.FromHours(5.5);
         private static readonly string[] AllowedPassengerGenders = ["Male", "Female"];
@@ -40,33 +43,82 @@ namespace PickNBook.Api.Controllers
 
         [HttpGet("user/available")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAvailableCoupons()
+        public async Task<IActionResult> GetAvailableCoupons(
+            [FromQuery] string? category = null,
+            [FromQuery] string? traceId = null,
+            [FromQuery] string? resultIndex = null,
+            [FromQuery] string? seatCodes = null)
         {
-            var today = DateOnly.FromDateTime(
-                DateTime.UtcNow.AddHours(5.5));
+            try
+            {
+                var today = DateOnly.FromDateTime(
+                    DateTime.UtcNow.AddHours(5.5));
 
-            var coupons = await dbContext.BusCoupons
-                .AsNoTracking()
-                .Where(x =>
-                    x.Status == "Active" &&
-                       x.StartDate <= today &&
-                    x.ExpiryDate >= today &&
-                    (x.UseLimit == 0 || x.UsedCount < x.UseLimit))
-                .OrderBy(x => x.ExpiryDate)
-                .Select(x => new
+                var query = dbContext.BusCoupons
+                    .Include(x => x.Conditions)
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.Status == "Active" &&
+                        x.StartDate <= today &&
+                        x.ExpiryDate >= today &&
+                        (x.UseLimit == 0 || x.UsedCount < x.UseLimit));
+
+                if (!string.IsNullOrWhiteSpace(category))
                 {
-                    x.Id,
-                    x.CouponCode,
-                    x.CouponType,
-                    x.Value,
-                    x.MinBookingAmount,
-                    x.MaxUsagePerUser,
-                    x.ExpiryDate,
-                    Description = x.Remark
-                })
-                .ToListAsync();
+                    query = query.Where(x => x.PromotionCategory == category);
+                }
 
-            return Ok(coupons);
+                var coupons = await query
+                    .OrderBy(x => x.ExpiryDate)
+                    .ToListAsync();
+
+                BusCouponValidationContext? validationContext = null;
+                if (!string.IsNullOrWhiteSpace(traceId) && !string.IsNullOrWhiteSpace(resultIndex))
+                {
+                    var seatsList = !string.IsNullOrWhiteSpace(seatCodes)
+                        ? seatCodes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
+                        : new List<string>();
+
+                    validationContext = await _couponContextBuilder.BuildContextAsync(traceId, resultIndex, seatsList);
+                }
+
+                var response = coupons.Select(x =>
+                {
+                    bool isEligible = true;
+                    if (validationContext != null)
+                    {
+                        isEligible = _promotionEngine.ValidateCouponConditions(x.Conditions, validationContext);
+                    }
+
+                    return new
+                    {
+                        x.Id,
+                        x.CouponCode,
+                        x.CouponType,
+                        x.Value,
+                        x.MaxDiscountAmount,
+                        x.MinBookingAmount,
+                        x.MaxUsagePerUser,
+                        x.ExpiryDate,
+                        PromotionCategory = x.PromotionCategory,
+                        Title = x.Title ?? x.CouponCode,
+                        Description = x.Description ?? x.Remark,
+                        x.IsAutoApply,
+                        x.IsExclusive,
+                        IsEligible = isEligible
+                    };
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet("search-cities")]
@@ -185,7 +237,25 @@ namespace PickNBook.Api.Controllers
                             busNode["B2CDisplayFare"] = (minimumBaseFare + markupForDisplayFare).ToString("F2");
                         }
 
-
+                        var searchTraceId = jsonNode["TraceId"]?.ToString() ?? string.Empty;
+                        var resIdx = busNode["ResultIndex"]?.ToString() ?? string.Empty;
+                        if (!string.IsNullOrEmpty(searchTraceId) && !string.IsNullOrEmpty(resIdx))
+                        {
+                            var busCtx = new BusSearchItemContext
+                            {
+                                TraceId = searchTraceId,
+                                ResultIndex = resIdx,
+                                SrdvIndex = int.TryParse(busNode["SrdvIndex"]?.ToString(), out var si) ? si : 0,
+                                OperatorName = busNode["TravelsName"]?.ToString() ?? string.Empty,
+                                BusType = busNode["BusType"]?.ToString() ?? string.Empty,
+                                FromCity = request.FromCityCode,
+                                ToCity = request.ToCityCode,
+                                DepartureTime = busNode["DepartureTime"]?.ToString() ?? string.Empty,
+                                ArrivalTime = busNode["ArrivalTime"]?.ToString() ?? string.Empty,
+                                DepartDate = request.DepartDate
+                            };
+                            _cache.Set($"bus_ctx_{searchTraceId}_{resIdx}", busCtx, TimeSpan.FromMinutes(30));
+                        }
                     }
                 }
 
@@ -343,6 +413,32 @@ namespace PickNBook.Api.Controllers
 
                     }
 
+                    var seatLayoutMap = new Dictionary<string, BusSeatLayoutItemContext>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var seatNode in resultNodes)
+                    {
+                        if (seatNode == null) continue;
+                        var sn = seatNode["SeatName"]?.ToString();
+                        var st = seatNode["SeatType"]?.ToString() ?? "";
+                        decimal.TryParse(seatNode["Price"]?["BaseFare"]?.ToString(), out decimal bf);
+                        decimal.TryParse(seatNode["SeatFare"]?.ToString(), out decimal sf);
+                        decimal.TryParse(seatNode["Price"]?["PublishedFare"]?.ToString(), out decimal pf);
+                        decimal.TryParse(seatNode["Price"]?["GSTAmount"]?.ToString() ?? seatNode["Price"]?["Tax"]?.ToString() ?? seatNode["Price"]?["GstAmount"]?.ToString(), out decimal gst);
+
+                        if (!string.IsNullOrWhiteSpace(sn))
+                        {
+                            seatLayoutMap[sn] = new BusSeatLayoutItemContext
+                            {
+                                SeatName = sn,
+                                SeatType = st,
+                                BaseFare = bf,
+                                SeatFare = sf,
+                                PublishedFare = pf,
+                                GstAmount = gst
+                            };
+                        }
+                    }
+                    _cache.Set($"bus_seats_{request.TraceId}_{request.ResultIndex}", seatLayoutMap, TimeSpan.FromMinutes(30));
+
                     // Cancellation policies are returned to frontend directly inside the JSON response.
                     // Legacy code to save them to the database has been removed.
                 }
@@ -456,7 +552,14 @@ namespace PickNBook.Api.Controllers
                                 }
 
                                 // Update the DB record with the exact breakdown, EVEN IF markup is 0
-                                var dbRecord = blockedSeatsInDb.FirstOrDefault(x => x.SeatName == seatNameStr);
+                                var dbRecord = blockedSeatsInDb
+                                    .Where(x => string.Equals(
+                                        x.SeatName,
+                                        seatNameStr,
+                                        StringComparison.OrdinalIgnoreCase))
+                                    .OrderByDescending(x => x.Id)
+                                    .FirstOrDefault();
+
                                 if (dbRecord != null)
                                 {
                                     dbRecord.MarkupAmount = finalMarkup;
@@ -551,105 +654,38 @@ namespace PickNBook.Api.Controllers
 
             try
             {
-                // ========================================
-                // UNIFIED PROMOTION VALIDATION
-                // ========================================
-                BusPromotion? promotionToApply = null;
-                FeaturedOffer? selectedFeaturedOffer = null;
 
-                if (request.SelectedFeaturedOfferId.HasValue)
+
+
+
+                var seatCodes = request.Seats
+                    .Where(p => !string.IsNullOrWhiteSpace(p.SeatCode))
+                    .Select(p => p.SeatCode.Trim())
+                    .ToList();
+
+                if (!seatCodes.Any())
                 {
-                    selectedFeaturedOffer = await dbContext.FeaturedOffers
-                        .Include(x => x.Conditions)
-                        .FirstOrDefaultAsync(x => x.Id == request.SelectedFeaturedOfferId.Value && x.IsActive);
-
-                    if (selectedFeaturedOffer == null)
-                        throw new Exception("Selected offer is invalid or inactive.");
-
-                    if (!string.IsNullOrWhiteSpace(request.CouponCode))
-                    {
-                        throw new Exception("Featured offers cannot stack with manual coupons.");
-                    }
-                    if (request.PromotionId.HasValue)
-                    {
-                        throw new Exception("Only one manual promotion/offer can be applied.");
-                    }
-                }
-                else if (!string.IsNullOrWhiteSpace(request.CouponCode))
-                {
-                    var normalizedCoupon = request.CouponCode.Trim().ToUpperInvariant();
-                    var promoByCode = await dbContext.BusPromotions
-                        .Include(x => x.Conditions)
-                        .FirstOrDefaultAsync(x => x.Code == normalizedCoupon && x.IsActive && !x.IsAutoApply);
-
-                    if (promoByCode == null)
-                    {
-                        throw new Exception("Invalid or inactive coupon code.");
-                    }
-
-                    if (request.PromotionId.HasValue && request.PromotionId.Value != promoByCode.Id)
-                    {
-                        throw new Exception("Only one manual promotion/offer can be applied.");
-                    }
-
-                    promotionToApply = promoByCode;
-                }
-                else if (request.PromotionId.HasValue)
-                {
-                    var promoById = await dbContext.BusPromotions
-                        .Include(x => x.Conditions)
-                        .FirstOrDefaultAsync(x => x.Id == request.PromotionId.Value && x.IsActive && !x.IsAutoApply);
-
-                    if (promoById == null)
-                    {
-                        throw new Exception("Invalid or inactive promotion.");
-                    }
-
-                    promotionToApply = promoById;
+                    return BadRequest(new { message = "At least one seat is required for pricing preview." });
                 }
 
-                if (selectedFeaturedOffer != null)
+                // Mandatory upfront layout check for SeatType
+                Dictionary<string, BusSeatLayoutItemContext>? layoutMap = null;
+                if (!string.IsNullOrEmpty(request.TraceId) && !string.IsNullOrEmpty(request.ResultIndex))
                 {
-                    var nowUtc = DateTime.UtcNow;
-
-                    if (selectedFeaturedOffer.StartDateUtc.HasValue && selectedFeaturedOffer.StartDateUtc.Value > nowUtc)
-                        throw new Exception("Featured offer has not started yet.");
-
-                    if (selectedFeaturedOffer.EndDateUtc.HasValue && selectedFeaturedOffer.EndDateUtc.Value < nowUtc)
-                        throw new Exception("Featured offer has expired.");
-
-                    if (selectedFeaturedOffer.MaxUsage.HasValue && selectedFeaturedOffer.UsedCount >= selectedFeaturedOffer.MaxUsage.Value)
-                        throw new Exception("Featured offer usage limit reached.");
+                    _cache.TryGetValue($"bus_seats_{request.TraceId}_{request.ResultIndex}", out layoutMap);
                 }
-                else if (promotionToApply != null)
+
+                var missingLayoutSeats = seatCodes
+                    .Where(seat => layoutMap == null || 
+                                   !layoutMap.TryGetValue(seat, out var layoutSeat) || 
+                                   string.IsNullOrWhiteSpace(layoutSeat.SeatType))
+                    .ToList();
+
+                if (missingLayoutSeats.Any())
                 {
-                    var nowUtc = DateTime.UtcNow;
-
-                    if (promotionToApply.StartDateUtc.HasValue && promotionToApply.StartDateUtc.Value > nowUtc)
-                        throw new Exception("Promotion has not started yet.");
-
-                    if (promotionToApply.EndDateUtc.HasValue && promotionToApply.EndDateUtc.Value < nowUtc)
-                        throw new Exception("Promotion has expired.");
-
-                    if (promotionToApply.MaxUsage.HasValue && promotionToApply.UsedCount >= promotionToApply.MaxUsage.Value)
-                        throw new Exception("Promotion usage limit reached.");
-
-                    if (promotionToApply.MaxUsagePerUser > 0 && userIdStr != null)
-                    {
-                        var userPromoUsageCount = await dbContext.BusPromotionUsages
-                            .CountAsync(x => x.BusPromotionId == promotionToApply.Id && x.UserId == userIdStr && x.BookingStatus == "Booked");
-
-                        if (userPromoUsageCount >= promotionToApply.MaxUsagePerUser)
-                            throw new Exception("Your usage limit for this promotion has been reached.");
-                    }
-
-                    if (promotionToApply.IsFirstTimeUserOnly && userIdStr != null)
-                    {
-                        var userBookingHistoryService = HttpContext.RequestServices.GetRequiredService<IUserBookingHistoryService>();
-                        var hasPrior = await userBookingHistoryService.HasPriorBookingAsync(userIdStr, null);
-                        if (hasPrior)
-                            throw new Exception("This promotion is only valid for your first booking.");
-                    }
+                    return BadRequest(new { 
+                        message = $"Authoritative seat layout information is unavailable for seat(s): {string.Join(", ", missingLayoutSeats)}. Please refresh the seat layout and try again." 
+                    });
                 }
 
                 // ========================================
@@ -660,23 +696,47 @@ namespace PickNBook.Api.Controllers
                     .Where(x => x.TraceId == traceId)
                     .ToListAsync();
 
-                var seatPreviews = request.Seats
-                    .Where(p => !string.IsNullOrWhiteSpace(p.SeatCode))
-                    .Select(p => {
-                        var blockedSeat = blockedSeats.FirstOrDefault(b => b.SeatName.Equals(p.SeatCode, StringComparison.OrdinalIgnoreCase));
-                        return new PickNBook.Api.Models.DTOs.SeatPreviewDto 
-                        { 
-                            SeatCode = p.SeatCode, 
-                            BaseFare = blockedSeat?.BaseFare > 0 ? blockedSeat.BaseFare : p.BaseFare, 
-                            SeatType = p.SeatType,
-                            ExternalGst = blockedSeat?.GstAmount > 0 ? blockedSeat.GstAmount : p.ExternalGst 
-                        };
-                    })
-                    .ToList();
+                var seatPreviews = new List<PickNBook.Api.Models.DTOs.SeatPreviewDto>();
+                foreach (var p in request.Seats.Where(s => !string.IsNullOrWhiteSpace(s.SeatCode)))
+                {
+                    var seatCode = p.SeatCode.Trim();
+                    var blockedSeat = blockedSeats
+                        .OrderByDescending(b => b.Id)
+                        .FirstOrDefault(b => b.SeatName.Equals(seatCode, StringComparison.OrdinalIgnoreCase));
 
-                var invalidSeats = seatPreviews.Where(s => s.BaseFare <= 0).Select(s => s.SeatCode).ToList();
-                if (invalidSeats.Any())
-                    throw new Exception($"Seat pricing data is missing for seat(s): {string.Join(", ", invalidSeats)}. Ensure the frontend sends BaseFare and ExternalGst from the SRDV Seat Layout response.");
+                    var layoutSeat = layoutMap![seatCode];
+
+                    decimal baseFare = 0m;
+                    decimal gstAmount = 0m;
+
+                    if (blockedSeat != null && blockedSeat.BaseFare > 0)
+                    {
+                        baseFare = blockedSeat.BaseFare;
+                        gstAmount = blockedSeat.GstAmount;
+                    }
+                    else
+                    {
+                        baseFare = layoutSeat.BaseFare > 0 ? layoutSeat.BaseFare : p.BaseFare;
+                        gstAmount = layoutSeat.GstAmount > 0 
+                            ? layoutSeat.GstAmount 
+                            : (p.ExternalGst > 0 ? p.ExternalGst : (layoutSeat.PublishedFare > layoutSeat.BaseFare ? layoutSeat.PublishedFare - layoutSeat.BaseFare : 0m));
+                    }
+
+                    if (baseFare <= 0)
+                    {
+                        return BadRequest(new { 
+                            message = $"Authoritative seat pricing is unavailable for seat '{seatCode}'. Please refresh the seat layout." 
+                        });
+                    }
+
+                    seatPreviews.Add(new PickNBook.Api.Models.DTOs.SeatPreviewDto 
+                    { 
+                        SeatCode = seatCode, 
+                        BaseFare = baseFare, 
+                        SeatType = layoutSeat.SeatType, // 100% authoritative from layout
+                        ExternalGst = gstAmount 
+                    });
+                }
 
                 var dummyBus = new BusBooking
                 {
@@ -689,15 +749,28 @@ namespace PickNBook.Api.Controllers
                     GstCategory = "AC"
                 };
 
+                seatCodes = seatPreviews.Select(s => s.SeatCode).ToList();
+                var validationContext = await _couponContextBuilder.BuildContextAsync(
+                    request.TraceId,
+                    request.ResultIndex,
+                    seatCodes,
+                    dummyBus,
+                    seatPreviews);
+
                 var pricing = await _promotionEngine.CalculateAsync(
                     dummyBus,
                     seatPreviews,
                     request.CouponCode,
                     request.PromotionId,
                     parsedUserId,
-                    request.SelectedFeaturedOfferId);
+                    request.SelectedFeaturedOfferId,
+                    validationContext);
 
                 return Ok(pricing);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -787,121 +860,22 @@ namespace PickNBook.Api.Controllers
                             throw new Exception("Seat selection is mandatory for all passengers.");
                         }
 
-                        // ========================================
-                        // UNIFIED PROMOTION VALIDATION
-                        // ========================================
-                        BusPromotion? promotionToApply = null;
-                        FeaturedOffer? selectedFeaturedOffer = null;
-
-                        if (request.SelectedFeaturedOfferId.HasValue)
+                        // Mandatory upfront layout check for SeatType
+                        Dictionary<string, BusSeatLayoutItemContext>? layoutMap = null;
+                        if (!string.IsNullOrEmpty(bus.TraceId) && !string.IsNullOrEmpty(bus.ResultIndex))
                         {
-                            selectedFeaturedOffer = await dbContext.FeaturedOffers
-                                .Include(x => x.Conditions)
-                                .FirstOrDefaultAsync(x => x.Id == request.SelectedFeaturedOfferId.Value && x.IsActive);
-
-                            if (selectedFeaturedOffer == null)
-                                throw new Exception("Selected offer is invalid or inactive.");
-
-                            if (!string.IsNullOrWhiteSpace(request.CouponCode))
-                            {
-                                throw new Exception("Featured offers cannot stack with manual coupons.");
-                            }
-                            if (request.PromotionId.HasValue)
-                            {
-                                throw new Exception("Only one manual promotion/offer can be applied.");
-                            }
-                        }
-                        else if (!string.IsNullOrWhiteSpace(request.CouponCode))
-                        {
-                            var normalizedCoupon = request.CouponCode.Trim().ToUpperInvariant();
-                            var promoByCode = await dbContext.BusPromotions
-                                .Include(x => x.Conditions)
-                                .FirstOrDefaultAsync(x => x.Code == normalizedCoupon && x.IsActive && !x.IsAutoApply);
-
-                            if (promoByCode == null)
-                            {
-                                throw new Exception("Invalid or inactive coupon code.");
-                            }
-
-                            if (request.PromotionId.HasValue && request.PromotionId.Value != promoByCode.Id)
-                            {
-                                throw new Exception("Only one manual promotion/offer can be applied.");
-                            }
-
-                            promotionToApply = promoByCode;
-                        }
-                        else if (request.PromotionId.HasValue)
-                        {
-                            var promoById = await dbContext.BusPromotions
-                                .Include(x => x.Conditions)
-                                .FirstOrDefaultAsync(x => x.Id == request.PromotionId.Value && x.IsActive && !x.IsAutoApply);
-
-                            if (promoById == null)
-                            {
-                                throw new Exception("Invalid or inactive promotion.");
-                            }
-
-                            promotionToApply = promoById;
+                            _cache.TryGetValue($"bus_seats_{bus.TraceId}_{bus.ResultIndex}", out layoutMap);
                         }
 
-                        if (selectedFeaturedOffer != null)
+                        var missingLayoutSeats = requestedSeatCodes
+                            .Where(seat => layoutMap == null || 
+                                           !layoutMap.TryGetValue(seat, out var layoutSeat) || 
+                                           string.IsNullOrWhiteSpace(layoutSeat.SeatType))
+                            .ToList();
+
+                        if (missingLayoutSeats.Any())
                         {
-                            var nowUtc = DateTime.UtcNow;
-
-                            if (selectedFeaturedOffer.StartDateUtc.HasValue && selectedFeaturedOffer.StartDateUtc.Value > nowUtc)
-                            {
-                                throw new Exception("Featured offer has not started yet.");
-                            }
-
-                            if (selectedFeaturedOffer.EndDateUtc.HasValue && selectedFeaturedOffer.EndDateUtc.Value < nowUtc)
-                            {
-                                throw new Exception("Featured offer has expired.");
-                            }
-
-                            if (selectedFeaturedOffer.MaxUsage.HasValue && selectedFeaturedOffer.UsedCount >= selectedFeaturedOffer.MaxUsage.Value)
-                            {
-                                throw new Exception("Featured offer usage limit reached.");
-                            }
-                        }
-                        else if (promotionToApply != null)
-                        {
-                            var nowUtc = DateTime.UtcNow;
-
-                            if (promotionToApply.StartDateUtc.HasValue && promotionToApply.StartDateUtc.Value > nowUtc)
-                            {
-                                throw new Exception("Promotion has not started yet.");
-                            }
-
-                            if (promotionToApply.EndDateUtc.HasValue && promotionToApply.EndDateUtc.Value < nowUtc)
-                            {
-                                throw new Exception("Promotion has expired.");
-                            }
-
-                            if (promotionToApply.MaxUsage.HasValue && promotionToApply.UsedCount >= promotionToApply.MaxUsage.Value)
-                            {
-                                throw new Exception("Promotion usage limit reached.");
-                            }
-
-                            if (promotionToApply.MaxUsagePerUser > 0)
-                            {
-                                var userPromoUsageCount = await dbContext.BusPromotionUsages
-                                    .CountAsync(x => x.BusPromotionId == promotionToApply.Id && x.UserId == userId && x.BookingStatus == "Booked");
-
-                                if (userPromoUsageCount >= promotionToApply.MaxUsagePerUser)
-                                {
-                                    throw new Exception("Your usage limit for this promotion has been reached.");
-                                }
-                            }
-
-                            if (promotionToApply.IsFirstTimeUserOnly)
-                            {
-                                var userBookingHistoryService = HttpContext.RequestServices.GetRequiredService<IUserBookingHistoryService>();
-                                var hasPrior = await userBookingHistoryService.HasPriorBookingAsync(userId, request.PassengerPhone);
-                                if (hasPrior)
-                                {
-                                    throw new Exception("This promotion is only valid for your first booking.");
-                                }
-                            }
+                            throw new InvalidOperationException($"Authoritative seat layout information is unavailable for seat(s): {string.Join(", ", missingLayoutSeats)}. Please refresh the seat layout and block again.");
                         }
 
                         // ========================================
@@ -912,20 +886,40 @@ namespace PickNBook.Api.Controllers
                             .Where(x => x.TraceId == traceId)
                             .ToListAsync();
 
+                        var missingBlockedSeats = requestedSeatCodes
+                            .Where(seat => !blockedSeats.Any(b => b.SeatName.Equals(seat, StringComparison.OrdinalIgnoreCase) && b.BaseFare > 0))
+                            .ToList();
+
+                        if (missingBlockedSeats.Any())
+                        {
+                            throw new InvalidOperationException($"Authoritative blocked seat pricing is unavailable for seat(s): {string.Join(", ", missingBlockedSeats)}. Please refresh and block the seats again.");
+                        }
+
                         var seatPreviews = request.Passengers
                             .Where(p => !string.IsNullOrWhiteSpace(p.SeatNumber))
                             .Select(p => {
-                                // Match using case-insensitive check in case frontend modified case, but frontend is instructed not to modify it.
-                                var blockedSeat = blockedSeats.FirstOrDefault(b => b.SeatName.Equals(p.SeatNumber, StringComparison.OrdinalIgnoreCase));
+                                var seatCode = p.SeatNumber!.Trim();
+                                var blockedSeat = blockedSeats
+                                    .OrderByDescending(b => b.Id)
+                                    .First(b => b.SeatName.Equals(seatCode, StringComparison.OrdinalIgnoreCase));
+                                var layoutSeat = layoutMap![seatCode];
                                 return new PickNBook.Api.Models.DTOs.SeatPreviewDto 
                                 { 
-                                    SeatCode = p.SeatNumber!, 
-                                    BaseFare = blockedSeat?.BaseFare > 0 ? blockedSeat.BaseFare : p.BaseFare, 
-                                    SeatType = p.SeatType,
-                                    ExternalGst = blockedSeat?.GstAmount > 0 ? blockedSeat.GstAmount : p.ExternalGst 
+                                    SeatCode = seatCode, 
+                                    BaseFare = blockedSeat.BaseFare, 
+                                    SeatType = layoutSeat.SeatType, // 100% authoritative from layout
+                                    ExternalGst = blockedSeat.GstAmount 
                                 };
                             })
                             .ToList();
+
+                        var seatCodes = requestedSeatCodes;
+                        var validationContext = await _couponContextBuilder.BuildContextAsync(
+                            bus.TraceId,
+                            bus.ResultIndex,
+                            seatCodes,
+                            bus,
+                            seatPreviews);
 
                         var pricing = await _promotionEngine.CalculateAsync(
                             bus,
@@ -933,7 +927,8 @@ namespace PickNBook.Api.Controllers
                             request.CouponCode,
                             request.PromotionId,
                             int.Parse(userId!),
-                            request.SelectedFeaturedOfferId);
+                            request.SelectedFeaturedOfferId,
+                            validationContext);
 
                         var pnr = await GenerateUniqueBusPnrAsync();
                         var reservation = new BusReservation
@@ -954,16 +949,16 @@ namespace PickNBook.Api.Controllers
                             TaxableFareInr = pricing.TaxableFare,
                             GstPercent = pricing.GstPercent,
                             GstAmountInr = pricing.GstAmount,
-                            DiscountAmountInr = pricing.AutoDiscountAmount + pricing.CouponDiscountAmount + pricing.ManualDiscountAmount,
+                            DiscountAmountInr = pricing.TotalDiscount,
                             ConvenienceFeeInr = pricing.ConvenienceFee,
-                            CouponCode = string.IsNullOrWhiteSpace(request.CouponCode) ? null : request.CouponCode.Trim().ToUpperInvariant(),
-                            AppliedPromotionId = promotionToApply?.Id,
+                            CouponCode = pricing.AppliedPromotionCode ?? pricing.AutoPromotionCode,
+                            AppliedPromotionId = null,
                             AppliedPromotionCode = pricing.AppliedPromotionCode,
                             AppliedPromotionType = pricing.AppliedPromotionType ?? pricing.DiscountSource,
-                            AppliedFeaturedOfferId = request.SelectedFeaturedOfferId,
-                            AppliedFeaturedOfferTitle = selectedFeaturedOffer?.Title,
-                            FeaturedOfferDiscountAmount = selectedFeaturedOffer != null ? pricing.ManualDiscountAmount : 0m,
-                            AutoPromotionId = pricing.AutoPromotionCode != null ? (await dbContext.BusPromotions.Where(x => x.Code == pricing.AutoPromotionCode).Select(x => (int?)x.Id).FirstOrDefaultAsync()) : null,
+                            AppliedFeaturedOfferId = null,
+                            AppliedFeaturedOfferTitle = null,
+                            FeaturedOfferDiscountAmount = 0m,
+                            AutoPromotionId = null,
                             AutoPromotionCode = pricing.AutoPromotionCode,
                             DiscountSource = pricing.DiscountSource,
                             Status = "Booked",
@@ -983,103 +978,76 @@ namespace PickNBook.Api.Controllers
                         // ========================================
                         if (pricing.AutoDiscountAmount > 0 && !string.IsNullOrEmpty(pricing.AutoPromotionCode))
                         {
-                            var autoPromo = await dbContext.BusPromotions.FirstOrDefaultAsync(x => x.Code == pricing.AutoPromotionCode);
-                            if (autoPromo != null)
+                            var autoCoupon = await dbContext.BusCoupons.FirstOrDefaultAsync(x => x.CouponCode == pricing.AutoPromotionCode);
+                            var autoUsage = new BusCouponUsage
                             {
-                                var autoUsage = new BusPromotionUsage
-                                {
-                                    BusPromotionId = autoPromo.Id,
-                                    FeaturedOfferId = null,
-                                    BusReservationId = reservation.Id,
-                                    UserId = userId!,
-                                    PromotionCode = autoPromo.Code,
-                                    PromotionType = autoPromo.PromotionType,
-                                    DiscountAmountInr = pricing.AutoDiscountAmount,
-                                    BookingTotalInr = pricing.GrandTotal,
-                                    BookingStatus = "Booked",
-                                    UsedAtUtc = DateTime.UtcNow
-                                };
-                                dbContext.BusPromotionUsages.Add(autoUsage);
-
-                                var autoRows = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                                    UPDATE buspromotions
-                                    SET UsedCount = UsedCount + 1
-                                    WHERE Id = {autoPromo.Id}
-                                    AND (MaxUsage IS NULL OR UsedCount < MaxUsage)
-                                ");
-                                if (autoRows == 0 && autoPromo.MaxUsage.HasValue)
-                                {
-                                    throw new Exception($"Auto-promotion '{autoPromo.Code}' usage limit reached concurrently.");
-                                }
-                            }
-                        }
-
-                        if (selectedFeaturedOffer != null)
-                        {
-                            var featuredUsage = new FeaturedOfferUsage
-                            {
-                                FeaturedOfferId = selectedFeaturedOffer.Id,
+                                BusCouponId = autoCoupon?.Id,
                                 BusReservationId = reservation.Id,
                                 UserId = userId!,
-                                DiscountAmount = pricing.ManualDiscountAmount,
-                                UsedAtUtc = DateTime.UtcNow
-                            };
-                            dbContext.FeaturedOfferUsages.Add(featuredUsage);
-
-                            var rowsUpdated = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                                UPDATE featuredoffers
-                                SET UsedCount = UsedCount + 1
-                                WHERE Id = {selectedFeaturedOffer.Id}
-                                AND (MaxUsage IS NULL OR UsedCount < MaxUsage)
-                            ");
-                            if (rowsUpdated == 0 && selectedFeaturedOffer.MaxUsage.HasValue)
-                            {
-                                throw new Exception("Featured offer usage limit reached concurrently.");
-                            }
-                        }
-                        else if (promotionToApply != null)
-                        {
-                            var discountAmt = promotionToApply.PromotionType.Equals("Coupon", StringComparison.OrdinalIgnoreCase)
-                                ? pricing.CouponDiscountAmount
-                                : pricing.ManualDiscountAmount;
-
-                            var manualUsage = new BusPromotionUsage
-                            {
-                                BusPromotionId = promotionToApply.Id,
-                                BusReservationId = reservation.Id,
-                                UserId = userId!,
-                                PromotionCode = promotionToApply.Code,
-                                PromotionType = promotionToApply.PromotionType,
-                                DiscountAmountInr = discountAmt,
-                                BookingTotalInr = pricing.GrandTotal,
+                                CouponCode = pricing.AutoPromotionCode,
+                                CouponType = autoCoupon?.CouponType ?? "Fixed",
+                                CouponValue = autoCoupon?.Value ?? pricing.AutoDiscountAmount,
+                                CouponAmountInr = pricing.AutoDiscountAmount,
+                                TotalFareInr = pricing.GrandTotal,
                                 BookingStatus = "Booked",
                                 UsedAtUtc = DateTime.UtcNow
                             };
-                            dbContext.BusPromotionUsages.Add(manualUsage);
+                            dbContext.BusCouponUsages.Add(autoUsage);
 
-                            var manualRows = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                                UPDATE buspromotions
+                            await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                                UPDATE bus_coupons
                                 SET UsedCount = UsedCount + 1
-                                WHERE Id = {promotionToApply.Id}
-                                AND (MaxUsage IS NULL OR UsedCount < MaxUsage)
+                                WHERE CouponCode = {pricing.AutoPromotionCode}
+                                AND (UseLimit = 0 OR UsedCount < UseLimit)
                             ");
-                            if (manualRows == 0 && promotionToApply.MaxUsage.HasValue)
+                        }
+
+                        if ((pricing.CouponDiscountAmount > 0 || pricing.ManualDiscountAmount > 0) && !string.IsNullOrEmpty(pricing.AppliedPromotionCode))
+                        {
+                            var manualDiscountAmt = pricing.CouponDiscountAmount > 0 ? pricing.CouponDiscountAmount : pricing.ManualDiscountAmount;
+                            var manualCoupon = await dbContext.BusCoupons.FirstOrDefaultAsync(x => x.CouponCode == pricing.AppliedPromotionCode);
+                            var manualUsage = new BusCouponUsage
                             {
-                                throw new Exception("Promotion usage limit reached concurrently.");
+                                BusCouponId = manualCoupon?.Id,
+                                BusReservationId = reservation.Id,
+                                UserId = userId!,
+                                CouponCode = pricing.AppliedPromotionCode,
+                                CouponType = manualCoupon?.CouponType ?? "Fixed",
+                                CouponValue = manualCoupon?.Value ?? manualDiscountAmt,
+                                CouponAmountInr = manualDiscountAmt,
+                                TotalFareInr = pricing.GrandTotal,
+                                BookingStatus = "Booked",
+                                UsedAtUtc = DateTime.UtcNow
+                            };
+                            dbContext.BusCouponUsages.Add(manualUsage);
+
+                            var rows = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                                UPDATE bus_coupons
+                                SET UsedCount = UsedCount + 1
+                                WHERE CouponCode = {pricing.AppliedPromotionCode}
+                                AND (UseLimit = 0 OR UsedCount < UseLimit)
+                            ");
+                            if (rows == 0 && manualCoupon != null && manualCoupon.UseLimit > 0)
+                            {
+                                throw new Exception($"Coupon '{pricing.AppliedPromotionCode}' usage limit reached concurrently.");
                             }
                         }
 
                         var passengers = new List<BusReservationPassenger>();
                         foreach (var p in normalizedPassengers)
                         {
+                            var seatCode = p.SeatNumber!.Trim();
+                            var layoutSeat = (layoutMap != null && layoutMap.TryGetValue(seatCode, out var ls)) ? ls : null;
+                            var blockedSeat = blockedSeats.OrderByDescending(b => b.Id).FirstOrDefault(b => b.SeatName.Equals(seatCode, StringComparison.OrdinalIgnoreCase));
+
                             passengers.Add(new BusReservationPassenger
                             {
                                 BusReservationId = reservation.Id,
                                 FullName = p.FullName,
                                 Gender = p.Gender,
-                                SeatNumber = p.SeatNumber!,
-                                BaseFareInr = p.BaseFare,
-                                SeatType = p.SeatType,
+                                SeatNumber = seatCode,
+                                BaseFareInr = blockedSeat!.BaseFare,
+                                SeatType = layoutSeat!.SeatType,
                                 Age = p.Age
                             });
                         }
@@ -1285,9 +1253,13 @@ namespace PickNBook.Api.Controllers
  );
 
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
         }
 
@@ -1568,26 +1540,6 @@ namespace PickNBook.Api.Controllers
     ");
                         }
 
-                        // Unified promotion cancellation handling:
-                        var unifiedUsages = await dbContext.BusPromotionUsages
-                            .Where(x => x.BusReservationId == booking.Id && x.BookingStatus == "Booked")
-                            .ToListAsync();
-
-                        foreach (var u in unifiedUsages)
-                        {
-                            u.BookingStatus = "Cancelled";
-                            u.UsedAtUtc = DateTime.UtcNow;
-
-                            // Decrement atomic promotion usage
-                            await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                                UPDATE buspromotions
-                                SET UsedCount = CASE 
-                                    WHEN UsedCount > 0 THEN UsedCount - 1 
-                                    ELSE 0 
-                                END
-                                WHERE Id = {u.BusPromotionId}
-                            ");
-                        }
                     }
 
                     // 🔥 validation
@@ -1957,26 +1909,6 @@ namespace PickNBook.Api.Controllers
                             ");
                         }
 
-                        // Unified promotion cancellation handling:
-                        var unifiedUsages = await dbContext.BusPromotionUsages
-                            .Where(x => x.BusReservationId == booking.Id && x.BookingStatus == "Booked")
-                            .ToListAsync();
-
-                        foreach (var u in unifiedUsages)
-                        {
-                            u.BookingStatus = "Cancelled";
-                            u.UsedAtUtc = DateTime.UtcNow;
-
-                            // Decrement atomic promotion usage
-                            await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                                UPDATE buspromotions
-                                SET UsedCount = CASE 
-                                    WHEN UsedCount > 0 THEN UsedCount - 1 
-                                    ELSE 0 
-                                END
-                                WHERE Id = {u.BusPromotionId}
-                            ");
-                        }
                     }
 
 

@@ -206,6 +206,7 @@ const AddBlogForm = () => {
             const targetId = blogId || editingBlog?.id;
 
             if (isEditing && targetId) {
+                dataToSend.append("Id", targetId);
                 await updateAdminBlog(targetId, dataToSend);
                 showToast('Blog updated successfully.', 'success');
             } else {
@@ -218,7 +219,8 @@ const AddBlogForm = () => {
             }, 1000);
         } catch (error) {
             console.error("Error saving blog:", error);
-            showToast("Failed to save blog post.", "error");
+            const serverMsg = error.response?.data?.message || error.response?.data?.title || (typeof error.response?.data === 'string' ? error.response.data : '') || error.message || "";
+            showToast(`Failed to save blog post. ${serverMsg}`.trim(), "error");
         } finally {
             setIsSubmitting(false);
         }

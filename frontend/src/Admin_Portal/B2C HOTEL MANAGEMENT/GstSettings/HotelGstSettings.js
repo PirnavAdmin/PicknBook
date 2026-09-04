@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
-import { Check, Edit, Trash2, Plus, ArrowLeft, X } from "lucide-react";
+import { Check, Edit, Trash2, Plus, ArrowLeft, X, Eye } from "lucide-react";
 import "./HotelGstSettings.css";
 import AdminPagination from "../../../components/AdminPagination";
 import {
@@ -23,10 +23,12 @@ function createDefaultForm() {
 
 export default function HotelGstSettings() {
   const [rows, setRows] = useState([]);
+  const [viewingGstRecord, setViewingGstRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [deleteRecord, setDeleteRecord] = useState(null);
 
   // Toolbar state
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,13 +97,13 @@ export default function HotelGstSettings() {
         String(r.convenienceFeeValue).includes(searchTerm) ||
         String(r.gstPercent).includes(searchTerm) ||
         String(r.updatedBy || "").toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && r.isActive) ||
         (statusFilter === "inactive" && !r.isActive);
 
-    return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
   }, [rows, searchTerm, statusFilter]);
 
@@ -189,16 +191,15 @@ export default function HotelGstSettings() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this pricing rule?")) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!deleteRecord) return;
     setError("");
     try {
-      await deleteHotelPricingRule(id);
-      if (editId === id) {
+      await deleteHotelPricingRule(deleteRecord.id);
+      if (editId === deleteRecord.id) {
         handleCancelForm();
       }
+      setDeleteRecord(null);
       await loadSettings();
     } catch (err) {
       setError(err.message || "Failed to delete pricing rule.");
@@ -207,18 +208,26 @@ export default function HotelGstSettings() {
 
   const handleToggleStatus = async (row) => {
     setError("");
+    // Optimistic status update
+    setRows(prevRows =>
+      prevRows.map(r => r.id === row.id ? { ...r, isActive: !r.isActive } : r)
+    );
     const payload = {
       markupType: row.markupType,
-      markupValue: row.markupValue,
+      markupValue: Number(row.markupValue),
       convenienceFeeType: row.convenienceFeeType,
-      convenienceFeeValue: row.convenienceFeeValue,
-      gstPercent: row.gstPercent,
+      convenienceFeeValue: Number(row.convenienceFeeValue),
+      gstPercent: Number(row.gstPercent),
       isActive: !row.isActive
     };
     try {
       await updateHotelPricingRule(row.id, payload);
       await loadSettings();
     } catch (err) {
+      // Revert status on error
+      setRows(prevRows =>
+        prevRows.map(r => r.id === row.id ? { ...r, isActive: r.isActive } : r)
+      );
       setError(err.message || "Failed to toggle status.");
     }
   };
@@ -251,28 +260,117 @@ export default function HotelGstSettings() {
 
   return (
     <div className="admin-b2c-page admin-b2c-hotel-page bus-gst-settings-page-container">
-      {isFormViewOpen ? (
-        /* ── CONFIGURATION FORM VIEW ── */
-        <section className="admin-markup-coupon-table-wrap" style={{ padding: "24px", background: "var(--panel)", borderRadius: "16px", border: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-            <h1 style={{ fontSize: "1.6rem", margin: 0, fontWeight: "700", color: "#000000" }}>
-              Configure <span style={{ color: "#be185d" }}>B2C Hotel</span> GST Settings
-            </h1>
-            <button
-              type="button"
-              className="admin-markup-coupon-btn generate"
-              onClick={handleCancelForm}
-              style={{ backgroundColor: "#be185d", borderColor: "#be185d", display: "flex", alignItems: "center", gap: "6px" }}
-            >
-              <ArrowLeft size={15} />
-              <span>GST Settings List</span>
-            </button>
-          </div>
+      <style>{`
+        .bus-gst-settings-page-container {
+          padding-top: 4px !important;
+        }
+        .markup-primary-btn {
+          transition: all 0.2s ease !important;
+        }
+        .markup-primary-btn:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+        }
+        .markup-export-btn {
+          transition: all 0.2s ease !important;
+        }
+        .markup-export-btn:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+          background-color: #15803d !important;
+          border-color: #15803d !important;
+        }
+        .admin-markup-table tbody tr {
+          transition: background-color 0.2s ease !important;
+        }
+        .admin-markup-table tbody tr:hover {
+          background-color: rgba(165, 28, 73, 0.03) !important;
+        }
+        .action-btn {
+          transition: all 0.2s ease !important;
+        }
+        .action-btn:hover {
+          background-color: rgba(165, 28, 73, 0.08) !important;
+          border-color: #A51C49 !important;
+          color: #A51C49 !important;
+        }
+        
+        .admin-markup-coupon-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.6) !important;
+          backdrop-filter: blur(4px) !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000 !important;
+        }
+        
+        .discount-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.6) !important;
+          backdrop-filter: blur(4px) !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000 !important;
+        }
+
+        /* Pill style for active and inactive status */
+        .status-pill-btn {
+          border-radius: 8px !important;
+          padding: 6px 12px !important;
+          font-weight: 600 !important;
+          font-size: 13px !important;
+          cursor: pointer !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          outline: none !important;
+          transition: all 0.2s ease !important;
+        }
+        .status-pill-btn.active {
+          border: 1px solid #10b981 !important;
+          background-color: #ecfdf5 !important;
+          color: #047857 !important;
+        }
+        .status-pill-btn.inactive {
+          border: 1px solid #ef4444 !important;
+          background-color: #fef2f2 !important;
+          color: #b91c1c !important;
+        }
+        .status-pill-btn:hover {
+          transform: scale(1.02) !important;
+        }
+      `}</style>
+      {isFormViewOpen && (
+        <div className="admin-markup-coupon-backdrop" onClick={handleCancelForm}>
+          <section className="admin-markup-coupon-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px", width: "90%", maxHeight: "90vh", overflowY: "auto", background: "#ffffff", borderRadius: "12px", padding: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <h1 style={{ fontSize: "1.6rem", margin: 0, fontWeight: "700", color: "#A51C49" }}>
+                Configure B2C Hotel GST Settings
+              </h1>
+              <button
+                type="button"
+                className="admin-markup-coupon-btn generate"
+                onClick={handleCancelForm}
+                style={{ backgroundColor: "#A51C49", borderColor: "#A51C49", display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <span>Close Form</span>
+              </button>
+            </div>
 
           {error && <div className="admin-data-error" style={{ marginBottom: "15px", color: "red", fontSize: "0.85rem" }}>{error}</div>}
 
           <div className="admin-markup-coupon-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-            
+
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span>Markup Type: <span style={{ color: "red" }}>*</span></span>
               <select value={form.markupType} onChange={(e) => setForm(prev => ({ ...prev, markupType: e.target.value }))}>
@@ -387,19 +485,19 @@ export default function HotelGstSettings() {
           </div>
 
           <footer style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-            <button type="button" className="admin-markup-coupon-btn clear" onClick={handleCancelForm}>Cancel</button>
-            <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : editId ? "Update GST Settings" : "Save GST Settings"}
+            <button type="button" className="admin-markup-coupon-btn clear" onClick={handleCancelForm} style={{ backgroundColor: "#f97316", borderColor: "#f97316", color: "#ffffff" }}>Cancel</button>
+            <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} disabled={isSubmitting} style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
+              {isSubmitting ? "Saving..." : editId ? "Save Changes" : "Save Settings"}
             </button>
           </footer>
         </section>
-      ) : (
-        /* ── TABLE / LIST VIEW ── */
-        <>
-          {/* ── PAGE HEADING ── */}
-          <section className="markup-heading">
-            <h2 style={{ fontWeight: 500, margin: 0, fontSize: "1.6rem" }}>
-              <span style={{ color: "#A51C49", fontWeight: 500 }}>B2C Hotel</span> <span style={{ color: "#000000" }}>GST Settings</span>
+      </div>
+      )}
+
+      <>
+          <section className="markup-heading" style={{ paddingTop: '16px', paddingBottom: '8px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: '28px' }}>
+              <span style={{ color: '#A51C49' }}>B2C Hotel</span> GST Settings
             </h2>
           </section>
 
@@ -423,7 +521,7 @@ export default function HotelGstSettings() {
           </section>
 
           {/* ── TOOLBAR ── */}
-          <section className="markup-toolbar">
+          <section className="markup-toolbar" style={{ marginBottom: '20px' }}>
             <div className="markup-toolbar-group">
               <label className="markup-field">
                 <span>Search GST Settings</span>
@@ -454,7 +552,7 @@ export default function HotelGstSettings() {
                 <Plus size={14} aria-hidden="true" />
                 Add GST Setting
               </button>
-              <button type="button" className="markup-export-btn" onClick={handleExport} disabled={filteredRows.length === 0} style={{ backgroundColor: "#2563eb", borderColor: "#2563eb", color: "#ffffff" }}>
+              <button type="button" className="markup-export-btn" onClick={handleExport} disabled={filteredRows.length === 0} style={{ backgroundColor: "#16a34a", borderColor: "#16a34a", color: "#ffffff" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
@@ -467,32 +565,39 @@ export default function HotelGstSettings() {
 
           {/* ── TABLE ── */}
           <section className="admin-markup-table-wrap">
-            {loading ? (
-              <p className="admin-markup-empty">Loading GST settings...</p>
-            ) : error ? (
-              <p className="admin-markup-empty" style={{ color: "red" }}>{error}</p>
-            ) : (
-              <table className="admin-markup-table">
-                <thead>
+            <table className="admin-markup-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Markup</th>
+                  <th>Conv. Fee</th>
+                  <th>GST Percent</th>
+                  <th>Updated On</th>
+                  <th>Updated By</th>
+                  <th>Status</th>
+                  <th className="action-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
                   <tr>
-                    <th>ID</th>
-                    <th>Markup</th>
-                    <th>Conv. Fee</th>
-                    <th>GST Percent</th>
-                    <th>Updated On</th>
-                    <th>Updated By</th>
-                    <th>Status</th>
-                    <th className="action-col">Actions</th>
+                    <td colSpan="8">
+                      <p className="admin-markup-empty">Loading GST settings...</p>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.length === 0 ? (
-                    <tr>
-                      <td colSpan="8">
-                        <p className="admin-markup-empty">No GST records found.</p>
-                      </td>
-                    </tr>
-                  ) : (
+                ) : error ? (
+                  <tr>
+                    <td colSpan="8">
+                      <p className="admin-markup-empty" style={{ color: "red", fontWeight: "600" }}>{error}</p>
+                    </td>
+                  </tr>
+                ) : filteredRows.length === 0 ? (
+                  <tr>
+                    <td colSpan="8">
+                      <p className="admin-markup-empty">No GST records found.</p>
+                    </td>
+                  </tr>
+                ) : (
                     paginatedRows.map((row) => (
                       <tr key={row.id}>
                         <td>
@@ -513,12 +618,11 @@ export default function HotelGstSettings() {
                         <td>
                           <button
                             type="button"
-                            className={`markup-status-toggle ${row.isActive ? "active" : "inactive"}`}
+                            className={`status-pill-btn ${row.isActive ? "active" : "inactive"}`}
                             onClick={() => handleToggleStatus(row)}
                             aria-label={`Set ${row.id} status`}
                           >
-                            {row.isActive ? <Check size={14} /> : <X size={14} />}
-                            <span>{row.isActive ? "Active" : "Inactive"}</span>
+                            {row.isActive ? "Active" : "Inactive"}
                           </button>
                         </td>
                         <td className="action-col">
@@ -540,6 +644,18 @@ export default function HotelGstSettings() {
                               <div className="actions-dropdown-menu">
                                 <button
                                   type="button"
+                                  className="dropdown-item view"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setViewingGstRecord(row);
+                                    setActiveDropdownId(null);
+                                  }}
+                                >
+                                  <Eye size={13} className="item-icon" />
+                                  <span>View Details</span>
+                                </button>
+                                <button
+                                  type="button"
                                   className="dropdown-item edit"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -558,7 +674,7 @@ export default function HotelGstSettings() {
                                   className="dropdown-item delete"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDelete(row.id);
+                                    setDeleteRecord(row);
                                     setActiveDropdownId(null);
                                   }}
                                 >
@@ -574,7 +690,6 @@ export default function HotelGstSettings() {
                   )}
                 </tbody>
               </table>
-            )}
             <div style={{ borderTop: '1px solid var(--border)' }}>
               <AdminPagination
                 currentPage={currentPage}
@@ -586,6 +701,97 @@ export default function HotelGstSettings() {
             </div>
           </section>
         </>
+
+      {/* View Details Modal */}
+      {viewingGstRecord && (
+        <div className="discount-modal-overlay" onClick={() => setViewingGstRecord(null)}>
+          <div className="discount-modal-container view-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px' }}>
+            <div className="modal-header" style={{ borderBottom: 'none', marginBottom: '8px' }}>
+              <h3 style={{ color: '#1e293b', fontWeight: '700' }}>GST Setting Details</h3>
+              <button
+                type="button"
+                onClick={() => setViewingGstRecord(null)}
+                style={{
+                  border: 'none',
+                  background: '#1e3a8a',
+                  color: '#ffffff',
+                  borderRadius: '20px',
+                  padding: '6px 16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Close
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', justifyContent: 'flex-start' }}>
+              <span style={{ 
+                background: viewingGstRecord.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)', 
+                color: viewingGstRecord.isActive ? '#10b981' : '#64748b', 
+                padding: '4px 12px', 
+                borderRadius: '100px', 
+                fontWeight: '600', 
+                fontSize: '11px' 
+              }}>
+                {viewingGstRecord.isActive ? 'Active' : 'Inactive'}
+              </span>
+              <span style={{ background: '#fdf2f8', color: '#A51C49', padding: '4px 12px', borderRadius: '100px', fontWeight: '700', fontSize: '11px', border: '1px solid rgba(165, 28, 73, 0.15)' }}>
+                GST Rule ID: {viewingGstRecord.id}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', textAlign: 'left', overflowY: 'auto', maxHeight: '60vh', paddingRight: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MARKUP TYPE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingGstRecord.markupType}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MARKUP VALUE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingGstRecord.markupValue}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CONVENIENCE FEE TYPE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingGstRecord.convenienceFeeType}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CONVENIENCE FEE VALUE</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingGstRecord.convenienceFeeValue}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>GST PERCENT</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewingGstRecord.gstPercent}%</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>UPDATED ON</span>
+                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{new Date(viewingGstRecord.updatedAtUtc || viewingGstRecord.createdAtUtc).toLocaleString()}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 3' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>UPDATED BY</span>
+                <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{viewingGstRecord.updatedBy || '--'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteRecord && (
+        <div className="admin-markup-coupon-backdrop" onClick={() => setDeleteRecord(null)}>
+          <section className="admin-markup-coupon-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px" }}>
+            <header className="generate-header">
+              <h2>Confirm Delete</h2>
+            </header>
+            <div style={{ padding: "20px", fontSize: "0.9rem" }}>
+              Are you sure you want to delete GST Setting ID <strong>{deleteRecord.id}</strong>? This action cannot be undone.
+            </div>
+            <footer style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button type="button" className="admin-markup-coupon-btn clear" onClick={() => setDeleteRecord(null)} style={{ backgroundColor: "#f97316", borderColor: "#f97316", color: "#ffffff" }}>Cancel</button>
+              <button type="button" className="admin-markup-coupon-btn generate" style={{ backgroundColor: "#ef4444", borderColor: "#ef4444", color: "#ffffff" }} onClick={handleDelete}>Delete</button>
+            </footer>
+          </section>
+        </div>
       )}
     </div>
   );

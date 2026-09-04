@@ -112,9 +112,34 @@ export default function HotelConvenienceFee() {
   
   return (
     <section className="admin-b2c-page admin-convenience-page">
-      <div className="admin-convenience-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <header className="admin-b2c-header admin-convenience-header" style={{ marginBottom: 0 }}>
-          <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Hotel</span> Convenience Fee</h1>
+      <style>{`
+        .admin-convenience-icon-btn {
+          transition: all 0.2s ease !important;
+        }
+        .admin-convenience-icon-btn:hover {
+          opacity: 0.9 !important;
+          transform: translateY(-1px) !important;
+        }
+        .admin-convenience-table-row {
+          transition: background-color 0.2s ease !important;
+        }
+        .admin-convenience-table-row:hover {
+          background-color: rgba(165, 28, 73, 0.03) !important;
+        }
+        .admin-convenience-action-btn {
+          transition: all 0.2s ease !important;
+        }
+        .admin-convenience-action-btn:hover {
+          background-color: rgba(165, 28, 73, 0.08) !important;
+          border-color: #A51C49 !important;
+          color: #A51C49 !important;
+        }
+      `}</style>
+      <div className="admin-convenience-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px' }}>
+        <header className="admin-b2c-header admin-convenience-header" style={{ margin: 0 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: '28px' }}>
+            <span style={{ color: '#A51C49' }}>B2C Hotel</span> Convenience Fee
+          </h1>
         </header>
 
         <button

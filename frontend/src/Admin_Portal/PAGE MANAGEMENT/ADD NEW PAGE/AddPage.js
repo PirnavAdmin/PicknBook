@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./AddPage.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createAdminPage, updateAdminPage } from "../../../services/cmsPageService";
+import { createAdminPage, updateAdminPage, resolveCmsImageUrl } from "../../../services/cmsPageService";
 
 const DEFAULT_FORM = {
   title: "",
@@ -45,6 +45,14 @@ const AddPage = () => {
     bannerName: editingPage?.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage?.bannerName || ""),
   }));
 
+  const [imagePreview, setImagePreview] = useState(() => {
+    const existingImg = editingPage?.imagePath || editingPage?.image || editingPage?.imageUrl || "";
+    if (existingImg) {
+      return resolveCmsImageUrl(existingImg, "image") || existingImg;
+    }
+    return "";
+  });
+
   useEffect(() => {
     if (editingPage) {
       setFormData({
@@ -59,6 +67,10 @@ const AddPage = () => {
         imageName: editingPage.imagePath ? editingPage.imagePath.split(/[/\\]/).pop() : (editingPage.imageName || ""),
         bannerName: editingPage.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage.bannerName || ""),
       });
+      const existingImg = editingPage.imagePath || editingPage.image || editingPage.imageUrl || "";
+      if (existingImg) {
+        setImagePreview(resolveCmsImageUrl(existingImg, "image") || existingImg);
+      }
     }
   }, [editingPage]);
 
@@ -79,6 +91,7 @@ const AddPage = () => {
       event.target.value = ""; // Clear file input
       if (field === "image") {
         setImageFile(null);
+        setImagePreview("");
         setFormData((previous) => ({ ...previous, imageName: "" }));
       } else if (field === "banner") {
         setBannerFile(null);
@@ -90,6 +103,13 @@ const AddPage = () => {
     if (field === "image") {
       setImageFile(file || null);
       setFormData((previous) => ({ ...previous, imageName: file ? file.name : "" }));
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target?.result || "");
+        reader.readAsDataURL(file);
+      } else {
+        setImagePreview("");
+      }
     } else if (field === "banner") {
       setBannerFile(file || null);
       setFormData((previous) => ({ ...previous, bannerName: file ? file.name : "" }));
@@ -99,6 +119,7 @@ const AddPage = () => {
   const handleRemoveFile = (field) => {
     if (field === "image") {
       setImageFile(null);
+      setImagePreview("");
       setFormData((previous) => ({ ...previous, imageName: "" }));
       const fileInput = document.getElementById("image-input");
       if (fileInput) fileInput.value = "";
@@ -161,18 +182,58 @@ const AddPage = () => {
 
     if (imageFile) {
       data.append("Image", imageFile);
+      data.append("image", imageFile);
+      data.append("PageImage", imageFile);
+      data.append("file", imageFile);
     }
     if (bannerFile) {
       data.append("Banner", bannerFile);
+      data.append("banner", bannerFile);
+      data.append("BannerImage", bannerFile);
     }
 
     setLoading(true);
     try {
-      if (editingPage && editingPage.id && !String(editingPage.id).startsWith("default-")) {
-        await updateAdminPage(editingPage.id, data);
-      } else {
-        await createAdminPage(data);
+      const pageSlug = formData.slug.trim() || formData.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+      if (imageFile) {
+        try {
+          const base64Url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result || null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(imageFile);
+          });
+          if (base64Url) {
+            const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
+            current[pageSlug] = base64Url;
+            const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (norm) current[norm] = base64Url;
+            if (editingPage?.id) current[editingPage.id] = base64Url;
+            localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
+          }
+        } catch (e) {}
       }
+
+      let res = null;
+      if (editingPage && editingPage.id && !String(editingPage.id).startsWith("default-")) {
+        res = await updateAdminPage(editingPage.id, data);
+      } else {
+        res = await createAdminPage(data);
+      }
+
+      if (res) {
+        const savedImg = res.imagePath || res.ImagePath || res.image || res.Image;
+        if (savedImg) {
+          try {
+            const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
+            current[pageSlug] = savedImg;
+            if (res.id) current[res.id] = savedImg;
+            localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
+          } catch (e) {}
+        }
+      }
+
       setSaved(true);
       navigate(pageListPath);
     } catch (err) {
@@ -257,6 +318,23 @@ const AddPage = () => {
                 disabled={loading}
                 accept="image/*"
               />
+              {imagePreview && (
+                <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <img
+                    src={imagePreview}
+                    alt="Image Preview"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      border: "1px solid #cbd5e1",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
+                    }}
+                  />
+                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Selected Image Preview</span>
+                </div>
+              )}
             </div>
 
             <div className="form-group">

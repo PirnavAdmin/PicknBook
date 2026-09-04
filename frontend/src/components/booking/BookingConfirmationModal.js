@@ -37,7 +37,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   const fareSummary = flowState?.fareSummary || {};
   let totalPayable = flowState?.payableAmount || fareSummary?.totalFare || 0;
   if (bookingType === "Hotel") {
-    totalPayable = flowState?.finalPayableAmount || 0;
+    totalPayable = flowState?.payableAmount || flowState?.finalPayableAmount || 0;
   }
   
   // --- Agent Wallet Logic ---

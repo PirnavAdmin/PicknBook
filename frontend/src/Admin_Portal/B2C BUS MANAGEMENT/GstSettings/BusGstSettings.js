@@ -11,6 +11,8 @@ import {
   Trash2,
   X,
   Search,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import "./BusGstSettings.css";
 import { csvCell, formatDateTime, toViewId } from "../../../utils/adminPortalUtils";
@@ -293,6 +295,56 @@ export default function AdminBusGstSettingsPage() {
       alert("Failed to delete: " + err.message);
     }
   };
+
+  if (error) {
+    return (
+      <div className="admin-b2c-page bus-gst-list-page-container" style={{ padding: "24px" }}>
+        <section className="markup-heading">
+          <p className="markup-heading-main">
+            B2C Bus <span className="markup-heading-sub">GST Settings</span>
+          </p>
+        </section>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 20px',
+          background: 'var(--panel)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginTop: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={20} />
+            <span>Network Error</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={fetchSettings}
+            style={{
+              background: '#A41B48',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            title="Retry Connection"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

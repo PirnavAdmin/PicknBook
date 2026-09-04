@@ -44,7 +44,7 @@ try {
   console.log('[Asset Sync] Warning:', e.message);
 }
 
-const FALLBACK_PROXY_TARGET = "https://humiliate-eatery-humvee.ngrok-free.dev";
+const FALLBACK_PROXY_TARGET = "https://www.picknbook.in";
 
 function normalizeHttpUrl(value) {
   if (typeof value !== "string") return "";

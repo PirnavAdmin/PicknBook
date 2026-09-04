@@ -27,11 +27,11 @@ const TravelerTable = ({ data, onUpdate, onDelete }) => {
       <table className="traveler-table">
         <thead>
           <tr>
-            <th>Sr</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Gender</th>
-            <th>Action</th>
+            <th>SR</th>
+            <th>NAME</th>
+            <th>TYPE</th>
+            <th>GENDER</th>
+            <th>ACTION</th>
           </tr>
         </thead>
         <tbody>
@@ -46,8 +46,8 @@ const TravelerTable = ({ data, onUpdate, onDelete }) => {
               const isEdit = editId === item.id;
               return (
                 <tr key={item.id}>
-                  <td>{index + 1}</td>
-                  <td>
+                  <td className="traveler-sr">{index + 1}</td>
+                  <td className="traveler-name">
                     {isEdit ? (
                       <input
                         name="name"
@@ -59,8 +59,8 @@ const TravelerTable = ({ data, onUpdate, onDelete }) => {
                       item.name
                     )}
                   </td>
-                      <td>{item.type || "Adult"}</td>
-                  <td>
+                  <td className="traveler-type">{item.type || "Adult"}</td>
+                  <td className="traveler-gender">
                     {isEdit ? (
                       <select
                         name="gender"
@@ -77,24 +77,24 @@ const TravelerTable = ({ data, onUpdate, onDelete }) => {
                   </td>
                   <td>
                     {!isEdit ? (
-                      <>
+                      <div className="traveler-actions-wrap">
                         <button
                           onClick={() => handleEdit(item)}
-                          className="icon-btn icon-edit"
+                          className="traveler-btn-edit"
                           type="button"
                           title="Edit"
                         >
-                          <FiEdit2 />
+                          <FiEdit2 size={13} />
                         </button>
                         <button
                           onClick={() => onDelete(item.id)}
-                          className="icon-btn icon-delete"
+                          className="traveler-btn-delete"
                           type="button"
                           title="Delete"
                         >
-                          <FiTrash2 />
+                          <FiTrash2 size={13} />
                         </button>
-                      </>
+                      </div>
                     ) : (
                       <>
                         <button

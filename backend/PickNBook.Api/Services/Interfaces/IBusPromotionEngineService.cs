@@ -9,7 +9,17 @@ public interface IBusPromotionEngineService
         BusBooking bus,
         List<SeatPreviewDto> seats,
         string? couponCode,
-        int? promotionId,
+        int? promotionId = null,
         int? userId = null,
-         int? selectedFeaturedOfferId = null);
+        int? selectedFeaturedOfferId = null,
+        BusCouponValidationContext? validationContext = null);
+
+    bool ValidateCouponConditions(
+        IEnumerable<BusCouponCondition>? conditions,
+        BusCouponValidationContext context);
+
+    bool ValidateCouponConditions(
+        IEnumerable<BusCouponCondition>? conditions,
+        BusBooking bus,
+        List<SeatPreviewDto> seats);
 }

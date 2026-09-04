@@ -70,7 +70,9 @@ export default function HotelDetail({
   nights
 }) {
 
-  const amenities = hotel.amenities || [];
+  const amenities = Array.isArray(hotel.amenities)
+    ? hotel.amenities
+    : (typeof hotel.amenities === "string" ? hotel.amenities.split(",").map(a => a.trim()) : []);
 
   // Parse amenities dynamically based on API data
   const views = [];

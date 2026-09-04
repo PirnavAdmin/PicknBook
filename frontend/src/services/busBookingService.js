@@ -2,7 +2,7 @@
 import { toDdMmYyyy } from "../utils/apiDateFormat";
 
 const FALLBACK_API_BASE_URL =
-  "https://humiliate-eatery-humvee.ngrok-free.dev";
+  "https://www.picknbook.in";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function getAuthHeaders() {
@@ -37,6 +37,15 @@ function isLocalDevelopment() {
 }
 
 function resolveApiBaseUrl() {
+  const preferProxyInDev =
+    isLocalDevelopment() &&
+    String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
+      "true";
+
+  if (preferProxyInDev) {
+    return "";
+  }
+
   const explicitBase =
     process.env.REACT_APP_API_BASE_URL ||
     process.env.REACT_APP_BUS_API_BASE_URL;
@@ -292,13 +301,28 @@ function normalizeBusSearchRecord(record, index = 0) {
     priceInr: Number(pickFirst(record, ["b2CDisplayFare", "B2CDisplayFare", "b2cDisplayFare"], 0)) || Number(pickFirst(record, ["priceInr", "PriceInr", "DisplayFare"], 0)) || 0,
     availableSeats:
       Number(pickFirst(record, ["availableSeats", "AvailableSeats"], 0)) || 0,
-    totalSeats: Number(pickFirst(record, ["totalSeats", "TotalSeats"], 0)) || 0,
-    idProofRequired: Boolean(
-      pickFirst(record, ["idProofRequired", "IdProofRequired", "isIdProofRequired", "IsIdProofRequired"], false)
-    ),
-    IdProofRequired: Boolean(
-      pickFirst(record, ["idProofRequired", "IdProofRequired", "isIdProofRequired", "IsIdProofRequired"], false)
-    ),
+    idProofRequired: (() => {
+      const val = pickFirst(record, ["idProofRequired", "IdProofRequired", "isIdProofRequired", "IsIdProofRequired"], false);
+      if (typeof val === "boolean") return val;
+      if (typeof val === "number") return val === 1;
+      if (typeof val === "string") {
+        const s = val.trim().toLowerCase();
+        if (s === "true" || s === "1" || s === "yes") return true;
+        if (s === "false" || s === "0" || s === "no") return false;
+      }
+      return false;
+    })(),
+    IdProofRequired: (() => {
+      const val = pickFirst(record, ["idProofRequired", "IdProofRequired", "isIdProofRequired", "IsIdProofRequired"], false);
+      if (typeof val === "boolean") return val;
+      if (typeof val === "number") return val === 1;
+      if (typeof val === "string") {
+        const s = val.trim().toLowerCase();
+        if (s === "true" || s === "1" || s === "yes") return true;
+        if (s === "false" || s === "0" || s === "no") return false;
+      }
+      return false;
+    })(),
   };
 }
 
@@ -1704,8 +1728,11 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
         b2cDisplayFare: b2cDisplayFare,
         publishedFare,
         baseFare,
+        supplierBaseFare: baseFare,
+        srdvBaseFare:  baseFare,
         tax,
         externalGst:   tax, // Added for Pricing Preview explicitly
+        srdvTax:       tax,
         seatFare,
         markupAmount:  markup,
         fareBeforeTax: b2cDisplayFare,
@@ -1754,6 +1781,8 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
 
 export async function getBusPricingPreview({
   traceId,
+  resultIndex,
+  srdvIndex,
   passengers = [],
   couponCode,
   promotionId,
@@ -1793,15 +1822,53 @@ export async function getBusPricingPreview({
     }
   }
 
-  const seatsPayload = passengers.map(p => ({
-    seatCode: p.seatNumber || p.seatName || p.seatCode,
-    seatType: p.seatType || "Seater",
-    baseFare: Number(p.baseFare || p.fareBeforeTax || p.priceInr || 0),
-    externalGst: Number(p.tax || p.externalGst || p.gstAmount || 0)
-  }));
+  const seatsPayload = passengers.map((p) => {
+    const rawBase = Number(
+      p.supplierBaseFare ??
+      p.srdvBaseFare ??
+      (p.b2cDisplayFare !== undefined && p.markupAmount !== undefined
+        ? Number(p.b2cDisplayFare) - Number(p.markupAmount)
+        : null) ??
+      p.baseFare ??
+      p.fareBeforeTax ??
+      p.priceInr ??
+      0
+    );
+    const tax = Number(p.externalGst ?? p.tax ?? p.gstAmount ?? p.srdvTax ?? 0);
+    return {
+      seatCode: String(p.seatCode || p.seatNumber || p.seatName || ""),
+      seatType: String(p.seatType || "Seater"),
+      baseFare: rawBase,
+      externalGst: tax
+    };
+  });
 
-  const calculatedBaseFare = seatsPayload.reduce((sum, s) => sum + Number(s.baseFare || 0), 0) || Number(totalFare || 0);
-  const calculatedTax = seatsPayload.reduce((sum, s) => sum + Number(s.externalGst || 0), 0);
+  const calculatedTotalFare = passengers.reduce((sum, p, idx) => {
+    const seatBase = seatsPayload[idx]?.baseFare ?? Number(p.baseFare || 0);
+    const seatTax = seatsPayload[idx]?.externalGst ?? Number(p.tax || p.externalGst || 0);
+    const seatMarkup = Number(p.markupAmount || p.markup || 0);
+    const seatPayable = Number(p.publishedFare || 0) || (seatBase + seatMarkup + seatTax);
+    return sum + seatPayable;
+  }, 0);
+
+  const finalTotalFare =
+    totalFare !== undefined && totalFare !== null && !isNaN(Number(totalFare)) && Number(totalFare) > 0
+      ? Number(Number(totalFare).toFixed(2))
+      : Number(calculatedTotalFare.toFixed(2));
+
+  const resolvedResultIndex =
+    resultIndex !== undefined && resultIndex !== null && String(resultIndex).trim() !== ""
+      ? String(resultIndex).trim()
+      : passengers[0]?.resultIndex
+      ? String(passengers[0].resultIndex).trim()
+      : undefined;
+
+  const resolvedSrdvIndex =
+    srdvIndex !== undefined && srdvIndex !== null
+      ? (!isNaN(Number(srdvIndex)) ? Number(srdvIndex) : srdvIndex)
+      : passengers[0]?.srdvIndex !== undefined && passengers[0]?.srdvIndex !== null
+      ? (!isNaN(Number(passengers[0].srdvIndex)) ? Number(passengers[0].srdvIndex) : passengers[0].srdvIndex)
+      : undefined;
 
   try {
     const data = await requestJsonWithFallback(
@@ -1811,16 +1878,17 @@ export async function getBusPricingPreview({
         allowAuthFallback: true,
         body: JSON.stringify({
           traceId: String(traceId || ""),
-          couponCode: finalCouponCode,
+          ...(resolvedResultIndex !== undefined ? { resultIndex: resolvedResultIndex } : {}),
+          ...(resolvedSrdvIndex !== undefined ? { srdvIndex: resolvedSrdvIndex } : {}),
+          couponCode: finalCouponCode || null,
           seats: seatsPayload,
-          promotionId: finalFeaturedOfferId ? null : promotionId,
-          selectedFeaturedOfferId: finalFeaturedOfferId,
+          ...(finalFeaturedOfferId ? { selectedFeaturedOfferId: finalFeaturedOfferId } : {}),
           fromCity: String(fromCity || ""),
           toCity: String(toCity || ""),
           departureTime: String(departureTime || ""),
           operatorName: String(operatorName || ""),
           busType: String(busType || ""),
-          totalFare: calculatedBaseFare
+          totalFare: finalTotalFare
         }),
       }
     );
@@ -1967,6 +2035,7 @@ export function buildBusPayload(payload) {
   });
 
   return {
+    routeId: String(payload.routeId || payload.RouteId || payload.bus?.routeId || ""),
     traceId: String(payload.traceId || payload.TraceId || payload.bus?.traceId || payload.bus?.tripId || ""),
     resultIndex: String(payload.resultIndex || payload.ResultIndex || payload.bus?.resultIndex || payload.bus?.id || ""),
     srdvIndex: Number(payload.srdvIndex || payload.SrdvIndex || payload.bus?.srdvIndex || 0),
@@ -1977,6 +2046,7 @@ export function buildBusPayload(payload) {
     arrivalTime: String(payload.arrivalTime || payload.bus?.arrivalTimeUtc || payload.bus?.arrivalTimeIst || payload.bus?.arrivalTime || ""),
     operatorName: String(payload.operatorName || payload.bus?.operatorName || ""),
     busType: String(payload.busType || payload.bus?.busType || ""),
+    isIdProofRequired: Boolean(payload.isIdProofRequired ?? payload.IsIdProofRequired ?? false),
     totalFare: Number(payload.totalFare || payload.bus?.priceInr || payload.bus?.displayFare || payload.bus?.fare || 0),
     boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || payload.boardingPoint?.id || payload.boardingPoint?.pointId || ""),
     boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || payload.boardingPoint?.name || ""),

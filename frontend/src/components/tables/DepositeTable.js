@@ -18,15 +18,15 @@ const DepositTable = ({ data, onDelete, onUpdateRow }) => {
         <table className="deposit-table">
           <thead className="deposit-table-head">
             <tr>
-              <th>Sr.</th>
-              <th>Amount</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>User Remark</th>
-              <th>Admin Remark</th>
-              <th>Entry Date</th>
-              <th>Trns. Date</th>
-              <th>Action</th>
+              <th>SR.</th>
+              <th>AMOUNT</th>
+              <th>TYPE</th>
+              <th>STATUS</th>
+              <th>USER REMARK</th>
+              <th>ADMIN REMARK</th>
+              <th>ENTRY DATE</th>
+              <th>TRNS. DATE</th>
+              <th>ACTION</th>
             </tr>
           </thead>
 
@@ -40,7 +40,7 @@ const DepositTable = ({ data, onDelete, onUpdateRow }) => {
             ) : (
               data.map((item, index) => (
                 <tr key={item.id} className="deposit-row">
-                  <td className="deposit-cell">{index + 1}</td>
+                  <td className="deposit-cell deposit-cell-sr">{index + 1}</td>
                   <td className="deposit-cell">
                     {editId === item.id ? (
                       <input
@@ -63,7 +63,7 @@ const DepositTable = ({ data, onDelete, onUpdateRow }) => {
                     <div className="deposit-action-group">
                       {editId !== item.id ? (
                         <>
-                          <button onClick={() => setViewData(item)} className="deposit-icon-btn" title="View">
+                          <button onClick={() => setViewData(item)} className="deposit-btn-action" title="View">
                             View
                           </button>
                           <button
@@ -71,14 +71,14 @@ const DepositTable = ({ data, onDelete, onUpdateRow }) => {
                               setEditId(item.id);
                               setEditData(item);
                             }}
-                            className="deposit-icon-btn deposit-icon-blue"
+                            className="deposit-btn-action"
                             title="Edit"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => onDelete(item.id)}
-                            className="deposit-icon-btn deposit-icon-red"
+                            className="deposit-btn-action"
                             title="Delete"
                           >
                             Delete

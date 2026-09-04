@@ -83,5 +83,16 @@ export async function getPublicPages() {
   return response.data;
 }
 
+export function resolveCmsImageUrl(pathOrUrl, type) {
+  if (!pathOrUrl || typeof pathOrUrl !== "string") return "";
+  const trimmed = pathOrUrl.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
+  return toApiUrl(trimmed);
+}
+
 export default cmsApi;
+
 
