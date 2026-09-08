@@ -38,7 +38,21 @@ import {
 import { searchBuses, getBoardingPointsProxy } from "../../services/busBookingService";
 import { getActiveOffers } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
+import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import "../../STYLES/BusSearchResults.css";
+
+function formatBusPillDate(dateStr) {
+  if (!dateStr) return { date: "Select Date", day: "DATE OF TRAVEL" };
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return { date: dateStr, day: "DATE OF TRAVEL" };
+  const dateFormatted = d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const dayName = d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  return { date: dateFormatted, day: dayName };
+}
 
 const USE_DIRECT_API_IN_DEV =
   String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() ===
@@ -1447,7 +1461,10 @@ export default function BusSearchResults() {
     const raw = bus?.amenities || bus?.Amenities || bus?.facilities || bus?.Facilities || bus?.busAmenities || detailsData?.Amenities || detailsData?.facilities;
     if (!raw) return [];
     if (Array.isArray(raw)) {
-      return raw.map(a => typeof a === "string" ? a : (a.name || a.Name || a.title || JSON.stringify(a))).filter(Boolean);
+      return raw.map(a => typeof a === "string" ? a : (a?.name || a?.Name || a?.title || (typeof a === "object" ? "" : String(a)))).filter(Boolean);
+    }
+    if (typeof raw === "object") {
+      return Object.values(raw).map(a => typeof a === "string" ? a : (a?.name || a?.Name || a?.title || "")).filter(Boolean);
     }
     if (typeof raw === "string") {
       return raw.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
@@ -1663,12 +1680,15 @@ export default function BusSearchResults() {
               <h4 className="bus-details-section-title">Available Amenities</h4>
               {busAmenitiesList.length > 0 ? (
                 <div className="bus-details-grid-3col">
-                  {busAmenitiesList.map((item, idx) => (
-                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13.5px", color: "#1e293b", fontWeight: "600", padding: "6px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                      {renderAmenityIcon(item)}
-                      <span>{item}</span>
-                    </div>
-                  ))}
+                  {busAmenitiesList.map((item, idx) => {
+                    const itemName = typeof item === "object" && item !== null ? (item.name || item.Name || item.title || "") : String(item || "");
+                    return (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13.5px", color: "#1e293b", fontWeight: "600", padding: "6px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                        {renderAmenityIcon(itemName)}
+                        <span>{itemName}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
@@ -2020,8 +2040,8 @@ export default function BusSearchResults() {
               ) : expandedCard.panel === "boarding" ? (
                 <div style={{ padding: '16px' }}>
                   <p>
-                    Boarding: <strong>{bus.boardingPoint}</strong> | Dropping:{" "}
-                    <strong>{bus.droppingPoint}</strong>
+                    Boarding: <strong>{typeof bus.boardingPoint === "object" && bus.boardingPoint !== null ? (bus.boardingPoint.name || bus.boardingPoint.locationName || "") : bus.boardingPoint}</strong> | Dropping:{" "}
+                    <strong>{typeof bus.droppingPoint === "object" && bus.droppingPoint !== null ? (bus.droppingPoint.name || bus.droppingPoint.locationName || "") : bus.droppingPoint}</strong>
                   </p>
                 </div>
               ) : expandedCard.panel === "policy" ? (
@@ -2063,84 +2083,124 @@ export default function BusSearchResults() {
   return (
     <main className="bus-results-page">
       <div className="bus-results-shell">
-        <section className="bus-search-summary">
-          <div className="bus-search-card">
-            <ModifyPlaceAutocomplete
-              label="From"
-              value={modifyForm.source}
-              onChange={(nextValue) =>
-                setModifyForm((previous) => ({
-                  ...previous,
-                  source: nextValue,
-                }))
-              }
-              tripType="bus"
-              field="from"
-              placeholder="Source"
-            />
-
-            <button
-              type="button"
-              className="bus-modify-swap"
-              onClick={handleSwapModifyCities}
-              aria-label="Swap source and destination"
+        <section className="bus-search-hero">
+          <div className="bus-hero-wallpaper-overlay" />
+          <div className="bus-hero-content-wrapper">
+            <form
+              className="bus-discover-searchbar"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleApplyModifySearch();
+              }}
             >
-              <ArrowLeftRight size={20} />
-            </button>
-
-            <ModifyPlaceAutocomplete
-              label="To"
-              value={modifyForm.destination}
-              onChange={(nextValue) =>
-                setModifyForm((previous) => ({
-                  ...previous,
-                  destination: nextValue,
-                }))
-              }
-              tripType="bus"
-              field="to"
-              placeholder="Destination"
-            />
-
-            <label className="bus-modify-field bus-modify-date">
-              <span>Date</span>
-              <div className="bus-modify-control-wrap">
-                <CalendarDays size={18} />
-                <input
-                  type="text"
-                  readOnly
-                  value={formatDdMmYyyy(modifyForm.departureDate)}
-                  placeholder="DD/MM/YYYY"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    const hiddenInput = document.getElementById("bus-date-hidden");
-                    if (hiddenInput) {
-                      try {
-                        hiddenInput.showPicker();
-                      } catch (err) {
-                        hiddenInput.click();
-                      }
+              {/* LOCATIONS GROUP */}
+              <div style={{ display: 'flex', flex: '2.4 1 auto', position: 'relative', alignItems: 'center' }}>
+                {/* FROM FIELD */}
+                <div className="bus-discover-searchcell" style={{ flex: '1 1 50%', paddingRight: '16px' }}>
+                  <PlaceAutocomplete
+                    label="FROM"
+                    sublabel={false}
+                    value={modifyForm.source}
+                    onChange={(nextValue) =>
+                      setModifyForm((previous) => ({
+                        ...previous,
+                        source: nextValue,
+                      }))
                     }
-                  }}
-                />
-                <input
-                  id="bus-date-hidden"
-                  type="date"
-                  value={modifyForm.departureDate}
-                  onChange={(event) =>
-                    setModifyForm((previous) => ({
-                      ...previous,
-                      departureDate: event.target.value,
-                    }))
-                  }
-                  style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-                />
-              </div>
-            </label>
+                    tripType="bus"
+                    field="from"
+                    placeholder="Enter departure city"
+                    isInline={true}
+                  />
+                </div>
 
-            <button type="button" className="bus-modify-btn" onClick={handleApplyModifySearch}>
-              Modify Search
-            </button>
+                {/* SWAP BUTTON */}
+                <button
+                  type="button"
+                  className="bus-discover-swap"
+                  onClick={handleSwapModifyCities}
+                  aria-label="Swap source and destination"
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 10,
+                    margin: 0,
+                    backgroundColor: '#ffffff',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                  }}
+                >
+                  <ArrowLeftRight size={16} />
+                </button>
+
+                {/* TO FIELD */}
+                <div className="bus-discover-searchcell with-divider" style={{ flex: '1 1 50%', paddingLeft: '22px' }}>
+                  <PlaceAutocomplete
+                    label="TO"
+                    sublabel={false}
+                    value={modifyForm.destination}
+                    onChange={(nextValue) =>
+                      setModifyForm((previous) => ({
+                        ...previous,
+                        destination: nextValue,
+                      }))
+                    }
+                    tripType="bus"
+                    field="to"
+                    placeholder="Enter destination city"
+                    isInline={true}
+                  />
+                </div>
+              </div>
+
+              {/* TRAVEL DATE FIELD */}
+              <div
+                className="bus-discover-searchcell with-divider"
+                style={{ flex: '1 1 auto', cursor: 'pointer' }}
+                onClick={() => {
+                  const picker = document.getElementById("bus-discover-date");
+                  if (picker) {
+                    try {
+                      picker.showPicker();
+                    } catch (e) {
+                      picker.click();
+                    }
+                  }
+                }}
+              >
+                <CalendarDays size={18} color="#64748b" style={{ flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    TRAVEL DATE
+                  </span>
+                  <strong style={{ cursor: 'pointer', color: '#0f172a', fontWeight: 700, fontSize: '1.02rem', margin: '2px 0', whiteSpace: 'nowrap' }}>
+                    {formatBusPillDate(modifyForm.departureDate).date}
+                  </strong>
+                  <input
+                    id="bus-discover-date"
+                    type="date"
+                    value={modifyForm.departureDate}
+                    onChange={(event) =>
+                      setModifyForm((previous) => ({
+                        ...previous,
+                        departureDate: event.target.value,
+                      }))
+                    }
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                  />
+                </div>
+              </div>
+
+              {/* SEARCH BUTTON */}
+              <button
+                type="button"
+                className="bus-discover-searchbutton"
+                onClick={handleApplyModifySearch}
+              >
+                <Search size={18} />
+                <span>Search Buses</span>
+              </button>
+            </form>
           </div>
         </section>
 

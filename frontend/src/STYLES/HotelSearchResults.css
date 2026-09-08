@@ -1533,32 +1533,6 @@
   box-shadow: 0 0 15px rgba(220, 30, 38, 0.3);
 }
 
-/* Search bar elements visibility and color overrides */
-.hotel-discover-searchbar {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
-}
-
-.hotel-discover-searchbar span {
-  color: #475569 !important;
-}
-
-.hotel-discover-searchbar strong,
-.hotel-discover-searchbar input {
-  color: #0f172a !important;
-  background: transparent !important;
-}
-
-.hotel-discover-searchbar input::placeholder {
-  color: #94a3b8 !important;
-}
-
-.hotel-discover-searchcell svg {
-  color: #dc1e26 !important;
-}
-
 /* Glass search bar overrides - translucent background and white text */
 .hotel-discover-searchbar {
   background: rgba(255, 255, 255, 0.18) !important;
@@ -1566,7 +1540,7 @@
   -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
-  border-radius: 30px !important;
+  border-radius: 40px !important;
 }
 
 .hotel-discover-searchbar span {
@@ -1581,6 +1555,10 @@
 
 .hotel-discover-searchbar input::placeholder {
   color: #e2e8f0 !important;
+}
+
+.hotel-discover-searchcell svg {
+  color: #ffffff !important;
 }
 
 .hotel-discover-searchcell svg {

@@ -5396,138 +5396,213 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bus-offers-section section-shell">
-        <div className="bus-offers-content-shell">
-          {/* Top Header Row */}
-          <div className="bus-offers-header-row">
-            <div>
-              <h2 className="bus-offers-title">Featured Offers</h2>
-              <p className="bus-offers-subtitle">
-                Best deals on buses. Grab them before they're gone!
-              </p>
+      {
+        activeTab === "buses" && (
+          <section className="popular-routes-section section-shell">
+            <div className="section-header">
+              <div>
+                <span className="section-kicker">POPULAR BUS ROUTES</span>
+                <h2>Most Booked Bus Routes</h2>
+              </div>
             </div>
 
-            <button
-              type="button"
-              className="bus-offers-view-all"
-              onClick={() => setIsDealsDialogOpen(true)}
-            >
-              <span>View all deals</span>
-              <ArrowRight size={15} />
-            </button>
-          </div>
+            {popularRoutesLoading ? (
+              <div className="popular-routes-loading">Loading popular routes...</div>
+            ) : popularRoutesError ? (
+              <div className="popular-routes-error">{popularRoutesError}</div>
+            ) : popularRoutes.length === 0 ? (
+              <div className="popular-routes-empty">No popular routes available.</div>
+            ) : (
+              <AutoMarquee
+                items={popularRoutes}
+                className="popular-routes-marquee"
+                duration={36}
+                renderItem={(route, idx) => {
+                  const BUS_PHOTOS = [
+                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=600&q=80&fit=crop&auto=format"
+                  ];
+                  const cityImg = getCityImage(route.toCity || route.fromCity, "");
+                  const busImg = cityImg || BUS_PHOTOS[idx % BUS_PHOTOS.length];
 
-          {/* Category Filter Tabs Bar */}
-          <div className="bus-offers-tabs-bar">
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
-              onClick={() => setOffersFilter("all")}
-            >
-              <Tag size={13} />
-              <span>All Offers</span>
-            </button>
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
-              onClick={() => setOffersFilter("flight")}
-            >
-              <Plane size={13} />
-              <span>Flights</span>
-            </button>
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
-              onClick={() => setOffersFilter("bus")}
-            >
-              <Bus size={13} />
-              <span>Buses</span>
-            </button>
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
-              onClick={() => setOffersFilter("hotel")}
-            >
-              <Building2 size={13} />
-              <span>Hotels</span>
-            </button>
-          </div>
+                  return (
+                    <article
+                      className="pop-route-card"
+                      key={route.id || idx}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handlePopularRouteBooking(route)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
+                    >
+                      <div className="pop-route-img-wrap">
+                        <img
+                          src={busImg}
+                          alt={`${route.fromCity} to ${route.toCity}`}
+                          loading="lazy"
+                          onError={(e) => { e.target.onerror = null; e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length]; }}
+                        />
+                        <div className="pop-route-img-overlay">
+                          <span className="pop-route-tag-search">BUS</span>
+                        </div>
+                      </div>
+                      <div className="pop-route-body">
+                        <div className="pop-route-cities-row">
+                          <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
+                          <div className="pop-route-icon-circle"><Bus size={13} /></div>
+                          <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
+                        </div>
+                      </div>
+                      <button type="button" className="pop-route-book-btn"
+                        onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
+                      >BOOK BUS</button>
+                    </article>
+                  );
+                }}
+              />
+            )}
+          </section>
+        )
+      }
 
-          {/* Auto-Scrolling Featured Offers Marquee */}
-          <AutoMarquee
-            items={filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS}
-            className="offer-marquee"
-            duration={24}
-            pauseOnHover={false}
-            renderItem={(offer, idx) => {
-              const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
-              const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
+      {
+        activeTab === "flights" && (
+          <>
+            <section className="popular-section section-shell">
+              <div className="section-header">
+                <div>
+                  <span className="section-kicker">Popular Picks</span>
+                  <h2>Trending Flight Routes</h2>
+                </div>
+              </div>
 
-              const rawCode = offer.couponCode || offer.code || offer.title || "BUSOFFER";
-              let code = rawCode;
-              if (!rawCode || /^coupon[_-]?code/i.test(rawCode)) {
-                const sampleCodes = ["SAVER500", "FESTIVE15", "SUPERBUS", "LUXURY25", "ACVOLVO100", "NIGHTS50"];
-                code = sampleCodes[idx % sampleCodes.length];
-              }
-
-              const badgeText = offer.badgeLabel || (idx % 3 === 0 ? "SPECIAL OFFER" : idx % 3 === 1 ? "EXCLUSIVE OFFER" : "50% OFF");
-
-              const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
-              let apiOfferImg = null;
-              if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
-                const trimmed = rawAdminImg.trim();
-                apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
-              }
-
-              return (
-                <article
-                  key={offer.id || idx}
-                  className={`bus-card-unit ${themeClass}`}
-                  onClick={() => setOfferForDetailPopup(offer)}
-                >
-                  {/* Top Bar: Icon + Category */}
-                  <div className="bus-card-top-bar">
-                    <div className="bus-card-icon-badge">
-                      <Bus size={15} />
-                    </div>
-                    <span className="bus-card-cat">BUS OFFER</span>
-                  </div>
-
-                  {/* Center Info: Code & Validity */}
-                  <div className="bus-card-center">
-                    <h3 className="bus-card-code">{code}</h3>
-                    <p className="bus-card-expiry">
-                      {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                    </p>
-                  </div>
-
-                  {/* Bottom Badge Pill */}
-                  <div className="bus-card-bottom-bar">
-                    <span className="bus-card-tag-pill">{badgeText}</span>
-                  </div>
-
-                  {/* Top Right Starburst / Badge Ribbon */}
-                  <div className="bus-card-starburst">
-                    {badgeText}
-                  </div>
-
-                  {/* Only API Provided Image (No Static Fallbacks) */}
-                  {apiOfferImg && (
-                    <img
-                      src={apiOfferImg}
-                      alt={offer.title || "Offer Graphic"}
-                      className="bus-card-vehicle-graphic"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
+              {popularFlightsLoading ? (
+                <div className="popular-routes-loading">Loading popular flights...</div>
+              ) : popularFlightsError ? (
+                <div className="popular-routes-error">{popularFlightsError}</div>
+              ) : popularFlights.length === 0 ? (
+                <div className="popular-routes-empty">No popular flights available.</div>
+              ) : (
+                <AutoMarquee
+                  items={popularFlights}
+                  className="popular-routes-marquee flight-routes-marquee"
+                  duration={38}
+                  renderItem={(flight) => (
+                    <article
+                      className="pop-route-card pop-flight-card"
+                      key={flight.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handlePopularFlightBooking(flight)}
+                    >
+                      <div className="pop-route-img-wrap">
+                        <img
+                          src={getCityImage(flight.toCity, "flight_default")}
+                          alt={`${flight.fromCity} to ${flight.toCity}`}
+                          loading="lazy"
+                          onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.flight_default; }}
+                        />
+                        <div className="pop-route-img-overlay">
+                          <span className="pop-route-tag-search">FLIGHT</span>
+                        </div>
+                      </div>
+                      <div className="pop-route-body">
+                        <div className="pop-route-cities-row">
+                          <span className="pop-route-city from" title={flight.fromCity}>{flight.fromCity}</span>
+                          <div className="pop-route-icon-circle"><Plane size={13} /></div>
+                          <span className="pop-route-city to" title={flight.toCity}>{flight.toCity}</span>
+                        </div>
+                      </div>
+                      <button type="button" className="pop-route-book-btn"
+                        onClick={(e) => { e.stopPropagation(); handlePopularFlightBooking(flight); }}
+                      >BOOK FLIGHT</button>
+                    </article>
                   )}
-                </article>
-              );
-            }}
-          />
-        </div>
-      </section>
+                />
+              )}
+            </section>
+
+            <section className="brands-section section-shell">
+              <div className="section-header">
+                <div>
+                  <h2>Airline Brands</h2>
+                </div>
+              </div>
+
+              <AutoMarquee
+                items={AIRLINE_BRANDS}
+                className="brand-marquee"
+                duration={30}
+                renderItem={(brand) => (
+                  <article className="brand-slide">
+                    <img
+                      src={brand.image}
+                      alt={brand.name}
+                      className="brand-logo"
+                      style={{ "--brand-scale": brand.scale }}
+                    />
+                    <span>{brand.name}</span>
+                  </article>
+                )}
+              />
+            </section>
+          </>
+        )
+      }
+
+      {
+        activeTab === "hotels" && (
+          <section className="popular-section hotel-popular-section section-shell">
+            <div className="section-header">
+              <div>
+                <span className="section-kicker">Popular Stays</span>
+                <h2>Trending Hotel Picks</h2>
+              </div>
+            </div>
+
+            {popularHotelsLoading ? (
+              <div className="popular-routes-loading">Loading popular stays...</div>
+            ) : popularHotels.length === 0 ? (
+              <div className="popular-routes-empty">No popular stays available.</div>
+            ) : (
+              <AutoMarquee
+                items={popularHotels}
+                className="popular-routes-marquee hotel-routes-marquee"
+                duration={38}
+                renderItem={(hotel, idx) => (
+                  <article
+                    className="pop-route-card pop-hotel-card"
+                    key={hotel.id || idx}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handlePopularHotelBooking(hotel)}
+                  >
+                    <div className="pop-route-img-wrap">
+                      <img
+                        src={hotel.hotelImage || hotel.image || hotel.imageUrl || HOTEL_ROOM_IMAGES[idx % HOTEL_ROOM_IMAGES.length] || hotelSectionBanner}
+                        alt={`${hotel.name} - ${hotel.city}`}
+                        loading="lazy"
+                        onError={(e) => { e.target.onerror = null; e.target.src = hotelSectionBanner; }}
+                      />
+                      <div className="pop-route-img-overlay">
+                        <span className="pop-route-tag-search">STAY</span>
+                      </div>
+                    </div>
+                    <div className="pop-route-body">
+                      <p className="pop-hotel-name">{hotel.name}</p>
+                      <p className="pop-hotel-sub">{hotel.city} &nbsp;•&nbsp; From INR {hotel.price}</p>
+                    </div>
+                    <button type="button" className="pop-route-book-btn"
+                      onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}
+                    >BOOK HOTEL</button>
+                  </article>
+                )}
+              />
+            )}
+          </section>
+        )
+      }
 
       {/* TRAVEL DESK SERVICES Banner Section - Dynamic per active tab */}
       {(() => {
@@ -5766,218 +5841,141 @@ export default function HomePage() {
         );
       })()}
 
-      {
-        activeTab === "buses" && (
-          <section className="popular-routes-section section-shell">
-            <div className="section-header">
-              <div>
-                <span className="section-kicker">POPULAR BUS ROUTES</span>
-                <h2>Most Booked Bus Routes</h2>
-              </div>
+      <section className="bus-offers-section section-shell">
+        <div className="bus-offers-content-shell">
+          {/* Top Header Row */}
+          <div className="bus-offers-header-row">
+            <div>
+              <h2 className="bus-offers-title">Featured Offers</h2>
+              <p className="bus-offers-subtitle">
+                Best deals on buses. Grab them before they're gone!
+              </p>
             </div>
 
-            {popularRoutesLoading ? (
-              <div className="popular-routes-loading">Loading popular routes...</div>
-            ) : popularRoutesError ? (
-              <div className="popular-routes-error">{popularRoutesError}</div>
-            ) : popularRoutes.length === 0 ? (
-              <div className="popular-routes-empty">No popular routes available.</div>
-            ) : (
-              <AutoMarquee
-                items={popularRoutes}
-                className="popular-routes-marquee"
-                duration={36}
-                renderItem={(route, idx) => {
-                  const BUS_PHOTOS = [
-                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
-                    "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
-                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
-                    "https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=600&q=80&fit=crop&auto=format"
-                  ];
-                  const cityImg = getCityImage(route.toCity || route.fromCity, "");
-                  const busImg = cityImg || BUS_PHOTOS[idx % BUS_PHOTOS.length];
+            <button
+              type="button"
+              className="bus-offers-view-all"
+              onClick={() => setIsDealsDialogOpen(true)}
+            >
+              <span>View all deals</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
 
-                  return (
-                    <article
-                      className="pop-route-card"
-                      key={route.id || idx}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handlePopularRouteBooking(route)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
-                    >
-                      <div className="pop-route-img-wrap">
-                        <img
-                          src={busImg}
-                          alt={`${route.fromCity} to ${route.toCity}`}
-                          loading="lazy"
-                          onError={(e) => { e.target.onerror = null; e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length]; }}
-                        />
-                        <div className="pop-route-img-overlay">
-                          <span className="pop-route-tag-search">BUS</span>
-                        </div>
-                      </div>
-                      <div className="pop-route-body">
-                        <div className="pop-route-cities-row">
-                          <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
-                          <div className="pop-route-icon-circle"><Bus size={13} /></div>
-                          <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
-                        </div>
-                      </div>
-                      <button type="button" className="pop-route-book-btn"
-                        onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
-                      >BOOK BUS</button>
-                    </article>
-                  );
-                }}
-              />
-            )}
-          </section>
-        )
-      }
+          {/* Category Filter Tabs Bar */}
+          <div className="bus-offers-tabs-bar">
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
+              onClick={() => setOffersFilter("all")}
+            >
+              <Tag size={13} />
+              <span>All Offers</span>
+            </button>
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
+              onClick={() => setOffersFilter("flight")}
+            >
+              <Plane size={13} />
+              <span>Flights</span>
+            </button>
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
+              onClick={() => setOffersFilter("bus")}
+            >
+              <Bus size={13} />
+              <span>Buses</span>
+            </button>
+            <button
+              type="button"
+              className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
+              onClick={() => setOffersFilter("hotel")}
+            >
+              <Building2 size={13} />
+              <span>Hotels</span>
+            </button>
+          </div>
+
+          {/* Auto-Scrolling Featured Offers Marquee */}
+          <AutoMarquee
+            items={filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS}
+            className="offer-marquee"
+            duration={24}
+            pauseOnHover={false}
+            renderItem={(offer, idx) => {
+              const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
+              const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
+
+              const rawCode = offer.couponCode || offer.code || offer.title || "BUSOFFER";
+              let code = rawCode;
+              if (!rawCode || /^coupon[_-]?code/i.test(rawCode)) {
+                const sampleCodes = ["SAVER500", "FESTIVE15", "SUPERBUS", "LUXURY25", "ACVOLVO100", "NIGHTS50"];
+                code = sampleCodes[idx % sampleCodes.length];
+              }
+
+              const badgeText = offer.badgeLabel || (idx % 3 === 0 ? "SPECIAL OFFER" : idx % 3 === 1 ? "EXCLUSIVE OFFER" : "50% OFF");
+
+              const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
+              let apiOfferImg = null;
+              if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
+                const trimmed = rawAdminImg.trim();
+                apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
+              }
+
+              return (
+                <article
+                  key={offer.id || idx}
+                  className={`bus-card-unit ${themeClass}`}
+                  onClick={() => setOfferForDetailPopup(offer)}
+                >
+                  {/* Top Bar: Icon + Category */}
+                  <div className="bus-card-top-bar">
+                    <div className="bus-card-icon-badge">
+                      <Bus size={15} />
+                    </div>
+                    <span className="bus-card-cat">BUS OFFER</span>
+                  </div>
+
+                  {/* Center Info: Code & Validity */}
+                  <div className="bus-card-center">
+                    <h3 className="bus-card-code">{code}</h3>
+                    <p className="bus-card-expiry">
+                      {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                    </p>
+                  </div>
+
+                  {/* Bottom Badge Pill */}
+                  <div className="bus-card-bottom-bar">
+                    <span className="bus-card-tag-pill">{badgeText}</span>
+                  </div>
+
+                  {/* Top Right Starburst / Badge Ribbon */}
+                  <div className="bus-card-starburst">
+                    {badgeText}
+                  </div>
+
+                  {/* Only API Provided Image (No Static Fallbacks) */}
+                  {apiOfferImg && (
+                    <img
+                      src={apiOfferImg}
+                      alt={offer.title || "Offer Graphic"}
+                      className="bus-card-vehicle-graphic"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  )}
+                </article>
+              );
+            }}
+          />
+        </div>
+      </section>
 
       {dealsDialog}
       {offerDetailDialog}
-
-
-
-      {
-        activeTab === "flights" && (
-          <>
-            <section className="popular-section section-shell">
-              <div className="section-header">
-                <div>
-                  <span className="section-kicker">Popular Picks</span>
-                  <h2>Trending Flight Routes</h2>
-                </div>
-              </div>
-
-              {popularFlightsLoading ? (
-                <div className="popular-routes-loading">Loading popular flights...</div>
-              ) : popularFlightsError ? (
-                <div className="popular-routes-error">{popularFlightsError}</div>
-              ) : popularFlights.length === 0 ? (
-                <div className="popular-routes-empty">No popular flights available.</div>
-              ) : (
-                <AutoMarquee
-                  items={popularFlights}
-                  className="popular-routes-marquee flight-routes-marquee"
-                  duration={38}
-                  renderItem={(flight) => (
-                    <article
-                      className="pop-route-card pop-flight-card"
-                      key={flight.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handlePopularFlightBooking(flight)}
-                    >
-                      <div className="pop-route-img-wrap">
-                        <img
-                          src={getCityImage(flight.toCity, "flight_default")}
-                          alt={`${flight.fromCity} to ${flight.toCity}`}
-                          loading="lazy"
-                          onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.flight_default; }}
-                        />
-                        <div className="pop-route-img-overlay">
-                          <span className="pop-route-tag-search">FLIGHT</span>
-                        </div>
-                      </div>
-                      <div className="pop-route-body">
-                        <div className="pop-route-cities-row">
-                          <span className="pop-route-city from" title={flight.fromCity}>{flight.fromCity}</span>
-                          <div className="pop-route-icon-circle"><Plane size={13} /></div>
-                          <span className="pop-route-city to" title={flight.toCity}>{flight.toCity}</span>
-                        </div>
-                      </div>
-                      <button type="button" className="pop-route-book-btn"
-                        onClick={(e) => { e.stopPropagation(); handlePopularFlightBooking(flight); }}
-                      >BOOK FLIGHT</button>
-                    </article>
-                  )}
-                />
-              )}
-            </section>
-
-            <section className="brands-section section-shell">
-              <div className="section-header">
-                <div>
-                  <h2>Airline Brands</h2>
-                </div>
-              </div>
-
-              <AutoMarquee
-                items={AIRLINE_BRANDS}
-                className="brand-marquee"
-                duration={30}
-                renderItem={(brand) => (
-                  <article className="brand-slide">
-                    <img
-                      src={brand.image}
-                      alt={brand.name}
-                      className="brand-logo"
-                      style={{ "--brand-scale": brand.scale }}
-                    />
-                    <span>{brand.name}</span>
-                  </article>
-                )}
-              />
-            </section>
-          </>
-        )
-      }
-
-      {
-        activeTab === "hotels" && (
-          <section className="popular-section hotel-popular-section section-shell">
-            <div className="section-header">
-              <div>
-                <span className="section-kicker">Popular Stays</span>
-                <h2>Trending Hotel Picks</h2>
-              </div>
-            </div>
-
-            {popularHotelsLoading ? (
-              <div className="popular-routes-loading">Loading popular stays...</div>
-            ) : popularHotels.length === 0 ? (
-              <div className="popular-routes-empty">No popular stays available.</div>
-            ) : (
-              <AutoMarquee
-                items={popularHotels}
-                className="popular-routes-marquee hotel-routes-marquee"
-                duration={38}
-                renderItem={(hotel, idx) => (
-                  <article
-                    className="pop-route-card pop-hotel-card"
-                    key={hotel.id || idx}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handlePopularHotelBooking(hotel)}
-                  >
-                    <div className="pop-route-img-wrap">
-                      <img
-                        src={hotel.hotelImage || hotel.image || hotel.imageUrl || HOTEL_ROOM_IMAGES[idx % HOTEL_ROOM_IMAGES.length] || hotelSectionBanner}
-                        alt={`${hotel.name} - ${hotel.city}`}
-                        loading="lazy"
-                        onError={(e) => { e.target.onerror = null; e.target.src = hotelSectionBanner; }}
-                      />
-                      <div className="pop-route-img-overlay">
-                        <span className="pop-route-tag-search">STAY</span>
-                      </div>
-                    </div>
-                    <div className="pop-route-body">
-                      <p className="pop-hotel-name">{hotel.name}</p>
-                      <p className="pop-hotel-sub">{hotel.city} &nbsp;•&nbsp; From INR {hotel.price}</p>
-                    </div>
-                    <button type="button" className="pop-route-book-btn"
-                      onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}
-                    >BOOK HOTEL</button>
-                  </article>
-                )}
-              />
-            )}
-          </section>
-        )
-      }
 
       {/* Assurance Paragraph Card Section */}
       <section className="assurance-section section-shell">

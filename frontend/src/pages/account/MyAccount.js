@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "../../contexts/UserContext";
 import { getAccountProfile } from "../../services/accountProfileService";
+import PasskeyManager from "../../components/PasskeyManager";
 import "../../STYLES/myAccount.css";
 
 const accountCards = [
@@ -204,6 +205,12 @@ const MyAccount = () => {
             <h1>Your Account</h1>
             <p>Manage your account and settings here.</p>
           </div>
+
+          {!isB2B && (
+            <div style={{ marginBottom: "20px" }}>
+              <PasskeyManager />
+            </div>
+          )}
 
           <div className="account-grid">
             {accountCards.map((card) => (

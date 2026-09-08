@@ -762,8 +762,7 @@ export default function BusSeatSelectionPage({
       const fareBands = [
         ...new Set(
           backendSeats
-            .map((seat) => Number(seat?.fareBeforeTax) || 0)
-            .map((fare, index) => fare || Number(backendSeats[index]?.priceInr) || 0)
+            .map((seat) => Number(seat?.b2cDisplayFare || seat?.fareBeforeTax || seat?.priceInr || 0))
             .filter((fare) => fare > 0)
         ),
       ].sort((first, second) => first - second);
@@ -783,6 +782,7 @@ export default function BusSeatSelectionPage({
           backendSeat?.gender
         );
         const seatFareBeforeTax =
+          Number(backendSeat?.b2cDisplayFare) ||
           Number(backendSeat?.fareBeforeTax) ||
           Number(backendSeat?.priceInr) ||
           (Number(backendSeat?.baseFare) || 0) + (Number(backendSeat?.markupAmount) || 0) ||
@@ -822,7 +822,8 @@ export default function BusSeatSelectionPage({
           tax: Number(backendSeat?.externalGst) || Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0,
           externalGst: Number(backendSeat?.externalGst) || Number(backendSeat?.serviceTaxAbsolute) || Number(backendSeat?.tax) || Number(backendSeat?.gst) || 0,
           srdvTax: Number(backendSeat?.srdvTax) || Number(backendSeat?.externalGst) || Number(backendSeat?.tax) || 0,
-          fare: Number(backendSeat?.publishedFare) || (seatFareBeforeTax + (Number(backendSeat?.externalGst) || Number(backendSeat?.tax) || 0)),
+          fare: seatFareBeforeTax,
+          seatFare: seatFareBeforeTax,
           publishedFare: Number(backendSeat?.publishedFare) || (seatFareBeforeTax + (Number(backendSeat?.externalGst) || Number(backendSeat?.tax) || 0)),
         };
       });
@@ -863,7 +864,7 @@ export default function BusSeatSelectionPage({
           const gstAmount = parseFloat(container?.Price?.Tax || container?.Price?.GSTAmount || container?.Price?.ServiceTaxAbsolute || 0) || 0;
           const rawBaseFare = parseFloat(container?.Price?.BaseFare || 0);
           const markupVal = parseFloat(container?.Price?.AgentMarkUp || container?.Price?.MarkUp || 0) || 0;
-          const b2cDisplayFare = parseFloat(container?.Price?.B2CDisplayFare || 0) || (rawBaseFare > 0 && markupVal > 0 ? rawBaseFare + markupVal : 0) || rawBaseFare || 0;
+          const b2cDisplayFare = parseFloat(container?.Price?.B2CDisplayFare || container?.Price?.b2cDisplayFare || container?.b2cDisplayFare || 0) || (rawBaseFare > 0 && markupVal > 0 ? rawBaseFare + markupVal : 0) || rawBaseFare || 0;
           const publishedFare = parseFloat(
             container?.Price?.PublishedFare ||
             (b2cDisplayFare > 0 ? b2cDisplayFare + gstAmount : 0) ||
@@ -884,7 +885,7 @@ export default function BusSeatSelectionPage({
             existing.b2cDisplayFare = customerBaseFare;
             existing.markupAmount = markupVal;
             existing.tax = gstAmount;
-            existing.fare = publishedFare;
+            existing.fare = customerBaseFare;
             existing.publishedFare = publishedFare;
             existing.seatFare = customerBaseFare;
             existing.priceInr = customerBaseFare;
@@ -910,7 +911,7 @@ export default function BusSeatSelectionPage({
               priceInr: customerBaseFare,
               tax: gstAmount,
               externalGst: gstAmount,
-              fare: publishedFare,
+              fare: customerBaseFare,
               publishedFare: publishedFare,
               seatFare: customerBaseFare,
               row: parseInt(container.RowNo ?? container.rowNo ?? 0, 10),
@@ -942,8 +943,9 @@ export default function BusSeatSelectionPage({
   const finalFareBands = useMemo(() => {
     const fares = new Set();
     seatsByLabel.forEach((seat) => {
-      if (seat.fare > 0) {
-        fares.add(seat.fare);
+      const fareVal = Number(seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0);
+      if (fareVal > 0) {
+        fares.add(fareVal);
       }
     });
     const sorted = [...fares].sort((a, b) => a - b);
@@ -1254,7 +1256,8 @@ export default function BusSeatSelectionPage({
     }
 
     const isSelected = selectedSeatLabels.includes(seat.label);
-    const isDimmed = activeFareFilter !== "all" && Number(activeFareFilter) !== seat.fare;
+    const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
+    const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
     const isBookedFemale = seat.status === "booked" && seat.bookedGender === "Female";
     const isBookedMale = seat.status === "booked" && seat.bookedGender === "Male";
     const isNextToBookedFemale =
@@ -1295,7 +1298,7 @@ export default function BusSeatSelectionPage({
           setHoveredSeat({
             label: seat.label,
             displayLabel: seat.displayLabel,
-            fare: seat.fare,
+            fare: seat.b2cDisplayFare || seat.fare,
             status: seat.status,
             bookedGender: seat.bookedGender,
             isNextToBookedFemale,
@@ -1314,7 +1317,7 @@ export default function BusSeatSelectionPage({
         onMouseLeave={() => setHoveredSeat(null)}
         disabled={seat.status === "booked" || isDimmed}
         title={`Seat No: ${seat.displayLabel || seat.label} | Fare: ${formatCurrency(
-          seat.fare
+          seat.b2cDisplayFare || seat.fare
         )}`}
       >
         {seat.kind === "sleeper" ? (
@@ -1570,8 +1573,8 @@ export default function BusSeatSelectionPage({
             <div className="bus-flow-expand-panel">
               {activeCardPanel === "boarding" ? (
                 <p>
-                  Boarding Point: <strong>{bus.boardingPoint}</strong> | Dropping Point:{" "}
-                  <strong>{bus.droppingPoint}</strong>
+                  Boarding Point: <strong>{typeof bus.boardingPoint === "object" && bus.boardingPoint !== null ? (bus.boardingPoint.name || bus.boardingPoint.locationName || "") : bus.boardingPoint}</strong> | Dropping Point:{" "}
+                  <strong>{typeof bus.droppingPoint === "object" && bus.droppingPoint !== null ? (bus.droppingPoint.name || bus.droppingPoint.locationName || "") : bus.droppingPoint}</strong>
                 </p>
               ) : (
                 <p>
@@ -1698,7 +1701,7 @@ export default function BusSeatSelectionPage({
                   {hoveredSeat.status !== "booked" && hoveredSeat.bookedGender === "Male" && "Male Available | "}
                   {hoveredSeat.status !== "booked" && hoveredSeat.bookedGender !== "Female" && hoveredSeat.isNextToBookedFemale && "Beside Female Seat | "}
                   {hoveredSeat.status !== "booked" && hoveredSeat.bookedGender !== "Male" && hoveredSeat.isNextToBookedMale && "Beside Male Seat | "}
-                  Fare: {formatCurrency(hoveredSeat.fare)}
+                  Fare: {formatCurrency(hoveredSeat.b2cDisplayFare || hoveredSeat.fare)}
                 </div>
               )}
             </div>

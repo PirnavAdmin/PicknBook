@@ -81,7 +81,7 @@ function buildPassengerDetailsQuery(hotel, offerId, searchContext) {
     ["hotelAddress", hotel?.address],
     ["hotelRating", hotel?.rating],
     ["hotelTag", hotel?.tag],
-    ["hotelAmenities", Array.isArray(hotel?.amenities) ? hotel.amenities.join("|") : ""],
+    ["hotelAmenities", Array.isArray(hotel?.amenities) ? hotel.amenities.map((a) => typeof a === "object" && a !== null ? String(a.name || a.Name || a.title || "").trim() : String(a || "").trim()).filter(Boolean).join("|") : ""],
     ["destination", searchContext?.destination],
     ["checkInDate", searchContext?.checkInDate],
     ["checkOutDate", searchContext?.checkOutDate],
@@ -339,18 +339,34 @@ export default function HotelSearchResults() {
     return [...apiHotels]
       .map((hotelRecord, index) => {
         const hotelName = hotelRecord.hotelName || hotelRecord.name || "Hotel stay";
-        const basePrice = Number(hotelRecord.price?.b2cFinalFare || hotelRecord.price?.B2CFinalFare || hotelRecord.price?.offeredPrice || hotelRecord.price?.b2CBasePrice || hotelRecord.offeredFare || 0);
+        // Use ?? (nullish coalescing) to avoid skipping valid 0 values from the API
+        const priceObj = hotelRecord.price ?? {};
+        const basePrice = Number(
+          priceObj.b2cDisplayFare ?? priceObj.B2CDisplayFare ??
+          priceObj.b2cFinalFare ?? priceObj.B2CFinalFare ??
+          priceObj.offeredPriceRoundedOff ?? priceObj.OfferedPriceRoundedOff ??
+          priceObj.offeredPrice ?? priceObj.OfferedPrice ??
+          priceObj.publishedPriceRoundedOff ?? priceObj.PublishedPriceRoundedOff ??
+          priceObj.roomPrice ?? priceObj.RoomPrice ??
+          priceObj.b2CBasePrice ?? priceObj.b2cBasePrice ??
+          hotelRecord.offeredFare ?? 0
+        );
+        // Published price from API for strikethrough (only if genuinely provided)
+        const publishedPrice = Number(
+          priceObj.publishedPriceRoundedOff ?? priceObj.PublishedPriceRoundedOff ??
+          priceObj.publishedPrice ?? priceObj.PublishedPrice ?? 0
+        );
         const visuals = getHotelVisuals(`${hotelRecord.hotelCode || hotelRecord.hotelId || hotelName}-${destination}-${index}`);
-        const rating = Number(hotelRecord.starRating || hotelRecord.rating || 4.6) || 4.6;
-        const reviewCount = 36 + ((index + 1) * 17) % 112;
+        const rating = Number(hotelRecord.starRating ?? hotelRecord.rating ?? 0) || 0;
+        const reviewCount = Number(hotelRecord.reviewCount ?? hotelRecord.ReviewCount ?? 0);
         const apiImage = hotelRecord.hotelPicture || (hotelRecord.images && hotelRecord.images.length > 0 ? hotelRecord.images[0] : null);
         
-        // Build a mock offer structure from the TBO price and facilities since the UI expects 'offers'
-        const mockOffer = {
+        // Build a preliminary offer structure from the search price — real rooms come from getHotelRoom
+        const searchOffer = {
           price: basePrice,
-          cancellationPolicy: hotelRecord.hotelPolicy || "Flexible plans available on select rooms.",
+          cancellationPolicy: hotelRecord.hotelPolicy || "",
         };
-        const mappedOffers = [mockOffer];
+        const mappedOffers = [searchOffer];
 
         return {
           id: hotelRecord.hotelCode || hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`,
@@ -367,13 +383,14 @@ export default function HotelSearchResults() {
           reviewCount,
           tag:
             hotelRecord.tag ||
-            (rating >= 4.8 ? "Guest favourite" : rating >= 4.5 ? "Popular with city travelers" : "Value pick"),
+            (rating >= 4.5 ? "Top Rated" : rating >= 3.5 ? "Popular" : ""),
           price: basePrice,
-          oldPrice: Math.round(basePrice * 1.18),
+          // Only set oldPrice if the API returned a published price that is higher than offered price
+          oldPrice: (publishedPrice > basePrice) ? publishedPrice : 0,
           amenities: hotelRecord.facilities && hotelRecord.facilities.length > 0 && hotelRecord.facilities[0].facilitiesNames
             ? hotelRecord.facilities[0].facilitiesNames 
-            : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : ["Wi-Fi", "Breakfast", "Room service"]),
-          note: mockOffer.cancellationPolicy,
+            : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : []),
+          note: searchOffer.cancellationPolicy,
           offers: mappedOffers,
           image: apiImage || visuals.cardImage,
           thumbImage: apiImage || visuals.thumbImage,
@@ -384,7 +401,7 @@ export default function HotelSearchResults() {
           highlightLabel: visuals.highlightLabel,
           facts: buildStayFacts(
             { city: hotelRecord.city || hotelRecord.cityCode || destination },
-            mockOffer,
+            searchOffer,
             { adults: totalAdults, children: totalChildren, rooms: roomsCount },
           ),
         };
@@ -398,11 +415,11 @@ export default function HotelSearchResults() {
           return false;
         }
 
-        if (collectionKey === "breakfast" && !hotelRecord.amenities.some((item) => /breakfast/i.test(item))) {
+        if (collectionKey === "breakfast" && !hotelRecord.amenities.some((item) => /breakfast/i.test(typeof item === "object" && item !== null ? String(item.name || item.Name || "") : String(item || "")))) {
           return false;
         }
 
-        if (collectionKey === "work-ready" && !hotelRecord.amenities.some((item) => /wi-?fi|desk|workspace/i.test(item))) {
+        if (collectionKey === "work-ready" && !hotelRecord.amenities.some((item) => /wi-?fi|desk|workspace/i.test(typeof item === "object" && item !== null ? String(item.name || item.Name || "") : String(item || "")))) {
           return false;
         }
 
@@ -489,7 +506,7 @@ export default function HotelSearchResults() {
         if (selectedAmenities.length > 0) {
           const matchAmenities = selectedAmenities.every((amenity) => {
             const regex = new RegExp(amenity, "i");
-            const hasAmenity = hotelRecord.amenities.some((hAmenity) => regex.test(hAmenity));
+            const hasAmenity = hotelRecord.amenities.some((hAmenity) => regex.test(typeof hAmenity === "object" && hAmenity !== null ? String(hAmenity.name || hAmenity.Name || "") : String(hAmenity || "")));
             const hasInNote = regex.test(hotelRecord.note || "");
             const hasInOffers = hotelRecord.offers.some((o) => regex.test(o.cancellationPolicy || "") || regex.test(o.roomCategory || "") || regex.test(o.bedType || ""));
             return hasAmenity || hasInNote || hasInOffers;
@@ -529,7 +546,9 @@ export default function HotelSearchResults() {
         address: hotel.address,
         rating: hotel.rating,
         tag: hotel.tag,
-        amenities: hotel.amenities,
+        amenities: Array.isArray(hotel.amenities)
+          ? hotel.amenities.map((a) => typeof a === "object" && a !== null ? String(a.name || a.Name || a.title || "").trim() : String(a || "").trim()).filter(Boolean)
+          : (hotel.amenities || []),
         offers: hotel.offers,
         images: hotel.images,
         TraceId: hotel.TraceId,
@@ -1008,9 +1027,11 @@ export default function HotelSearchResults() {
                               {roomsCount > 1 ? `total for ${roomsCount} Rooms` : "total per night"}
                             </span>
                           </div>
-                          <span style={{ textDecoration: "line-through", color: "#94a3b8", fontSize: "0.8rem" }}>
-                            ₹{Math.round(hotel.price * 1.25).toLocaleString()}
-                          </span>
+                          {hotel.oldPrice > 0 && hotel.oldPrice > hotel.price && (
+                            <span style={{ textDecoration: "line-through", color: "#94a3b8", fontSize: "0.8rem" }}>
+                              ₹{hotel.oldPrice.toLocaleString()}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={{ height: "2px", backgroundColor: "#dc1e26", width: "100%" }} />

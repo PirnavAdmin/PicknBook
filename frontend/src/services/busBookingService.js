@@ -1478,9 +1478,14 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode, so
       const isSeater =
         String(record.Seater ?? record.seater ?? "false").toLowerCase() === "true";
 
-      const amenities =
+      const rawAmenities =
         Array.isArray(record.Amenities) ? record.Amenities :
-        Array.isArray(record.amenities) ? record.amenities : [];
+        Array.isArray(record.amenities) ? record.amenities :
+        Array.isArray(record.Facilities) ? record.Facilities :
+        Array.isArray(record.facilities) ? record.facilities : [];
+      const amenities = rawAmenities
+        .map((a) => (typeof a === "string" ? a : a?.Name || a?.name || a?.title || ""))
+        .filter(Boolean);
       const cancellationPolicies =
         Array.isArray(record.CancellationPolicies) ? record.CancellationPolicies :
         Array.isArray(record.cancellationPolicies) ? record.cancellationPolicies : [];
@@ -1516,7 +1521,7 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode, so
         liveTracking: String(record.LiveTracking ?? "false").toLowerCase() === "true",
         boardingPoints,
         droppingPoints,
-        amenities: amenities.map((a) => (typeof a === "string" ? a : a?.Name || a?.name || "")),
+        amenities,
         priceList,
         cancellationPolicies,
         partialCancellationAllowed: String(record.PartialCancellationAllowed ?? "false").toLowerCase() === "true",
@@ -1724,6 +1729,7 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
       return {
         seatCode:      String(s?.SeatName || ""),
         seatType:      String(s?.SeatType || "Seater"),
+        fare:          b2cDisplayFare,
         priceInr:      b2cDisplayFare,
         b2cDisplayFare: b2cDisplayFare,
         publishedFare,

@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   ArrowDown,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -10,12 +11,16 @@ import {
   IndianRupee,
   Loader2,
   MapPin,
+  Minus,
   Moon,
   Plane,
   PlaneTakeoff,
+  Plus,
+  Search,
   Sun,
   Sunrise,
   Sunset,
+  Users,
   X,
   XCircle,
   ChevronDown,
@@ -35,9 +40,23 @@ import { bookFlight, searchFlights, getFareRule, getCalendarFare } from "../../s
 import { resetBookingSessionTimer } from "./BookingTimer";
 import FareCalendarModal from "../../components/FareCalendarModal";
 import FlightLoadingScreen from "../../components/FlightLoadingScreen";
+import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import "../../STYLES/FlightSearchResults.css";
 import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
 import { writeFlightBookingFlowState, clearFlightBookingFlowState } from "./flightBookingFlowStore";
+
+function formatFlightPillDate(dateStr) {
+  if (!dateStr) return { date: "Select Date", day: "DATE OF TRAVEL" };
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return { date: dateStr, day: "DATE OF TRAVEL" };
+  const dateFormatted = d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const dayName = d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  return { date: dateFormatted, day: dayName };
+}
 import airIndiaExpress from "../../assets/images/airlines/Air-India_express.jpg";
 import airIndia from "../../assets/images/airlines/air-india.png";
 import akasaAir from "../../assets/images/airlines/AkasaAir.png";
@@ -567,6 +586,39 @@ export default function FlightSearchResults() {
     travellers: initialTravellerText,
     cabinClass: initialCabinClass,
   });
+
+  const [showTravellersDropdown, setShowTravellersDropdown] = useState(false);
+  const travellersRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (travellersRef.current && !travellersRef.current.contains(e.target)) {
+        setShowTravellersDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  const currentTravellerCounts = useMemo(() => {
+    return getTravellerCounts(modifyForm.travellers || "1 Adult");
+  }, [modifyForm.travellers]);
+
+  const updateTravellerCount = (type, delta) => {
+    const counts = { ...currentTravellerCounts };
+    if (type === "adults") {
+      counts.adults = Math.max(1, counts.adults + delta);
+    } else if (type === "children") {
+      counts.children = Math.max(0, counts.children + delta);
+    } else if (type === "infants") {
+      counts.infants = Math.max(0, Math.min(counts.adults, counts.infants + delta));
+    }
+    const parts = [];
+    parts.push(`${counts.adults} Adult${counts.adults > 1 ? 's' : ''}`);
+    if (counts.children > 0) parts.push(`${counts.children} Child${counts.children > 1 ? 'ren' : ''}`);
+    if (counts.infants > 0) parts.push(`${counts.infants} Infant${counts.infants > 1 ? 's' : ''}`);
+    setModifyForm((prev) => ({ ...prev, travellers: parts.join(", ") }));
+  };
 
   const [selectedDate, setSelectedDate] = useState(() =>
     parseDateInput(initialOnwardDateInput)
@@ -1762,182 +1814,303 @@ export default function FlightSearchResults() {
         />
       )}
       <div className="flight-results-shell">
-        <section className="summary-strip">
-          <div className="route-summary">
-            <article className="route-block">
-              <h2>{displaySourceCode}</h2>
-              <p>{displaySourceName}</p>
-            </article>
-            <article className="route-block">
-              <h2>{displayDestinationCode}</h2>
-              <p>{displayDestinationName}</p>
-            </article>
-          </div>
-
-          <div className="journey-meta">
-            <div className="meta-line">
-              <CalendarDays size={15} />
-              <span>
-                ONWARD <strong>{formatLongDate(selectedDate)}</strong>
-              </span>
-            </div>
-            <p>
-              Trip {tripLabel}{" "}
-              | Adults {travellerCounts.adults} | Child {travellerCounts.children} |
-              Infant {travellerCounts.infants}
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              type="button"
-              className="modify-btn"
-              style={{ backgroundColor: "#dc1e26", borderColor: "#dc1e26", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}
-              onClick={() => setIsFareCalendarOpen(true)}
-            >
-              <CalendarDays size={16} />
-              Calendar Fare
-            </button>
-            <button
-              type="button"
-              className="modify-btn"
-              onClick={toggleModifySearch}
-            >
-              Modify Search
-            </button>
-          </div>
-        </section>
-
-        {isModifySearchOpen && (
-          <section className="modify-search-panel">
-            <div className="modify-search-grid">
-              <label className="modify-field">
-                <span>Source</span>
-                <input
-                  type="text"
-                  value={modifyForm.source}
-                  onChange={(event) =>
-                    setModifyForm((previous) => ({
-                      ...previous,
-                      source: event.target.value,
-                    }))
-                  }
-                  placeholder="Enter source city"
-                />
-              </label>
+        <section className="flight-search-hero">
+          <div className="flight-hero-wallpaper-overlay" />
+          <div className="flight-hero-content-wrapper">
+            <div className="flight-hero-top-row">
+              <div className="flight-trip-types">
+                <button
+                  type="button"
+                  className={`flight-trip-chip ${modifyForm.tripType !== "twoway" ? "active" : ""}`}
+                  onClick={() => setModifyForm((prev) => ({ ...prev, tripType: "oneway" }))}
+                >
+                  One Way
+                </button>
+                <button
+                  type="button"
+                  className={`flight-trip-chip ${modifyForm.tripType === "twoway" ? "active" : ""}`}
+                  onClick={() => setModifyForm((prev) => ({ ...prev, tripType: "twoway" }))}
+                >
+                  Two Way
+                </button>
+              </div>
 
               <button
                 type="button"
-                className="modify-swap-btn"
+                className="flight-hero-calendar-btn"
+                onClick={() => setIsFareCalendarOpen(true)}
+              >
+                <CalendarDays size={15} />
+                <span>Fare Calendar</span>
+              </button>
+            </div>
+
+            <form
+              className="flight-discover-searchbar"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleApplyModifySearch();
+              }}
+            >
+              {/* FROM FIELD */}
+              <div className="flight-discover-searchcell" style={{ flex: '1.2 1 auto' }}>
+                <PlaceAutocomplete
+                  label="FROM"
+                  sublabel="ORIGIN AIRPORT"
+                  value={modifyForm.source}
+                  onChange={(nextValue) =>
+                    setModifyForm((previous) => ({
+                      ...previous,
+                      source: nextValue,
+                    }))
+                  }
+                  tripType="flight"
+                  field="source"
+                  placeholder="Enter source city"
+                  isInline={true}
+                />
+              </div>
+
+              {/* SWAP BUTTON */}
+              <button
+                type="button"
+                className="flight-discover-swap"
                 onClick={handleSwapModifyCities}
                 aria-label="Swap source and destination"
               >
                 <ArrowLeftRight size={16} />
               </button>
 
-              <label className="modify-field">
-                <span>Destination</span>
-                <input
-                  type="text"
+              {/* TO FIELD */}
+              <div className="flight-discover-searchcell with-divider" style={{ flex: '1.2 1 auto' }}>
+                <PlaceAutocomplete
+                  label="TO"
+                  sublabel="DESTINATION AIRPORT"
                   value={modifyForm.destination}
-                  onChange={(event) =>
+                  onChange={(nextValue) =>
                     setModifyForm((previous) => ({
                       ...previous,
-                      destination: event.target.value,
+                      destination: nextValue,
                     }))
                   }
+                  tripType="flight"
+                  field="destination"
                   placeholder="Enter destination city"
+                  isInline={true}
                 />
-              </label>
+              </div>
 
-              <label className="modify-field" style={{ position: "relative" }}>
-                <span>Departure Date</span>
-                <input
-                  type="text"
-                  readOnly
-                  value={toDisplayDate(modifyForm.departureDate)}
-                  placeholder="DD/MM/YYYY"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => document.getElementById("flight-date-hidden").showPicker?.()}
-                />
-                <input
-                  id="flight-date-hidden"
-                  type="date"
-                  value={modifyForm.departureDate}
-                  onChange={(event) =>
-                    setModifyForm((previous) => ({
-                      ...previous,
-                      departureDate: event.target.value,
-                    }))
+              {/* TIMELINE / DEPARTURE (+ RETURN) FIELD */}
+              <div
+                className="flight-discover-searchcell with-divider"
+                style={{ flex: '1.2 1 auto', cursor: 'pointer' }}
+                onClick={() => {
+                  const picker = document.getElementById("flight-discover-dep-date");
+                  if (picker) {
+                    try { picker.showPicker(); } catch (e) { picker.click(); }
                   }
-                  style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-                />
-              </label>
-              <label className="modify-field">
-                <span>Trip Type</span>
-                <select
-                  value={modifyForm.tripType}
-                  onChange={(event) =>
-                    setModifyForm((previous) => ({
-                      ...previous,
-                      tripType: normalizeTripType(event.target.value),
-                    }))
-                  }
-                >
-                  <option value="oneway">One Way</option>
-                  <option value="twoway">Two Way</option>
-                </select>
-              </label>
+                }}
+              >
+                <CalendarRange size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    TIMELINE
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
+                    <span
+                      style={{ cursor: "pointer", color: '#ffffff', fontWeight: 700, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const picker = document.getElementById("flight-discover-dep-date");
+                        if (picker) {
+                          try { picker.showPicker(); } catch (err) { picker.click(); }
+                        }
+                      }}
+                    >
+                      {formatFlightPillDate(modifyForm.departureDate).date}
+                    </span>
+                    {modifyForm.tripType === "twoway" && (
+                      <>
+                        <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
+                        <span
+                          style={{ cursor: "pointer", color: '#ffffff', fontWeight: 700, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const picker = document.getElementById("flight-discover-ret-date");
+                            if (picker) {
+                              try { picker.showPicker(); } catch (err) { picker.click(); }
+                            }
+                          }}
+                        >
+                          {formatFlightPillDate(modifyForm.returnDate).date}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    {modifyForm.tripType === "twoway" ? "ROUND TRIP" : formatFlightPillDate(modifyForm.departureDate).day}
+                  </span>
+                  <input
+                    id="flight-discover-dep-date"
+                    type="date"
+                    value={modifyForm.departureDate}
+                    onChange={(event) =>
+                      setModifyForm((previous) => ({
+                        ...previous,
+                        departureDate: event.target.value,
+                      }))
+                    }
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                  />
+                  {modifyForm.tripType === "twoway" && (
+                    <input
+                      id="flight-discover-ret-date"
+                      type="date"
+                      value={modifyForm.returnDate}
+                      onChange={(event) =>
+                        setModifyForm((previous) => ({
+                          ...previous,
+                          returnDate: event.target.value,
+                        }))
+                      }
+                      style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                    />
+                  )}
+                </div>
+              </div>
 
-              <label className="modify-field">
-                <span>Travellers</span>
-                <input
-                  type="text"
-                  value={modifyForm.travellers}
-                  onChange={(event) =>
-                    setModifyForm((previous) => ({
-                      ...previous,
-                      travellers: event.target.value,
-                    }))
-                  }
-                  placeholder="1 Adult"
-                />
-              </label>
+              {/* TRAVELLERS & CABIN CLASS FIELD */}
+              <div
+                className="flight-discover-searchcell with-divider"
+                ref={travellersRef}
+                style={{ flex: '1.1 1 auto', cursor: 'pointer' }}
+                onClick={() => setShowTravellersDropdown((prev) => !prev)}
+              >
+                <Users size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    TRAVELLERS & CLASS
+                  </span>
+                  <span style={{ fontSize: '1.02rem', fontWeight: 700, color: '#ffffff', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "Economy"}
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    CABIN & SEATS
+                  </span>
+                </div>
 
-              <label className="modify-field">
-                <span>Cabin Class</span>
-                <select
-                  value={modifyForm.cabinClass}
-                  onChange={(event) =>
-                    setModifyForm((previous) => ({
-                      ...previous,
-                      cabinClass: event.target.value,
-                    }))
-                  }
-                >
-                  {TRAVEL_CLASS_ORDER.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                {showTravellersDropdown && (
+                  <div
+                    className="flight-travellers-popover"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flight-counter-row">
+                      <div className="flight-counter-label">
+                        <strong>Adults</strong>
+                        <span>12+ years</span>
+                      </div>
+                      <div className="flight-counter-actions">
+                        <button
+                          type="button"
+                          onClick={() => updateTravellerCount("adults", -1)}
+                          disabled={currentTravellerCounts.adults <= 1}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span>{currentTravellerCounts.adults}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateTravellerCount("adults", 1)}
+                          disabled={currentTravellerCounts.adults >= 9}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
 
-            <div className="modify-search-actions">
+                    <div className="flight-counter-row">
+                      <div className="flight-counter-label">
+                        <strong>Children</strong>
+                        <span>2 - 11 years</span>
+                      </div>
+                      <div className="flight-counter-actions">
+                        <button
+                          type="button"
+                          onClick={() => updateTravellerCount("children", -1)}
+                          disabled={currentTravellerCounts.children <= 0}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span>{currentTravellerCounts.children}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateTravellerCount("children", 1)}
+                          disabled={currentTravellerCounts.children >= 8}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flight-counter-row">
+                      <div className="flight-counter-label">
+                        <strong>Infants</strong>
+                        <span>Under 2 years</span>
+                      </div>
+                      <div className="flight-counter-actions">
+                        <button
+                          type="button"
+                          onClick={() => updateTravellerCount("infants", -1)}
+                          disabled={currentTravellerCounts.infants <= 0}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span>{currentTravellerCounts.infants}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateTravellerCount("infants", 1)}
+                          disabled={currentTravellerCounts.infants >= currentTravellerCounts.adults}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flight-class-select-row">
+                      <label>Cabin Class</label>
+                      <select
+                        value={modifyForm.cabinClass}
+                        onChange={(e) => setModifyForm((prev) => ({ ...prev, cabinClass: e.target.value }))}
+                      >
+                        {TRAVEL_CLASS_ORDER.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="flight-popover-done-btn"
+                      onClick={() => setShowTravellersDropdown(false)}
+                    >
+                      Done
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* SEARCH BUTTON */}
               <button
                 type="button"
-                className="secondary"
-                onClick={() => setIsModifySearchOpen(false)}
+                className="flight-discover-searchbutton"
+                onClick={handleApplyModifySearch}
               >
-                Close
+                <Search size={18} />
+                <span>Search Flights</span>
               </button>
-              <button type="button" className="primary" onClick={handleApplyModifySearch}>
-                Apply Search
-              </button>
-            </div>
-          </section>
-        )}
+            </form>
+          </div>
+        </section>
 
         {searchError && (
           <div className="search-feedback error">
@@ -2120,8 +2293,8 @@ export default function FlightSearchResults() {
                       type="button"
                       key={item.id}
                       className={`fare-date-card ${item.date.toDateString() === selectedDate.toDateString()
-                          ? "active"
-                          : ""
+                        ? "active"
+                        : ""
                         } ${isLowestOfMonth ? "lowest-month-fare" : ""}`}
                       aria-label={`Search fares for ${formatLongDate(item.date)}`}
                       onClick={() => setSelectedDate(item.date)}

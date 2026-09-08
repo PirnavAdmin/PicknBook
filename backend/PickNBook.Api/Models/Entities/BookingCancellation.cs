@@ -77,5 +77,21 @@ namespace PickNBook.Api.Models.Entities
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
         
         public DateTime? CompletedAtUtc { get; set; }
+
+        // V9 Cancellation Correlation Fields
+        public long? TraceId { get; set; }
+
+        public long? ProviderCancelId { get; set; }
+
+        [MaxLength(100)]
+        public string? SupplierCancelId { get; set; }
+
+        public string? SeatNamesJson { get; set; }
+
+        [MaxLength(20)]
+        public string? CancellationType { get; set; } // "FULL" or "PARTIAL"
+
+        [MaxLength(50)]
+        public string? RefundStatus { get; set; } // "PENDING", "NOT_REQUIRED", "COMPLETED", "FAILED"
     }
 }

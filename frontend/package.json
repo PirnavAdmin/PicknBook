@@ -5,6 +5,7 @@
   "dependencies": {
     "@cashfreepayments/cashfree-js": "^1.0.7",
     "@react-google-maps/api": "^2.20.8",
+    "@simplewebauthn/browser": "^14.0.0",
     "axios": "^1.16.0",
     "framer-motion": "^12.42.2",
     "html2canvas": "^1.4.1",

@@ -119,15 +119,34 @@ function normalizeSrdvSeatData(seatData) {
         ? forceUpper
         : Boolean(seat.IsUpper) || String(seat.IsUpper).toLowerCase() === "true";
 
-    const fare =
+    const rawBaseFare = parseFloat(seat?.Price?.BaseFare || 0);
+    const markupVal = parseFloat(seat?.Price?.AgentMarkUp || seat?.Price?.MarkUp || 0) || 0;
+    const b2cDisplayFare =
       parseFloat(
         seat?.Price?.B2CDisplayFare ||
-          seat?.Price?.PublishedFare ||
-          seat?.Price?.BaseFare ||
-          seat?.SeatFare ||
-          seat?.fare ||
+          seat?.Price?.b2cDisplayFare ||
+          seat?.b2cDisplayFare ||
+          0
+      ) || (rawBaseFare > 0 && markupVal > 0 ? rawBaseFare + markupVal : 0) || rawBaseFare || 0;
+
+    const publishedFare =
+      parseFloat(
+        seat?.Price?.PublishedFare ||
+          seat?.Price?.publishedFare ||
+          seat?.publishedFare ||
           0
       ) || 0;
+
+    const fare =
+      b2cDisplayFare > 0
+        ? b2cDisplayFare
+        : parseFloat(
+            seat?.Price?.BaseFare ||
+              seat?.SeatFare ||
+              seat?.fare ||
+              publishedFare ||
+              0
+          ) || 0;
 
     const isAvailable =
       fare > 0 && String(seat.SeatStatus ?? seat.seatStatus ?? "true").toLowerCase() === "true";
@@ -162,6 +181,9 @@ function normalizeSrdvSeatData(seatData) {
       width,
       length,
       fare,
+      b2cDisplayFare: fare,
+      priceInr: fare,
+      publishedFare: publishedFare || fare,
       status: isAvailable ? "available" : "booked",
       bookedGender: isLadies ? "Female" : isMales ? "Male" : null,
     });
@@ -241,7 +263,7 @@ export default function SeatSelection({
     }
 
     const isSelected = selectedSeatLabels.includes(seat.label);
-    const seatFareVal = Number(seat.fare || seat.b2cDisplayFare || seat.priceInr || 0);
+    const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
     const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
     const isBooked = seat.status === "booked";
 
@@ -302,7 +324,7 @@ export default function SeatSelection({
           onSeatHover({
             label: seat.label,
             displayLabel: seat.displayLabel,
-            fare: seat.fare,
+            fare: seat.b2cDisplayFare || seat.fare,
             status: seat.status,
             bookedGender: seat.bookedGender,
             isNextToBookedFemale,
@@ -320,7 +342,7 @@ export default function SeatSelection({
         }
         onMouseLeave={onSeatMouseLeave}
         disabled={isBooked || isDimmed}
-        title={`Seat: ${seat.displayLabel || seat.label} | Fare: ₹${seat.fare}`}
+        title={`Seat: ${seat.displayLabel || seat.label} | Fare: ₹${seat.b2cDisplayFare || seat.fare}`}
       >
         {seat.kind === "sleeper" ? (
           <SleeperIcon label={seat.displayLabel || seat.label} />
@@ -507,7 +529,7 @@ export default function SeatSelection({
             {validSeats.map((seat, index) => {
               const isSelected = selectedSeatLabels.includes(seat.label);
               const isBooked = !seat.isAvailable;
-              const seatFareVal = Number(seat.fare || seat.b2cDisplayFare || seat.priceInr || 0);
+              const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
               const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
 
               let statusClass = "status-available";
@@ -546,6 +568,8 @@ export default function SeatSelection({
                 gridColumn: `${layoutCol} / span ${colSpan}`,
               };
 
+              const displayFareVal = seat.b2cDisplayFare || seat.fare;
+
               return (
                 <button
                   key={seat.id || `${seat.label}-${index}`}
@@ -553,8 +577,29 @@ export default function SeatSelection({
                   style={seatItemStyle}
                   className={seatWrapperClass}
                   onClick={() => (isBooked || isDimmed ? null : onSeatToggle(seat))}
+                  onMouseEnter={(event) =>
+                    onSeatHover({
+                      label: seat.label,
+                      displayLabel: seat.displayLabel || seat.label,
+                      fare: displayFareVal,
+                      status: seat.status,
+                      bookedGender: seat.bookedGender,
+                      isNextToBookedFemale: false,
+                      isNextToBookedMale: false,
+                      x: event.clientX,
+                      y: event.clientY,
+                    })
+                  }
+                  onMouseMove={(event) =>
+                    onSeatHover((previous) =>
+                      previous && previous.label === seat.label
+                        ? { ...previous, x: event.clientX, y: event.clientY }
+                        : previous
+                    )
+                  }
+                  onMouseLeave={onSeatMouseLeave}
                   disabled={isBooked || isDimmed}
-                  title={`Seat: ${seat.label} | Fare: ₹${seat.fare}`}
+                  title={`Seat: ${seat.label} | Fare: ₹${displayFareVal}`}
                 >
                   {seat.kind === "vertical-sleeper" ? (
                     <VerticalSleeperIcon label={seat.label} />
@@ -563,8 +608,8 @@ export default function SeatSelection({
                   ) : (
                     <SeaterIcon label={seat.label} />
                   )}
-                  {seat.fare > 0 && (
-                    <span className="srdv-seat-fare-label">₹{seat.fare}</span>
+                  {displayFareVal > 0 && (
+                    <span className="srdv-seat-fare-label">₹{displayFareVal}</span>
                   )}
                 </button>
               );

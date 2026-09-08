@@ -80,10 +80,18 @@ export function buildStayHighlights(hotel = {}, offer = {}, nights = 1) {
   const highlights = [];
  
   if (hotelAmenities[0]) {
-    highlights.push({
-      title: hotelAmenities[0],
-      text: "Frequently chosen by guests booking city stays.",
-    });
+    const first = hotelAmenities[0];
+    const amenityTitle =
+      typeof first === "object" && first !== null
+        ? String(first.name || first.Name || first.title || "").trim()
+        : String(first || "").trim();
+
+    if (amenityTitle && amenityTitle !== "[object Object]") {
+      highlights.push({
+        title: amenityTitle,
+        text: "Frequently chosen by guests booking city stays.",
+      });
+    }
   }
  
   highlights.push({

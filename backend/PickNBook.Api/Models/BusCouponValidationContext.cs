@@ -35,7 +35,7 @@ namespace PickNBook.Api.Models
     {
         public string TraceId { get; set; } = string.Empty;
         public string ResultIndex { get; set; } = string.Empty;
-        public int SrdvIndex { get; set; }
+        public long SrdvIndex { get; set; }
         public string OperatorName { get; set; } = string.Empty;
         public string BusType { get; set; } = string.Empty;
         public string FromCity { get; set; } = string.Empty;
@@ -43,6 +43,7 @@ namespace PickNBook.Api.Models
         public string DepartureTime { get; set; } = string.Empty;
         public string ArrivalTime { get; set; } = string.Empty;
         public string DepartDate { get; set; } = string.Empty;
+        public bool BpDpSeatLayout { get; set; }
     }
 
     public class BusSeatLayoutItemContext
@@ -53,5 +54,15 @@ namespace PickNBook.Api.Models
         public decimal SeatFare { get; set; }
         public decimal PublishedFare { get; set; }
         public decimal GstAmount { get; set; }
+        public bool IsAvailable { get; set; } = true;
+        public string? SeatStatus { get; set; }
+        public bool IsLadiesSeat { get; set; }
+        public bool IsMalesSeat { get; set; }
+    }
+
+    public class BusBoardingPointsWorkflowContext
+    {
+        public HashSet<string> BoardingPointIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<string> DroppingPointIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

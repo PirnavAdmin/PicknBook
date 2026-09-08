@@ -10973,7 +10973,7 @@ button:focus-visible {
 .client-testimonials-container {
   display: flex !important;
   gap: 28px !important;
-  align-items: center !important;
+  align-items: stretch !important;
   width: 100% !important;
   max-width: 1240px !important;
   margin: 0 auto !important;
@@ -10987,13 +10987,18 @@ button:focus-visible {
   border-radius: 28px !important;
   overflow: hidden !important;
   min-height: 380px !important;
+  align-self: stretch !important;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08) !important;
 }
 
 .client-testimonial-landscape-img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
+  object-position: center !important;
   display: block !important;
 }
 

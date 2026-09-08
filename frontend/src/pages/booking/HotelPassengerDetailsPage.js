@@ -227,13 +227,12 @@ export default function HotelPassengerDetailsPage() {
 
     if (isAutoContinue && isUserAuthenticated() && !autoContinueProcessed.current) {
       autoContinueProcessed.current = true;
+      // Clean the autoContinue param from the URL without auto-triggering blockRoom/handleContinue.
+      // The user must click Continue manually after returning from login.
       const nextParams = new URLSearchParams(location.search);
       nextParams.delete("autoContinue");
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
       navigate(`/hotel/passenger-details${nextSearch}`, { replace: true, state: {} });
-      setTimeout(() => {
-        handleContinue();
-      }, 150);
     }
   }, [location, searchParams]);
 
@@ -515,12 +514,13 @@ export default function HotelPassengerDetailsPage() {
   const stayFacts = useMemo(() => buildStayFacts(hotel || {}, offer || {}, searchContext || {}), [hotel, offer, searchContext]);
   const stayHighlights = useMemo(() => buildStayHighlights(hotel || {}, offer || {}, nights), [hotel, offer, nights]);
 
+  const roomsFetchedRef = useRef(false);
   useEffect(() => {
     let isMounted = true;
     async function fetchRoomsAndInfo() {
       if (!hotel?.hotelId) { setIsLoadingOffer(false); return; }
-      // If we already have the actual API room offers, we can skip fetching again to prevent loops
-      if (hotel.offers?.length > 0 && hotel.offers[0]?.RatePlanCode) {
+      // Prevent duplicate fetches — only fetch once per hotel
+      if (roomsFetchedRef.current) {
           setIsLoadingOffer(false); 
           return;
       }
@@ -538,23 +538,31 @@ export default function HotelPassengerDetailsPage() {
         
         // 1. Get Hotel Info
         const info = await getHotelInfo(infoPayload);
-        const fetchedHotelCode = info?.HotelDetails?.HotelCode || hotel.hotelId;
+        const hotelDetailsObj = info?.HotelDetails || info?.hotelInfoResult?.hotelDetails || info?.HotelInfoResult?.HotelDetails;
+        const fetchedHotelCode = hotelDetailsObj?.HotelCode || hotelDetailsObj?.hotelCode || hotel.hotelId;
         
-        if (info?.HotelDetails) {
+        if (hotelDetailsObj) {
+            const rawFacilities = hotelDetailsObj.HotelFacilities || hotelDetailsObj.hotelFacilities || [];
+            const normalizedAmenities = Array.isArray(rawFacilities)
+              ? rawFacilities.map(f => typeof f === "object" && f !== null ? String(f.name || f.Name || f.title || "").trim() : String(f || "").trim()).filter(Boolean)
+              : [];
+
             setHotel(current => ({
                 ...current,
-                images: info.HotelDetails.Images || current.images,
-                latitude: info.HotelDetails.Latitude || current.latitude,
-                longitude: info.HotelDetails.Longitude || current.longitude,
-                address: info.HotelDetails.Address || current.address,
-                amenities: info.HotelDetails.HotelFacilities || current.amenities,
+                images: hotelDetailsObj.Images || hotelDetailsObj.images || current.images,
+                latitude: hotelDetailsObj.Latitude || hotelDetailsObj.latitude || current.latitude,
+                longitude: hotelDetailsObj.Longitude || hotelDetailsObj.longitude || current.longitude,
+                address: hotelDetailsObj.Address || hotelDetailsObj.address || current.address,
+                amenities: normalizedAmenities.length > 0 ? normalizedAmenities : current.amenities,
                 hotelId: fetchedHotelCode
             }));
         }
         
-        // 2. Get Hotel Rooms
+        // 2. Get Hotel Rooms — this is the critical call for live room pricing
         const roomPayload = { ...infoPayload, HotelCode: fetchedHotelCode };
+        console.log("[HotelBooking] Calling getHotelRoom with payload:", roomPayload);
         const roomsResult = await getHotelRoom(roomPayload);
+        console.log("[HotelBooking] getHotelRoom response:", roomsResult);
         
         const hotelRoomResult = roomsResult?.getHotelRoomResult || roomsResult?.GetHotelRoomResult || roomsResult?.HotelRoomResult || {};
         const hotelRoomsDetails = hotelRoomResult?.hotelRoomsDetails || hotelRoomResult?.HotelRoomsDetails;
@@ -580,7 +588,16 @@ export default function HotelPassengerDetailsPage() {
                         const priceObj = r.price || r.Price || {};
                         const cancelPolicies = r.cancellationPolicies || r.CancellationPolicies || [];
                         
-                        const extractedPrice = priceObj.b2cFinalFare || priceObj.B2CFinalFare || priceObj.offeredPriceRoundedOff || priceObj.OfferedPriceRoundedOff || priceObj.publishedPriceRoundedOff || priceObj.PublishedPriceRoundedOff || priceObj.roomPrice || priceObj.RoomPrice || (typeof priceObj === 'number' ? priceObj : 0);
+                        // Use ?? to avoid skipping valid 0 values; prioritize b2cDisplayFare
+                        const extractedPrice = Number(
+                          priceObj.b2cDisplayFare ?? priceObj.B2CDisplayFare ??
+                          priceObj.b2cFinalFare ?? priceObj.B2CFinalFare ??
+                          priceObj.offeredPriceRoundedOff ?? priceObj.OfferedPriceRoundedOff ??
+                          priceObj.offeredPrice ?? priceObj.OfferedPrice ??
+                          priceObj.publishedPriceRoundedOff ?? priceObj.PublishedPriceRoundedOff ??
+                          priceObj.roomPrice ?? priceObj.RoomPrice ??
+                          (typeof priceObj === 'number' ? priceObj : 0)
+                        );
 
                         return {
                             ...r,
@@ -589,17 +606,20 @@ export default function HotelPassengerDetailsPage() {
                             currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
                             roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
                             cancellationPolicy: cancelPolicies?.[0]?.charge || cancelPolicies?.[0]?.Charge ? `Charge: ${cancelPolicies[0].charge || cancelPolicies[0].Charge}` : "Refundable thresholds apply",
-                            bedType: r.bedTypes || r.BedTypes || "Double",
+                            bedType: r.bedTypes || r.BedTypes || "",
                             isPANMandatory: hotelRoomResult.isPANMandatory || hotelRoomResult.IsPANMandatory || r.isPANMandatory || false,
                             isPassportMandatory: hotelRoomResult.isPassportMandatory || hotelRoomResult.IsPassportMandatory || r.isPassportMandatory || false
                         };
                     })
                 }));
+                // Mark as fetched so we don't re-fetch on state updates
+                roomsFetchedRef.current = true;
             }
         } else if (!roomsResult) {
             throw new Error("Unable to fetch room availability from the live API.");
         }
       } catch (err) {
+        console.error("[HotelBooking] fetchRoomsAndInfo error:", err);
         if (isMounted) setOfferLoadError(err.message || "Unable to reload stay details from the backend.");
       } finally {
         if (isMounted) setIsLoadingOffer(false);
@@ -617,7 +637,8 @@ export default function HotelPassengerDetailsPage() {
     return () => { isMounted = false; };
   }, []);
 
-  // Restore pending hotel offer selection after logging in
+  // Restore pending hotel offer after login — but do NOT auto-trigger blockRoom.
+  // Instead, restore the selection state and let the user click "Choose room" or "Continue" manually.
   useEffect(() => {
     const activePortal = sessionStorage.getItem("active_portal");
     const isAgentUser = localStorage.getItem("b2b_role") === "Agent" && activePortal === "b2b";
@@ -630,11 +651,8 @@ export default function HotelPassengerDetailsPage() {
         try {
           const pendingOffer = JSON.parse(pendingRaw);
           sessionStorage.removeItem("pending_hotel_offer");
-          handleSelectOffer(pendingOffer).then(() => {
-            setCurrentStep(2);
-          }).catch((err) => {
-            console.error("Failed to select restored pending offer:", err);
-          });
+          // Just store the offer in state — don't call blockRoom automatically
+          console.log("[HotelBooking] Restored pending offer after login (user must click Choose room):", pendingOffer);
         } catch (e) {
           console.error("Error restoring pending hotel offer:", e);
         }
@@ -794,14 +812,16 @@ export default function HotelPassengerDetailsPage() {
           couponDiscount += Number(price.CouponDiscount ?? price.couponDiscount ?? 0);
           convenienceFee += Number(price.ConvenienceFee ?? price.convenienceFee ?? 0);
           
-          const rawTotal = price.b2CTotalPrice ?? price.b2cTotalPrice ?? price.OfferedPrice ?? price.offeredPrice ?? price.PublishedPrice ?? price.publishedPrice ?? 0;
+          const rawTotal = price.b2cDisplayFare ?? price.B2CDisplayFare ?? price.b2cFinalFare ?? price.B2CFinalFare ?? price.b2CTotalPrice ?? price.b2cTotalPrice ?? price.OfferedPrice ?? price.offeredPrice ?? price.PublishedPrice ?? price.publishedPrice ?? 0;
           finalPayable += Number(rawTotal);
       });
-  } else {
-      // Fallback if no block room response yet, use offer price (base)
-      basePrice = selectedMultiRooms.reduce((sum, r) => sum + (Number(r.price) || 0), 0) * nights;
+  } else if (offer) {
+      // Use the selected offer's price until blockRoom confirms the final rate
+      const offerPrice = Number(offer.price ?? 0);
+      basePrice = offerPrice > 0 ? offerPrice : 0;
       finalPayable = basePrice;
   }
+  // If no offer selected and no blocked rooms, all prices remain 0 — UI shows "Select a room"
 
   // Fallback for manual markup if backend didn't provide AgentMarkUp and user is not an agent
   if (markupValue === 0 && !isAgent) {

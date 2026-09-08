@@ -5,7 +5,7 @@ import { getPendingBookingReturn, clearPendingBookingReturn } from "../../utils/
 import {
   LockKeyhole, Mail, Phone, ShieldCheck,
   Eye, EyeOff, User, ArrowLeft, Facebook,
-  Plane, Bus, Building2, MapPin,
+  Plane, Bus, Building2, MapPin, Fingerprint
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import "../../STYLES/AuthPage.css";
@@ -24,6 +24,7 @@ import {
   forgotPasswordVerifyOtp,
   resetPassword,
 } from "../../services/authService";
+import { loginWithPasskey } from "../../services/passkeyService";
 
 const OTP_LENGTH = 6;
 
@@ -502,6 +503,26 @@ export default function AuthPage() {
     } finally { setFpLoading(false); }
   };
 
+  /* ── Passkey Login ──────────────────────────────────────── */
+  const handlePasskeyLogin = async () => {
+    setLoading(true);
+    setStatus({ type: "", message: "" });
+    try {
+      const response = await loginWithPasskey();
+      if (response && response.token) {
+        localStorage.setItem("authToken", response.token);
+        completeLogin("Passkey sign-in successful!");
+      } else {
+        setStatus({ type: "error", message: "Passkey sign-in failed." });
+      }
+    } catch (error) {
+      console.error(error);
+      setStatus({ type: "error", message: "Passkey sign-in failed or was cancelled." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ── Dynamic title/subtitle ─────────────────────────────── */
   const getTitle = () => {
     if (viewMode === "login")         return "Welcome back";
@@ -707,13 +728,18 @@ export default function AuthPage() {
                 )}
 
                 <div className="auth-divider"><span>or continue with</span></div>
+                <div style={{ display: 'flex', marginBottom: '8px' }}>
+                  <button type="button" className="auth-social-btn" onClick={handlePasskeyLogin} disabled={loading} style={{ flex: 1, background: '#0f172a', color: 'white', borderColor: '#0f172a' }}>
+                    <Fingerprint size={18} />
+                    <span>Sign in with Passkey</span>
+                  </button>
+                </div>
                 <div className="auth-social-row">
                   {authMethod === "mobile"
                     ? <button type="button" className="auth-social-btn" onClick={() => switchAuthMethod("email")}><Mail size={16}/><span>Email</span></button>
                     : <button type="button" className="auth-social-btn" onClick={() => switchAuthMethod("mobile")}><Phone size={16}/><span>Mobile</span></button>
                   }
                   <button type="button" className="auth-social-btn auth-google-btn" onClick={() => handleSocialLogin("Google")}><FcGoogle size={18}/><span>Google</span></button>
-                  <button type="button" className="auth-social-btn auth-facebook-btn" onClick={() => handleSocialLogin("Facebook")}><Facebook size={17}/><span>Facebook</span></button>
                 </div>
                 <div className="auth-divider auth-divider-thin"><span>New here?</span></div>
                 <div className="auth-secondary-actions">

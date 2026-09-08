@@ -70,9 +70,20 @@ export default function HotelDetail({
   nights
 }) {
 
-  const amenities = Array.isArray(hotel.amenities)
+  const rawAmenities = Array.isArray(hotel.amenities)
     ? hotel.amenities
     : (typeof hotel.amenities === "string" ? hotel.amenities.split(",").map(a => a.trim()) : []);
+
+  const amenities = rawAmenities
+    .map((item) => {
+      if (!item) return "";
+      if (typeof item === "object" && item !== null) {
+        return String(item.name || item.Name || item.title || "").trim();
+      }
+      const s = String(item).trim();
+      return s === "[object Object]" ? "" : s;
+    })
+    .filter(Boolean);
 
   // Parse amenities dynamically based on API data
   const views = [];
@@ -80,8 +91,7 @@ export default function HotelDetail({
   const attractions = [];
   const general = [];
 
-  amenities.forEach(item => {
-    const val = String(item).trim();
+  amenities.forEach(val => {
     if (!val) return;
 
     if (/view|balcony|terrace|garden|window|exterior|skyline|patio/i.test(val)) {
@@ -284,7 +294,9 @@ export default function HotelDetail({
                     ✨
                   </span>
                   <div>
-                    <strong style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>{highlight.title}</strong>
+                    <strong style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>
+                      {typeof highlight.title === "object" && highlight.title !== null ? (highlight.title.name || highlight.title.Name || highlight.title.title || "") : highlight.title}
+                    </strong>
                     <p style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", margin: 0, lineHeight: "1.3" }}>{highlight.text}</p>
                   </div>
                 </article>

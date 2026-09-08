@@ -756,9 +756,13 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.CouponCode).HasMaxLength(40);
                 entity.Property(x => x.CancellationChargeInr).HasPrecision(10, 2);
                 entity.Property(x => x.RefundAmountInr).HasPrecision(10, 2);
+                entity.Property(x => x.TraceId).HasMaxLength(100);
+                entity.Property(x => x.FinancialStatus).HasMaxLength(50);
+                entity.Property(x => x.SupplierCancelId).HasMaxLength(100);
                 entity.HasIndex(x => x.BookingReference).IsUnique();
                 entity.HasIndex(x => x.UserId);
                 entity.HasIndex(x => x.PassengerPhone);
+                entity.HasIndex(x => new { x.UserId, x.TraceId }).IsUnique();
                 entity.HasOne(x => x.BusBooking)
                     .WithMany()
                     .HasForeignKey(x => x.BusBookingId)
@@ -772,12 +776,29 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.FullName).HasMaxLength(120).IsRequired();
                 entity.Property(x => x.Gender).HasMaxLength(20).IsRequired();
                 entity.Property(x => x.SeatNumber).HasMaxLength(10);
+                entity.Property(x => x.Title).HasMaxLength(20);
+                entity.Property(x => x.FirstName).HasMaxLength(100);
+                entity.Property(x => x.LastName).HasMaxLength(100);
+                entity.Property(x => x.SeatType).HasMaxLength(50);
+                entity.Property(x => x.BaseFareInr).HasPrecision(10, 2);
+                entity.Property(x => x.PublishedFareInr).HasPrecision(10, 2);
+                entity.Property(x => x.GstAmountInr).HasPrecision(10, 2);
+                entity.Property(x => x.TaxInr).HasPrecision(10, 2);
+                entity.Property(x => x.OfferedFareInr).HasPrecision(10, 2);
+                entity.Property(x => x.GstRate).HasPrecision(5, 2);
                 entity.HasIndex(x => x.BusReservationId);
                 entity.HasIndex(x => new { x.BusReservationId, x.SeatNumber }).IsUnique();
                 entity.HasOne(x => x.BusReservation)
                     .WithMany()
                     .HasForeignKey(x => x.BusReservationId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PickNBook.Api.Models.Entities.BookingCancellation>(entity =>
+            {
+                entity.Property(x => x.SupplierCancelId).HasMaxLength(100);
+                entity.Property(x => x.CancellationType).HasMaxLength(20);
+                entity.Property(x => x.RefundStatus).HasMaxLength(50);
             });
 
             modelBuilder.Entity<FlightReservationPassenger>(entity =>
@@ -1304,13 +1325,21 @@ namespace PickNBook.Api.Data
             modelBuilder.Entity<BusCity>(entity =>
             {
                 entity.ToTable("bus_cities");
-                entity.Property(x => x.CityCode).HasMaxLength(50).IsRequired();
+                entity.HasKey(x => x.CityId);
+                entity.Property(x => x.CityId).ValueGeneratedNever();
+                entity.Property(x => x.CityCode).HasMaxLength(50).ValueGeneratedOnAddOrUpdate();
                 entity.Property(x => x.CityName).HasMaxLength(200).IsRequired();
-                entity.Property(x => x.StateName).HasMaxLength(200);
-                entity.Property(x => x.CountryName).HasMaxLength(100);
-                entity.Property(x => x.CountryCode).HasMaxLength(10);
+                entity.Property(x => x.DistrictName).HasMaxLength(200);
+                entity.Property(x => x.StateName).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.StateCode).HasMaxLength(20);
+                entity.Property(x => x.CountryName).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.CountryCode).HasMaxLength(10).IsRequired();
+                entity.Property(x => x.Type).HasMaxLength(30).IsRequired();
+                entity.Property(x => x.Timezone).HasMaxLength(64);
                 entity.HasIndex(x => x.CityCode);
                 entity.HasIndex(x => x.CityName);
+                entity.HasIndex(x => x.Type);
+                entity.HasIndex(x => x.ParentCityId);
                 entity.HasIndex(x => x.IsActive);
             });
 

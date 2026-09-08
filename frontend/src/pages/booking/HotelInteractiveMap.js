@@ -7,6 +7,7 @@ import {
   useJsApiLoader,
   MarkerClusterer,
 } from "@react-google-maps/api";
+import "../../STYLES/HotelInteractiveMap.css";
 
 const formatCurrency = (amount) => `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.round(Number(amount) || 0))}`;
 
@@ -161,6 +162,14 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
               lng: Number(selectedHotel.longitude),
             }}
             onCloseClick={() => setSelectedHotel(null)}
+            options={
+              typeof window !== "undefined" && window.google?.maps
+                ? {
+                    maxWidth: 300,
+                    pixelOffset: new window.google.maps.Size(0, -10),
+                  }
+                : { maxWidth: 300 }
+            }
           >
             <div className="hotel-map-info-window">
               {selectedHotel.image && (
@@ -168,6 +177,9 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
                   src={selectedHotel.image}
                   alt={selectedHotel.name}
                   className="hotel-map-info-image"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               )}
               <div className="hotel-map-info-content">

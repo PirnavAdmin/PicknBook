@@ -6130,6 +6130,37 @@
         }
       }
     },
+    "/api/BusBookings/v9/Block": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvBusBookingRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvBusBookingRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvBusBookingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BusBookings/block": {
       "post": {
         "tags": [
@@ -6218,6 +6249,68 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/BusPricingPreviewRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BusBookings/v9/Book": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookV9RequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookV9RequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookV9RequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v9/Book": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookV9RequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookV9RequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookV9RequestDto"
               }
             }
           }
@@ -6372,6 +6465,130 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/CancelPassengersRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BusBookings/v9/BookingDetails": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookingDetailsQueryRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookingDetailsQueryRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookingDetailsQueryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BusBookings/booking-details": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookingDetailsQueryRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookingDetailsQueryRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusBookingDetailsQueryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BusBookings/v9/Cancel": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BusBookings/cancel": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
               }
             }
           }
@@ -11997,6 +12214,80 @@
         },
         "additionalProperties": false
       },
+      "BusBookV9RequestDto": {
+        "required": [
+          "resultIndex",
+          "traceId"
+        ],
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64"
+          },
+          "resultIndex": {
+            "maxLength": 500,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusBookingDetailsQueryRequestDto": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusCancelV9RequestDto": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "seatName": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "seatNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "seatId": {
+            "type": "string",
+            "nullable": true
+          },
+          "remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "bookingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "busId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BusConvenienceFeeRequestDto": {
         "type": "object",
         "properties": {
@@ -12215,12 +12506,12 @@
         "type": "object",
         "properties": {
           "fromCityCode": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           },
           "toCityCode": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           },
           "departDate": {
             "type": "string",
@@ -12242,6 +12533,18 @@
           },
           "resultIndex": {
             "type": "string",
+            "nullable": true
+          },
+          "boardingPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "droppingPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "bpDpSeatLayout": {
+            "type": "boolean",
             "nullable": true
           }
         },
@@ -12376,7 +12679,7 @@
           },
           "srdvIndex": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
           "blockKey": {
             "type": "string",
@@ -12507,6 +12810,27 @@
         "properties": {
           "fullName": {
             "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "leadPassenger": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "seatIndex": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "gender": {
@@ -15397,13 +15721,17 @@
           },
           "srdvIndex": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
           "boardingPointId": {
             "type": "string",
             "nullable": true
           },
           "droppingPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "refId": {
             "type": "string",
             "nullable": true
           },
@@ -15496,8 +15824,21 @@
             "type": "string",
             "nullable": true
           },
+          "phoneNo": {
+            "type": "string",
+            "nullable": true
+          },
           "email": {
             "type": "string",
+            "nullable": true
+          },
+          "leadPassenger": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "seatIndex": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "idType": {

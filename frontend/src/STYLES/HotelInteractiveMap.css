@@ -1,0 +1,221 @@
+/* ==========================================================================
+   HotelInteractiveMap Styles
+   ========================================================================== */
+
+.hotel-interactive-map-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+}
+
+.hotel-google-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Fallback & Loading States */
+.hotel-map-no-coords-container,
+.hotel-map-error-container,
+.hotel-map-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  padding: 32px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px dashed #e2e8f0;
+}
+
+.hotel-map-loader-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #dc1e26;
+  border-radius: 50%;
+  animation: hotelMapSpin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes hotelMapSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Google Maps InfoWindow Overrides & Card Styling
+   ========================================================================== */
+
+/* Remove default Google Maps InfoWindow padding & style container */
+.gm-style .gm-style-iw.gm-style-iw-c {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.18), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+  max-width: 290px !important;
+}
+
+.gm-style .gm-style-iw-d {
+  padding: 0 !important;
+  overflow: hidden !important;
+  max-height: none !important;
+}
+
+/* Close 'X' Button on top-right */
+.gm-style .gm-ui-hover-effect {
+  top: 4px !important;
+  right: 4px !important;
+  width: 22px !important;
+  height: 22px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.85 !important;
+  transition: opacity 0.2s, background-color 0.2s !important;
+  z-index: 10 !important;
+}
+
+.gm-style .gm-ui-hover-effect:hover {
+  opacity: 1 !important;
+  background: #ffffff !important;
+}
+
+.gm-style .gm-ui-hover-effect > span {
+  margin: 0 !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* ==========================================================================
+   Compact Hotel Map Card
+   ========================================================================== */
+
+.hotel-map-info-window {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 280px;
+  max-width: 280px;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+.hotel-map-info-image {
+  width: 95px;
+  min-width: 95px;
+  max-width: 95px;
+  height: 100%;
+  min-height: 100px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+
+.hotel-map-info-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px 8px 10px;
+  gap: 3px;
+  box-sizing: border-box;
+}
+
+.hotel-map-info-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.hotel-map-info-address {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hotel-map-info-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+.hotel-map-info-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background-color: #059669;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hotel-map-info-price {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #dc1e26;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.hotel-map-info-button {
+  margin-top: 4px;
+  padding: 5px 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #dc1e26, #b8141b);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 6px rgba(220, 30, 38, 0.25);
+}
+
+.hotel-map-info-button:hover {
+  background: linear-gradient(135deg, #b8141b, #991b1b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(220, 30, 38, 0.35);
+}
+
+.hotel-map-info-button:active {
+  transform: translateY(0);
+}
