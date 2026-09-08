@@ -304,8 +304,6 @@ C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\obj\Debu
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\obj\Debug\net8.0\PickNBook.Api.pdb
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\obj\Debug\net8.0\PickNBook.Api.genruntimeconfig.cache
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\obj\Debug\net8.0\ref\PickNBook.Api.dll
-C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\Data\srdv_hotel_cities_intl.json
-C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\Data\srdv_hotel_cities_special.json
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\test.json
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\Serilog.Sinks.Async.dll
 C:\Users\ADMIN\OneDrive\Desktop\Local\Travel_site\backend\PickNBook.Api\bin\Debug\net8.0\cashfree_pg.dll

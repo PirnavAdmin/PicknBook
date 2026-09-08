@@ -15,6 +15,7 @@ import {
 import { listBusBookings } from "../../services/busBookingService";
 import { getDashboardSummary } from "../../services/dashboardService";
 import { listFlightBookings } from "../../services/flightBookingService";
+import { getWalletSummary } from "../../services/walletService";
 import { RefreshCw } from "lucide-react";
 
 const RECENT_LIMIT = 10;
@@ -330,6 +331,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
   const [busBookings, setBusBookings] = useState([]);
   const [flightBookings, setFlightBookings] = useState([]);
+  const [walletSummary, setWalletSummary] = useState(null);
   const [travelerData, setTravelerData] = useState([]);
   const [depositData, setDepositData] = useState([]);
   const [loadingSummary, setLoadingSummary] = useState(true);
@@ -355,7 +357,7 @@ export default function DashboardPage() {
       setSummaryNotice("");
 
       try {
-        const [summaryResult, busBookings, flightBookings] = await Promise.all([
+        const [summaryResult, busBookings, flightBookings, walletRes] = await Promise.all([
           getDashboardSummary({
             recentLimit: RECENT_LIMIT,
             travelerPendingDays: TRAVELER_PENDING_DAYS,
@@ -365,6 +367,7 @@ export default function DashboardPage() {
           ),
           listBusBookings().catch(() => []),
           listFlightBookings().catch(() => []),
+          getWalletSummary().catch(() => null),
         ]);
         if (ignore) {
           return;
@@ -372,6 +375,7 @@ export default function DashboardPage() {
 
         setBusBookings(Array.isArray(busBookings) ? busBookings : []);
         setFlightBookings(Array.isArray(flightBookings) ? flightBookings : []);
+        setWalletSummary(walletRes);
         setTravelerData(readStoredArray(TRAVELER_STORAGE_KEY));
         setDepositData(readStoredArray(DEPOSIT_STORAGE_KEY));
 
@@ -594,6 +598,25 @@ export default function DashboardPage() {
           {currentDateTime}
         </div>
       </header>
+
+      {walletSummary && (
+        <section className="dashboard-wallet-card" style={{ display: 'flex', justifyContent: 'space-between', padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #eee' }}>
+          <div>
+            <p style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', marginBottom: '5px' }}>Wallet Balance</p>
+            <h2 style={{ margin: '0 0 5px 0', fontSize: '28px', color: '#1a1a1a' }}>₹ {walletSummary.availableBalance?.toLocaleString('en-IN', {minimumFractionDigits:2})}</h2>
+            <span style={{ fontSize: '12px', background: walletSummary.walletStatus === 'Active' ? '#d4edda' : '#f8d7da', color: walletSummary.walletStatus === 'Active' ? '#155724' : '#721c24', padding: '4px 8px', borderRadius: '4px', fontWeight: '500' }}>Status: {walletSummary.walletStatus}</span>
+          </div>
+          <div>
+            <p style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', marginBottom: '5px' }}>PickNBook Coins</p>
+            <h2 style={{ margin: '0 0 5px 0', fontSize: '28px', color: '#1a1a1a' }}>{walletSummary.picknbookCoins}</h2>
+            <span style={{ fontSize: '12px', color: '#666' }}>Loyalty Rewards</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '10px' }}>
+            <Link to="/dashboard/wallet" style={{ background: '#007bff', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontWeight: '500', textAlign: 'center' }}>Add Money</Link>
+            <Link to="/dashboard/wallet" style={{ color: '#007bff', textDecoration: 'none', fontWeight: '500', textAlign: 'center', fontSize: '14px' }}>View Wallet</Link>
+          </div>
+        </section>
+      )}
 
       <section className="dashboard-kpi-grid">
         {dashboardStats.map((stat) => (

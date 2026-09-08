@@ -36,7 +36,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { searchBuses, getBoardingPointsProxy } from "../../services/busBookingService";
-import { getActiveOffers } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import "../../STYLES/BusSearchResults.css";
@@ -2096,7 +2095,7 @@ export default function BusSearchResults() {
               {/* LOCATIONS GROUP */}
               <div style={{ display: 'flex', flex: '2.4 1 auto', position: 'relative', alignItems: 'center' }}>
                 {/* FROM FIELD */}
-                <div className="bus-discover-searchcell" style={{ flex: '1 1 50%', paddingRight: '16px' }}>
+                <div className="bus-discover-searchcell" style={{ flex: '1 1 50%', paddingRight: '22px' }}>
                   <PlaceAutocomplete
                     label="FROM"
                     sublabel={false}
@@ -2173,7 +2172,7 @@ export default function BusSearchResults() {
                   <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     TRAVEL DATE
                   </span>
-                  <strong style={{ cursor: 'pointer', color: '#0f172a', fontWeight: 700, fontSize: '1.02rem', margin: '2px 0', whiteSpace: 'nowrap' }}>
+                  <strong style={{ cursor: 'pointer', color: '#0f172a', fontWeight: 500, fontSize: '14px', margin: '2px 0', whiteSpace: 'nowrap' }}>
                     {formatBusPillDate(modifyForm.departureDate).date}
                   </strong>
                   <input

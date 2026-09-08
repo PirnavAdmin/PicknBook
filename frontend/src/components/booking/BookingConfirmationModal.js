@@ -3,7 +3,8 @@ import { X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCashfreePayment } from "../../hooks/useCashfreePayment";
 import { buildFlightBookingPayload, buildBookingPayload as buildBusBookingPayload } from "../../utils/checkoutPayloadBuilders";
-import "../../STYLES/FlightBookingFlow.css"; // Reuse existing styles
+import { getWalletSummary } from "../../services/walletService";
+import "../../STYLES/FlightBookingFlow.css";
 
 export default function BookingConfirmationModal({ isOpen, onClose, bookingType, flowState, payload, onSuccess }) {
   const navigate = useNavigate();
@@ -14,6 +15,10 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   // Agent Wallet Info
   const [isAgent, setIsAgent] = useState(false);
   const [agentProfile, setAgentProfile] = useState(null);
+  
+  // B2C Wallet Info
+  const [b2cWallet, setB2cWallet] = useState(null);
+  const [selectedMethod, setSelectedMethod] = useState("Online");
 
   useEffect(() => {
     if (isOpen) {
@@ -22,6 +27,13 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       if (b2bUser) {
         setIsAgent(true);
         setAgentProfile(JSON.parse(b2bUser));
+      } else {
+        const token = localStorage.getItem("token");
+        if (token) {
+           getWalletSummary()
+            .then(data => setB2cWallet(data))
+            .catch(err => console.warn("Failed to fetch B2C wallet summary", err));
+        }
       }
     } else {
       document.body.style.overflow = "";
@@ -75,6 +87,35 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     }
   };
 
+  // --- B2C Wallet Logic ---
+  const handleB2CWalletPay = async () => {
+     if (isProcessing) return;
+     setLocalError("");
+     setIsProcessing(true);
+
+     const balance = Number(b2cWallet?.balance || 0);
+     if (balance < totalPayable) {
+       setLocalError(`Insufficient wallet balance. You need ₹ ${totalPayable.toFixed(2)} but only have ₹ ${balance.toFixed(2)}.`);
+       setIsProcessing(false);
+       return;
+     }
+     
+     if (b2cWallet?.walletStatus !== "Active") {
+       setLocalError(`Wallet is currently ${b2cWallet?.walletStatus || "Inactive"}.`);
+       setIsProcessing(false);
+       return;
+     }
+
+     try {
+       await new Promise(res => setTimeout(res, 1200));
+       onSuccess({ paymentMethod: "Wallet", price: totalPayable });
+     } catch (err) {
+       setLocalError(err.message || "Failed to process wallet payment.");
+     } finally {
+       setIsProcessing(false);
+     }
+  };
+
   // --- Cashfree B2C Logic ---
   const handleCashfreePay = async () => {
     if (cfIsSubmitting || cfStatus === "creating") return;
@@ -105,8 +146,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     } else if (bookingType === "Hotel") {
       // Inline Hotel Payload mapping
       const { guestName, guestTitle, guestPhone, guestEmail, blockRoomResponse, hotel, offer, checkInDate, checkOutDate } = flowState;
-      const firstName = guestName?.split(' ')[0] || "";
-      const lastName = guestName?.split(' ').slice(1).join(' ') || "";
+      const firstName = guestName?.split(" ")[0] || "";
+      const lastName = guestName?.split(" ").slice(1).join(" ") || "";
       const cleanPhone = String(guestPhone || "9876543210").replace(/\D/g, "").slice(-10);
       const cleanEmail = String(guestEmail || "guest@gopickandbook.in").trim();
       
@@ -128,7 +169,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         HotelName: hotel?.name || "",
         GuestNationality: "IN",
         NoOfRooms: 1, // simplified for fallback
-        ClientReferenceNo: 0,
+        ClientReferenceNo: "0",
         IsVoucherBooking: true,
         GuestName: `${firstName} ${lastName}`,
         GuestEmail: cleanEmail,
@@ -159,7 +200,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     }
   };
 
-  const handlePayNow = isAgent ? handleAgentPay : handleCashfreePay;
+  const handlePayNow = isAgent ? handleAgentPay : (selectedMethod === "Wallet" ? handleB2CWalletPay : handleCashfreePay);
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{
@@ -224,6 +265,51 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           </div>
         </div>
 
+        {/* Payment Method Selection for B2C */}
+        {!isAgent && (
+           <div style={{ marginBottom: "24px", padding: "16px", border: "1px solid #eee", borderRadius: "8px" }}>
+             <h3 style={{ fontSize: "1.1rem", margin: "0 0 12px 0" }}>Payment Method</h3>
+             
+             <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", cursor: "pointer" }}>
+               <input 
+                 type="radio" 
+                 name="paymentMethod" 
+                 value="Online" 
+                 checked={selectedMethod === "Online"} 
+                 onChange={() => setSelectedMethod("Online")}
+                 style={{ width: "18px", height: "18px", accentColor: "var(--pnb-red)" }}
+               />
+               <div>
+                 <strong>Pay Online</strong>
+                 <div style={{ fontSize: "0.85rem", color: "#666" }}>Credit Card, Debit Card, UPI, NetBanking (via Cashfree)</div>
+               </div>
+             </label>
+
+             <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", opacity: (!b2cWallet || b2cWallet.walletStatus !== "Active" || b2cWallet.balance < totalPayable) ? 0.6 : 1 }}>
+               <input 
+                 type="radio" 
+                 name="paymentMethod" 
+                 value="Wallet" 
+                 checked={selectedMethod === "Wallet"} 
+                 onChange={() => setSelectedMethod("Wallet")}
+                 disabled={!b2cWallet || b2cWallet.walletStatus !== "Active" || b2cWallet.balance < totalPayable}
+                 style={{ width: "18px", height: "18px", accentColor: "var(--pnb-red)" }}
+               />
+               <div>
+                 <strong>PickNBook Wallet</strong>
+                 {b2cWallet ? (
+                   <div style={{ fontSize: "0.85rem", color: b2cWallet.balance < totalPayable ? "red" : "green" }}>
+                     Balance: ₹ {b2cWallet.balance.toFixed(2)} 
+                     {b2cWallet.walletStatus !== "Active" ? " (Inactive)" : ""}
+                   </div>
+                 ) : (
+                   <div style={{ fontSize: "0.85rem", color: "#666" }}>Login to use Wallet</div>
+                 )}
+               </div>
+             </label>
+           </div>
+        )}
+
         {(localError || paymentError) && (
           <div style={{ padding: "12px", background: "#fee", color: "#c00", borderRadius: "6px", marginBottom: "20px" }}>
             {localError || paymentError}
@@ -232,7 +318,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
         <button 
           onClick={handlePayNow} 
-          disabled={isProcessing || cfIsSubmitting}
+          disabled={isProcessing || cfIsSubmitting || (selectedMethod === "Wallet" && (!b2cWallet || b2cWallet.balance < totalPayable))}
           style={{
             width: "100%", padding: "14px", backgroundColor: "var(--pnb-red, #e60000)", color: "white",
             border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer",
@@ -245,3 +331,4 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     </div>
   );
 }
+

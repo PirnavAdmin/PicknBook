@@ -18,7 +18,6 @@ function getAdminAuthHeaders(hasBody = false) {
 
   const headers = {
     Accept: "application/json",
-    "ngrok-skip-browser-warning": "true",
   };
 
   if (hasBody) {

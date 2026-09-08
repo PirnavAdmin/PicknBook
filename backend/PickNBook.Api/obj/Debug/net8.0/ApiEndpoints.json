@@ -5206,15 +5206,31 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBlockRoom",
+    "RelativePath": "api/Hotels/block-room",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BlockRoomRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "GetBlockRoom",
-    "RelativePath": "api/Hotels/blockRoom",
+    "RelativePath": "api/Hotels/block-room",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "traceId",
-        "Type": "System.String",
+        "Type": "System.Int64",
         "IsRequired": false
       },
       {
@@ -5223,23 +5239,18 @@
         "IsRequired": false
       },
       {
-        "Name": "hotelCode",
+        "Name": "optionId",
         "Type": "System.String",
         "IsRequired": false
       },
       {
-        "Name": "hotelName",
+        "Name": "roomTypeCode",
         "Type": "System.String",
         "IsRequired": false
       },
       {
-        "Name": "noOfRooms",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "price",
-        "Type": "System.Decimal",
+        "Name": "roomIndex",
+        "Type": "System.String",
         "IsRequired": false
       }
     ],
@@ -5263,6 +5274,42 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBlockRoom",
+    "RelativePath": "api/Hotels/BlockRoom",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "resultIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "optionId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "roomTypeCode",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "roomIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "Book",
     "RelativePath": "api/Hotels/book",
     "HttpMethod": "POST",
@@ -5273,6 +5320,132 @@
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.HotelBookingRequestDto",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBookRoom",
+    "RelativePath": "api/Hotels/book-room",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBookRoom",
+    "RelativePath": "api/Hotels/book-room",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "resultIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "guestName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "guestEmail",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "guestPhone",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "pan",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "clientReferenceNo",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBookingDetails",
+    "RelativePath": "api/Hotels/booking-details",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookingDetailsRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBookingDetails",
+    "RelativePath": "api/Hotels/booking-details",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBookingDetails",
+    "RelativePath": "api/Hotels/BookingDetails",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookingDetailsRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBookingDetails",
+    "RelativePath": "api/Hotels/BookingDetails",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -5300,29 +5473,35 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBookRoom",
+    "RelativePath": "api/Hotels/BookRoom",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "GetBookRoom",
-    "RelativePath": "api/Hotels/bookRoom",
+    "RelativePath": "api/Hotels/BookRoom",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "traceId",
-        "Type": "System.String",
+        "Type": "System.Int64",
         "IsRequired": false
       },
       {
         "Name": "resultIndex",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "hotelCode",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "hotelName",
         "Type": "System.String",
         "IsRequired": false
       },
@@ -5342,13 +5521,13 @@
         "IsRequired": false
       },
       {
-        "Name": "noOfRooms",
-        "Type": "System.Int32",
+        "Name": "pan",
+        "Type": "System.String",
         "IsRequired": false
       },
       {
-        "Name": "price",
-        "Type": "System.Decimal",
+        "Name": "clientReferenceNo",
+        "Type": "System.String",
         "IsRequired": false
       }
     ],
@@ -5356,16 +5535,74 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
-    "Method": "PostBookRoom",
-    "RelativePath": "api/Hotels/BookRoom",
+    "Method": "PostCancel",
+    "RelativePath": "api/Hotels/Cancel",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.HotelBookRequestDto",
+        "Type": "PickNBook.Api.Models.DTOs.HotelCancelBookingRequestDto",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetCancel",
+    "RelativePath": "api/Hotels/Cancel",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "remarks",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostCancel",
+    "RelativePath": "api/Hotels/cancel-booking",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelCancelBookingRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetCancel",
+    "RelativePath": "api/Hotels/cancel-booking",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "remarks",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -5486,6 +5723,27 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetHotelRooms",
+    "RelativePath": "api/Hotels/GetHotelRoom",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "resultIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "PostHotelRooms",
     "RelativePath": "api/Hotels/GetHotelRoom",
     "HttpMethod": "POST",
@@ -5558,6 +5816,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostHotelInfo",
+    "RelativePath": "api/Hotels/info",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelInfoRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "MyBookings",
     "RelativePath": "api/Hotels/my-bookings",
     "HttpMethod": "GET",
@@ -5600,6 +5874,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "RecheckSearch",
+    "RelativePath": "api/Hotels/recheck-search",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SrdvHotelRecheckRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "GetHotelRooms",
     "RelativePath": "api/Hotels/rooms",
     "HttpMethod": "GET",
@@ -5608,28 +5898,29 @@
     "Parameters": [
       {
         "Name": "traceId",
-        "Type": "System.String",
+        "Type": "System.Int64",
         "IsRequired": false
       },
       {
         "Name": "resultIndex",
         "Type": "System.String",
         "IsRequired": false
-      },
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostHotelRooms",
+    "RelativePath": "api/Hotels/rooms",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
       {
-        "Name": "hotelCode",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "srdvIndex",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "endUserIp",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelRoomRequestDto",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []

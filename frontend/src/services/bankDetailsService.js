@@ -1,54 +1,10 @@
 /* eslint-disable */
-const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
-const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 
 const BANK_DETAILS_ROOT = "/api/BankDetails";
 const BANK_UPI_DETAILS_ROOT = "/api/BankUpiDetails";
 
-function isLocalDevelopment() {
-  if (process.env.NODE_ENV !== "development") {
-    return false;
-  }
-
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return LOCAL_HOSTNAMES.has(window.location.hostname);
-}
-
-function resolveApiBaseUrl() {
-  const preferProxyInDev =
-    isLocalDevelopment() &&
-    String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-      "true";
-
-  if (preferProxyInDev) {
-    return "";
-  }
-
-  const explicitBase =
-    process.env.REACT_APP_API_BASE_URL ||
-    process.env.REACT_APP_BANK_API_BASE_URL;
-
-  if (explicitBase && explicitBase.trim()) {
-    return explicitBase.trim();
-  }
-
-  const placesUrl = process.env.REACT_APP_PLACES_API_URL;
-  if (placesUrl && placesUrl.trim()) {
-    try {
-      return new URL(placesUrl.trim()).origin;
-    } catch {
-      // Fall through to default host.
-    }
-  }
-
-  return FALLBACK_API_BASE_URL;
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+const IS_LOCAL_DEV = process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && ['localhost','127.0.0.1','0.0.0.0'].includes(window.location.hostname);
+const API_BASE_URL = IS_LOCAL_DEV ? '' : (process.env.REACT_APP_API_BASE_URL || '').trim();
 
 function toAbsoluteUrl(urlOrPath) {
   if (/^https?:\/\//i.test(urlOrPath)) {

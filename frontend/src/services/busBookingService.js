@@ -2,7 +2,7 @@
 import { toDdMmYyyy } from "../utils/apiDateFormat";
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://paycheck-baton-overfull.ngrok-free.dev";
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function getAuthHeaders() {
@@ -2250,12 +2250,14 @@ export async function getBusBookingById(bookingId) {
   return normalizeBusBookingRecord(data);
 }
 
-export async function cancelBusBooking(bookingId, reason) {
+export async function cancelBusBooking(bookingId, reason, refundPreference = "Original") {
   const url = buildUrl(`${BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel`, {
     reason,
+    refundPreference,
   });
   const legacyUrl = buildUrl(`${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel`, {
     reason,
+    refundPreference,
   });
 
   const data = await requestJsonWithFallback([url, legacyUrl], { method: "POST" });
@@ -2379,13 +2381,27 @@ export async function getFeaturedBusOffers() {
   }
 }
 
-export async function cancelBusPassengers(bookingId, seatNumbers, reason) {
+export async function cancelBusPassengers(bookingId, seatNumbers, reason, refundPreference = "Original") {
   const url = `${BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
   const legacyUrl = `${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
 
   const data = await requestJsonWithFallback([url, legacyUrl], {
     method: "POST",
-    body: JSON.stringify({ seatNumbers, reason }),
+    body: JSON.stringify({ seatNumbers, reason, refundPreference }),
   });
   return normalizeBusBookingRecord(data);
+}
+
+export async function bookBusProxy(payload) {
+  try {
+    const data = await requestJson(`${BUS_BOOKINGS_ROOT}/book`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return data;
+  } catch (error) {
+    console.error("[busBookingService] bookBusProxy Error:", error);
+    throw error;
+  }
 }

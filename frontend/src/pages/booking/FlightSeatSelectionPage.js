@@ -19,7 +19,8 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import "../../STYLES/FlightBookingFlow.css";
-import { getFlightSeatMap } from "../../services/flightBookingService";
+import { getFlightSeatMap, ticketLCC, ticketGDS } from "../../services/flightBookingService";
+import { buildFlightBookingPayload } from "../../utils/checkoutPayloadBuilders";
 import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
@@ -1540,9 +1541,28 @@ export default function FlightSeatSelectionPage() {
           onClose={() => setIsModalOpen(false)} 
           bookingType="Flight" 
           flowState={checkoutPayload} 
-          onSuccess={(res) => {
-            // Agent wallet success fallback (Cashfree redirects on its own)
-            navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+          onSuccess={async (res) => {
+            if (res.paymentMethod === "Wallet" || res.paymentMethod === "Agent Wallet") {
+              try {
+                const bookPayload = buildFlightBookingPayload(checkoutPayload);
+                bookPayload.PaymentMethod = res.paymentMethod;
+                
+                let bookRes;
+                if (checkoutPayload.isLcc) {
+                  bookRes = await ticketLCC(bookPayload);
+                } else {
+                  bookRes = await ticketGDS(bookPayload);
+                }
+                
+                navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });
+              } catch (err) {
+                console.error("Flight Booking failed", err);
+                alert("Flight Booking failed: " + (err.response?.data?.message || err.message));
+                setIsModalOpen(false);
+              }
+            } else {
+              navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+            }
           }} 
         />
       )}

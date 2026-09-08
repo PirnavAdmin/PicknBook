@@ -97,6 +97,7 @@ export default function FlightBookings() {
   const [selectedLegIndexes, setSelectedLegIndexes] = useState([]);
   const [selectedPassengerIds, setSelectedPassengerIds] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
+  const [refundPreference, setRefundPreference] = useState("Original");
   const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
@@ -260,7 +261,8 @@ export default function FlightBookings() {
       const updatedBooking = await cancelFlightPartial(selectedBooking, {
         selectedLegIndexes,
         selectedPassengerIds,
-        reason: cancelReason || "Customer requested partial flight cancellation"
+        reason: cancelReason || "Customer requested partial flight cancellation",
+        refundPreference
       });
 
       setSelectedBooking(updatedBooking);
@@ -300,7 +302,7 @@ export default function FlightBookings() {
     }
   };
 
-  const handleCancelBooking = async (reason) => {
+  const handleCancelBooking = async (reason, refundPreference = "Original") => {
     const targetBooking = cancelModalBooking;
     const bookingId = targetBooking?.bookingId || targetBooking?.bookingReference;
     if (!bookingId) return;
@@ -311,7 +313,7 @@ export default function FlightBookings() {
     setActionMessage("");
 
     try {
-      const result = await cancelFlightBooking(targetBooking || bookingId, reason || undefined);
+      const result = await cancelFlightBooking(targetBooking || bookingId, reason || undefined, { refundPreference });
       setActionMessage(
         `✅ Booking ${result.bookingReference || bookingId} cancelled successfully! Database updated & cancellation confirmation email triggered.`
       );
@@ -907,6 +909,17 @@ export default function FlightBookings() {
                           placeholder="e.g. Flight leg schedule change"
                           style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
                         />
+                      </label>
+                      <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>
+                        Refund To:
+                        <select
+                          value={refundPreference}
+                          onChange={(e) => setRefundPreference(e.target.value)}
+                          style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
+                        >
+                          <option value="Original">Original Payment Method</option>
+                          <option value="Wallet">PickNBook Wallet</option>
+                        </select>
                       </label>
                       <button
                         type="button"

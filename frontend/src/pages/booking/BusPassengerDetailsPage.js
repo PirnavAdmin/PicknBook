@@ -20,6 +20,7 @@ import {
   calculateBusPayableAmount,
   getBusPromotionDiscountAmount,
   blockBusProxy,
+  bookBusProxy,
   isBusCategoryOfferOrCoupon,
 } from "../../services/busBookingService";
 import { usePromo } from "../../contexts/PromoContext";
@@ -2484,8 +2485,24 @@ export default function BusPassengerDetailsPage() {
           onClose={() => setIsModalOpen(false)} 
           bookingType="Bus" 
           flowState={checkoutPayload} 
-          onSuccess={(res) => {
-            navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+          onSuccess={async (res) => {
+            if (res.paymentMethod === "Wallet" || res.paymentMethod === "Agent Wallet") {
+              try {
+                // Attach the payment method to the payload so backend can debit properly
+                const bookPayload = { ...checkoutPayload, paymentMethod: res.paymentMethod };
+                const bookRes = await bookBusProxy(bookPayload);
+                
+                // On success, bookRes should have { Reservation, Bus, Passengers, Response (ticket) }
+                navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });
+              } catch (err) {
+                console.error("Booking failed", err);
+                alert("Booking failed: " + (err.response?.data?.message || err.message));
+                setIsModalOpen(false);
+              }
+            } else {
+              // Cashfree redirect handles booking externally, but fallback here if needed
+              navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+            }
           }} 
         />
       )}

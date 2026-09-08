@@ -175,7 +175,7 @@ export default function HotelBookings() {
     setIsCancelModalOpen(true);
   };
 
-  const handleCancelBooking = async (reason) => {
+  const handleCancelBooking = async (reason, refundPreference = "Original") => {
     setIsCancelModalOpen(false);
     
     const booking = cancelModalBookingId;
@@ -201,7 +201,7 @@ export default function HotelBookings() {
     setActionMessage("");
 
     try {
-      const result = await cancelHotelBooking(booking, reason || undefined);
+      const result = await cancelHotelBooking(booking, reason || undefined, { refundPreference });
       setActionMessage(
         `Hotel Booking ${result.bookingReference || actualId} cancelled successfully.`
       );

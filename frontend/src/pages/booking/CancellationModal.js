@@ -5,12 +5,13 @@ import "../../STYLES/CancellationModal.css";
 
 export default function CancellationModal({ isOpen, onClose, onConfirm, title = "Cancel Ticket", message = "Are you sure you want to cancel this ticket?" }) {
   const [reason, setReason] = useState("Plan changed");
+  const [refundPreference, setRefundPreference] = useState("Original");
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onConfirm(reason);
+    onConfirm(reason, refundPreference);
   };
 
   return (
@@ -37,6 +38,18 @@ export default function CancellationModal({ isOpen, onClose, onConfirm, title = 
               required
               className="cancel-modal-input"
             />
+          </label>
+          <label className="cancel-modal-label" style={{ marginTop: "12px" }}>
+            <span>Refund To:</span>
+            <select
+              value={refundPreference}
+              onChange={(e) => setRefundPreference(e.target.value)}
+              className="cancel-modal-input"
+              style={{ marginTop: "4px" }}
+            >
+              <option value="Original">Original Payment Method</option>
+              <option value="Wallet">PickNBook Wallet</option>
+            </select>
           </label>
           <div className="cancel-modal-actions">
             <button type="button" className="cancel-btn-secondary" onClick={onClose}>

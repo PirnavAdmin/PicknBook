@@ -1,6 +1,5 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import adminFeaturedOffersService from "../../../services/adminFeaturedOffersService";
 import "./BusSearchHistory.css";
 import AdminPagination from "../../../components/AdminPagination";
 import { RefreshCw, AlertCircle } from "lucide-react";
@@ -103,7 +102,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
+  "https://paycheck-baton-overfull.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const BUS_BOOKINGS_ROOT = "/api/BusBookings";
 const BUS_SEARCH_LOGS_ROOT = "/api/admin/bus-search-logs";

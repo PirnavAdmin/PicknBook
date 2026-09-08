@@ -1918,7 +1918,7 @@ export default function FlightSearchResults() {
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
                     <span
-                      style={{ cursor: "pointer", color: '#ffffff', fontWeight: 700, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                      style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
                       onClick={(e) => {
                         e.stopPropagation();
                         const picker = document.getElementById("flight-discover-dep-date");
@@ -1933,7 +1933,7 @@ export default function FlightSearchResults() {
                       <>
                         <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
                         <span
-                          style={{ cursor: "pointer", color: '#ffffff', fontWeight: 700, fontSize: '1.02rem', whiteSpace: 'nowrap', display: 'inline-block' }}
+                          style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
                           onClick={(e) => {
                             e.stopPropagation();
                             const picker = document.getElementById("flight-discover-ret-date");
@@ -1991,7 +1991,7 @@ export default function FlightSearchResults() {
                   <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     TRAVELLERS & CLASS
                   </span>
-                  <span style={{ fontSize: '1.02rem', fontWeight: 700, color: '#ffffff', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#ffffff', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "Economy"}
                   </span>
                   <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>

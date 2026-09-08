@@ -7972,6 +7972,37 @@
         }
       }
     },
+    "/api/Hotels/recheck-search": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvHotelRecheckRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvHotelRecheckRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrdvHotelRecheckRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Hotels/offers/{offerId}": {
       "get": {
         "tags": [
@@ -8018,7 +8049,8 @@
             "name": "hotelCode",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": ""
             }
           },
           {
@@ -8130,7 +8162,8 @@
             "name": "hotelCode",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": ""
             }
           },
           {
@@ -8187,6 +8220,35 @@
             "description": "Success"
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelInfoRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelInfoRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelInfoRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
       }
     },
     "/api/Hotels/rooms": {
@@ -8199,32 +8261,12 @@
             "name": "traceId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
             "name": "resultIndex",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "hotelCode",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "srdvIndex",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endUserIp",
             "in": "query",
             "schema": {
               "type": "string"
@@ -8236,9 +8278,65 @@
             "description": "Success"
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelRoomRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelRoomRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelRoomRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
       }
     },
     "/api/Hotels/GetHotelRoom": {
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "resultIndex",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
       "post": {
         "tags": [
           "Hotels"
@@ -8298,9 +8396,7 @@
             "description": "Success"
           }
         }
-      }
-    },
-    "/api/Hotels/blockRoom": {
+      },
       "get": {
         "tags": [
           "Hotels"
@@ -8310,7 +8406,8 @@
             "name": "traceId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -8321,36 +8418,103 @@
             }
           },
           {
-            "name": "hotelCode",
+            "name": "optionId",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "hotelName",
+            "name": "roomTypeCode",
             "in": "query",
             "schema": {
-              "type": "string",
-              "default": ""
+              "type": "string"
             }
           },
           {
-            "name": "noOfRooms",
+            "name": "roomIndex",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/block-room": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockRoomRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockRoomRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockRoomRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
             "in": "query",
             "schema": {
               "type": "integer",
-              "format": "int32",
-              "default": 1
+              "format": "int64"
             }
           },
           {
-            "name": "price",
+            "name": "resultIndex",
             "in": "query",
             "schema": {
-              "type": "number",
-              "format": "double",
-              "default": 0
+              "type": "string"
+            }
+          },
+          {
+            "name": "optionId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roomTypeCode",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roomIndex",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -8390,9 +8554,7 @@
             "description": "Success"
           }
         }
-      }
-    },
-    "/api/Hotels/bookRoom": {
+      },
       "get": {
         "tags": [
           "Hotels"
@@ -8402,7 +8564,8 @@
             "name": "traceId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -8413,60 +8576,349 @@
             }
           },
           {
-            "name": "hotelCode",
+            "name": "guestName",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "hotelName",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": ""
-            }
-          },
-          {
-            "name": "guestName",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": ""
-            }
-          },
-          {
             "name": "guestEmail",
             "in": "query",
             "schema": {
-              "type": "string",
-              "default": ""
+              "type": "string"
             }
           },
           {
             "name": "guestPhone",
             "in": "query",
             "schema": {
-              "type": "string",
-              "default": ""
+              "type": "string"
             }
           },
           {
-            "name": "noOfRooms",
+            "name": "pan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientReferenceNo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/book-room": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
             "in": "query",
             "schema": {
               "type": "integer",
-              "format": "int32",
-              "default": 1
+              "format": "int64"
             }
           },
           {
-            "name": "price",
+            "name": "resultIndex",
             "in": "query",
             "schema": {
-              "type": "number",
-              "format": "double",
-              "default": 0
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestPhone",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientReferenceNo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/BookingDetails": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookingDetailsRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookingDetailsRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookingDetailsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/booking-details": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookingDetailsRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookingDetailsRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookingDetailsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/Cancel": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "remarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hotels/cancel-booking": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "traceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "remarks",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -11822,21 +12274,25 @@
         },
         "additionalProperties": false
       },
-      "BlockRoomDetailItemDto": {
+      "BlockRoomRequestDto": {
         "type": "object",
         "properties": {
-          "childCount": {
+          "TraceId": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
-          "requireAllPaxDetails": {
-            "type": "boolean"
-          },
-          "roomId": {
+          "ResultIndex": {
             "type": "string",
             "nullable": true
           },
-          "roomStatus": {
+          "HotelRoomsDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlockRoomRequestRoomDto"
+            },
+            "nullable": true
+          },
+          "optionId": {
             "type": "string",
             "nullable": true
           },
@@ -11856,143 +12312,17 @@
             "type": "string",
             "nullable": true
           },
-          "ratePlan": {
-            "type": "string",
-            "nullable": true
-          },
-          "infoSource": {
-            "type": "string",
-            "nullable": true
-          },
-          "sequenceNo": {
-            "type": "string",
-            "nullable": true
-          },
-          "dayRates": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HotelRoomDayRateDto"
-            },
-            "nullable": true
-          },
-          "supplierPrice": {
-            "type": "string",
-            "nullable": true
-          },
-          "price": {
-            "$ref": "#/components/schemas/HotelSearchPriceDto"
-          },
-          "roomPromotion": {
-            "type": "string",
-            "nullable": true
-          },
-          "amenities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HotelRoomAmenityDto"
-            },
-            "nullable": true
-          },
-          "smokingPreference": {
-            "type": "string",
-            "nullable": true
-          },
-          "bedTypes": {
-            "type": "string",
-            "nullable": true
-          },
-          "hotelSupplements": {
-            "type": "string",
-            "nullable": true
-          },
-          "lastCancellationDate": {
-            "type": "string",
-            "nullable": true
-          },
-          "isPassportMandatory": {
-            "type": "boolean"
-          },
-          "isPANMandatory": {
-            "type": "boolean"
-          },
-          "fullRefundAllowed": {
-            "type": "boolean"
-          },
-          "cancellationPolicies": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HotelRoomCancellationPolicyDto"
-            },
-            "nullable": true
-          },
-          "cancellationPolicy": {
-            "type": "string",
-            "nullable": true
-          },
-          "offeredPrice": {
-            "type": "number",
-            "format": "double"
-          },
-          "b2CBasePrice": {
-            "type": "number",
-            "format": "double"
-          },
-          "b2CTotalPrice": {
-            "type": "number",
-            "format": "double"
-          },
-          "inclusion": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true
-          },
           "bedTypeCode": {
             "type": "string",
             "nullable": true
           },
-          "supplements": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "BlockRoomRequestDto": {
-        "type": "object",
-        "properties": {
-          "endUserIp": {
-            "type": "string",
-            "nullable": true
+          "smokingPreference": {
+            "type": "integer",
+            "format": "int32"
           },
-          "clientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "userName": {
-            "type": "string",
-            "nullable": true
-          },
-          "password": {
-            "type": "string",
-            "nullable": true
-          },
-          "traceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "srdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "srdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "resultIndex": {
-            "type": "string",
-            "nullable": true
+          "price": {
+            "type": "number",
+            "format": "double"
           },
           "hotelCode": {
             "type": "string",
@@ -12002,55 +12332,31 @@
             "type": "string",
             "nullable": true
           },
-          "guestNationality": {
-            "type": "string",
-            "nullable": true
-          },
           "noOfRooms": {
             "type": "integer",
             "format": "int32"
           },
-          "clientReferenceNo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "isVoucherBooking": {
-            "type": "boolean"
-          },
-          "hotelRoomsDetails": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BlockRoomDetailItemDto"
-            },
+          "endUserIp": {
+            "type": "string",
             "nullable": true
-          },
-          "roomIndex": {
+          }
+        },
+        "additionalProperties": false
+      },
+      "BlockRoomRequestRoomDto": {
+        "type": "object",
+        "properties": {
+          "OptionId": {
             "type": "string",
             "nullable": true
           },
-          "roomTypeCode": {
+          "RoomTypeCode": {
             "type": "string",
             "nullable": true
           },
-          "roomTypeName": {
+          "RoomIndex": {
             "type": "string",
             "nullable": true
-          },
-          "ratePlanCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "bedTypeCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "smokingPreference": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "price": {
-            "type": "number",
-            "format": "double"
           }
         },
         "additionalProperties": false
@@ -14266,70 +14572,27 @@
       "HotelBookRequestDto": {
         "type": "object",
         "properties": {
-          "endUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "clientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "userName": {
-            "type": "string",
-            "nullable": true
-          },
-          "password": {
-            "type": "string",
-            "nullable": true
-          },
-          "traceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "srdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "srdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "resultIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "hotelCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "hotelName": {
-            "type": "string",
-            "nullable": true
-          },
-          "couponCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "guestNationality": {
-            "type": "string",
-            "nullable": true
-          },
-          "noOfRooms": {
+          "TraceId": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
-          "clientReferenceNo": {
-            "type": "integer",
-            "format": "int32"
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
           },
-          "isVoucherBooking": {
-            "type": "boolean"
-          },
-          "hotelRoomsDetails": {
+          "HotelRoomsDetails": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BookRoomDetailItemDto"
             },
+            "nullable": true
+          },
+          "ClientReferenceNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
             "nullable": true
           },
           "guestName": {
@@ -14341,6 +14604,18 @@
             "nullable": true
           },
           "guestPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "pan": {
+            "type": "string",
+            "nullable": true
+          },
+          "hotelCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "hotelName": {
             "type": "string",
             "nullable": true
           },
@@ -14375,6 +14650,51 @@
             "format": "date",
             "nullable": true,
             "example": "2026-08-05"
+          },
+          "noOfRooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "endUserIp": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "srdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "srdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "guestNationality": {
+            "type": "string",
+            "nullable": true
+          },
+          "isVoucherBooking": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HotelBookingDetailsRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -14463,6 +14783,47 @@
         },
         "additionalProperties": false
       },
+      "HotelCancelBookingRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "Remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "bookingId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "requestType": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "bookingMode": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "srdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "srdvIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "endUserIp": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "HotelCancelRequestDto": {
         "type": "object",
         "properties": {
@@ -14537,7 +14898,6 @@
             "nullable": true
           },
           "TraceId": {
-            "type": "string",
             "nullable": true
           },
           "SrdvType": {
@@ -14590,6 +14950,11 @@
             "type": "string",
             "nullable": true
           },
+          "age": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "leadPassenger": {
             "type": "boolean"
           },
@@ -14602,6 +14967,10 @@
             "nullable": true
           },
           "passportExpDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "passportIssueCountry": {
             "type": "string",
             "nullable": true
           },
@@ -14719,39 +15088,11 @@
       "HotelRoomRequestDto": {
         "type": "object",
         "properties": {
-          "EndUserIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "ClientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "UserName": {
-            "type": "string",
-            "nullable": true
-          },
-          "Password": {
-            "type": "string",
-            "nullable": true
-          },
           "TraceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           },
           "ResultIndex": {
-            "type": "string",
-            "nullable": true
-          },
-          "HotelCode": {
             "type": "string",
             "nullable": true
           }
@@ -15372,12 +15713,12 @@
         "type": "object",
         "properties": {
           "NoOfAdults": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int32"
           },
           "NoOfChild": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int32"
           },
           "ChildAge": {
             "type": "array",
@@ -15908,6 +16249,16 @@
         },
         "additionalProperties": false
       },
+      "SrdvHotelRecheckRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "SrdvHotelSearchRequestDto": {
         "type": "object",
         "properties": {
@@ -15940,8 +16291,8 @@
             "example": "2026-08-05"
           },
           "NoOfNights": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int32"
           },
           "BookingMode": {
             "type": "string",
@@ -15952,7 +16303,16 @@
             "nullable": true
           },
           "CityId": {
-            "type": "string",
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "HotelCodes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           },
           "ResultCount": {

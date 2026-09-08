@@ -1,12 +1,6 @@
 /* eslint-disable */
 // ApiClient service
 
-
-const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
-
-const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
-
 function normalizeApiBaseUrlCandidate(candidate) {
   const trimmed = String(candidate ?? "").trim();
   if (!trimmed) {
@@ -71,47 +65,16 @@ function getAbsoluteOrigin(candidate) {
 }
 
 export function isLocalDevelopment() {
-  if (process.env.NODE_ENV !== "development") {
-    return false;
-  }
-
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return LOCAL_HOSTNAMES.has(window.location.hostname);
+  if (process.env.NODE_ENV !== "development") return false;
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
 }
 
 export function resolveApiBaseUrl() {
-  const preferProxyInDev =
-    isLocalDevelopment() &&
-    String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-    "true";
-
-  if (preferProxyInDev) {
-    return "";
-  }
-
-  const explicitBase =
-    process.env.REACT_APP_API_BASE_URL ||
-    process.env.REACT_APP_AUTH_API_BASE_URL ||
-    process.env.REACT_APP_API_PROXY_TARGET;
-
-  if (explicitBase && explicitBase.trim()) {
-    return normalizeApiBaseUrlCandidate(explicitBase);
-  }
-
-  // When a Places API host is configured, reuse it so all APIs stay on the same backend.
-  const placesUrl = process.env.REACT_APP_PLACES_API_URL;
-  if (placesUrl && placesUrl.trim()) {
-    try {
-      return new URL(placesUrl.trim()).origin;
-    } catch {
-      // Fall through to fallback.
-    }
-  }
-
-  return FALLBACK_API_BASE_URL;
+  // In local dev, return "" so the CRA proxy (setupProxy.js) handles routing.
+  if (isLocalDevelopment()) return "";
+  // In production/staging, use the env variable set at build time.
+  return (process.env.REACT_APP_API_BASE_URL || "").trim();
 }
 
 export function toApiUrl(urlOrPath) {
@@ -159,19 +122,10 @@ function isApiAssetOrigin(urlValue) {
 
   try {
     const assetUrl = new URL(urlValue);
-    const hostname = assetUrl.hostname.toLowerCase();
-    if (hostname.includes("ngrok-free.dev") || hostname.includes("ngrok.io")) {
-      return true;
-    }
 
     const assetOrigins = [
       resolveApiBaseUrl(),
-      process.env.REACT_APP_API_PROXY_TARGET,
       process.env.REACT_APP_API_BASE_URL,
-      process.env.REACT_APP_AUTH_API_BASE_URL,
-      process.env.REACT_APP_BUS_API_BASE_URL,
-      process.env.REACT_APP_PLACES_API_URL,
-      FALLBACK_API_BASE_URL,
     ]
       .map(getAbsoluteOrigin)
       .filter(Boolean);
@@ -209,7 +163,6 @@ export function toApiAssetUrl(urlOrPath) {
 export function withNgrokSkipWarningHeader(urlOrPath, headers = {}) {
   return {
     ...headers,
-    "ngrok-skip-browser-warning": "true",
   };
 }
 

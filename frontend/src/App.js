@@ -12,15 +12,6 @@ import {
 } from "./services/authSession";
 
 import BookingConfirmationPage from "./pages/booking/BookingConfirmationPage";
-import B2BDashboard from "./B2B_Portal/DASHBOARD B2B/B2BDashboard";
-import B2BLayout from "./B2B_Portal/B2B LAYOUT/B2BLayout";
-import B2BBookingsReport from "./B2B_Portal/DASHBOARD B2B/B2BBookingsReport";
-import B2BLedgerStatement from "./B2B_Portal/DASHBOARD B2B/B2BLedgerStatement";
-import B2BDepositRequest from "./B2B_Portal/DASHBOARD B2B/B2BDepositRequest";
-import B2BMarkupSettings from "./B2B_Portal/SETTINGS B2B/B2BMarkupSettings";
-import B2BLogoManagement from "./B2B_Portal/SETTINGS B2B/B2BLogoManagement";
-import B2BBookingEngine from "./B2B_Portal/DASHBOARD B2B/B2BBookingEngine";
-import B2BPrintTicket from "./B2B_Portal/DASHBOARD B2B/B2BPrintTicket";
 
 import Topbar from "./components/layout/Topbar";
 import SiteFooter from "./components/layout/SiteFooter";
@@ -49,7 +40,7 @@ import FlightPassengerDetailsPage from "./pages/booking/FlightPassengerDetailsPa
 import HotelBookings from "./pages/booking/HotelBookings";
 import TicketConfirmationPage from "./pages/public/TicketConfirmationPage";
 import MyAccount from "./pages/account/MyAccount";
-import OffersPage from "./pages/public/OffersPage";
+import WalletPage from "./pages/account/WalletPage";
 import WebCheckinPage from "./pages/public/WebCheckinPage";
 import LegalPage from "./pages/public/LegalPage";
 import ContactUsPage from "./pages/public/ContactUsPage";
@@ -115,10 +106,6 @@ import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
 import AdminMenuListPage from "./Admin_Portal/MENU MANAGEMENT/MENU LIST/MenuList";
 import AdminMenuAddPage from "./Admin_Portal/MENU MANAGEMENT/ADD MENU/addmenu";
-import AdminOfferListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER LIST/OfferList";
-import AdminAddOfferPage from "./Admin_Portal/OFFER MANAGEMENT/ADD NEW OFFER/AddOffer";
-import AdminOfferCategoryListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER CATEGORY LIST/OfferCategoryList";
-import AdminAddOfferCategoryPage from "./Admin_Portal/OFFER MANAGEMENT/ADD OFFER CATEGORY/AddOfferCategory";
 
 import PaymentSettings from "./Admin_Portal/PAYMENT MANAGEMENT/Payment Settings/payment Settings";
 import AdminBlogList from "./Admin_Portal/BLOG MANAGEMENT/Blog List/Admin.Bloglist";
@@ -136,19 +123,6 @@ import ThemesList from "./Admin_Portal/THEME MANAGEMENT/ThemesList";
 import B2CHeaderTheme from "./Admin_Portal/THEME MANAGEMENT/B2CHeaderTheme";
 import B2CHomeTheme from "./Admin_Portal/THEME MANAGEMENT/B2CHomeTheme";
 
-// B2B Management Portal imports
-import WalletManagement from "./Admin_Portal/B2B_MANAGEMENT/WalletManagement/WalletManagement";
-import TopRoutes from "./Admin_Portal/B2B_MANAGEMENT/TopRoutes/TopRoutes";
-import Settings from "./Admin_Portal/B2B_MANAGEMENT/Settings/Settings";
-import Reports from "./Admin_Portal/B2B_MANAGEMENT/Reports/Reports";
-import Notifications from "./Admin_Portal/B2B_MANAGEMENT/Notifications/Notifications";
-import MarkupManagement from "./Admin_Portal/B2B_MANAGEMENT/MarkupManagement/MarkupManagement";
-import Logs from "./Admin_Portal/B2B_MANAGEMENT/Logs/Logs";
-import Ledger from "./Admin_Portal/B2B_MANAGEMENT/Ledger/Ledger";
-import DepositManagement from "./Admin_Portal/B2B_MANAGEMENT/DepositManagement/DepositManagement";
-import CommissionManagement from "./Admin_Portal/B2B_MANAGEMENT/CommissionManagement/CommissionManagement";
-import AgentManagement from "./Admin_Portal/B2B_MANAGEMENT/AgentManagement/AgentManagement";
-import AgentBookings from "./Admin_Portal/B2B_MANAGEMENT/AgentBookings/AgentBookings";
 import B2CFooterTheme from "./Admin_Portal/THEME MANAGEMENT/B2CFooterTheme";
 import "./STYLES/AtlasTheme.css";
 
@@ -171,7 +145,6 @@ const ADMIN_PATHS = {
 const USER_PROTECTED_PATH_PREFIXES = [
   "/bus/passenger-details",
   "/flight/passenger-details",
-  "/hotel/passenger-details",
   "/bus/payment",
   "/flight/payment",
   "/hotel/payment",
@@ -200,20 +173,6 @@ const ADMIN_MENU_ROUTES = {
 const ADMIN_MENU_PATHS = {
   list: `${ADMIN_PATHS.base}/${ADMIN_MENU_ROUTES.list}`,
   add: `${ADMIN_PATHS.base}/${ADMIN_MENU_ROUTES.add}`,
-};
-
-const ADMIN_OFFER_ROUTES = {
-  list: "offer-management/offers",
-  add: "offer-management/offers/new",
-  categories: "offer-management/categories",
-  addCategory: "offer-management/categories/new",
-};
-
-const ADMIN_OFFER_PATHS = {
-  list: `${ADMIN_PATHS.base}/${ADMIN_OFFER_ROUTES.list}`,
-  add: `${ADMIN_PATHS.base}/${ADMIN_OFFER_ROUTES.add}`,
-  categories: `${ADMIN_PATHS.base}/${ADMIN_OFFER_ROUTES.categories}`,
-  addCategory: `${ADMIN_PATHS.base}/${ADMIN_OFFER_ROUTES.addCategory}`,
 };
 
 const HIDE_TOPBAR_PATHS = new Set([
@@ -299,59 +258,6 @@ function RequireAdmin({ children }) {
   return children;
 }
 
-function RequireAgent({ children }) {
-  const sanitize = (val) => {
-    const text = String(val ?? "").trim();
-    return (text === "undefined" || text === "null") ? "" : text;
-  };
-
-  const userToken = sanitize((localStorage.getItem("b2b_token") || sessionStorage.getItem("b2b_token")));
-  const userRole = sanitize((localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")));
-
-  let parsedUserRole = "";
-  try {
-    const userStr = (localStorage.getItem("b2b_user") || sessionStorage.getItem("b2b_user"));
-    if (userStr) {
-      const userObj = JSON.parse(userStr);
-      parsedUserRole = sanitize(userObj?.role || userObj?.Role);
-    }
-  } catch {
-    // Ignore JSON parse errors
-  }
-
-  const resolvedRole = userRole || parsedUserRole;
-
-  if (!userToken || resolvedRole.toLowerCase() !== "agent" || isTokenExpired(userToken)) {
-    localStorage.removeItem("b2b_token");
-    localStorage.removeItem("b2b_role");
-    localStorage.removeItem("b2b_user");
-    localStorage.removeItem("b2b_userId");
-    return <Navigate to="/b2b/login" replace />;
-  }
-
-  return children;
-}
-
-function BookingRouteWrapper({ element }) {
-  const sanitize = (val) => {
-    const text = String(val ?? "").trim();
-    return (text === "undefined" || text === "null") ? "" : text;
-  };
-  const b2bToken = sanitize((localStorage.getItem("b2b_token") || sessionStorage.getItem("b2b_token")));
-  const b2bRole = sanitize((localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")));
-  const activePortal = sessionStorage.getItem("active_portal") || "b2c";
-  const isAgent = activePortal === "b2b" && b2bToken && b2bRole.toLowerCase() === "agent" && !isTokenExpired(b2bToken);
-
-  if (isAgent) {
-    return (
-      <RequireAgent>
-        <B2BLayout bookingFlow={true}>{element}</B2BLayout>
-      </RequireAgent>
-    );
-  }
-  return element;
-}
-
 
 function AdminMenuListRoute() {
   const navigate = useNavigate();
@@ -365,30 +271,6 @@ function AdminMenuAddRoute() {
   return <AdminMenuAddPage onBack={() => navigate(ADMIN_MENU_PATHS.list)} />;
 }
 
-function AdminOfferListRoute() {
-  const navigate = useNavigate();
-
-  return <AdminOfferListPage onAddOffer={() => navigate(ADMIN_OFFER_PATHS.add)} />;
-}
-
-function AdminOfferAddRoute() {
-  const navigate = useNavigate();
-
-  return <AdminAddOfferPage onBack={() => navigate(ADMIN_OFFER_PATHS.list)} />;
-}
-
-function AdminOfferCategoryListRoute() {
-  const navigate = useNavigate();
-
-  return <AdminOfferCategoryListPage onAddCategory={() => navigate(ADMIN_OFFER_PATHS.addCategory)} />;
-}
-
-function AdminOfferCategoryAddRoute() {
-  const navigate = useNavigate();
-
-  return <AdminAddOfferCategoryPage onBack={() => navigate(ADMIN_OFFER_PATHS.categories)} />;
-}
-
 function AuthPopupRedirect({ mode }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -400,6 +282,10 @@ function AuthPopupRedirect({ mode }) {
     navigate(`/login${query}`, { replace: true });
   }, []);
   return null;
+}
+
+function BookingRouteWrapper({ element }) {
+  return element;
 }
 
 function AppContent() {
@@ -453,14 +339,6 @@ function AppContent() {
     };
   }, []);
 
-  useEffect(() => {
-    const path = (location.pathname || "").toLowerCase();
-    if (path.startsWith("/b2b")) {
-      sessionStorage.setItem("active_portal", "b2b");
-    } else if (path === "/" || path === "/home") {
-      sessionStorage.setItem("active_portal", "b2c");
-    }
-  }, [location]);
 
   useEffect(() => {
     const checkSession = () => {
@@ -476,14 +354,6 @@ function AppContent() {
       if (isAdmin) {
         // Session timeout checks for the admin portal are removed as requested.
       } else {
-        // Agents use b2b_token — never apply the B2C login guard to them
-        const b2bToken = (localStorage.getItem("b2b_token") || sessionStorage.getItem("b2b_token"));
-        const b2bRole = ((localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")) || "").toLowerCase();
-        const isLoggedInAgent = b2bToken && b2bRole === "agent";
-        if (isLoggedInAgent) {
-          return; // Agent is authenticated via b2b_token — no B2C check needed
-        }
-
         const token = (localStorage.getItem("token") || sessionStorage.getItem("token"));
         if (!token && isUserProtectedPath(currentPath)) {
           const returnTo = encodeURIComponent(buildReturnTo(location));
@@ -517,10 +387,8 @@ function AppContent() {
 
   const normalizedPath = (location.pathname || "").toLowerCase();
   const isAdminPath = normalizedPath.startsWith("/admin");
-  const isB2BPath = normalizedPath.startsWith("/b2b");
   
   const activePortalStr = sessionStorage.getItem("active_portal") || "b2c";
-  const isAgent = (localStorage.getItem("b2b_role") || sessionStorage.getItem("b2b_role")) === "Agent" && activePortalStr === "b2b";  
   const isBookingPath =
     normalizedPath === "/web-checkin" ||
     normalizedPath === "/fetch-ticket" ||
@@ -545,15 +413,12 @@ function AppContent() {
     normalizedPath.startsWith("/ticket/confirmation") ||
     normalizedPath.startsWith("/booking-confirmation") ||
     normalizedPath.startsWith("/ticket-confirmation");
-
-  const isInsideB2B = isB2BPath || (isAgent && isBookingPath);
   
   const shouldHideTopbar =
-    isAdminPath || isInsideB2B || HIDE_TOPBAR_PATHS.has(normalizedPath);
+    isAdminPath  || HIDE_TOPBAR_PATHS.has(normalizedPath);
   const shouldShowFooter =
     !isAdminPath &&
-    !isInsideB2B &&
-    !HIDE_FOOTER_PATHS.has(normalizedPath) &&
+        !HIDE_FOOTER_PATHS.has(normalizedPath) &&
     (FORCE_FOOTER_PATHS.has(normalizedPath) || !HIDE_TOPBAR_PATHS.has(normalizedPath));
 
   return (
@@ -561,42 +426,11 @@ function AppContent() {
       {!shouldHideTopbar && <Topbar />}
 
       <Routes>
-        <Route path="/b2b/login" element={<Navigate to="/login" replace />} />
-        <Route path="/b2b/register" element={<Navigate to="/register" replace />} />
-        <Route path="/b2b/forgot-password" element={<Navigate to="/forgot-password" replace />} />
-        <Route path="/b2b" element={<Navigate to="/b2b/dashboard" replace />} />
-        <Route
-          path="/b2b/dashboard"
-          element={
-            <RequireAgent>
-              <B2BLayout />
-            </RequireAgent>
-          }
-        >
-          <Route index element={<B2BDashboard />} />
-          <Route path="book" element={<B2BBookingEngine />} />
-          <Route path="bookings" element={<B2BBookingsReport />} />
-          <Route path="flight-bookings" element={<FlightBookings />} />
-          <Route path="bus-bookings" element={<BusBookings />} />
-          <Route path="hotel-bookings" element={<HotelBookings />} />
-          <Route path="ledger" element={<B2BLedgerStatement />} />
-          <Route path="deposit-request" element={<B2BDepositRequest />} />
-          <Route path="bank-list" element={<BankList />} />
-          <Route path="qr-list" element={<QRList />} />
-          <Route path="traveler-list" element={<TravelerList />} />
-          <Route path="my-account" element={<MyAccount />} />
-          <Route path="change-password" element={<ChangePassword />} />
-          <Route path="markup" element={<B2BMarkupSettings />} />
-          <Route path="logo-management" element={<B2BLogoManagement />} />
-          <Route path="print-ticket" element={<B2BPrintTicket />} />
-          <Route path="*" element={<B2BDashboard />} />
-        </Route>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/register" element={<AuthPage />} />
         <Route path="/verify" element={<AuthPage />} />
         <Route path="/forgot-password" element={<AuthPage />} />
-        <Route path="/offers" element={<OffersPage />} />
         <Route path="/online/:slug" element={<LegalPage />} />
         <Route path="/legal/:slug" element={<LegalPage />} />
         <Route path="/contact-us" element={<ContactUsPage />} />
@@ -744,13 +578,6 @@ function AppContent() {
           {/* Menu Management */}
           <Route path={ADMIN_MENU_ROUTES.list} element={<AdminMenuListRoute />} />
           <Route path={ADMIN_MENU_ROUTES.add} element={<AdminMenuAddRoute />} />
-
-          {/* Offer Management */}
-          <Route path={ADMIN_OFFER_ROUTES.list} element={<AdminOfferListRoute />} />
-          <Route path={ADMIN_OFFER_ROUTES.add} element={<AdminOfferAddRoute />} />
-          <Route path={ADMIN_OFFER_ROUTES.categories} element={<AdminOfferCategoryListRoute />} />
-          <Route path={ADMIN_OFFER_ROUTES.addCategory} element={<AdminOfferCategoryAddRoute />} />
-
           <Route path="AllPages" element={<Navigate to="page-management/pages" replace />} />
           <Route path="AddPage" element={<Navigate to="page-management/pages/new" replace />} />
           <Route path="payment-management/tax-management" element={<TaxManagement />} />
@@ -775,21 +602,6 @@ function AppContent() {
           <Route path="customer-management/customer-list" element={<AdminCustomerList />} />
           <Route path="customer-management/add-new-customer" element={<AdminAddNewCustomer />} />
           <Route path="customer-management/deposit-request-list" element={<AdminDepositRequestList />} />
-          
-          {/* B2B Management */}
-          <Route path="b2b-management/agent-management" element={<AgentManagement />} />
-          <Route path="b2b-management/agent-bookings" element={<AgentBookings />} />
-          <Route path="b2b-management/deposit-management" element={<DepositManagement />} />
-          <Route path="b2b-management/wallet-management" element={<WalletManagement />} />
-          <Route path="b2b-management/ledger" element={<Ledger />} />
-          <Route path="b2b-management/commission-management" element={<CommissionManagement />} />
-          <Route path="b2b-management/markup-management" element={<MarkupManagement />} />
-          <Route path="b2b-management/reports" element={<Reports />} />
-          <Route path="b2b-management/top-routes" element={<TopRoutes />} />
-          <Route path="b2b-management/notifications" element={<Notifications />} />
-          <Route path="b2b-management/logs" element={<Logs />} />
-          <Route path="b2b-management/settings" element={<Settings />} />
-
           {/* Query Management */}
           <Route path="query-management/query-list" element={<AdminQueryList />} />
           {/* Security Management */}
@@ -838,7 +650,7 @@ function AppContent() {
           <Route path="account-statement" element={<AccountStatement />} />
           <Route path="web-checkin" element={<WebCheckinPage />} />
           <Route path="fetch-ticket" element={<FetchTicket />} />
-          <Route path="wallet" element={<DepositRequest />} />
+          <Route path="wallet" element={<WalletPage />} />
           <Route path="my-account" element={<MyAccount />} />
           <Route path="edit-profile" element={<Navigate to="/edit-profile" replace />} />
           <Route path="change-password" element={<Navigate to="/change-password" replace />} />

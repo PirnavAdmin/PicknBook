@@ -83,7 +83,6 @@ import spiceJet from "../../assets/images/airlines/Spicejet.png";
 import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
-import { getActiveOffers, getPublicFeaturedOffers } from "../../services/adminFeaturedOffersService";
 import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
 import { listHotFlightRoutes } from "../../services/flightBookingService";
 import { searchHotels } from "../../services/hotelBookingService";

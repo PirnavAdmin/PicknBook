@@ -8,7 +8,7 @@ import { toDisplayDate } from "../../utils/apiDateFormat";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import { navigateWithAuth, isUserAuthenticated } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
-import { blockRoom, getHotelInfo, getHotelRoom } from "../../services/hotelBookingService";
+import { blockRoom, getHotelInfo, getHotelRoom, bookHotelRoom } from "../../services/hotelBookingService";
 import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 import BookingTimer from "./BookingTimer";
@@ -235,6 +235,16 @@ export default function HotelPassengerDetailsPage() {
       navigate(`/hotel/passenger-details${nextSearch}`, { replace: true, state: {} });
     }
   }, [location, searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("autoStep2") === "true" && isUserAuthenticated()) {
+      setCurrentStep(2);
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.delete("autoStep2");
+      const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
+      navigate(`/hotel/passenger-details${nextSearch}`, { replace: true, state: {} });
+    }
+  }, [searchParams, location.search, navigate]);
 
   // Parse roomsConfig and guest counts
   const roomsConfig = useMemo(() => {
@@ -682,7 +692,13 @@ export default function HotelPassengerDetailsPage() {
   }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse]);
 
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
-    const newSelection = [...selectedMultiRooms, roomOffer];
+    // If user is re-selecting (replacing an already chosen room), drop the previous
+    // selection for that slot so we don't accumulate beyond roomsCount.
+    const alreadyPicked = selectedMultiRooms.some(r => r.offerId === roomOffer.offerId);
+    const cleanedSelection = alreadyPicked
+      ? selectedMultiRooms.filter(r => r.offerId !== roomOffer.offerId)
+      : selectedMultiRooms;
+    const newSelection = [...cleanedSelection, roomOffer];
     
     if (newSelection.length < roomsCount) {
         setSelectedMultiRooms(newSelection);
@@ -701,7 +717,7 @@ export default function HotelPassengerDetailsPage() {
         HotelName: hotel?.name || "",
         GuestNationality: "IN",
         NoOfRooms: roomsCount,
-        ClientReferenceNo: 0,
+        ClientReferenceNo: "0",
         IsVoucherBooking: true,
         EndUserIp: "192.168.10.10",
         CouponCode: couponToApply || "",
@@ -1066,6 +1082,21 @@ export default function HotelPassengerDetailsPage() {
   }
 
   const handleSetCurrentStep = (step) => {
+    if (step === 2) {
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.set("autoStep2", "true");
+      const nextRoute = `/hotel/passenger-details?${nextParams.toString()}`;
+      
+      const canProceed = navigateWithAuth({
+        navigate,
+        location,
+        nextRoute,
+        bookingContext: { hotel, offer, searchContext },
+        bookingType: "hotel"
+      });
+      
+      if (!canProceed) return;
+    }
     setCurrentStep(step);
   };
 
@@ -1894,8 +1925,55 @@ export default function HotelPassengerDetailsPage() {
           onClose={() => setIsModalOpen(false)} 
           bookingType="Hotel" 
           flowState={checkoutPayload} 
-          onSuccess={(res) => {
-            navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+          onSuccess={async (res) => {
+            if (res.paymentMethod === "Wallet" || res.paymentMethod === "Agent Wallet") {
+              try {
+                const { guestName, guestPhone, guestEmail, blockRoomResponse, hotel, offer, checkInDate, checkOutDate } = checkoutPayload;
+                const firstName = guestName?.split(" ")[0] || "";
+                const lastName = guestName?.split(" ").slice(1).join(" ") || "";
+                const cleanPhone = String(guestPhone || "9876543210").replace(/\D/g, "").slice(-10);
+                const cleanEmail = String(guestEmail || "guest@gopickandbook.in").trim();
+                
+                const rawCheckIn = offer?.checkInDate || checkoutPayload.searchContext?.checkInDate || checkInDate || "";
+                const rawCheckOut = offer?.checkOutDate || checkoutPayload.searchContext?.checkOutDate || checkOutDate || "";
+                const checkInStr = typeof rawCheckIn === "string" ? rawCheckIn.split("T")[0] : "";
+                const checkOutStr = typeof rawCheckOut === "string" ? rawCheckOut.split("T")[0] : "";
+
+                const totalPayable = checkoutPayload?.payableAmount || checkoutPayload?.finalPayableAmount || 0;
+
+                const bookPayload = {
+                  CheckInDate: checkInStr,
+                  CheckOutDate: checkOutStr,
+                  checkInDate: checkInStr,
+                  checkOutDate: checkOutStr,
+                  TraceId: String(blockRoomResponse?.TraceId || blockRoomResponse?.traceId || hotel?.TraceId || ""),
+                  ResultIndex: String(hotel?.ResultIndex || ""),
+                  SrdvType: String(hotel?.SrdvType || "MixAPI"),
+                  SrdvIndex: String(hotel?.SrdvIndex || ""),
+                  HotelCode: String(hotel?.hotelId || hotel?.hotelCode || ""),
+                  HotelName: hotel?.name || "",
+                  GuestNationality: "IN",
+                  NoOfRooms: 1,
+                  ClientReferenceNo: 0,
+                  IsVoucherBooking: true,
+                  GuestName: `${firstName} ${lastName}`,
+                  GuestEmail: cleanEmail,
+                  GuestPhone: cleanPhone,
+                  Price: Number(totalPayable || 0),
+                  EndUserIp: "192.168.10.10",
+                  PaymentMethod: res.paymentMethod
+                };
+                
+                const bookRes = await bookHotelRoom(bookPayload);
+                navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });
+              } catch (err) {
+                console.error("Hotel Booking failed", err);
+                alert("Hotel Booking failed: " + (err.response?.data?.message || err.message));
+                setIsModalOpen(false);
+              }
+            } else {
+              navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
+            }
           }} 
         />
       )}

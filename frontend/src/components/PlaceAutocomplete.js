@@ -187,8 +187,7 @@ export default function PlaceAutocomplete({
                 outline: 'none',
                 boxShadow: 'none',
                 color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '1.02rem',
+                fontWeight: 500, fontSize: '14px',
                 padding: 0,
                 margin: '2px 0',
                 width: '100%'

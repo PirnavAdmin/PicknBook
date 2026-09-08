@@ -174,7 +174,7 @@ export async function blockRoom(payload) {
     HotelName: payload.HotelName || payload.hotelName || "",
     GuestNationality: payload.GuestNationality || payload.guestNationality || "IN",
     NoOfRooms: Number(payload.NoOfRooms || payload.noOfRooms || 1),
-    ClientReferenceNo: Number(payload.ClientReferenceNo || payload.clientReferenceNo || Math.floor(Math.random() * 10000000)),
+    ClientReferenceNo: String(payload.ClientReferenceNo || payload.clientReferenceNo || "0"),
     IsVoucherBooking: Boolean(payload.IsVoucherBooking === undefined ? payload.isVoucherBooking : payload.IsVoucherBooking) || false,
     CouponCode: payload.CouponCode || payload.couponCode || "",
     HotelRoomsDetails: Array.isArray(payload.HotelRoomsDetails || payload.hotelRoomsDetails) ? (payload.HotelRoomsDetails || payload.hotelRoomsDetails) : []
@@ -202,13 +202,14 @@ export async function bookHotelRoom(payload) {
     HotelName: payload.HotelName || payload.hotelName || "",
     GuestNationality: payload.GuestNationality || payload.guestNationality || "IN",
     NoOfRooms: Number(payload.NoOfRooms || payload.noOfRooms || 1),
-    ClientReferenceNo: Number(payload.ClientReferenceNo || payload.clientReferenceNo || Math.floor(Math.random() * 10000000)),
+    ClientReferenceNo: String(payload.ClientReferenceNo || payload.clientReferenceNo || "0"),
     IsVoucherBooking: Boolean(payload.IsVoucherBooking === undefined ? payload.isVoucherBooking : payload.IsVoucherBooking) || true,
     GuestName: payload.GuestName || payload.guestName || "",
     GuestEmail: payload.GuestEmail || payload.guestEmail || "",
     GuestPhone: String(payload.GuestPhone || payload.guestPhone || ""),
     Price: Number(payload.Price || payload.price || 0),
-    HotelRoomsDetails: Array.isArray(payload.HotelRoomsDetails || payload.hotelRoomsDetails) ? (payload.HotelRoomsDetails || payload.hotelRoomsDetails) : []
+    HotelRoomsDetails: Array.isArray(payload.HotelRoomsDetails || payload.hotelRoomsDetails) ? (payload.HotelRoomsDetails || payload.hotelRoomsDetails) : [],
+    PaymentMethod: payload.PaymentMethod || payload.paymentMethod || ""
   };
   try {
     return await requestHotelJson(
@@ -236,7 +237,7 @@ export async function getMyHotelBookings() {
   }
 }
 
-export async function cancelHotelBooking(booking, reason = "User requested cancellation") {
+export async function cancelHotelBooking(booking, reason = "User requested cancellation", { refundPreference = "Original" } = {}) {
   const internalId = booking.id || booking.bookingId;
   
   if (!internalId) {
@@ -244,7 +245,7 @@ export async function cancelHotelBooking(booking, reason = "User requested cance
   }
 
   try {
-    const url = `/api/Hotels/bookings/${internalId}/cancel${reason ? `?reason=${encodeURIComponent(reason)}` : ""}`;
+    const url = `/api/Hotels/bookings/${internalId}/cancel${reason ? `?reason=${encodeURIComponent(reason)}&refundPreference=${encodeURIComponent(refundPreference)}` : `?refundPreference=${encodeURIComponent(refundPreference)}`}`;
     return await requestHotelJson(
       url,
       { method: "POST" },

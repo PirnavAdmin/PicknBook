@@ -2,53 +2,8 @@ import { clearFlightBookingFlowState } from "../pages/booking/flightBookingFlowS
 import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
 import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
 
-const FALLBACK_API_BASE_URL =
-  "https://www.picknbook.in";
-const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
-function isLocalDevelopment() {
-  if (process.env.NODE_ENV !== "development") {
-    return false;
-  }
-
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return LOCAL_HOSTNAMES.has(window.location.hostname);
-}
-
-function resolveApiBaseUrl() {
-  const preferProxyInDev =
-    isLocalDevelopment() &&
-    String(process.env.REACT_APP_USE_DIRECT_API_IN_DEV || "").toLowerCase() !==
-    "true";
-
-  if (preferProxyInDev) {
-    return "";
-  }
-
-  const explicitBase =
-    process.env.REACT_APP_API_BASE_URL ||
-    process.env.REACT_APP_FLIGHT_API_BASE_URL;
-
-  if (explicitBase && explicitBase.trim()) {
-    return explicitBase.trim();
-  }
-
-  // Reuse the Places API host when present, so all APIs stay on the same backend.
-  const placesUrl = process.env.REACT_APP_PLACES_API_URL;
-  if (placesUrl && placesUrl.trim()) {
-    try {
-      return new URL(placesUrl.trim()).origin;
-    } catch {
-      // Fall through to default.
-    }
-  }
-
-  return FALLBACK_API_BASE_URL;
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+const IS_LOCAL_DEV = process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+const API_BASE_URL = IS_LOCAL_DEV ? '' : (process.env.REACT_APP_API_BASE_URL || '').trim();
 
 const ADMIN_FLIGHT_ROOT = "/api/admin/flight";
 const ADMIN_FLIGHT_MARKUPS_ROOT = "/api/admin/flight-markups";
@@ -797,7 +752,7 @@ function normalizeFlightBookingRecord(record) {
     ),
     seatsBooked:
       Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], null)) ||
-    seatsBookedFallback,
+      seatsBookedFallback,
     totalPriceInr:
       Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr", "totalFare", "totalPaid"], 0)) || 0,
     status: String(pickFirst(record, ["status", "Status"], "Confirmed") || "Confirmed"),
@@ -1697,35 +1652,35 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
 
     const fareOptions = Array.isArray(item?.FareDataMultiple)
       ? item.FareDataMultiple.map((fd) => {
-          const optFare = fd?.Fare || {};
-          const optSegments = fd?.FareSegments || [];
-          const optOffered = Number(
-            fd?.B2CFinalFare ||
-            optFare?.B2CFinalFare ||
-            fd?.B2CPublishedFare ||
-            optFare?.B2CPublishedFare ||
-            fd?.OfferedFare ||
-            optFare?.OfferedFare ||
-            optFare?.PublishedFare ||
-            0
-          );
-          return {
-            srdvIndex: String(fd?.SrdvIndex || "2"),
-            resultIndex: String(fd?.ResultIndex || ""),
-            source: fd?.Source || "Publish",
-            buttonColor: fd?.ButtonColor || "#0000ff",
-            textColor: fd?.TextColor || "#ffffff",
-            isLcc: Boolean(fd?.IsLCC !== undefined ? fd.IsLCC : (airlineCode ? ["6E", "SG", "I5", "QP", "G8", "IX"].includes(airlineCode.toUpperCase()) : true)),
-            isRefundable: Boolean(fd?.IsRefundable !== undefined ? (fd.IsRefundable === true || fd.IsRefundable === "true" || fd.IsRefundable === 1) : true),
-            airlineRemark: fd?.AirlineRemark || "",
-            offeredFare: optOffered,
-            b2cFinalFare: Number(fd?.B2CFinalFare || optFare?.B2CFinalFare || optOffered),
-            b2cPublishedFare: Number(fd?.B2CPublishedFare || optFare?.B2CPublishedFare || optOffered),
-            fare: optFare,
-            fareSegments: optSegments,
-            fareBreakdown: fd?.FareBreakdown || [],
-          };
-        })
+        const optFare = fd?.Fare || {};
+        const optSegments = fd?.FareSegments || [];
+        const optOffered = Number(
+          fd?.B2CFinalFare ||
+          optFare?.B2CFinalFare ||
+          fd?.B2CPublishedFare ||
+          optFare?.B2CPublishedFare ||
+          fd?.OfferedFare ||
+          optFare?.OfferedFare ||
+          optFare?.PublishedFare ||
+          0
+        );
+        return {
+          srdvIndex: String(fd?.SrdvIndex || "2"),
+          resultIndex: String(fd?.ResultIndex || ""),
+          source: fd?.Source || "Publish",
+          buttonColor: fd?.ButtonColor || "#0000ff",
+          textColor: fd?.TextColor || "#ffffff",
+          isLcc: Boolean(fd?.IsLCC !== undefined ? fd.IsLCC : (airlineCode ? ["6E", "SG", "I5", "QP", "G8", "IX"].includes(airlineCode.toUpperCase()) : true)),
+          isRefundable: Boolean(fd?.IsRefundable !== undefined ? (fd.IsRefundable === true || fd.IsRefundable === "true" || fd.IsRefundable === 1) : true),
+          airlineRemark: fd?.AirlineRemark || "",
+          offeredFare: optOffered,
+          b2cFinalFare: Number(fd?.B2CFinalFare || optFare?.B2CFinalFare || optOffered),
+          b2cPublishedFare: Number(fd?.B2CPublishedFare || optFare?.B2CPublishedFare || optOffered),
+          fare: optFare,
+          fareSegments: optSegments,
+          fareBreakdown: fd?.FareBreakdown || [],
+        };
+      })
       : [];
 
     const resultIndex = fareData?.ResultIndex || item?.ResultIndex || item?.resultIndex || String(idx + 1);
@@ -2038,8 +1993,8 @@ export async function searchFlights(searchParams) {
     JourneyType: resolvedJourneyType,
     ...(resolvedJourneyType !== 3
       ? {
-          DirectFlight: Boolean(searchParams.directFlight ?? false),
-        }
+        DirectFlight: Boolean(searchParams.directFlight ?? false),
+      }
       : {}),
     Segments: segments,
   };
@@ -2063,7 +2018,7 @@ export async function searchFlights(searchParams) {
         window.sessionStorage.setItem("flight_trace_id", traceId);
         window.sessionStorage.setItem("last_booking_trace_id", traceId);
         window.sessionStorage.setItem("SearchResult", JSON.stringify(rawData));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const errObj = resObj?.Error || rawData?.Error;
@@ -2328,7 +2283,7 @@ export async function getFlightSeatMap(paramsOrTrace = {}, resultIdx = null, srd
     try {
       const raw = window.sessionStorage.getItem("flight_booking_flow_state_v1");
       if (raw) flowState = JSON.parse(raw) || {};
-    } catch {}
+    } catch { }
   }
 
   // Prioritize real SRDV ResultIndex, strictly rejecting artificial UI IDs like 'flight-0-1'
@@ -2455,7 +2410,7 @@ export function formatPassengerMeals(selectedMealsForPax, flight = {}) {
     selectedMealsForPax.forEach((item) => {
       const meal = item.meal || item;
       const count = Number(item.quantity || item.count || item.Quantity || 1);
-      
+
       const code = String(meal.Code || meal.code || "").trim();
       if (!code || code.toLowerCase() === "nomeal" || code.toLowerCase() === "none") return;
 
@@ -2473,7 +2428,7 @@ export function formatPassengerMeals(selectedMealsForPax, flight = {}) {
         });
       }
     });
-  } 
+  }
   // Case B: If storing as a map { [mealCode]: quantity }
   else if (typeof selectedMealsForPax === "object") {
     Object.entries(selectedMealsForPax).forEach(([mealCode, count]) => {
@@ -2658,8 +2613,8 @@ export function mapPassengersForApi(passengers, baseFare, tax, flight = {}, fare
       MealDynamic: mappedMeals,
       ...(mappedSeats.length > 0
         ? {
-            Seat: mappedSeats,
-          }
+          Seat: mappedSeats,
+        }
         : {}),
     };
   });
@@ -3063,7 +3018,7 @@ export async function bookFlight(paramPayload = {}) {
     try {
       const raw = window.sessionStorage.getItem("flight_booking_flow_state_v1");
       if (raw) flowState = JSON.parse(raw) || {};
-    } catch {}
+    } catch { }
   }
 
   const actualPayload = paramPayload.payload || paramPayload;
@@ -3813,6 +3768,7 @@ async function syncCancelledStatusToDatabase(cancelResult) {
     refundAmount: Number(cancelResult.refundAmount || 0),
     cancellationCharge: Number(cancelResult.cancellationCharge || 0),
     cancelledAtUtc: cancelResult.cancelledAtUtc || new Date().toISOString(),
+    refundPreference: cancelResult.refundPreference || "Original"
   };
 
   // Target single validated ASP.NET Core flight controller endpoint namespace
@@ -3830,11 +3786,11 @@ async function syncCancelledStatusToDatabase(cancelResult) {
       method: "POST",
       body: JSON.stringify(payload),
       skipAuth: false,
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 
-export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {}) {
+export async function cancelFlightBooking(bookingIdOrObj, reason, { userId, refundPreference = "Original" } = {}) {
   let booking = typeof bookingIdOrObj === "object" && bookingIdOrObj !== null ? bookingIdOrObj : null;
   const bookingId = booking ? String(booking.bookingId || booking.id || booking.bookingReference || "") : String(bookingIdOrObj || "");
   const targetRef = String(booking?.bookingReference || booking?.BookingReference || booking?.PNR || booking?.pnr || bookingId || "").trim();
@@ -4177,6 +4133,7 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {
     refundAmount: calculatedRefund,
     cancellationCharge: calculatedFee,
     emailTriggered: true,
+    refundPreference: refundPreference,
     message: "Ticket cancelled successfully and cancellation email dispatched."
   };
 
@@ -4196,7 +4153,7 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId } = {
   return cancelResult;
 }
 
-export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes = [], selectedPassengerIds = [], reason } = {}) {
+export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes = [], selectedPassengerIds = [], reason, refundPreference = "Original" } = {}) {
   const booking = typeof bookingIdOrObj === "object" ? bookingIdOrObj : await getFlightBookingById(bookingIdOrObj);
   if (!booking) throw new Error("Booking record not found.");
 

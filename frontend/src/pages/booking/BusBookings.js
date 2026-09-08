@@ -110,6 +110,7 @@ export default function BusBookings() {
   const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
+  const [refundPreference, setRefundPreference] = useState("Original");
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -233,7 +234,7 @@ export default function BusBookings() {
     setIsCancelModalOpen(true);
   };
 
-  const handleCancelBooking = async (reason) => {
+  const handleCancelBooking = async (reason, refundPreference = "Original") => {
     const bookingId = cancelModalBookingId;
     if (!bookingId) return;
     setIsCancelModalOpen(false);
@@ -243,7 +244,7 @@ export default function BusBookings() {
     setActionMessage("");
 
     try {
-      const result = await cancelBusBooking(bookingId, reason || undefined);
+      const result = await cancelBusBooking(bookingId, reason || undefined, refundPreference);
       setActionMessage(
         `Booking ${result.bookingReference || bookingId} has been cancelled.`
       );
@@ -267,7 +268,8 @@ export default function BusBookings() {
       const updatedBooking = await cancelBusPassengers(
         selectedBooking.bookingId,
         selectedSeatNumbers,
-        cancelReason || undefined
+        cancelReason || undefined,
+        refundPreference
       );
 
       setSelectedBooking(updatedBooking);
@@ -670,6 +672,17 @@ export default function BusBookings() {
                           placeholder="e.g. Change of plans"
                           style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
                         />
+                      </label>
+                      <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>
+                        Refund To:
+                        <select
+                          value={refundPreference}
+                          onChange={(e) => setRefundPreference(e.target.value)}
+                          style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
+                        >
+                          <option value="Original">Original Payment Method</option>
+                          <option value="Wallet">PickNBook Wallet</option>
+                        </select>
                       </label>
                       <button
                         type="button"

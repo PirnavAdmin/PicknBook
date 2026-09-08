@@ -22,21 +22,29 @@ namespace PickNBook.Api.Models.DTOs
         public string? ApiToken { get; set; }
 
         [JsonPropertyName("AdultCount")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int AdultCount { get; set; } = 1;
 
         [JsonPropertyName("ChildCount")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int ChildCount { get; set; } = 0;
 
         [JsonPropertyName("InfantCount")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
         public int InfantCount { get; set; } = 0;
 
         [JsonPropertyName("JourneyType")]
-        public int JourneyType { get; set; } = 1;
+        [JsonConverter(typeof(SafeStringConverter))]
+        public string JourneyType { get; set; } = "1";
+
+        [JsonPropertyName("CurrencyCode")]
+        public string CurrencyCode { get; set; } = "INR";
+
+        [JsonPropertyName("FareType")]
+        public string FareType { get; set; } = "1";
 
         [JsonPropertyName("DirectFlight")]
         public bool? DirectFlight { get; set; }
-
-
 
         [JsonPropertyName("Segments")]
         public List<AirSearchSegmentDto> Segments { get; set; } = new();
@@ -51,13 +59,37 @@ namespace PickNBook.Api.Models.DTOs
         public string Destination { get; set; } = string.Empty;
 
         [JsonPropertyName("FlightCabinClass")]
-        public int FlightCabinClass { get; set; }
+        [JsonConverter(typeof(SafeStringConverter))]
+        public string FlightCabinClass { get; set; } = "1";
 
         [JsonPropertyName("PreferredDepartureTime")]
         public DateTime PreferredDepartureTime { get; set; }
 
         [JsonPropertyName("PreferredArrivalTime")]
         public DateTime PreferredArrivalTime { get; set; }
+    }
+
+    public class AirRecheckSearchRequestDto
+    {
+        [JsonPropertyName("TraceId")]
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long TraceId { get; set; }
+
+        [JsonPropertyName("ApiToken")]
+        public string? ApiToken { get; set; }
+    }
+
+    public class AirFareQuoteRequestDto
+    {
+        [JsonPropertyName("TraceId")]
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long TraceId { get; set; }
+
+        [JsonPropertyName("ResultIndex")]
+        public string ResultIndex { get; set; } = string.Empty;
+
+        [JsonPropertyName("ApiToken")]
+        public string? ApiToken { get; set; }
     }
 
     public class AirFareRuleRequestDto
@@ -84,7 +116,8 @@ namespace PickNBook.Api.Models.DTOs
         public string SrdvIndex { get; set; } = string.Empty;
 
         [JsonPropertyName("TraceId")]
-        public string TraceId { get; set; } = string.Empty;
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long TraceId { get; set; }
 
         [JsonPropertyName("ResultIndex")]
         public string ResultIndex { get; set; } = string.Empty;
@@ -146,6 +179,24 @@ namespace PickNBook.Api.Models.DTOs
 
         [JsonPropertyName("JourneyType")]
         public int? JourneyType { get; set; }
+
+        [JsonPropertyName("RefID")]
+        public string? RefID { get; set; } = string.Empty;
+
+        [JsonPropertyName("Module")]
+        public string? Module { get; set; } = "b2c";
+
+        [JsonPropertyName("BookedById")]
+        public int? BookedById { get; set; }
+
+        [JsonPropertyName("BookedByName")]
+        public string? BookedByName { get; set; } = string.Empty;
+
+        [JsonPropertyName("CustomerFare")]
+        public decimal? CustomerFare { get; set; }
+
+        [JsonPropertyName("ReturnCustomerFare")]
+        public decimal? ReturnCustomerFare { get; set; }
 
         [JsonPropertyName("Passengers")]
         public List<LCCPassengerDto> Passengers { get; set; } = new();
@@ -242,6 +293,15 @@ namespace PickNBook.Api.Models.DTOs
 
         [JsonPropertyName("MealDynamic")]
         public List<LCCMealDynamicDto> MealDynamic { get; set; } = new();
+
+        [JsonPropertyName("EContactName")]
+        public string? EContactName { get; set; } = string.Empty;
+
+        [JsonPropertyName("EContactEmail")]
+        public string? EContactEmail { get; set; } = string.Empty;
+
+        [JsonPropertyName("EContactMobile")]
+        public string? EContactMobile { get; set; } = string.Empty;
 
         [JsonPropertyName("Seat")]
         public List<LCCSeatDto> Seat { get; set; } = new();

@@ -44,7 +44,7 @@ try {
   console.log('[Asset Sync] Warning:', e.message);
 }
 
-const FALLBACK_PROXY_TARGET = "https://www.picknbook.in";
+const PRODUCTION_API_URL = "https://www.picknbook.in";
 
 function normalizeHttpUrl(value) {
   if (typeof value !== "string") return "";
@@ -70,8 +70,6 @@ function resolveProxyTarget() {
   const candidates = [
     process.env.REACT_APP_API_PROXY_TARGET,
     process.env.REACT_APP_API_BASE_URL,
-    process.env.REACT_APP_BUS_API_BASE_URL,
-    process.env.REACT_APP_PLACES_API_URL,
   ];
 
   const explicit = candidates
@@ -87,7 +85,7 @@ function resolveProxyTarget() {
     }
   }
 
-  return FALLBACK_PROXY_TARGET;
+  return PRODUCTION_API_URL;
 }
 
 module.exports = function setupProxy(app) {
