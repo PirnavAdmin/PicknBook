@@ -218,6 +218,7 @@ const SEARCHABLE_PAGES = [
     { label: 'Deposit Request List', category: 'Customer Management', path: '/admin/customer-management/deposit-request-list' },
     { label: 'Contact Queries List', category: 'Query Management', path: '/admin/query-management/query-list' },
     { label: 'IP Management', category: 'Security Management', path: '/admin/security-management/ip-management' },
+    { label: 'User Security Rules', category: 'Security Management', path: '/admin/security-management/user-security-rules' },
     { label: 'White List IP', category: 'Security Management', path: '/admin/security-management/white-list-ip' },
     { label: 'Black List IP', category: 'Security Management', path: '/admin/security-management/black-list-ip' },
     { label: 'Email Logs', category: 'Email Management', path: '/admin/email-management/email-logs' },

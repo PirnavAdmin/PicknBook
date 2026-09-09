@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createAdminTestimonial, updateAdminTestimonial } from "../../../services/testimonialService";
+import { createAdminTestimonial, updateAdminTestimonial, getAdminTestimonialCategories } from "../../../services/testimonialService";
 
 export default function AdminAddTestimonial() {
   const navigate = useNavigate();
@@ -9,12 +9,14 @@ export default function AdminAddTestimonial() {
   const editItem = location.state?.editItem || null;
   const isEditMode = !!editItem;
 
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     designation: "",
     rating: 5,
     comment: "",
     status: "Active",
+    categoryId: "",
     image: null,
   });
 
@@ -24,6 +26,18 @@ export default function AdminAddTestimonial() {
   const toastTimerRef = useRef(null);
 
   useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const data = await getAdminTestimonialCategories();
+        if (Array.isArray(data)) {
+          setCategories(data);
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    }
+    fetchCategories();
+
     if (isEditMode && editItem) {
       setFormData({
         name: editItem.name || "",
@@ -31,6 +45,7 @@ export default function AdminAddTestimonial() {
         rating: editItem.rating || 5,
         comment: editItem.comment || editItem.message || "",
         status: editItem.status || "Active",
+        categoryId: editItem.categoryId || "",
         image: null,
       });
       if (editItem.imageUrl || editItem.image) {
@@ -75,6 +90,9 @@ export default function AdminAddTestimonial() {
       data.append("Rating", formData.rating);
       data.append("Comment", formData.comment.trim());
       data.append("Status", formData.status);
+      if (formData.categoryId) {
+        data.append("CategoryId", formData.categoryId);
+      }
       if (formData.image) {
         data.append("Image", formData.image);
       }

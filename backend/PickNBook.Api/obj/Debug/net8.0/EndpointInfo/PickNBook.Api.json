@@ -10409,6 +10409,37 @@
         }
       }
     },
+    "/api/flight/srdv/RecheckSearch": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightRecheckSearchProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightRecheckSearchProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightRecheckSearchProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/flight/srdv/GetCalendarFare": {
       "post": {
         "tags": [
@@ -10480,17 +10511,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightFareQuoteProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightFareQuoteProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightFareQuoteProxyRequestDto"
               }
             }
           }
@@ -10511,17 +10542,79 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/SSR": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/SSR": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSSRProxyRequestDto"
               }
             }
           }
@@ -10542,17 +10635,79 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/FlightFareRuleProxyRequestDto"
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/SeatMap": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/SeatMap": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSeatMapProxyRequestDto"
               }
             }
           }
@@ -10565,6 +10720,68 @@
       }
     },
     "/api/flight/srdv/TicketLCC": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/TicketLCC": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightTicketLCCProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/TicketLCC": {
       "post": {
         "tags": [
           "SrdvFlightApi"
@@ -12066,8 +12283,8 @@
             "nullable": true
           },
           "FlightCabinClass": {
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "nullable": true
           },
           "PreferredDepartureTime": {
             "type": "string",
@@ -14067,9 +14284,40 @@
         "type": "integer",
         "format": "int32"
       },
-      "FlightFareRuleProxyRequestDto": {
+      "FlightFareQuoteProxyRequestDto": {
         "type": "object",
         "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "CouponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "JourneyType": {
+            "type": "string",
+            "nullable": true
+          },
+          "AdultCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ChildCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "InfantCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "SrdvType": {
             "type": "string",
             "nullable": true
@@ -14077,12 +14325,26 @@
           "SrdvIndex": {
             "type": "string",
             "nullable": true
-          },
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightFareRuleProxyRequestDto": {
+        "type": "object",
+        "properties": {
           "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ResultIndex": {
             "type": "string",
             "nullable": true
           },
-          "ResultIndex": {
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
             "type": "string",
             "nullable": true
           },
@@ -14243,6 +14505,16 @@
         },
         "additionalProperties": false
       },
+      "FlightRecheckSearchProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "FlightRemarkRequestDto": {
         "type": "object",
         "properties": {
@@ -14265,6 +14537,28 @@
         },
         "additionalProperties": false
       },
+      "FlightSSRProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "FlightSearchProxyRequestDto": {
         "type": "object",
         "properties": {
@@ -14281,8 +14575,16 @@
             "format": "int32"
           },
           "JourneyType": {
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "nullable": true
+          },
+          "CurrencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "FareType": {
+            "type": "string",
+            "nullable": true
           },
           "DirectFlight": {
             "type": "boolean",
@@ -14293,6 +14595,28 @@
             "items": {
               "$ref": "#/components/schemas/AirSearchSegmentDto"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightSeatMapProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ResultIndex": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -14408,11 +14732,38 @@
             "nullable": true
           },
           "TraceId": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           },
           "ResultIndex": {
             "type": "string",
+            "nullable": true
+          },
+          "RefID": {
+            "type": "string",
+            "nullable": true
+          },
+          "Module": {
+            "type": "string",
+            "nullable": true
+          },
+          "BookedById": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "BookedByName": {
+            "type": "string",
+            "nullable": true
+          },
+          "CustomerFare": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ReturnCustomerFare": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "CouponCode": {
@@ -14651,7 +15002,7 @@
             "nullable": true,
             "example": "2026-08-05"
           },
-          "noOfRooms": {
+          "NoOfRooms": {
             "type": "integer",
             "format": "int32"
           },
@@ -15465,6 +15816,18 @@
             "items": {
               "$ref": "#/components/schemas/LCCMealDynamicDto"
             },
+            "nullable": true
+          },
+          "EContactName": {
+            "type": "string",
+            "nullable": true
+          },
+          "EContactEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "EContactMobile": {
+            "type": "string",
             "nullable": true
           },
           "Seat": {

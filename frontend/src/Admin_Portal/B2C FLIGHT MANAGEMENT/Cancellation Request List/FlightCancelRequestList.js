@@ -46,7 +46,7 @@ const normalizeText = (value, fallback = "") => {
 };
 
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
@@ -662,11 +662,11 @@ export default function AdminFlightCancellationRequestListPage() {
           return secondTime - firstTime;
         });
 
-      if (mapped.length > 0) {
-        setCancellationRequests(mapped);
-      }
+      setCancellationRequests(mapped);
     } catch (error) {
-      console.warn("Backend fetch failed, falling back to dynamic local storage data", error);
+      console.warn("Backend fetch failed or server off, setting empty list", error);
+      setCancellationRequests([]);
+      setErrorMessage("");
     } finally {
       setIsLoading(false);
     }
@@ -806,14 +806,14 @@ export default function AdminFlightCancellationRequestListPage() {
 
   return (
     <section className="admin-b2c-page admin-cancel-page admin-flight-cancel-page">
-      <header className="admin-b2c-header admin-flight-cancel-header" style={{ marginBottom: "12px" }}>
+      <header className="admin-b2c-header admin-flight-cancel-header" style={{ marginBottom: "6px" }}>
         <h1 className="admin-flight-cancel-title" style={{ fontWeight: 500, margin: 0 }}>
           <span style={{ color: "#be185d", fontWeight: 700 }}>B2C Flight </span>
           <span style={{ color: "black" }}>Cancellation List</span>
         </h1>
       </header>
 
-      <div className="admin-toolbar-row admin-cancel-toolbar" style={{ marginBottom: "16px" }}>
+      <div className="admin-toolbar-row admin-cancel-toolbar" style={{ marginBottom: "6px" }}>
         <div className="admin-chip-row">
           <span className="admin-chip">Today Cancelled: {filteredRequests.filter(r => r.paymentStatus === "Completed").length}</span>
           <span className="admin-chip">Today Pending: {filteredRequests.filter(r => r.paymentStatus === "Pending").length}</span>
@@ -929,11 +929,37 @@ export default function AdminFlightCancellationRequestListPage() {
 
       <section className="admin-cancel-table-shell">
         <header className="admin-cancel-table-head admin-flight-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
-          <span>B. ID / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Booking ID">
+              B. ID
+              <span className="admin-tooltip-text">Booking ID</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Booking Date">
+              B.D.
+              <span className="admin-tooltip-text">Booking Date</span>
+            </span>
+          </span>
           <span>Name</span>
-          <span>Segment / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Source & Destination">
+              Segment
+              <span className="admin-tooltip-text">Source & Destination</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Journey Date">
+              Jd
+              <span className="admin-tooltip-text">Journey Date</span>
+            </span>
+          </span>
           <span>Time</span>
-          <span>PNR / Status</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Passenger Name Record">
+              PNR
+              <span className="admin-tooltip-text">Passenger Name Record</span>
+            </span>{" "}
+            / Status
+          </span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -1024,30 +1050,17 @@ export default function AdminFlightCancellationRequestListPage() {
             ))}
           </div>
         ) : (
-          <div className="admin-cancel-empty">not found any record.</div>
+          <div className="admin-cancel-empty">No cancellation requests found.</div>
         )}
 
-        {filteredRequests.length > 0 && (
-          <AdminPagination
-            currentPage={currentPage}
-            totalItems={filteredRequests.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-            itemName="cancellations"
-          />
-        )}
-
-        <footer className="admin-flight-cancel-footnote">
-          <strong>RD :-</strong> Request Date, <strong>CS :-</strong> Cancellation Status,
-          <strong> CRS :-</strong> Customer Refund Status, <strong>ARS :-</strong> Admin
-          Refund Status, <strong>CRA :-</strong> Customer Refund Amount, <strong>CCC :-</strong>{" "}
-          Customer Cancellation Charge, <strong>CSC :-</strong> Customer Service Charge,
-          <strong> ARA :-</strong> Admin Refund Amount, <strong>ACC :-</strong> Admin
-          Cancellation Charge, <strong>ASC :-</strong> Admin Service Charge, <strong>SR :-</strong>{" "}
-          Supplier Remark, <strong>CR :-</strong> Customer Remark, <strong>AR :-</strong>{" "}
-          Admin Remark
-        </footer>
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filteredRequests.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          itemName="cancellations"
+        />
       </section>
 
       {selectedCancellation ? (

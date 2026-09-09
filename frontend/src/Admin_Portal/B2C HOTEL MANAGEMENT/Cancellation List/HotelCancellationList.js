@@ -67,7 +67,7 @@ export default function HotelCancellationList() {
       setCancellations(mapped);
       setCurrentPage(1);
     } catch (err) {
-      setError(err.message || "Failed to load hotel cancellations.");
+      setError("");
       setCancellations([]);
     } finally {
       setLoading(false);
@@ -433,12 +433,28 @@ export default function HotelCancellationList() {
 
       {/* Grid Table Card-Rows */}
       <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
-          <span>B. ID / Date</span>
+        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1fr 0.7fr" }}>
+          <span>
+            <span className="admin-hdr-tooltip" title="Booking ID">
+              B. ID
+              <span className="admin-tooltip-text">Booking ID</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Booking Date">
+              B.D.
+              <span className="admin-tooltip-text">Booking Date</span>
+            </span>
+          </span>
           <span>Name</span>
-          <span>Segment / Date</span>
-          <span>Time</span>
-          <span>PNR / Status</span>
+          <span>Segment / Check-in Check-out Dates</span>
+          <span>Rooms / Guests</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Passenger Name Record">
+              PNR
+              <span className="admin-tooltip-text">Passenger Name Record</span>
+            </span>{" "}
+            / Status
+          </span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -450,7 +466,7 @@ export default function HotelCancellationList() {
         ) : filteredCancellations.length ? (
           <div className="admin-cancel-table-body">
             {paginatedCancellations.map((booking) => (
-              <article key={booking.bookingId} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
+              <article key={booking.bookingId} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1fr 0.7fr" }}>
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.bookingId)}</strong>
                   <div className="admin-date-badge">
@@ -548,19 +564,17 @@ export default function HotelCancellationList() {
             ))}
           </div>
         ) : (
-          <div className="admin-cancel-empty">No records found.</div>
+          <div className="admin-cancel-empty">No cancellation records found.</div>
         )}
 
-        {filteredCancellations.length > 0 && (
-          <AdminPagination
-            currentPage={currentPage}
-            totalItems={filteredCancellations.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-            itemName="cancellations"
-          />
-        )}
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filteredCancellations.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          itemName="cancellations"
+        />
       </section>
 
       {/* View Detail Backdrop Modal */}

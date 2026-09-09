@@ -9,7 +9,7 @@ import {
   createHotelPricingRule,
 } from "../../../services/adminHotelService";
 import AdminPagination from "../../../components/AdminPagination";
-import "../../B2C BUS MANAGEMENT/Coupon list/BusCouponList.css";
+import "../../B2C BUS MANAGEMENT/Coupon list/BusPromotionsList.css";
 import "./HotelMarkupList.css";
 
 const fmtDate = (isoStr) => {

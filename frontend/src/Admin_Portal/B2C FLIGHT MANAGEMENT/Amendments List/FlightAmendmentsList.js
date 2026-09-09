@@ -484,12 +484,6 @@ export default function AdminFlightAmendmentsListPage() {
           onPageChange={setCurrentPage}
           itemName="amendment requests"
         />
-
-        <footer className="admin-flight-amend-footnote">
-          <strong>RD :-</strong> Request Date, <strong>AS :-</strong> Amendments Status,{" "}
-          <strong>SR :-</strong> Supplier Remark, <strong>CR :-</strong> Customer Remark,{" "}
-          <strong>AR :-</strong> Admin Remark
-        </footer>
       </section>
 
       {selectedRecord ? (

@@ -854,184 +854,183 @@ function DepositRequestList() {
 
                 {/* Table */}
                 <div style={styles.tableWrapper}>
-                    {loading ? (
-                        <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading requests...</p>
-                    ) : (
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
+                    <table style={styles.table}>
+                        <thead style={styles.thead}>
+                            <tr>
+                                <th style={styles.th}>SN.</th>
+                                <th style={styles.th}>User</th>
+                                <th style={styles.th}>Amount</th>
+                                <th style={styles.th}>Type</th>
+                                <th style={styles.th}>Status</th>
+                                <th style={styles.th}>Payment Details</th>
+                                <th style={styles.th}>Entry Date</th>
+                                <th style={styles.th}>Trns. Date</th>
+                                <th style={styles.th}>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
                                 <tr>
-                                    <th style={styles.th}>SN.</th>
-                                    <th style={styles.th}>User</th>
-                                    <th style={styles.th}>Amount</th>
-                                    <th style={styles.th}>Type</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>Payment Details</th>
-                                    <th style={styles.th}>Entry Date</th>
-                                    <th style={styles.th}>Trns. Date</th>
-                                    <th style={styles.th}>Action</th>
+                                    <td colSpan="9" style={{ padding: "30px 20px", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+                                        Loading requests...
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {currentItems.length > 0 ? (
-                                    currentItems.map((request, index) => (
-                                        <tr
-                                            key={request.id}
-                                            style={styles.tr}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = 'transparent';
-                                            }}
-                                        >
-                                            <td style={{ ...styles.td, ...styles.snBadge }}>{indexOfFirstItem + index + 1}</td>
-
-                                            <td style={{ ...styles.td, ...styles.userCell }}>{request.user}</td>
-                                            <td style={{ ...styles.td, ...styles.amountCell }}>Rs. {request.amount}</td>
-                                            <td style={styles.td}>{request.type}</td>
-                                            <td style={styles.td}>
-                                                <button
-                                                    type="button"
-                                                    style={{
-                                                        ...styles.statusBadge,
-                                                        ...getStatusStyle(request.adminRemark || request.status)
-                                                    }}
-                                                    onClick={() => handleCycleStatus(request)}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.opacity = '0.85';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.opacity = '1';
-                                                    }}
-                                                >
-                                                    {toTitleCase(request.adminRemark || request.status)}
-                                                </button>
-                                            </td>
-                                            <td style={styles.td}>{request.userRemark ? toTitleCase(request.userRemark) : '-'}</td>
-                                            <td style={styles.td}>{request.entryDate}</td>
-                                            <td style={styles.td}>{request.transactionDate}</td>
-                                            <td style={{ ...styles.td, position: 'relative', overflow: 'visible' }}>
-                                                <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
-                                                    <button
-                                                        type="button"
-                                                        className={`actions-trigger-btn ${activeDropdownId === request.id ? 'active' : ''}`}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActiveDropdownId(activeDropdownId === request.id ? null : request.id);
-                                                        }}
-                                                    >
-                                                        <span>Actions</span> <ChevronDown size={14} />
-                                                    </button>
-                                                    {activeDropdownId === request.id && (
-                                                        <div style={{
-                                                            position: 'absolute',
-                                                            ...(index >= currentItems.length - 2 || currentItems.length <= 3
-                                                                ? { bottom: '100%', marginBottom: '6px' }
-                                                                : { top: '100%', marginTop: '6px' }),
-                                                            right: 0,
-                                                            background: '#ffffff',
-                                                            borderRadius: '12px',
-                                                            border: '1px solid #e2e8f0',
-                                                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                                                            zIndex: 99999,
-                                                            minWidth: '150px',
-                                                            width: 'max-content',
-                                                            padding: '6px',
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            gap: '2px'
-                                                        }}>
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                                                    padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
-                                                                    fontWeight: 500, color: '#334155', background: 'transparent',
-                                                                    border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left'
-                                                                }}
-                                                                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-                                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                                                onClick={() => { setActiveDropdownId(null); setSelectedRequest(request); }}
-                                                            >
-                                                                <Eye size={14} /> <span>View Details</span>
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                                                    padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
-                                                                    fontWeight: 500, color: '#334155', background: 'transparent',
-                                                                    border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left'
-                                                                }}
-                                                                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-                                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                                                onClick={() => { setActiveDropdownId(null); handleEditStatusPopup(request); }}
-                                                            >
-                                                                <Edit2 size={14} /> <span>Edit</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                            <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '10px' }}>No data</div>
-                                            <p>No deposit requests found matching "{searchQuery}"</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    )}
-
-                    {/* Pagination */}
-                    {totalItems > 0 && (
-                        <div style={styles.pagination}>
-                            <div style={styles.paginationInfo}>
-                                Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, totalItems)} of {totalItems} entries
-                            </div>
-                            <div style={styles.pageNumbers}>
-                                <button
-                                    type="button"
-                                    disabled={currentPage === 1}
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    style={{
-                                        ...styles.pageBtn,
-                                        ...(currentPage === 1 ? styles.pageBtnDisabled : {})
-                                    }}
-                                >
-                                    &lt; Previous
-                                </button>
-                                {Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1).map(pageNum => (
-                                    <button
-                                        key={pageNum}
-                                        type="button"
-                                        onClick={() => setCurrentPage(pageNum)}
-                                        style={{
-                                            ...styles.pageNoBtn,
-                                            ...(currentPage === pageNum ? styles.pageNoActive : {})
+                            ) : currentItems.length > 0 ? (
+                                currentItems.map((request, index) => (
+                                    <tr
+                                        key={request.id}
+                                        style={styles.tr}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'transparent';
                                         }}
                                     >
-                                        {pageNum}
-                                    </button>
-                                ))}
+                                        <td style={{ ...styles.td, ...styles.snBadge }}>{indexOfFirstItem + index + 1}</td>
+
+                                        <td style={{ ...styles.td, ...styles.userCell }}>{request.user}</td>
+                                        <td style={{ ...styles.td, ...styles.amountCell }}>Rs. {request.amount}</td>
+                                        <td style={styles.td}>{request.type}</td>
+                                        <td style={styles.td}>
+                                            <button
+                                                type="button"
+                                                style={{
+                                                    ...styles.statusBadge,
+                                                    ...getStatusStyle(request.adminRemark || request.status)
+                                                }}
+                                                onClick={() => handleCycleStatus(request)}
+                                                onMouseEnter={(e) => {
+                                                    e.target.style.opacity = '0.85';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.target.style.opacity = '1';
+                                                }}
+                                            >
+                                                {toTitleCase(request.adminRemark || request.status)}
+                                            </button>
+                                        </td>
+                                        <td style={styles.td}>{request.userRemark ? toTitleCase(request.userRemark) : '-'}</td>
+                                        <td style={styles.td}>{request.entryDate}</td>
+                                        <td style={styles.td}>{request.transactionDate}</td>
+                                        <td style={{ ...styles.td, position: 'relative', overflow: 'visible' }}>
+                                            <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
+                                                <button
+                                                    type="button"
+                                                    className={`actions-trigger-btn ${activeDropdownId === request.id ? 'active' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveDropdownId(activeDropdownId === request.id ? null : request.id);
+                                                    }}
+                                                >
+                                                    <span>Actions</span> <ChevronDown size={14} />
+                                                </button>
+                                                {activeDropdownId === request.id && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        ...(index >= currentItems.length - 2 || currentItems.length <= 3
+                                                            ? { bottom: '100%', marginBottom: '6px' }
+                                                            : { top: '100%', marginTop: '6px' }),
+                                                        right: 0,
+                                                        background: '#ffffff',
+                                                        borderRadius: '12px',
+                                                        border: '1px solid #e2e8f0',
+                                                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                                        zIndex: 99999,
+                                                        minWidth: '150px',
+                                                        width: 'max-content',
+                                                        padding: '6px',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '2px'
+                                                    }}>
+                                                        <button
+                                                            type="button"
+                                                            style={{
+                                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                                padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
+                                                                fontWeight: 500, color: '#334155', background: 'transparent',
+                                                                border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                            onClick={() => { setActiveDropdownId(null); setSelectedRequest(request); }}
+                                                        >
+                                                            <Eye size={14} /> <span>View Details</span>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            style={{
+                                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                                padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
+                                                                fontWeight: 500, color: '#334155', background: 'transparent',
+                                                                border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                            onClick={() => { setActiveDropdownId(null); handleEditStatusPopup(request); }}
+                                                        >
+                                                            <Edit2 size={14} /> <span>Edit</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="9" style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                        Data not found
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+
+                    {/* Pagination */}
+                    <div style={styles.pagination}>
+                        <div style={styles.paginationInfo}>
+                            Showing {totalItems === 0 ? 0 : indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} deposit requests
+                        </div>
+                        <div style={styles.pageNumbers}>
+                            <button
+                                type="button"
+                                disabled={currentPage === 1 || totalPages <= 1}
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                style={{
+                                    ...styles.pageBtn,
+                                    ...((currentPage === 1 || totalPages <= 1) ? styles.pageBtnDisabled : {})
+                                }}
+                            >
+                                Previous
+                            </button>
+                            {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
                                 <button
+                                    key={pageNum}
                                     type="button"
-                                    disabled={currentPage === totalPages || totalPages === 0}
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    onClick={() => setCurrentPage(pageNum)}
                                     style={{
-                                        ...styles.pageBtn,
-                                        ...(currentPage === totalPages || totalPages === 0 ? styles.pageBtnDisabled : {})
+                                        ...styles.pageNoBtn,
+                                        ...(currentPage === pageNum ? styles.pageNoActive : {})
                                     }}
                                 >
-                                    Next &gt;
+                                    {pageNum}
                                 </button>
-                            </div>
+                            ))}
+                            <button
+                                type="button"
+                                disabled={currentPage === totalPages || totalPages <= 1}
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                style={{
+                                    ...styles.pageBtn,
+                                    ...((currentPage === totalPages || totalPages <= 1) ? styles.pageBtnDisabled : {})
+                                }}
+                            >
+                                Next
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {editPopupOpen && requestToEdit && createPortal(

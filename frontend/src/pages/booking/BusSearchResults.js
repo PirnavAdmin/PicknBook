@@ -103,11 +103,37 @@ const BUS_TYPE_FILTERS = [
   { key: "sleeper", label: "Sleeper", icon: Bed },
 ];
 
-const AMENITIES = [
-  { key: "blankets", label: "Blankets", icon: Wind },
-  { key: "charging", label: "Charging Point", icon: Zap },
-  { key: "pillow", label: "Pillow", icon: Square },
-];
+const AMENITY_ICONS = {
+  "charging point": Zap,
+  "water bottle": Droplet,
+  "blanket": Wind,
+  "reading light": Sun,
+  "wifi": Wifi,
+  "cctv": Tv,
+  "pillow": Square,
+  "coffee": Coffee,
+  "toilet": Droplet,
+};
+
+const getAmenityIcon = (name) => {
+  const key = String(name || "").toLowerCase().trim();
+  return AMENITY_ICONS[key] || Sparkles;
+};
+
+const extractBusAmenities = (bus) => {
+  const raw = bus?.amenities || bus?.Amenities || bus?.facilities || bus?.Facilities || bus?.busAmenities;
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map(a => typeof a === "string" ? a : (a?.name || a?.Name || a?.title || (typeof a === "object" ? "" : String(a)))).filter(Boolean);
+  }
+  if (typeof raw === "object") {
+    return Object.values(raw).map(a => typeof a === "string" ? a : (a?.name || a?.Name || a?.title || "")).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+};
 
 const BUS_PROMO_ITEMS = [
   {
@@ -156,12 +182,6 @@ const DEFAULT_TIME_WINDOWS = {
   afternoon: false,
   evening: false,
   night: false,
-};
-
-const DEFAULT_AMENITIES = {
-  blankets: false,
-  charging: false,
-  pillow: false,
 };
 
 function readValue(params, state, key, aliases = []) {
@@ -639,7 +659,7 @@ export default function BusSearchResults() {
   const [busTypeFilters, setBusTypeFilters] = useState(() => cachedFilters?.busTypeFilters ?? DEFAULT_BUS_TYPES);
   const [departureWindows, setDepartureWindows] = useState(() => cachedFilters?.departureWindows ?? DEFAULT_TIME_WINDOWS);
   const [arrivalWindows, setArrivalWindows] = useState(() => cachedFilters?.arrivalWindows ?? DEFAULT_TIME_WINDOWS);
-  const [amenitiesFilters, setAmenitiesFilters] = useState(() => cachedFilters?.amenitiesFilters ?? DEFAULT_AMENITIES);
+  const [amenitiesFilters, setAmenitiesFilters] = useState(() => cachedFilters?.amenitiesFilters ?? {});
   const [boardingFilters, setBoardingFilters] = useState(() => cachedFilters?.boardingFilters ?? {});
   const [droppingFilters, setDroppingFilters] = useState(() => cachedFilters?.droppingFilters ?? {});
   const [travelFilters, setTravelFilters] = useState(() => cachedFilters?.travelFilters ?? {});
@@ -651,7 +671,9 @@ export default function BusSearchResults() {
   const [expandedOperatorGroups, setExpandedOperatorGroups] = useState(() => cachedFilters?.expandedOperatorGroups ?? {});
   const [seatLoadingBusId, setSeatLoadingBusId] = useState(null);
   const [visibleBusesCount, setVisibleBusesCount] = useState(15);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [observerTarget, setObserverTarget] = useState(null);
+  const loadingMoreRef = useRef(false);
 
   const [activeDetailTab, setActiveDetailTab] = useState("boarding");
   const [detailsBoardingData, setDetailsBoardingData] = useState(null);
@@ -784,11 +806,16 @@ export default function BusSearchResults() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (
+          entries[0].isIntersecting &&
+          !loadingMoreRef.current
+        ) {
+          loadingMoreRef.current = true;
+          setIsLoadingMore(true);
           setVisibleBusesCount((prev) => prev + 10);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: "0px 0px 120px 0px" }
     );
     
     observer.observe(observerTarget);
@@ -796,12 +823,27 @@ export default function BusSearchResults() {
     return () => {
       observer.disconnect();
     };
-  }, [observerTarget]);
+  }, [observerTarget, visibleBusesCount]);
+
+  useEffect(() => {
+    if (!isLoadingMore) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      loadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [visibleBusesCount, isLoadingMore]);
 
   useEffect(() => {
     let isCurrent = true;
 
     async function runSearch() {
+      loadingMoreRef.current = false;
+      setIsLoadingMore(false);
+      setVisibleBusesCount(15);
+
       if (!sourceName.trim() || !destinationName.trim()) {
         setApiBuses([]);
         setIsLoadingBuses(false);
@@ -909,7 +951,7 @@ export default function BusSearchResults() {
         }
 
         return {
-          id: bus.id,
+          id: bus.resultIndex || bus.id || bus.traceId || `bus-${index}`,
           busNumber: bus.busNumber && bus.busNumber !== "--" ? bus.busNumber : `PNB-${1000 + (index + 1)}`,
           operatorName: bus.operatorName || "Unknown Travels",
           busType: bus.busType || "Bus Service",
@@ -987,6 +1029,24 @@ export default function BusSearchResults() {
     () => uniqueSortedValues(buses.map((bus) => bus.operatorName)),
     [buses]
   );
+  const amenitiesList = useMemo(() => {
+    const allAmenities = new Set();
+    buses.forEach((bus) => {
+      const parsed = extractBusAmenities(bus);
+      parsed.forEach((a) => {
+        const normalized = a.trim();
+        if (normalized) {
+          // Keep the exact casing of the first encountered variant by normalizing checking
+          const lower = normalized.toLowerCase();
+          const existing = Array.from(allAmenities).find(x => x.toLowerCase() === lower);
+          if (!existing) {
+            allAmenities.add(normalized);
+          }
+        }
+      });
+    });
+    return Array.from(allAmenities).sort();
+  }, [buses]);
 
   useEffect(() => {
     setBoardingFilters((previous) => createToggleMap(boardingList, previous));
@@ -1097,16 +1157,10 @@ export default function BusSearchResults() {
       }
 
       if (activeAmenities.length > 0) {
-        const busAmenities = bus.amenities || {};
-        const hasAllSelectedAmenities = activeAmenities.every((amenity) => {
-          const amenityMap = {
-            blankets: busAmenities.blankets,
-            charging: busAmenities.chargingPoint,
-            pillow: busAmenities.pillow,
-          };
-          return amenityMap[amenity];
-        });
-
+        const busAmenities = extractBusAmenities(bus).map(a => a.toLowerCase().trim());
+        const hasAllSelectedAmenities = activeAmenities.every((amenity) =>
+          busAmenities.includes(amenity.toLowerCase().trim())
+        );
         if (!hasAllSelectedAmenities) {
           return false;
         }
@@ -1291,7 +1345,7 @@ export default function BusSearchResults() {
     setBusTypeFilters(DEFAULT_BUS_TYPES);
     setDepartureWindows(DEFAULT_TIME_WINDOWS);
     setArrivalWindows(DEFAULT_TIME_WINDOWS);
-    setAmenitiesFilters(DEFAULT_AMENITIES);
+    setAmenitiesFilters({});
     setBoardingFilters(createToggleMap(boardingList));
     setDroppingFilters(createToggleMap(droppingList));
     setTravelFilters(createToggleMap(travelList));
@@ -1941,8 +1995,7 @@ export default function BusSearchResults() {
 
   const renderBusCard = (bus, className = "") => (
     <article className={`bus-result-card ${className}`.trim()} key={bus.id}>
-      <div className="bus-operator-cell" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-        {resolveOperatorLogo(bus.operatorName)}
+      <div className="bus-operator-cell" style={{ display: "flex", gap: "6px", alignItems: "flex-start", paddingTop: "10px" }}>
         <div>
           <h4 style={{ margin: 0, fontSize: "14.5px" }}>{bus.operatorName}</h4>
           <p style={{ margin: "2px 0 0", fontSize: "12px" }}>{bus.busType}</p>
@@ -2095,7 +2148,7 @@ export default function BusSearchResults() {
               {/* LOCATIONS GROUP */}
               <div style={{ display: 'flex', flex: '2.4 1 auto', position: 'relative', alignItems: 'center' }}>
                 {/* FROM FIELD */}
-                <div className="bus-discover-searchcell" style={{ flex: '1 1 50%', paddingRight: '22px' }}>
+                <div className="bus-discover-searchcell" style={{ flex: '1 1 50%', paddingLeft: '14px', paddingRight: '22px' }}>
                   <PlaceAutocomplete
                     label="FROM"
                     sublabel={false}
@@ -2109,7 +2162,7 @@ export default function BusSearchResults() {
                     tripType="bus"
                     field="from"
                     placeholder="Enter departure city"
-                    isInline={true}
+                    isInline={false}
                   />
                 </div>
 
@@ -2122,7 +2175,8 @@ export default function BusSearchResults() {
                   style={{
                     position: 'absolute',
                     left: '50%',
-                    transform: 'translateX(-50%)',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
                     zIndex: 10,
                     margin: 0,
                     backgroundColor: '#ffffff',
@@ -2147,34 +2201,32 @@ export default function BusSearchResults() {
                     tripType="bus"
                     field="to"
                     placeholder="Enter destination city"
-                    isInline={true}
+                    isInline={false}
                   />
                 </div>
               </div>
 
               {/* TRAVEL DATE FIELD */}
-              <div
-                className="bus-discover-searchcell with-divider"
-                style={{ flex: '1 1 auto', cursor: 'pointer' }}
-                onClick={() => {
-                  const picker = document.getElementById("bus-discover-date");
-                  if (picker) {
-                    try {
-                      picker.showPicker();
-                    } catch (e) {
-                      picker.click();
-                    }
-                  }
-                }}
-              >
-                <CalendarDays size={18} color="#64748b" style={{ flexShrink: 0 }} />
-                <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                    TRAVEL DATE
-                  </span>
-                  <strong style={{ cursor: 'pointer', color: '#0f172a', fontWeight: 500, fontSize: '14px', margin: '2px 0', whiteSpace: 'nowrap' }}>
-                    {formatBusPillDate(modifyForm.departureDate).date}
-                  </strong>
+              <div className="bus-discover-searchcell with-divider" style={{ flex: '1 1 auto' }}>
+                <div className="field field-with-icon departure-field" style={{ position: "relative", width: "100%" }}>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>TRAVEL DATE</label>
+                  <div className="control-wrap">
+                    <CalendarDays size={18} />
+                    <input
+                      type="text"
+                      readOnly
+                      value={formatBusPillDate(modifyForm.departureDate).date}
+                      placeholder="DD-MM-YYYY"
+                      className="field-control with-leading-icon"
+                      style={{ cursor: "pointer", fontWeight: 500, fontSize: '14px', color: '#0f172a' }}
+                      onClick={() => {
+                        const picker = document.getElementById("bus-discover-date");
+                        if (picker) {
+                          try { picker.showPicker(); } catch (e) { picker.click(); }
+                        }
+                      }}
+                    />
+                  </div>
                   <input
                     id="bus-discover-date"
                     type="date"
@@ -2571,27 +2623,28 @@ export default function BusSearchResults() {
                 </div>
               </section>
 
-              <section className="bus-filter-card">
-                <h3>Amenities</h3>
-                <div className="amenities-grid">
-                  {AMENITIES.map((amenity) => (
-                    <label
-                      key={amenity.key}
-                      className={`amenity-checkbox ${amenitiesFilters[amenity.key] ? "checked" : ""}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={Boolean(amenitiesFilters[amenity.key])}
-                        onChange={() => toggleSimpleFilter(setAmenitiesFilters, amenity.key)}
-                      />
-                      <span className="checkbox-icon">
-                        <amenity.icon size={18} />
-                      </span>
-                      <span className="checkbox-label">{amenity.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </section>
+              {amenitiesList.length > 0 && (
+                <section className="bus-filter-card">
+                  <h3>Amenities</h3>
+                  <div className="bus-type-grid">
+                    {amenitiesList.map((amenity) => {
+                      const Icon = getAmenityIcon(amenity);
+                      return (
+                        <button
+                          key={amenity}
+                          type="button"
+                          className={`bus-type-chip ${amenitiesFilters[amenity] ? "active" : ""}`}
+                          onClick={() => toggleSimpleFilter(setAmenitiesFilters, amenity)}
+                          style={{ padding: "8px" }}
+                        >
+                          <Icon size={18} />
+                          <span style={{ fontSize: "0.75rem", marginTop: "4px", lineHeight: 1.2 }}>{amenity}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
 
               <section className={`bus-filter-card bus-collapse-card ${openFilterPanel === "travels" ? "open" : ""}`}>
                 <button
@@ -2804,7 +2857,14 @@ export default function BusSearchResults() {
                       );
                     })}
                     {visibleBusesCount < resultItems.length && (
-                      <div ref={setObserverTarget} style={{ height: "20px", width: "100%" }} />
+                      <div ref={setObserverTarget} className="bus-load-more-sentinel" aria-live="polite">
+                         {isLoadingMore && (
+                           <>
+                             <Loader2 className="spin" size={24} />
+                             <span>Loading more buses...</span>
+                           </>
+                         )}
+                      </div>
                     )}
                   </>
                 )}

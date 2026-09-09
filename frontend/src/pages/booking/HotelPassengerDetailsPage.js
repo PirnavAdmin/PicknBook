@@ -611,7 +611,8 @@ export default function HotelPassengerDetailsPage() {
 
                         return {
                             ...r,
-                            offerId: r.roomId || r.RatePlanCode || `room-${i}`,
+                          offerId: r.roomId || r.RatePlanCode || `room-${i}`,
+                          selectionKey: `room-${i}-${r.roomId || r.RatePlanCode || r.roomTypeName || r.RoomTypeName || "option"}`,
                             price: extractedPrice,
                             currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
                             roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
@@ -694,9 +695,11 @@ export default function HotelPassengerDetailsPage() {
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
     // If user is re-selecting (replacing an already chosen room), drop the previous
     // selection for that slot so we don't accumulate beyond roomsCount.
-    const alreadyPicked = selectedMultiRooms.some(r => r.offerId === roomOffer.offerId);
-    const cleanedSelection = alreadyPicked
-      ? selectedMultiRooms.filter(r => r.offerId !== roomOffer.offerId)
+    const alreadyPicked = selectedMultiRooms.some(r => r.selectionKey === roomOffer.selectionKey);
+    const cleanedSelection = roomsCount === 1
+      ? []
+      : alreadyPicked
+      ? selectedMultiRooms.filter(r => r.selectionKey !== roomOffer.selectionKey)
       : selectedMultiRooms;
     const newSelection = [...cleanedSelection, roomOffer];
     
@@ -705,8 +708,10 @@ export default function HotelPassengerDetailsPage() {
         return; // wait for next room selection
     }
 
-    setSelectingOfferId(roomOffer.offerId);
+    setSelectingOfferId(roomOffer.selectionKey);
     setOfferLoadError("");
+  setSelectedMultiRooms(newSelection);
+  setBlockRoomResponse(null);
     try {
       const blockPayload = {
         TraceId: String(hotel?.TraceId || hotel?.traceId || ""),

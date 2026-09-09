@@ -97,3 +97,120 @@
   box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2) !important;
 }
 
+/* Compact filter form for Flight Cancel Request List */
+.admin-flight-cancel-page .admin-cancel-filters,
+.admin-flight-cancel-page .flight-ops-filters {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  gap: 6px 12px !important;
+  padding: 8px 12px !important;
+  margin-top: 2px !important;
+  margin-bottom: 6px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(29, 78, 216, 0.18) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 3px 12px rgba(29, 78, 216, 0.05) !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filters label,
+.admin-flight-cancel-page .flight-ops-filters label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex: 1 1 150px !important;
+  min-width: 140px !important;
+  max-width: 220px !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filters label span,
+.admin-flight-cancel-page .flight-ops-filters label span {
+  font-size: 0.64rem !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+  white-space: nowrap !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filters input,
+.admin-flight-cancel-page .admin-cancel-filters select,
+.admin-flight-cancel-page .flight-ops-filters input,
+.admin-flight-cancel-page .flight-ops-filters select {
+  height: 28px !important;
+  padding: 2px 8px !important;
+  font-size: 0.76rem !important;
+  border: 1px solid rgba(29, 78, 216, 0.22) !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filters input::placeholder,
+.admin-flight-cancel-page .flight-ops-filters input::placeholder {
+  font-size: 0.72rem !important;
+  color: #94a3b8 !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filters input:focus,
+.admin-flight-cancel-page .flight-ops-filters input:focus {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.12) !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filter-actions,
+.admin-flight-cancel-page .flight-ops-filters .filters-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: auto !important;
+  margin-left: auto !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filter-actions button.primary,
+.admin-flight-cancel-page .flight-ops-filters .filters-actions button.primary {
+  height: 28px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2) !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filter-actions button.primary:hover,
+.admin-flight-cancel-page .flight-ops-filters .filters-actions button.primary:hover {
+  background: #1e40af !important;
+  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.35) !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filter-actions button.secondary,
+.admin-flight-cancel-page .flight-ops-filters .filters-actions button.secondary {
+  height: 28px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-flight-cancel-page .admin-cancel-filter-actions button.secondary:hover,
+.admin-flight-cancel-page .flight-ops-filters .filters-actions button.secondary:hover {
+  background: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+

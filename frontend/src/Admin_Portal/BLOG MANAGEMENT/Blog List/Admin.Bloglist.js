@@ -615,11 +615,11 @@ function BlogList() {
             background: '#A51C49',
             color: '#ffffff',
             fontWeight: 500,
-            borderBottom: '2px solid var(--border)',
         },
         th: {
             padding: '12px 10px',
             textAlign: 'center',
+            borderRight: '1px solid rgba(255, 255, 255, 0.2)',
             whiteSpace: 'nowrap',
             fontSize: '11px',
             textTransform: 'none',
@@ -627,6 +627,8 @@ function BlogList() {
             fontWeight: 500,
             verticalAlign: 'middle',
             height: '42px',
+            background: '#A51C49',
+            color: '#ffffff',
         },
         td: {
             padding: '6px 8px',
@@ -1242,12 +1244,8 @@ function BlogList() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="8" style={{ ...styles.td, textAlign: 'center', padding: '20px' }}>
-                                        <div style={styles.emptyState}>
-                                            <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                                No blogs found
-                                            </div>
-                                        </div>
+                                    <td colSpan="8" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
+                                        Data not found
                                     </td>
                                 </tr>
                             )}

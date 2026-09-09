@@ -134,6 +134,7 @@ builder.Services.AddHttpClient<PickNBook.Api.Services.Interfaces.ISrdvMasterData
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.ISrdvSqlDumpParser, PickNBook.Api.Services.Implementations.SrdvSqlDumpParser>();
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.ISrdvMasterDataImporter, PickNBook.Api.Services.Implementations.SrdvMasterDataImporter>();
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IPlacesService, PickNBook.Api.Services.Implementations.PlacesService>();
+builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IAirlineLookupService, PickNBook.Api.Services.Implementations.AirlineLookupService>();
 // Email Settings
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
@@ -183,6 +184,10 @@ builder.Services.AddScoped<IFlightPromotionEngine, FlightPromotionEngine>();
 builder.Services.AddScoped<IFlightPricingService, FlightPricingService>();
 builder.Services.AddScoped<IUserBookingHistoryService, UserBookingHistoryService>();
 builder.Services.AddScoped<IAgentWalletService, AgentWalletService>();
+builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IRefundRouterService, RefundRouterService>();
+builder.Services.AddScoped<IPasskeyService, PasskeyService>();
+builder.Services.AddFido2(builder.Configuration.GetSection("Fido2"));
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAboutUsService, AboutUsService>();

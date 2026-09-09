@@ -7,27 +7,33 @@ import {
 } from "./apiClient";
 import { getAuthToken } from "./authSession";
 
-const PUBLIC_TESTIMONIAL_CANDIDATES = [
-  "/api/testimonials",
-  "/api/Testimonials",
-  "/api/testimonial",
-  "/api/Testimonial"
+const DASHBOARD_STATS_CANDIDATES = [
+  "/api/admin/testimonials/dashboard-stats",
+  "/api/testimonials/admin/dashboard-stats",
+  "/api/testimonials/dashboard-stats",
 ];
 
-const ADMIN_TESTIMONIAL_CANDIDATES = [
+const CATEGORY_CANDIDATES = [
+  "/api/admin/testimonial-categories",
+  "/api/testimonials/admin/categories",
+  "/api/admin/testimonials/categories",
+];
+
+const TESTIMONIAL_CANDIDATES = [
   "/api/admin/testimonials",
-  "/api/admin/Testimonials",
-  "/api/admin/testimonial",
-  "/api/admin/Testimonial",
+  "/api/testimonials/admin/list",
   "/api/testimonials/admin",
-  "/api/Testimonials/admin",
-  "/api/testimonial/admin",
-  "/api/Testimonial/admin"
 ];
 
-// Cache resolved endpoints to avoid repeated probing
-let resolvedPublicTestimonialRoot = null;
-let resolvedAdminTestimonialRoot = null;
+const SETTINGS_CANDIDATES = [
+  "/api/admin/testimonials/settings",
+  "/api/testimonials/admin/settings",
+];
+
+let resolvedDashboardStatsRoot = null;
+let resolvedCategoryRoot = null;
+let resolvedTestimonialRoot = null;
+let resolvedSettingsRoot = null;
 
 function getAuthHeaders(isFormData = false) {
   const token = getAuthToken() || localStorage.getItem("adminToken") || localStorage.getItem("token");
@@ -47,6 +53,7 @@ async function requestJson(urlOrPath, options = {}) {
   });
 
   const response = await fetch(toApiUrl(urlOrPath), {
+    cache: "no-store",
     ...options,
     headers,
   });
@@ -79,82 +86,262 @@ async function requestWithCandidates(candidates, options = {}, resolvedCacheSett
   throw lastError || new Error("All candidate endpoints failed.");
 }
 
-export async function getPublicTestimonials() {
-  if (resolvedPublicTestimonialRoot) {
-    try {
-      return await requestJson(`${resolvedPublicTestimonialRoot}/active`, { method: "GET" });
-    } catch (err) {
-      if (err.status !== 404 && err.status !== 405) throw err;
-      try {
-        return await requestJson(resolvedPublicTestimonialRoot, { method: "GET" });
-      } catch (err2) {
-        if (err2.status !== 404 && err2.status !== 405) throw err2;
-      }
-    }
-  }
+// ---------------------------------------------------------
+// 1. DASHBOARD STATISTICS
+// ---------------------------------------------------------
 
-  // Probe candidates with /active first
-  for (const root of PUBLIC_TESTIMONIAL_CANDIDATES) {
+export async function getTestimonialDashboardStats(params = {}) {
+  const queryParams = new URLSearchParams();
+  if (params.startDate) queryParams.append("startDate", params.startDate);
+  if (params.endDate) queryParams.append("endDate", params.endDate);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+  if (resolvedDashboardStatsRoot) {
     try {
-      const data = await requestJson(`${root}/active`, { method: "GET" });
-      resolvedPublicTestimonialRoot = root;
-      return data;
+      return await requestJson(`${resolvedDashboardStatsRoot}${queryString}`, { method: "GET" });
     } catch (err) {
       if (err.status !== 404 && err.status !== 405) throw err;
     }
   }
 
-  // Fallback to normal root candidates
+  const candidatesWithQuery = DASHBOARD_STATS_CANDIDATES.map(c => `${c}${queryString}`);
   return requestWithCandidates(
-    PUBLIC_TESTIMONIAL_CANDIDATES,
+    candidatesWithQuery,
     { method: "GET" },
-    (path) => { resolvedPublicTestimonialRoot = path; }
+    (path) => { resolvedDashboardStatsRoot = path.split("?")[0]; }
   );
 }
 
-export async function getAdminTestimonials() {
-  if (resolvedAdminTestimonialRoot) {
+// ---------------------------------------------------------
+// 2. TESTIMONIAL CATEGORIES MANAGEMENT
+// ---------------------------------------------------------
+
+export async function getAdminTestimonialCategories() {
+  if (resolvedCategoryRoot) {
     try {
-      return await requestJson(resolvedAdminTestimonialRoot, { method: "GET" });
+      return await requestJson(resolvedCategoryRoot, { method: "GET" });
     } catch (err) {
       if (err.status !== 404 && err.status !== 405) throw err;
     }
   }
 
   return requestWithCandidates(
-    ADMIN_TESTIMONIAL_CANDIDATES,
+    CATEGORY_CANDIDATES,
     { method: "GET" },
-    (path) => { resolvedAdminTestimonialRoot = path; }
+    (path) => { resolvedCategoryRoot = path; }
   );
 }
 
-export async function createAdminTestimonial(formData) {
-  const root = resolvedAdminTestimonialRoot || ADMIN_TESTIMONIAL_CANDIDATES[0];
+export async function createAdminTestimonialCategory(data) {
+  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
   return requestJson(root, {
     method: "POST",
-    body: formData,
+    body: JSON.stringify(data),
   });
 }
 
-export async function updateAdminTestimonial(id, formData) {
-  const root = resolvedAdminTestimonialRoot || ADMIN_TESTIMONIAL_CANDIDATES[0];
+export async function updateAdminTestimonialCategory(id, data) {
+  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
   return requestJson(`${root}/${id}`, {
     method: "PUT",
-    body: formData,
+    body: JSON.stringify(data),
   });
 }
 
-export async function deleteAdminTestimonial(id) {
-  const root = resolvedAdminTestimonialRoot || ADMIN_TESTIMONIAL_CANDIDATES[0];
+export async function deleteAdminTestimonialCategory(id) {
+  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
   return requestJson(`${root}/${id}`, {
     method: "DELETE",
   });
 }
 
-export async function toggleTestimonialStatus(id) {
-  const root = resolvedAdminTestimonialRoot || ADMIN_TESTIMONIAL_CANDIDATES[0];
-  return requestJson(`${root}/${id}/toggle-status`, {
+export async function toggleTestimonialCategoryStatus(id) {
+  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
+  try {
+    return await requestJson(`${root}/${id}/status`, {
+      method: "PATCH",
+    });
+  } catch (err) {
+    return await requestJson(`${root}/${id}/toggle-status`, {
+      method: "POST",
+    });
+  }
+}
+
+// ---------------------------------------------------------
+// 3. TESTIMONIALS MANAGEMENT
+// ---------------------------------------------------------
+
+export async function getAdminTestimonials(params = {}) {
+  const queryParams = new URLSearchParams();
+  if (params.status) queryParams.append("status", params.status);
+  if (params.categoryId) queryParams.append("categoryId", params.categoryId);
+  if (params.search) queryParams.append("search", params.search);
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+  if (resolvedTestimonialRoot) {
+    try {
+      return await requestJson(`${resolvedTestimonialRoot}${queryString}`, { method: "GET" });
+    } catch (err) {
+      if (err.status !== 404 && err.status !== 405) throw err;
+    }
+  }
+
+  const candidatesWithQuery = TESTIMONIAL_CANDIDATES.map(c => `${c}${queryString}`);
+  return requestWithCandidates(
+    candidatesWithQuery,
+    { method: "GET" },
+    (path) => { resolvedTestimonialRoot = path.split("?")[0]; }
+  );
+}
+
+export async function getPublicTestimonials() {
+  return getAdminTestimonials({ status: "Active" });
+}
+
+export async function createAdminTestimonial(formDataOrObj) {
+  const root = resolvedTestimonialRoot || TESTIMONIAL_CANDIDATES[0];
+  let body = formDataOrObj;
+  if (formDataOrObj && !(formDataOrObj instanceof FormData) && typeof formDataOrObj === "object") {
+    body = new FormData();
+    if (formDataOrObj.name || formDataOrObj.Name) body.append("Name", formDataOrObj.name || formDataOrObj.Name);
+    if (formDataOrObj.role || formDataOrObj.Role) body.append("Role", formDataOrObj.role || formDataOrObj.Role || "Traveler");
+    if (formDataOrObj.location || formDataOrObj.Location) body.append("Location", formDataOrObj.location || formDataOrObj.Location);
+    if (formDataOrObj.rating != null || formDataOrObj.Rating != null) body.append("Rating", String(formDataOrObj.rating != null ? formDataOrObj.rating : formDataOrObj.Rating));
+    if (formDataOrObj.comment || formDataOrObj.Comment || formDataOrObj.preview) body.append("Comment", formDataOrObj.comment || formDataOrObj.Comment || formDataOrObj.preview);
+    if (formDataOrObj.status || formDataOrObj.Status) body.append("Status", formDataOrObj.status || formDataOrObj.Status || "Active");
+    if (formDataOrObj.displayOrder != null || formDataOrObj.DisplayOrder != null || formDataOrObj.order != null) body.append("DisplayOrder", String(formDataOrObj.displayOrder ?? formDataOrObj.DisplayOrder ?? formDataOrObj.order ?? 1));
+    if (formDataOrObj.featured != null || formDataOrObj.Featured != null) body.append("Featured", String(Boolean(formDataOrObj.featured ?? formDataOrObj.Featured)));
+    if (formDataOrObj.categoryId != null || formDataOrObj.CategoryId != null) body.append("CategoryId", String(formDataOrObj.categoryId ?? formDataOrObj.CategoryId));
+    if (formDataOrObj.image || formDataOrObj.Image || formDataOrObj.imageFile) body.append("Image", formDataOrObj.image || formDataOrObj.Image || formDataOrObj.imageFile);
+  }
+
+  return requestJson(root, {
     method: "POST",
+    body,
   });
+}
+
+export async function updateAdminTestimonial(id, formDataOrObj) {
+  const root = resolvedTestimonialRoot || TESTIMONIAL_CANDIDATES[0];
+  let body = formDataOrObj;
+  if (formDataOrObj && !(formDataOrObj instanceof FormData) && typeof formDataOrObj === "object") {
+    body = new FormData();
+    if (formDataOrObj.name || formDataOrObj.Name) body.append("Name", formDataOrObj.name || formDataOrObj.Name);
+    if (formDataOrObj.role || formDataOrObj.Role) body.append("Role", formDataOrObj.role || formDataOrObj.Role || "Traveler");
+    if (formDataOrObj.location || formDataOrObj.Location) body.append("Location", formDataOrObj.location || formDataOrObj.Location);
+    if (formDataOrObj.rating != null || formDataOrObj.Rating != null) body.append("Rating", String(formDataOrObj.rating != null ? formDataOrObj.rating : formDataOrObj.Rating));
+    if (formDataOrObj.comment || formDataOrObj.Comment || formDataOrObj.preview) body.append("Comment", formDataOrObj.comment || formDataOrObj.Comment || formDataOrObj.preview);
+    if (formDataOrObj.status || formDataOrObj.Status) body.append("Status", formDataOrObj.status || formDataOrObj.Status || "Active");
+    if (formDataOrObj.displayOrder != null || formDataOrObj.DisplayOrder != null || formDataOrObj.order != null) body.append("DisplayOrder", String(formDataOrObj.displayOrder ?? formDataOrObj.DisplayOrder ?? formDataOrObj.order ?? 1));
+    if (formDataOrObj.featured != null || formDataOrObj.Featured != null) body.append("Featured", String(Boolean(formDataOrObj.featured ?? formDataOrObj.Featured)));
+    if (formDataOrObj.categoryId != null || formDataOrObj.CategoryId != null) body.append("CategoryId", String(formDataOrObj.categoryId ?? formDataOrObj.CategoryId));
+    if (formDataOrObj.image || formDataOrObj.Image || formDataOrObj.imageFile) body.append("Image", formDataOrObj.image || formDataOrObj.Image || formDataOrObj.imageFile);
+  }
+
+  return requestJson(`${root}/${id}`, {
+    method: "PUT",
+    body,
+  });
+}
+
+export async function toggleTestimonialStatus(id, newStatus = null, featured = null) {
+  const root = resolvedTestimonialRoot || TESTIMONIAL_CANDIDATES[0];
+  const payload = {};
+  if (newStatus) payload.status = newStatus;
+  if (featured != null) payload.featured = Boolean(featured);
+
+  try {
+    return await requestJson(`${root}/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    return await requestJson(`${root}/${id}/toggle-status`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+}
+
+export async function deleteAdminTestimonial(id) {
+  const root = resolvedTestimonialRoot || TESTIMONIAL_CANDIDATES[0];
+  return requestJson(`${root}/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------
+// 4. GLOBAL TESTIMONIAL SETTINGS
+// ---------------------------------------------------------
+
+export async function getTestimonialSettings() {
+  if (resolvedSettingsRoot) {
+    try {
+      return await requestJson(resolvedSettingsRoot, { method: "GET" });
+    } catch (err) {
+      if (err.status !== 404 && err.status !== 405) throw err;
+    }
+  }
+
+  return requestWithCandidates(
+    SETTINGS_CANDIDATES,
+    { method: "GET" },
+    (path) => { resolvedSettingsRoot = path; }
+  );
+}
+
+export async function updateTestimonialSettings(settingsData) {
+  const root = resolvedSettingsRoot || SETTINGS_CANDIDATES[0];
+  return requestJson(root, {
+    method: "PUT",
+    body: JSON.stringify(settingsData),
+  });
+}
+
+// ---------------------------------------------------------
+// 5. PUBLIC TESTIMONIAL SUBMISSION
+// ---------------------------------------------------------
+
+const PUBLIC_SUBMIT_CANDIDATES = [
+  "/api/testimonials",
+  "/api/public/testimonials",
+  "/api/testimonials/submit",
+];
+
+let resolvedPublicSubmitRoot = null;
+
+export async function submitPublicTestimonial(formDataOrObj) {
+  let body = formDataOrObj;
+  if (!(formDataOrObj instanceof FormData)) {
+    body = new FormData();
+    if (formDataOrObj.name || formDataOrObj.Name) body.append("Name", formDataOrObj.name || formDataOrObj.Name);
+    if (formDataOrObj.role || formDataOrObj.Role) body.append("Role", formDataOrObj.role || formDataOrObj.Role || "Traveler");
+    if (formDataOrObj.location || formDataOrObj.Location) body.append("Location", formDataOrObj.location || formDataOrObj.Location);
+    if (formDataOrObj.rating != null || formDataOrObj.Rating != null) body.append("Rating", String(formDataOrObj.rating != null ? formDataOrObj.rating : formDataOrObj.Rating));
+    if (formDataOrObj.comment || formDataOrObj.Comment) body.append("Comment", formDataOrObj.comment || formDataOrObj.Comment);
+    if (formDataOrObj.categoryId != null || formDataOrObj.CategoryId != null) body.append("CategoryId", String(formDataOrObj.categoryId != null ? formDataOrObj.categoryId : formDataOrObj.CategoryId));
+    if (formDataOrObj.image || formDataOrObj.Image) body.append("Image", formDataOrObj.image || formDataOrObj.Image);
+  }
+
+  if (resolvedPublicSubmitRoot) {
+    try {
+      return await requestJson(resolvedPublicSubmitRoot, {
+        method: "POST",
+        body,
+      });
+    } catch (err) {
+      if (err.status !== 404 && err.status !== 405) throw err;
+    }
+  }
+
+  return requestWithCandidates(
+    PUBLIC_SUBMIT_CANDIDATES,
+    {
+      method: "POST",
+      body,
+    },
+    (path) => { resolvedPublicSubmitRoot = path; }
+  );
 }
 

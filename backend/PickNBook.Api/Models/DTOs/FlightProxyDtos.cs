@@ -42,6 +42,13 @@ namespace PickNBook.Api.Models.DTOs
         public long TraceId { get; set; }
     }
 
+    public class FlightBookingDetailsProxyRequestDto
+    {
+        [JsonPropertyName("TraceId")]
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long TraceId { get; set; }
+    }
+
     public class FlightFareRuleProxyRequestDto
     {
         [JsonPropertyName("TraceId")]
@@ -145,12 +152,12 @@ namespace PickNBook.Api.Models.DTOs
 
     public class FlightTicketLCCProxyRequestDto
     {
-
         [JsonPropertyName("SrdvType")]
-        public string SrdvType { get; set; }
+        public string? SrdvType { get; set; } = "MixAPI";
 
         [JsonPropertyName("SrdvIndex")]
-        public string SrdvIndex { get; set; }
+        [JsonConverter(typeof(SafeStringConverter))]
+        public string? SrdvIndex { get; set; } = "1";
 
         [JsonPropertyName("TraceId")]
         [JsonConverter(typeof(SafeLongConverter))]
@@ -172,9 +179,11 @@ namespace PickNBook.Api.Models.DTOs
         public string? BookedByName { get; set; } = string.Empty;
 
         [JsonPropertyName("CustomerFare")]
+        [JsonConverter(typeof(SafeNullableDecimalConverter))]
         public decimal? CustomerFare { get; set; }
 
         [JsonPropertyName("ReturnCustomerFare")]
+        [JsonConverter(typeof(SafeNullableDecimalConverter))]
         public decimal? ReturnCustomerFare { get; set; }
 
         [JsonPropertyName("CouponCode")]
@@ -195,12 +204,12 @@ namespace PickNBook.Api.Models.DTOs
 
     public class FlightHoldGDSProxyRequestDto
     {
-
         [JsonPropertyName("SrdvType")]
-        public string SrdvType { get; set; }
+        public string? SrdvType { get; set; } = "MixAPI";
 
         [JsonPropertyName("SrdvIndex")]
-        public string SrdvIndex { get; set; }
+        [JsonConverter(typeof(SafeStringConverter))]
+        public string? SrdvIndex { get; set; } = "1";
 
         [JsonPropertyName("TraceId")]
         public string TraceId { get; set; }
@@ -226,12 +235,12 @@ namespace PickNBook.Api.Models.DTOs
 
     public class FlightTicketGDSProxyRequestDto
     {
-
         [JsonPropertyName("SrdvType")]
-        public string SrdvType { get; set; }
+        public string? SrdvType { get; set; } = "MixAPI";
 
         [JsonPropertyName("SrdvIndex")]
-        public string SrdvIndex { get; set; }
+        [JsonConverter(typeof(SafeStringConverter))]
+        public string? SrdvIndex { get; set; } = "1";
 
         [JsonPropertyName("TraceId")]
         public string TraceId { get; set; }
@@ -276,40 +285,45 @@ namespace PickNBook.Api.Models.DTOs
 
     public class FlightSendChangeProxyRequestDto
     {
-
         [JsonPropertyName("BookingId")]
-        public string BookingId { get; set; }
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long BookingId { get; set; }
 
         [JsonPropertyName("RequestType")]
-        public string RequestType { get; set; }
+        [JsonConverter(typeof(SafeIntConverter))]
+        public int RequestType { get; set; } = 2;
 
         [JsonPropertyName("CancellationType")]
-        public string CancellationType { get; set; }
+        [JsonConverter(typeof(SafeIntConverter))]
+        public int CancellationType { get; set; } = 3;
 
         [JsonPropertyName("Remarks")]
-        public string Remarks { get; set; }
+        public string Remarks { get; set; } = string.Empty;
+
+        [JsonPropertyName("ClientRefId")]
+        public string? ClientRefId { get; set; } = string.Empty;
 
         [JsonPropertyName("Sectors")]
         public List<ChangeRequestSectorDto> Sectors { get; set; } = new();
-
-        [JsonPropertyName("SrdvType")]
-        public string SrdvType { get; set; }
-
-        [JsonPropertyName("SrdvIndex")]
-        public string SrdvIndex { get; set; }
 
         [JsonPropertyName("TicketData")]
         public List<ChangeRequestTicketDataDto> TicketData { get; set; } = new();
 
         [JsonPropertyName("PNR")]
-        public string PNR { get; set; }
+        public string PNR { get; set; } = string.Empty;
+
+        [JsonPropertyName("SrdvType")]
+        public string? SrdvType { get; set; }
+
+        [JsonPropertyName("SrdvIndex")]
+        public string? SrdvIndex { get; set; }
     }
 
     public class FlightGetCancelStatusProxyRequestDto
     {
-
         [JsonPropertyName("ChangeRequestId")]
-        public string ChangeRequestId { get; set; }
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long ChangeRequestId { get; set; }
     }
 
     public class FlightGetCancellationChargesProxyRequestDto

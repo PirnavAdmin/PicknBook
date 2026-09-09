@@ -972,10 +972,8 @@ function BlogSubCategoryList() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: '20px' }}>
-                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                            No sub categories found
-                                        </div>
+                                    <td colSpan="7" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
+                                        Data not found
                                     </td>
                                 </tr>
                             )}

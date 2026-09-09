@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import adminFeaturedOffersService from "../../../services/adminFeaturedOffersService";
 import "./BusSearchHistory.css";
 import AdminPagination from "../../../components/AdminPagination";
 import { RefreshCw, AlertCircle } from "lucide-react";
@@ -102,7 +103,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const BUS_BOOKINGS_ROOT = "/api/BusBookings";
 const BUS_SEARCH_LOGS_ROOT = "/api/admin/bus-search-logs";
@@ -306,6 +307,22 @@ function pickFirst(source, keys, fallback = null) {
 }
 
 function normalizeBusSearchHistoryRecord(record, index = 0) {
+  const isGuest = Boolean(
+    pickFirst(record, ["isGuest", "IsGuest"], false) ||
+    (!pickFirst(record, ["userId", "UserId"]) && !pickFirst(record, ["customerId", "CustomerId"]))
+  );
+
+  const rawUserId = pickFirst(
+    record,
+    ["userId", "UserId", "customerId", "CustomerId", "userGuid", "UserGuid"],
+    null
+  );
+
+  const resolvedCustomerId =
+    rawUserId !== null && rawUserId !== undefined && String(rawUserId).trim()
+      ? String(rawUserId).trim()
+      : "0";
+
   const customerNameDirect = pickFirst(
     record,
     [
@@ -319,119 +336,70 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
       "Name",
       "fullName",
       "FullName",
-      "createdBy",
-      "CreatedBy",
-      "email",
-      "Email",
-      "customerEmail",
-      "CustomerEmail",
-      "userEmail",
-      "UserEmail",
     ],
     null
   );
 
-  let resolvedCustomerName = "No Login";
-  if (typeof customerNameDirect === "string" && customerNameDirect.trim()) {
-    resolvedCustomerName = customerNameDirect.trim();
-  } else if (record?.user && typeof record.user === "object") {
-    resolvedCustomerName =
-      record.user.fullName ||
-      record.user.FullName ||
-      record.user.userName ||
-      record.user.UserName ||
-      record.user.email ||
-      record.user.Email ||
-      "No Login";
-  } else if (record?.User && typeof record.User === "object") {
-    resolvedCustomerName =
-      record.User.FullName ||
-      record.User.fullName ||
-      record.User.UserName ||
-      record.User.userName ||
-      record.User.Email ||
-      record.User.email ||
-      "No Login";
-  }
+  const userOrGuestId = String(
+    pickFirst(
+      record,
+      ["userOrGuestId", "UserOrGuestId"],
+      isGuest ? `Guest` : `User #${resolvedCustomerId}`
+    ) || ""
+  );
 
-  const customerIdDirect = pickFirst(
+  const customerName =
+    customerNameDirect || userOrGuestId || (isGuest ? "Guest User" : "Logged User");
+
+  const searchDateUtc = pickFirst(
     record,
     [
-      "customerId",
-      "CustomerId",
-      "userId",
-      "UserId",
-      "createdById",
-      "CreatedById",
-      "userGuid",
-      "UserGuid",
+      "searchedAtIst",
+      "SearchedAtIst",
+      "searchedAtUtc",
+      "SearchedAtUtc",
+      "searchDateUtc",
+      "SearchDateUtc",
+      "createdAtUtc",
+      "CreatedAtUtc",
+      "searchDate",
+      "SearchDate",
+      "createdAt",
+      "CreatedAt",
+      "searchedAt",
+      "SearchedAt",
     ],
     null
   );
 
-  let resolvedCustomerId = "0";
-  if (customerIdDirect !== null && customerIdDirect !== undefined && String(customerIdDirect).trim()) {
-    resolvedCustomerId = String(customerIdDirect).trim();
-  } else if (record?.user && typeof record.user === "object") {
-    resolvedCustomerId = String(record.user.id || record.user.Id || record.user.userId || record.user.UserId || "0");
-  } else if (record?.User && typeof record.User === "object") {
-    resolvedCustomerId = String(record.User.Id || record.User.id || record.User.UserId || record.User.userId || "0");
-  }
+  const searchedAtIst = pickFirst(record, ["searchedAtIst", "SearchedAtIst"], null);
 
   return {
     id:
       pickFirst(
         record,
-        ["id", "Id", "searchId", "SearchId", "busSearchLogId", "BusSearchLogId", "logId", "LogId"],
+        ["id", "Id", "searchId", "SearchId", "busSearchLogId", "BusSearchLogId"],
         null
       ) || `bus-search-${index + 1}`,
-    searchDateUtc:
-      pickFirst(
-        record,
-        [
-          "searchDateUtc",
-          "SearchDateUtc",
-          "searchedAtUtc",
-          "SearchedAtUtc",
-          "createdAtUtc",
-          "CreatedAtUtc",
-          "createdDateUtc",
-          "CreatedDateUtc",
-          "searchDate",
-          "SearchDate",
-          "searchedAt",
-          "SearchedAt",
-          "searchedOn",
-          "SearchedOn",
-          "searchTime",
-          "SearchTime",
-          "createdAt",
-          "CreatedAt",
-          "createdDate",
-          "CreatedDate",
-          "timestamp",
-          "Timestamp",
-        ],
-        null
-      ) || null,
+    isGuest,
+    userId: rawUserId ? String(rawUserId) : null,
+    userOrGuestId,
+    customerName,
+    customerId: resolvedCustomerId,
+    searchDateUtc,
+    searchedAtIst,
     departDate:
       pickFirst(
         record,
         [
+          "journeyDate",
+          "JourneyDate",
           "departDate",
           "DepartDate",
           "departureDate",
           "DepartureDate",
-          "journeyDate",
-          "JourneyDate",
-          "dateOfJourney",
-          "DateOfJourney",
           "travelDate",
           "TravelDate",
-          "onwardDate",
-          "OnwardDate",
-          "tripDate",
-          "TripDate",
           "date",
           "Date",
         ],
@@ -447,18 +415,8 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
           "FromCityName",
           "sourceCity",
           "SourceCity",
-          "sourceCityName",
-          "SourceCityName",
-          "sourceName",
-          "SourceName",
-          "originCity",
-          "OriginCity",
-          "origin",
-          "Origin",
           "from",
           "From",
-          "source",
-          "Source",
         ],
         ""
       ) || ""
@@ -473,16 +431,8 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
           "ToCityName",
           "destinationCity",
           "DestinationCity",
-          "destinationCityName",
-          "DestinationCityName",
-          "destinationName",
-          "DestinationName",
-          "arrivalCity",
-          "ArrivalCity",
           "to",
           "To",
-          "destination",
-          "Destination",
         ],
         ""
       ) || ""
@@ -495,14 +445,8 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
           "FromCityCode",
           "sourceCityCode",
           "SourceCityCode",
-          "sourceCode",
-          "SourceCode",
           "fromCode",
           "FromCode",
-          "fromCityId",
-          "FromCityId",
-          "sourceId",
-          "SourceId",
         ],
         ""
       ) || ""
@@ -515,26 +459,11 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
           "ToCityCode",
           "destinationCityCode",
           "DestinationCityCode",
-          "destinationCode",
-          "DestinationCode",
           "toCode",
           "ToCode",
-          "toCityId",
-          "ToCityId",
-          "destinationId",
-          "DestinationId",
         ],
         ""
       ) || ""
-    ),
-    customerName: resolvedCustomerName,
-    customerId: resolvedCustomerId,
-    resultsCount: normalizeCount(
-      pickFirst(
-        record,
-        ["resultsCount", "ResultsCount", "resultCount", "ResultCount", "totalBuses", "TotalBuses", "busCount", "BusCount"],
-        0
-      )
     ),
     searchType: "Bus",
     raw: record,
@@ -550,28 +479,17 @@ function findFirstArrayPayload(value, depth = 0) {
     return null;
   }
 
-  const preferredKeys = [
-    "data",
-    "items",
-    "records",
-    "results",
-    "value",
-    "searchHistory",
-    "SearchHistory",
-    "busSearchHistory",
-    "BusSearchHistory",
-    "busSearchHistories",
-    "BusSearchHistories",
-    "searches",
-    "Searches",
-    "list",
-    "List",
+  const directArrayCandidates = [
+    value.data,
+    value.items,
+    value.records,
+    value.results,
+    value.value,
   ];
 
-  for (const key of preferredKeys) {
-    const nestedArray = findFirstArrayPayload(value[key], depth + 1);
-    if (nestedArray) {
-      return nestedArray;
+  for (const candidate of directArrayCandidates) {
+    if (Array.isArray(candidate)) {
+      return candidate;
     }
   }
 
@@ -676,6 +594,7 @@ async function requestJson(urlOrPath, options = {}) {
 
   const url = toAbsoluteUrl(urlOrPath);
   const response = await fetch(url, {
+    cache: "no-store",
     ...options,
     headers,
   });
@@ -695,6 +614,32 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
+const CANDIDATE_BASE_URLS = [
+  "",
+  "http://localhost:7147",
+  "https://localhost:7147",
+  "http://localhost:7179",
+  "https://localhost:7179",
+  "https://satin-eastcoast-musky.ngrok-free.dev"
+];
+
+const CANDIDATE_ENDPOINTS = [
+  BUS_SEARCH_LOGS_ROOT,
+  "/api/admin/bus/searches",
+  "/api/BusSearchLogs",
+  "/api/admin/bus/search-history",
+  "/api/admin/bus/bus-search-history",
+  "/api/admin/bus-search-history",
+  "/api/BusSearchHistory",
+  "/api/BusSearchHistories",
+  `${BUS_BOOKINGS_ROOT}/admin/search-history`,
+  `${BUS_BOOKINGS_ROOT}/admin/searches`,
+  `${BUS_BOOKINGS_ROOT}/admin/bus-search-history`,
+  `${BUS_BOOKINGS_ROOT}/search-history`,
+  `${BUS_BOOKINGS_ROOT}/searches`,
+  `${BUS_BOOKINGS_ROOT}/bus-search-history`,
+];
+
 async function listAdminBusSearchHistory({
   query,
   customerName,
@@ -709,74 +654,36 @@ async function listAdminBusSearchHistory({
   if (fromDate && String(fromDate).trim()) queryParams.fromDate = String(fromDate).trim();
   if (toDate && String(toDate).trim()) queryParams.toDate = String(toDate).trim();
 
-  try {
-    const response = await adminFeaturedOffersService.get(BUS_SEARCH_LOGS_ROOT, {
-      params: queryParams,
-    });
-    const records = extractArrayPayload(response?.data);
-
-    if (records.length > 0) {
-      return records.map((record, index) =>
-        normalizeBusSearchHistoryRecord(record, index)
-      );
-    }
-
-    if (Array.isArray(records)) {
-      return [];
-    }
-  } catch (error) {
-    if (!shouldTryNextSearchHistoryEndpoint(error)) {
-      throw error;
-    }
-  }
-
-  const candidateEndpoints = [
-    BUS_SEARCH_LOGS_ROOT,
-    "/api/BusSearchLogs",
-    "/api/admin/bus/search-history",
-    "/api/admin/bus/searches",
-    "/api/admin/bus/bus-search-history",
-    "/api/admin/bus-search-history",
-    "/api/BusSearchHistory",
-    "/api/BusSearchHistories",
-    `${BUS_BOOKINGS_ROOT}/admin/search-history`,
-    `${BUS_BOOKINGS_ROOT}/admin/searches`,
-    `${BUS_BOOKINGS_ROOT}/admin/bus-search-history`,
-    `${BUS_BOOKINGS_ROOT}/search-history`,
-    `${BUS_BOOKINGS_ROOT}/searches`,
-    `${BUS_BOOKINGS_ROOT}/bus-search-history`,
-  ];
-
   let lastError = null;
-  let emptyRecords = null;
 
-  for (const endpoint of candidateEndpoints) {
-    const url = buildUrl(endpoint, queryParams);
+  for (const endpoint of CANDIDATE_ENDPOINTS) {
+    for (const baseUrl of CANDIDATE_BASE_URLS) {
+      const fullPath = baseUrl
+        ? `${baseUrl.replace(/\/+$/, "")}${endpoint}`
+        : endpoint;
 
-    try {
-      const payload = await requestJson(url, { method: "GET" });
-      if (isLikelyHtmlResponse(payload)) {
-        throw new Error(payload);
+      const url = buildUrl(fullPath, queryParams);
+
+      try {
+        const payload = await requestJson(url, { method: "GET" });
+        if (isLikelyHtmlResponse(payload)) {
+          throw new Error("Received HTML response page");
+        }
+        const records = extractArrayPayload(payload);
+        if (Array.isArray(records) && records.length > 0) {
+          return records.map((record, index) =>
+            normalizeBusSearchHistoryRecord(record, index)
+          );
+        }
+        if (Array.isArray(records)) {
+          return [];
+        }
+      } catch (error) {
+        lastError = error;
+        if (!shouldTryNextSearchHistoryEndpoint(error)) {
+          // Fall through candidate loop
+        }
       }
-      const records = extractArrayPayload(payload);
-      if (records.length > 0) {
-        return records.map((record, index) =>
-          normalizeBusSearchHistoryRecord(record, index)
-        );
-      }
-
-      if (Array.isArray(records)) {
-        return [];
-      }
-
-      emptyRecords = records;
-    } catch (error) {
-      lastError = error;
-      if (shouldTryNextSearchHistoryEndpoint(error)) {
-        continue;
-      }
-
-      throw error;
     }
   }
 
@@ -784,7 +691,7 @@ async function listAdminBusSearchHistory({
     throw lastError;
   }
 
-  return emptyRecords || [];
+  return [];
 }
 
 function parseDateValue(value) {
@@ -808,114 +715,70 @@ function hasTimezoneSuffix(value) {
   return /(?:z|[+-]\d{2}:?\d{2})$/i.test(String(value || "").trim());
 }
 
-function normalizeDateTimeText(value) {
+function parseUtcDate(value) {
   const text = normalizeText(value, "");
   if (!text) {
-    return "";
+    return new Date("");
   }
 
-  const ddMmYyyyMatch = text.match(/^(\d{2})[-/](\d{2})[-/](\d{4})(.*)$/);
-  if (ddMmYyyyMatch) {
-    const [, day, month, year, timePart] = ddMmYyyyMatch;
-    const normalizedTime = normalizeText(timePart, "").replace(/^\s+/, "T");
-    return `${year}-${month}-${day}${normalizedTime}`;
+  if (text.includes(":") && !hasTimezoneSuffix(text)) {
+    return new Date(`${text.replace(" ", "T")}Z`);
   }
 
-  return text;
+  const parsed = parseDateValue(text);
+  return parsed || new Date(text);
 }
 
-function parseUtcDateValue(value) {
-  const text = normalizeDateTimeText(value);
-  if (!text) {
-    return null;
-  }
-
-  const hasTimeComponent = /[T\s]\d{1,2}:\d{2}/.test(text);
-  const utcText = hasTimeComponent && !hasTimezoneSuffix(text) ? `${text}Z` : text;
-  const parsed = new Date(utcText);
-
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+function toDateValue(value) {
+  const parsed = parseUtcDate(value);
+  return Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
 }
 
-const toDateValue = (value) => {
-  const parsed = parseDateValue(value);
-  return parsed ? parsed.getTime() : Number.NaN;
-};
-
-const toSearchDateValue = (value) => {
-  const parsed = parseUtcDateValue(value);
-  return parsed ? parsed.getTime() : Number.NaN;
-};
-
-const formatSearchDate = (value) => {
-  const parsed = parseUtcDateValue(value);
-  if (!parsed) {
+function formatSearchDate(value) {
+  const parsed = parseUtcDate(value);
+  if (Number.isNaN(parsed.getTime())) {
     return "--";
   }
-  const day = String(parsed.getUTCDate()).padStart(2, '0');
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-  const year = parsed.getUTCFullYear();
-  let hours = parsed.getUTCHours();
-  const minutes = String(parsed.getUTCMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-  const strHours = String(hours).padStart(2, '0');
 
-  return `${day}-${month}-${year}, ${strHours}:${minutes} ${ampm}`;
-};
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  }).replace(/\//g, "-");
+}
 
-const formatDepartDate = (value) => {
+function formatDepartDate(value) {
   const parsed = parseDateValue(value);
-  if (!parsed) {
-    return "--";
+  if (!parsed || Number.isNaN(parsed.getTime())) {
+    return normalizeText(value, "--");
   }
-  const day = String(parsed.getDate()).padStart(2, '0');
-  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
   const year = parsed.getFullYear();
-
   return `${day}-${month}-${year}`;
-};
+}
 
 function mapLocalSearchRecord(record, index = 0) {
-  return {
-    id: record?.id || `local-search-${index + 1}`,
-    searchDateUtc: record?.searchDateUtc || null,
-    departDate: record?.departDate || null,
-    fromCity: normalizeText(record?.fromCity, ""),
-    toCity: normalizeText(record?.toCity, ""),
-    fromCityCode: normalizeText(record?.fromCityCode, ""),
-    toCityCode: normalizeText(record?.toCityCode, ""),
-    customerName: normalizeText(record?.customerName, "No Login"),
-    customerId: normalizeText(record?.customerId, "0"),
-    searchType: "Bus",
+  return normalizeBusSearchHistoryRecord({
+    ...record,
+    id: record?.id || `local-bus-search-${index + 1}`,
     isLocalFallback: true,
-  };
+  }, index);
 }
 
 function mergeSearchHistory(apiRecords, localRecords) {
   const byKey = new Map();
 
   [...apiRecords, ...localRecords].forEach((record, index) => {
-    const normalizedRecord = {
-      id: record?.id || `search-row-${index + 1}`,
-      searchDateUtc: record?.searchDateUtc || null,
-      departDate: record?.departDate || null,
-      fromCity: normalizeText(record?.fromCity, ""),
-      toCity: normalizeText(record?.toCity, ""),
-      fromCityCode: normalizeText(
-        record?.fromCityCode || record?.fromCode || record?.fromCityId,
-        ""
-      ),
-      toCityCode: normalizeText(
-        record?.toCityCode || record?.toCode || record?.toCityId,
-        ""
-      ),
-      customerName: normalizeText(record?.customerName, "No Login"),
-      customerId: normalizeText(record?.customerId || record?.userId, "0"),
-      searchType: "Bus",
-      isLocalFallback: Boolean(record?.isLocalFallback),
-    };
+    const normalizedRecord = normalizeBusSearchHistoryRecord(record, index);
+    if (record?.isLocalFallback) {
+      normalizedRecord.isLocalFallback = true;
+    }
 
     const key = normalizedRecord.id ? String(normalizedRecord.id) : `search-row-${index + 1}`;
     if (!byKey.has(key)) {
@@ -924,8 +787,8 @@ function mergeSearchHistory(apiRecords, localRecords) {
   });
 
   return Array.from(byKey.values()).sort((a, b) => {
-    const left = toSearchDateValue(a.searchDateUtc);
-    const right = toSearchDateValue(b.searchDateUtc);
+    const left = toDateValue(a.searchDateUtc);
+    const right = toDateValue(b.searchDateUtc);
     return right - left;
   });
 }
@@ -936,39 +799,33 @@ function buildSegmentLabel(record) {
   const fromCode = normalizeText(record.fromCityCode, "");
   const toCode = normalizeText(record.toCityCode, "");
 
-  const sourceLabel = fromCode ? `${fromPart} (${fromCode})` : fromPart;
-  const destinationLabel = toCode ? `${toPart} (${toCode})` : toPart;
+  const sourceLabel = fromCode && fromCode !== fromPart ? `${fromPart} (${fromCode})` : fromPart;
+  const destinationLabel = toCode && toCode !== toPart ? `${toPart} (${toCode})` : toPart;
 
   return `${sourceLabel} \u27A4 ${destinationLabel}`;
 }
 
 function buildCustomerLabel(record) {
-  const name = normalizeText(record?.customerName, "");
-  const id = normalizeText(record?.customerId, "");
-  const hasName = name && name.toLowerCase() !== "no login";
-  const hasId = id && id !== "0";
+  if (record.isGuest) {
+    return record.userOrGuestId || "Guest User";
+  }
 
-  if (hasName && hasId && name !== id) {
+  const name = normalizeText(record.customerName, "");
+  const id = normalizeText(record.userId || record.customerId, "");
+  if (name && id && id !== "0") {
     return `${name} (${id})`;
   }
 
-  if (hasName) {
-    return name;
-  }
-
-  if (hasId) {
-    return id;
-  }
-
-  return "No Login";
+  return name || (id ? `User #${id}` : "Logged User");
 }
 
-export default function AdminSearchHistoryPage() {
+export default function AdminBusSearchHistoryPage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [historyRows, setHistoryRows] = useState([]);
   const [deletedRecordIds, setDeletedRecordIds] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
@@ -992,21 +849,19 @@ export default function AdminSearchHistoryPage() {
         limit: 500,
       });
     } catch (error) {
-      apiError = normalizeText(error?.message, "Unable to load search history.");
+      apiError = normalizeText(error?.message, "Unable to load bus search history.");
     }
 
     const localRows = apiError
       ? readSearchHistoryEntries({ searchType: "Bus" }).map((record, index) =>
-        mapLocalSearchRecord(record, index)
-      )
+          mapLocalSearchRecord(record, index)
+        )
       : [];
     const mergedRows = mergeSearchHistory(apiRows, localRows);
     setHistoryRows(mergedRows);
 
     if (apiError && mergedRows.length > 0) {
-      setInfoMessage(
-        "Unable to load live search history. Showing local search history backup."
-      );
+      setInfoMessage("Unable to load live search history. Showing local search history backup.");
     } else if (apiError) {
       setErrorMessage(apiError);
     }
@@ -1037,25 +892,31 @@ export default function AdminSearchHistoryPage() {
       }
 
       if (queryValue) {
-        const searchText = `${record.fromCity} ${record.toCity} ${record.customerName} ${record.customerId}`.toLowerCase();
+        const searchText = `${record.id} ${record.fromCity} ${record.toCity} ${record.customerName} ${record.userOrGuestId}`.toLowerCase();
         if (!searchText.includes(queryValue)) {
           return false;
         }
       }
 
       if (customerNameValue) {
-        const customerText = `${record.customerName} ${record.customerId}`.toLowerCase();
+        const customerText = `${record.customerName} ${record.userOrGuestId} ${record.customerId}`.toLowerCase();
         if (!customerText.includes(customerNameValue)) {
           return false;
         }
       }
 
       const departValue = toDateValue(record.departDate);
-      if (Number.isFinite(fromDateValue) && (!Number.isFinite(departValue) || departValue < fromDateValue)) {
+      if (
+        Number.isFinite(fromDateValue) &&
+        (!Number.isFinite(departValue) || departValue < fromDateValue)
+      ) {
         return false;
       }
 
-      if (Number.isFinite(toDateValueMs) && (!Number.isFinite(departValue) || departValue > toDateValueMs)) {
+      if (
+        Number.isFinite(toDateValueMs) &&
+        (!Number.isFinite(departValue) || departValue > toDateValueMs)
+      ) {
         return false;
       }
 
@@ -1071,6 +932,7 @@ export default function AdminSearchHistoryPage() {
   const applyFilters = () => {
     setFilters(draftFilters);
     setIsFiltersOpen(false);
+    setActivePage(1);
   };
 
   const clearFilters = () => {
@@ -1078,17 +940,30 @@ export default function AdminSearchHistoryPage() {
     setFilters(DEFAULT_FILTERS);
     setDeletedRecordIds([]);
     setIsFiltersOpen(false);
+    setActivePage(1);
   };
 
   const handleExport = () => {
-    const headers = ["S.No", "Search Date", "Depart Date", "Segment", "Customer / User"];
+    const headers = [
+      "Log ID",
+      "User / Guest ID",
+      "User Type",
+      "User ID",
+      "From City",
+      "To City",
+      "Journey Date",
+      "Search Date (IST)"
+    ];
     const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-    const rows = filteredRows.map((record, index) => [
-      index + 1,
-      formatSearchDate(record.searchDateUtc),
+    const rows = filteredRows.map((record) => [
+      normalizeText(record.id, "--"),
+      normalizeText(record.userOrGuestId, "Guest"),
+      record.isGuest ? "Guest" : "Registered User",
+      normalizeText(record.userId, "--"),
+      normalizeText(record.fromCity, "--"),
+      normalizeText(record.toCity, "--"),
       formatDepartDate(record.departDate),
-      buildSegmentLabel(record),
-      buildCustomerLabel(record),
+      formatSearchDate(record.searchDateUtc),
     ]);
 
     const csvBody = [
@@ -1124,57 +999,6 @@ export default function AdminSearchHistoryPage() {
     setInfoMessage("Visible search records removed from this view.");
   };
 
-  if (errorMessage) {
-    return (
-      <section className="admin-b2c-page admin-search-history-page">
-        <header className="admin-b2c-header admin-search-history-header">
-          <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
-            <span style={{ color: "#A51C49" }}>B2C Bus </span>
-            <span style={{ color: "black" }}>Search List</span>
-          </h1>
-        </header>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '80px 20px',
-          background: 'var(--panel)',
-          borderRadius: '12px',
-          border: '1px solid var(--border)',
-          marginTop: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={20} />
-            <span>Network Error</span>
-          </div>
-          <button 
-            type="button" 
-            onClick={() => loadSearchHistory(filters)}
-            style={{
-              background: '#A41B48',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
-              transition: 'all 0.2s'
-            }}
-            title="Retry Connection"
-          >
-            <RefreshCw size={18} />
-          </button>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="admin-b2c-page admin-search-history-page">
       <header className="admin-b2c-header admin-search-history-header">
@@ -1187,7 +1011,7 @@ export default function AdminSearchHistoryPage() {
       <div className="admin-toolbar-row admin-search-history-toolbar">
         <div className="admin-chip-row">
           <span className="admin-chip admin-search-history-chip">
-            Total Records {filteredRows.length}
+            Total Records - {filteredRows.length}
           </span>
         </div>
 
@@ -1278,7 +1102,7 @@ export default function AdminSearchHistoryPage() {
       <section className="admin-search-history-table-shell">
         <header className="admin-search-history-table-head">
           <span>S.No</span>
-          <span>Search Date</span>
+          <span>Search Date (IST)</span>
           <span>Depart Date</span>
           <span>Segment</span>
           <span>Customer / User</span>
@@ -1292,6 +1116,8 @@ export default function AdminSearchHistoryPage() {
               <article
                 key={`${row.id}-${row.searchDateUtc}-${index}`}
                 className="admin-search-history-row"
+                style={{ cursor: "pointer" }}
+                onClick={() => setSelectedRecord(row)}
               >
                 <div className="admin-search-history-cell admin-cell-centered">
                   <strong>{startIndex + index + 1}</strong>
@@ -1306,7 +1132,21 @@ export default function AdminSearchHistoryPage() {
                   <strong>{buildSegmentLabel(row)}</strong>
                 </div>
                 <div className="admin-search-history-cell">
-                  <strong>{buildCustomerLabel(row)}</strong>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
+                    <span
+                      style={{
+                        padding: "1px 6px",
+                        borderRadius: "4px",
+                        fontSize: "0.72rem",
+                        fontWeight: 600,
+                        backgroundColor: row.isGuest ? "#fef3c7" : "#e0f2fe",
+                        color: row.isGuest ? "#92400e" : "#075985",
+                      }}
+                    >
+                      {row.isGuest ? "Guest" : "User"}
+                    </span>
+                    <strong>{row.userOrGuestId || buildCustomerLabel(row)}</strong>
+                  </div>
                 </div>
               </article>
             ))}
@@ -1326,7 +1166,97 @@ export default function AdminSearchHistoryPage() {
           />
         )}
       </section>
+
+      {selectedRecord ? (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: "16px",
+          }}
+          onClick={() => setSelectedRecord(null)}
+        >
+          <article
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              width: "min(560px, 95vw)",
+              padding: "20px",
+              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#0f172a" }}>Bus Search Log #{selectedRecord.id}</h3>
+                <small style={{ color: "#64748b" }}>{selectedRecord.userOrGuestId}</small>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRecord(null)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  background: "#f8fafc",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                Close
+              </button>
+            </header>
+
+            <section style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px" }}>
+              <div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>User Type</span>
+                <div style={{ marginTop: "4px" }}>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      backgroundColor: selectedRecord.isGuest ? "#fef3c7" : "#e0f2fe",
+                      color: selectedRecord.isGuest ? "#92400e" : "#075985",
+                    }}
+                  >
+                    {selectedRecord.isGuest ? "Guest User" : "Registered User"}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>User / Guest ID</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{selectedRecord.userOrGuestId || "N/A"}</p>
+              </div>
+              <div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Route Segment</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{buildSegmentLabel(selectedRecord)}</p>
+              </div>
+              <div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Journey Date</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{formatDepartDate(selectedRecord.departDate)}</p>
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Search Timestamp (IST)</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{formatSearchDate(selectedRecord.searchDateUtc)}</p>
+              </div>
+              <div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Data Source</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{selectedRecord.isLocalFallback ? "Local Backup" : "Live Backend API"}</p>
+              </div>
+            </section>
+          </article>
+        </div>
+      ) : null}
     </section>
   );
 }
-

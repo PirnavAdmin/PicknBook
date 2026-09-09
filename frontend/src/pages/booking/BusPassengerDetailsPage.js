@@ -13,6 +13,7 @@ import {
 import { isTokenExpired } from "../../services/authSession";
 import { navigateWithAuth, isUserAuthenticated } from "../../utils/authNavigation";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
+import { getWalletSummary } from "../../services/walletService";
 import {
   getBusPricingPreview,
   listAvailableBusCoupons,
@@ -448,8 +449,15 @@ export default function BusPassengerDetailsPage() {
   const bus = flowState.bus || null;
   const searchContext = flowState.searchContext || {};
   const busId = bus?.tripId || bus?.traceId || bus?.id || bus?.resultIndex || flowState.bus?.id || flowState.bus?.traceId;
-  // Always required for SRDV upstream Block & Booking API validation
-  const isIdProofRequired = true;
+  const idProofRequiredValue =
+    bus?.idProofRequired ??
+    bus?.IdProofRequired ??
+    searchContext?.idProofRequired ??
+    searchContext?.IdProofRequired;
+  const isIdProofRequired =
+    idProofRequiredValue === true ||
+    idProofRequiredValue === 1 ||
+    ["true", "1", "yes"].includes(String(idProofRequiredValue || "").trim().toLowerCase());
   const selectedSeats = flowState.selectedSeats || [];
   const boardingPoint = flowState.boardingPoint || null;
   const droppingPoint = flowState.droppingPoint || null;
@@ -694,6 +702,8 @@ export default function BusPassengerDetailsPage() {
   const [formError, setFormError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] = useState(null);
+  const [walletSummary, setWalletSummary] = useState(null);
+  const [useWallet, setUseWallet] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formErrorList, setFormErrorList] = useState([]);
@@ -701,6 +711,21 @@ export default function BusPassengerDetailsPage() {
   const [copiedCode, setCopiedCode] = useState(null);
   const featuredOffersScrollerRef = useRef(null);
   const couponScrollerRef = useRef(null);
+
+  useEffect(() => {
+    if (isAgent) return undefined;
+    let isMounted = true;
+    getWalletSummary()
+      .then((summary) => {
+        if (isMounted) setWalletSummary(summary);
+      })
+      .catch(() => {
+        if (isMounted) setWalletSummary(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isAgent]);
 
 
 
@@ -770,6 +795,12 @@ export default function BusPassengerDetailsPage() {
   }, []);
 
   const totalAfterDiscount = Number(fareSummary.grandTotal) || 0;
+  const walletBalance = Number(walletSummary?.balance ?? walletSummary?.availableBalance ?? 0) || 0;
+  const walletStatus = walletSummary?.walletStatus || walletSummary?.status || "Inactive";
+  const walletAppliedAmount = useWallet && walletStatus === "Active"
+    ? Math.min(walletBalance, totalAfterDiscount)
+    : 0;
+  const gatewayPayableAmount = Math.max(0, totalAfterDiscount - walletAppliedAmount);
 
   const loadPricingPreview = async (
     { selectedFeaturedOfferId = null, promotionId = null, couponCode = null } = {}
@@ -1755,6 +1786,8 @@ export default function BusPassengerDetailsPage() {
       basePricingPreview,
       agreedToFare,
       payableAmount: Number(fareSummary.grandTotal) || totalAfterDiscount,
+      walletAppliedAmount,
+      gatewayPayableAmount,
       fareSummary,
       blockKey,
       boardingPointName: String(flowState.boardingPoint?.name || ""),
@@ -2151,11 +2184,6 @@ export default function BusPassengerDetailsPage() {
                   <span className="field-error-text" style={{ marginTop: '2px' }}>{errors.agreedToFare}</span>
                 )}
 
-                <div className="ack-pay-strip">
-                  <span>Travel....</span>
-                  <small>VISA Mastercard RuPay UPI</small>
-                </div>
-
                 {formError && (
                   <div className="form-error-summary-box">
                     <div className="error-summary-header">
@@ -2271,6 +2299,34 @@ export default function BusPassengerDetailsPage() {
                       <span>Grand Total</span>
                       <strong>{formatCurrency(fareSummary.grandTotal)}</strong>
                     </div>
+                    <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={useWallet}
+                        onChange={(event) => setUseWallet(event.target.checked)}
+                        disabled={!walletSummary || walletStatus !== "Active" || walletBalance <= 0}
+                        style={{ width: "18px", height: "18px", accentColor: "var(--flow-primary, #dc1e26)" }}
+                      />
+                      <span>
+                        Use PickNBook Wallet
+                        <small style={{ display: "block", color: "#66757b", marginTop: "3px" }}>
+                          Available: {formatCurrency(walletBalance)}
+                          {walletStatus !== "Active" ? ` (${walletStatus})` : ""}
+                        </small>
+                      </span>
+                    </label>
+                    {useWallet && walletAppliedAmount > 0 && (
+                      <>
+                        <div>
+                          <span>Wallet Applied</span>
+                          <strong>(-) {formatCurrency(walletAppliedAmount)}</strong>
+                        </div>
+                        <div className="grand-total">
+                          <span>Payable Online</span>
+                          <strong>{formatCurrency(gatewayPayableAmount)}</strong>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -2489,7 +2545,12 @@ export default function BusPassengerDetailsPage() {
             if (res.paymentMethod === "Wallet" || res.paymentMethod === "Agent Wallet") {
               try {
                 // Attach the payment method to the payload so backend can debit properly
-                const bookPayload = { ...checkoutPayload, paymentMethod: res.paymentMethod };
+                const bookPayload = {
+                  ...checkoutPayload,
+                  paymentMethod: res.paymentMethod,
+                  walletAppliedAmount: Number(res.walletAppliedAmount || 0),
+                  gatewayPayableAmount: Number(res.gatewayPayableAmount || 0),
+                };
                 const bookRes = await bookBusProxy(bookPayload);
                 
                 // On success, bookRes should have { Reservation, Bus, Passengers, Response (ticket) }

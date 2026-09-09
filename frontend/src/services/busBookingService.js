@@ -2067,6 +2067,8 @@ export function buildBusPayload(payload) {
     seats: Number(payload.seats || passengersPayload.length || 1),
     promotionId: finalFeaturedOfferId ? null : (payload.promotionId ? Number(payload.promotionId) : null),
     selectedFeaturedOfferId: finalFeaturedOfferId ? Number(finalFeaturedOfferId) : null,
+    walletAppliedAmount: Number(payload.walletAppliedAmount || payload.WalletAppliedAmount || 0),
+    gatewayPayableAmount: Number(payload.gatewayPayableAmount || payload.GatewayPayableAmount || 0),
     passengers: passengersPayload,
     paymentMethod: String(payload.paymentMethod || "")
   };

@@ -24,7 +24,11 @@ const getProfitClassName = (profit) =>
 const DEFAULT_FILTERS = {
   status: "all",
   bookingReference: "",
+  passengerName: "",
   passengerPhone: "",
+  tripType: "all",
+  fromCity: "",
+  toCity: "",
   fromDate: "",
   toDate: "",
 };
@@ -54,7 +58,7 @@ const formatDateCell = (value) => {
 };
 
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
@@ -381,6 +385,7 @@ function normalizeFlightBookingRecord(record) {
       ],
       null
     ),
+    pnr: String(pickFirst(record, ["pnr", "Pnr"], "") || pickFirst(record, ["bookingReference", "BookingReference"], "") || ""),
     travelClass: String(pickFirst(record, ["travelClass", "TravelClass"], "") || ""),
     adults: Number(pickFirst(record, ["adults", "Adults"], 0)) || 0,
     children: Number(pickFirst(record, ["children", "Children"], 0)) || 0,
@@ -389,9 +394,19 @@ function normalizeFlightBookingRecord(record) {
       Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], null)) ||
       seatsBookedFallback,
     totalPriceInr:
-      Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr", "customerFareInr", "CustomerFareInr"], 0)) || 0,
+      Number(pickFirst(record, ["customerFareInr", "CustomerFareInr", "totalPriceInr", "TotalPriceInr"], 0)) || 0,
+    customerFareInr:
+      Number(pickFirst(record, ["customerFareInr", "CustomerFareInr", "totalPriceInr", "TotalPriceInr"], 0)) || 0,
+    netFareInr:
+      Number(pickFirst(record, ["netFareInr", "NetFareInr"], 0)) || 0,
     status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
-    bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc", "bookingDateUtc", "BookingDateUtc"], null),
+    paymentStatus: pickFirst(record, ["paymentStatus", "PaymentStatus"], null),
+    refundStatus: pickFirst(record, ["refundStatus", "RefundStatus"], null),
+    fulfillmentStatus: pickFirst(record, ["fulfillmentStatus", "FulfillmentStatus"], null),
+    bookedBy: pickFirst(record, ["bookedBy", "BookedBy"], null),
+    bookedAtUtc: pickFirst(record, ["bookingDateUtc", "BookingDateUtc", "bookedAtUtc", "BookedAtUtc"], null),
+    bookingDateIst: pickFirst(record, ["bookingDateIst", "BookingDateIst"], null),
+    journeyDateIst: pickFirst(record, ["journeyDateIst", "JourneyDateIst"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
     cancellationReason: String(
       pickFirst(record, ["cancellationReason", "CancellationReason"], "") || ""
@@ -403,7 +418,7 @@ function normalizeFlightBookingRecord(record) {
       ""
     ),
     passengers,
-    profit: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], null)),
+    profit: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], 0)),
   };
 }
 
@@ -500,12 +515,12 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
-async function listAdminFlightBookings({ passengerPhone, status } = {}) {
+async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDate, limit = 200 } = {}) {
   const candidateEndpoints = [
+    "/api/admin/flight/bookings",
     "/api/SrdvFlightApi/bookings",
     "/api/flight/srdv/bookings",
     "/api/FlightBookings/bookings",
-    "/api/admin/flight/bookings",
     "/api/FlightBookings",
     "/api/flight/bookings"
   ];
@@ -516,6 +531,9 @@ async function listAdminFlightBookings({ passengerPhone, status } = {}) {
     const url = buildUrl(endpoint, {
       passengerPhone,
       status,
+      pnr,
+      journeyDate,
+      limit,
     });
 
     try {
@@ -541,7 +559,9 @@ async function listAdminFlightBookings({ passengerPhone, status } = {}) {
       const list = Array.isArray(parsed) ? parsed : [parsed];
       list.forEach((t) => {
         if (!t || typeof t !== "object") return;
-        const isFlight = t.ticketType === "flight" || t.fromCity || t.toCity || t.providerName?.toLowerCase().includes("flight") || t.airline;
+        const isHotel = t.bookingType === "hotel" || t.ticketType === "hotel" || Boolean(t.hotelName) || Boolean(t.roomType) || Boolean(t.hotelId);
+        if (isHotel) return;
+        const isFlight = t.ticketType === "flight" || t.providerName?.toLowerCase().includes("flight") || Boolean(t.airline) || Boolean(t.flightNumber) || Boolean(t.pnr);
         if (!isFlight) return;
         localBookings.push(normalizeFlightBookingRecord(t));
       });
@@ -726,6 +746,11 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     vehicleType: normalizeText(record?.travelClass, safeSourceType),
     fare,
     profit,
+    paymentStatus: record?.paymentStatus || null,
+    refundStatus: record?.refundStatus || null,
+    fulfillmentStatus: record?.fulfillmentStatus || null,
+    netFareInr: record?.netFareInr || null,
+    bookedBy: record?.bookedBy || null,
     cancellationReason: normalizeText(record?.cancellationReason, ""),
     cancelledAtValue: record?.cancelledAtUtc || null,
     raw: record,
@@ -804,6 +829,10 @@ export default function AdminFlightBookingListPage() {
       });
 
       const unifiedBookings = flightResults
+        .filter((record) => {
+          const isHotel = record?.bookingType === "hotel" || record?.ticketType === "hotel" || Boolean(record?.hotelName) || Boolean(record?.roomType) || Boolean(record?.hotelId);
+          return !isHotel;
+        })
         .map((record) => toUnifiedAdminBooking(record, "Flight"))
         .sort((first, second) => {
           const firstTime = toNumberDate(first.createdAtValue || first.createdAt);
@@ -844,18 +873,53 @@ export default function AdminFlightBookingListPage() {
       }
 
       if (filters.bookingReference) {
-        const query = filters.bookingReference.toLowerCase();
-        const lookup = `${booking.id} ${booking.pnr} ${booking.passengerName} ${booking.operator} ${booking.raw?.tripNumber || ""}`.toLowerCase();
+        const query = filters.bookingReference.trim().toLowerCase();
+        const lookup = `${booking.id} ${booking.pnr} ${booking.bookingReference || ""} ${booking.raw?.tripNumber || ""}`.toLowerCase();
         if (!lookup.includes(query)) {
           return false;
         }
       }
 
-      if (
-        filters.passengerPhone &&
-        !String(booking.passengerPhone || "").includes(filters.passengerPhone)
-      ) {
-        return false;
+      if (filters.passengerName) {
+        const query = filters.passengerName.trim().toLowerCase();
+        const mainName = String(booking.passengerName || "").toLowerCase();
+        const pNames = (booking.passengers || []).map((p) => String(p.fullName || "").toLowerCase()).join(" ");
+        if (!mainName.includes(query) && !pNames.includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.passengerPhone) {
+        const query = filters.passengerPhone.trim().toLowerCase();
+        if (!String(booking.passengerPhone || "").toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.tripType && filters.tripType !== "all") {
+        const query = filters.tripType.toLowerCase();
+        const bTripType = String(booking.vehicleType || booking.tripType || booking.raw?.tripType || "").toLowerCase();
+        if (query === "oneway" || query === "one way") {
+          if (bTripType.includes("round") || bTripType.includes("multi") || bTripType.includes("two")) return false;
+        } else if (query === "roundtrip" || query === "two way" || query === "round trip" || query === "twoway") {
+          if (!bTripType.includes("round") && !bTripType.includes("two") && !bTripType.includes("return")) return false;
+        } else if (query === "multicity" || query === "multi city") {
+          if (!bTripType.includes("multi")) return false;
+        }
+      }
+
+      if (filters.fromCity) {
+        const query = filters.fromCity.trim().toLowerCase();
+        if (!String(booking.from || "").toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.toCity) {
+        const query = filters.toCity.trim().toLowerCase();
+        if (!String(booking.to || "").toLowerCase().includes(query)) {
+          return false;
+        }
       }
 
       if (filters.fromDate) {
@@ -1004,11 +1068,13 @@ export default function AdminFlightBookingListPage() {
 
   return (
     <section className="admin-b2c-page admin-booking-page admin-flight-booking-page">
-      <header className="admin-b2c-header admin-flight-booking-header" style={{ marginBottom: "12px" }}>
-        <h1><span className="admin-heading-red">B2C Flight</span> Booking List</h1>
+      <header className="admin-b2c-header admin-flight-booking-header" style={{ marginBottom: "4px" }}>
+        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
+          <span className="admin-heading-red">B2C Flight</span> Booking List
+        </h1>
       </header>
 
-      <div className="admin-toolbar-row" style={{ marginBottom: "16px" }}>
+      <div className="admin-toolbar-row" style={{ marginBottom: "6px" }}>
         <div className="admin-chip-row">
           <span className="admin-chip">Today Booked: {todaySuccessCount}</span>
           <span className="admin-chip">Today Pending: {todayPendingCount}</span>
@@ -1017,7 +1083,7 @@ export default function AdminFlightBookingListPage() {
           </span>
         </div>
 
-        <div className="admin-actions-row admin-flight-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-actions-row admin-flight-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             type="button"
             onClick={() => setIsFiltersOpen((current) => !current)}
@@ -1026,19 +1092,21 @@ export default function AdminFlightBookingListPage() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
+              padding: '4px 14px',
+              height: '28px',
+              borderRadius: '7px',
               border: 'none',
               background: '#A51C49',
               color: '#ffffff',
-              fontSize: '0.88rem',
+              fontSize: '0.80rem',
               fontWeight: '600',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 6px rgba(165, 28, 73, 0.2)'
             }}
           >
-            <Filter size={15} />
+            <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
           <button
@@ -1049,19 +1117,21 @@ export default function AdminFlightBookingListPage() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
+              padding: '4px 14px',
+              height: '28px',
+              borderRadius: '7px',
               border: 'none',
               background: '#10b981',
               color: '#ffffff',
-              fontSize: '0.88rem',
+              fontSize: '0.80rem',
               fontWeight: '600',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.2)'
             }}
           >
-            <Download size={15} />
+            <Download size={13} />
             <span>Export</span>
           </button>
         </div>
@@ -1072,20 +1142,6 @@ export default function AdminFlightBookingListPage() {
       {isFiltersOpen ? (
         <section className="flight-ops-filters admin-ops-filters">
           <label>
-            <span>Status</span>
-            <select
-              value={draftFilters.status}
-              onChange={(event) => handleDraftChange("status", event.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="booked">Success</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </label>
-
-          <label>
             <span>Booking Ref / PNR</span>
             <input
               type="text"
@@ -1093,17 +1149,62 @@ export default function AdminFlightBookingListPage() {
               onChange={(event) =>
                 handleDraftChange("bookingReference", event.target.value)
               }
-              placeholder="Search booking id, PNR or passenger"
+              placeholder="Search Ref / PNR"
             />
           </label>
 
           <label>
-            <span>Passenger Phone</span>
+            <span>Passenger Name</span>
+            <input
+              type="text"
+              value={draftFilters.passengerName}
+              onChange={(event) =>
+                handleDraftChange("passengerName", event.target.value)
+              }
+              placeholder="Enter name"
+            />
+          </label>
+
+          <label>
+            <span>Mobile No</span>
             <input
               type="text"
               value={draftFilters.passengerPhone}
               onChange={(event) => handleDraftChange("passengerPhone", event.target.value)}
               placeholder="Enter mobile number"
+            />
+          </label>
+
+          <label>
+            <span>Trip Way</span>
+            <select
+              value={draftFilters.tripType}
+              onChange={(event) => handleDraftChange("tripType", event.target.value)}
+            >
+              <option value="all">All Ways</option>
+              <option value="oneway">One Way</option>
+              <option value="roundtrip">Round Trip (Two Way)</option>
+              <option value="multicity">Multi City</option>
+            </select>
+          </label>
+
+          <label>
+            <span>From City</span>
+            <input
+              type="text"
+              value={draftFilters.fromCity}
+              onChange={(event) => handleDraftChange("fromCity", event.target.value)}
+              placeholder="e.g. DEL"
+            />
+          </label>
+
+          <label>
+            <span>To City</span>
+            <input
+              type="text"
+              value={draftFilters.toCity}
+              onChange={(event) => handleDraftChange("toCity", event.target.value)}
+              placeholder="e.g. BOM"
             />
           </label>
 
@@ -1125,6 +1226,20 @@ export default function AdminFlightBookingListPage() {
             />
           </label>
 
+          <label>
+            <span>Status</span>
+            <select
+              value={draftFilters.status}
+              onChange={(event) => handleDraftChange("status", event.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="booked">Success</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+
           <div className="filters-actions">
             <button type="button" className="primary" onClick={applyFilters}>
               Apply Filter
@@ -1138,11 +1253,37 @@ export default function AdminFlightBookingListPage() {
 
       <section className="admin-table-shell admin-flight-table-shell">
         <header className="admin-table-head admin-flight-table-head">
-          <span>B. ID / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Booking ID">
+              B. ID
+              <span className="admin-tooltip-text">Booking ID</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Booking Date">
+              B.D.
+              <span className="admin-tooltip-text">Booking Date</span>
+            </span>
+          </span>
           <span>Name</span>
-          <span>Segment / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Source & Destination">
+              Segment
+              <span className="admin-tooltip-text">Source & Destination</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Journey Date">
+              Jd
+              <span className="admin-tooltip-text">Journey Date</span>
+            </span>
+          </span>
           <span>Time</span>
-          <span>PNR / Status</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Passenger Name Record">
+              PNR
+              <span className="admin-tooltip-text">Passenger Name Record</span>
+            </span>{" "}
+            / Status
+          </span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -1151,105 +1292,100 @@ export default function AdminFlightBookingListPage() {
 
         {isLoading ? (
           <div className="admin-table-empty">Loading flight bookings...</div>
+        ) : errorMessage ? (
+          <div className="admin-table-empty">Data not found</div>
         ) : filteredBookings.length ? (
-          <>
-            <div className="admin-table-body">
-              {paginatedBookings.map((booking, idx) => {
-                const statusClass = resolveFlightStatusClass(booking.status);
-                const flightNumber = safeValue(booking.raw?.tripNumber, "--");
-                const fare = Number(booking.fare) || 0;
-                const profit = Number(booking.profit) || 0;
-                const netFare = resolveNetFare(booking);
+          <div className="admin-table-body">
+            {paginatedBookings.map((booking, idx) => {
+              const statusClass = resolveFlightStatusClass(booking.status);
+              const flightNumber = safeValue(booking.raw?.tripNumber, "--");
+              const fare = Number(booking.fare) || 0;
+              const profit = Number(booking.profit) || 0;
 
-                return (
-                  <article
-                    key={`flight-${booking.id || idx}-${booking.createdAt || idx}-${idx}`}
-                    className="admin-table-row"
-                  >
-                    <div className="admin-table-cell" title={`Booking ID: ${safeValue(booking.id)}`}>
-                      <strong title={safeValue(booking.id)}>{safeValue(booking.id)}</strong>
-                      <div className="admin-date-badge">
-                        <span className="admin-calendar-emoji">🗓️</span>
-                        <span>{formatDateCell(booking.createdAt)}</span>
-                      </div>
+              return (
+                <article
+                  key={`flight-${booking.id || idx}-${booking.createdAt || idx}-${idx}`}
+                  className="admin-table-row"
+                >
+                  <div className="admin-table-cell" title={`Booking ID: ${safeValue(booking.id)}`}>
+                    <strong title={safeValue(booking.id)}>{safeValue(booking.id)}</strong>
+                    <div className="admin-date-badge">
+                      <span className="admin-calendar-emoji">🗓️</span>
+                      <span>{formatDateCell(booking.createdAt)}</span>
                     </div>
+                  </div>
 
-                    <div className="admin-table-cell admin-cell-centered" title={`Passenger: ${safeValue(booking.passengerName)} (${safeValue(booking.passengerPhone)})`}>
-                      <strong title={safeValue(booking.passengerName)}>{safeValue(booking.passengerName)}</strong>
-                      <small title={safeValue(booking.passengerPhone)}>{safeValue(booking.passengerPhone)}</small>
+                  <div className="admin-table-cell admin-cell-centered" title={`Passenger: ${safeValue(booking.passengerName)} (${safeValue(booking.passengerPhone)})`}>
+                    <strong title={safeValue(booking.passengerName)}>{safeValue(booking.passengerName)}</strong>
+                    <small title={safeValue(booking.passengerPhone)}>{safeValue(booking.passengerPhone)}</small>
+                  </div>
+
+                  <div className="admin-table-cell" title={`Segment: ${safeValue(booking.from)} → ${safeValue(booking.to)}`}>
+                    <div className="admin-route-segment">
+                      <span>{safeValue(booking.from)}</span>
+                      <span className="admin-segment-arrow">➔</span>
+                      <span>{safeValue(booking.to)}</span>
                     </div>
-
-                    <div className="admin-table-cell" title={`Segment: ${safeValue(booking.from)} → ${safeValue(booking.to)}`}>
-                      <div className="admin-route-segment">
-                        <span>{safeValue(booking.from)}</span>
-                        <span className="admin-segment-arrow">➔</span>
-                        <span>{safeValue(booking.to)}</span>
-                      </div>
-                      <div className="admin-date-badge">
-                        <span className="admin-calendar-emoji">🗓️</span>
-                        <span>{formatDateCell(booking.journeyDate)}</span>
-                      </div>
+                    <div className="admin-date-badge">
+                      <span className="admin-calendar-emoji">🗓️</span>
+                      <span>{formatDateCell(booking.journeyDate)}</span>
                     </div>
+                  </div>
 
-                    <div className="admin-table-cell admin-cell-centered" title={`Time: ${safeValue(booking.journeyTime)}`}>
-                      <strong title={safeValue(booking.journeyTime)}>{safeValue(booking.journeyTime) || "--:--"}</strong>
-                    </div>
+                  <div className="admin-table-cell admin-cell-centered" title={`Time: ${safeValue(booking.journeyTime)}`}>
+                    <strong title={safeValue(booking.journeyTime)}>{safeValue(booking.journeyTime) || "--:--"}</strong>
+                  </div>
 
-                    <div className="admin-table-cell admin-cell-centered" title={`PNR: ${safeValue(booking.pnr)} | Status: ${safeValue(booking.status)}`}>
-                      <strong title={safeValue(booking.pnr)} style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(booking.pnr)}</strong>
-                      <span className={`admin-status-pill ${statusClass}`}>
-                        {safeValue(booking.status)}
-                      </span>
-                    </div>
+                  <div className="admin-table-cell admin-cell-centered" title={`PNR: ${safeValue(booking.pnr)} | Status: ${safeValue(booking.status)}`}>
+                    <strong title={safeValue(booking.pnr)} style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(booking.pnr)}</strong>
+                    <span className={`admin-status-pill ${statusClass}`}>
+                      {safeValue(booking.status)}
+                    </span>
+                  </div>
 
-                    <div className="admin-table-cell" title={`Operator: ${booking.operator} | Flight: ${flightNumber}`}>
-                      <strong title={booking.operator}>{booking.operator !== "--" ? booking.operator : "Airlines"}</strong>
-                      <small title={`${flightNumber} | ${safeValue(booking.vehicleType)}`}>
-                        {flightNumber} | {safeValue(booking.vehicleType)}
-                      </small>
-                    </div>
+                  <div className="admin-table-cell" title={`Operator: ${booking.operator} | Flight: ${flightNumber}`}>
+                    <strong title={booking.operator}>{booking.operator !== "--" ? booking.operator : "Airlines"}</strong>
+                    <small title={`${flightNumber} | ${safeValue(booking.vehicleType)}`}>
+                      {flightNumber} | {safeValue(booking.vehicleType)}
+                    </small>
+                  </div>
 
-                    <div className="admin-table-cell admin-cell-centered" title={`Fare: ${adminCurrencyFormatter.format(fare)}`}>
-                      <strong title={`Customer Fare: ${adminCurrencyFormatter.format(fare)}`}>{adminCurrencyFormatter.format(fare)}</strong>
-                    </div>
+                  <div className="admin-table-cell admin-cell-centered" title={`Fare: ${adminCurrencyFormatter.format(fare)}`}>
+                    <strong title={`Customer Fare: ${adminCurrencyFormatter.format(fare)}`}>{adminCurrencyFormatter.format(fare)}</strong>
+                  </div>
 
-                    <div className="admin-table-cell admin-cell-centered" title={`Profit: ${adminCurrencyFormatter.format(profit)}`}>
-                      <strong title={`Calculated Profit: ${adminCurrencyFormatter.format(profit)}`} style={{ color: profit < 0 ? "#ef4444" : "#10b981" }}>
-                        {profit < 0 ? `- ₹${Math.abs(profit).toLocaleString("en-IN")}` : `₹${profit.toLocaleString("en-IN")}`}
-                      </strong>
-                      <small style={{ color: profit < 0 ? "#ef4444" : "#10b981", fontWeight: "600" }}>{profit < 0 ? "Loss" : "Profit"}</small>
-                    </div>
+                  <div className="admin-table-cell admin-cell-centered" title={`Profit: ${adminCurrencyFormatter.format(profit)}`}>
+                    <strong title={`Calculated Profit: ${adminCurrencyFormatter.format(profit)}`} style={{ color: profit < 0 ? "#ef4444" : "#10b981" }}>
+                      {profit < 0 ? `- ₹${Math.abs(profit).toLocaleString("en-IN")}` : `₹${profit.toLocaleString("en-IN")}`}
+                    </strong>
+                    <small style={{ color: profit < 0 ? "#ef4444" : "#10b981", fontWeight: "600" }}>{profit < 0 ? "Loss" : "Profit"}</small>
+                  </div>
 
-                    <div className="admin-table-cell admin-cell-centered">
-                      <button
-                        type="button"
-                        className="admin-action-btn"
-                        onClick={() => setSelectedBooking(booking)}
-                        title="View details"
-                      >
-                        View
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <AdminPagination
-              currentPage={currentPage}
-              totalItems={filteredBookings.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              itemName="bookings"
-            />
-          </>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <button
+                      type="button"
+                      className="admin-action-btn"
+                      onClick={() => setSelectedBooking(booking)}
+                      title="View details"
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         ) : (
           <div className="admin-table-empty">No flight bookings available.</div>
         )}
 
-        <footer className="admin-flight-legend" style={{ borderTop: "1px solid var(--admin-border)", display: "flex", width: "100%", boxSizing: "border-box" }}>
-          D :- Depart, R :- Return, B. By :- Booked By, CF :- Customer Fare, NF :- Net Fare, +/P :- Profit
-        </footer>
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filteredBookings.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="bookings"
+        />
       </section>
 
       {selectedBooking ? (
@@ -1341,6 +1477,22 @@ export default function AdminFlightBookingListPage() {
               <div>
                 <span>Travel Class</span>
                 <strong>{safeValue(selectedBooking.vehicleType)}</strong>
+              </div>
+              <div>
+                <span>Payment Status</span>
+                <strong>{safeValue(selectedBooking.paymentStatus, "N/A")}</strong>
+              </div>
+              <div>
+                <span>Refund Status</span>
+                <strong>{safeValue(selectedBooking.refundStatus, "N/A")}</strong>
+              </div>
+              <div>
+                <span>Fulfillment Status</span>
+                <strong>{safeValue(selectedBooking.fulfillmentStatus, "N/A")}</strong>
+              </div>
+              <div>
+                <span>Booked By (User ID)</span>
+                <strong>{safeValue(selectedBooking.bookedBy, "N/A")}</strong>
               </div>
             </section>
 

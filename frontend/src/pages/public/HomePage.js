@@ -1,5 +1,4 @@
-/* eslint-disable */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
@@ -24,6 +23,7 @@ import {
   Clock,
   IndianRupee,
   Tag,
+  LayoutGrid,
   Headphones,
   Lock,
   Route,
@@ -42,6 +42,7 @@ import {
   Gift,
   Sparkles,
   Send,
+  Bookmark,
 } from "lucide-react";
 import HotelSearchWidget from "../../components/HotelSearchWidget";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
@@ -65,12 +66,18 @@ import flightSectionBanner from "../../assets/images/illustrations/flight-sectio
 import flightSectionNewBanner from "../../assets/images/image.png";
 import flightHeroThemeImg from "../../assets/images/illustrations/flight-hero-theme.png";
 import flightHeroThemeVideo from "../../assets/images/Give_me_a_background_screen_HD_1080p.mp4";
-import busHeroVideo from "../../assets/images/PickNBook_SingleScreen_Color_HD.mp4";
+import busHeroVideo from "../../assets/images/PickNBook_HD_no_Gemini.mp4";
 import hotelHeroVideo from "../../assets/images/remove_cotage_make_different_HD_no_Gemini.mp4";
 import hotelSectionBanner from "../../assets/images/illustrations/hotel-reception-banner.jpg";
 import busCoastBanner from "../../assets/images/illustrations/bus-coast-banner.jpg";
+import intercityBusBanner from "../../assets/images/bus-image.png.png";
+import footerOfferBanner from "../../assets/images/illustrations/picknbook-all-travel-banner.jpg";
+import footerOfferImg from "../../assets/images/footer offer.png";
+const exclusiveDealsBanner = footerOfferImg;
+const flightLandingBanner = footerOfferImg;
 import picknbookLogin from "../../assets/images/picknbook-login.png";
 import picknbookAllTravelBanner from "../../assets/images/illustrations/picknbook-all-travel-banner.jpg";
+const hikerLandscapeBg = picknbookAllTravelBanner;
 import airIndiaExpress from "../../assets/images/brands/air-india-express.png";
 import airIndia from "../../assets/images/brands/air-india.png";
 import akasaAir from "../../assets/images/brands/akasa-air.png";
@@ -81,16 +88,78 @@ import lufthansa from "../../assets/images/brands/lufthansa.png";
 import qatarAirways from "../../assets/images/brands/qatar-airways.png";
 import spiceJet from "../../assets/images/airlines/Spicejet.png";
 import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
+import offerCardBusImg from "../../assets/images/illustrations/bus-coast-banner.jpg";
+import offerCardFlightImg from "../../assets/images/illustrations/flight-section-banner.png";
+import offerCardHotelImg from "../../assets/images/illustrations/hotel-reception-banner.jpg";
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
+import { getActiveOffers, getPublicFeaturedOffers } from "../../services/adminFeaturedOffersService";
 import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
+import { getPopularBusRoutesFromSearchHistory } from "../../services/busSearchHistoryService";
 import { listHotFlightRoutes } from "../../services/flightBookingService";
 import { searchHotels } from "../../services/hotelBookingService";
 import { toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
 
-const hikerLandscapeBg = picknbookAllTravelBanner;
+function StatCountUp({ endValue, duration = 2000, decimals = 0, suffix = "", formatComma = false }) {
+  const [value, setValue] = useState(0);
+  const containerRef = useRef(null);
+  const hasAnimatedRef = useRef(false);
 
+  const startAnimation = () => {
+    let startTime = null;
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Quintic ease-out curve for smooth deceleration
+      const ease = 1 - Math.pow(1 - progress, 4);
+      const current = ease * endValue;
+      setValue(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setValue(endValue);
+      }
+    };
+    requestAnimationFrame(step);
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) {
+      startAnimation();
+      return;
+    }
+
+    if (typeof IntersectionObserver !== "undefined") {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && !hasAnimatedRef.current) {
+            hasAnimatedRef.current = true;
+            startAnimation();
+          }
+        },
+        { threshold: 0.15 }
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+    } else {
+      startAnimation();
+    }
+  }, [endValue, duration]);
+
+  const display = decimals > 0
+    ? value.toFixed(decimals)
+    : (formatComma ? Math.floor(value).toLocaleString() : Math.floor(value));
+
+  return (
+    <span ref={containerRef} className="intercity-stat-num">
+      {display}{suffix}
+    </span>
+  );
+}
 
 function AiFlightLogoIcon({ className, size = 32 }) {
   return (
@@ -312,45 +381,221 @@ const BUS_TRIP_TYPES = [
 ];
 
 const DEFAULT_BUS_FEATURED_OFFERS = [
+  // ── BUS OFFERS ──
   {
-    id: "bus-offer-1",
-    title: "wheelsbus",
-    couponCode: "wheelsbus",
-    bookingType: "Bus",
-    badgeLabel: "SPECIAL OFFER",
-    theme: "pink",
-    endDateUtc: "2026-07-25T23:59:59Z",
-    couponExpiresAtUtc: "2026-07-25T23:59:59Z",
-  },
-  {
-    id: "bus-offer-2",
-    title: "June10",
-    couponCode: "June10",
-    bookingType: "Bus",
-    badgeLabel: "EXCLUSIVE OFFER",
-    theme: "green",
-    endDateUtc: "2026-08-08T23:59:59Z",
-    couponExpiresAtUtc: "2026-08-08T23:59:59Z",
-  },
-  {
-    id: "bus-offer-3",
-    title: "BUS50",
-    couponCode: "BUS50",
-    bookingType: "Bus",
-    badgeLabel: "50% OFF",
-    theme: "yellow",
-    endDateUtc: "2026-10-08T23:59:59Z",
-    couponExpiresAtUtc: "2026-10-08T23:59:59Z",
-  },
-  {
-    id: "bus-offer-4",
+    id: "bus-offer-julyfair",
     title: "JULYfair",
     couponCode: "JULYfair",
     bookingType: "Bus",
-    badgeLabel: "SPECIAL OFFER",
-    theme: "blue",
-    endDateUtc: "2026-07-31T23:59:59Z",
-    couponExpiresAtUtc: "2026-07-31T23:59:59Z",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "25%",
+    ribbonText2: "OFF",
+    cardTheme: "bus",
+    image: offerCardBusImg,
+    couponExpiresAtUtc: "2026-11-05T23:59:59Z",
+    endDateUtc: "2026-11-05T23:59:59Z",
+    description: "Get flat 25% off on all intercity Volvo, AC sleeper, and luxury bus bookings.",
+  },
+  {
+    id: "bus-offer-june10",
+    title: "June10",
+    couponCode: "June10",
+    bookingType: "Bus",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "10%",
+    ribbonText2: "OFF",
+    cardTheme: "bus",
+    image: offerCardBusImg,
+    couponExpiresAtUtc: "2026-08-09T23:59:59Z",
+    endDateUtc: "2026-08-09T23:59:59Z",
+    description: "Get flat 10% off on all intercity Volvo, AC sleeper, and luxury bus bookings.",
+  },
+  {
+    id: "bus-offer-superbus",
+    title: "SUPERBUS",
+    couponCode: "SUPERBUS",
+    bookingType: "Bus",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "SPECIAL",
+    ribbonText2: "OFFER",
+    cardTheme: "bus",
+    image: offerCardBusImg,
+    couponExpiresAtUtc: "2026-09-30T23:59:59Z",
+    endDateUtc: "2026-09-30T23:59:59Z",
+    description: "Extra ₹150 off on RTC and private luxury multi-axle buses.",
+  },
+
+  {
+    id: "bus-offer-bus50",
+    title: "BUS50",
+    couponCode: "BUS50",
+    bookingType: "Bus",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "50%",
+    ribbonText2: "OFF",
+    cardTheme: "bus",
+    image: offerCardBusImg,
+    couponExpiresAtUtc: "2026-10-09T23:59:59Z",
+    endDateUtc: "2026-10-09T23:59:59Z",
+    description: "Save up to 50% on selected state and luxury private bus bookings.",
+  },
+  {
+    id: "bus-offer-wheelsbus",
+    title: "wheelsbus",
+    couponCode: "wheelsbus",
+    bookingType: "Bus",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "SPECIAL",
+    ribbonText2: "OFFER",
+    cardTheme: "bus",
+    image: offerCardBusImg,
+    couponExpiresAtUtc: "2026-07-27T23:59:59Z",
+    endDateUtc: "2026-07-27T23:59:59Z",
+    description: "Enjoy special discounted rates on express and interstate Volvo luxury buses.",
+  },
+
+  // ── FLIGHT OFFERS ──
+  {
+    id: "flight-offer-flyaway",
+    title: "FLYAWAY",
+    couponCode: "FLYAWAY",
+    bookingType: "Flight",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "SPECIAL",
+    ribbonText2: "OFFER",
+    cardTheme: "flight",
+    image: offerCardFlightImg,
+    couponExpiresAtUtc: "2026-11-20T23:59:59Z",
+    endDateUtc: "2026-11-20T23:59:59Z",
+    description: "Special seasonal discounts on popular domestic airline routes across India.",
+  },
+  {
+    id: "flight-offer-airsave",
+    title: "AIRSAVE",
+    couponCode: "AIRSAVE",
+    bookingType: "Flight",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "30%",
+    ribbonText2: "OFF",
+    cardTheme: "flight",
+    image: offerCardFlightImg,
+    couponExpiresAtUtc: "2026-10-31T23:59:59Z",
+    endDateUtc: "2026-10-31T23:59:59Z",
+    description: "Flat 30% savings on domestic nonstop flights booked 14 days in advance.",
+  },
+  {
+    id: "flight-offer-skyhigh",
+    title: "SKYHIGH",
+    couponCode: "SKYHIGH",
+    bookingType: "Flight",
+    badgeLabel: "EXCLUSIVE",
+    ribbonText1: "25%",
+    ribbonText2: "OFF",
+    cardTheme: "flight",
+    image: offerCardFlightImg,
+    couponExpiresAtUtc: "2026-12-31T23:59:59Z",
+    endDateUtc: "2026-12-31T23:59:59Z",
+    description: "Get flat 25% discount on round-trip flight bookings across India.",
+  },
+  {
+    id: "flight-offer-indigo500",
+    title: "FLYINDIGO",
+    couponCode: "FLYINDIGO",
+    bookingType: "Flight",
+    badgeLabel: "POPULAR",
+    ribbonText1: "₹1500",
+    ribbonText2: "OFF",
+    cardTheme: "flight",
+    image: offerCardFlightImg,
+    couponExpiresAtUtc: "2026-11-30T23:59:59Z",
+    endDateUtc: "2026-11-30T23:59:59Z",
+    description: "Save up to ₹1,500 on all major domestic airline routes.",
+  },
+  {
+    id: "flight-offer-airindia",
+    title: "AIRINDIA",
+    couponCode: "AIRINDIA",
+    bookingType: "Flight",
+    badgeLabel: "SPECIAL",
+    ribbonText1: "20%",
+    ribbonText2: "OFF",
+    cardTheme: "flight",
+    image: offerCardFlightImg,
+    couponExpiresAtUtc: "2026-12-15T23:59:59Z",
+    endDateUtc: "2026-12-15T23:59:59Z",
+    description: "Flat 20% discount on business and economy cabin flight bookings.",
+  },
+  {
+    id: "flight-offer-wings20",
+    title: "WINGS20",
+    couponCode: "WINGS20",
+    bookingType: "Flight",
+    badgeLabel: "DEAL",
+    ribbonText1: "₹800",
+    ribbonText2: "OFF",
+    cardTheme: "flight",
+    image: offerCardFlightImg,
+    couponExpiresAtUtc: "2026-10-25T23:59:59Z",
+    endDateUtc: "2026-10-25T23:59:59Z",
+    description: "Instant ₹800 discount on your first domestic flight booking.",
+  },
+
+  // ── HOTEL OFFERS ──
+  {
+    id: "hotel-offer-luxestay",
+    title: "LUXESTAY",
+    couponCode: "LUXESTAY",
+    bookingType: "Hotel",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "40%",
+    ribbonText2: "OFF",
+    cardTheme: "hotel",
+    image: offerCardHotelImg,
+    couponExpiresAtUtc: "2026-12-10T23:59:59Z",
+    endDateUtc: "2026-12-10T23:59:59Z",
+    description: "Up to 40% off on premium luxury suites, villas, and boutique heritage stays.",
+  },
+  {
+    id: "hotel-offer-resortdeal",
+    title: "RESORTDEAL",
+    couponCode: "RESORTDEAL",
+    bookingType: "Hotel",
+    badgeLabel: "LIMITED TIME",
+    ribbonText1: "50%",
+    ribbonText2: "OFF",
+    cardTheme: "hotel",
+    image: offerCardHotelImg,
+    couponExpiresAtUtc: "2026-11-15T23:59:59Z",
+    endDateUtc: "2026-11-15T23:59:59Z",
+    description: "Flat 50% discount on 3-night resort stays with free cancellation.",
+  },
+  {
+    id: "hotel-offer-staymore",
+    title: "STAYMORE",
+    couponCode: "STAYMORE",
+    bookingType: "Hotel",
+    badgeLabel: "EXCLUSIVE",
+    ribbonText1: "35%",
+    ribbonText2: "OFF",
+    cardTheme: "hotel",
+    image: offerCardHotelImg,
+    couponExpiresAtUtc: "2026-11-28T23:59:59Z",
+    endDateUtc: "2026-11-28T23:59:59Z",
+    description: "Save up to 35% on stays of 3 or more nights at partner hotels.",
+  },
+  {
+    id: "hotel-offer-cityhotel",
+    title: "CITYHOTEL",
+    couponCode: "CITYHOTEL",
+    bookingType: "Hotel",
+    badgeLabel: "BEST DEAL",
+    ribbonText1: "₹1000",
+    ribbonText2: "OFF",
+    cardTheme: "hotel",
+    image: offerCardHotelImg,
+    couponExpiresAtUtc: "2026-12-05T23:59:59Z",
+    endDateUtc: "2026-12-05T23:59:59Z",
+    description: "Flat ₹1,000 instant off on business hotel bookings in metro cities.",
   },
 ];
 
@@ -1391,7 +1636,7 @@ const HOME_MODE_CONTENT = {
     appTitle: "Book buses faster",
     appText:
       "Save routes, compare fares, and keep tickets ready for city-to-city journeys.",
-    appOffer: "Code TRAVELFIRST",
+    appOffer: "",
     appBenefits: HOME_APP_BENEFITS,
     aboutTitle: "About Pick N Book Bus Booking",
     aboutParagraphs: [
@@ -1451,7 +1696,7 @@ const HOME_MODE_CONTENT = {
     appTitle: "Plan flights faster on your next trip",
     appText:
       "Save frequent flight routes, compare airline choices, and keep PNR and check-in actions ready.",
-    appOffer: "Use code FLYFIRST",
+    appOffer: "",
     appBenefits: HOME_FLIGHT_APP_BENEFITS,
     aboutTitle: "About Pick N Book Flight Booking",
     aboutParagraphs: [
@@ -1511,7 +1756,7 @@ const HOME_MODE_CONTENT = {
     appTitle: "Plan hotel stays faster",
     appText:
       "Save favourite cities, compare stay options, and keep room and guest details ready.",
-    appOffer: "Use code STAYFIRST",
+    appOffer: "",
     appBenefits: HOME_HOTEL_APP_BENEFITS,
     aboutTitle: "About Pick N Book Hotel Booking",
     aboutParagraphs: [
@@ -1961,7 +2206,14 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
     scrollLeft: 0,
   });
   const [isDragging, setIsDragging] = useState(false);
-  const loopItems = [...items, ...items, ...items];
+  const loopItems = useMemo(() => {
+    if (!items || items.length === 0) return [];
+    let base = [...items];
+    while (base.length < 8) {
+      base = [...base, ...items];
+    }
+    return [...base, ...base, ...base];
+  }, [items]);
 
   const normalizeMarqueeScroll = (node) => {
     if (!node || node.scrollWidth <= node.clientWidth) {
@@ -1984,7 +2236,7 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
   useEffect(() => {
     const node = marqueeRef.current;
 
-    if (!node || items.length === 0) {
+    if (!node || loopItems.length === 0) {
       return undefined;
     }
 
@@ -2027,7 +2279,7 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [items, duration]);
+  }, [loopItems, duration, pauseOnHover]);
 
   const handlePointerDown = (event) => {
     if (event.button !== undefined && event.button !== 0) {
@@ -2240,13 +2492,46 @@ export default function HomePage() {
 
   const state = location.state || {};
 
-  const [featuredOffers, setFeaturedOffers] = useState([]);
+  const [featuredOffers, setFeaturedOffers] = useState(DEFAULT_BUS_FEATURED_OFFERS);
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
   const [featuredOffersError, setFeaturedOffersError] = useState("");
-  const [offersFilter, setOffersFilter] = useState("all");
+  const [offersFilter, setOffersFilter] = useState("bus");
+  const hasUserChangedTabRef = useRef(false);
   const [popularRoutes, setPopularRoutes] = useState([]);
   const [popularRoutesLoading, setPopularRoutesLoading] = useState(false);
   const [popularRoutesError, setPopularRoutesError] = useState("");
+  const [busRoutePage, setBusRoutePage] = useState(0);
+  const busCardsTrackRef = useRef(null);
+
+  const handleNextBusPage = () => {
+    setBusRoutePage((prev) => (prev + 1) % 3);
+    if (busCardsTrackRef.current) {
+      const track = busCardsTrackRef.current;
+      const scrollStep = track.clientWidth * 0.85;
+      if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 20) {
+        track.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        track.scrollBy({ left: scrollStep, behavior: "smooth" });
+      }
+    }
+  };
+
+  const handleGoToBusPage = (pageIdx) => {
+    setBusRoutePage(pageIdx);
+    if (busCardsTrackRef.current) {
+      const track = busCardsTrackRef.current;
+      track.scrollTo({ left: pageIdx * track.clientWidth * 0.85, behavior: "smooth" });
+    }
+  };
+  const [savedBusRouteIds, setSavedBusRouteIds] = useState(() => new Set());
+  const toggleSaveBusRoute = (id) => {
+    setSavedBusRouteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const [popularFlights, setPopularFlights] = useState([]);
   const [popularFlightsLoading, setPopularFlightsLoading] = useState(false);
   const [popularFlightsError, setPopularFlightsError] = useState("");
@@ -2543,35 +2828,108 @@ export default function HomePage() {
               </button>
             </header>
             <div className="deals-dialog-grid">
-              {featuredOffers.map((offer, index) => (
-                <article
-                  className={`offer-card bg-${index % 5}`}
-                  key={offer.id}
-                  onClick={() => {
-                    setIsDealsDialogOpen(false);
-                    setOfferForDetailPopup(offer);
-                  }}
-                >
-                  <div className="offer-card-left">
-                    <span className="offer-card-badge">
-                      {offer.bookingType ? `${offer.bookingType} Offer` : "Special Offer"}
-                    </span>
-                    <h3 className="offer-card-title">{offer.title}</h3>
-                    <span className="offer-card-validity">
-                      {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                    </span>
-                    {offer.couponCode && (
-                      <div className="offer-card-coupon">
-                        <Tag size={12} className="coupon-icon" />
-                        <span className="coupon-text">{offer.couponCode}</span>
+              {featuredOffers.map((offer, index) => {
+                const rawCode = offer.couponCode || offer.code || offer.title || "OFFER";
+                let code = rawCode;
+                if (!rawCode || /^coupon[_-]?code/i.test(rawCode)) {
+                  const sampleCodes = ["June10", "BUS50", "wheelsbus", "JULYfair"];
+                  code = sampleCodes[index % sampleCodes.length];
+                }
+
+                const typeLower = (offer.bookingType || "bus").toLowerCase();
+                const isFlight = typeLower.includes("flight");
+                const isHotel = typeLower.includes("hotel");
+                const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
+                const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
+                const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
+                const cardImage =
+                  offer.image ||
+                  (isFlight ? offerCardFlightImg : isHotel ? offerCardHotelImg : offerCardBusImg);
+
+                let ribbon1 = offer.ribbonText1;
+                let ribbon2 = offer.ribbonText2;
+                if (!ribbon1 || !ribbon2) {
+                  if (offer.badgeLabel && offer.badgeLabel.includes("OFF")) {
+                    const parts = offer.badgeLabel.trim().split(/\s+/);
+                    ribbon1 = parts[0] || "50%";
+                    ribbon2 = parts[1] || "OFF";
+                  } else {
+                    ribbon1 = "SPECIAL";
+                    ribbon2 = "OFFER";
+                  }
+                }
+
+                return (
+                  <article
+                    className={`wavy-offer-card theme-${cardTheme}`}
+                    key={offer.id || index}
+                    onClick={() => {
+                      setIsDealsDialogOpen(false);
+                      setOfferForDetailPopup(offer);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="wavy-offer-left">
+                      <div className="wavy-offer-cat-row">
+                        <div className={`wavy-offer-icon-circle icon-${cardTheme}`}>
+                          <OfferIcon size={12} strokeWidth={2.6} />
+                        </div>
+                        <span className={`wavy-offer-cat-text text-${cardTheme}`}>
+                          {categoryLabel}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <div className="offer-card-right-img">
-                    <FeaturedOfferImage offer={offer} />
-                  </div>
-                </article>
-              ))}
+
+                      <div className="wavy-offer-code-group">
+                        <h3 className="wavy-offer-title">{code}</h3>
+                        <p className="wavy-offer-validity">
+                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                        </p>
+                      </div>
+
+                      <div className="wavy-offer-action-row">
+                        <button
+                          type="button"
+                          className={`wavy-offer-grab-btn btn-${cardTheme}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsDealsDialogOpen(false);
+                            handleOfferBooking(offer);
+                          }}
+                        >
+                          <span>Grab Offer</span>
+                          <ArrowRight size={13} strokeWidth={2.4} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="wavy-offer-divider" aria-hidden="true">
+                      <svg viewBox="0 0 50 145" preserveAspectRatio="none" className="wavy-divider-svg">
+                        <path
+                          d="M0,0 C26,24 8,80 34,118 C38,128 44,138 48,145 L0,145 Z"
+                          className={`wavy-accent-path accent-${cardTheme}`}
+                        />
+                        <path
+                          d="M0,0 C20,24 2,80 28,118 C32,128 38,138 42,145 L0,145 Z"
+                          fill="#ffffff"
+                        />
+                      </svg>
+                    </div>
+
+                    <div className="wavy-offer-right">
+                      <span className={`wavy-offer-badge badge-${cardTheme}`}>
+                        LIMITED TIME
+                      </span>
+                      <img
+                        src={cardImage}
+                        alt={categoryLabel}
+                        className="wavy-offer-photo"
+                        loading="lazy"
+                      />
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
         </div>,
@@ -2709,17 +3067,32 @@ export default function HomePage() {
       setFeaturedOffersError("");
 
       try {
-        const response = await getPublicFeaturedOffers();
+        const activeType = activeTab === "flights" ? "Flight" : activeTab === "hotels" ? "Hotel" : "Bus";
+        let response = await getActiveOffers(activeType).catch(() => null);
+        if (!response || (Array.isArray(response) && response.length === 0)) {
+          response = await getPublicFeaturedOffers().catch(() => null);
+        }
         const activeOffers = getFeaturedOffersPayload(response)
           .map(normalizeFeaturedOffer)
           .filter((offer) => offer.isActive);
 
         if (isMounted) {
-          setFeaturedOffers(activeOffers);
+          if (activeOffers.length > 0) {
+            const dynamicCodes = new Set(
+              activeOffers.map((o) => (o.couponCode || o.title || "").toLowerCase().trim())
+            );
+            const complementaryStatic = DEFAULT_BUS_FEATURED_OFFERS.filter(
+              (s) => !dynamicCodes.has((s.couponCode || s.title || "").toLowerCase().trim())
+            );
+            setFeaturedOffers([...activeOffers, ...complementaryStatic]);
+          } else {
+            setFeaturedOffers(DEFAULT_BUS_FEATURED_OFFERS);
+          }
         }
       } catch (error) {
         if (isMounted) {
-          setFeaturedOffersError("Unable to load featured offers.");
+          setFeaturedOffers(DEFAULT_BUS_FEATURED_OFFERS);
+          setFeaturedOffersError("");
         }
       } finally {
         if (isMounted) {
@@ -2732,20 +3105,39 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeTab]);
 
-  /* Popular Bus Routes â€” Static Curated Data (No API Hit) */
+  /* Popular Bus Routes — Static Curated Data + Dynamic History */
   useEffect(() => {
+    let isMounted = true;
+    const DEFAULT_POPULAR_BUS_ROUTES = [
+      // Page 1 (The exact 5 reference routes)
+      { id: "bus-hot-1", fromCity: "Delhi", toCity: "Jaipur", searches: 2450, fare: 450, arrowType: "single", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-2", fromCity: "Hyderabad", toCity: "Vijayawada", searches: 2180, fare: 620, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-3", fromCity: "Bengaluru", toCity: "Goa", searches: 1890, fare: 850, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-4", fromCity: "Hyderabad", toCity: "Bengaluru", searches: 1420, fare: 700, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-5", fromCity: "Chennai", toCity: "Coimbatore", searches: 1280, fare: 680, arrowType: "swap", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format" },
+      // Page 2
+      { id: "bus-hot-6", fromCity: "Mumbai", toCity: "Pune", searches: 1950, fare: 420, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-7", fromCity: "Delhi", toCity: "Agra", searches: 1820, fare: 380, arrowType: "swap", img: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-8", fromCity: "Bengaluru", toCity: "Chennai", searches: 1640, fare: 550, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-9", fromCity: "Ahmedabad", toCity: "Mumbai", searches: 1510, fare: 750, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-10", fromCity: "Pune", toCity: "Goa", searches: 1390, fare: 800, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
+      // Page 3
+      { id: "bus-hot-11", fromCity: "Jaipur", toCity: "Udaipur", searches: 1220, fare: 490, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-12", fromCity: "Hyderabad", toCity: "Tirupati", searches: 1140, fare: 650, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-13", fromCity: "Chandigarh", toCity: "Manali", searches: 1080, fare: 920, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-14", fromCity: "Chennai", toCity: "Madurai", searches: 1010, fare: 580, arrowType: "swap", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-15", fromCity: "Kolkata", toCity: "Digha", searches: 960, fare: 350, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
+    ];
+
     setPopularRoutesLoading(false);
     setPopularRoutesError("");
-    setPopularRoutes([
-      { id: "bus-hot-1", fromCity: "Hyderabad", toCity: "Bengaluru", searches: 1420 },
-      { id: "bus-hot-2", fromCity: "Chennai", toCity: "Bengaluru", searches: 1280 },
-      { id: "bus-hot-3", fromCity: "Mumbai", toCity: "Pune", searches: 1150 },
-      { id: "bus-hot-4", fromCity: "Delhi", toCity: "Jaipur", searches: 980 },
-      { id: "bus-hot-5", fromCity: "Bengaluru", toCity: "Goa", searches: 890 },
-      { id: "bus-hot-6", fromCity: "Hyderabad", toCity: "Vijayawada", searches: 840 },
-    ]);
+    setPopularRoutes(DEFAULT_POPULAR_BUS_ROUTES);
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   /* Popular Flight Routes â€” Static Curated Data (No API Hit) */
@@ -2811,6 +3203,7 @@ export default function HomePage() {
   };
 
   const handleBookingTabChange = (nextTab) => {
+    hasUserChangedTabRef.current = true;
     const normalizedTab = normalizeHomeTab(nextTab);
     setActiveTab(normalizedTab);
     const nextParams = new URLSearchParams(searchParams);
@@ -3414,14 +3807,24 @@ export default function HomePage() {
     </div>
   );
 
-  const filteredOffers = featuredOffers.filter((offer) => {
-    if (offersFilter === "all") return true;
-    const type = (offer.bookingType || "").toLowerCase();
-    if (offersFilter === "flight") return type === "flight" || type === "flights";
-    if (offersFilter === "bus") return type === "bus" || type === "buses";
-    if (offersFilter === "hotel") return type === "hotel" || type === "hotels";
-    return true;
-  });
+  const filteredOffers = featuredOffers
+    .filter((offer) => {
+      if (offersFilter === "all") return true;
+      const type = (offer.bookingType || "").toLowerCase();
+      if (offersFilter === "flight") return type.includes("flight");
+      if (offersFilter === "bus") return type.includes("bus");
+      if (offersFilter === "hotel") return type.includes("hotel");
+      return false;
+    })
+    .sort((a, b) => {
+      if (offersFilter !== "all") return 0;
+      const currentType = activeTab === "flights" ? "flight" : activeTab === "hotels" ? "hotel" : "bus";
+      const aMatches = (a.bookingType || "").toLowerCase().includes(currentType);
+      const bMatches = (b.bookingType || "").toLowerCase().includes(currentType);
+      if (aMatches && !bMatches) return -1;
+      if (!aMatches && bMatches) return 1;
+      return 0;
+    });
 
   const homeContent = HOME_MODE_CONTENT[activeTab] || HOME_MODE_CONTENT.flights;
   const ActiveAiIcon =
@@ -3514,35 +3917,6 @@ export default function HomePage() {
           align-self: flex-start;
         }
 
-        .offers-filter-tab {
-          border: 0;
-          outline: 0;
-          background: transparent;
-          border-radius: 99px;
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #2c486c;
-          padding: 6px 16px;
-          min-height: 30px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .offers-filter-tab:hover {
-          color: #1e3c64;
-          background: rgba(255, 255, 255, 0.6);
-        }
-
-        .offers-filter-tab.active {
-          background: var(--primary, #dc1e26) !important;
-          color: #ffffff !important;
-          box-shadow: 0 2px 8px rgba(220, 30, 38, 0.2) !important;
-        }
-
         /* Custom Popular Route Card Embedded Styles */
         .pop-route-card {
            box-sizing: border-box;
@@ -3564,7 +3938,7 @@ export default function HomePage() {
            box-shadow: 0 12px 28px rgba(6, 24, 44, 0.13);
         }
 
-        /* Image header â€” flush, no side gaps */
+        /* Image header — flush, no side gaps */
         .pop-route-img-wrap {
            width: 100%;
            height: 160px;
@@ -3723,10 +4097,1212 @@ export default function HomePage() {
            transform: scale(0.98);
         }
 
+        /* ─── MOST BOOKED BUS ROUTES (Pixel-Perfect Match to Reference) ─── */
+        .popular-routes-section {
+           max-width: 1280px;
+           margin: 16px auto 36px;
+           padding: 0 16px;
+           box-sizing: border-box;
+        }
+
+        .pop-bus-header-row {
+           display: flex !important;
+           align-items: flex-end !important;
+           justify-content: space-between !important;
+           margin-bottom: 18px !important;
+        }
+
+        .pop-bus-kicker {
+           font-size: 0.72rem !important;
+           font-weight: 800 !important;
+           color: #dc2626 !important;
+           letter-spacing: 0.08em !important;
+           text-transform: uppercase !important;
+           display: block !important;
+           margin-bottom: 4px !important;
+        }
+
+        .pop-bus-title {
+           font-size: 1.65rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+           letter-spacing: -0.02em !important;
+           margin: 0 !important;
+        }
+
+        .pop-bus-view-all-btn {
+           display: inline-flex !important;
+           align-items: center !important;
+           gap: 6px !important;
+           background: none !important;
+           border: none !important;
+           color: #dc2626 !important;
+           font-size: 0.88rem !important;
+           font-weight: 700 !important;
+           cursor: pointer !important;
+           padding: 6px 0 !important;
+           transition: gap 0.2s ease, color 0.2s ease !important;
+        }
+
+        .pop-bus-view-all-btn:hover {
+           gap: 10px !important;
+           color: #b91c1c !important;
+        }
+
+        /* ─── TRAVEL DESK SERVICES BANNER (Exact Reference Match) ─── */
+        .td-services-section {
+           width: 100% !important;
+           max-width: 1280px !important;
+           margin: -14px auto 18px !important;
+           padding: 0 16px !important;
+           box-sizing: border-box !important;
+        }
+
+        .td-services-card {
+           width: 100% !important;
+           border-radius: 28px !important;
+           overflow: hidden !important;
+           background: #ffffff !important;
+           box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+           border: 1px solid #f1f5f9 !important;
+        }
+
+        .td-services-body-grid {
+           display: grid !important;
+           grid-template-columns: 50% 50% !important;
+           min-height: 330px !important;
+           max-height: 350px !important;
+           position: relative !important;
+        }
+
+        .td-services-left-col {
+           padding: 24px 28px 22px 34px !important;
+           display: flex !important;
+           flex-direction: column !important;
+           justify-content: center !important;
+           background: #ffffff !important;
+           z-index: 3 !important;
+        }
+
+        .td-services-headline {
+           font-size: 2.2rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+           line-height: 1.12 !important;
+           margin: 0 0 8px !important;
+           letter-spacing: -0.025em !important;
+        }
+
+        .td-highlight-red {
+           color: #c91c32 !important;
+        }
+
+        .td-services-paragraph {
+           font-size: 0.82rem !important;
+           line-height: 1.45 !important;
+           color: #64748b !important;
+           margin: 0 0 16px !important;
+           max-width: 440px !important;
+        }
+
+        .td-services-features-list {
+           display: flex !important;
+           flex-direction: row !important;
+           align-items: center !important;
+           gap: 12px !important;
+           margin-bottom: 18px !important;
+           flex-wrap: nowrap !important;
+        }
+
+        .td-feature-item {
+           display: flex !important;
+           align-items: center !important;
+           gap: 7px !important;
+        }
+
+        .td-feature-icon-box {
+           width: 32px !important;
+           height: 32px !important;
+           min-width: 32px !important;
+           border-radius: 50% !important;
+           background: #fff1f2 !important;
+           border: 1.2px solid #ffe4e6 !important;
+           color: #e11d48 !important;
+           display: grid !important;
+           place-items: center !important;
+           flex-shrink: 0 !important;
+        }
+
+        .td-feature-text strong {
+           font-size: 0.74rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+           white-space: nowrap !important;
+           display: block !important;
+           line-height: 1.15 !important;
+           margin-bottom: 1px !important;
+        }
+
+        .td-feature-text p {
+           font-size: 0.63rem !important;
+           color: #64748b !important;
+           white-space: nowrap !important;
+           margin: 0 !important;
+           line-height: 1.15 !important;
+        }
+
+        .td-services-actions-row {
+           display: flex !important;
+           align-items: center !important;
+           gap: 12px !important;
+           flex-wrap: wrap !important;
+        }
+
+        .td-search-now-btn {
+           display: inline-flex !important;
+           align-items: center !important;
+           gap: 8px !important;
+           background: #c91e24 !important;
+           color: #ffffff !important;
+           padding: 9px 20px !important;
+           border-radius: 999px !important;
+           border: none !important;
+           font-size: 0.8rem !important;
+           font-weight: 800 !important;
+           cursor: pointer !important;
+           box-shadow: 0 4px 14px rgba(201, 30, 36, 0.3) !important;
+           transition: all 0.2s ease !important;
+           white-space: nowrap !important;
+        }
+
+        .td-search-now-btn:hover {
+           background: #b3161c !important;
+           transform: translateY(-1px) !important;
+        }
+
+        .td-need-help-pill {
+           display: inline-flex !important;
+           align-items: center !important;
+           gap: 8px !important;
+           background: #ffffff !important;
+           border: 1.5px solid #e2e8f0 !important;
+           padding: 4px 14px 4px 6px !important;
+           border-radius: 999px !important;
+           cursor: pointer !important;
+           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+           transition: all 0.2s ease !important;
+        }
+
+        .td-help-icon-circle {
+           width: 28px !important;
+           height: 28px !important;
+           border-radius: 50% !important;
+           background: #fff1f2 !important;
+           color: #e11d48 !important;
+           display: grid !important;
+           place-items: center !important;
+           flex-shrink: 0 !important;
+        }
+
+        .td-help-meta strong {
+           font-size: 0.74rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+           display: block !important;
+           line-height: 1.1 !important;
+        }
+
+        .td-help-meta span {
+           font-size: 0.62rem !important;
+           color: #64748b !important;
+           font-weight: 500 !important;
+           line-height: 1.1 !important;
+        }
+
+        .td-services-right-col {
+           position: relative !important;
+           background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 35%, #e11d48 70%, #be123c 100%) !important;
+           overflow: hidden !important;
+           display: flex !important;
+           flex-direction: column !important;
+           justify-content: space-between !important;
+           padding: 12px 18px 12px 18px !important;
+        }
+
+        .td-curved-divider-overlay {
+           position: absolute !important;
+           top: -20px !important;
+           left: -60px !important;
+           width: 100px !important;
+           height: 115% !important;
+           background: #ffffff !important;
+           border-radius: 0 100% 100% 0 / 0 50% 50% 0 !important;
+           z-index: 2 !important;
+           pointer-events: none !important;
+        }
+
+        .td-floating-stats-glass-bar {
+           position: relative !important;
+           z-index: 4 !important;
+           background: rgba(255, 255, 255, 0.95) !important;
+           backdrop-filter: blur(12px) !important;
+           -webkit-backdrop-filter: blur(12px) !important;
+           border-radius: 999px !important;
+           padding: 6px 16px !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: space-between !important;
+           margin-left: 12px !important;
+           box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1) !important;
+        }
+
+        .td-glass-stat-item {
+           display: flex !important;
+           align-items: center !important;
+           gap: 6px !important;
+        }
+
+        .td-stat-icon-circle {
+           width: 22px !important;
+           height: 22px !important;
+           border-radius: 50% !important;
+           display: grid !important;
+           place-items: center !important;
+           flex-shrink: 0 !important;
+        }
+
+        .td-stat-icon-circle.red { background: #ffe4e6 !important; color: #e11d48 !important; }
+        .td-stat-icon-circle.purple { background: #f3e8ff !important; color: #9333ea !important; }
+        .td-stat-icon-circle.crimson { background: #fff1f2 !important; color: #881337 !important; }
+        .td-stat-icon-circle.dark { background: #f1f5f9 !important; color: #0f172a !important; }
+
+        .td-stat-info strong {
+           font-size: 0.76rem !important;
+           font-weight: 900 !important;
+           color: #0f172a !important;
+           line-height: 1 !important;
+        }
+
+        .td-stat-info span {
+           font-size: 0.56rem !important;
+           color: #64748b !important;
+           font-weight: 600 !important;
+           margin-top: 1px !important;
+        }
+
+        .td-glass-stat-divider {
+           width: 1px !important;
+           height: 18px !important;
+           background: #e2e8f0 !important;
+        }
+
+        .td-services-visual-stage {
+           position: relative !important;
+           z-index: 4 !important;
+           height: 235px !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: flex-end !important;
+           gap: 16px !important;
+        }
+
+        .td-bus-visual-wrap {
+           position: relative !important;
+           width: 195px !important;
+           height: 215px !important;
+           border-radius: 18px !important;
+           overflow: hidden !important;
+           box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22) !important;
+           flex-shrink: 0 !important;
+        }
+
+        .td-stage-bus-img {
+           width: 100% !important;
+           height: 100% !important;
+           object-fit: cover !important;
+           border-radius: 18px !important;
+           transition: transform 0.35s ease !important;
+        }
+
+        .td-bus-travel-overlay {
+           position: absolute !important;
+           top: 14px !important;
+           left: 14px !important;
+           right: 14px !important;
+           z-index: 4 !important;
+           display: flex !important;
+           flex-direction: column !important;
+           pointer-events: none !important;
+        }
+
+        .td-bus-travel-title {
+           color: #ffffff !important;
+           font-size: 1.3rem !important;
+           font-weight: 800 !important;
+           font-style: italic !important;
+           line-height: 1.1 !important;
+           text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        .td-bus-travel-sub {
+           color: rgba(255, 255, 255, 0.95) !important;
+           font-size: 0.64rem !important;
+           font-weight: 600 !important;
+           margin-top: 2px !important;
+           text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        .td-phone-device-frame {
+           position: relative !important;
+           z-index: 4 !important;
+           width: 175px !important;
+           height: 235px !important;
+           background: #ffffff !important;
+           border-radius: 20px !important;
+           border: 3px solid #0f172a !important;
+           box-shadow: 0 16px 36px rgba(15, 23, 42, 0.28) !important;
+           padding: 8px 9px !important;
+           display: flex !important;
+           flex-direction: column !important;
+           justify-content: space-between !important;
+           box-sizing: border-box !important;
+        }
+
+        .td-phone-notch {
+           width: 36px !important;
+           height: 8px !important;
+           background: #0f172a !important;
+           border-radius: 0 0 6px 6px !important;
+           margin: -8px auto 3px !important;
+        }
+
+        .td-phone-inner-screen {
+           display: flex !important;
+           flex-direction: column !important;
+           gap: 5px !important;
+           height: 100% !important;
+           justify-content: space-between !important;
+        }
+
+        .td-greeting-title {
+           font-size: 0.72rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+        }
+
+        .td-greeting-sub {
+           font-size: 0.56rem !important;
+           color: #64748b !important;
+           font-weight: 500 !important;
+        }
+
+        .td-phone-field-box {
+           display: flex !important;
+           align-items: center !important;
+           gap: 6px !important;
+           background: #f8fafc !important;
+           border: 1px solid #e2e8f0 !important;
+           border-radius: 7px !important;
+           padding: 4px 7px !important;
+        }
+
+        .td-field-lbl {
+           font-size: 0.5rem !important;
+           color: #64748b !important;
+           font-weight: 700 !important;
+        }
+
+        .td-field-labels strong {
+           font-size: 0.64rem !important;
+           color: #0f172a !important;
+           font-weight: 800 !important;
+        }
+
+        .td-phone-main-submit-btn {
+           margin-top: 2px !important;
+           width: 100% !important;
+           padding: 7px 0 !important;
+           border-radius: 8px !important;
+           background: #c91e24 !important;
+           color: #ffffff !important;
+           border: none !important;
+           font-size: 0.72rem !important;
+           font-weight: 800 !important;
+           cursor: pointer !important;
+           box-shadow: 0 4px 12px rgba(201, 30, 36, 0.3) !important;
+        }
+
+        /* ─── MOST BOOKED BUS ROUTES (Pixel-Perfect Match to Reference) ─── */
+        .popular-routes-section {
+           max-width: 1280px;
+           margin: 16px auto 8px !important;
+           padding: 0 16px;
+           box-sizing: border-box;
+        }
+
+        .pop-bus-header-row {
+           display: flex !important;
+           align-items: flex-end !important;
+           justify-content: space-between !important;
+           margin-bottom: 18px !important;
+        }
+
+        .pop-bus-kicker {
+           font-size: 0.72rem !important;
+           font-weight: 800 !important;
+           color: #dc2626 !important;
+           letter-spacing: 0.08em !important;
+           text-transform: uppercase !important;
+           display: block !important;
+           margin-bottom: 4px !important;
+        }
+
+        .pop-bus-title {
+           font-size: 1.65rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+           letter-spacing: -0.02em !important;
+           margin: 0 !important;
+        }
+
+        .pop-bus-view-all-btn {
+           display: inline-flex !important;
+           align-items: center !important;
+           gap: 6px !important;
+           background: none !important;
+           border: none !important;
+           color: #dc2626 !important;
+           font-size: 0.88rem !important;
+           font-weight: 700 !important;
+           cursor: pointer !important;
+           padding: 6px 0 !important;
+           transition: gap 0.2s ease, color 0.2s ease !important;
+        }
+
+        .pop-bus-view-all-btn:hover {
+           gap: 10px !important;
+           color: #b91c1c !important;
+        }
+
+        .pop-bus-carousel-wrapper {
+           position: relative !important;
+           width: 100% !important;
+        }
+
+        .pop-bus-cards-track {
+           display: flex !important;
+           align-items: stretch !important;
+           gap: 14px !important;
+           overflow-x: auto !important;
+           scroll-behavior: smooth !important;
+           scrollbar-width: none !important;
+           -ms-overflow-style: none !important;
+           padding: 6px 4px 16px 4px !important;
+        }
+
+        .pop-bus-cards-track::-webkit-scrollbar {
+           display: none !important;
+        }
+
+        .homepage .pop-bus-card,
+        .pop-bus-card {
+           flex: 0 0 calc((100% - 56px) / 5) !important;
+           min-width: calc((100% - 56px) / 5) !important;
+           max-width: calc((100% - 56px) / 5) !important;
+           background: #ffffff !important;
+           border: 1px solid #e2e8f0 !important;
+           border-radius: 18px !important;
+           overflow: hidden !important;
+           box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05) !important;
+           display: flex !important;
+           flex-direction: column !important;
+           cursor: pointer !important;
+           transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+           box-sizing: border-box !important;
+        }
+
+        .homepage .pop-bus-card:hover,
+        .pop-bus-card:hover {
+           transform: translateY(-4px) !important;
+           box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1) !important;
+           border-color: #cbd5e1 !important;
+        }
+
+        .pop-bus-card .pop-route-img-wrap {
+           position: relative !important;
+           width: 100% !important;
+           height: 125px !important;
+           overflow: hidden !important;
+           background: #f1f5f9 !important;
+           margin: 0 !important;
+           padding: 0 !important;
+           display: block !important;
+        }
+
+        .pop-bus-card .pop-route-img-wrap img {
+           width: 100% !important;
+           height: 100% !important;
+           object-fit: cover !important;
+           display: block !important;
+           transition: transform 0.4s ease !important;
+        }
+
+        .pop-bus-card:hover .pop-route-img-wrap img {
+           transform: scale(1.06) !important;
+        }
+
+        .pop-bus-badge-top-left {
+           position: absolute !important;
+           top: 10px !important;
+           left: 10px !important;
+           z-index: 3 !important;
+           background: #dc2626 !important;
+           color: #ffffff !important;
+           padding: 3px 8px !important;
+           border-radius: 999px !important;
+           display: inline-flex !important;
+           align-items: center !important;
+           gap: 4px !important;
+           font-size: 0.62rem !important;
+           font-weight: 800 !important;
+           letter-spacing: 0.04em !important;
+           box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35) !important;
+        }
+
+        .pop-bus-bookmark-btn {
+           position: absolute !important;
+           top: 10px !important;
+           right: 10px !important;
+           z-index: 4 !important;
+           width: 28px !important;
+           height: 28px !important;
+           border-radius: 8px !important;
+           background: #ffffff !important;
+           border: none !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           cursor: pointer !important;
+           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+           transition: transform 0.2s ease !important;
+           padding: 0 !important;
+        }
+
+        .pop-bus-bookmark-btn:hover {
+           transform: scale(1.1) !important;
+        }
+
+        .pop-bus-wave-wrap {
+           position: absolute !important;
+           bottom: -1px !important;
+           left: 0 !important;
+           width: 100% !important;
+           height: 28px !important;
+           z-index: 3 !important;
+           pointer-events: none !important;
+           line-height: 0 !important;
+        }
+
+        .pop-bus-wave-svg {
+           width: 100% !important;
+           height: 100% !important;
+           display: block !important;
+        }
+
+        .pop-bus-body {
+           padding: 14px 14px 10px 14px !important;
+           background: #ffffff !important;
+        }
+
+        .pop-bus-cities-row {
+           display: flex !important;
+           align-items: center !important;
+           justify-content: space-between !important;
+           width: 100% !important;
+           gap: 4px !important;
+        }
+
+        .pop-bus-city {
+           font-size: 0.95rem !important;
+           font-weight: 800 !important;
+           color: #0f172a !important;
+           white-space: nowrap !important;
+           overflow: hidden !important;
+           text-overflow: ellipsis !important;
+           max-width: 90px !important;
+           line-height: 1.2 !important;
+        }
+
+        .pop-bus-connector {
+           display: flex !important;
+           align-items: center !important;
+           flex: 1 !important;
+           min-width: 16px !important;
+           justify-content: center !important;
+           margin: 0 4px !important;
+        }
+
+        .pop-bus-dot {
+           width: 4px !important;
+           height: 4px !important;
+           border-radius: 50% !important;
+           background: #dc2626 !important;
+           flex-shrink: 0 !important;
+        }
+
+        .pop-bus-line {
+           flex: 1 !important;
+           height: 1.2px !important;
+           background: #fecdd3 !important;
+           margin: 0 3px !important;
+        }
+
+        .pop-bus-icon-circle {
+           width: 28px !important;
+           height: 28px !important;
+           min-width: 28px !important;
+           border-radius: 50% !important;
+           background: #ffffff !important;
+           border: 1.5px solid #fecdd3 !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           color: #dc2626 !important;
+           box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08) !important;
+           flex-shrink: 0 !important;
+           margin: 0 2px !important;
+        }
+
+        .pop-bus-footer {
+           padding: 0 14px 14px 14px !important;
+           background: #ffffff !important;
+           margin-top: auto !important;
+        }
+
+        .pop-bus-book-btn {
+           width: 100% !important;
+           height: 38px !important;
+           background: #c91e24 !important;
+           color: #ffffff !important;
+           border-radius: 9999px !important;
+           border: none !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           gap: 8px !important;
+           font-size: 0.8rem !important;
+           font-weight: 800 !important;
+           letter-spacing: 0.04em !important;
+           cursor: pointer !important;
+           box-shadow: 0 4px 12px rgba(201, 30, 36, 0.28) !important;
+           transition: all 0.2s ease !important;
+        }
+
+        .pop-bus-book-btn:hover {
+           background: #b3161c !important;
+           transform: translateY(-1px) !important;
+           box-shadow: 0 6px 16px rgba(201, 30, 36, 0.38) !important;
+        }
+
+        .pop-bus-next-circle-btn {
+           position: absolute !important;
+           right: -16px !important;
+           top: 48% !important;
+           transform: translateY(-50%) !important;
+           width: 36px !important;
+           height: 36px !important;
+           border-radius: 50% !important;
+           background: #ffffff !important;
+           border: 1px solid #e2e8f0 !important;
+           box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12) !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           color: #dc2626 !important;
+           cursor: pointer !important;
+           z-index: 5 !important;
+           transition: all 0.2s ease !important;
+        }
+
+        .pop-bus-next-circle-btn:hover {
+           background: #fff1f2 !important;
+           transform: translateY(-50%) scale(1.08) !important;
+        }
+
+        .pop-bus-pagination-dots {
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           gap: 8px !important;
+           margin-top: 8px !important;
+        }
+
+        .pop-bus-dot {
+           width: 7px !important;
+           height: 7px !important;
+           border-radius: 50% !important;
+           background: #cbd5e1 !important;
+           cursor: pointer !important;
+           transition: all 0.25s ease !important;
+        }
+
+        .pop-bus-dot.active {
+           width: 7px !important;
+           height: 7px !important;
+           border-radius: 50% !important;
+           background: #dc2626 !important;
+        }
+
+        .pop-bus-book-btn:active {
+           transform: scale(0.98);
+        }
+
          .popular-routes-marquee .marquee-slide {
-            width: 300px;
-            padding: 12px 20px 12px 0;
-         }          /* Custom Offers Scrollable Row and Selected Highlighting */
+            width: auto !important;
+            min-width: 0 !important;
+            flex: 0 0 auto !important;
+            padding: 0 12px 0 0 !important;
+         }
+
+        /* ─── FEATURED OFFERS SECTION & HEADER (Moved towards upside) ─── */
+        .bus-offers-section {
+           margin-top: -24px !important;
+           position: relative !important;
+           z-index: 10 !important;
+        }
+
+        .bus-offers-header-block {
+           display: flex !important;
+           align-items: center !important;
+           justify-content: space-between !important;
+           margin-bottom: 8px !important;
+           flex-wrap: wrap !important;
+           gap: 12px !important;
+        }
+
+        .bus-offers-title-wrap {
+           display: flex !important;
+           flex-direction: column !important;
+           flex: 0 1 auto !important;
+        }
+
+        .bus-offers-title {
+           font-size: 1.35rem !important;
+           font-weight: 800 !important;
+           color: #e11d48 !important;
+           background: linear-gradient(135deg, #e11d48 0%, #be123c 60%, #f43f5e 100%) !important;
+           -webkit-background-clip: text !important;
+           -webkit-text-fill-color: transparent !important;
+           letter-spacing: -0.02em !important;
+           margin: 0 0 4px 0 !important;
+           line-height: 1.25 !important;
+        }
+
+        .bus-offers-subtitle {
+           font-size: 0.88rem !important;
+           color: #64748b !important;
+           font-weight: 500 !important;
+           margin: 0 !important;
+           line-height: 1.4 !important;
+        }
+
+        .bus-offers-tabs-bar {
+           display: flex !important;
+           align-items: center !important;
+           justify-content: flex-end !important;
+           gap: 10px !important;
+           margin: 0 !important;
+           margin-left: auto !important;
+           flex-wrap: wrap !important;
+        }
+
+        .bus-offers-tab-btn {
+           display: inline-flex !important;
+           align-items: center !important;
+           gap: 8px !important;
+           background: #ffffff !important;
+           color: #1e293b !important;
+           border: 1.5px solid #e2e8f0 !important;
+           padding: 8px 18px !important;
+           border-radius: 9999px !important;
+           font-size: 0.88rem !important;
+           font-weight: 700 !important;
+           cursor: pointer !important;
+           transition: all 0.2s ease !important;
+           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        .bus-offers-tab-btn:hover {
+           border-color: #cbd5e1 !important;
+           background: #f8fafc !important;
+           transform: translateY(-1px) !important;
+        }
+
+        .bus-offers-tab-btn.active {
+           background: #e11d48 !important;
+           color: #ffffff !important;
+           border-color: #e11d48 !important;
+           box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35) !important;
+        }
+
+        /* ─── COMPACT CURVED OFFER CARD (Exact Reference Match) ─── */
+        .offer-img-marquee.offer-marquee {
+           margin-top: -6px !important;
+           padding: 0 0 6px 0 !important;
+        }
+
+        .offer-img-marquee.offer-marquee .marquee-slide {
+           width: 270px !important;
+           flex: 0 0 270px !important;
+           padding: 0 6px !important;
+        }
+
+
+        .img-offer-card {
+           position: relative !important;
+           width: 270px !important;
+           height: 114px !important;
+           border-radius: 16px !important;
+           overflow: hidden !important;
+           cursor: pointer !important;
+           display: flex !important;
+           background: #ffffff !important;
+           border: 1.5px solid #fce7f3 !important;
+           box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07) !important;
+           transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease !important;
+           user-select: none !important;
+           flex-shrink: 0 !important;
+           box-sizing: border-box !important;
+        }
+
+        .img-offer-card:hover {
+           transform: translateY(-4px) !important;
+           box-shadow: 0 10px 26px rgba(225, 29, 72, 0.16) !important;
+        }
+
+        .img-offer-photo-side {
+           position: absolute !important;
+           top: 0 !important;
+           right: 0 !important;
+           width: 60% !important;
+           height: 100% !important;
+           overflow: hidden !important;
+           z-index: 1 !important;
+        }
+
+        .img-offer-photo {
+           width: 100% !important;
+           height: 100% !important;
+           object-fit: cover !important;
+           object-position: center !important;
+           display: block !important;
+           transition: transform 0.4s ease !important;
+        }
+
+        .img-offer-card:hover .img-offer-photo {
+           transform: scale(1.06) !important;
+        }
+
+        .img-offer-corner-badge {
+           position: absolute !important;
+           top: 7px !important;
+           right: 7px !important;
+           z-index: 4 !important;
+           background: #f43f5e !important;
+           color: #ffffff !important;
+           font-size: 0.58rem !important;
+           font-weight: 800 !important;
+           padding: 3px 8px !important;
+           border-radius: 9999px !important;
+           letter-spacing: 0.04em !important;
+           text-transform: uppercase !important;
+           box-shadow: 0 2px 6px rgba(244, 63, 94, 0.35) !important;
+           line-height: 1 !important;
+        }
+
+        .img-offer-corner-badge.badge-bus { background: #f43f5e !important; }
+        .img-offer-corner-badge.badge-flight { background: #0284c7 !important; }
+        .img-offer-corner-badge.badge-hotel { background: #059669 !important; }
+
+        .img-offer-divider-svg {
+           position: absolute !important;
+           inset: 0 !important;
+           width: 100% !important;
+           height: 100% !important;
+           z-index: 2 !important;
+           pointer-events: none !important;
+        }
+
+        .img-offer-info-side {
+           position: relative !important;
+           z-index: 3 !important;
+           width: 55% !important;
+           height: 100% !important;
+           padding: 8px 10px 8px 12px !important;
+           display: flex !important;
+           flex-direction: column !important;
+           justify-content: space-between !important;
+           box-sizing: border-box !important;
+        }
+
+        .img-offer-cat-row {
+           display: flex !important;
+           align-items: center !important;
+           gap: 5px !important;
+        }
+
+        .img-offer-cat-circle {
+           width: 19px !important;
+           height: 19px !important;
+           min-width: 19px !important;
+           border-radius: 50% !important;
+           background: #ffe4e6 !important;
+           color: #e11d48 !important;
+           display: grid !important;
+           place-items: center !important;
+        }
+
+        .img-offer-cat-circle.circle-flight { background: #e0f2fe !important; color: #0284c7 !important; }
+        .img-offer-cat-circle.circle-hotel { background: #d1fae5 !important; color: #059669 !important; }
+
+        .img-offer-cat-text {
+           font-size: 0.62rem !important;
+           font-weight: 800 !important;
+           color: #e11d48 !important;
+           letter-spacing: 0.04em !important;
+           text-transform: uppercase !important;
+           white-space: nowrap !important;
+           line-height: 1 !important;
+        }
+
+        .img-offer-cat-text.text-flight { color: #0284c7 !important; }
+        .img-offer-cat-text.text-hotel { color: #059669 !important; }
+
+        .img-offer-title {
+           font-size: 1.12rem !important;
+           font-weight: 900 !important;
+           color: #0f172a !important;
+           letter-spacing: -0.02em !important;
+           margin: 0 !important;
+           line-height: 1.15 !important;
+           white-space: nowrap !important;
+           overflow: hidden !important;
+           text-overflow: ellipsis !important;
+        }
+
+        .img-offer-validity {
+           font-size: 0.62rem !important;
+           color: #64748b !important;
+           font-weight: 500 !important;
+           margin: 0 !important;
+           line-height: 1 !important;
+           white-space: nowrap !important;
+        }
+
+        .img-offer-grab-btn {
+           display: inline-flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           gap: 5px !important;
+           background: #be185d !important;
+           color: #ffffff !important;
+           border-radius: 9999px !important;
+           padding: 4px 11px !important;
+           font-size: 0.68rem !important;
+           font-weight: 800 !important;
+           border: none !important;
+           cursor: pointer !important;
+           box-shadow: 0 3px 8px rgba(190, 24, 93, 0.3) !important;
+           width: fit-content !important;
+           transition: all 0.2s ease !important;
+           line-height: 1 !important;
+        }
+
+        .img-offer-grab-btn:hover {
+           background: #9d174d !important;
+           transform: translateY(-1px) !important;
+        }
+
+        .img-offer-grab-btn.btn-flight { background: #0284c7 !important; box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3) !important; }
+        .img-offer-grab-btn.btn-hotel { background: #059669 !important; box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3) !important; }
+
+        /* ─── FEATURED OFFERS - MULTI-SHAPE STYLING ─── */
+        .bus-card-unit {
+           position: relative;
+           width: 280px;
+           height: 136px;
+           min-height: 136px;
+           padding: 14px 18px 12px;
+           display: flex;
+           flex-direction: column;
+           justify-content: space-between;
+           overflow: visible;
+           cursor: pointer;
+           background: transparent !important;
+           border: none !important;
+           box-shadow: none !important;
+           filter: drop-shadow(0 6px 16px rgba(15, 23, 42, 0.08));
+           transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), filter 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+           box-sizing: border-box;
+        }
+
+        .bus-card-unit:hover {
+           transform: translateY(-4px);
+           filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.14));
+        }
+
+        .bus-card-bg-svg {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           pointer-events: none;
+           z-index: 0;
+        }
+
+        /* Shape 1: Hanging Ribbon Bookmark */
+        .wavy-ribbon-tag {
+           position: absolute;
+           top: 0;
+           right: 26px;
+           width: 38px;
+           height: 52px;
+           background: #9333ea;
+           clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: flex-start;
+           padding-top: 7px;
+           gap: 1px;
+           z-index: 4;
+           filter: drop-shadow(0 4px 6px rgba(147, 51, 234, 0.35));
+        }
+
+        .ribbon-text-line {
+           color: #ffffff;
+           font-size: 0.54rem;
+           font-weight: 800;
+           letter-spacing: 0.4px;
+           line-height: 1.1;
+           text-align: center;
+        }
+
+        /* Shape 2: Solid Orange Pill */
+        .ticket-solid-pill {
+           position: absolute;
+           top: 12px;
+           right: 18px;
+           background: #f59e0b;
+           color: #ffffff;
+           border-radius: 999px;
+           padding: 4px 12px;
+           font-size: 0.64rem;
+           font-weight: 800;
+           letter-spacing: 0.4px;
+           box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+           text-transform: uppercase;
+           z-index: 4;
+        }
+
+        /* Common top bar */
+        .bus-card-top-bar {
+           position: relative;
+           z-index: 2;
+           display: flex;
+           align-items: center;
+           gap: 8px;
+        }
+
+        .bus-card-icon-badge {
+           width: 28px;
+           height: 28px;
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           flex-shrink: 0;
+        }
+
+        .bus-card-icon-badge.purple {
+           background: #ede9fe;
+           color: #9333ea;
+        }
+
+        .bus-card-icon-badge.yellow {
+           background: #fef3c7;
+           color: #d97706;
+        }
+
+        .bus-card-cat-label {
+           font-size: 0.72rem;
+           font-weight: 800;
+           letter-spacing: 0.5px;
+        }
+
+        .bus-card-cat-label.purple {
+           color: #9333ea;
+        }
+
+        .bus-card-cat-label.yellow {
+           color: #d97706;
+        }
+
+        /* Center code & validity */
+        .bus-card-center-info {
+           position: relative;
+           z-index: 2;
+           margin: 3px 0 2px;
+        }
+
+        .bus-card-title-code {
+           font-size: 1.45rem;
+           font-weight: 800;
+           color: #1e293b;
+           margin: 0;
+           letter-spacing: -0.01em;
+           line-height: 1.15;
+        }
+
+        .bus-card-validity-date {
+           font-size: 0.78rem;
+           font-weight: 500;
+           color: #64748b;
+           margin: 3px 0 0 0;
+           line-height: 1;
+        }
+
+        /* Bottom outlined pill */
+        .bus-card-bottom-bar {
+           position: relative;
+           z-index: 2;
+        }
+
+        .bus-card-outline-btn {
+           display: inline-flex;
+           align-items: center;
+           justify-content: center;
+           background: #ffffff;
+           border-radius: 999px;
+           padding: 4px 14px;
+           font-size: 0.68rem;
+           font-weight: 700;
+           letter-spacing: 0.4px;
+           line-height: 1.2;
+        }
+
+        .bus-card-outline-btn.purple {
+           border: 1.5px solid #d8b4fe;
+           color: #9333ea;
+        }
+
+        .bus-card-outline-btn.yellow {
+           border: 1.5px solid #fcd34d;
+           color: #d97706;
+        }
+
+         /* Custom Offers Scrollable Row and Selected Highlighting */
           .offers-scroll-row {
             display: flex;
             gap: 12px;
@@ -4215,61 +5791,91 @@ export default function HomePage() {
             gap: 8px;
           }
 
-          .terms-list {
-            margin: 0;
-            padding-left: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          }
-
-          .terms-list li {
-            font-size: 0.82rem;
-            color: #475569;
-            line-height: 1.4;
-          }
-
-          .offer-detail-actions {
-            margin-top: 8px;
-          }
-
-          .offer-proceed-btn {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary, #dc1e26), #b8141b) !important;
-            border: none !important;
-            color: #ffffff !important;
-            font-weight: 800 !important;
-            font-size: 0.95rem !important;
-            padding: 14px 0 !important;
-            border-radius: 12px !important;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(220, 30, 38, 0.15);
-            transition: all 0.25s ease !important;
-          }
-
-          .offer-proceed-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(220, 30, 38, 0.22);
-          }
-
-          .offer-proceed-btn:active {
-            transform: translateY(0);
-          }
-
-          /* â”€â”€â”€ Flight Video & Hero Wallpaper Styles (21:9 Aspect Ratio) â”€â”€â”€ */
-          /* â”€â”€â”€ 18:6 Ultra-Wide Flight Hero & Horizontal Search Bar â”€â”€â”€ */
-          .homepage-flights.hero-section,
-          .homepage-buses.hero-section {
-            position: relative !important;
-            overflow: visible !important;
+          /* ─── Compact Assurance Paragraph Card & Gap Removal ─── */
+          .assurance-section {
             width: 100% !important;
-            min-height: 380px !important;
+            padding: 0 !important;
+            margin: 8px auto 14px auto !important;
+            box-sizing: border-box !important;
+          }
+
+          .assurance-paragraph-card {
+            width: 100% !important;
+            background: #ffffff !important;
+            border-radius: 14px !important;
+            padding: 16px 24px !important;
+            color: #0f172a !important;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+            border: 1px solid #e2e8f0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            position: relative !important;
+            overflow: hidden !important;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+          }
+
+          .assurance-paragraph-card:hover {
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08) !important;
+            border-color: #cbd5e1 !important;
+          }
+
+          .assurance-paragraph-header {
             display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .assurance-paragraph-header .assurance-badge {
+            align-self: flex-start !important;
+            background: #eff6ff !important;
+            border: 1px solid #bfdbfe !important;
+            color: #2563eb !important;
+            font-size: 0.65rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.05em !important;
+            padding: 3px 10px !important;
+            border-radius: 9999px !important;
+            display: inline-flex !important;
             align-items: center !important;
+            gap: 5px !important;
+            text-transform: uppercase !important;
+          }
+
+          .assurance-paragraph-title {
+            font-size: 1.18rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            letter-spacing: -0.015em !important;
+            line-height: 1.25 !important;
+          }
+
+          .assurance-paragraph-text {
+            font-size: 0.82rem !important;
+            line-height: 1.5 !important;
+            color: #475569 !important;
+            margin: 0 !important;
+            font-weight: 400 !important;
+          }
+
+          /* ─── Compact Video Hero (video + offers visible together) ─── */
+          .homepage-flights.hero-section,
+          .homepage-buses.hero-section,
+          .homepage-hotels.hero-section {
+            position: relative !important;
+            overflow: hidden !important;
+            width: 100% !important;
+            height: 340px !important;
+            min-height: 340px !important;
+            max-height: 340px !important;
+            display: flex !important;
+            align-items: flex-end !important;
             justify-content: center !important;
-            padding: 30px 20px !important;
+            padding: 8px 20px 10px !important;
             background: transparent !important;
             z-index: 40 !important;
+            box-sizing: border-box !important;
           }
 
           .flight-hero-wallpaper {
@@ -4289,8 +5895,7 @@ export default function HomePage() {
             height: 100% !important;
             min-height: 100% !important;
             object-fit: cover !important;
-            object-position: center !important;
-            aspect-ratio: auto !important;
+            object-position: center center !important;
             filter: none !important;
             opacity: 1 !important;
             transform: none !important;
@@ -4302,99 +5907,59 @@ export default function HomePage() {
           .flight-hero-wallpaper-overlay {
             display: none !important;
           }
-          .homepage-flights .flight-hero-header {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            text-align: left !important;
-            margin-bottom: 60px !important;
-            margin-top: 20px !important;
-            z-index: 10 !important;
-            width: 100% !important;
-          }
-          .homepage-flights .flight-hero-title {
-            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
-            font-size: clamp(28px, 4vw, 44px) !important;
-            font-weight: 900 !important;
-            color: #ffffff !important;
-            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.6) !important;
-            margin-bottom: 8px !important;
-            letter-spacing: -0.01em !important;
-            line-height: 1.2 !important;
-            text-transform: none !important;
-          }
 
-          .homepage-flights .flight-hero-title-highlight {
-            color: #dc1e26 !important;
-            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.6) !important;
-          }
-
-          .homepage-flights .flight-hero-subtitle {
-            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
-            font-size: clamp(15px, 1.8vw, 20px) !important;
-            font-weight: 700 !important;
-            color: rgba(255, 255, 255, 0.95) !important;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
-            margin-top: 4px !important;
-            opacity: 1 !important;
-            letter-spacing: 0.02em !important;
-          }
-          .homepage-flights.hero-section,
-          .homepage-buses.hero-section,
-          .homepage-hotels.hero-section {
-            width: 100% !important;
-            height: auto !important;
-            min-height: 480px !important;
-            display: flex !important;
-            align-items: flex-end !important;
-            justify-content: center !important;
-            padding: 60px 20px 20px !important;
-            box-sizing: border-box !important;
-            z-index: 40 !important;
-            position: relative !important;
-          }
-
-          .homepage-flights .flight-hero-header {
+          .homepage-flights .flight-hero-header,
+          .homepage-buses .hero-header-left,
+          .homepage-hotels .hero-header-left {
             position: absolute !important;
-            top: 40px !important;
-            left: 40px !important;
+            top: 18px !important;
+            left: 36px !important;
             right: auto !important;
             text-align: left !important;
             max-width: 600px !important;
             margin: 0 !important;
             padding: 0 !important;
-            width: auto !important;
             z-index: 50 !important;
-          }
-
-          .homepage-flights .hero-grid {
-            width: 100% !important;
-            max-width: 1220px !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-          }
-
-          /* Premium Glassy Flight Search Bar */
-          .homepage-flights .search-panel {
-            width: 100% !important;
-            max-width: 1240px !important;
-            height: auto !important;
-            min-height: 95px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.2)) !important;
-            backdrop-filter: blur(24px) saturate(160%) !important;
-            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-            border-radius: 24px !important;
-            padding: 16px 24px !important;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
-            border-left: 1px solid rgba(255, 255, 255, 0.85) !important;
+            width: auto !important;
             display: flex !important;
             flex-direction: column !important;
-            justify-content: center !important;
-            box-sizing: border-box !important;
-            position: relative !important;
-            z-index: 20 !important;
+            align-items: flex-start !important;
+          }
+
+          .homepage-flights .flight-hero-title,
+          .homepage-buses .hero-title-left,
+          .homepage-hotels .hero-title-left {
+            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+            font-size: clamp(28px, 3vw, 40px) !important;
+            font-weight: 900 !important;
+            color: #ffffff !important;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65) !important;
+            margin: 0 0 4px 0 !important;
+            letter-spacing: -0.01em !important;
+            line-height: 1.18 !important;
+            text-transform: none !important;
+          }
+
+          .homepage-flights .flight-hero-title-highlight,
+          .homepage-buses .hero-title-highlight,
+          .homepage-hotels .hero-title-highlight {
+            color: #dc1e26 !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6) !important;
+          }
+
+          .homepage-flights .flight-hero-subtitle,
+          .homepage-buses .hero-subtitle-left,
+          .homepage-hotels .hero-subtitle-left {
+            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+            font-size: clamp(13px, 1.35vw, 15px) !important;
+            font-weight: 600 !important;
+            color: rgba(255, 255, 255, 0.95) !important;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+            margin: 0 !important;
+            opacity: 1 !important;
+            letter-spacing: 0.01em !important;
+            line-height: 1.35 !important;
+            max-width: 520px !important;
           }
 
           .homepage-buses .hero-content,
@@ -4412,49 +5977,38 @@ export default function HomePage() {
             justify-content: flex-end !important;
           }
 
-          .homepage-buses .hero-header-left,
-          .homepage-hotels .hero-header-left {
-            position: absolute !important;
-            top: 40px !important;
-            left: 40px !important;
-            right: auto !important;
-            text-align: left !important;
-            max-width: 600px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-
-          /* ── Premium Glassmorphic Bus & Hotel Search Bar ── */
+          .homepage-flights .hero-grid,
           .homepage-buses .hero-grid,
-          .homepage-hotels .hero-grid {
+          .homepage-hotels .hero-grid,
+          .homepage-flights .hero-grid.multicity-active {
             width: 100% !important;
             max-width: 1220px !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
           }
 
+          /* ── Sleek Glassmorphic Search Bar ── */
           .homepage-buses .search-panel,
           .homepage-flights .search-panel,
-          .homepage-hotels .search-panel {
+          .homepage-hotels .search-panel,
+          .homepage-flights .search-panel.is-multicity {
             width: 100% !important;
             max-width: 1240px !important;
             height: auto !important;
-            min-height: 95px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15)) !important;
-            backdrop-filter: blur(28px) saturate(160%) !important;
-            -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
-            border-radius: 24px !important;
-            padding: 16px 24px !important;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
-            border-left: 1px solid rgba(255, 255, 255, 0.85) !important;
+            min-height: 58px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2)) !important;
+            backdrop-filter: blur(24px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+            border-radius: 20px !important;
+            padding: 6px 16px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+            border: 1px solid rgba(255, 255, 255, 0.65) !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important;
             box-sizing: border-box !important;
-            margin: 16px auto -230px !important;
-            transform: translateY(30px) !important;
+            margin: 0 auto !important;
+            transform: none !important;
             position: relative !important;
             z-index: 20 !important;
           }
@@ -4464,73 +6018,6 @@ export default function HomePage() {
           .homepage-hotels .search-panel .tabs-wrap,
           .homepage-flights .search-panel .popular-searches-row {
             display: none !important;
-          }
-
-          .homepage-flights .search-panel {
-            margin: 16px auto -250px !important;
-            transform: translateY(50px) !important;
-          }
-
-          .homepage-hotels .hero-header-left {
-            position: absolute !important;
-            top: 40px !important;
-            left: 40px !important;
-            right: auto !important;
-            text-align: left !important;
-            max-width: 600px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-
-          .homepage-hotels .hero-title-left {
-            color: #ffffff !important;
-            font-size: clamp(34px, 4.4vw, 56px) !important;
-            font-weight: 800 !important;
-            line-height: 1.12 !important;
-            letter-spacing: -0.02em !important;
-            margin-bottom: 12px !important;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
-          }
-
-          .homepage-hotels .hero-title-left .hero-title-highlight {
-            color: #dc2626 !important;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
-            display: inline !important;
-          }
-
-          .homepage-hotels .hero-subtitle-left {
-            color: #ffffff !important;
-            font-size: 15px !important;
-            font-weight: 500 !important;
-            line-height: 1.45 !important;
-            max-width: 440px !important;
-            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55) !important;
-            margin: 0 !important;
-            opacity: 0.95 !important;
-          }
-
-          .homepage-hotels .search-panel {
-            width: 100% !important;
-            max-width: 1240px !important;
-            height: auto !important;
-            min-height: 95px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15)) !important;
-            backdrop-filter: blur(28px) saturate(160%) !important;
-            -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
-            border-radius: 24px !important;
-            padding: 16px 24px !important;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.85) !important;
-            border-left: 1px solid rgba(255, 255, 255, 0.85) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            box-sizing: border-box !important;
-            margin: 16px auto -230px !important;
-            transform: translateY(30px) !important;
-            position: relative !important;
-            z-index: 20 !important;
           }
 
           /* Left-aligned Trip Chips */
@@ -4592,31 +6079,72 @@ export default function HomePage() {
           .search-panel .flight-search-bar-row .class-field {
             flex: 1 1 auto !important;
             min-width: 80px !important;
-            height: 58px !important;
+            height: 54px !important;
             background: transparent !important;
             border: none !important;
             border-right: 1px solid #e2e8f0 !important;
             border-radius: 0 !important;
-            padding: 6px 12px !important;
+            padding: 4px 12px !important;
             margin: 0 !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important;
+            align-items: flex-start !important;
             box-sizing: border-box !important;
             position: relative !important;
           }
 
+          .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
+          .search-panel .flight-search-bar-row .place-autocomplete.is-open {
+            z-index: 10000 !important;
+          }
+
+          .search-panel .flight-search-bar-row .destination-field .place-dropdown,
+          .search-panel .flight-search-bar-row .destination-field .bus-place-dropdown,
+          .search-panel .flight-search-bar-row .destination-field .modern-place-menu {
+            left: auto !important;
+            right: 0 !important;
+          }
+
+
           /* Remove PlaceAutocomplete internal input fixed heights so it matches Departure/Travellers */
-          .search-panel .flight-search-bar-row .field-control {
-            height: auto !important;
-            min-height: 0 !important;
+          .search-panel .flight-search-bar-row .field-control,
+          .search-panel .flight-search-bar-row input.field-control {
+            height: 26px !important;
+            min-height: 26px !important;
+            line-height: 26px !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
+            margin: 0 !important;
             color: #334155 !important;
             font-size: 0.92rem !important;
             font-weight: 500 !important;
+            width: 100% !important;
+          }
+
+          .search-panel .flight-search-bar-row .control-wrap {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+            height: 26px !important;
+            min-height: 26px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+          }
+
+          .search-panel .flight-search-bar-row .control-wrap svg {
+            color: #dc1e26 !important;
+            stroke: #dc1e26 !important;
+            flex-shrink: 0 !important;
+            width: 17px !important;
+            height: 17px !important;
           }
 
           .search-panel .flight-search-bar-row .field-control::placeholder {
@@ -4649,21 +6177,15 @@ export default function HomePage() {
           }
 
           .search-panel .flight-search-bar-row .hotel-destination-field {
-            flex: 1.35 1 auto !important;
-            padding-left: 8px !important;
+            flex: 1.4 1 auto !important;
+            padding-left: 6px !important;
             border-right: 1px solid #e2e8f0 !important;
           }
 
           .search-panel .flight-search-bar-row .hotel-guests-field {
-            flex: 1.15 1 auto !important;
-            border-right: none !important;
-            padding-left: 12px !important;
-            padding-right: 8px !important;
-          }
-
-          .search-panel .flight-search-bar-row.hotel-search-bar-row .checkin-field,
-          .search-panel .flight-search-bar-row.hotel-search-bar-row .checkout-field {
+            flex: 1.2 1 auto !important;
             border-right: 1px solid #e2e8f0 !important;
+            padding-left: 12px !important;
           }
 
           .search-panel .flight-search-bar-row .hotel-destination-field svg,
@@ -4673,14 +6195,6 @@ export default function HomePage() {
             color: #dc1e26 !important;
             stroke: #dc1e26 !important;
             flex-shrink: 0 !important;
-          }
-
-          .search-panel .flight-search-bar-row.hotel-search-bar-row .hotel-guest-summary-text {
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            max-width: 140px !important;
-            display: inline-block !important;
           }
 
           /* Ensure dropdowns aren't covered by subsequent sibling elements with explicit z-indices */
@@ -4718,15 +6232,23 @@ export default function HomePage() {
 
           /* Field Labels (SOURCE, DESTINATION, DEPARTURE, TRAVELLERS, CLASS) - Bold & Dark */
           .search-panel .flight-search-bar-row .field label,
+          .search-panel .flight-search-bar-row .place-autocomplete label,
+          .search-panel .flight-search-bar-row .departure-field label,
+          .search-panel .flight-search-bar-row .return-field label,
           .search-panel .flight-search-bar-row .traveller-field label,
           .search-panel .flight-search-bar-row .class-field label {
+            display: block !important;
+            text-align: left !important;
+            align-self: flex-start !important;
             color: #0f172a !important;
             font-size: 0.68rem !important;
             font-weight: 900 !important;
             letter-spacing: 0.07em !important;
-            margin-bottom: 2px !important;
+            margin: 0 0 2px 0 !important;
+            padding: 0 !important;
             text-transform: uppercase !important;
             white-space: nowrap !important;
+            line-height: 1.2 !important;
           }
           
           .search-panel .flight-search-bar-row .date-display-wrapper span {
@@ -4763,200 +6285,46 @@ export default function HomePage() {
             box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
           }
 
-          /* Red Search Hotels Button */
-          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn,
-          .search-panel .hotel-search-submit-btn {
-            flex: 0 0 auto !important;
-            width: auto !important;
-            min-width: 140px !important;
-            height: 38px !important;
-            background: #dc2626 !important;
-            color: #ffffff !important;
-            border-radius: 12px !important;
-            font-weight: 800 !important;
-            font-size: 0.72rem !important;
-            letter-spacing: 0.05em !important;
-            text-transform: uppercase !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 7px !important;
-            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
-            transition: all 0.2s ease !important;
-            margin-left: 10px !important;
-            padding: 0 22px !important;
-            cursor: pointer !important;
-            border: none !important;
-          }
-
-          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn:hover,
-          .search-panel .hotel-search-submit-btn:hover {
-            background: #b91c1c !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45) !important;
-          }
-
-          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn svg,
-          .search-panel .hotel-search-submit-btn svg {
-            color: #ffffff !important;
-            stroke: #ffffff !important;
-          }
-
-          /* ─── Premium Place Autocomplete Dropdown ─── */
-          .place-dropdown,
-          .bus-place-dropdown {
-            position: absolute !important;
-            top: calc(100% + 6px) !important;
-            left: 0 !important;
-            right: 0 !important;
+          /* Multi-City Full Width Row Styling */
+          .homepage-flights .search-panel .multi-city-list {
             width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-            max-height: 320px !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            background: #ffffff !important;
-            border-radius: 16px !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
-            padding: 6px !important;
-            z-index: 9999 !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 2px !important;
-            box-sizing: border-box !important;
+            gap: 10px !important;
           }
 
-          .place-dropdown::-webkit-scrollbar,
-          .bus-place-dropdown::-webkit-scrollbar {
-            width: 5px !important;
-          }
-          .place-dropdown::-webkit-scrollbar-thumb,
-          .bus-place-dropdown::-webkit-scrollbar-thumb {
-            background: #cbd5e1 !important;
-            border-radius: 4px !important;
-          }
-
-          .pnb-place-option {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: flex-start !important;
+          .homepage-flights .search-panel .multi-city-row {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(160px, 1fr) auto !important;
             gap: 12px !important;
+            align-items: flex-end !important;
+          }
+
+          .homepage-flights .search-panel .multi-footer-row {
             width: 100% !important;
-            min-height: 48px !important;
-            padding: 8px 12px !important;
-            background: transparent !important;
-            border: none !important;
-            border-radius: 10px !important;
-            cursor: pointer !important;
-            text-align: left !important;
-            transition: all 0.15s ease !important;
-            box-sizing: border-box !important;
-            outline: none !important;
-            color: #1e293b !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+            align-items: flex-end !important;
           }
 
-          .pnb-place-option:hover,
-          .pnb-place-option:focus {
-            background: #f8fafc !important;
-            transform: none !important;
-          }
-
-          .pnb-place-option:hover .pnb-place-icon-wrap {
-            background: #fee2e2 !important;
-            color: #dc2626 !important;
-          }
-
-          .pnb-place-icon-wrap {
-            width: 32px !important;
-            height: 32px !important;
-            border-radius: 8px !important;
-            background: #f1f5f9 !important;
-            color: #64748b !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            flex-shrink: 0 !important;
-            transition: all 0.15s ease !important;
-          }
-
-          .pnb-place-text {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            gap: 2px !important;
-            min-width: 0 !important;
-            flex: 1 !important;
-          }
-
-          .pnb-place-primary {
+          .homepage-flights .search-panel .multi-actions {
             display: flex !important;
             align-items: center !important;
             gap: 8px !important;
-            font-size: 0.88rem !important;
-            font-weight: 700 !important;
-            color: #0f172a !important;
-            line-height: 1.2 !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
+            height: 38px !important;
           }
 
-          .pnb-place-city {
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            text-transform: capitalize !important;
-          }
-
-          .pnb-place-code {
-            font-size: 0.68rem !important;
-            font-weight: 800 !important;
-            background: #fee2e2 !important;
-            color: #dc2626 !important;
-            padding: 1px 6px !important;
-            border-radius: 4px !important;
-            letter-spacing: 0.04em !important;
-            flex-shrink: 0 !important;
-          }
-
-          .pnb-place-secondary {
-            font-size: 0.74rem !important;
-            font-weight: 500 !important;
-            color: #64748b !important;
-            line-height: 1.2 !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-          }
-
-          .place-meta,
-          .bus-place-meta {
-            padding: 16px 12px !important;
-            text-align: center !important;
-            font-size: 0.82rem !important;
-            font-weight: 500 !important;
-            color: #94a3b8 !important;
-            display: flex !important;
+          .homepage-flights .search-panel .action-circle {
+            width: 38px !important;
+            height: 38px !important;
+            min-width: 38px !important;
+            min-height: 38px !important;
+            border-radius: 50% !important;
+            display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-          }
-
-          /* Ensure hotel destination input is 100% clean and transparent on focus */
-          .search-panel .flight-search-bar-row .hotel-destination-field,
-          .search-panel .flight-search-bar-row .hotel-destination-field:focus-within,
-          .search-panel .flight-search-bar-row .hotel-destination-field .control-wrap,
-          .search-panel .flight-search-bar-row .hotel-destination-field:focus-within .control-wrap,
-          .search-panel .flight-search-bar-row .field-control,
-          .search-panel .flight-search-bar-row .field-control:focus,
-          .search-panel .flight-search-bar-row .place-input,
-          .search-panel .flight-search-bar-row .place-input:focus {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            outline: none !important;
           }
 
           @media (max-width: 100px) {
@@ -5395,14 +6763,406 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 1. FEATURED OFFERS SECTION (TOP) */}
+      <section className="bus-offers-section section-shell">
+        <div className="bus-offers-content-shell">
+          <div className="bus-offers-header-block">
+            <div className="bus-offers-title-wrap">
+              <h2 className="bus-offers-title">Featured Offers</h2>
+              <p className="bus-offers-subtitle">
+                {offersFilter === "bus"
+                  ? "Best deals on buses. Grab them before they're gone!"
+                  : offersFilter === "flight"
+                  ? "Best deals on flights. Grab them before they're gone!"
+                  : offersFilter === "hotel"
+                  ? "Best deals on hotels. Grab them before they're gone!"
+                  : "Top travel deals and exclusive savings across all categories!"}
+              </p>
+            </div>
+            <div className="bus-offers-tabs-bar">
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
+                onClick={() => setOffersFilter("all")}
+              >
+                <LayoutGrid size={15} />
+                <span>All Offers</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
+                onClick={() => setOffersFilter("bus")}
+              >
+                <Bus size={15} />
+                <span>Buses</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
+                onClick={() => setOffersFilter("flight")}
+              >
+                <Plane size={15} />
+                <span>Flights</span>
+              </button>
+              <button
+                type="button"
+                className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
+                onClick={() => setOffersFilter("hotel")}
+              >
+                <Building2 size={15} />
+                <span>Hotels</span>
+              </button>
+            </div>
+          </div>
+
+              {/* Offer Cards */}
+              {featuredOffersLoading ? (
+                <div className="popular-routes-loading" style={{ padding: "20px 0", textAlign: "center" }}>
+                  Loading offers...
+                </div>
+              ) : filteredOffers.length === 0 ? (
+                <div style={{ padding: "20px 0", textAlign: "center", color: "#64748b", fontSize: "14px" }}>
+                  No {offersFilter === "all" ? "" : `${offersFilter} `}offers available.
+                </div>
+              ) : (
+                <AutoMarquee
+                  items={filteredOffers}
+                  className="offer-marquee offer-img-marquee"
+                  duration={32}
+                  pauseOnHover={true}
+                  renderItem={(offer, idx) => {
+                    let code = String(
+                      offer.couponCode ||
+                      offer.offerCode ||
+                      offer.promotionCode ||
+                      offer.title ||
+                      "OFFER"
+                    ).trim();
+
+                    if (!code || code === "0") {
+                      code = String(offer.title || "OFFER").trim();
+                    }
+                    if (!code || code === "0") {
+                      code = "OFFER";
+                    }
+
+                    const typeLower = (offer.bookingType || "bus").toLowerCase();
+                    const isFlight = typeLower.includes("flight");
+                    const isHotel = typeLower.includes("hotel");
+                    const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
+                    const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
+                    const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
+
+                    const cardImage =
+                      offer.imageUrl ||
+                      offer.image ||
+                      (isFlight ? offerCardFlightImg : isHotel ? offerCardHotelImg : offerCardBusImg);
+
+                    const discountLabel = offer.badgeLabel || offer.discountPercent
+                      ? (offer.badgeLabel || `${offer.discountPercent}% OFF`)
+                      : null;
+
+                    return (
+                      <article
+                        key={offer.id ? `${offer.id}-${idx}` : idx}
+                        className={`img-offer-card theme-${cardTheme}`}
+                        onClick={() => setOfferForDetailPopup(offer)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        {/* Right Photo Area */}
+                        <div className="img-offer-photo-side">
+                          <img src={cardImage} alt={categoryLabel} className="img-offer-photo" loading="lazy" />
+                          <span className={`img-offer-corner-badge badge-${cardTheme}`}>
+                            {discountLabel || "LIMITED TIME"}
+                          </span>
+                        </div>
+
+                        {/* S-Curve Divider SVG */}
+                        <svg className="img-offer-divider-svg" viewBox="0 0 270 114" preserveAspectRatio="none">
+                          <path
+                            d="M0,0 L150,0 C172,32 135,76 117,114 L0,114 Z"
+                            fill="#fbcfe8"
+                            opacity="0.9"
+                          />
+                          <path
+                            d="M0,0 L145,0 C167,32 130,76 112,114 L0,114 Z"
+                            fill="#ffffff"
+                          />
+                        </svg>
+
+                        {/* Left Info Area */}
+                        <div className="img-offer-info-side">
+                          <div className="img-offer-cat-row">
+                            <span className={`img-offer-cat-circle circle-${cardTheme}`}>
+                              <OfferIcon size={11} strokeWidth={2.4} />
+                            </span>
+                            <span className={`img-offer-cat-text text-${cardTheme}`}>
+                              {categoryLabel}
+                            </span>
+                          </div>
+
+                          <h3 className="img-offer-title">{code}</h3>
+
+                          <p className="img-offer-validity">
+                            {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                          </p>
+
+                          <button
+                            type="button"
+                            className={`img-offer-grab-btn btn-${cardTheme}`}
+                            onClick={(e) => { e.stopPropagation(); handleOfferBooking(offer); }}
+                          >
+                            <span>Grab Offer</span>
+                            <ArrowRight size={11} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  }}
+                />
+              )}
+        </div>
+      </section>
+
+
+
+      {/* 2. TRAVEL DESK SERVICES Banner Section - Dynamic per active tab (MIDDLE) */}
+      {(() => {
+        const isFlight = activeTab === "flights";
+        const isHotel = activeTab === "hotels";
+
+        const config = isFlight
+          ? {
+            headline: <>Your Flight.<br /><span className="td-highlight-red">Our Priority.</span></>,
+            subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable - all in one place.",
+            features: [
+              { icon: <Search size={17} />, title: "Smart Search", desc: "Find flights across hundreds of routes with smart filters." },
+              { icon: <Clock3 size={17} />, title: "Live Flight Status", desc: "Get real-time departure, arrival & delay updates instantly." },
+              { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
+              { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
+            ],
+            btnIcon: <Plane size={16} />,
+            btnLabel: "Search Flights Now",
+            btnAction: () => setActiveTab("flights"),
+            bgImage: sunsetHighwayBg,
+            vehicleImg: flightSectionNewBanner,
+            vehicleAlt: "Flight Booking Illustration",
+            vehicleTag: "",
+            stats: [
+              { color: "red", icon: <Plane size={15} />, value: "500+", label: "Airlines" },
+              { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
+              { color: "crimson", icon: <MapPin size={15} />, value: "300+", label: "Destinations" },
+              { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
+            ],
+            phoneGreeting: "Book Your Flight!",
+            phoneSub: "Where are you flying to?",
+            phoneField1Icon: <Plane size={13} className="td-field-icon" />,
+            phoneField1Label: "From",
+            phoneField1Value: "Delhi",
+            phoneField2Icon: <Plane size={13} className="td-field-icon" />,
+            phoneField2Label: "To",
+            phoneField2Value: "Mumbai",
+            phoneDateLabel: "Travel Date",
+            phoneDateValue: "25 May, 2025",
+            phoneSubmitLabel: "Search Flights",
+          }
+          : isHotel
+            ? {
+              headline: <>Your Stay.<br /><span className="td-highlight-red">Our Priority.</span></>,
+              subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable - all in one place.",
+              features: [
+                { icon: <Search size={17} />, title: "Smart Search", desc: "Find hotels across hundreds of destinations with smart filters." },
+                { icon: <BedDouble size={17} />, title: "Room Availability", desc: "Get live room availability & pricing updates instantly." },
+                { icon: <Ticket size={17} />, title: "Best Rates", desc: "Compare prices and choose the best deals that fit your budget." },
+                { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
+              ],
+              btnIcon: <Building2 size={16} />,
+              btnLabel: "Search Hotels Now",
+              btnAction: () => setActiveTab("hotels"),
+              bgImage: sunsetHighwayBg,
+              vehicleImg: hotelSectionBanner,
+              vehicleAlt: "Hotel Booking Illustration",
+              vehicleTag: "",
+              stats: [
+                { color: "red", icon: <Building2 size={15} />, value: "2000+", label: "Hotels Listed" },
+                { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
+                { color: "crimson", icon: <MapPin size={15} />, value: "200+", label: "Cities Covered" },
+                { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
+              ],
+              phoneGreeting: "Book Your Hotel!",
+              phoneSub: "Where are you staying?",
+              phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
+              phoneField1Label: "Destination",
+              phoneField1Value: "Goa",
+              phoneField2Icon: <BedDouble size={13} className="td-field-icon" />,
+              phoneField2Label: "Rooms",
+              phoneField2Value: "1 Room, 2 Adults",
+              phoneDateLabel: "Check-in Date",
+              phoneDateValue: "25 May, 2025",
+              phoneSubmitLabel: "Search Hotels",
+            }
+            : {
+              headline: <>Your Journey.<br /><span className="td-highlight-red">Our Priority.</span></>,
+              subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable – all in one place.",
+              features: [
+                { icon: <Search size={14} />, title: "Smart Search", desc: "Find buses easily" },
+                { icon: <Clock3 size={14} />, title: "Live Updates", desc: "Real-time info" },
+                { icon: <Ticket size={14} />, title: "Best Fares", desc: "Unbeatable deals" },
+                { icon: <ShieldCheck size={14} />, title: "Safe & Secure", desc: "Verified payments" },
+              ],
+              btnIcon: <Bus size={15} />,
+              btnLabel: "Search Buses Now",
+              btnAction: () => openPopularBusRoutes(),
+              bgImage: sunsetHighwayBg,
+              vehicleImg: busCoastBanner,
+              vehicleAlt: "Pick N Book Luxury Bus",
+              vehicleTag: "",
+              stats: [
+                { color: "red", icon: <MapPin size={13} />, value: "5000+", label: "Routes Covered" },
+                { color: "purple", icon: <Users size={13} />, value: "10L+", label: "Happy Customers" },
+                { color: "crimson", icon: <ShieldCheck size={13} />, value: "1000+", label: "Trusted Partners" },
+                { color: "dark", icon: <Headphones size={13} />, value: "24/7", label: "Support Available" },
+              ],
+              phoneGreeting: "Hello, Traveller!",
+              phoneSub: "Where are you going?",
+              phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
+              phoneField1Label: "From",
+              phoneField1Value: "City A",
+              phoneField2Icon: <MapPin size={13} className="td-field-icon" />,
+              phoneField2Label: "To",
+              phoneField2Value: "City B",
+              phoneDateLabel: "Journey Date",
+              phoneDateValue: "25 May, 2025",
+              phoneSubmitLabel: "Search Buses →",
+            };
+
+        return (
+          <section className="td-services-section section-shell">
+            <div className="td-services-card">
+              <div className="td-services-body-grid">
+                {/* Left White Copy & Features Column */}
+                <div className="td-services-left-col">
+                  <h2 className="td-services-headline">{config.headline}</h2>
+                  <p className="td-services-paragraph">{config.subtitle}</p>
+
+                  <div className="td-services-features-list">
+                    {config.features.map((f, i) => (
+                      <div className="td-feature-item" key={i}>
+                        <div className="td-feature-icon-box">{f.icon}</div>
+                        <div className="td-feature-text">
+                          <strong>{f.title}</strong>
+                          <p>{f.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="td-services-actions-row">
+                    <button
+                      type="button"
+                      className="td-search-now-btn"
+                      onClick={config.btnAction}
+                    >
+                      {config.btnIcon}
+                      <span>{config.btnLabel}</span>
+                      <ArrowRight size={16} className="td-btn-arrow" />
+                    </button>
+                    <div className="td-need-help-pill">
+                      <div className="td-help-icon-circle">
+                        <Headphones size={15} />
+                      </div>
+                      <div className="td-help-meta">
+                        <strong>Need Help?</strong>
+                        <span>24/7 Customer Support</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: BG + Stats + Visual Mockup */}
+                <div className="td-services-right-col" style={{ backgroundImage: `url(${config.bgImage})` }}>
+                  <div className="td-curved-divider-overlay" />
+
+                  <div className="td-floating-stats-glass-bar">
+                    {config.stats.map((s, i) => (
+                      <React.Fragment key={i}>
+                        {i > 0 && <div className="td-glass-stat-divider" />}
+                        <div className="td-glass-stat-item">
+                          <div className={`td-stat-icon-circle ${s.color}`}>{s.icon}</div>
+                          <div className="td-stat-info">
+                            <strong>{s.value}</strong>
+                            <span>{s.label}</span>
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  <div className="td-services-visual-stage">
+                    <div className="td-bus-visual-wrap">
+                      {config.vehicleTag && <div className="td-bus-display-tag">{config.vehicleTag}</div>}
+                      <img src={config.vehicleImg} alt={config.vehicleAlt} className="td-stage-bus-img" />
+                    </div>
+
+                    <div className="td-phone-device-frame">
+                      <div className="td-phone-notch" />
+                      <div className="td-phone-inner-screen">
+                        <div className="td-phone-greeting">
+                          <span className="td-greeting-title">{config.phoneGreeting}</span>
+                          <span className="td-greeting-sub">{config.phoneSub}</span>
+                        </div>
+                        <div className="td-phone-field-box">
+                          {config.phoneField1Icon}
+                          <div className="td-field-labels">
+                            <span className="td-field-lbl">{config.phoneField1Label}</span>
+                            <strong>{config.phoneField1Value}</strong>
+                          </div>
+                        </div>
+                        <div className="td-phone-field-box">
+                          {config.phoneField2Icon}
+                          <div className="td-field-labels">
+                            <span className="td-field-lbl">{config.phoneField2Label}</span>
+                            <strong>{config.phoneField2Value}</strong>
+                          </div>
+                        </div>
+                        <div className="td-phone-field-box">
+                          <CalendarDays size={13} className="td-field-icon" />
+                          <div className="td-field-labels">
+                            <span className="td-field-lbl">{config.phoneDateLabel}</span>
+                            <strong>{config.phoneDateValue}</strong>
+                          </div>
+                        </div>
+                        <button type="button" className="td-phone-main-submit-btn">
+                          {config.phoneSubmitLabel}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* 3. POPULAR PICKS / ROUTES SECTION (BOTTOM) */}
       {
         activeTab === "buses" && (
           <section className="popular-routes-section section-shell">
-            <div className="section-header">
+            <div className="section-header pop-bus-header-row">
               <div>
-                <span className="section-kicker">POPULAR BUS ROUTES</span>
-                <h2>Most Booked Bus Routes</h2>
+                <span className="section-kicker pop-bus-kicker">POPULAR BUS ROUTES</span>
+                <h2 className="pop-bus-title">Most Booked Bus Routes</h2>
               </div>
+              <button
+                type="button"
+                className="pop-bus-view-all-btn"
+                onClick={openPopularBusRoutes}
+              >
+                <span>View All Routes</span>
+                <ArrowRight size={15} strokeWidth={2.4} />
+              </button>
             </div>
 
             {popularRoutesLoading ? (
@@ -5412,54 +7172,123 @@ export default function HomePage() {
             ) : popularRoutes.length === 0 ? (
               <div className="popular-routes-empty">No popular routes available.</div>
             ) : (
-              <AutoMarquee
-                items={popularRoutes}
-                className="popular-routes-marquee"
-                duration={36}
-                renderItem={(route, idx) => {
-                  const BUS_PHOTOS = [
-                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
-                    "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
-                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
-                    "https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=600&q=80&fit=crop&auto=format"
-                  ];
-                  const cityImg = getCityImage(route.toCity || route.fromCity, "");
-                  const busImg = cityImg || BUS_PHOTOS[idx % BUS_PHOTOS.length];
+              <>
+                <div className="pop-bus-carousel-wrapper">
+                  <div className="pop-bus-cards-track" ref={busCardsTrackRef}>
+                    {popularRoutes.slice(0, 15).map((route, idx) => {
+                      const BUS_PHOTOS = [
+                        "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
+                        "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
+                        "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format",
+                        "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format",
+                        "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format"
+                      ];
+                      const busImg = route.img || BUS_PHOTOS[idx % BUS_PHOTOS.length];
 
-                  return (
-                    <article
-                      className="pop-route-card"
-                      key={route.id || idx}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handlePopularRouteBooking(route)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePopularRouteBooking(route); } }}
-                    >
-                      <div className="pop-route-img-wrap">
-                        <img
-                          src={busImg}
-                          alt={`${route.fromCity} to ${route.toCity}`}
-                          loading="lazy"
-                          onError={(e) => { e.target.onerror = null; e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length]; }}
-                        />
-                        <div className="pop-route-img-overlay">
-                          <span className="pop-route-tag-search">BUS</span>
-                        </div>
-                      </div>
-                      <div className="pop-route-body">
-                        <div className="pop-route-cities-row">
-                          <span className="pop-route-city from" title={route.fromCity}>{route.fromCity}</span>
-                          <div className="pop-route-icon-circle"><Bus size={13} /></div>
-                          <span className="pop-route-city to" title={route.toCity}>{route.toCity}</span>
-                        </div>
-                      </div>
-                      <button type="button" className="pop-route-book-btn"
-                        onClick={(e) => { e.stopPropagation(); handlePopularRouteBooking(route); }}
-                      >BOOK BUS</button>
-                    </article>
-                  );
-                }}
-              />
+                      return (
+                        <article
+                          className="pop-route-card pop-bus-card"
+                          key={route.id || idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handlePopularRouteBooking(route)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handlePopularRouteBooking(route);
+                            }
+                          }}
+                        >
+                          <div className="pop-route-img-wrap">
+                            <img
+                              src={busImg}
+                              alt={`${route.fromCity} to ${route.toCity}`}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
+                              }}
+                            />
+                            <div className="pop-bus-badge-top-left">
+                              <Bus size={11} strokeWidth={2.4} />
+                              <span>BUS</span>
+                            </div>
+                            <button
+                              type="button"
+                              className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(route.id || idx) ? "is-saved" : ""}`}
+                              aria-label="Save route"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSaveBusRoute(route.id || idx);
+                              }}
+                            >
+                              <Bookmark
+                                size={14}
+                                strokeWidth={2}
+                                fill={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "none"}
+                                color={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "#1f2937"}
+                              />
+                            </button>
+                            <div className="pop-bus-wave-wrap">
+                              <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
+                                <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          <div className="pop-bus-body">
+                            <div className="pop-bus-cities-row">
+                              <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
+                              <div className="pop-bus-connector">
+                                <span className="pop-bus-dot" />
+                                <span className="pop-bus-line" />
+                                <div className="pop-bus-icon-circle">
+                                  <Bus size={13} strokeWidth={2.4} />
+                                </div>
+                                <span className="pop-bus-line" />
+                                <span className="pop-bus-dot" />
+                              </div>
+                              <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
+                            </div>
+                          </div>
+
+                          <div className="pop-bus-footer">
+                            <button
+                              type="button"
+                              className="pop-bus-book-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePopularRouteBooking(route);
+                              }}
+                            >
+                              <span>BOOK BUS</span>
+                              <ArrowRight size={13} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    className="pop-bus-next-circle-btn"
+                    aria-label="Next routes"
+                    onClick={handleNextBusPage}
+                  >
+                    <ChevronRight size={18} strokeWidth={2.6} />
+                  </button>
+                </div>
+
+                <div className="pop-bus-pagination-dots">
+                  {[0, 1, 2].map((dotIdx) => (
+                    <span
+                      key={dotIdx}
+                      className={`pop-bus-dot ${busRoutePage === dotIdx ? "active" : ""}`}
+                      onClick={() => handleGoToBusPage(dotIdx)}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </section>
         )
@@ -5522,8 +7351,103 @@ export default function HomePage() {
               )}
             </section>
 
-            <section className="brands-section section-shell">
-              <div className="section-header">
+            {/* Middle Section: Flight Advantage Background Card with Modern UI */}
+            <section className="flight-highlights-section section-shell">
+              <div className="flight-master-bg-card">
+                {/* Modern Header Inside Background Card */}
+                <div className="flight-master-header">
+                  <div className="flight-master-header-left">
+                    <h2 className="flight-master-title">Why Book Flights With Pick N Book</h2>
+                    <p className="flight-master-subtitle">Enjoy automated travel perks, guaranteed price transparency, and zero cancellation delays.</p>
+                  </div>
+                </div>
+
+                <div className="flight-cards-grid">
+                  {/* Card 1: Web Check-in */}
+                  <div className="flight-elevated-card card-theme-blue">
+                    <div className="f-card-accent-bar" />
+                    <div className="f-card-header">
+                      <div className="f-card-icon-bubble">
+                        <Ticket size={22} />
+                      </div>
+                      <span className="f-card-badge">AUTO-SEAT</span>
+                    </div>
+                    <div className="f-card-body">
+                      <h3 className="f-card-title">Web Check-in</h3>
+                      <h4 className="f-card-subtitle">Instant Boarding Pass</h4>
+                      <p className="f-card-text">Pre-select preferred seats and receive digital boarding passes via WhatsApp & email.</p>
+                    </div>
+                    <div className="f-card-footer">
+                      <Sparkles size={13} className="f-card-sparkle" />
+                      <span>Free Seat Selection</span>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Flexi-Fly */}
+                  <div className="flight-elevated-card card-theme-purple">
+                    <div className="f-card-accent-bar" />
+                    <div className="f-card-header">
+                      <div className="f-card-icon-bubble">
+                        <RefreshCw size={22} />
+                      </div>
+                      <span className="f-card-badge">FLEXI-FLY</span>
+                    </div>
+                    <div className="f-card-body">
+                      <h3 className="f-card-title">Free Reschedule</h3>
+                      <h4 className="f-card-subtitle">Zero Date-Change Fee</h4>
+                      <p className="f-card-text">Enjoy flexible booking options with zero date-change penalties on select airlines.</p>
+                    </div>
+                    <div className="f-card-footer">
+                      <Sparkles size={13} className="f-card-sparkle" />
+                      <span>Valid On Top Airlines</span>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Special Fares */}
+                  <div className="flight-elevated-card card-theme-red">
+                    <div className="f-card-accent-bar" />
+                    <div className="f-card-header">
+                      <div className="f-card-icon-bubble">
+                        <Tag size={22} />
+                      </div>
+                      <span className="f-card-badge">EXTRA SAVINGS</span>
+                    </div>
+                    <div className="f-card-body">
+                      <h3 className="f-card-title">Special Fares</h3>
+                      <h4 className="f-card-subtitle">Student & Senior Perks</h4>
+                      <p className="f-card-text">Exclusive base fare concessions and extra baggage allowances for eligible travellers.</p>
+                    </div>
+                    <div className="f-card-footer">
+                      <Sparkles size={13} className="f-card-sparkle" />
+                      <span>Special Concessions</span>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Fast Refunds */}
+                  <div className="flight-elevated-card card-theme-green">
+                    <div className="f-card-accent-bar" />
+                    <div className="f-card-header">
+                      <div className="f-card-icon-bubble">
+                        <Lock size={22} />
+                      </div>
+                      <span className="f-card-badge">FAST-TRACK</span>
+                    </div>
+                    <div className="f-card-body">
+                      <h3 className="f-card-title">Fast Refunds</h3>
+                      <h4 className="f-card-subtitle">Quick Bank Settlement</h4>
+                      <p className="f-card-text">Prompt cancellation refunds directly credited to your original payment mode without delays.</p>
+                    </div>
+                    <div className="f-card-footer">
+                      <Sparkles size={13} className="f-card-sparkle" />
+                      <span>Zero Cancellation Delays</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="brands-section section-shell" style={{ marginTop: "32px", marginBottom: "16px" }}>
+              <div className="section-header" style={{ marginBottom: "18px" }}>
                 <div>
                   <h2>Airline Brands</h2>
                 </div>
@@ -5603,376 +7527,6 @@ export default function HomePage() {
         )
       }
 
-      {/* TRAVEL DESK SERVICES Banner Section - Dynamic per active tab */}
-      {(() => {
-        const isFlight = activeTab === "flights";
-        const isHotel = activeTab === "hotels";
-
-        const config = isFlight
-          ? {
-            headline: <>Your Flight.<br /><span className="td-highlight-red">Our Priority.</span></>,
-            subtitle: "Discover the best flight routes, compare fares, and book tickets in just a few clicks. Fast, easy, and reliable - all in one place.",
-            features: [
-              { icon: <Search size={17} />, title: "Smart Search", desc: "Find flights across hundreds of routes with smart filters." },
-              { icon: <Clock3 size={17} />, title: "Live Flight Status", desc: "Get real-time departure, arrival & delay updates instantly." },
-              { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
-              { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
-            ],
-            btnIcon: <Plane size={16} />,
-            btnLabel: "Search Flights Now",
-            btnAction: () => setActiveTab("flights"),
-            bgImage: sunsetHighwayBg,
-            vehicleImg: flightSectionNewBanner,
-            vehicleAlt: "Flight Booking Illustration",
-            vehicleTag: "",
-            stats: [
-              { color: "red", icon: <Plane size={15} />, value: "500+", label: "Airlines" },
-              { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
-              { color: "crimson", icon: <MapPin size={15} />, value: "300+", label: "Destinations" },
-              { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
-            ],
-            phoneGreeting: "Book Your Flight!",
-            phoneSub: "Where are you flying to?",
-            phoneField1Icon: <Plane size={13} className="td-field-icon" />,
-            phoneField1Label: "From",
-            phoneField1Value: "Delhi",
-            phoneField2Icon: <Plane size={13} className="td-field-icon" />,
-            phoneField2Label: "To",
-            phoneField2Value: "Mumbai",
-            phoneDateLabel: "Travel Date",
-            phoneDateValue: "25 May, 2025",
-            phoneSubmitLabel: "Search Flights",
-          }
-          : isHotel
-            ? {
-              headline: <>Your Stay.<br /><span className="td-highlight-red">Our Priority.</span></>,
-              subtitle: "Discover the best hotels, compare rates, and book your perfect stay in just a few clicks. Fast, easy, and reliable - all in one place.",
-              features: [
-                { icon: <Search size={17} />, title: "Smart Search", desc: "Find hotels across hundreds of destinations with smart filters." },
-                { icon: <BedDouble size={17} />, title: "Room Availability", desc: "Get live room availability & pricing updates instantly." },
-                { icon: <Ticket size={17} />, title: "Best Rates", desc: "Compare prices and choose the best deals that fit your budget." },
-                { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
-              ],
-              btnIcon: <Building2 size={16} />,
-              btnLabel: "Search Hotels Now",
-              btnAction: () => setActiveTab("hotels"),
-              bgImage: sunsetHighwayBg,
-              vehicleImg: hotelSectionBanner,
-              vehicleAlt: "Hotel Booking Illustration",
-              vehicleTag: "",
-              stats: [
-                { color: "red", icon: <Building2 size={15} />, value: "2000+", label: "Hotels Listed" },
-                { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
-                { color: "crimson", icon: <MapPin size={15} />, value: "200+", label: "Cities Covered" },
-                { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
-              ],
-              phoneGreeting: "Book Your Hotel!",
-              phoneSub: "Where are you staying?",
-              phoneField1Icon: <MapPin size={13} className="td-field-icon" />,
-              phoneField1Label: "Destination",
-              phoneField1Value: "Goa",
-              phoneField2Icon: <BedDouble size={13} className="td-field-icon" />,
-              phoneField2Label: "Rooms",
-              phoneField2Value: "1 Room, 2 Adults",
-              phoneDateLabel: "Check-in Date",
-              phoneDateValue: "25 May, 2025",
-              phoneSubmitLabel: "Search Hotels",
-            }
-            : {
-              headline: <>Your Journey.<br /><span className="td-highlight-red">Our Priority.</span></>,
-              subtitle: "Discover the best bus routes, compare fares, and book your tickets in just a few clicks. Fast, easy, and reliable - all in one place.",
-              features: [
-                { icon: <Search size={17} />, title: "Smart Search", desc: "Find buses across thousands of routes with smart filters." },
-                { icon: <Clock3 size={17} />, title: "Real-time Updates", desc: "Get live timings, seat availability & prices instantly." },
-                { icon: <Ticket size={17} />, title: "Best Fares", desc: "Compare prices and choose the best deals that fit your budget." },
-                { icon: <ShieldCheck size={17} />, title: "Safe & Secure", desc: "Secure payments and verified bookings for peace of mind." },
-              ],
-              btnIcon: <Bus size={16} />,
-              btnLabel: "Search Buses Now",
-              btnAction: () => openPopularBusRoutes(),
-              bgImage: sunsetHighwayBg,
-              vehicleImg: busCoastBanner,
-              vehicleAlt: "Pick N Book Luxury Bus",
-              vehicleTag: "",
-              stats: [
-                { color: "red", icon: <MapPin size={15} />, value: "5000+", label: "Routes Covered" },
-                { color: "purple", icon: <Users size={15} />, value: "10L+", label: "Happy Customers" },
-                { color: "crimson", icon: <Handshake size={15} />, value: "1000+", label: "Trusted Partners" },
-                { color: "dark", icon: <Headphones size={15} />, value: "24/7", label: "Support Available" },
-              ],
-              phoneGreeting: "Hello, Traveller!",
-              phoneSub: "Where are you going?",
-              phoneField1Icon: <Bus size={13} className="td-field-icon" />,
-              phoneField1Label: "From",
-              phoneField1Value: "City A",
-              phoneField2Icon: <Bus size={13} className="td-field-icon" />,
-              phoneField2Label: "To",
-              phoneField2Value: "City B",
-              phoneDateLabel: "Journey Date",
-              phoneDateValue: "25 May, 2025",
-              phoneSubmitLabel: "Search Buses",
-            };
-
-        return (
-          <section className="td-services-section section-shell">
-            <div className="td-services-card">
-              <div className="td-services-body-grid">
-                {/* Left White Copy & Features Column */}
-                <div className="td-services-left-col">
-                  <h2 className="td-services-headline">{config.headline}</h2>
-                  <div className="td-services-underline" />
-                  <p className="td-services-paragraph">{config.subtitle}</p>
-
-                  <div className="td-services-features-list">
-                    {config.features.map((f, i) => (
-                      <div className="td-feature-item" key={i}>
-                        <div className="td-feature-icon-box">{f.icon}</div>
-                        <div className="td-feature-text">
-                          <strong>{f.title}</strong>
-                          <p>{f.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="td-services-actions-row">
-                    <button
-                      type="button"
-                      className="td-search-now-btn"
-                      onClick={config.btnAction}
-                    >
-                      {config.btnIcon}
-                      <span>{config.btnLabel}</span>
-                      <ChevronRight size={16} className="td-btn-arrow" />
-                    </button>
-                    <div className="td-need-help-pill">
-                      <div className="td-help-icon-circle">
-                        <Headphones size={15} />
-                      </div>
-                      <div className="td-help-meta">
-                        <strong>Need Help?</strong>
-                        <span>24/7 Customer Support</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column: BG + Stats + Visual Mockup */}
-                <div className="td-services-right-col" style={{ backgroundImage: `url(${config.bgImage})` }}>
-                  <div className="td-curved-divider-overlay" />
-
-                  <div className="td-floating-stats-glass-bar">
-                    {config.stats.map((s, i) => (
-                      <React.Fragment key={i}>
-                        {i > 0 && <div className="td-glass-stat-divider" />}
-                        <div className="td-glass-stat-item">
-                          <div className={`td-stat-icon-circle ${s.color}`}>{s.icon}</div>
-                          <div className="td-stat-info">
-                            <strong>{s.value}</strong>
-                            <span>{s.label}</span>
-                          </div>
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
-
-                  <div className="td-services-visual-stage">
-                    <div className="td-bus-visual-wrap">
-                      {config.vehicleTag && <div className="td-bus-display-tag">{config.vehicleTag}</div>}
-                      <img src={config.vehicleImg} alt={config.vehicleAlt} className="td-stage-bus-img" />
-                    </div>
-
-                    <div className="td-phone-device-frame">
-                      <div className="td-phone-notch" />
-                      <div className="td-phone-inner-screen">
-                        <div className="td-phone-greeting">
-                          <span className="td-greeting-title">{config.phoneGreeting}</span>
-                          <span className="td-greeting-sub">{config.phoneSub}</span>
-                        </div>
-                        <div className="td-phone-field-box">
-                          {config.phoneField1Icon}
-                          <div className="td-field-labels">
-                            <span className="td-field-lbl">{config.phoneField1Label}</span>
-                            <strong>{config.phoneField1Value}</strong>
-                          </div>
-                        </div>
-                        <div className="td-phone-field-box">
-                          {config.phoneField2Icon}
-                          <div className="td-field-labels">
-                            <span className="td-field-lbl">{config.phoneField2Label}</span>
-                            <strong>{config.phoneField2Value}</strong>
-                          </div>
-                        </div>
-                        <div className="td-phone-field-box">
-                          <CalendarDays size={13} className="td-field-icon" />
-                          <div className="td-field-labels">
-                            <span className="td-field-lbl">{config.phoneDateLabel}</span>
-                            <strong>{config.phoneDateValue}</strong>
-                          </div>
-                        </div>
-                        <button type="button" className="td-phone-main-submit-btn">
-                          {config.phoneSubmitLabel}
-                        </button>
-                        <div className="td-phone-bottom-nav">
-                          <div className="td-nav-item active">
-                            <CalendarDays size={11} /><span>My Bookings</span>
-                          </div>
-                          <div className="td-nav-item">
-                            <Tag size={11} /><span>Offers</span>
-                          </div>
-                          <div className="td-nav-item">
-                            <Headphones size={11} /><span>Help Center</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="td-stage-suitcase-graphic">
-                      <div className="td-straw-hat-decor" />
-                      <div className="td-suitcase-body" />
-                      <div className="td-plant-pot-decor" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        );
-      })()}
-
-      <section className="bus-offers-section section-shell">
-        <div className="bus-offers-content-shell">
-          {/* Top Header Row */}
-          <div className="bus-offers-header-row">
-            <div>
-              <h2 className="bus-offers-title">Featured Offers</h2>
-              <p className="bus-offers-subtitle">
-                Best deals on buses. Grab them before they're gone!
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="bus-offers-view-all"
-              onClick={() => setIsDealsDialogOpen(true)}
-            >
-              <span>View all deals</span>
-              <ArrowRight size={15} />
-            </button>
-          </div>
-
-          {/* Category Filter Tabs Bar */}
-          <div className="bus-offers-tabs-bar">
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "all" ? "active" : ""}`}
-              onClick={() => setOffersFilter("all")}
-            >
-              <Tag size={13} />
-              <span>All Offers</span>
-            </button>
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "flight" ? "active" : ""}`}
-              onClick={() => setOffersFilter("flight")}
-            >
-              <Plane size={13} />
-              <span>Flights</span>
-            </button>
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "bus" ? "active" : ""}`}
-              onClick={() => setOffersFilter("bus")}
-            >
-              <Bus size={13} />
-              <span>Buses</span>
-            </button>
-            <button
-              type="button"
-              className={`bus-offers-tab-btn ${offersFilter === "hotel" ? "active" : ""}`}
-              onClick={() => setOffersFilter("hotel")}
-            >
-              <Building2 size={13} />
-              <span>Hotels</span>
-            </button>
-          </div>
-
-          {/* Auto-Scrolling Featured Offers Marquee */}
-          <AutoMarquee
-            items={filteredOffers.length > 0 ? filteredOffers : DEFAULT_BUS_FEATURED_OFFERS}
-            className="offer-marquee"
-            duration={24}
-            pauseOnHover={false}
-            renderItem={(offer, idx) => {
-              const themeNames = ["theme-pink", "theme-green", "theme-yellow", "theme-blue"];
-              const themeClass = offer.theme ? `theme-${offer.theme}` : themeNames[idx % 4];
-
-              const rawCode = offer.couponCode || offer.code || offer.title || "BUSOFFER";
-              let code = rawCode;
-              if (!rawCode || /^coupon[_-]?code/i.test(rawCode)) {
-                const sampleCodes = ["SAVER500", "FESTIVE15", "SUPERBUS", "LUXURY25", "ACVOLVO100", "NIGHTS50"];
-                code = sampleCodes[idx % sampleCodes.length];
-              }
-
-              const badgeText = offer.badgeLabel || (idx % 3 === 0 ? "SPECIAL OFFER" : idx % 3 === 1 ? "EXCLUSIVE OFFER" : "50% OFF");
-
-              const rawAdminImg = offer.imageUrl || offer.image || offer.bannerUrl || offer.bannerImage || offer.imgUrl || offer.mediaUrl || offer.banner;
-              let apiOfferImg = null;
-              if (rawAdminImg && typeof rawAdminImg === "string" && rawAdminImg.trim()) {
-                const trimmed = rawAdminImg.trim();
-                apiOfferImg = /^https?:\/\//i.test(trimmed) || /^data:image/i.test(trimmed) ? trimmed : toApiUrl(trimmed);
-              }
-
-              return (
-                <article
-                  key={offer.id || idx}
-                  className={`bus-card-unit ${themeClass}`}
-                  onClick={() => setOfferForDetailPopup(offer)}
-                >
-                  {/* Top Bar: Icon + Category */}
-                  <div className="bus-card-top-bar">
-                    <div className="bus-card-icon-badge">
-                      <Bus size={15} />
-                    </div>
-                    <span className="bus-card-cat">BUS OFFER</span>
-                  </div>
-
-                  {/* Center Info: Code & Validity */}
-                  <div className="bus-card-center">
-                    <h3 className="bus-card-code">{code}</h3>
-                    <p className="bus-card-expiry">
-                      {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                    </p>
-                  </div>
-
-                  {/* Bottom Badge Pill */}
-                  <div className="bus-card-bottom-bar">
-                    <span className="bus-card-tag-pill">{badgeText}</span>
-                  </div>
-
-                  {/* Top Right Starburst / Badge Ribbon */}
-                  <div className="bus-card-starburst">
-                    {badgeText}
-                  </div>
-
-                  {/* Only API Provided Image (No Static Fallbacks) */}
-                  {apiOfferImg && (
-                    <img
-                      src={apiOfferImg}
-                      alt={offer.title || "Offer Graphic"}
-                      className="bus-card-vehicle-graphic"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  )}
-                </article>
-              );
-            }}
-          />
-        </div>
-      </section>
-
       {dealsDialog}
       {offerDetailDialog}
 
@@ -5981,7 +7535,7 @@ export default function HomePage() {
         <div className="assurance-paragraph-card">
           <div className="assurance-paragraph-header">
             <span className="assurance-badge">
-              <ShieldCheck size={16} />
+              <ShieldCheck size={13} />
               {homeContent.assuranceBadge}
             </span>
             <h2 className="assurance-paragraph-title">
@@ -5994,37 +7548,100 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Highlight Banner Split Card Section - Dynamic per Tab */}
+      {/* Highlight Banner Section - Full Graphic Banner for Buses, Split Card for Other Tabs */}
       <section className="world-class-services-section section-shell" style={{ paddingTop: 0 }}>
-        <div className="world-class-banner-card">
-          <div className="world-class-banner-copy">
-            <span className="banner-badge">{homeContent.bannerBadge || "INTERCITY BUS & SEAT GUARANTEE"}</span>
-            <h2>{homeContent.bannerTitle || "Book Bus Tickets Smarter. Travel Farther."}</h2>
-            <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick N Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
-            <div className="banner-stats-row">
-              {(homeContent.bannerStats || [
-                ["99.8%", "On-Time Departure"],
-                ["5,000+", "Daily Bus Routes"],
-                ["0%", "Hidden Fees"],
-              ]).map(([val, lbl], index, arr) => (
-                <React.Fragment key={lbl}>
-                  <div className="banner-stat-item">
-                    <strong>{val}</strong>
-                    <span>{lbl}</span>
-                  </div>
-                  {index < arr.length - 1 && <div className="banner-stat-divider" />}
-                </React.Fragment>
-              ))}
+        {(!activeTab || activeTab === "buses") ? (
+          <div className="intercity-full-banner-card">
+            <img
+              src={intercityBusBanner}
+              alt="Intercity Bus & Seat Guarantee - Book Bus Tickets Smarter. Travel Farther."
+              className="intercity-full-banner-img"
+            />
+            <div className="intercity-banner-overlay" />
+            <div className="intercity-banner-content">
+              <div className="intercity-banner-top-group">
+                <div className="intercity-banner-badge-wrap">
+                  <span className="intercity-banner-badge">INTERCITY BUS &amp; SEAT GUARANTEE</span>
+                  <span className="intercity-banner-red-bar" />
+                </div>
+                <h2 className="intercity-banner-heading">
+                  Book Bus Tickets<br />
+                  <span className="intercity-highlight-red">Smarter.</span> Travel Farther.
+                </h2>
+              </div>
+              <p className="intercity-banner-desc">
+                Join over 10 Lakh+ happy passengers who trust us for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes.
+              </p>
+            </div>
+
+            {/* Animated Stats Pill - Positioned Right Side Up with Count-Up Numbers */}
+            <div className="intercity-banner-stats-row intercity-animated-stats-pill">
+              <div className="intercity-stat-box">
+                <div className="intercity-stat-circle intercity-stat-circle-red">
+                  <Clock size={20} color="#ffffff" strokeWidth={2.4} />
+                </div>
+                <div className="intercity-stat-info">
+                  <StatCountUp endValue={99.8} duration={2200} decimals={1} suffix="%" />
+                  <span className="intercity-stat-lbl">On-Time Departure</span>
+                </div>
+              </div>
+
+              <div className="intercity-stat-vsep" />
+
+              <div className="intercity-stat-box">
+                <div className="intercity-stat-circle intercity-stat-circle-blue">
+                  <Bus size={20} color="#ffffff" strokeWidth={2.4} />
+                </div>
+                <div className="intercity-stat-info">
+                  <StatCountUp endValue={5000} duration={2400} decimals={0} suffix="+" formatComma={true} />
+                  <span className="intercity-stat-lbl">Daily Bus Routes</span>
+                </div>
+              </div>
+
+              <div className="intercity-stat-vsep" />
+
+              <div className="intercity-stat-box">
+                <div className="intercity-stat-circle intercity-stat-circle-green">
+                  <ShieldCheck size={20} color="#ffffff" strokeWidth={2.4} />
+                </div>
+                <div className="intercity-stat-info">
+                  <StatCountUp endValue={0} duration={1000} decimals={0} suffix="%" />
+                  <span className="intercity-stat-lbl">Hidden Fees</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="world-class-banner-visual">
-            <img
-              src={homeContent.bannerImage || busCoastBanner}
-              alt={homeContent.bannerAlt || "Travel Banner"}
-              className="world-class-banner-img"
-            />
+        ) : (
+          <div className="world-class-banner-card">
+            <div className="world-class-banner-copy">
+              <span className="banner-badge">{homeContent.bannerBadge || "INTERCITY BUS & SEAT GUARANTEE"}</span>
+              <h2>{homeContent.bannerTitle || "Book Bus Tickets Smarter. Travel Farther."}</h2>
+              <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick N Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
+              <div className="banner-stats-row">
+                {(homeContent.bannerStats || [
+                  ["99.8%", "On-Time Departure"],
+                  ["5,000+", "Daily Bus Routes"],
+                  ["0%", "Hidden Fees"],
+                ]).map(([val, lbl], index, arr) => (
+                  <React.Fragment key={lbl}>
+                    <div className="banner-stat-item">
+                      <strong>{val}</strong>
+                      <span>{lbl}</span>
+                    </div>
+                    {index < arr.length - 1 && <div className="banner-stat-divider" />}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+            <div className="world-class-banner-visual">
+              <img
+                src={homeContent.bannerImage || busCoastBanner}
+                alt={homeContent.bannerAlt || "Travel Banner"}
+                className="world-class-banner-img"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Testimonials Section - Matching Image 1 Design Mockup */}
@@ -6034,21 +7651,9 @@ export default function HomePage() {
           <div className="client-testimonial-left-visual">
             <img
               src={picknbookAllTravelBanner}
-              alt="5000+ Satisfied Customers"
+              alt="Pick N Book Travel Banner"
               className="client-testimonial-landscape-img"
             />
-            {/* Floating Glass Pill Badge */}
-            <div className="client-testimonial-badge-pill">
-              <div className="client-avatar-stack">
-                <span className="avatar-circle av1">AM</span>
-                <span className="avatar-circle av2">AJ</span>
-                <span className="avatar-circle av3">MK</span>
-              </div>
-              <div className="client-badge-text">
-                <strong>5000+</strong>
-                <span>Satisfied Customers</span>
-              </div>
-            </div>
           </div>
 
           {/* Right Dark Navy Container */}
@@ -6150,63 +7755,60 @@ export default function HomePage() {
 
       {/* Modern Exclusive Offers Newsletter Banner */}
       <section className="modern-signup-section section-shell">
-        <div className="modern-signup-card">
-          {/* Background Decorative Glow Elements */}
-          <div className="modern-signup-glow-circle glow-1" aria-hidden="true" />
-          <div className="modern-signup-glow-circle glow-2" aria-hidden="true" />
-
-          <div className="modern-signup-content">
-            {/* Left Copy */}
-            <div className="modern-signup-copy">
+        <div className="modern-signup-full-banner">
+          <img
+            src={activeTab === "flights" ? flightLandingBanner : exclusiveDealsBanner}
+            alt={activeTab === "flights" ? "Exclusive Flight Deals Straight to Your Inbox" : "Exclusive Travel Deals Straight to Your Inbox"}
+            className={`modern-signup-full-img ${activeTab === "flights" ? "flight-banner-img" : ""}`}
+          />
+          <div className="modern-signup-banner-overlay" />
+          <div className="modern-signup-banner-content">
+            <div className="modern-signup-text-content">
               <h2 className="modern-signup-heading">
                 Unlock <span className="highlight-red-text">Exclusive Offers</span> On Your Next Journey
               </h2>
               <p className="modern-signup-subtext">
-                Sign up to receive secret flight deals, hotel discount coupons & promo codes directly in your inbox.
+                Sign up to receive secret flight deals, hotel discount coupons &amp; promo codes directly in your inbox.
               </p>
               <div className="modern-signup-trust-row">
-                <span><ShieldCheck size={14} className="trust-icon" /> No Spam Guarantee</span>
+                <span className="modern-signup-trust-item">
+                  <ShieldCheck size={16} className="trust-icon" /> No Spam Guarantee
+                </span>
                 <span className="trust-dot">•</span>
-                <span><Tag size={14} className="trust-icon" /> Instant Promo Codes</span>
+                <span className="modern-signup-trust-item">
+                  <Tag size={16} className="trust-icon" /> Instant Promo Codes
+                </span>
                 <span className="trust-dot">•</span>
-                <span><Clock size={14} className="trust-icon" /> Cancel Anytime</span>
+                <span className="modern-signup-trust-item">
+                  <Clock size={16} className="trust-icon" /> Cancel Anytime
+                </span>
               </div>
             </div>
 
-            {/* Right Action Box: Interactive Email Input + Button */}
-            <div className="modern-signup-action-box">
-              <form
-                className="modern-signup-email-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  navigate("/login");
-                }}
+            <form
+              className="modern-signup-form-overlay"
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate("/login");
+              }}
+            >
+              <input
+                type="email"
+                placeholder="Enter your email address..."
+                className="modern-signup-overlay-input"
+                required
+              />
+              <button type="submit" className="modern-signup-overlay-btn" aria-label="Get Exclusive Offers">
+                Get Exclusive Offers →
+              </button>
+              <button
+                type="button"
+                className="modern-signup-overlay-login"
+                onClick={() => navigate("/login")}
               >
-                <div className="modern-email-input-wrap">
-                  <Mail size={18} className="email-field-icon" />
-                  <input
-                    type="email"
-                    placeholder="Enter your email address..."
-                    className="modern-email-input"
-                    required
-                  />
-                </div>
-                <button type="submit" className="modern-signup-submit-btn">
-                  <span>Get Secret Deals</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-              <div className="modern-signup-or-login">
-                <span>Already a member?</span>
-                <button
-                  type="button"
-                  className="modern-login-link-btn"
-                  onClick={() => navigate("/login")}
-                >
-                  Login / Sign Up →
-                </button>
-              </div>
-            </div>
+                Already a member? Login / Sign Up →
+              </button>
+            </form>
           </div>
         </div>
       </section>
@@ -6234,45 +7836,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="india-app-card">
-          <div className="india-app-mark" aria-hidden="true">
-            <HomeModeIcon size={42} />
-            <span>APP</span>
-          </div>
-
-          <div className="india-app-copy">
-            <span className="section-kicker">{homeContent.appKicker}</span>
-            <h2>{homeContent.appTitle}</h2>
-            <p>{homeContent.appText}</p>
-            <div className="india-offer-chip">{homeContent.appOffer}</div>
-          </div>
-
-          <div className="india-app-side">
-            <ul className="india-app-benefits">
-              {homeContent.appBenefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
-
-            <div className="india-app-qr" aria-label="App QR code">
-              <div className="india-app-qr-code" aria-hidden="true">
-                {Array.from({ length: 49 }, (_, index) => (
-                  <span
-                    key={index}
-                    className={
-                      [0, 2, 3, 6, 7, 9, 12, 14, 17, 18, 20, 22, 24, 27, 28, 31, 33, 35, 37, 38, 41, 43, 45, 46, 48].includes(index)
-                        ? "filled"
-                        : undefined
-                    }
-                  />
-                ))}
-              </div>
-              <strong>Scan QR</strong>
-              <span>Get app link</span>
-            </div>
-
-          </div>
-        </div>
 
         <div className="india-about-block">
           <h2>{homeContent.aboutTitle}</h2>
@@ -6380,3 +7943,4 @@ export default function HomePage() {
     </div >
   );
 }
+

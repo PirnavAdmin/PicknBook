@@ -1,0 +1,75 @@
+.b2b-wallet-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+/* Wallet Status custom badges styling */
+.badge-wallet-active {
+  background: #e2fbe8 !important;
+  color: #15803d !important;
+  font-weight: 700 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.badge-wallet-inactive {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.badge-wallet-blocked {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+/* Adjustments for custom selectors */
+.b2b-wallet-container select {
+  cursor: pointer;
+}
+
+/* ── STYLISH TABLE STANDARDIZATION (CRIMSON PINK THEME) FOR B2B VIEW ── */
+.b2b-wallet-container .sd-mini-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 8px;
+}
+
+.b2b-wallet-container .sd-mini-table thead th {
+  background: #fdf2f4 !important;
+  background-color: #fdf2f4 !important;
+  color: #901335 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 2px solid #fce2e6 !important;
+  padding: 12px 16px !important;
+  font-family: inherit !important;
+  text-align: left;
+}
+
+.b2b-wallet-container .sd-mini-table tbody td {
+  padding: 12px 16px !important;
+  font-size: 12px !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  vertical-align: middle;
+}
+
+.b2b-wallet-container .sd-mini-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.b2b-wallet-container .sd-mini-table tbody tr:hover {
+  background-color: #fdf8f9 !important;
+}
+
+.b2b-wallet-container .sd-mini-table tbody tr:last-child td {
+  border-bottom: none !important;
+}

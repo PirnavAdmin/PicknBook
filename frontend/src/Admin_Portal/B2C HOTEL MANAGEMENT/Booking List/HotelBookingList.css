@@ -8,6 +8,23 @@
   min-height: 100%;
 }
 
+/* Header Title Spacing above and below */
+.admin-b2c-hotel-page .admin-b2c-header,
+.hbl-page .admin-b2c-header {
+  margin-top: 18px !important;
+  margin-bottom: 16px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.admin-b2c-hotel-page .admin-b2c-header h1,
+.hbl-page .admin-b2c-header h1 {
+  margin-top: 6px !important;
+  margin-bottom: 10px !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+}
+
 /* Header */
 .hbl-header {
   display: flex;
@@ -331,25 +348,25 @@
   max-width: 100%;
   display: block;
   font-weight: 500;
-  font-size: 0.76rem;
+  font-size: 0.72rem !important;
 }
 
 .hbl-id {
   font-family: monospace;
   font-weight: 500;
   color: #1a73e8 !important;
-  font-size: 0.76rem;
+  font-size: 0.72rem !important;
 }
 
 .hbl-amount {
   font-weight: 500;
-  font-size: 0.76rem;
+  font-size: 0.72rem !important;
   color: #0f172a !important;
 }
 
 .hbl-desc {
   color: #64748b;
-  font-size: 0.65rem;
+  font-size: 0.62rem !important;
   font-weight: 400;
   display: block;
   white-space: nowrap;
@@ -458,12 +475,12 @@
 }
 
 .hbl-field-label {
-  color: #000000 !important;
-  font-weight: 600 !important;
-  font-size: 10px !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.64rem !important;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -473,17 +490,17 @@
 .hbl-input-field,
 .hbl-select-field {
   width: 100%;
-  padding: 6px 8px !important;
-  border: 1.5px solid #cbd5e1 !important;
+  padding: 2px 8px !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 6px !important;
-  font-size: 11.5px !important;
+  font-size: 0.76rem !important;
   font-family: inherit;
   background: #fff;
   color: #0f172a;
   outline: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
-  height: 32px !important;
+  height: 26px !important;
 }
 
 .hbl-select-field {
@@ -494,25 +511,29 @@
 .hbl-input-field:focus,
 .hbl-select-field:focus {
   border-color: #A51C49 !important;
-  box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.15) !important;
+  box-shadow: 0 0 0 2px rgba(165, 28, 73, 0.15) !important;
 }
 
 .hbl-filter-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   border-top: 1px solid #f1f5f9;
-  padding-top: 16px;
+  padding-top: 10px;
 }
 
 .hbl-btn-apply {
   background: #2563eb !important;
   color: #ffffff !important;
   border: none !important;
-  padding: 8px 20px !important;
-  border-radius: 8px !important;
-  font-size: 12.5px !important;
+  padding: 4px 14px !important;
+  border-radius: 6px !important;
+  font-size: 0.78rem !important;
   font-weight: 600 !important;
+  height: 26px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
 }
@@ -520,17 +541,21 @@
 .hbl-btn-apply:hover {
   background: #1d4ed8 !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35);
 }
 
 .hbl-btn-reset {
   background: #64748b !important;
   color: #ffffff !important;
   border: none !important;
-  padding: 8px 20px !important;
-  border-radius: 8px !important;
-  font-size: 12.5px !important;
+  padding: 4px 14px !important;
+  border-radius: 6px !important;
+  font-size: 0.78rem !important;
   font-weight: 600 !important;
+  height: 26px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
 }
@@ -538,7 +563,7 @@
 .hbl-btn-reset:hover {
   background: #475569 !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.35);
+  box-shadow: 0 3px 8px rgba(100, 116, 139, 0.35);
 }
 
 /* Outside search container */
@@ -583,4 +608,40 @@
   background: #fef2f2 !important;
   color: #ef4444 !important;
   border: 1.5px solid #fee2e2 !important;
+}
+
+/* Compact Table Header & Typography */
+.admin-b2c-hotel-page .admin-table-head {
+  min-height: 28px !important;
+  height: auto !important;
+  padding: 3px 6px !important;
+  align-items: center !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+  grid-template-columns: 1.1fr 1.1fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1.1fr 0.7fr !important;
+  background: linear-gradient(135deg, #A51C49, #851237) !important;
+}
+
+.admin-b2c-hotel-page .admin-table-row {
+  grid-template-columns: 1.1fr 1.1fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1.1fr 0.7fr !important;
+}
+
+.admin-b2c-hotel-page .admin-table-head span {
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  min-height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2px 4px !important;
+  text-align: center !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.admin-b2c-hotel-page .admin-table-head span:last-child {
+  border-right: none !important;
 }

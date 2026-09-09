@@ -476,7 +476,7 @@ const AllPages = () => {
               </tr>
             ) : currentItems.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: "24px", color: "var(--text-secondary)" }}>No pages found.</td>
+                <td colSpan="9" style={{ textAlign: "center", padding: "30px 20px", color: "#94a3b8", fontSize: "0.85rem" }}>Data not found</td>
               </tr>
             ) : (
                 currentItems.map((page, index) => (

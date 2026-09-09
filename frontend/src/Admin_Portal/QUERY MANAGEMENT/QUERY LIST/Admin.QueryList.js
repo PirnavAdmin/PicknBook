@@ -1,7 +1,7 @@
-/* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getAdminQueries, updateQueryStatus, deleteAdminQuery } from "../../../services/queryService";
-import { Eye, Edit2, Trash2, X, Search, ChevronDown, Filter, Download } from "lucide-react";
+import { Eye, Edit2, Trash2, X, Search, ChevronDown, Filter, Download, Mail, Send } from "lucide-react";
 
 const formatDate = (dateString) => {
   if (!dateString || dateString === "-") return "-";
@@ -36,6 +36,13 @@ export default function AdminQueryList() {
   const [toast, setToast] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  // Email Format Reply Modal states
+  const [emailModalQuery, setEmailModalQuery] = useState(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailStatus, setEmailStatus] = useState("Replied");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -67,9 +74,52 @@ export default function AdminQueryList() {
     setPage(1);
   }, [searchQuery, statusFilter, typeFilter, filterName, filterMobile]);
 
+  const openEmailModal = (query, defaultStatus = "Replied") => {
+    setEmailModalQuery(query);
+    setEmailStatus(defaultStatus);
+    setEmailSubject(`Re: ${query.subject || "Support Inquiry"}`);
+    setEmailMessage(
+      query.replyMessage ||
+        `Hello ${query.name || "Customer"},\n\nThank you for reaching out to PickNBook Support regarding "${query.subject || "your inquiry"}".\n\nWe have reviewed your request. If you have any further questions, please let us know.\n\nWarm regards,\nPickNBook Support Team`
+    );
+  };
+
+  const handleSendEmailSubmit = async (e) => {
+    e.preventDefault();
+    if (!emailModalQuery) return;
+    try {
+      setSendingEmail(true);
+      await updateQueryStatus(emailModalQuery.id, {
+        status: emailStatus,
+        replyMessage: emailMessage,
+      });
+      setQueries((prev) =>
+        prev.map((q) =>
+          q.id === emailModalQuery.id
+            ? { ...q, status: emailStatus, replyMessage: emailMessage }
+            : q
+        )
+      );
+      showToast("Reply email sent and query status updated successfully.", "success");
+      setEmailModalQuery(null);
+    } catch {
+      showToast("Failed to send reply email.", "error");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const handleStatusUpdateSubmit = async (e) => {
     e.preventDefault();
     if (!editStatusQuery) return;
+
+    if (newStatus === "Replied" || newStatus === "Resolved") {
+      const targetQuery = editStatusQuery;
+      setEditStatusQuery(null);
+      openEmailModal(targetQuery, newStatus);
+      return;
+    }
+
     try {
       await updateQueryStatus(editStatusQuery.id, newStatus);
       setQueries((prev) =>
@@ -157,7 +207,7 @@ export default function AdminQueryList() {
 
   const styles = {
     container: {
-      padding: "12px 24px",
+      padding: "12px 16px",
       background: "var(--page-bg)",
       minHeight: "100vh",
     },
@@ -276,7 +326,7 @@ export default function AdminQueryList() {
     table: {
       width: "100%",
       borderCollapse: "collapse",
-      fontSize: "0.85rem",
+      fontSize: "0.78rem",
     },
     thead: {
       background: "linear-gradient(90deg, var(--primary), var(--primary-strong))",
@@ -284,46 +334,49 @@ export default function AdminQueryList() {
       fontWeight: 700,
     },
     th: {
-      padding: "6px 10px",
+      padding: "8px 6px",
       textAlign: "center",
       borderRight: "1px solid rgba(255, 255, 255, 0.2)",
       whiteSpace: "nowrap",
-      fontSize: "0.85rem",
+      fontSize: "0.78rem",
       fontWeight: 600,
-      height: "34px",
+      height: "36px",
       verticalAlign: "middle",
+      color: "#ffffff",
     },
     td: {
-      padding: "10px 12px",
+      padding: "6px 8px",
       borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
       color: "var(--text-primary)",
       textAlign: "center",
-      height: "48px",
+      height: "40px",
+      fontSize: "0.78rem",
+      whiteSpace: "nowrap",
     },
     tr: {
       transition: "background-color 0.2s ease",
-      height: "48px",
+      height: "40px",
     },
     sn: {
       fontWeight: 600,
       color: "var(--primary)",
-      minWidth: "26px",
+      minWidth: "22px",
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      width: "26px",
-      height: "26px",
+      width: "22px",
+      height: "22px",
       background: "rgba(74, 15, 26, 0.08)",
-      borderRadius: "8px",
-      fontSize: "0.8rem",
+      borderRadius: "6px",
+      fontSize: "0.75rem",
     },
     statusBadge: {
       display: "inline-flex",
       alignItems: "center",
-      padding: "6px 10px",
+      padding: "4px 8px",
       borderRadius: "6px",
       fontWeight: 600,
-      fontSize: "0.75rem",
+      fontSize: "0.72rem",
       border: "1px solid",
       textTransform: "capitalize",
     },
@@ -544,6 +597,9 @@ export default function AdminQueryList() {
           border-color: var(--primary) !important;
           box-shadow: 0 0 0 2px rgba(74, 15, 26, 0.15) !important;
         }
+        th, .admin-table-head th {
+          color: #ffffff !important;
+        }
       `}</style>
       <div style={styles.container}>
         {toast && (
@@ -686,7 +742,6 @@ export default function AdminQueryList() {
                 </select>
               </div>
 
-              {/* Action Buttons in single line: Apply Filter (Blue) and Reset (Gray) */}
               <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "38px" }}>
                 <button
                   type="button"
@@ -707,16 +762,6 @@ export default function AdminQueryList() {
                     transition: "all 0.2s ease",
                     boxShadow: "0 2px 4px rgba(37, 99, 235, 0.2)",
                     whiteSpace: "nowrap"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#1d4ed8";
-                    e.currentTarget.style.borderColor = "#1d4ed8";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#2563eb";
-                    e.currentTarget.style.borderColor = "#2563eb";
-                    e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
                   Apply Filter
@@ -739,16 +784,6 @@ export default function AdminQueryList() {
                     boxShadow: "0 2px 4px rgba(100, 116, 139, 0.2)",
                     whiteSpace: "nowrap"
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#475569";
-                    e.currentTarget.style.borderColor = "#475569";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#64748b";
-                    e.currentTarget.style.borderColor = "#64748b";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
                 >
                   Reset
                 </button>
@@ -758,138 +793,144 @@ export default function AdminQueryList() {
         )}
 
         <div style={styles.tableWrapper}>
-          {filteredQueries.length > 0 ? (
-            <table style={styles.table}>
+          <table style={styles.table}>
               <thead style={styles.thead}>
                 <tr>
-                  <th style={styles.th}>ID</th>
-                  <th style={styles.th}>Entry Date</th>
-                  <th style={styles.th}>Query Type</th>
-                  <th style={styles.th}>Module</th>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Email</th>
-                  <th style={styles.th}>Mobile</th>
-                  <th style={styles.th}>Message</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Action</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>ID</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Entry Date</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Query Type</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Module</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Name</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Email</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Mobile</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Message</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Status</th>
+                  <th style={{ ...styles.th, color: "#ffffff" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredQueries.slice((page - 1) * pageSize, page * pageSize).map((q, index) => (
-                  <tr
-                    key={q.id}
-                    style={styles.tr}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(74, 15, 26, 0.06)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    <td style={styles.td}><span style={styles.sn}>{q.id}</span></td>
-                    <td style={styles.td}>{formatDate(q.createdAtUtc || q.entryDate)}</td>
-                    <td style={styles.td}>{q.subject || "ContactUs"}</td>
-                    <td style={styles.td}>B2C</td>
-                    <td style={styles.td}>{q.name}</td>
-                    <td style={styles.td}>{q.email}</td>
-                    <td style={styles.td}>{q.phoneNo || "-"}</td>
-                    <td style={{ ...styles.td, maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={q.message}>
-                      {q.message}
-                    </td>
-                    <td style={styles.td}>
-                      <span style={getStatusBadgeStyle(q.status)}>
-                        {q.status || "Pending"}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
-                        <button
-                          type="button"
-                          className={`actions-trigger-btn ${openMenuId === q.id ? "active" : ""}`}
-                          onClick={() => setOpenMenuId(openMenuId === q.id ? null : q.id)}
-                        >
-                          <span>Actions</span> <ChevronDown size={14} />
-                        </button>
-
-                        {openMenuId === q.id && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              ...(index >= filteredQueries.slice((page - 1) * pageSize, page * pageSize).length - 2 || filteredQueries.slice((page - 1) * pageSize, page * pageSize).length <= 3
-                                ? { bottom: '100%', marginBottom: '6px' }
-                                : { top: '100%', marginTop: '6px' }),
-                              right: 0,
-                              background: '#ffffff',
-                              borderRadius: '12px',
-                              border: '1px solid #e2e8f0',
-                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                              zIndex: 99999,
-                              minWidth: '160px',
-                              width: 'max-content',
-                              padding: '6px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px'
-                            }}
-                          >
-                            <button
-                              type="button"
-                              style={{
-                                border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
-                                borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                              onClick={() => { setOpenMenuId(null); setViewQuery(q); }}
-                            >
-                              <Eye size={15} /> <span>View Details</span>
-                            </button>
-                            <button
-                              type="button"
-                              style={{
-                                border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
-                                borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                              onClick={() => { setOpenMenuId(null); setEditStatusQuery(q); }}
-                            >
-                              <Edit2 size={15} /> <span>Edit Status</span>
-                            </button>
-                            <button
-                              type="button"
-                              style={{
-                                border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
-                                borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#ef4444',
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                              onClick={() => { setOpenMenuId(null); handleDelete(q.id); }}
-                            >
-                              <Trash2 size={15} /> <span>Delete Query</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                {filteredQueries.length === 0 ? (
+                  <tr>
+                    <td colSpan="10" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
+                      Data not found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredQueries.slice((page - 1) * pageSize, page * pageSize).map((q, index) => (
+                    <tr
+                      key={q.id}
+                      style={styles.tr}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(74, 15, 26, 0.06)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <td style={styles.td}><span style={styles.sn}>{q.id}</span></td>
+                      <td style={styles.td}>{formatDate(q.createdAtUtc || q.entryDate)}</td>
+                      <td style={styles.td}>{q.subject || "ContactUs"}</td>
+                      <td style={styles.td}>B2C</td>
+                      <td style={{ ...styles.td, maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.name}>{q.name}</td>
+                      <td style={{ ...styles.td, maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.email}>{q.email}</td>
+                      <td style={styles.td}>{q.phoneNo || "-"}</td>
+                      <td style={{ ...styles.td, maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.message}>
+                        {q.message}
+                      </td>
+                      <td style={styles.td}>
+                        <span style={getStatusBadgeStyle(q.status)}>
+                          {q.status || "Pending"}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
+                          <button
+                            type="button"
+                            className={`actions-trigger-btn ${openMenuId === q.id ? "active" : ""}`}
+                            onClick={() => setOpenMenuId(openMenuId === q.id ? null : q.id)}
+                          >
+                            <span>Actions</span> <ChevronDown size={14} />
+                          </button>
+
+                          {openMenuId === q.id && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                ...(index >= filteredQueries.slice((page - 1) * pageSize, page * pageSize).length - 2 || filteredQueries.slice((page - 1) * pageSize, page * pageSize).length <= 3
+                                  ? { bottom: '100%', marginBottom: '6px' }
+                                  : { top: '100%', marginTop: '6px' }),
+                                right: 0,
+                                background: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                zIndex: 99999,
+                                minWidth: '160px',
+                                width: 'max-content',
+                                padding: '6px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px'
+                              }}
+                            >
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onClick={() => { setOpenMenuId(null); setViewQuery(q); }}
+                              >
+                                <Eye size={15} /> <span>View Details</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#2563eb',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onClick={() => { setOpenMenuId(null); openEmailModal(q, "Replied"); }}
+                              >
+                                <Mail size={15} /> <span>Reply Email</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#334155',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onClick={() => { setOpenMenuId(null); setEditStatusQuery(q); setNewStatus(q.status || "Pending"); }}
+                              >
+                                <Edit2 size={15} /> <span>Edit Status</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
+                                  borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#ef4444',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap'
+                                }}
+                                onClick={() => { setOpenMenuId(null); handleDelete(q.id); }}
+                              >
+                                <Trash2 size={15} /> <span>Delete Query</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          ) : (
-            <div style={styles.emptyState}>
-              <div style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "10px" }}>No data</div>
-              <p>No queries found matching the search criteria.</p>
-            </div>
-          )}
 
           {totalPages >= 1 && (
             <div style={styles.paginationContainer}>
               <div style={styles.paginationInfo}>
-                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredQueries.length)} of {filteredQueries.length} queries
+                Showing {filteredQueries.length === 0 ? 0 : ((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, filteredQueries.length)} of {filteredQueries.length} queries
               </div>
               <div style={styles.paginationButtons}>
                 <button
@@ -914,11 +955,9 @@ export default function AdminQueryList() {
           )}
         </div>
 
-
-        {/* View Modal */}
-        {viewQuery && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setViewQuery(null)}>
-            <div style={{ background: "var(--panel)", padding: "24px", borderRadius: "14px", width: "600px", maxWidth: "90%", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }} onClick={(e) => e.stopPropagation()}>
+        {viewQuery && createPortal(
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.65)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999999, backdropFilter: "blur(4px)", padding: "20px", boxSizing: "border-box" }} onClick={() => setViewQuery(null)}>
+            <div style={{ background: "var(--panel)", padding: "24px", borderRadius: "14px", width: "600px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>Query Details</h3>
                 <button type="button" onClick={() => setViewQuery(null)} style={{ padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", color: "var(--text-primary)" }}>
@@ -954,24 +993,30 @@ export default function AdminQueryList() {
                   <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Message</div>
                   <div style={{ fontSize: "0.9rem", color: "var(--text-primary)", background: "var(--surface-soft)", padding: "12px", borderRadius: "8px", marginTop: "4px", wordBreak: "break-all" }}>{viewQuery.message}</div>
                 </div>
+                {viewQuery.replyMessage && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <div style={{ fontSize: "0.75rem", color: "#007bff", fontWeight: 700 }}>Admin Reply Message</div>
+                    <div style={{ fontSize: "0.9rem", color: "#1e293b", background: "rgba(0, 123, 255, 0.08)", border: "1px solid rgba(0, 123, 255, 0.2)", padding: "12px", borderRadius: "8px", marginTop: "4px", wordBreak: "break-all", whiteSpace: "pre-wrap" }}>{viewQuery.replyMessage}</div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
-        {/* Edit Modal */}
-        {editStatusQuery && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }} onClick={() => setEditStatusQuery(null)}>
+        {editStatusQuery && createPortal(
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.65)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999999, backdropFilter: "blur(4px)", padding: "20px", boxSizing: "border-box" }} onClick={() => setEditStatusQuery(null)}>
             <div style={{
               background: "#ffffff",
               borderRadius: "12px",
               width: "650px",
               maxWidth: "95%",
-              overflow: "hidden",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.15)"
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
             }} onClick={(e) => e.stopPropagation()}>
               
-              {/* Header */}
               <div style={{
                 background: "#A51C49",
                 padding: "14px 20px",
@@ -1000,7 +1045,6 @@ export default function AdminQueryList() {
                 </button>
               </div>
 
-              {/* Body */}
               <form
                 onSubmit={handleStatusUpdateSubmit}
                 style={{
@@ -1011,48 +1055,23 @@ export default function AdminQueryList() {
                   background: "#ffffff"
                 }}
               >
-                {/* Two fields in one line */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Name</label>
-                    <input
-                      type="text"
-                      value={editStatusQuery.name || ""}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
+                    <input type="text" value={editStatusQuery.name || ""} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }} />
                   </div>
-
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Email</label>
-                    <input
-                      type="email"
-                      value={editStatusQuery.email || ""}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
+                    <input type="email" value={editStatusQuery.email || ""} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }} />
                   </div>
-
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Mobile</label>
-                    <input
-                      type="text"
-                      value={editStatusQuery.phoneNo || ""}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
+                    <input type="text" value={editStatusQuery.phoneNo || ""} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }} />
                   </div>
-
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Query Type</label>
-                    <input
-                      type="text"
-                      value={editStatusQuery.subject || "ContactUs"}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
+                    <input type="text" value={editStatusQuery.subject || "ContactUs"} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }} />
                   </div>
-
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Status</label>
                     <select
@@ -1061,53 +1080,207 @@ export default function AdminQueryList() {
                       style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#ffffff", color: "#111827", cursor: "pointer" }}
                     >
                       <option value="Pending">Pending</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Replied">Replied</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">Resolved (Send Email)</option>
+                      <option value="Replied">Replied (Send Email)</option>
                     </select>
                   </div>
-
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Entry Date</label>
-                    <input
-                      type="text"
-                      value={formatDate(editStatusQuery.createdAtUtc || editStatusQuery.entryDate)}
-                      disabled
-                      style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }}
-                    />
+                    <input type="text" value={formatDate(editStatusQuery.createdAtUtc || editStatusQuery.entryDate)} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827" }} />
                   </div>
                 </div>
-
-                {/* Message takes full width */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Message</label>
-                  <textarea
-                    rows="3"
-                    value={editStatusQuery.message || ""}
-                    disabled
-                    style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827", resize: "none" }}
-                  />
+                  <textarea rows="3" value={editStatusQuery.message || ""} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827", resize: "none" }} />
                 </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    background: "#A51C49",
-                    color: "#ffffff",
-                    padding: "10px 16px",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    marginTop: "8px",
-                    transition: "background 0.2s"
-                  }}
-                >
-                  Save Changes
+                <button type="submit" style={{ background: "#A51C49", color: "#ffffff", padding: "10px 16px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600", cursor: "pointer", marginTop: "8px" }}>
+                  {(newStatus === "Replied" || newStatus === "Resolved") ? "Continue to Compose Reply Email →" : "Save Changes"}
                 </button>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
+        )}
+
+        {emailModalQuery && createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100vw",
+              height: "100vh",
+              backgroundColor: "rgba(0, 0, 0, 0.65)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 999999,
+              backdropFilter: "blur(4px)",
+              padding: "20px",
+              boxSizing: "border-box",
+            }}
+            onClick={() => setEmailModalQuery(null)}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                borderRadius: "14px",
+                width: "680px",
+                maxWidth: "95%",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.3)",
+                border: "1px solid #e2e8f0",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #A51C49 0%, #7A1234 100%)",
+                  padding: "16px 22px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  color: "#ffffff",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <Mail size={22} />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "700", color: "#ffffff" }}>
+                      Send Reply Email
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEmailModalQuery(null)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.2)",
+                    border: "none",
+                    color: "#ffffff",
+                    borderRadius: "50%",
+                    width: "32px",
+                    height: "32px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSendEmailSubmit} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>To (Customer Email)</label>
+                  <div style={{ padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#f8fafc", fontSize: "13px", fontWeight: 600, color: "#1d4ed8", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span>📧</span>
+                    <span>{emailModalQuery.name} &lt;{emailModalQuery.email}&gt;</span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Subject</label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    required
+                    style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "13px", color: "#111827", outline: "none" }}
+                  />
+                </div>
+
+                <div style={{ background: "#fffbe6", border: "1px solid #ffe58f", padding: "12px 14px", borderRadius: "8px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: "700", color: "#856404", textTransform: "uppercase", marginBottom: "4px" }}>
+                    📌 Customer Inquiry Reference
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#333333", fontStyle: "italic", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                    "{emailModalQuery.message}"
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Email Response Body</label>
+                  <textarea
+                    rows={7}
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    required
+                    style={{
+                      padding: "12px",
+                      border: "1.5px solid #94a3b8",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      color: "#0f172a",
+                      lineHeight: "1.5",
+                      resize: "vertical",
+                      fontFamily: "inherit",
+                      outline: "none"
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Set Query Status To</label>
+                  <select
+                    value={emailStatus}
+                    onChange={(e) => setEmailStatus(e.target.value)}
+                    style={{ padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: "13px", color: "#111827", cursor: "pointer", background: "#ffffff" }}
+                  >
+                    <option value="Replied">Replied</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setEmailModalQuery(null)}
+                    style={{
+                      padding: "10px 18px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                      background: "#ffffff",
+                      color: "#475569",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={sendingEmail}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "linear-gradient(135deg, #A51C49 0%, #7A1234 100%)",
+                      color: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: sendingEmail ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      boxShadow: "0 4px 12px rgba(165, 28, 73, 0.3)"
+                    }}
+                  >
+                    <Send size={15} />
+                    <span>{sendingEmail ? "Sending Email..." : "Send Email & Update Status"}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
         )}
       </div>
     </>

@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
+import { FaFemale, FaMale } from "react-icons/fa";
 import { Clock3, Info } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
@@ -1656,11 +1657,11 @@ export default function BusSeatSelectionPage({
                   </div>
                   <div className="legend-item">
                     <div className="legend-color booked-female" />
-                    <span>Female</span>
+                    <FaFemale size={18} aria-label="Female" />
                   </div>
                   <div className="legend-item">
                     <div className="legend-color booked-male" />
-                    <span>Male</span>
+                    <FaMale size={18} aria-label="Male" />
                   </div>
                 </div>
               </header>

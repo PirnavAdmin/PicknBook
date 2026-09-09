@@ -138,11 +138,17 @@
 }
 
 .admin-markup-coupon-table-wrap {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--panel);
-  overflow: visible !important;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 0 0 16px 16px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 16px !important;
+  border-bottom-right-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08) !important;
+  overflow: hidden !important;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -156,10 +162,13 @@
 
 .admin-markup-coupon-table {
   width: 100% !important;
-  border-collapse: collapse;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
   font-size: 11px !important;
   min-width: 100% !important;
   table-layout: fixed;
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
 .admin-markup-coupon-table .col-id { width: 3%; }
@@ -175,13 +184,15 @@
 .admin-markup-coupon-table .col-action { width: 10%; }
 
 .admin-markup-coupon-table thead {
-  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-  color: #ffffff;
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border-radius: 0 !important;
 }
 
 .admin-markup-coupon-table th {
   padding: 14px 8px !important;
   border-bottom: 1px solid var(--border);
+  border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
   text-align: center !important;
   vertical-align: middle !important;
   text-overflow: ellipsis;
@@ -189,6 +200,70 @@
   overflow: hidden;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+.admin-markup-coupon-table th:first-child {
+  border-top-left-radius: 0 !important;
+}
+
+.admin-markup-coupon-table th:last-child {
+  border-right: none !important;
+  border-top-right-radius: 0 !important;
+}
+
+.action-popup-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.action-popup-btn:hover {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #bfdbfe !important;
+}
+
+.action-popup-btn.delete:hover {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+}
+
+.admin-markup-coupon-table tbody tr {
+  background: rgba(255, 255, 255, 0.4) !important;
+  transition: background 0.2s ease !important;
+}
+
+.admin-markup-coupon-table tbody tr:hover {
+  background: rgba(253, 242, 248, 0.6) !important;
+}
+
+/* Glassmorphic attached AdminPagination overrides */
+.admin-markup-coupon-table-wrap .admin-pagination-container {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 0 0 16px 16px !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+  padding: 12px 20px !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .admin-markup-coupon-table td {
@@ -476,10 +551,36 @@
   }
 }
 
+/* Overflow & Z-Index fixes for Table Actions Dropdown */
+.admin-markup-coupon-container,
+.admin-markup-coupon-shell,
+.admin-markup-coupon-table-card,
+.admin-markup-coupon-table-wrapper,
+.admin-markup-coupon-table-wrap,
+.admin-markup-coupon-table-scroll,
+.admin-markup-coupon-table,
+.admin-markup-coupon-table tbody,
+.admin-markup-coupon-table tr,
+.admin-markup-coupon-table td {
+  overflow: visible !important;
+}
+
+.admin-markup-coupon-table tr:has(.actions-trigger-btn.active),
+.admin-markup-coupon-table tr.active-dropdown-row {
+  position: relative !important;
+  z-index: 9999 !important;
+}
+
 /* Actions Dropdown Container */
 .actions-dropdown-container {
   position: relative !important;
   display: inline-block !important;
+  z-index: 100 !important;
+}
+
+.actions-dropdown-container.active,
+.actions-dropdown-container:hover {
+  z-index: 9999 !important;
 }
 
 .actions-trigger-btn {
@@ -520,13 +621,20 @@
   top: 100% !important;
   right: 0 !important;
   margin-top: 4px !important;
-  width: 140px !important;
+  width: 155px !important;
   background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
   border-radius: 8px !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  z-index: 1000 !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+  z-index: 99999 !important;
   overflow: hidden !important;
+}
+
+.actions-dropdown-menu.drop-up {
+  top: auto !important;
+  bottom: 100% !important;
+  margin-top: 0 !important;
+  margin-bottom: 4px !important;
 }
 
 .dropdown-item {
@@ -732,4 +840,13 @@
   margin-bottom: 16px !important;
   text-align: left !important;
 }
+
+.actions-dropdown-menu .dropdown-item.conditions {
+  color: #2563eb !important;
+}
+
+.actions-dropdown-menu .dropdown-item.conditions:hover {
+  background-color: #eff6ff !important;
+}
+
 

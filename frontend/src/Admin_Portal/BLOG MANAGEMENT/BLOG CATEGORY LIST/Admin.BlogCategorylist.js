@@ -874,10 +874,8 @@ function BlogCategoryList() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" style={{ ...styles.td, textAlign: 'center', padding: '20px' }}>
-                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                            No categories found
-                                        </div>
+                                    <td colSpan="6" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
+                                        Data not found
                                     </td>
                                 </tr>
                             )}
@@ -1055,7 +1053,6 @@ function BlogCategoryList() {
                     </div>
                 </div>,
                 document.body
-            )}
             )}
 
             {activePopupImage && (

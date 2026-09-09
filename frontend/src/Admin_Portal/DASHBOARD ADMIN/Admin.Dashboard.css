@@ -4,11 +4,128 @@
     flex-direction: column;
     gap: 24px;
     padding: 24px;
-    background: var(--page-bg);
+    background-color: #fdf2f5;
+    background-image: url('../../assets/images/admin-skyline-bg.png');
+    background-repeat: no-repeat;
+    background-position: top center;
+    background-size: 100% auto;
     color: var(--admin-text);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     min-height: 100%;
     box-sizing: border-box;
+    position: relative;
+}
+
+/* ─── Top Admin Operations Header Banner ─── */
+.admin-operations-header-banner {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0.65) 100%) !important;
+    backdrop-filter: blur(30px) saturate(220%);
+    -webkit-backdrop-filter: blur(30px) saturate(220%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    border-radius: 22px;
+    padding: 16px 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.1), inset 0 2px 3px 0 rgba(255, 255, 255, 1), inset 0 -1px 2px 0 rgba(255, 255, 255, 0.5) !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.header-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.in-badge {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 0.85rem !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    letter-spacing: 1px;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    text-transform: uppercase;
+}
+
+.header-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.header-title-text {
+    margin: 0;
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    text-shadow: none !important;
+}
+
+.header-subtitle-text {
+    margin: 0;
+    font-size: 0.84rem !important;
+    color: #475569 !important;
+    font-weight: 600;
+}
+
+.header-banner-right {
+    display: flex;
+    align-items: center;
+}
+
+.live-clock-capsule {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    padding: 8px 20px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a !important;
+    box-shadow: 0 4px 16px rgba(31, 38, 135, 0.06), inset 0 1.5px 2px #ffffff;
+}
+
+.live-pulse-dot {
+    color: #10b981;
+    font-size: 0.95rem;
+    animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.3;
+        transform: scale(0.85);
+    }
+}
+
+.clock-date {
+    color: #334155 !important;
+}
+
+.clock-sep {
+    color: #94a3b8 !important;
+}
+
+.clock-time {
+    color: #0f172a !important;
+    font-weight: 800;
 }
 
 /* Metric Cards Grid */
@@ -20,22 +137,25 @@
 }
 
 .metric-card-premium {
-    background: var(--admin-surface);
-    border: 1px solid var(--admin-border);
-    border-radius: 16px;
-    padding: 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0.65) 100%) !important;
+    backdrop-filter: blur(30px) saturate(220%);
+    -webkit-backdrop-filter: blur(30px) saturate(220%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    border-radius: 22px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.1), inset 0 2px 3px 0 rgba(255, 255, 255, 1), inset 0 -1px 2px 0 rgba(255, 255, 255, 0.5) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     min-width: 0;
 }
 
 .metric-card-premium:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(30, 117, 255, 0.1);
-    border-color: var(--admin-primary);
+    transform: translateY(-5px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0.75) 100%) !important;
+    box-shadow: 0 20px 50px 0 rgba(30, 117, 255, 0.15), inset 0 2px 3px 0 rgba(255, 255, 255, 1) !important;
+    border-color: #ffffff !important;
 }
 
 .metric-card-header {
@@ -54,12 +174,29 @@
     color: #ffffff;
 }
 
-.metric-icon-circle.revenue { background: #ef4444; }
-.metric-icon-circle.bookings { background: #3b82f6; }
-.metric-icon-circle.users { background: #8b5cf6; }
-.metric-icon-circle.active { background: #10b981; }
-.metric-icon-circle.cancelled { background: #f97316; }
-.metric-icon-circle.refund { background: #ec4899; }
+.metric-icon-circle.revenue {
+    background: #ef4444;
+}
+
+.metric-icon-circle.bookings {
+    background: #3b82f6;
+}
+
+.metric-icon-circle.users {
+    background: #8b5cf6;
+}
+
+.metric-icon-circle.active {
+    background: #10b981;
+}
+
+.metric-icon-circle.cancelled {
+    background: #f97316;
+}
+
+.metric-icon-circle.refund {
+    background: #ec4899;
+}
 
 .metric-title-text {
     font-size: 0.8rem;
@@ -94,8 +231,13 @@
     font-weight: 600;
 }
 
-.trend-up-green { color: #10b981; }
-.trend-down-red { color: #ef4444; }
+.trend-up-green {
+    color: #10b981;
+}
+
+.trend-down-red {
+    color: #ef4444;
+}
 
 /* Dashboard Columns Layout */
 .dashboard-row-layout {
@@ -117,20 +259,24 @@
 }
 
 .dashboard-card-shell {
-    background: var(--admin-surface);
-    border: 1px solid var(--admin-border);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0.65) 100%) !important;
+    backdrop-filter: blur(30px) saturate(220%);
+    -webkit-backdrop-filter: blur(30px) saturate(220%);
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.1), inset 0 2px 3px 0 rgba(255, 255, 255, 1), inset 0 -1px 2px 0 rgba(255, 255, 255, 0.5) !important;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dashboard-card-shell:hover {
-    box-shadow: 0 8px 30px rgba(30, 117, 255, 0.08);
-    border-color: var(--admin-primary);
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0.75) 100%) !important;
+    box-shadow: 0 20px 50px 0 rgba(30, 117, 255, 0.12), inset 0 2px 3px 0 rgba(255, 255, 255, 1) !important;
+    border-color: #ffffff !important;
 }
 
 /* Glass mini-stat cards (2 new cards in revenue row) */
@@ -264,19 +410,42 @@
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 117, 255, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(30, 117, 255, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 117, 255, 0); }
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(30, 117, 255, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(30, 117, 255, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(30, 117, 255, 0);
+    }
 }
 
 @keyframes dashFlow {
-    from { stroke-dashoffset: 200; }
-    to { stroke-dashoffset: 0; }
+    from {
+        stroke-dashoffset: 200;
+    }
+
+    to {
+        stroke-dashoffset: 0;
+    }
 }
 
 @keyframes popIn {
-    0% { transform: scale(0.9); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* Booking Funnel */
@@ -300,11 +469,35 @@
     white-space: nowrap;
 }
 
-.funnel-stage.s1 { background: #3b82f6; width: 95%; margin: 0 auto; }
-.funnel-stage.s2 { background: #10b981; width: 90%; margin: 0 auto; }
-.funnel-stage.s3 { background: #8b5cf6; width: 80%; margin: 0 auto; }
-.funnel-stage.s4 { background: #f59e0b; width: 70%; margin: 0 auto; }
-.funnel-stage.s5 { background: #ec4899; width: 60%; margin: 0 auto; }
+.funnel-stage.s1 {
+    background: #3b82f6;
+    width: 95%;
+    margin: 0 auto;
+}
+
+.funnel-stage.s2 {
+    background: #10b981;
+    width: 90%;
+    margin: 0 auto;
+}
+
+.funnel-stage.s3 {
+    background: #8b5cf6;
+    width: 80%;
+    margin: 0 auto;
+}
+
+.funnel-stage.s4 {
+    background: #f59e0b;
+    width: 70%;
+    margin: 0 auto;
+}
+
+.funnel-stage.s5 {
+    background: #ec4899;
+    width: 60%;
+    margin: 0 auto;
+}
 
 /* 4 Columns row layout */
 .dashboard-four-cols {
@@ -479,12 +672,15 @@
     .dashboard-row-layout {
         grid-template-columns: repeat(12, 1fr);
     }
+
     .dashboard-card-shell.revenue-box {
         grid-column: span 5;
     }
+
     .dashboard-card-shell.funnel-box {
         grid-column: span 4;
     }
+
     .dashboard-card-shell.today-status-box {
         grid-column: span 3;
     }
@@ -494,12 +690,15 @@
     .dashboard-row-layout {
         grid-template-columns: repeat(12, 1fr);
     }
+
     .dashboard-card-shell.revenue-box {
         grid-column: span 12;
     }
+
     .dashboard-card-shell.funnel-box {
         grid-column: span 7;
     }
+
     .dashboard-card-shell.today-status-box {
         grid-column: span 5;
     }
@@ -509,17 +708,21 @@
     .dashboard-metrics-grid {
         grid-template-columns: repeat(3, 1fr);
     }
+
     .dashboard-row-layout {
         grid-template-columns: 1fr;
     }
+
     .dashboard-card-shell.revenue-box,
     .dashboard-card-shell.funnel-box,
     .dashboard-card-shell.today-status-box {
         grid-column: span 1;
     }
+
     .dashboard-four-cols {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .dashboard-three-cols {
         grid-template-columns: 1fr;
     }
@@ -529,6 +732,7 @@
     .dashboard-metrics-grid {
         grid-template-columns: 1fr;
     }
+
     .dashboard-four-cols {
         grid-template-columns: 1fr;
     }

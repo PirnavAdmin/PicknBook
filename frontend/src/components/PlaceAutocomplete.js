@@ -224,11 +224,11 @@ export default function PlaceAutocomplete({
             borderRadius: '16px',
             boxShadow: '0 16px 40px rgba(15,23,42,0.22)',
             border: '1px solid #e2e8f0',
-            maxHeight: '320px',
+            maxHeight: '480px',
             overflowY: 'auto',
-            minWidth: '260px',
-            width: 'max-content',
-            maxWidth: '360px',
+            minWidth: '420px',
+            width: 'min(420px, 90vw)',
+            maxWidth: '420px',
             color: '#0f172a'
           } : {}}
         >

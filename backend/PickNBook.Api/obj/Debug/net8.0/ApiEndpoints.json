@@ -1439,6 +1439,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminFlightSearchLogsController",
+    "Method": "GetFlightSearchLogs",
+    "RelativePath": "api/admin/flight-search-logs",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "limit",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.AdminFlightController",
     "Method": "GetAirlineWebcheckLinks",
     "RelativePath": "api/admin/flight/airline-webcheck",
@@ -2764,6 +2780,415 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminPaymentsController",
+    "Method": "GetPayments",
+    "RelativePath": "api/admin/payments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "bookingType",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "fromDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "toDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminPaymentsController",
+    "Method": "GetPaymentById",
+    "RelativePath": "api/admin/payments/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminPaymentsController",
+    "Method": "InitiateRefund",
+    "RelativePath": "api/admin/payments/{id}/refund",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "PickNBook.Api.Controllers.Admin.AdminRefundRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminPaymentsController",
+    "Method": "GetPaymentMetrics",
+    "RelativePath": "api/admin/payments/metrics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "CreateCategory",
+    "RelativePath": "api/admin/testimonial-categories",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.UpsertTestimonialCategoryRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "UpdateCategory",
+    "RelativePath": "api/admin/testimonial-categories/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.UpsertTestimonialCategoryRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "DeleteCategory",
+    "RelativePath": "api/admin/testimonial-categories/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "GetTestimonialsCombined",
+    "RelativePath": "api/admin/testimonials",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "categoryId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "CreateTestimonial",
+    "RelativePath": "api/admin/testimonials",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Role",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Location",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Rating",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Comment",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "DisplayOrder",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Featured",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "Image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "CategoryId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "UpdateTestimonial",
+    "RelativePath": "api/admin/testimonials/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "Name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Role",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Location",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Rating",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Comment",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "DisplayOrder",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Featured",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "Image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "CategoryId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "DeleteTestimonial",
+    "RelativePath": "api/admin/testimonials/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "UpdateTestimonialStatus",
+    "RelativePath": "api/admin/testimonials/{id}/status",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.UpdateTestimonialStatusDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "GetTestimonialsCombinedAlias",
+    "RelativePath": "api/admin/testimonials/combined",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "categoryId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "GetDashboardStats",
+    "RelativePath": "api/admin/testimonials/dashboard-stats",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "startDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "endDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "GetSettings",
+    "RelativePath": "api/admin/testimonials/settings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminTestimonialsController",
+    "Method": "UpdateSettings",
+    "RelativePath": "api/admin/testimonials/settings",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.TestimonialSettingsDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.Admin.ThemesController",
     "Method": "GetFooterConfig",
     "RelativePath": "api/admin/theme-configs/footer",
@@ -3320,6 +3745,117 @@
         "Name": "request",
         "Type": "PickNBook.Api.Models.LoginRequest",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "ListPasskeys",
+    "RelativePath": "api/auth/passkey",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "DeletePasskey",
+    "RelativePath": "api/auth/passkey/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "RenamePasskey",
+    "RelativePath": "api/auth/passkey/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.PasskeyRenameRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "LoginComplete",
+    "RelativePath": "api/auth/passkey/login-complete",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.PasskeyLoginCompleteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "LoginOptions",
+    "RelativePath": "api/auth/passkey/login-options",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.PasskeyLoginOptionsRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "RegisterComplete",
+    "RelativePath": "api/auth/passkey/register-complete",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.PasskeyRegisterCompleteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.PasskeyAuthController",
+    "Method": "RegisterOptions",
+    "RelativePath": "api/auth/passkey/register-options",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.PasskeyRegisterOptionsRequest",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4119,6 +4655,16 @@
         "Name": "reason",
         "Type": "System.String",
         "IsRequired": false
+      },
+      {
+        "Name": "refundPreference",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "cancelBody",
+        "Type": "PickNBook.Api.Models.DTOs.BusCancelRequestDto",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4910,6 +5456,48 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetAirlines",
+    "RelativePath": "api/flight/srdv/Airlines",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "BookingDetails",
+    "RelativePath": "api/flight/srdv/BookingDetails",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightBookingDetailsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "BookingDetails",
+    "RelativePath": "api/flight/srdv/BookingDetails",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightBookingDetailsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
     "Method": "FareQuote",
     "RelativePath": "api/flight/srdv/FareQuote",
     "HttpMethod": "POST",
@@ -4918,7 +5506,7 @@
     "Parameters": [
       {
         "Name": "proxyRequest",
-        "Type": "PickNBook.Api.Models.DTOs.FlightFareRuleProxyRequestDto",
+        "Type": "PickNBook.Api.Models.DTOs.FlightFareQuoteProxyRequestDto",
         "IsRequired": true
       }
     ],
@@ -5048,6 +5636,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancelStatus",
+    "RelativePath": "api/flight/srdv/GetCancelStatus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightGetCancelStatusProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
     "Method": "HoldGDS",
     "RelativePath": "api/flight/srdv/HoldGDS",
     "HttpMethod": "POST",
@@ -5070,6 +5674,22 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "RecheckSearch",
+    "RelativePath": "api/flight/srdv/RecheckSearch",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightRecheckSearchProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -5098,7 +5718,23 @@
     "Parameters": [
       {
         "Name": "proxyRequest",
-        "Type": "PickNBook.Api.Models.DTOs.FlightFareRuleProxyRequestDto",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSeatMapProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SendChangeRequest",
+    "RelativePath": "api/flight/srdv/SendChangeRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSendChangeProxyRequestDto",
         "IsRequired": true
       }
     ],
@@ -5130,7 +5766,7 @@
     "Parameters": [
       {
         "Name": "proxyRequest",
-        "Type": "PickNBook.Api.Models.DTOs.FlightFareRuleProxyRequestDto",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSSRProxyRequestDto",
         "IsRequired": true
       }
     ],
@@ -5156,6 +5792,102 @@
     "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
     "Method": "TicketLCC",
     "RelativePath": "api/flight/srdv/TicketLCC",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightTicketLCCProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "BookingDetails",
+    "RelativePath": "api/flight/v8/BookingDetails",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightBookingDetailsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancelStatus",
+    "RelativePath": "api/flight/v8/GetCancelStatus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightGetCancelStatusProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SeatMap",
+    "RelativePath": "api/flight/v8/SeatMap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSeatMapProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SendChangeRequest",
+    "RelativePath": "api/flight/v8/SendChangeRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSendChangeProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SSR",
+    "RelativePath": "api/flight/v8/SSR",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSSRProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "TicketLCC",
+    "RelativePath": "api/flight/v8/TicketLCC",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -5466,6 +6198,16 @@
       {
         "Name": "reason",
         "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "refundPreference",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "cancelBody",
+        "Type": "PickNBook.Api.Models.DTOs.PublicHotelCancelRequestDto",
         "IsRequired": false
       }
     ],
@@ -6202,226 +6944,69 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
+    "Method": "SubmitTestimonial",
+    "RelativePath": "api/testimonials",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Role",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Location",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Rating",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Comment",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "DisplayOrder",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Featured",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "Image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "CategoryId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
     "Method": "GetActiveTestimonials",
     "RelativePath": "api/testimonials/active",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "CreateTestimonial",
-    "RelativePath": "api/testimonials/admin",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Designation",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Rating",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Comment",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Status",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Image",
-        "Type": "Microsoft.AspNetCore.Http.IFormFile",
-        "IsRequired": false
-      },
-      {
-        "Name": "CategoryId",
-        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "UpdateTestimonial",
-    "RelativePath": "api/testimonials/admin/{id}",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int64",
-        "IsRequired": true
-      },
-      {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Designation",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Rating",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Comment",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Status",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Image",
-        "Type": "Microsoft.AspNetCore.Http.IFormFile",
-        "IsRequired": false
-      },
-      {
-        "Name": "CategoryId",
-        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "DeleteTestimonial",
-    "RelativePath": "api/testimonials/admin/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int64",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "ToggleTestimonialStatus",
-    "RelativePath": "api/testimonials/admin/{id}/toggle-status",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int64",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "GetCategories",
-    "RelativePath": "api/testimonials/admin/categories",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "CreateCategory",
-    "RelativePath": "api/testimonials/admin/categories",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "PickNBook.Api.Models.DTOs.UpsertTestimonialCategoryRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "UpdateCategory",
-    "RelativePath": "api/testimonials/admin/categories/{id}",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int64",
-        "IsRequired": true
-      },
-      {
-        "Name": "dto",
-        "Type": "PickNBook.Api.Models.DTOs.UpsertTestimonialCategoryRequestDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "DeleteCategory",
-    "RelativePath": "api/testimonials/admin/categories/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int64",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "ToggleCategoryStatus",
-    "RelativePath": "api/testimonials/admin/categories/{id}/toggle-status",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int64",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.TestimonialsController",
-    "Method": "GetAllTestimonials",
-    "RelativePath": "api/testimonials/admin/list",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -7317,6 +7902,285 @@
       {
         "Name": "newSettingsJson",
         "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.SecurityAdminController",
+    "Method": "GetUserRules",
+    "RelativePath": "api/v1/admin/security/user-rules",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.SecurityAdminController",
+    "Method": "DeleteUserRule",
+    "RelativePath": "api/v1/admin/security/user-rules/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.SecurityAdminController",
+    "Method": "ExtendUserRule",
+    "RelativePath": "api/v1/admin/security/user-rules/{id}/extend",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.ExtendUserRuleDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.SecurityAdminController",
+    "Method": "UnblockUserRule",
+    "RelativePath": "api/v1/admin/security/user-rules/{id}/unblock",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.UnblockUserRuleDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.SecurityAdminController",
+    "Method": "AddUserBlock",
+    "RelativePath": "api/v1/admin/security/user-rules/block",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.AddUserBlockRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.SecurityAdminController",
+    "Method": "AddUserUrlBlock",
+    "RelativePath": "api/v1/admin/security/user-rules/url-block",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "PickNBook.Api.Models.DTOs.AddUserUrlBlockRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.WalletController",
+    "Method": "GetDeposits",
+    "RelativePath": "api/Wallet/deposits",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.WalletController",
+    "Method": "SubmitDeposit",
+    "RelativePath": "api/Wallet/deposits",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SubmitDepositRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.WalletController",
+    "Method": "GetSummary",
+    "RelativePath": "api/Wallet/summary",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.WalletController",
+    "Method": "GetTransactions",
+    "RelativePath": "api/Wallet/transactions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "BookingDetails",
+    "RelativePath": "v8/BookingDetails",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightBookingDetailsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancelStatus",
+    "RelativePath": "v8/GetCancelStatus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightGetCancelStatusProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SeatMap",
+    "RelativePath": "v8/SeatMap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSeatMapProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SendChangeRequest",
+    "RelativePath": "v8/SendChangeRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSendChangeProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "SSR",
+    "RelativePath": "v8/SSR",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightSSRProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "TicketLCC",
+    "RelativePath": "v8/TicketLCC",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightTicketLCCProxyRequestDto",
         "IsRequired": true
       }
     ],

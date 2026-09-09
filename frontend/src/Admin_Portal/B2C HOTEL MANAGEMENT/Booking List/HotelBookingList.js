@@ -148,8 +148,29 @@ export default function HotelBookingList() {
       setBookings(Array.isArray(data) ? data : []);
       setCurrentPage(1);
     } catch (err) {
-      setError(err.message || "Failed to load hotel bookings.");
-      setBookings([]);
+      const msg = String(err?.message || "");
+      const lowerMsg = msg.toLowerCase();
+      if (
+        lowerMsg.includes("not found") ||
+        lowerMsg.includes("404") ||
+        lowerMsg.includes("failed to fetch") ||
+        lowerMsg.includes("networkerror") ||
+        lowerMsg.includes("network error") ||
+        lowerMsg.includes("econnrefused") ||
+        lowerMsg.includes("bad gateway") ||
+        lowerMsg.includes("gateway") ||
+        lowerMsg.includes("502") ||
+        lowerMsg.includes("503") ||
+        lowerMsg.includes("500") ||
+        lowerMsg.includes("504") ||
+        lowerMsg.includes("internal server error")
+      ) {
+        setBookings([]);
+        setError("");
+      } else {
+        setError(msg || "Failed to load hotel bookings.");
+        setBookings([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -352,11 +373,13 @@ export default function HotelBookingList() {
           transform: translateY(-1px) !important;
         }
       `}</style>
-      <header className="admin-b2c-header" style={{ marginBottom: "12px" }}>
-        <h1><span className="admin-heading-red">B2C Hotel</span> Booking List</h1>
+      <header className="admin-b2c-header" style={{ marginTop: "20px", marginBottom: "18px", paddingTop: "8px", paddingBottom: "8px" }}>
+        <h1 style={{ fontSize: "1.25rem", fontWeight: "700", marginTop: "6px", marginBottom: "10px" }}>
+          <span className="admin-heading-red">B2C Hotel</span> Booking List
+        </h1>
       </header>
 
-      <div className="admin-toolbar-row" style={{ marginBottom: "16px" }}>
+      <div className="admin-toolbar-row" style={{ marginBottom: "14px" }}>
         <div className="admin-chip-row">
           <span className="admin-chip">Today Booked: {stats.active}</span>
           <span className="admin-chip">Today Pending: {stats.cancelled}</span>
@@ -365,7 +388,7 @@ export default function HotelBookingList() {
           </span>
         </div>
 
-        <div className="admin-actions-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button 
             type="button" 
             onClick={() => setIsFiltersOpen(prev => !prev)}
@@ -373,20 +396,21 @@ export default function HotelBookingList() {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
+              gap: '5px',
+              padding: '4px 14px',
+              height: '28px',
+              borderRadius: '7px',
               border: 'none',
               background: '#A51C49',
               color: '#FFFFFF',
-              fontSize: '0.88rem',
+              fontSize: '0.80rem',
               fontWeight: '600',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               transition: 'all 0.2s'
             }}
           >
-            <Filter size={15} />
+            <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
           <button 
@@ -397,20 +421,21 @@ export default function HotelBookingList() {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
+              gap: '5px',
+              padding: '4px 14px',
+              height: '28px',
+              borderRadius: '7px',
               border: 'none',
               background: '#10b981',
               color: '#FFFFFF',
-              fontSize: '0.88rem',
+              fontSize: '0.80rem',
               fontWeight: '600',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               transition: 'all 0.2s'
             }}
           >
-            <Download size={15} />
+            <Download size={13} />
             <span>Export</span>
           </button>
         </div>
@@ -503,7 +528,7 @@ export default function HotelBookingList() {
         </section>
       )}
 
-      {error && (
+      {error && !error.toLowerCase().includes("gateway") && !error.toLowerCase().includes("502") && (
         <div className="hbl-badge hbl-badge-cancelled" style={{ width: "100%", padding: "10px 15px", marginBottom: "15px", borderRadius: "8px" }}>
           <strong>Error:</strong> {error}
         </div>
@@ -517,12 +542,28 @@ export default function HotelBookingList() {
 
       <section className="admin-table-shell">
         <header className="admin-table-head">
-          <span>B. ID / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Booking ID">
+              B. ID
+              <span className="admin-tooltip-text">Booking ID</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Booking Date">
+              B.D.
+              <span className="admin-tooltip-text">Booking Date</span>
+            </span>
+          </span>
           <span>Name</span>
-          <span>Segment / Date</span>
-          <span>Time</span>
-          <span>PNR / Status</span>
-          <span>Operator / Type</span>
+          <span>Check-in / Check-out</span>
+          <span>Rooms / Guests</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Passenger Name Record">
+              PNR
+              <span className="admin-tooltip-text">Passenger Name Record</span>
+            </span>{" "}
+            / Status
+          </span>
+          <span>Hotel / Property</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
           <span>Action</span>
@@ -658,37 +699,36 @@ export default function HotelBookingList() {
                 <strong>Hotel</strong>
               </div>
               <div>
-                <span>Passenger Phone</span>
+                <span>Guest Name & Email</span>
+                <strong>{selectedBooking.guestName || "--"}</strong>
+                {selectedBooking.guestEmail && <small>{selectedBooking.guestEmail}</small>}
+              </div>
+              <div>
+                <span>Guest Phone</span>
                 <strong>{selectedBooking.guestPhone || "--"}</strong>
               </div>
               <div>
-                <span>Booking ID</span>
-                <strong>{selectedBooking.bookingId || "--"}</strong>
-              </div>
-              <div>
-                <span>Booking Date</span>
-                <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : "--"}</strong>
+                <span>Booking Reference</span>
+                <strong>{selectedBooking.bookingReference || "--"}</strong>
               </div>
 
               <div>
-                <span>Segment</span>
+                <span>Booking ID / Provider ID</span>
+                <strong>{selectedBooking.bookingId || "--"}</strong>
+                {selectedBooking.providerBookingId && <small>Provider ID: {selectedBooking.providerBookingId}</small>}
+              </div>
+              <div>
+                <span>Booking Date</span>
+                <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : (selectedBooking.bookedAt ? formatDateTime(selectedBooking.bookedAt) : "--")}</strong>
+              </div>
+              <div>
+                <span>Hotel Property</span>
                 <strong>{selectedBooking.hotelName || "--"}</strong>
+                {selectedBooking.hotelId && <small>ID: {selectedBooking.hotelId}</small>}
               </div>
               <div>
-                <span>Journey Date & Time</span>
+                <span>Check-in / Check-out</span>
                 <strong>{selectedBooking.checkInDate || "--"} to {selectedBooking.checkOutDate || "--"}</strong>
-              </div>
-              <div>
-                <span>PNR</span>
-                <strong>{selectedBooking.bookingReference || "--"}</strong>
-              </div>
-              <div>
-                <span>Status</span>
-                <div>
-                  <span className={`admin-status-pill ${getAdminStatusClass(selectedBooking.status)}`}>
-                    {selectedBooking.status}
-                  </span>
-                </div>
               </div>
 
               <div>
@@ -700,18 +740,40 @@ export default function HotelBookingList() {
                 <strong>{selectedBooking.invoiceNumber || "--"}</strong>
               </div>
               <div>
-                <span>Rooms / Guests</span>
-                <strong>{selectedBooking.rooms} Room(s)</strong>
-                <small>{selectedBooking.adults} Adult(s){selectedBooking.children > 0 ? `, ${selectedBooking.children} Child(ren)` : ""}</small>
+                <span>Rooms & Guests</span>
+                <strong>{selectedBooking.rooms || 1} Room(s)</strong>
+                <small>{selectedBooking.totalGuests || selectedBooking.adults || 1} Guest(s) ({selectedBooking.adults || 0} Adult{selectedBooking.children > 0 ? `, ${selectedBooking.children} Child` : ""})</small>
               </div>
               <div>
                 <span>Last Cancel Date</span>
                 <strong>{selectedBooking.lastCancellationDate || "--"}</strong>
               </div>
 
+              <div>
+                <span>Payment Status</span>
+                <strong>{selectedBooking.paymentStatus || "N/A"}</strong>
+              </div>
+              <div>
+                <span>Refund Status</span>
+                <strong>{selectedBooking.refundStatus || "N/A"}</strong>
+              </div>
+              <div>
+                <span>Fulfillment Status</span>
+                <strong>{selectedBooking.fulfillmentStatus || "N/A"}</strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <div>
+                  <span className={`admin-status-pill ${getAdminStatusClass(selectedBooking.status)}`}>
+                    {selectedBooking.status}
+                  </span>
+                </div>
+              </div>
+
               <div className="admin-view-highlight-card">
                 <span>Total Paid</span>
                 <strong>{formatCurrency(selectedBooking.totalPaid || selectedBooking.totalPrice)}</strong>
+                {selectedBooking.srdvOfferedPrice ? <small>Offered: {formatCurrency(selectedBooking.srdvOfferedPrice)}</small> : null}
               </div>
               <div className="admin-view-highlight-card">
                 <span>Calculated Profit</span>

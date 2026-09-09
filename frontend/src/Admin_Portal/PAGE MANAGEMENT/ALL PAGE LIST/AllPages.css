@@ -73,7 +73,14 @@ body .admin-markup-table-wrap .page-table th {
   line-height: 1.3 !important;
   font-weight: 500 !important;
   white-space: nowrap !important;
-  border: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
+body .admin-markup-table-wrap .page-table th:last-child {
+  border-right: none !important;
 }
 
 body .admin-markup-table-wrap .page-table tbody tr {

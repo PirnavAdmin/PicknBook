@@ -1,0 +1,173 @@
+.admin-payments-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Metric summary cards grid */
+.admin-payments-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .admin-payments-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-payments-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.payment-metric-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payment-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.payment-metric-card .metric-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.payment-metric-card.revenue .metric-icon {
+  background: #fdf2f8;
+  color: #A51C49;
+}
+
+.payment-metric-card.total .metric-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.payment-metric-card.success .metric-icon {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.payment-metric-card.failed .metric-icon {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.payment-metric-card.pending .metric-icon {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.payment-metric-card.refunds .metric-icon {
+  background: #faf5ff;
+  color: #9333ea;
+}
+
+.payment-metric-card .metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.payment-metric-card .metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.payment-metric-card .metric-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Status Badges */
+.payment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.payment-status-badge.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.payment-status-badge.failed {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.payment-status-badge.dropped {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.payment-status-badge.pending {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+/* Payments Table Layout & Overflow Protection */
+.admin-payments-container .admin-markup-coupon-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.admin-payments-container .admin-markup-coupon-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1200px;
+}
+
+.admin-payments-container .admin-markup-coupon-table th,
+.admin-payments-container .admin-markup-coupon-table td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.admin-payments-container .admin-markup-coupon-table td span[title] {
+  cursor: help;
+}
+
+.discount-modal-container.view-modal h4 {
+  font-family: inherit;
+}
+

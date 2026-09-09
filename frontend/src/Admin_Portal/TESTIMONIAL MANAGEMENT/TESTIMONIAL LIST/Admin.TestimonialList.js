@@ -1,9 +1,10 @@
 /* eslint-disable */
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Edit2, Trash2, Star } from "lucide-react";
+import { Eye, Edit2, Trash2, Star, Search, Plus, Download, ChevronDown } from "lucide-react";
 import { getAdminTestimonials, deleteAdminTestimonial, toggleTestimonialStatus } from "../../../services/testimonialService";
 import { toApiAssetUrl } from "../../../services/apiClient";
+import AdminPagination from "../../../components/AdminPagination";
 
 export default function AdminTestimonialList() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function AdminTestimonialList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedTestimonial, setSelectedTestimonial] = useState(null);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [toast, setToast] = useState(null);
 
   const [page, setPage] = useState(1);
@@ -43,6 +45,18 @@ export default function AdminTestimonialList() {
     loadTestimonials();
   }, []);
 
+  // Close actions dropdown when clicking anywhere outside
+  useEffect(() => {
+    const handleGlobalClick = () => setActiveDropdownId(null);
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, []);
+
+  // Reset page to 1 whenever filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter]);
+
   const handleToggleStatus = async (id) => {
     try {
       await toggleTestimonialStatus(id);
@@ -71,20 +85,24 @@ export default function AdminTestimonialList() {
     }
   };
 
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("All");
-    setPage(1);
-    showToast("Filters cleared.", "info");
-  };
-
   const filteredTestimonials = testimonials
     .filter((t) => {
-      const s = searchQuery.toLowerCase();
+      const s = searchQuery.trim().toLowerCase();
+      if (!s) return true;
+      const name = (t.name || "").toLowerCase();
+      const designation = (t.designation || t.role || "").toLowerCase();
+      const comment = (t.comment || t.message || t.preview || "").toLowerCase();
+      const category = (t.category || t.categoryName || "").toLowerCase();
+      const status = (t.status || "").toLowerCase();
+      const rating = String(t.rating || "");
+
       return (
-        (t.name || "").toLowerCase().includes(s) ||
-        (t.designation || "").toLowerCase().includes(s) ||
-        (t.comment || t.message || "").toLowerCase().includes(s)
+        name.includes(s) ||
+        designation.includes(s) ||
+        comment.includes(s) ||
+        category.includes(s) ||
+        status.includes(s) ||
+        rating.includes(s)
       );
     })
     .filter((t) => (statusFilter === "All" ? true : (t.status || "").toLowerCase() === statusFilter.toLowerCase()));
@@ -118,40 +136,14 @@ export default function AdminTestimonialList() {
       background: "var(--page-bg)",
       minHeight: "100vh",
     },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "16px",
-      gap: "16px",
-      flexWrap: "wrap",
-    },
     titleWrapper: {
       display: "flex",
       alignItems: "baseline",
       gap: "8px",
     },
-    titleMain: {
-      fontSize: "1.8rem",
-      fontWeight: 500,
-      color: "var(--text-primary)",
-      margin: 0,
-    },
-    titleSub: {
-      fontSize: "1.8rem",
-      fontWeight: 500,
-      color: "var(--text-secondary)",
-      margin: 0,
-    },
-    actions: {
-      display: "flex",
-      gap: "10px",
-      alignItems: "center",
-      flexWrap: "wrap",
-    },
     button: {
-      padding: "8px 14px",
-      borderRadius: "8px",
+      padding: "6px 14px",
+      borderRadius: "10px",
       border: "1px solid transparent",
       fontWeight: 600,
       cursor: "pointer",
@@ -160,41 +152,37 @@ export default function AdminTestimonialList() {
       alignItems: "center",
       gap: "6px",
       fontSize: "0.85rem",
-    },
-    filterBtn: {
-      background: "var(--primary)",
-      color: "#ffffff",
-      borderColor: "var(--primary)",
-    },
-    clearBtn: {
-      background: "var(--panel)",
-      color: "var(--text-primary)",
-      borderColor: "var(--border)",
+      height: "36px",
+      boxSizing: "border-box",
+      whiteSpace: "nowrap",
     },
     addBtn: {
-      background: "linear-gradient(135deg, var(--primary), var(--primary-strong))",
-      color: "#ffffff",
+      background: "#fdf2f4",
+      color: "#A51C49",
+      borderColor: "#fbcfe8",
     },
     exportBtn: {
-      background: "var(--success)",
-      color: "#ffffff",
-      borderColor: "var(--success)",
+      background: "#ecfdf5",
+      color: "#047857",
+      borderColor: "#a7f3d0",
     },
     searchBox: {
-      padding: "8px 12px",
-      border: "1px solid var(--border)",
-      borderRadius: "8px",
+      padding: "6px 12px 6px 36px",
+      border: "1.5px solid var(--border, #cbd5e1)",
+      borderRadius: "10px",
       fontSize: "0.85rem",
-      width: "200px",
+      width: "240px",
       outline: "none",
       transition: "all 0.2s ease",
-      background: "var(--panel)",
-      color: "var(--text-primary)",
+      background: "var(--panel, #ffffff)",
+      color: "var(--text-primary, #0f172a)",
+      height: "36px",
+      boxSizing: "border-box",
     },
     tableWrapper: {
-      background: "var(--panel)",
+      background: "var(--panel, #ffffff)",
       borderRadius: "14px",
-      border: "1px solid var(--border)",
+      border: "1px solid var(--border, #e2e8f0)",
       boxShadow: "var(--shadow-sm)",
       overflow: "hidden",
       overflowX: "auto",
@@ -205,19 +193,22 @@ export default function AdminTestimonialList() {
       fontSize: "0.85rem",
     },
     thead: {
-      background: "linear-gradient(90deg, var(--primary), var(--primary-strong))",
+      background: "#A51C49",
       color: "#ffffff",
       fontWeight: 700,
     },
     th: {
-      padding: "6px 10px",
+      padding: "10px 14px",
       textAlign: "center",
       borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+      borderBottom: "1.5px solid #831843",
       whiteSpace: "nowrap",
       fontSize: "0.85rem",
       fontWeight: 600,
-      height: "34px",
+      height: "38px",
       verticalAlign: "middle",
+      background: "#A51C49",
+      color: "#ffffff",
     },
     td: {
       padding: "10px 12px",
@@ -232,64 +223,37 @@ export default function AdminTestimonialList() {
     },
     sn: {
       fontWeight: 600,
-      color: "var(--primary)",
+      color: "#A51C49",
       minWidth: "26px",
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
       width: "26px",
       height: "26px",
-      background: "rgba(74, 15, 26, 0.08)",
+      background: "rgba(165, 28, 73, 0.08)",
       borderRadius: "8px",
       fontSize: "0.8rem",
     },
     statusBadge: {
       display: "inline-flex",
       alignItems: "center",
-      padding: "6px 10px",
-      borderRadius: "6px",
+      padding: "5px 12px",
+      borderRadius: "8px",
       fontWeight: 600,
-      fontSize: "0.75rem",
+      fontSize: "0.8rem",
       border: "1px solid",
       cursor: "pointer",
+      transition: "all 0.2s ease",
     },
     statusActive: {
-      background: "rgba(30, 142, 62, 0.12)",
-      color: "var(--success)",
-      borderColor: "rgba(30, 142, 62, 0.3)",
+      background: "#ecfdf5",
+      color: "#10b981",
+      borderColor: "#a7f3d0",
     },
     statusInactive: {
-      background: "rgba(217, 48, 37, 0.12)",
-      color: "var(--danger)",
-      borderColor: "rgba(217, 48, 37, 0.3)",
-    },
-    actionButtons: {
-      display: "flex",
-      gap: "8px",
-      flexWrap: "wrap",
-      justifyContent: "center",
-    },
-    actionBtn: {
-      width: "32px",
-      height: "32px",
-      borderRadius: "8px",
-      border: "1.5px solid var(--border)",
-      fontWeight: 700,
-      fontSize: "0.8rem",
-      cursor: "pointer",
-      transition: "all 0.3s ease",
-      background: "var(--surface-soft)",
-      color: "var(--text-primary)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-      padding: "0",
-    },
-    deleteBtn: {
-      background: "rgba(217, 48, 37, 0.15)",
-      color: "var(--danger)",
-      borderColor: "rgba(217, 48, 37, 0.35)",
+      background: "#fef2f2",
+      color: "#ef4444",
+      borderColor: "#fecaca",
     },
     toast: {
       padding: "10px 14px",
@@ -316,11 +280,6 @@ export default function AdminTestimonialList() {
       borderColor: "rgba(74, 15, 26, 0.25)",
       background: "rgba(74, 15, 26, 0.08)",
       color: "var(--primary)",
-    },
-    emptyState: {
-      textAlign: "center",
-      padding: "40px 20px",
-      color: "var(--text-secondary)",
     },
     detailCard: {
       padding: "16px",
@@ -388,7 +347,7 @@ export default function AdminTestimonialList() {
     return <div style={{ display: "inline-flex" }}>{stars}</div>;
   };
 
-  const totalPages = Math.ceil(filteredTestimonials.length / pageSize) || 1;
+  const currentItems = filteredTestimonials.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <>
@@ -408,12 +367,18 @@ export default function AdminTestimonialList() {
           </div>
         )}
 
-        <div style={styles.header}>
+        {/* Title Heading */}
+        <div style={{ marginBottom: "12px" }}>
           <div style={styles.titleWrapper}>
-            <h1 style={styles.titleMain}>Testimonial</h1>
-            <h2 style={styles.titleSub}>List</h2>
+            <h1 style={{ fontSize: "1.6rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Testimonial</h1>
+            <h2 style={{ fontSize: "1.6rem", fontWeight: 700, color: "var(--text-secondary)", margin: 0 }}>List</h2>
           </div>
-          <div style={styles.actions}>
+        </div>
+
+        {/* Action Controls Bar: Left Side Search, Right Side All Status, Export, + Add Testimonial */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", gap: "12px", flexWrap: "wrap" }}>
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <Search size={16} color="var(--text-secondary, #64748b)" style={{ position: "absolute", left: "12px", pointerEvents: "none" }} />
             <input
               type="text"
               placeholder="Search testimonials..."
@@ -421,19 +386,23 @@ export default function AdminTestimonialList() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchBox}
             />
+          </div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               style={{
-                padding: "8px 14px",
+                padding: "6px 14px",
                 borderRadius: "10px",
-                border: "1.5px solid var(--border)",
+                border: "1.5px solid var(--border, #cbd5e1)",
                 fontSize: "0.85rem",
                 outline: "none",
-                background: "var(--panel)",
-                color: "var(--text-primary)",
+                background: "var(--panel, #ffffff)",
+                color: "var(--text-primary, #0f172a)",
                 fontWeight: 600,
                 cursor: "pointer",
+                height: "36px",
+                boxSizing: "border-box",
               }}
             >
               <option value="All">All Status</option>
@@ -442,16 +411,10 @@ export default function AdminTestimonialList() {
             </select>
             <button
               type="button"
-              style={{ ...styles.button, ...styles.clearBtn }}
-              onClick={handleClearFilters}
-            >
-              Clear
-            </button>
-            <button
-              type="button"
               style={{ ...styles.button, ...styles.exportBtn }}
               onClick={handleExport}
             >
+              <Download size={15} strokeWidth={2.2} />
               Export
             </button>
             <button
@@ -459,6 +422,7 @@ export default function AdminTestimonialList() {
               style={{ ...styles.button, ...styles.addBtn }}
               onClick={() => navigate("/admin/testimonial-management/add-testimonial")}
             >
+              <Plus size={17} strokeWidth={2.5} />
               Add Testimonial
             </button>
           </div>
@@ -502,156 +466,262 @@ export default function AdminTestimonialList() {
         )}
 
         <div style={styles.tableWrapper}>
-          {filteredTestimonials.length > 0 ? (
-            <table style={styles.table}>
-              <thead style={styles.thead}>
-                <tr>
-                  <th style={styles.th}>SN.</th>
-                  <th style={styles.th}>Photo</th>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Designation</th>
-                  <th style={styles.th}>Rating</th>
-                  <th style={styles.th}>Comment</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTestimonials.slice((page - 1) * pageSize, page * pageSize).map((t, index) => (
-                  <tr
-                    key={t.id}
-                    style={styles.tr}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(74, 15, 26, 0.06)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    <td style={styles.td}>
-                      <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
-                    </td>
-                    <td style={styles.td}>
-                      {t.imageUrl || t.image ? (
-                        <img
-                          src={toApiAssetUrl(t.imageUrl || t.image)}
-                          alt={t.name}
-                          style={{
-                            width: "36px",
-                            height: "36px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                            display: "block",
-                            margin: "0 auto",
-                          }}
-                        />
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td style={styles.td}>{t.name}</td>
-                    <td style={styles.td}>{t.designation}</td>
-                    <td style={styles.td}>{renderStars(t.rating)}</td>
-                    <td
-                      style={{
-                        ...styles.td,
-                        maxWidth: "240px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+          <table style={styles.table}>
+            <thead style={styles.thead}>
+              <tr>
+                <th style={styles.th}>SN.</th>
+                <th style={styles.th}>Photo</th>
+                <th style={styles.th}>Name</th>
+                <th style={styles.th}>Designation</th>
+                <th style={styles.th}>Rating</th>
+                <th style={styles.th}>Comment</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.length > 0 ? (
+                currentItems.map((t, index) => {
+                  const rawImg = t.imageUrl || t.image || t.photo || t.imagePath || t.photoUrl || t.avatar || t.picture || t.url || t.filePath;
+                  const imgSrc = rawImg ? toApiAssetUrl(rawImg) : "";
+                  return (
+                    <tr
+                      key={t.id}
+                      style={styles.tr}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(74, 15, 26, 0.06)";
                       }}
-                      title={t.comment || t.message}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
                     >
-                      {t.comment || t.message}
-                    </td>
-                    <td style={styles.td}>
-                      <button
-                        type="button"
-                        style={getStatusStyle(t.status)}
-                        onClick={() => handleToggleStatus(t.id)}
+                      <td style={styles.td}>
+                        <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ position: "relative", width: "36px", height: "36px", margin: "0 auto" }}>
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt={t.name || "Testimonial"}
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                                display: "block",
+                                border: "1px solid var(--border, #cbd5e1)",
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                if (e.currentTarget.nextSibling) {
+                                  e.currentTarget.nextSibling.style.display = "flex";
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              background: "linear-gradient(135deg, #A51C49, #851237)",
+                              color: "#ffffff",
+                              fontWeight: 700,
+                              fontSize: "0.85rem",
+                              display: imgSrc ? "none" : "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              margin: "0 auto",
+                              textTransform: "uppercase",
+                              boxShadow: "0 2px 6px rgba(165, 28, 73, 0.25)",
+                            }}
+                          >
+                            {(t.name && t.name.trim()) ? t.name.trim().charAt(0) : "T"}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={styles.td}>{t.name}</td>
+                      <td style={styles.td}>{t.designation}</td>
+                      <td style={styles.td}>{renderStars(t.rating)}</td>
+                      <td
+                        style={{
+                          ...styles.td,
+                          maxWidth: "240px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={t.comment || t.message}
                       >
-                        {t.status || "Active"}
-                      </button>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={styles.actionButtons}>
+                        {t.comment || t.message}
+                      </td>
+                      <td style={styles.td}>
                         <button
                           type="button"
-                          style={styles.actionBtn}
-                          title="View Details"
-                          onClick={() => setSelectedTestimonial(t)}
+                          style={getStatusStyle(t.status)}
+                          onClick={() => handleToggleStatus(t.id)}
                         >
-                          <Eye size={16} strokeWidth={2} />
+                          {t.status || "Active"}
                         </button>
-                        <button
-                          type="button"
-                          style={styles.actionBtn}
-                          title="Edit"
-                          onClick={() =>
-                            navigate(`/admin/testimonial-management/add-testimonial`, {
-                              state: { editItem: t },
-                            })
-                          }
-                        >
-                          <Edit2 size={16} strokeWidth={2} />
-                        </button>
-                        <button
-                          type="button"
-                          style={{ ...styles.actionBtn, ...styles.deleteBtn }}
-                          title="Delete"
-                          onClick={() => handleDelete(t.id)}
-                        >
-                          <Trash2 size={16} strokeWidth={2} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div style={styles.emptyState}>
-              <div style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "10px" }}>No data</div>
-              <p>No testimonials found matching search criteria.</p>
-            </div>
-          )}
-        </div>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ position: "relative", display: "inline-block", verticalAlign: "middle" }}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdownId(activeDropdownId === t.id ? null : t.id);
+                            }}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "6px 14px",
+                              borderRadius: "8px",
+                              border: "1.5px solid var(--border, #cbd5e1)",
+                              background: activeDropdownId === t.id ? "#fdf2f4" : "var(--panel, #ffffff)",
+                              color: activeDropdownId === t.id ? "#A51C49" : "var(--text-primary, #0f172a)",
+                              borderColor: activeDropdownId === t.id ? "#fbcfe8" : "var(--border, #cbd5e1)",
+                              fontSize: "0.82rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <span>Actions</span>
+                            <ChevronDown size={14} />
+                          </button>
 
-        {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-              Page {page} of {totalPages}
-            </span>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border)",
-                  background: "var(--panel)",
-                  cursor: "pointer",
-                }}
-              >
-                Prev
-              </button>
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border)",
-                  background: "var(--panel)",
-                  cursor: "pointer",
-                }}
-              >
-                Next
-              </button>
-            </div>
+                          {activeDropdownId === t.id && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                ...(index >= currentItems.length - 2 || currentItems.length <= 3
+                                  ? { bottom: "100%", marginBottom: "6px" }
+                                  : { top: "100%", marginTop: "6px" }),
+                                right: 0,
+                                background: "#ffffff",
+                                borderRadius: "12px",
+                                border: "1px solid #e2e8f0",
+                                boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
+                                zIndex: 99999,
+                                minWidth: "150px",
+                                overflow: "hidden",
+                                padding: "4px 0",
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTestimonial(t);
+                                  setActiveDropdownId(null);
+                                }}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  width: "100%",
+                                  padding: "9px 14px",
+                                  border: "none",
+                                  background: "none",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  fontWeight: 500,
+                                  color: "#334155",
+                                  transition: "background 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                              >
+                                <Eye size={14} color="#64748b" />
+                                <span>View Details</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null);
+                                  navigate("/admin/testimonial-management/add-testimonial", {
+                                    state: { editItem: t },
+                                  });
+                                }}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  width: "100%",
+                                  padding: "9px 14px",
+                                  border: "none",
+                                  background: "none",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  fontWeight: 500,
+                                  color: "#334155",
+                                  transition: "background 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                              >
+                                <Edit2 size={14} color="#64748b" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null);
+                                  handleDelete(t.id);
+                                }}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  width: "100%",
+                                  padding: "9px 14px",
+                                  border: "none",
+                                  background: "none",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  fontWeight: 500,
+                                  color: "#ef4444",
+                                  transition: "background 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                              >
+                                <Trash2 size={14} color="#ef4444" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="8" style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-secondary, #64748b)" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "8px" }}>No data</div>
+                    <div>No testimonials found matching search criteria.</div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Attached AdminPagination directly inside tableWrapper card */}
+          <div style={{ borderTop: "1px solid var(--border, #e2e8f0)", padding: "4px 12px", background: "var(--panel, #ffffff)" }}>
+            <AdminPagination
+              currentPage={page}
+              totalItems={filteredTestimonials.length}
+              itemsPerPage={pageSize}
+              onPageChange={setPage}
+              itemName="testimonials"
+            />
           </div>
-        )}
+        </div>
       </div>
     </>
   );

@@ -74,6 +74,11 @@ const navGroups = [
               { label: 'Hotel', to: p('hotel-management/cancellation-list'), icon: icons.hotel },
             ],
           },
+          {
+            label: 'Payments / Failed',
+            to: p('payments'),
+            icon: icons.wallet,
+          },
         ],
       },
       {
@@ -81,40 +86,31 @@ const navGroups = [
         to: p('promotions'),
         icon: icons.offer,
         submenu: [
+          { label: 'Promotions', to: p('b2c-bus/coupon-list') },
           {
             label: 'Coupons',
             to: p('promotions/coupons'),
             submenu: [
-              { label: 'Flight', to: p('b2c-flight/coupon-list') },
-              { label: 'Bus', to: p('b2c-bus/coupon-list') },
-              { label: 'Hotel', to: p('b2c-hotel/coupon-list') },
+              { label: 'Flight', to: p('b2c-flight/coupon-list'), icon: icons.flight },
+              { label: 'Hotel', to: p('hotel-management/coupon-list'), icon: icons.hotel },
             ],
           },
+          { label: 'Offers', to: p('offer-management/offers') },
           {
             label: 'Discounts',
             to: p('promotions/discounts'),
             submenu: [
-              { label: 'Flight', to: p('b2c-flight/discount-list') },
-              { label: 'Bus', to: p('b2c-bus/discount-list') },
-              { label: 'Hotel', to: p('b2c-hotel/discount-list') },
+              { label: 'Flight', to: p('b2c-flight/discount-list'), icon: icons.flight },
+              { label: 'Hotel', to: p('hotel-management/discount-list'), icon: icons.hotel },
             ],
           },
           {
             label: 'Markup',
             to: p('promotions/markup'),
             submenu: [
-              { label: 'Bus', to: p('b2c-bus/markup-list') },
-              { label: 'Flight', to: p('b2c-flight/markup-list') },
-              { label: 'Hotel', to: p('hotel-management/markup-list') },
-            ],
-          },
-          {
-            label: 'Offers',
-            to: p('promotions/offers'),
-            submenu: [
-              { label: 'Flight', to: p('offer-management/offers') },
-              { label: 'Bus', to: p('offer-management/offers') },
-              { label: 'Hotel', to: p('offer-management/offers') },
+              { label: 'Bus', to: p('b2c-bus/markup-list'), icon: icons.bus },
+              { label: 'Flight', to: p('b2c-flight/markup-list'), icon: icons.flight },
+              { label: 'Hotel', to: p('hotel-management/markup-list'), icon: icons.hotel },
             ],
           },
         ],
@@ -143,23 +139,18 @@ const navGroups = [
           { label: 'Account Adjustment', to: p('account-management/account-adjustment') },
           { label: 'Balance Sheet', to: p('account-management/balance-sheet') },
           { label: 'Bank List', to: p('account-management/bank-list') },
-          { label: 'Payment Upload', to: p('account-management/payment-upload') },
-          { label: 'Payment Upload List', to: p('account-management/payment-upload-list') },
-          { label: 'QrCode List', to: p('account-management/qrcode-list') },
           { label: 'Reconciliation', to: p('account-management/reconciliation') },
-          { label: 'Settlement / Transfer', to: p('account-management/settlement-transfer') },
           { label: 'Transaction Log', to: p('account-management/transaction-log') },
         ],
       },
       {
         label: 'Payment Management', to: p('payment-management'), icon: icons.payment, submenu: [
-          { label: 'Bank Detail List', to: p('payment-management/bank-detail-list') },
-          { label: 'Manual Invoice', to: p('payment-management/manual-invoice') },
           { label: 'Payment Settings', to: p('payment-management/payment-settings') },
-          { label: 'Payment Store', to: p('payment-management/payment-store') },
-          { label: 'QrCode List', to: p('payment-management/qrcode-list') },
+          { label: 'Payment Gateway', to: p('payment-management/payment-gateway') },
+          { label: 'Payment Transactions', to: p('payment-management/payment-transactions') },
+          { label: 'QR Code List', to: p('payment-management/qrcode-list') },
+          { label: 'Manual Invoice', to: p('payment-management/manual-invoice') },
           { label: 'Tax Management', to: p('payment-management/tax-management') },
-          { label: 'Wallet Transaction', to: p('payment-management/wallet-transaction') },
         ],
       },
       {
@@ -170,6 +161,7 @@ const navGroups = [
           { label: 'Customers', to: p('customer-management/customer-list') },
           { label: 'Queries', to: p('query-management/query-list') },
           { label: 'Deposit Requests', to: p('customer-management/deposit-request-list') },
+          { label: 'Testimonial', to: p('testimonial-management/dashboard') },
           {
             label: 'Search History',
             to: p('customers/search-history'),
@@ -188,6 +180,7 @@ const navGroups = [
           { label: 'Authentication Security', to: p('security-management/auth-security') },
           { label: 'API Security', to: p('security-management/api-security') },
           { label: 'Account Security', to: p('security-management/account-security') },
+          { label: 'User Security Rules', to: p('security-management/user-security-rules') },
           { label: 'Security Limits', to: p('security-management/security-limits') },
           { label: 'Security Audit Logs', to: p('security-management/security-logs') },
         ],
@@ -196,12 +189,6 @@ const navGroups = [
         label: 'Email Management', to: p('email-management'), icon: icons.email, submenu: [
           { label: 'Email Logs', to: p('email-management/email-logs') },
           { label: 'Email Templates', to: p('email-management/email-templates') },
-        ],
-      },
-      {
-        label: 'Testimonial Management', to: p('testimonial-management'), icon: icons.testimonial, submenu: [
-          { label: 'Category List', to: p('testimonial-management/category-list') },
-          { label: 'Testimonial List', to: p('testimonial-management/testimonial-list') },
         ],
       },
     ],

@@ -18,11 +18,12 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   
   // B2C Wallet Info
   const [b2cWallet, setB2cWallet] = useState(null);
-  const [selectedMethod, setSelectedMethod] = useState("Online");
+  const [useWallet, setUseWallet] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setUseWallet(Number(flowState?.walletAppliedAmount || 0) > 0);
       const b2bUser = localStorage.getItem("b2b_user");
       if (b2bUser) {
         setIsAgent(true);
@@ -51,6 +52,13 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   if (bookingType === "Hotel") {
     totalPayable = flowState?.payableAmount || flowState?.finalPayableAmount || 0;
   }
+  totalPayable = Math.max(0, Number(totalPayable) || 0);
+  const walletBalance = Number(b2cWallet?.balance ?? b2cWallet?.availableBalance ?? 0) || 0;
+  const walletStatus = b2cWallet?.walletStatus || b2cWallet?.status || "Inactive";
+  const walletAppliedAmount = useWallet && walletStatus === "Active"
+    ? Math.min(walletBalance, totalPayable)
+    : 0;
+  const gatewayPayableAmount = Math.max(0, totalPayable - walletAppliedAmount);
   
   // --- Agent Wallet Logic ---
   const handleAgentPay = async () => {
@@ -88,34 +96,6 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   };
 
   // --- B2C Wallet Logic ---
-  const handleB2CWalletPay = async () => {
-     if (isProcessing) return;
-     setLocalError("");
-     setIsProcessing(true);
-
-     const balance = Number(b2cWallet?.balance || 0);
-     if (balance < totalPayable) {
-       setLocalError(`Insufficient wallet balance. You need ₹ ${totalPayable.toFixed(2)} but only have ₹ ${balance.toFixed(2)}.`);
-       setIsProcessing(false);
-       return;
-     }
-     
-     if (b2cWallet?.walletStatus !== "Active") {
-       setLocalError(`Wallet is currently ${b2cWallet?.walletStatus || "Inactive"}.`);
-       setIsProcessing(false);
-       return;
-     }
-
-     try {
-       await new Promise(res => setTimeout(res, 1200));
-       onSuccess({ paymentMethod: "Wallet", price: totalPayable });
-     } catch (err) {
-       setLocalError(err.message || "Failed to process wallet payment.");
-     } finally {
-       setIsProcessing(false);
-     }
-  };
-
   // --- Cashfree B2C Logic ---
   const handleCashfreePay = async () => {
     if (cfIsSubmitting || cfStatus === "creating") return;
@@ -179,14 +159,35 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       });
     }
 
+    if (useWallet && walletStatus !== "Active") {
+      setLocalError(`Wallet is currently ${walletStatus}.`);
+      setIsProcessing(false);
+      return;
+    }
+
+    if (gatewayPayableAmount <= 0) {
+      onSuccess({
+        paymentMethod: "Wallet",
+        walletAppliedAmount,
+        gatewayPayableAmount: 0,
+        price: totalPayable,
+      });
+      setIsProcessing(false);
+      return;
+    }
+
     const sessionData = await initializePaymentSession({
-      orderAmount: totalPayable,
+      orderAmount: gatewayPayableAmount,
       customerId,
       customerName,
       customerEmail: contact?.email || "guest@gopickandbook.in",
       customerPhone: contact?.mobile || "9876543210",
       bookingType,
-      bookingPayloadJson,
+      bookingPayloadJson: JSON.stringify({
+        ...JSON.parse(bookingPayloadJson),
+        walletAppliedAmount,
+        gatewayPayableAmount,
+      }),
       couponCode: flowState.couponCode || null,
     });
 
@@ -200,7 +201,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     }
   };
 
-  const handlePayNow = isAgent ? handleAgentPay : (selectedMethod === "Wallet" ? handleB2CWalletPay : handleCashfreePay);
+  const handlePayNow = isAgent ? handleAgentPay : handleCashfreePay;
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{
@@ -263,52 +264,13 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             <span>Total Payable</span>
             <span>₹ {totalPayable}</span>
           </div>
+          {useWallet && walletAppliedAmount > 0 && (
+            <div style={{ display: "grid", gap: "4px", marginTop: "12px", color: "#555" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Wallet applied</span><span>- ₹ {walletAppliedAmount.toFixed(2)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}><span>Pay via gateway</span><span>₹ {gatewayPayableAmount.toFixed(2)}</span></div>
+            </div>
+          )}
         </div>
-
-        {/* Payment Method Selection for B2C */}
-        {!isAgent && (
-           <div style={{ marginBottom: "24px", padding: "16px", border: "1px solid #eee", borderRadius: "8px" }}>
-             <h3 style={{ fontSize: "1.1rem", margin: "0 0 12px 0" }}>Payment Method</h3>
-             
-             <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", cursor: "pointer" }}>
-               <input 
-                 type="radio" 
-                 name="paymentMethod" 
-                 value="Online" 
-                 checked={selectedMethod === "Online"} 
-                 onChange={() => setSelectedMethod("Online")}
-                 style={{ width: "18px", height: "18px", accentColor: "var(--pnb-red)" }}
-               />
-               <div>
-                 <strong>Pay Online</strong>
-                 <div style={{ fontSize: "0.85rem", color: "#666" }}>Credit Card, Debit Card, UPI, NetBanking (via Cashfree)</div>
-               </div>
-             </label>
-
-             <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", opacity: (!b2cWallet || b2cWallet.walletStatus !== "Active" || b2cWallet.balance < totalPayable) ? 0.6 : 1 }}>
-               <input 
-                 type="radio" 
-                 name="paymentMethod" 
-                 value="Wallet" 
-                 checked={selectedMethod === "Wallet"} 
-                 onChange={() => setSelectedMethod("Wallet")}
-                 disabled={!b2cWallet || b2cWallet.walletStatus !== "Active" || b2cWallet.balance < totalPayable}
-                 style={{ width: "18px", height: "18px", accentColor: "var(--pnb-red)" }}
-               />
-               <div>
-                 <strong>PickNBook Wallet</strong>
-                 {b2cWallet ? (
-                   <div style={{ fontSize: "0.85rem", color: b2cWallet.balance < totalPayable ? "red" : "green" }}>
-                     Balance: ₹ {b2cWallet.balance.toFixed(2)} 
-                     {b2cWallet.walletStatus !== "Active" ? " (Inactive)" : ""}
-                   </div>
-                 ) : (
-                   <div style={{ fontSize: "0.85rem", color: "#666" }}>Login to use Wallet</div>
-                 )}
-               </div>
-             </label>
-           </div>
-        )}
 
         {(localError || paymentError) && (
           <div style={{ padding: "12px", background: "#fee", color: "#c00", borderRadius: "6px", marginBottom: "20px" }}>
@@ -318,7 +280,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
         <button 
           onClick={handlePayNow} 
-          disabled={isProcessing || cfIsSubmitting || (selectedMethod === "Wallet" && (!b2cWallet || b2cWallet.balance < totalPayable))}
+          disabled={isProcessing || cfIsSubmitting || (useWallet && (!b2cWallet || walletStatus !== "Active" || walletBalance <= 0))}
           style={{
             width: "100%", padding: "14px", backgroundColor: "var(--pnb-red, #e60000)", color: "white",
             border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer",

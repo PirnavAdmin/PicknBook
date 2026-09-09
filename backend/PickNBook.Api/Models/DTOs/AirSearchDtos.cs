@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace PickNBook.Api.Models.DTOs
@@ -70,6 +71,16 @@ namespace PickNBook.Api.Models.DTOs
     }
 
     public class AirRecheckSearchRequestDto
+    {
+        [JsonPropertyName("TraceId")]
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long TraceId { get; set; }
+
+        [JsonPropertyName("ApiToken")]
+        public string? ApiToken { get; set; }
+    }
+
+    public class AirBookingDetailsRequestDto
     {
         [JsonPropertyName("TraceId")]
         [JsonConverter(typeof(SafeLongConverter))]
@@ -154,10 +165,10 @@ namespace PickNBook.Api.Models.DTOs
         public string Password { get; set; } = string.Empty;
 
         [JsonPropertyName("SrdvType")]
-        public string SrdvType { get; set; } = string.Empty;
+        public string? SrdvType { get; set; } = "MixAPI";
 
         [JsonPropertyName("SrdvIndex")]
-        public string SrdvIndex { get; set; } = string.Empty;
+        public string? SrdvIndex { get; set; } = "1";
 
         [JsonPropertyName("TraceId")]
         public string TraceId { get; set; } = string.Empty;
@@ -218,7 +229,8 @@ namespace PickNBook.Api.Models.DTOs
 
 
         [JsonPropertyName("PaxType")]
-        public int PaxType { get; set; }
+        [JsonConverter(typeof(SafeIntConverter))]
+        public int PaxType { get; set; } = 1;
 
         [JsonPropertyName("DateOfBirth")]
         public string DateOfBirth { get; set; } = string.Empty;
@@ -286,7 +298,8 @@ namespace PickNBook.Api.Models.DTOs
 
 
         [JsonPropertyName("Fare")]
-        public LCCPassengerFareDto Fare { get; set; } = new();
+        [JsonConverter(typeof(SafePassengerFareConverter))]
+        public LCCPassengerFareDto? Fare { get; set; } = new();
 
         [JsonPropertyName("Baggage")]
         public List<LCCBaggageDto> Baggage { get; set; } = new();
@@ -361,7 +374,8 @@ namespace PickNBook.Api.Models.DTOs
         public string Currency { get; set; } = "INR";
 
         [JsonPropertyName("Price")]
-        public decimal Price { get; set; }
+        [JsonConverter(typeof(SafeNullableDecimalConverter))]
+        public decimal? Price { get; set; }
 
         [JsonPropertyName("Origin")]
         public string Origin { get; set; } = string.Empty;
@@ -397,7 +411,8 @@ namespace PickNBook.Api.Models.DTOs
         public string Currency { get; set; } = "INR";
 
         [JsonPropertyName("Price")]
-        public decimal Price { get; set; }
+        [JsonConverter(typeof(SafeNullableDecimalConverter))]
+        public decimal? Price { get; set; }
 
         [JsonPropertyName("Origin")]
         public string Origin { get; set; } = string.Empty;
@@ -427,7 +442,8 @@ namespace PickNBook.Api.Models.DTOs
         public bool IsAisle { get; set; }
 
         [JsonPropertyName("Amount")]
-        public double Amount { get; set; }
+        [JsonConverter(typeof(SafeNullableDoubleConverter))]
+        public double? Amount { get; set; }
 
         [JsonPropertyName("Code")]
         public string Code { get; set; } = string.Empty;
@@ -654,68 +670,60 @@ namespace PickNBook.Api.Models.DTOs
 
     public class SendChangeRequestDto
     {
-        [JsonPropertyName("EndUserIp")]
-        public string? EndUserIp { get; set; }
-
-        [JsonPropertyName("ClientId")]
-        public string? ClientId { get; set; }
-
-        [JsonPropertyName("UserName")]
-        public string? UserName { get; set; }
-
-        [JsonPropertyName("Password")]
-        public string? Password { get; set; }
-
         [JsonPropertyName("BookingId")]
-        public string BookingId { get; set; } = string.Empty;
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long BookingId { get; set; }
 
         [JsonPropertyName("RequestType")]
-        public string RequestType { get; set; } = "2";
+        [JsonConverter(typeof(SafeIntConverter))]
+        public int RequestType { get; set; } = 2;
 
         [JsonPropertyName("CancellationType")]
-        public string CancellationType { get; set; } = "3";
+        [JsonConverter(typeof(SafeIntConverter))]
+        public int CancellationType { get; set; } = 3;
+
+        [JsonPropertyName("PNR")]
+        public string PNR { get; set; } = string.Empty;
 
         [JsonPropertyName("Remarks")]
         public string Remarks { get; set; } = string.Empty;
 
+        [JsonPropertyName("ClientRefId")]
+        public string? ClientRefId { get; set; } = string.Empty;
+
         [JsonPropertyName("Sectors")]
         public List<ChangeRequestSectorDto> Sectors { get; set; } = new();
-
-        [JsonPropertyName("SrdvType")]
-        public string SrdvType { get; set; } = "MixAPI";
-
-        [JsonPropertyName("SrdvIndex")]
-        public string SrdvIndex { get; set; } = string.Empty;
 
         [JsonPropertyName("TicketData")]
         public List<ChangeRequestTicketDataDto> TicketData { get; set; } = new();
 
-        [JsonPropertyName("PNR")]
-        public string PNR { get; set; } = string.Empty;
+        [JsonPropertyName("ApiToken")]
+        public string? ApiToken { get; set; }
+
+        // Legacy compatibility fields
+        public string? EndUserIp { get; set; }
+        public string? ClientId { get; set; }
+        public string? UserName { get; set; }
+        public string? Password { get; set; }
+        public string? SrdvType { get; set; } = "MixAPI";
+        public string? SrdvIndex { get; set; } = string.Empty;
     }
 
     public class GetCancelStatusRequestDto
     {
-        [JsonPropertyName("UserId")]
-        public string? UserId { get; set; }
-
-        [JsonPropertyName("EndUserIp")]
-        public string? EndUserIp { get; set; }
-
-        [JsonPropertyName("ClientId")]
-        public string? ClientId { get; set; }
-
-        [JsonPropertyName("UserName")]
-        public string? UserName { get; set; }
-
-        [JsonPropertyName("Password")]
-        public string? Password { get; set; }
+        [JsonPropertyName("ChangeRequestId")]
+        [JsonConverter(typeof(SafeLongConverter))]
+        public long ChangeRequestId { get; set; }
 
         [JsonPropertyName("ApiToken")]
         public string? ApiToken { get; set; }
 
-        [JsonPropertyName("ChangeRequestId")]
-        public string ChangeRequestId { get; set; } = string.Empty;
+        // Legacy compatibility fields
+        public string? UserId { get; set; }
+        public string? EndUserIp { get; set; }
+        public string? ClientId { get; set; }
+        public string? UserName { get; set; }
+        public string? Password { get; set; }
     }
 
     public class GetCancellationChargesRequestDto

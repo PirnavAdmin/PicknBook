@@ -103,7 +103,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
 const DEFAULT_API_USER_ID =
@@ -267,33 +267,75 @@ function pickFirst(source, keys, fallback = null) {
   return fallback;
 }
 
+function formatTripType(typeVal) {
+  const str = String(typeVal ?? "").trim();
+  if (str === "1") return "OneWay";
+  if (str === "2") return "RoundTrip";
+  if (str === "3") return "MultiCity";
+  return str || "OneWay";
+}
+
 function normalizeFlightSearchHistoryRecord(record, index = 0) {
+  const isGuest = Boolean(
+    pickFirst(record, ["isGuest", "IsGuest"], false) ||
+    (!pickFirst(record, ["userId", "UserId"]) && !pickFirst(record, ["customerId", "CustomerId"]))
+  );
+
+  const rawUserId = pickFirst(record, ["userId", "UserId", "customerId", "CustomerId"], null);
+  const endUserIp = String(pickFirst(record, ["endUserIp", "EndUserIp"], "") || "");
+  const traceId = String(pickFirst(record, ["traceId", "TraceId"], "") || "");
+
+  const userOrGuestId = String(
+    pickFirst(
+      record,
+      ["userOrGuestId", "UserOrGuestId"],
+      isGuest
+        ? `Guest ${endUserIp ? `(${endUserIp})` : ""}`.trim()
+        : `User #${rawUserId || index + 1}`
+    ) || ""
+  );
+
+  const rawTripType = pickFirst(
+    record,
+    ["tripType", "TripType", "travelType", "TravelType", "journeyType", "JourneyType", "type", "Type"],
+    ""
+  );
+
+  const searchDateUtc = pickFirst(
+    record,
+    [
+      "searchedAtIst",
+      "SearchedAtIst",
+      "searchedAtUtc",
+      "SearchedAtUtc",
+      "searchDateUtc",
+      "SearchDateUtc",
+      "createdAtUtc",
+      "CreatedAtUtc",
+      "searchDate",
+      "SearchDate",
+      "createdAt",
+      "CreatedAt",
+      "searchedAt",
+      "SearchedAt",
+    ],
+    null
+  );
+
   return {
     id:
       pickFirst(
         record,
         ["id", "Id", "searchId", "SearchId", "flightSearchId", "FlightSearchId"],
         null
-      ) || `flight-search-${index + 1}`,
-    searchDateUtc:
-      pickFirst(
-        record,
-        [
-          "searchDateUtc",
-          "SearchDateUtc",
-          "searchedAtUtc",
-          "SearchedAtUtc",
-          "createdAtUtc",
-          "CreatedAtUtc",
-          "searchDate",
-          "SearchDate",
-          "createdAt",
-          "CreatedAt",
-          "searchedAt",
-          "SearchedAt",
-        ],
-        null
-      ) || null,
+      ) || `search-${index + 1}`,
+    isGuest,
+    userId: rawUserId ? String(rawUserId) : null,
+    userOrGuestId,
+    endUserIp,
+    traceId,
+    searchDateUtc,
+    searchedAtIst: pickFirst(record, ["searchedAtIst", "SearchedAtIst"], null),
     departDate:
       pickFirst(
         record,
@@ -309,6 +351,12 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
           "date",
           "Date",
         ],
+        null
+      ) || null,
+    returnDate:
+      pickFirst(
+        record,
+        ["returnDate", "ReturnDate"],
         null
       ) || null,
     fromCity: String(
@@ -396,30 +444,23 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
           "passengerName",
           "PassengerName",
         ],
-        "No Login"
-      ) || "No Login"
-    ),
-    customerId: String(
-      pickFirst(record, ["customerId", "CustomerId", "userId", "UserId"], "0") || "0"
-    ),
-    travelType: String(
-      pickFirst(
-        record,
-        ["travelType", "TravelType", "tripType", "TripType", "journeyType", "JourneyType", "type", "Type"],
         ""
-      ) || ""
+      ) || userOrGuestId
     ),
+    customerId: rawUserId ? String(rawUserId) : (isGuest ? "Guest" : "0"),
+    travelType: formatTripType(rawTripType),
+    rawTripType: String(rawTripType || ""),
     adultCount:
       Number(
-        pickFirst(record, ["adultCount", "AdultCount", "adults", "Adults"], 0)
+        pickFirst(record, ["adults", "Adults", "adultCount", "AdultCount"], 0)
       ) || 0,
     childCount:
       Number(
-        pickFirst(record, ["childCount", "ChildCount", "children", "Children"], 0)
+        pickFirst(record, ["children", "Children", "childCount", "ChildCount"], 0)
       ) || 0,
     infantCount:
       Number(
-        pickFirst(record, ["infantCount", "InfantCount", "infants", "Infants"], 0)
+        pickFirst(record, ["infants", "Infants", "infantCount", "InfantCount"], 0)
       ) || 0,
     searchType: "Flight",
     raw: record,
@@ -586,6 +627,27 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
+const CANDIDATE_BASE_URLS = [
+  "",
+  "http://localhost:7179",
+  "https://localhost:7179",
+  "https://satin-eastcoast-musky.ngrok-free.dev"
+];
+
+const CANDIDATE_ENDPOINTS = [
+  "/api/admin/flight-search-logs",
+  "/api/admin/flight/searches",
+  "/api/admin/flight/search-history",
+  `${FLIGHT_BOOKINGS_ROOT}/admin/search-history`,
+  `${FLIGHT_BOOKINGS_ROOT}/admin/searches`,
+  `${FLIGHT_BOOKINGS_ROOT}/admin/flight-search-history`,
+  `${FLIGHT_BOOKINGS_ROOT}/admin/search_history`,
+  `${FLIGHT_BOOKINGS_ROOT}/admin/flight_search_history`,
+  `${FLIGHT_BOOKINGS_ROOT}/search-history`,
+  `${FLIGHT_BOOKINGS_ROOT}/searches`,
+  `${FLIGHT_BOOKINGS_ROOT}/flight-search-history`,
+];
+
 async function listAdminFlightSearchHistory({
   query,
   customerName,
@@ -593,48 +655,39 @@ async function listAdminFlightSearchHistory({
   toDate,
   limit = 500,
 } = {}) {
-  const candidateEndpoints = [
-    "/api/admin/flight/searches",
-    "/api/admin/flight/search-history",
-    `${FLIGHT_BOOKINGS_ROOT}/admin/search-history`,
-    `${FLIGHT_BOOKINGS_ROOT}/admin/searches`,
-    `${FLIGHT_BOOKINGS_ROOT}/admin/flight-search-history`,
-    `${FLIGHT_BOOKINGS_ROOT}/admin/search_history`,
-    `${FLIGHT_BOOKINGS_ROOT}/admin/flight_search_history`,
-    `${FLIGHT_BOOKINGS_ROOT}/search-history`,
-    `${FLIGHT_BOOKINGS_ROOT}/searches`,
-    `${FLIGHT_BOOKINGS_ROOT}/flight-search-history`,
-    `${FLIGHT_BOOKINGS_ROOT}/search_history`,
-    `${FLIGHT_BOOKINGS_ROOT}/flight_search_history`,
-  ];
-
   let lastError = null;
 
-  for (const endpoint of candidateEndpoints) {
-    const url = buildUrl(endpoint, {
-      query,
-      customerName,
-      fromDate,
-      toDate,
-      limit,
-    });
+  for (const endpoint of CANDIDATE_ENDPOINTS) {
+    for (const baseUrl of CANDIDATE_BASE_URLS) {
+      const fullPath = baseUrl
+        ? `${baseUrl.replace(/\/+$/, "")}${endpoint}`
+        : endpoint;
 
-    try {
-      const payload = await requestJson(url, { method: "GET" });
-      if (isLikelyHtmlResponse(payload)) {
-        throw new Error(payload);
-      }
-      const records = extractArrayPayload(payload);
-      return records.map((record, index) =>
-        normalizeFlightSearchHistoryRecord(record, index)
-      );
-    } catch (error) {
-      lastError = error;
-      if (shouldTryNextSearchHistoryEndpoint(error)) {
-        continue;
-      }
+      const url = buildUrl(fullPath, {
+        query,
+        customerName,
+        fromDate,
+        toDate,
+        limit,
+      });
 
-      throw error;
+      try {
+        const payload = await requestJson(url, { method: "GET" });
+        if (isLikelyHtmlResponse(payload)) {
+          throw new Error("Received HTML response page");
+        }
+        const records = extractArrayPayload(payload);
+        if (Array.isArray(records)) {
+          return records.map((record, index) =>
+            normalizeFlightSearchHistoryRecord(record, index)
+          );
+        }
+      } catch (error) {
+        lastError = error;
+        if (!shouldTryNextSearchHistoryEndpoint(error)) {
+          // Fallback to next url/endpoint candidate
+        }
+      }
     }
   }
 
@@ -707,61 +760,21 @@ const formatDepartDateParts = (value) => {
 };
 
 function mapLocalSearchRecord(record, index = 0) {
-  return {
+  return normalizeFlightSearchHistoryRecord({
+    ...record,
     id: record?.id || `local-flight-search-${index + 1}`,
-    searchDateUtc: record?.searchDateUtc || null,
-    departDate: record?.departDate || null,
-    fromCity: normalizeText(record?.fromCity, ""),
-    toCity: normalizeText(record?.toCity, ""),
-    fromCityCode: normalizeText(record?.fromCityCode, ""),
-    toCityCode: normalizeText(record?.toCityCode, ""),
-    customerName: normalizeText(record?.customerName, "No Login"),
-    customerId: normalizeText(record?.customerId, "0"),
-    travelType: normalizeText(record?.travelType, ""),
-    adultCount: Number(record?.adultCount) || 0,
-    childCount: Number(record?.childCount) || 0,
-    infantCount: Number(record?.infantCount) || 0,
-    searchType: "Flight",
     isLocalFallback: true,
-    raw: record,
-  };
+  }, index);
 }
 
 function mergeSearchHistory(apiRecords, localRecords) {
   const byKey = new Map();
 
   [...apiRecords, ...localRecords].forEach((record, index) => {
-    const normalizedRecord = {
-      id: record?.id || `search-row-${index + 1}`,
-      searchDateUtc: record?.searchDateUtc || null,
-      departDate: record?.departDate || null,
-      fromCity: normalizeText(record?.fromCity, ""),
-      toCity: normalizeText(record?.toCity, ""),
-      fromCityCode: normalizeText(
-        record?.fromCityCode || record?.fromCode || record?.fromCityId,
-        ""
-      ),
-      toCityCode: normalizeText(
-        record?.toCityCode || record?.toCode || record?.toCityId,
-        ""
-      ),
-      customerName: normalizeText(record?.customerName, "No Login"),
-      customerId: normalizeText(record?.customerId || record?.userId, "0"),
-      travelType: normalizeText(record?.travelType || record?.journeyType || record?.type || record?.tripType || record?.TripType, ""),
-      adultCount:
-        Number(record?.adultCount ?? record?.adults ?? record?.AdultCount ?? record?.Adults) || 0,
-      childCount:
-        Number(
-          record?.childCount ?? record?.children ?? record?.ChildCount ?? record?.Children
-        ) || 0,
-      infantCount:
-        Number(
-          record?.infantCount ?? record?.infants ?? record?.InfantCount ?? record?.Infants
-        ) || 0,
-      searchType: "Flight",
-      isLocalFallback: Boolean(record?.isLocalFallback),
-      raw: record?.raw || record,
-    };
+    const normalizedRecord = normalizeFlightSearchHistoryRecord(record, index);
+    if (record?.isLocalFallback) {
+      normalizedRecord.isLocalFallback = true;
+    }
 
     const key = normalizedRecord.id ? String(normalizedRecord.id) : `search-row-${index + 1}`;
     if (!byKey.has(key)) {
@@ -883,14 +896,15 @@ export default function AdminFlightSearchHistoryPage() {
       }
 
       if (queryValue) {
-        const searchText = `${record.id} ${record.fromCity} ${record.toCity} ${record.customerName}`.toLowerCase();
+        const searchText = `${record.id} ${record.fromCity} ${record.toCity} ${record.customerName} ${record.userOrGuestId} ${record.endUserIp}`.toLowerCase();
         if (!searchText.includes(queryValue)) {
           return false;
         }
       }
 
       if (customerNameValue) {
-        if (!String(record.customerName || "").toLowerCase().includes(customerNameValue)) {
+        if (!String(record.customerName || "").toLowerCase().includes(customerNameValue) &&
+            !String(record.userOrGuestId || "").toLowerCase().includes(customerNameValue)) {
           return false;
         }
       }
@@ -949,14 +963,39 @@ export default function AdminFlightSearchHistoryPage() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Customer", "Segment", "Depart Date", "Type", "Search Date"];
+    const headers = [
+      "ID",
+      "User / Guest",
+      "Is Guest",
+      "User ID",
+      "From City",
+      "To City",
+      "Depart Date",
+      "Return Date",
+      "Trip Type",
+      "Adults",
+      "Children",
+      "Infants",
+      "End User IP",
+      "Trace ID",
+      "Search Date"
+    ];
     const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const rows = filteredRows.map((record) => [
       normalizeText(record.id, "--"),
-      `${normalizeText(record.customerName, "No Login")} (${normalizeText(record.customerId, "0")})`,
-      buildSegmentLabel(record),
+      normalizeText(record.userOrGuestId, "Guest"),
+      record.isGuest ? "Yes" : "No",
+      normalizeText(record.userId, "--"),
+      normalizeText(record.fromCity, "--"),
+      normalizeText(record.toCity, "--"),
       formatSearchDate(record.departDate),
+      formatSearchDate(record.returnDate),
       normalizeText(record.travelType, "--"),
+      record.adultCount,
+      record.childCount,
+      record.infantCount,
+      normalizeText(record.endUserIp, "--"),
+      normalizeText(record.traceId, "--"),
       `${formatSearchTime(record.searchDateUtc)}, ${formatSearchDate(record.searchDateUtc)}`,
     ]);
 
@@ -1125,7 +1164,7 @@ export default function AdminFlightSearchHistoryPage() {
 
       <section className="admin-search-history-table-shell">
         <header className="admin-search-history-table-head">
-          <span>ID</span>
+          <span>ID / User</span>
           <span>Segment</span>
           <span>Depart Date</span>
           <span>Type / Search Date</span>
@@ -1145,8 +1184,22 @@ export default function AdminFlightSearchHistoryPage() {
                   className="admin-search-history-row"
                 >
                   <div className="admin-search-history-cell">
-                    <strong>Search: {normalizeText(row.id, "--")}</strong>
-                    <small>Customer: {normalizeText(row.customerId, "0")}</small>
+                    <strong>Search #{normalizeText(row.id, "--")}</strong>
+                    <small style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center", marginTop: "2px" }}>
+                      <span
+                        style={{
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.72rem",
+                          fontWeight: 600,
+                          backgroundColor: row.isGuest ? "#fef3c7" : "#e0f2fe",
+                          color: row.isGuest ? "#92400e" : "#075985",
+                        }}
+                      >
+                        {row.isGuest ? "Guest" : "User"}
+                      </span>
+                      <span>{row.userOrGuestId || (row.userId ? `User #${row.userId}` : "Guest")}</span>
+                    </small>
                   </div>
 
                   <div className="admin-search-history-cell">
@@ -1156,11 +1209,17 @@ export default function AdminFlightSearchHistoryPage() {
 
                   <div className="admin-search-history-cell admin-cell-centered">
                     <strong>{departParts.dayMonth}</strong>
-                    <small>{departParts.year}</small>
+                    {row.returnDate ? (
+                      <small style={{ color: "#be185d", fontWeight: 500 }}>
+                        Return: {formatSearchDate(row.returnDate)}
+                      </small>
+                    ) : null}
                   </div>
 
                   <div className="admin-search-history-cell">
-                    <strong>{normalizeText(row.travelType, "--")}</strong>
+                    <strong style={{ color: row.travelType === "RoundTrip" ? "#be185d" : "#0f172a" }}>
+                      {normalizeText(row.travelType, "--")}
+                    </strong>
                     <small>
                       {formatSearchTime(row.searchDateUtc)}, {formatSearchDate(row.searchDateUtc)}
                     </small>
@@ -1208,10 +1267,9 @@ export default function AdminFlightSearchHistoryPage() {
           >
             <header className="admin-view-header">
               <div className="admin-view-header-main">
-                <h2>Flight Search Detail</h2>
+                <h2>Flight Search Details</h2>
                 <p className="admin-view-header-subtitle">
-                  Search: {normalizeText(selectedRecord.id, "--")} | Customer:{" "}
-                  {normalizeText(selectedRecord.customerId, "0")}
+                  Search ID: #{normalizeText(selectedRecord.id, "--")} | {selectedRecord.userOrGuestId}
                 </p>
               </div>
               <button type="button" onClick={() => setSelectedRecord(null)}>
@@ -1221,6 +1279,31 @@ export default function AdminFlightSearchHistoryPage() {
 
             <section className="admin-view-grid">
               <div>
+                <span>User Type</span>
+                <strong style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      backgroundColor: selectedRecord.isGuest ? "#fef3c7" : "#e0f2fe",
+                      color: selectedRecord.isGuest ? "#92400e" : "#075985",
+                    }}
+                  >
+                    {selectedRecord.isGuest ? "Guest User" : "Registered User"}
+                  </span>
+                </strong>
+              </div>
+              <div>
+                <span>User ID</span>
+                <strong>{selectedRecord.userId ? `#${selectedRecord.userId}` : "N/A (Guest)"}</strong>
+              </div>
+              <div>
+                <span>IP Address</span>
+                <strong>{normalizeText(selectedRecord.endUserIp, "N/A")}</strong>
+              </div>
+              <div>
                 <span>Segment</span>
                 <strong>{buildSegmentLabel(selectedRecord)}</strong>
               </div>
@@ -1229,23 +1312,35 @@ export default function AdminFlightSearchHistoryPage() {
                 <strong>{formatSearchDate(selectedRecord.departDate)}</strong>
               </div>
               <div>
-                <span>Search Date</span>
+                <span>Return Date</span>
+                <strong>{selectedRecord.returnDate ? formatSearchDate(selectedRecord.returnDate) : "N/A (One-Way)"}</strong>
+              </div>
+              <div>
+                <span>Search Date (IST)</span>
                 <strong>
                   {formatSearchTime(selectedRecord.searchDateUtc)},{" "}
                   {formatSearchDate(selectedRecord.searchDateUtc)}
                 </strong>
               </div>
               <div>
-                <span>Type</span>
+                <span>Trip Type</span>
                 <strong>{normalizeText(selectedRecord.travelType, "--")}</strong>
               </div>
               <div>
                 <span>Passengers</span>
                 <strong>{formatPassengerCounts(selectedRecord)}</strong>
               </div>
+              {selectedRecord.traceId ? (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <span>Trace ID</span>
+                  <strong style={{ fontFamily: "monospace", fontSize: "0.85rem", wordBreak: "break-all" }}>
+                    {selectedRecord.traceId}
+                  </strong>
+                </div>
+              ) : null}
               <div>
-                <span>Source</span>
-                <strong>{selectedRecord.isLocalFallback ? "Local Backup" : "API"}</strong>
+                <span>Data Source</span>
+                <strong>{selectedRecord.isLocalFallback ? "Local Backup" : "Live Backend API"}</strong>
               </div>
             </section>
           </article>

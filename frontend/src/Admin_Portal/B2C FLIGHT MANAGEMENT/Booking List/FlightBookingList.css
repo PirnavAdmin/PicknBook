@@ -580,13 +580,58 @@
   border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
-.admin-flight-booking-page .admin-table-head,
-.admin-flight-booking-page .admin-table-row {
+.admin-flight-booking-page .admin-table-head {
   display: grid !important;
-  grid-template-columns: 1.2fr 0.9fr 1.8fr 0.8fr 1.2fr 1.2fr 1.1fr 0.8fr 0.8fr !important;
+  grid-template-columns: 0.9fr 1.1fr 1.2fr 0.8fr 1.1fr 1.1fr 0.7fr 0.9fr 0.6fr !important;
   min-width: 0 !important;
   width: 100% !important;
-  padding: 10px !important;
+  padding: 3px 6px !important;
+  min-height: 28px !important;
+  height: auto !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  background: linear-gradient(135deg, #A51C49, #851237) !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+}
+
+.admin-flight-booking-page .admin-table-row {
+  display: grid !important;
+  grid-template-columns: 0.9fr 1.1fr 1.2fr 0.8fr 1.1fr 1.1fr 0.7fr 0.9fr 0.6fr !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 3px 6px !important;
+  align-items: stretch !important;
+  box-sizing: border-box !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-flight-booking-page .admin-table-head span {
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  min-height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2px 4px !important;
+  text-align: center !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.admin-flight-booking-page .admin-table-head span:last-child {
+  border-right: none !important;
 }
 
 .admin-flight-booking-page .admin-table-cell strong {
@@ -609,7 +654,267 @@
   min-width: 0 !important;
 }
 
+/* Glassmorphic Table Shell & Body (Background Animation Visible) */
 .admin-flight-table-shell {
-  border: 1px solid var(--admin-border) !important;
+  border: 1px solid rgba(165, 28, 73, 0.2) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
+  overflow: hidden !important;
 }
+
+.admin-flight-booking-page .admin-table-body {
+  background: transparent !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 4px !important;
+}
+
+.admin-flight-booking-page .admin-table-row:hover {
+  background: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 3px 10px rgba(165, 28, 73, 0.1) !important;
+}
+
+.admin-flight-booking-page .admin-table-cell {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  padding: 4px 6px !important;
+  font-size: 0.70rem !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+.admin-flight-booking-page .admin-table-empty {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  padding: 8px 12px !important;
+  text-align: center !important;
+  color: var(--admin-muted) !important;
+  font-weight: 600 !important;
+  font-size: 0.72rem !important;
+}
+
+.admin-pagination-container {
+  padding: 6px 12px !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  font-size: 0.76rem !important;
+}
+
+/* Glassmorphic Flight Filter Panel (Ultra-Compact Small Size Form) */
+.admin-flight-booking-page .admin-flight-booking-header h1 {
+  font-size: 1.10rem !important;
+  margin: 0 !important;
+}
+
+.admin-flight-booking-page .admin-chip {
+  height: 26px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  gap: 6px 10px !important;
+  padding: 8px 12px !important;
+  margin-top: 2px !important;
+  margin-bottom: 6px !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(29, 78, 216, 0.18) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 3px 12px rgba(29, 78, 216, 0.05) !important;
+  transition: all 0.25s ease-in-out !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex: 1 1 160px !important;
+  min-width: 140px !important;
+  max-width: 220px !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters label span {
+  font-size: 0.64rem !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+  white-space: nowrap !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters input,
+.admin-flight-booking-page .flight-ops-filters select {
+  height: 26px !important;
+  padding: 2px 8px !important;
+  font-size: 0.76rem !important;
+  border: 1px solid rgba(29, 78, 216, 0.22) !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease-in-out !important;
+  width: 100% !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters input::placeholder {
+  font-size: 0.72rem !important;
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters input:focus,
+.admin-flight-booking-page .flight-ops-filters select:focus {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.12) !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters .filters-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: auto !important;
+  margin-left: auto !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters .filters-actions button.primary {
+  height: 26px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2) !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters .filters-actions button.primary:hover {
+  background: #1e40af !important;
+  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.35) !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters .filters-actions button.secondary {
+  height: 26px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-flight-booking-page .flight-ops-filters .filters-actions button.secondary:hover {
+  background: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Compact Table Headers & Cells */
+.admin-flight-booking-page .admin-table-head {
+  padding: 6px 8px !important;
+  background: linear-gradient(135deg, rgba(165, 28, 73, 0.95), rgba(133, 18, 55, 0.95)) !important;
+}
+
+.admin-flight-booking-page .admin-table-head span {
+  font-size: 0.68rem !important;
+}
+
+.admin-flight-booking-page .admin-table-cell strong {
+  font-size: 0.72rem !important;
+}
+
+.admin-flight-booking-page .admin-table-cell small {
+  font-size: 0.62rem !important;
+}
+
+.admin-flight-booking-page .admin-action-btn {
+  height: 22px !important;
+  padding: 0 8px !important;
+  font-size: 0.66rem !important;
+  border-radius: 5px !important;
+}
+
+/* Dark theme filter & glass table overrides */
+.admin-shell.dark-theme .admin-flight-table-shell {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .admin-table-row {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .admin-table-cell {
+  background: rgba(30, 41, 59, 0.8) !important;
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: #334155 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters label span {
+  color: #ffffff !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters input,
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters select {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters input:focus,
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters .filters-actions button.primary {
+  background: #2563eb !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters .filters-actions button.primary:hover {
+  background: #1d4ed8 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters .filters-actions button.secondary {
+  background: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+.admin-shell.dark-theme .admin-flight-booking-page .flight-ops-filters .filters-actions button.secondary:hover {
+  background: #475569 !important;
+}
+
 

@@ -1139,25 +1139,29 @@ function CustomerList() {
 
                 {/* Table */}
                 <div style={styles.tableWrapper}>
-                    {loading ? (
-                        <p style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)" }}>Loading customers...</p>
-                    ) : filteredCustomers.length > 0 ? (
-                        <table style={styles.table}>
-                            <thead style={styles.thead}>
+                    <table style={styles.table}>
+                        <thead style={styles.thead}>
+                            <tr>
+                                <th style={styles.th}>ID</th>
+                                <th style={styles.th}>Status</th>
+                                <th style={styles.th}>Customer Name</th>
+                                <th style={styles.th}>Email ID</th>
+                                <th style={styles.th}>Mobile</th>
+                                <th style={styles.th}>Wallet Status</th>
+                                <th style={styles.th}>Wallet Bal.</th>
+                                <th style={styles.th}>Action</th>
+                                <th style={styles.th}>Finance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
                                 <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>Status</th>
-                                    <th style={styles.th}>Customer Name</th>
-                                    <th style={styles.th}>Email ID</th>
-                                    <th style={styles.th}>Mobile</th>
-                                    <th style={styles.th}>Wallet Status</th>
-                                    <th style={styles.th}>Wallet Bal.</th>
-                                    <th style={styles.th}>Action</th>
-                                    <th style={styles.th}>Finance</th>
+                                    <td colSpan="9" style={{ padding: "30px 20px", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+                                        Loading customers...
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {currentItems.map((customer, index) => {
+                            ) : currentItems.length > 0 ? (
+                                currentItems.map((customer, index) => {
                                     const isLowerRow = index >= currentItems.length - 3 && currentItems.length > 3;
                                     const dropdownStyle = {
                                         ...styles.menu,
@@ -1290,61 +1294,60 @@ function CustomerList() {
                                             </td>
                                         </tr>
                                     );
-                                })}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div style={styles.emptyState}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '10px' }}>No data</div>
-                            <p>No customers found matching "{searchQuery}"</p>
-                        </div>
-                    )}
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan="9" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
+                                        Data not found
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
 
                     {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div style={styles.pagination}>
-                            <div style={styles.paginationInfo}>
-                                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} entries
-                            </div>
-                            <div style={styles.pageNumbers}>
-                                <button
-                                    type="button"
-                                    disabled={currentPage === 1}
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    style={{
-                                        ...styles.pageBtn,
-                                        ...(currentPage === 1 ? styles.pageBtnDisabled : {})
-                                    }}
-                                >
-                                    Previous
-                                </button>
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-                                    <button
-                                        key={pageNum}
-                                        type="button"
-                                        onClick={() => setCurrentPage(pageNum)}
-                                        style={{
-                                            ...styles.pageNoBtn,
-                                            ...(currentPage === pageNum ? styles.pageNoActive : {})
-                                        }}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                ))}
-                                <button
-                                    type="button"
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    style={{
-                                        ...styles.pageBtn,
-                                        ...(currentPage === totalPages ? styles.pageBtnDisabled : {})
-                                    }}
-                                >
-                                    Next
-                                </button>
-                            </div>
+                    <div style={styles.pagination}>
+                        <div style={styles.paginationInfo}>
+                            Showing {totalItems === 0 ? 0 : indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} customers
                         </div>
-                    )}
+                        <div style={styles.pageNumbers}>
+                            <button
+                                type="button"
+                                disabled={currentPage === 1 || totalPages <= 1}
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                style={{
+                                    ...styles.pageBtn,
+                                    ...((currentPage === 1 || totalPages <= 1) ? styles.pageBtnDisabled : {})
+                                }}
+                            >
+                                Previous
+                            </button>
+                            {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                                <button
+                                    key={pageNum}
+                                    type="button"
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    style={{
+                                        ...styles.pageNoBtn,
+                                        ...(currentPage === pageNum ? styles.pageNoActive : {})
+                                    }}
+                                >
+                                    {pageNum}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                disabled={currentPage === totalPages || totalPages <= 1}
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                style={{
+                                    ...styles.pageBtn,
+                                    ...((currentPage === totalPages || totalPages <= 1) ? styles.pageBtnDisabled : {})
+                                }}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

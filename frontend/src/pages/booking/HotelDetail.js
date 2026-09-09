@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BedDouble, ShieldCheck, Loader2 } from "lucide-react";
 
 const getViewSymbol = (name) => {
@@ -69,6 +69,24 @@ export default function HotelDetail({
   visuals,
   nights
 }) {
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setLightboxIndex(null);
+      if (event.key === "ArrowRight") {
+        setLightboxIndex((current) => (current + 1) % displayedImages.length);
+      }
+      if (event.key === "ArrowLeft") {
+        setLightboxIndex((current) => (current - 1 + displayedImages.length) % displayedImages.length);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, displayedImages.length]);
 
   const rawAmenities = Array.isArray(hotel.amenities)
     ? hotel.amenities
@@ -211,7 +229,13 @@ export default function HotelDetail({
             const isLast = index === maxVisible - 1 && displayedImages.length > 4;
             const extraCount = displayedImages.length - 4;
             return (
-              <div key={index} style={{ position: "relative", width: "100%", height: "100%", borderRadius: "10px", overflow: "hidden" }}>
+              <button
+                key={index}
+                type="button"
+                onClick={() => setLightboxIndex(index)}
+                aria-label={`View ${hotel.name} image ${index + 1}`}
+                style={{ position: "relative", width: "100%", height: "100%", border: 0, padding: 0, borderRadius: "10px", overflow: "hidden", cursor: "zoom-in", background: "#e2e8f0" }}
+              >
                 <img src={imgUrl} alt={`${hotel.name} - ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 {isLast && (
                   <div style={{
@@ -225,15 +249,31 @@ export default function HotelDetail({
                     fontSize: "0.78rem",
                     fontWeight: 700,
                     borderRadius: "10px"
-                  }}>
+                  }} onClick={(event) => { event.stopPropagation(); setLightboxIndex(3); }}>
                     +{extraCount} more
                   </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       </section>
+
+      {lightboxIndex !== null && displayedImages.length > 0 && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${hotel.name} photo gallery`}
+          onClick={() => setLightboxIndex(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "rgba(15, 23, 42, 0.88)" }}
+        >
+          <button type="button" onClick={() => setLightboxIndex(null)} aria-label="Close gallery" style={{ position: "absolute", top: "18px", right: "22px", border: 0, background: "transparent", color: "#fff", fontSize: "2rem", cursor: "pointer" }}>×</button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + displayedImages.length) % displayedImages.length); }} aria-label="Previous image" style={{ position: "absolute", left: "20px", border: 0, background: "rgba(255,255,255,0.18)", color: "#fff", borderRadius: "50%", width: "44px", height: "44px", fontSize: "1.8rem", cursor: "pointer" }}>‹</button>
+          <img src={displayedImages[lightboxIndex]} alt={`${hotel.name} - ${lightboxIndex + 1}`} onClick={(event) => event.stopPropagation()} style={{ maxWidth: "min(100%, 1100px)", maxHeight: "82vh", objectFit: "contain", borderRadius: "12px", boxShadow: "0 24px 60px rgba(0,0,0,0.35)" }} />
+          <button type="button" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % displayedImages.length); }} aria-label="Next image" style={{ position: "absolute", right: "20px", border: 0, background: "rgba(255,255,255,0.18)", color: "#fff", borderRadius: "50%", width: "44px", height: "44px", fontSize: "1.8rem", cursor: "pointer" }}>›</button>
+          <span style={{ position: "absolute", bottom: "20px", color: "#fff", fontSize: "0.9rem" }}>{lightboxIndex + 1} / {displayedImages.length}</span>
+        </div>
+      )}
 
       {/* Two-Column Checkout/Detail Layout */}
       <div className="hotel-checkout-layout">
@@ -378,15 +418,17 @@ export default function HotelDetail({
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {hotel.offers && hotel.offers.length > 0 ? (
                 hotel.offers.map((roomOffer, roomIndex) => {
-                  const isSelectingThis = selectingOfferId === roomOffer.offerId;
-                  const isSelected = offer && offer.offerId === roomOffer.offerId;
+                  const roomSelectionKey = roomOffer.selectionKey || roomOffer.offerId;
+                  const selectedRoomKey = offer?.selectionKey || offer?.offerId;
+                  const isSelectingThis = selectingOfferId === roomSelectionKey;
+                  const isSelected = Boolean(offer && selectedRoomKey === roomSelectionKey);
                   const roomImg = hotel.images && hotel.images.length > 0 
                     ? hotel.images[roomIndex % hotel.images.length] 
                     : gallery[roomIndex % gallery.length];
                   
                   return (
                     <div 
-                      key={roomOffer.offerId} 
+                      key={roomSelectionKey}
                       style={{ 
                         display: "grid", 
                         gridTemplateColumns: "110px 1fr 160px", 

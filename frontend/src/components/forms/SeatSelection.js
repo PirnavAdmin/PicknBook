@@ -437,25 +437,25 @@ export default function SeatSelection({
     );
   };
 
-  const renderBusShell = (content, deckLabel) => (
+  const renderBusShell = (content, deckLabel, showSteering = false) => (
     <div className="bus-coach-container">
       {deckLabel && (
         <div className="bus-deck-label-container">
           <span className="bus-deck-label-text">{deckLabel}</span>
-          <div className="bus-deck-steering-wheel">
+          {showSteering && <div className="bus-deck-steering-wheel">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
               <circle cx="12" cy="12" r="9" stroke="#475569" strokeWidth="2.2" />
               <circle cx="12" cy="12" r="2.5" fill="#475569" />
               <path d="M4 12h16" stroke="#475569" strokeWidth="1.8" />
               <path d="M12 12v8" stroke="#475569" strokeWidth="1.8" />
             </svg>
-          </div>
+          </div>}
         </div>
       )}
       {/* Bus Coach floor containing actual grid running left-to-right */}
       <div className="bus-coach-floor">{content}</div>
     </div>
-  );  const renderSrdvGridDeck = (deckSeats, deckLabel) => {
+  );  const renderSrdvGridDeck = (deckSeats, deckLabel, showSteering = false) => {
     if (!deckSeats || deckSeats.length === 0) return null;
 
     const nonSeatPatterns = /EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/i;
@@ -513,14 +513,14 @@ export default function SeatSelection({
       <div className="bus-coach-container srdv-grid-deck-container">
         {deckLabel && (
           <div className="bus-deck-label-container">
-            <div className="bus-deck-steering-wheel" title="Front / Driver">
+            {showSteering && <div className="bus-deck-steering-wheel" title="Front / Driver">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
                 <circle cx="12" cy="12" r="9" stroke="#475569" strokeWidth="2.2" />
                 <circle cx="12" cy="12" r="2.5" fill="#475569" />
                 <path d="M4 12h16" stroke="#475569" strokeWidth="1.8" />
                 <path d="M12 12v8" stroke="#475569" strokeWidth="1.8" />
               </svg>
-            </div>
+            </div>}
             <span className="bus-deck-label-text">{deckLabel}</span>
           </div>
         )}
@@ -602,11 +602,11 @@ export default function SeatSelection({
                   title={`Seat: ${seat.label} | Fare: ₹${displayFareVal}`}
                 >
                   {seat.kind === "vertical-sleeper" ? (
-                    <VerticalSleeperIcon label={seat.label} />
+                    <VerticalSleeperIcon label={isBooked ? "" : seat.label} />
                   ) : seat.kind === "sleeper" ? (
-                    <SleeperIcon label={seat.label} />
+                    <SleeperIcon label={isBooked ? "" : seat.label} />
                   ) : (
-                    <SeaterIcon label={seat.label} />
+                    <SeaterIcon label={isBooked ? "" : seat.label} />
                   )}
                   {displayFareVal > 0 && (
                     <span className="srdv-seat-fare-label">₹{displayFareVal}</span>
@@ -625,14 +625,14 @@ export default function SeatSelection({
     if (srdvParsed) {
       return (
         <div className="bus-decks-container">
-          {srdvParsed.lower.length > 0 && (
-            <div className="bus-deck-wrapper">
-              {renderSrdvGridDeck(srdvParsed.lower, srdvParsed.hasUpper ? "Lower Deck" : "Bus Layout")}
-            </div>
-          )}
           {srdvParsed.upper.length > 0 && (
             <div className="bus-deck-wrapper">
               {renderSrdvGridDeck(srdvParsed.upper, "Upper Deck")}
+            </div>
+          )}
+          {srdvParsed.lower.length > 0 && (
+            <div className="bus-deck-wrapper">
+              {renderSrdvGridDeck(srdvParsed.lower, srdvParsed.hasUpper ? "Lower Deck" : "Bus Layout", true)}
             </div>
           )}
         </div>
@@ -643,11 +643,12 @@ export default function SeatSelection({
     if (hasDeckSections && hasBackendSections && seatDeckGroups.length > 0) {
       return (
         <div className="bus-decks-container">
-          {seatDeckGroups.map((deckGroup) => (
+          {[...seatDeckGroups].sort((a, b) => /upper/i.test(a.name) ? -1 : /upper/i.test(b.name) ? 1 : 0).map((deckGroup) => (
             <div key={deckGroup.name} className="bus-deck-wrapper">
               {renderBusShell(
                 deckGroup.sections.map((sec) => renderBusVerticalSection(sec)),
-                deckGroup.name.replace(/ Deck/gi, '')
+                deckGroup.name.replace(/ Deck/gi, ''),
+                /lower/i.test(deckGroup.name)
               )}
             </div>
           ))}
@@ -659,14 +660,14 @@ export default function SeatSelection({
     if (hasDeckSections) {
       return (
         <div className="bus-decks-container">
-          {lowerDeckRows.length > 0 && (
-            <div className="bus-deck-wrapper">
-              {renderBusShell(renderBusDeckContent(lowerDeckRows), "Lower")}
-            </div>
-          )}
           {upperDeckRows.length > 0 && (
             <div className="bus-deck-wrapper">
               {renderBusShell(renderBusDeckContent(upperDeckRows), "Upper")}
+            </div>
+          )}
+          {lowerDeckRows.length > 0 && (
+            <div className="bus-deck-wrapper">
+              {renderBusShell(renderBusDeckContent(lowerDeckRows), "Lower", true)}
             </div>
           )}
         </div>

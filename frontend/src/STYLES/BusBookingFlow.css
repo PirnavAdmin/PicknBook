@@ -5156,12 +5156,12 @@
 
 .bus-flow-page .ack-checkbox {
   display: flex !important;
-  align-items: flex-start !important;
+  align-items: center !important;
   gap: 6px !important;
 }
 
 .bus-flow-page .ack-checkbox input {
-  margin-top: 3px !important;
+  margin-top: 0 !important;
 }
 
 .bus-flow-page .ack-checkbox span {

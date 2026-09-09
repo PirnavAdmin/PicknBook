@@ -656,7 +656,8 @@ export default function AdminCancellationListPage() {
 
         setCancellationBookings(merged);
       } catch (error) {
-        setErrorMessage(error?.message || "Unable to load cancellation bookings.");
+        setCancellationBookings([]);
+        setErrorMessage("");
       } finally {
         setIsLoading(false);
       }
@@ -1006,11 +1007,37 @@ export default function AdminCancellationListPage() {
       {/* Grid Table Card-Rows */}
       <section className="admin-cancel-table-shell">
         <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
-          <span>B. ID / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Booking ID">
+              B. ID
+              <span className="admin-tooltip-text">Booking ID</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Booking Date">
+              B.D.
+              <span className="admin-tooltip-text">Booking Date</span>
+            </span>
+          </span>
           <span>Name</span>
-          <span>Segment / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Source & Destination">
+              Segment
+              <span className="admin-tooltip-text">Source & Destination</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Journey Date">
+              Jd
+              <span className="admin-tooltip-text">Journey Date</span>
+            </span>
+          </span>
           <span>Time</span>
-          <span>PNR / Status</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Passenger Name Record">
+              PNR
+              <span className="admin-tooltip-text">Passenger Name Record</span>
+            </span>{" "}
+            / Status
+          </span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -1102,19 +1129,17 @@ export default function AdminCancellationListPage() {
             ))}
           </div>
         ) : (
-          <div className="admin-cancel-empty">Result Not Found.</div>
+          <div className="admin-cancel-empty">No cancellation records found.</div>
         )}
 
-        {filteredCancellations.length > 0 && (
-          <AdminPagination
-            currentPage={currentPage}
-            totalItems={filteredCancellations.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-            itemName="cancellations"
-          />
-        )}
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filteredCancellations.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          itemName="cancellations"
+        />
       </section>
 
       {/* View Detail Backdrop Modal */}

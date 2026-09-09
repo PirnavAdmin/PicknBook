@@ -25,6 +25,8 @@ namespace PickNBook.Api.Services
         Task<string> TicketLCCRawAsync(TicketLCCRequestDto request);
         Task<string> HoldGDSRawAsync(HoldGDSRequestDto request);
         Task<string> TicketGDSRawAsync(TicketGDSRequestDto request);
+        Task<string> GetBookingDetailsRawAsync(AirBookingDetailsRequestDto request);
+        Task<string> GetBookingDetailsRawAsync(long traceId);
         Task<string> GetCalendarFareRawAsync(CalendarFareRequestDto request);
         Task<FlightFareQuoteDto> GetFareQuoteAsync(string traceId, string resultIndex);
         Task<FlightBookingResponseDto> BookFlightAsync(FlightBookingRequestDto request);

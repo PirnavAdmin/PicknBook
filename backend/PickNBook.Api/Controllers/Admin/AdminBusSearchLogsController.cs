@@ -22,13 +22,19 @@ namespace PickNBook.Api.Controllers.Admin
         }
 
         [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> GetBusSearchLogs([FromQuery] int limit = 100)
         {
             if (limit <= 0 || limit > 500) limit = 100; // Hard cap
 
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+
             var logs = await dbContext.BusSearchLogs
                 .AsNoTracking()
                 .OrderByDescending(x => x.SearchedAtUtc)
+                .ThenByDescending(x => x.Id)
                 .Take(limit)
                 .Select(x => new
                 {

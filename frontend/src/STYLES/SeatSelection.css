@@ -361,7 +361,7 @@
 }
 
 .seat-button-wrapper.status-booked .seat-icon .seat-label {
-  fill: #a1a1aa;
+  display: none;
 }
 
 /* Selected status style - Green */
@@ -399,7 +399,7 @@
 }
 
 .seat-button-wrapper.status-booked-female .seat-icon .seat-label {
-  fill: #be185d; /* pink-700 */
+  display: none;
 }
 
 /* Booked Male status style - Blue */
@@ -420,7 +420,7 @@
 }
 
 .seat-button-wrapper.status-booked-male .seat-icon .seat-label {
-  fill: #1d4ed8; /* blue-700 */
+  display: none;
 }
 
 /* Female Adjacent status style */
@@ -693,11 +693,11 @@
 .srdv-grid-seat-box.status-available .seat-label { fill: #475569; }
 
 /* Booked */
-.srdv-grid-seat-box.status-booked .seat-body { fill: #f1f5f9 !important; stroke: #cbd5e1 !important; }
+.srdv-grid-seat-box.status-booked .seat-body { fill: #d1d5db !important; stroke: #9ca3af !important; }
 .srdv-grid-seat-box.status-booked .seat-headrest,
 .srdv-grid-seat-box.status-booked .seat-armrest,
 .srdv-grid-seat-box.status-booked .sleeper-pillow { fill: #94a3b8 !important; stroke: #94a3b8 !important; }
-.srdv-grid-seat-box.status-booked .seat-label { fill: #64748b !important; font-weight: 700 !important; }
+.srdv-grid-seat-box.status-booked .seat-label { display: none !important; }
 .srdv-grid-seat-box.status-booked .srdv-seat-fare-label { visibility: hidden !important; }
 
 /* Selected */
@@ -713,10 +713,10 @@
 .srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .sleeper-pillow { fill: #ec4899 !important; stroke: #ec4899 !important; }
 
 /* Ladies (Booked) -> Greyed out body/border, ONLY pillow/headrest in Pink */
-.srdv-grid-seat-box.status-booked.status-ladies-seat .seat-body { fill: #f1f5f9 !important; stroke: #cbd5e1 !important; }
+.srdv-grid-seat-box.status-booked.status-ladies-seat .seat-body { fill: #d1d5db !important; stroke: #9ca3af !important; }
 .srdv-grid-seat-box.status-booked.status-ladies-seat .seat-headrest,
 .srdv-grid-seat-box.status-booked.status-ladies-seat .sleeper-pillow { fill: #ec4899 !important; stroke: #ec4899 !important; }
-.srdv-grid-seat-box.status-booked.status-ladies-seat .seat-label { fill: #64748b !important; }
+.srdv-grid-seat-box.status-booked.status-ladies-seat .seat-label { display: none !important; }
 
 /* Males Reserved (Available) */
 .srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .seat-body { fill: #eff6ff !important; stroke: #3b82f6 !important; }
@@ -724,10 +724,10 @@
 .srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .sleeper-pillow { fill: #3b82f6 !important; stroke: #3b82f6 !important; }
 
 /* Males (Booked) -> Greyed out body/border, ONLY pillow/headrest in Blue */
-.srdv-grid-seat-box.status-booked.status-males-seat .seat-body { fill: #f1f5f9 !important; stroke: #cbd5e1 !important; }
+.srdv-grid-seat-box.status-booked.status-males-seat .seat-body { fill: #d1d5db !important; stroke: #9ca3af !important; }
 .srdv-grid-seat-box.status-booked.status-males-seat .seat-headrest,
 .srdv-grid-seat-box.status-booked.status-males-seat .sleeper-pillow { fill: #3b82f6 !important; stroke: #3b82f6 !important; }
-.srdv-grid-seat-box.status-booked.status-males-seat .seat-label { fill: #64748b !important; }
+.srdv-grid-seat-box.status-booked.status-males-seat .seat-label { display: none !important; }
 
 /* Dimmed */
 .srdv-grid-seat-box.opacity-40 {

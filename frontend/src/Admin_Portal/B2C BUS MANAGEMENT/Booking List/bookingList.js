@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./BookingList.css";
-import { Filter, Download } from "lucide-react";
+import { Filter, Download, CreditCard, RefreshCw, CheckCircle } from "lucide-react";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import { listAdminBusBookings } from "../../../services/adminBusService";
 import AdminPagination from "../../../components/AdminPagination";
@@ -22,9 +22,14 @@ const adminProfitFormatter = new Intl.NumberFormat("en-IN", {
 const DEFAULT_FILTERS = {
   status: "all",
   bookingReference: "",
+  passengerName: "",
   passengerPhone: "",
+  fromCity: "",
+  toCity: "",
   fromDate: "",
   toDate: "",
+  journeyTime: "",
+  operator: "",
 };
 
 const normalizeText = (value, fallback = "") => {
@@ -457,6 +462,11 @@ function normalizeBusBookingRecord(record) {
     ]),
     profit: calculateBookingProfit(record),
     status: String(getFieldValue(["status", "Status"], "Unknown") || "Unknown"),
+    // --- NEW PAYMENT FIELDS ---
+    paymentStatus: getFieldValue(["paymentStatus", "PaymentStatus"], null),
+    refundStatus: getFieldValue(["refundStatus", "RefundStatus"], null),
+    fulfillmentStatus: getFieldValue(["fulfillmentStatus", "FulfillmentStatus"], null),
+    // --------------------------
     bookedAtUtc: getFieldValue(
       [
         "bookedAtUtc",
@@ -627,6 +637,22 @@ const mapAdminStatusClass = (statusValue) => {
   return "pending";
 };
 
+// --- Payment Status Helpers ---
+const getPaymentStatusDisplay = (value) => {
+  if (value === null || value === undefined || value === "") return "N/A";
+  return String(value);
+};
+
+const getPaymentStatusClass = (value) => {
+  if (value === null || value === undefined || value === "") return "ps-na";
+  const key = String(value).toLowerCase();
+  if (key === "success" || key === "completed") return "ps-success";
+  if (key === "pending" || key === "processing" || key === "created") return "ps-pending";
+  if (key === "failed" || key === "cancelled" || key === "expired") return "ps-failed";
+  if (key === "notrequired") return "ps-notrequired";
+  return "ps-default";
+};
+
 const mapBookingFilterStatusToApi = (filterStatus) => {
   const key = normalizeText(filterStatus, "").toLowerCase();
 
@@ -694,6 +720,11 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     journeyTime,
     pnr: bookingReference || tripNumber || bookingId || "--",
     status,
+    // --- NEW PAYMENT FIELDS ---
+    paymentStatus: record?.paymentStatus ?? null,
+    refundStatus: record?.refundStatus ?? null,
+    fulfillmentStatus: record?.fulfillmentStatus ?? null,
+    // --------------------------
     operator: normalizeText(record?.providerName, "--"),
     vehicleType: normalizeText(record?.travelClass, safeSourceType),
     fare,
@@ -797,15 +828,41 @@ export default function AdminB2CBookingListPage() {
       }
 
       if (filters.bookingReference) {
-        const query = filters.bookingReference.toLowerCase();
-        const lookup = `${booking.id} ${booking.pnr} ${booking.passengerName}`.toLowerCase();
+        const query = filters.bookingReference.trim().toLowerCase();
+        const lookup = `${booking.id} ${booking.pnr} ${booking.bookingReference || ""} ${booking.raw?.tripNumber || ""}`.toLowerCase();
         if (!lookup.includes(query)) {
           return false;
         }
       }
 
-      if (filters.passengerPhone && !String(booking.passengerPhone || "").includes(filters.passengerPhone)) {
-        return false;
+      if (filters.passengerName) {
+        const query = filters.passengerName.trim().toLowerCase();
+        const mainName = String(booking.passengerName || "").toLowerCase();
+        const pNames = (booking.passengers || []).map((p) => String(p.fullName || "").toLowerCase()).join(" ");
+        if (!mainName.includes(query) && !pNames.includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.passengerPhone) {
+        const query = filters.passengerPhone.trim().toLowerCase();
+        if (!String(booking.passengerPhone || "").toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.fromCity) {
+        const query = filters.fromCity.trim().toLowerCase();
+        if (!String(booking.from || "").toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.toCity) {
+        const query = filters.toCity.trim().toLowerCase();
+        if (!String(booking.to || "").toLowerCase().includes(query)) {
+          return false;
+        }
       }
 
       if (filters.fromDate) {
@@ -818,6 +875,20 @@ export default function AdminB2CBookingListPage() {
       if (filters.toDate) {
         const journeyTime = toNumberDate(booking.journeyDate);
         if (!Number.isFinite(journeyTime) || journeyTime > toNumberDate(filters.toDate)) {
+          return false;
+        }
+      }
+
+      if (filters.journeyTime) {
+        const query = filters.journeyTime.trim().toLowerCase();
+        if (!String(booking.journeyTime || "").toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      if (filters.operator) {
+        const query = filters.operator.trim().toLowerCase();
+        if (!String(booking.operator || "").toLowerCase().includes(query)) {
           return false;
         }
       }
@@ -888,6 +959,9 @@ export default function AdminB2CBookingListPage() {
       "Journey Time",
       "PNR",
       "Status",
+      "Payment Status",
+      "Refund Status",
+      "Fulfillment Status",
       "Operator",
       "Vehicle Type",
       "Fare",
@@ -907,6 +981,9 @@ export default function AdminB2CBookingListPage() {
       booking.journeyTime,
       booking.pnr,
       booking.status,
+      getPaymentStatusDisplay(booking.paymentStatus),
+      getPaymentStatusDisplay(booking.refundStatus),
+      getPaymentStatusDisplay(booking.fulfillmentStatus),
       booking.operator,
       booking.vehicleType,
       booking.fare,
@@ -931,11 +1008,13 @@ export default function AdminB2CBookingListPage() {
 
   return (
     <section className="admin-b2c-page admin-booking-page">
-      <header className="admin-b2c-header" style={{ marginBottom: "12px" }}>
-        <h1><span className="admin-heading-red">B2C Bus</span> Booking List</h1>
+      <header className="admin-b2c-header" style={{ marginBottom: "4px" }}>
+        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
+          <span className="admin-heading-red">B2C Bus</span> Booking List
+        </h1>
       </header>
 
-      <div className="admin-toolbar-row">
+      <div className="admin-toolbar-row" style={{ marginBottom: "6px" }}>
         <div className="admin-chip-row">
           <span className="admin-chip">Today Booked: {todayBookedCount}</span>
           <span className="admin-chip">Today Pending: {todayPendingCount}</span>
@@ -944,7 +1023,7 @@ export default function AdminB2CBookingListPage() {
           </span>
         </div>
 
-        <div className="admin-actions-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button 
             type="button" 
             onClick={() => setIsFiltersOpen((current) => !current)}
@@ -956,16 +1035,18 @@ export default function AdminB2CBookingListPage() {
               background: '#A51C49',
               color: '#ffffff',
               border: 'none',
-              borderRadius: '10px',
-              padding: '8px 16px',
+              borderRadius: '7px',
+              padding: '4px 14px',
+              height: '28px',
               fontWeight: '600',
-              fontSize: '0.88rem',
+              fontSize: '0.80rem',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 6px rgba(165, 28, 73, 0.2)'
             }}
           >
-            <Filter size={15} />
+            <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
           <button 
@@ -979,55 +1060,72 @@ export default function AdminB2CBookingListPage() {
               background: '#10b981',
               color: '#ffffff',
               border: 'none',
-              borderRadius: '10px',
-              padding: '8px 16px',
+              borderRadius: '7px',
+              padding: '4px 14px',
+              height: '28px',
               fontWeight: '600',
-              fontSize: '0.88rem',
+              fontSize: '0.80rem',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.2)'
             }}
           >
-            <Download size={15} />
+            <Download size={13} />
             <span>Export</span>
           </button>
         </div>
       </div>
 
-      {errorMessage ? <div className="admin-data-error">{errorMessage}</div> : null}
-
       {isFiltersOpen ? (
         <section className="flight-ops-filters admin-ops-filters">
-          <label>
-            <span>Status</span>
-            <select
-              value={draftFilters.status}
-              onChange={(event) => handleDraftChange("status", event.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="booked">Booked</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </label>
-
           <label>
             <span>Booking Ref / PNR</span>
             <input
               type="text"
               value={draftFilters.bookingReference}
               onChange={(event) => handleDraftChange("bookingReference", event.target.value)}
-              placeholder="Search booking id, PNR or name"
+              placeholder="Search Ref / PNR"
             />
           </label>
 
           <label>
-            <span>Passenger Phone</span>
+            <span>Passenger Name</span>
+            <input
+              type="text"
+              value={draftFilters.passengerName}
+              onChange={(event) => handleDraftChange("passengerName", event.target.value)}
+              placeholder="Enter name"
+            />
+          </label>
+
+          <label>
+            <span>Mobile No</span>
             <input
               type="text"
               value={draftFilters.passengerPhone}
               onChange={(event) => handleDraftChange("passengerPhone", event.target.value)}
               placeholder="Enter mobile number"
+            />
+          </label>
+
+          <label>
+            <span>Journey Source</span>
+            <input
+              type="text"
+              value={draftFilters.fromCity}
+              onChange={(event) => handleDraftChange("fromCity", event.target.value)}
+              placeholder="Source city"
+            />
+          </label>
+
+          <label>
+            <span>Destination</span>
+            <input
+              type="text"
+              value={draftFilters.toCity}
+              onChange={(event) => handleDraftChange("toCity", event.target.value)}
+              placeholder="Destination city"
             />
           </label>
 
@@ -1049,6 +1147,39 @@ export default function AdminB2CBookingListPage() {
             />
           </label>
 
+          <label>
+            <span>Time</span>
+            <input
+              type="text"
+              value={draftFilters.journeyTime}
+              onChange={(event) => handleDraftChange("journeyTime", event.target.value)}
+              placeholder="e.g. 10:00"
+            />
+          </label>
+
+          <label>
+            <span>Operator</span>
+            <input
+              type="text"
+              value={draftFilters.operator}
+              onChange={(event) => handleDraftChange("operator", event.target.value)}
+              placeholder="Operator name"
+            />
+          </label>
+
+          <label>
+            <span>Status</span>
+            <select
+              value={draftFilters.status}
+              onChange={(event) => handleDraftChange("status", event.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="booked">Booked</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </label>
+
           <div className="filters-actions">
             <button type="button" className="primary" onClick={applyFilters}>
               Apply Filter
@@ -1060,15 +1191,40 @@ export default function AdminB2CBookingListPage() {
         </section>
       ) : null}
 
-
-
       <section className="admin-table-shell">
         <header className="admin-table-head">
-          <span>B. ID / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Booking ID">
+              B. ID
+              <span className="admin-tooltip-text">Booking ID</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Booking Date">
+              B.D.
+              <span className="admin-tooltip-text">Booking Date</span>
+            </span>
+          </span>
           <span>Name</span>
-          <span>Segment / Date</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Source & Destination">
+              Segment
+              <span className="admin-tooltip-text">Source & Destination</span>
+            </span>{" "}
+            /{" "}
+            <span className="admin-hdr-tooltip" title="Journey Date">
+              Jd
+              <span className="admin-tooltip-text">Journey Date</span>
+            </span>
+          </span>
           <span>Time</span>
-          <span>PNR / Status</span>
+          <span>
+            <span className="admin-hdr-tooltip" title="Passenger Name Record">
+              PNR
+              <span className="admin-tooltip-text">Passenger Name Record</span>
+            </span>{" "}
+            / Status
+          </span>
+          <span>Payment</span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -1077,93 +1233,108 @@ export default function AdminB2CBookingListPage() {
 
         {isLoading ? (
           <div className="admin-table-empty">Loading bookings...</div>
+        ) : errorMessage ? (
+          <div className="admin-table-empty">Data not found</div>
         ) : filteredBookings.length ? (
-          <>
-            <div className="admin-table-body">
-              {paginatedBookings.map((booking) => (
-                <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-table-row">
-                  <div className="admin-table-cell">
-                    <strong>{safeValue(booking.id)}</strong>
-                    <div className="admin-date-badge">
-                      <span className="admin-calendar-emoji">🗓️</span>
-                      <span>{formatAdminDate(booking.createdAt)}</span>
-                    </div>
+          <div className="admin-table-body">
+            {paginatedBookings.map((booking) => (
+              <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-table-row">
+                <div className="admin-table-cell">
+                  <strong>{safeValue(booking.id)}</strong>
+                  <div className="admin-date-badge" title="Booking Date">
+                    <span className="admin-calendar-emoji">🗓️</span>
+                    <span>{formatAdminDate(booking.createdAt)}</span>
                   </div>
+                </div>
 
-                  <div className="admin-table-cell">
-                    <strong>{safeValue(booking.passengerName)}</strong>
-                    <small>{safeValue(booking.passengerPhone)}</small>
+                <div className="admin-table-cell">
+                  <strong>{safeValue(booking.passengerName)}</strong>
+                  <small>{safeValue(booking.passengerPhone)}</small>
+                </div>
+
+                <div className="admin-table-cell">
+                  <div className="admin-route-segment">
+                    <span>{safeValue(booking.from)}</span>
+                    <span className="admin-segment-arrow">➔</span>
+                    <span>{safeValue(booking.to)}</span>
                   </div>
-
-                  <div className="admin-table-cell">
-                    <div className="admin-route-segment">
-                      <span>{safeValue(booking.from)}</span>
-                      <span className="admin-segment-arrow">➔</span>
-                      <span>{safeValue(booking.to)}</span>
-                    </div>
-                    <div className="admin-date-badge">
-                      <span className="admin-calendar-emoji">🗓️</span>
-                      <span>{formatAdminDate(booking.journeyDate)}</span>
-                    </div>
+                  <div className="admin-date-badge" title="Journey Date">
+                    <span className="admin-calendar-emoji">🗓️</span>
+                    <span>{formatAdminDate(booking.journeyDate)}</span>
                   </div>
+                </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong>{safeValue(booking.journeyTime)}</strong>
-                  </div>
+                <div className="admin-table-cell admin-cell-centered">
+                  <strong>{safeValue(booking.journeyTime)}</strong>
+                </div>
 
-                  <div className="admin-table-cell">
-                    <strong>{safeValue(booking.pnr)}</strong>
-                    <span className={`admin-status-pill ${mapAdminStatusClass(booking.status)}`}>
-                      {safeValue(booking.status)}
-                    </span>
-                  </div>
+                <div className="admin-table-cell">
+                  <strong>{safeValue(booking.pnr)}</strong>
+                  <span className={`admin-status-pill ${mapAdminStatusClass(booking.status)}`}>
+                    {safeValue(booking.status)}
+                  </span>
+                </div>
 
-                  <div className="admin-table-cell">
-                    <strong>{safeValue(booking.operator)}</strong>
-                    <small>
-                      {safeValue(booking.tripType)} | {safeValue(booking.vehicleType)}
-                    </small>
-                  </div>
+                <div className="admin-table-cell admin-payment-cell">
+                  <span className={`admin-ps-pill ${getPaymentStatusClass(booking.paymentStatus)}`} title="Payment Status">
+                    <CreditCard size={10} />
+                    {getPaymentStatusDisplay(booking.paymentStatus)}
+                  </span>
+                  <span className={`admin-ps-pill ${getPaymentStatusClass(booking.refundStatus)}`} title="Refund Status">
+                    <RefreshCw size={10} />
+                    {getPaymentStatusDisplay(booking.refundStatus)}
+                  </span>
+                  <span className={`admin-ps-pill ${getPaymentStatusClass(booking.fulfillmentStatus)}`} title="Fulfillment Status">
+                    <CheckCircle size={10} />
+                    {getPaymentStatusDisplay(booking.fulfillmentStatus)}
+                  </span>
+                </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong>{adminCurrencyFormatter.format(Number(booking.fare) || 0)}</strong>
-                  </div>
+                <div className="admin-table-cell">
+                  <strong>{safeValue(booking.operator)}</strong>
+                  <small>
+                    {safeValue(booking.tripType)} | {safeValue(booking.vehicleType)}
+                  </small>
+                </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong className={getProfitClassName(booking.calculatedProfit)}>
-                      {adminProfitFormatter.format(Number(booking.calculatedProfit) || 0)}
-                    </strong>
-                    <small>{getProfitLabel(booking.calculatedProfit)}</small>
-                  </div>
+                <div className="admin-table-cell admin-cell-centered">
+                  <strong>{adminCurrencyFormatter.format(Number(booking.fare) || 0)}</strong>
+                </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
-                    <button
-                      type="button"
-                      className="admin-action-btn"
-                      onClick={() => setSelectedBooking(booking)}
-                    >
-                      View
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+                <div className="admin-table-cell admin-cell-centered">
+                  <strong className={getProfitClassName(booking.calculatedProfit)}>
+                    {adminProfitFormatter.format(Number(booking.calculatedProfit) || 0)}
+                  </strong>
+                  <small>{getProfitLabel(booking.calculatedProfit)}</small>
+                </div>
 
-            <AdminPagination
-              currentPage={currentPage}
-              totalItems={filteredBookings.length}
-              itemsPerPage={pageSize}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(newSize) => {
-                setPageSize(newSize);
-                setCurrentPage(1);
-              }}
-              itemName="bookings"
-            />
-          </>
+                <div className="admin-table-cell admin-cell-centered">
+                  <button
+                    type="button"
+                    className="admin-action-btn"
+                    onClick={() => setSelectedBooking(booking)}
+                  >
+                    View
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         ) : (
-          <div className="admin-table-empty">No bookings available for the selected filters.</div>
+          <div className="admin-table-empty">No bus bookings available.</div>
         )}
+
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filteredBookings.length}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="bookings"
+        />
       </section>
 
       {selectedBooking ? (
@@ -1257,6 +1428,40 @@ export default function AdminB2CBookingListPage() {
                   {adminProfitFormatter.format(Number(selectedBooking.calculatedProfit) || 0)}
                 </strong>
                 <small>{getProfitLabel(selectedBooking.calculatedProfit)}</small>
+              </div>
+            </section>
+
+            {/* Payment Status Section */}
+            <section className="admin-view-payment-section">
+              <h3 className="admin-view-payment-title">Payment Information</h3>
+              <div className="admin-view-payment-grid">
+                <div className="admin-view-payment-card">
+                  <div className="admin-view-payment-card-icon">
+                    <CreditCard size={16} />
+                  </div>
+                  <span>Payment Status</span>
+                  <strong className={`admin-ps-badge ${getPaymentStatusClass(selectedBooking.paymentStatus)}`}>
+                    {getPaymentStatusDisplay(selectedBooking.paymentStatus)}
+                  </strong>
+                </div>
+                <div className="admin-view-payment-card">
+                  <div className="admin-view-payment-card-icon">
+                    <RefreshCw size={16} />
+                  </div>
+                  <span>Refund Status</span>
+                  <strong className={`admin-ps-badge ${getPaymentStatusClass(selectedBooking.refundStatus)}`}>
+                    {getPaymentStatusDisplay(selectedBooking.refundStatus)}
+                  </strong>
+                </div>
+                <div className="admin-view-payment-card">
+                  <div className="admin-view-payment-card-icon">
+                    <CheckCircle size={16} />
+                  </div>
+                  <span>Fulfillment Status</span>
+                  <strong className={`admin-ps-badge ${getPaymentStatusClass(selectedBooking.fulfillmentStatus)}`}>
+                    {getPaymentStatusDisplay(selectedBooking.fulfillmentStatus)}
+                  </strong>
+                </div>
               </div>
             </section>
           </article>
