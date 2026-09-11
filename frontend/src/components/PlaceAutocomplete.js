@@ -226,15 +226,9 @@ export default function PlaceAutocomplete({
             border: '1px solid #e2e8f0',
             maxHeight: '480px',
             overflowY: 'auto',
-<<<<<<< HEAD
-            minWidth: '420px',
-            width: 'min(420px, 90vw)',
-            maxWidth: '420px',
-=======
             width: '100%',
             minWidth: '240px',
             maxWidth: '100%',
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             color: '#0f172a'
           } : {}}
         >

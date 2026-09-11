@@ -2496,11 +2496,6 @@ export default function HomePage() {
   );
   const [busReturnDate, setBusReturnDate] = useState("");
 
-<<<<<<< HEAD
-  const state = location.state || {};
-
-=======
->>>>>>> cf14845 (update on changes mentioned on 9th date)
   const [featuredOffers, setFeaturedOffers] = useState(DEFAULT_BUS_FEATURED_OFFERS);
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
   const [featuredOffersError, setFeaturedOffersError] = useState("");
@@ -6265,13 +6260,7 @@ export default function HomePage() {
           }
 
           /* Red Search Button */
-<<<<<<< HEAD
           .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
-=======
-          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn,
-          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn,
-          .search-panel .flight-search-bar-row .search-btn {
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             flex: 0 0 auto !important;
             width: auto !important;
             min-width: 100px !important;
@@ -6291,15 +6280,39 @@ export default function HomePage() {
             box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
             transition: all 0.2s ease !important;
             margin-left: 8px !important;
-            margin-top: 0 !important;
-            padding: 0 16px !important;
           }
 
-          .search-panel .flight-search-bar-row .search-btn:hover,
-          .homepage-flights .search-panel .search-btn.flight-grid-search-btn:hover,
-          .homepage-buses .search-panel .search-btn.flight-grid-search-btn:hover,
-          .homepage-hotels .search-panel .search-btn.flight-grid-search-btn:hover,
-          .homepage-hotels .search-panel .search-btn.hotel-search-submit-btn:hover {
+          .homepage-flights .search-panel .search-btn.flight-grid-search-btn:hover {
+            background: #b8141b !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
+          }
+
+          /* Hotel Search Button — same compact style as bus/flight search button */
+          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: 100px !important;
+            height: 36px !important;
+            background: #dc1e26 !important;
+            color: #ffffff !important;
+            border-radius: 9px !important;
+            font-weight: 800 !important;
+            font-size: 0.65rem !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
+            transition: all 0.2s ease !important;
+            margin-top: 0 !important;
+            margin-left: 8px !important;
+          }
+
+          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn:hover {
             background: #b8141b !important;
             transform: translateY(-1px) !important;
             box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;

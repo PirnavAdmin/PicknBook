@@ -2,10 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { CalendarDays, CalendarRange, Search, Users, ChevronDown, Plus, Minus, BedDouble, Baby } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
-<<<<<<< HEAD
-=======
 import { getDefaultDateString } from "../utils/apiDateFormat";
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
 function toDisplayDate(isoString) {
   if (!isoString) return "";
@@ -226,46 +223,19 @@ export default function HotelSearchWidget({
 
   const innerContent = (
     <>
-<<<<<<< HEAD
       <div className={isInline ? "hotel-discover-searchcell" : ""} style={isInline ? { display: 'flex', alignItems: 'center', gap: '12px', flex: '1.3 1 auto', minWidth: 0, position: 'relative' } : {}}>
         <PlaceAutocomplete
           label={isInline ? "STAY DESTINATION" : "DESTINATION"}
-=======
-      {isInline ? (
-        <div className="hotel-discover-searchcell" style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1.3 1 auto', minWidth: 0, position: 'relative' }}>
-          <PlaceAutocomplete
-            label="STAY DESTINATION"
-            value={destination}
-            onChange={handleDestinationChange}
-            tripType="hotel"
-            field="destination"
-            placeholder="Enter city, area or hotel"
-            error={destinationError}
-            className="hotel-discover-searchcell-autocomplete"
-            isInline={true}
-          />
-        </div>
-      ) : (
-        <PlaceAutocomplete
-          label="DESTINATION"
->>>>>>> cf14845 (update on changes mentioned on 9th date)
           value={destination}
           onChange={handleDestinationChange}
           tripType="hotel"
           field="destination"
           placeholder="Enter city, area or hotel"
           error={destinationError}
-<<<<<<< HEAD
           className={isInline ? "hotel-discover-searchcell-autocomplete" : "hotel-destination-field"}
           isInline={isInline}
         />
       </div>
-=======
-          className="hotel-destination-field"
-          isInline={false}
-        />
-      )}
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
       {isInline ? (
         <div
@@ -275,11 +245,7 @@ export default function HotelSearchWidget({
             alignItems: 'center',
             gap: '12px',
             flex: '1.2 1 auto',
-<<<<<<< HEAD
-            borderLeft: "1px solid rgba(255,255,255,0.15)",
-=======
             borderLeft: "1px solid rgba(15,23,42,0.08)",
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             paddingLeft: "20px",
             cursor: 'pointer',
             minWidth: 0,
@@ -287,56 +253,33 @@ export default function HotelSearchWidget({
           }}
           onClick={() => document.getElementById("inline-checkin-date")?.showPicker?.()}
         >
-<<<<<<< HEAD
-          <CalendarRange size={18} color="#ffffff" style={{ flexShrink: 0 }} />
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-=======
             <CalendarRange size={18} color="#dc1e26" style={{ flexShrink: 0 }} />
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
->>>>>>> cf14845 (update on changes mentioned on 9th date)
               TIMELINE
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
               <span
-<<<<<<< HEAD
-                style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
-=======
                 style={{ cursor: "pointer", color: '#0f172a', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
->>>>>>> cf14845 (update on changes mentioned on 9th date)
                 onClick={(e) => { e.stopPropagation(); document.getElementById("inline-checkin-date")?.showPicker?.(); }}
               >
                 {toDisplayDate(checkInDate) || "Select"}
               </span>
-<<<<<<< HEAD
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
-              <span
-                style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
-=======
               <span style={{ color: '#94a3b8', fontWeight: 700 }}>-</span>
               <span
                 style={{ cursor: "pointer", color: '#0f172a', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
->>>>>>> cf14845 (update on changes mentioned on 9th date)
                 onClick={(e) => { e.stopPropagation(); document.getElementById("inline-checkout-date")?.showPicker?.(); }}
               >
                 {toDisplayDate(checkOutDate) || "dates"}
               </span>
             </div>
-<<<<<<< HEAD
-            <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-=======
             <span style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
->>>>>>> cf14845 (update on changes mentioned on 9th date)
               {calculateNights(checkInDate, checkOutDate)} {calculateNights(checkInDate, checkOutDate) === 1 ? 'NIGHT' : 'NIGHTS'}
             </span>
             <input
               id="inline-checkin-date"
               type="date"
-<<<<<<< HEAD
-=======
               min={getDefaultDateString(0)}
->>>>>>> cf14845 (update on changes mentioned on 9th date)
               value={checkInDate}
               onChange={(event) => setCheckInDate(event.target.value)}
               style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
@@ -344,10 +287,7 @@ export default function HotelSearchWidget({
             <input
               id="inline-checkout-date"
               type="date"
-<<<<<<< HEAD
-=======
               min={checkInDate || getDefaultDateString(0)}
->>>>>>> cf14845 (update on changes mentioned on 9th date)
               value={checkOutDate}
               onChange={(event) => setCheckOutDate(event.target.value)}
               style={{ position: 'absolute', opacity: 0, width: 0, height: 0, top: 0, left: 0, pointerEvents: 'none' }}
@@ -409,19 +349,11 @@ export default function HotelSearchWidget({
 
         {isInline ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', cursor: 'pointer', minWidth: 0 }} onClick={toggleGuestsDropdown}>
-<<<<<<< HEAD
-            <Users size={18} color="#ffffff" style={{ flexShrink: 0 }} />
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>GUESTS</span>
-              <span style={{ fontSize: '14px', fontWeight: 500, color: '#ffffff', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{guestSummary}</span>
-              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>ROOMS & GUESTS</span>
-=======
             <Users size={18} color="#dc1e26" style={{ flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>GUESTS</span>
               <span style={{ fontSize: '14px', fontWeight: 500, color: '#0f172a', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{guestSummary}</span>
               <span style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>ROOMS & GUESTS</span>
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             </div>
           </div>
         ) : (
@@ -580,10 +512,9 @@ export default function HotelSearchWidget({
           className="hotel-discover-searchbutton"
           onClick={handleSubmit}
           style={{
-<<<<<<< HEAD
             borderRadius: "32px",
             padding: "0 24px",
-            height: "46px",
+            height: "44px",
             fontSize: "0.95rem",
             fontWeight: 700,
             background: "linear-gradient(135deg, #dc1e26, #991b1b)",
@@ -592,24 +523,6 @@ export default function HotelSearchWidget({
             display: "flex",
             alignItems: "center",
             gap: "8px",
-=======
-            borderRadius: "18px",
-            padding: "0 26px",
-            height: "56px",
-            width: "320px",
-            minWidth: "320px",
-            maxWidth: "100%",
-            fontSize: "0.92rem",
-            fontWeight: 800,
-            letterSpacing: "0.04em",
-            background: "linear-gradient(135deg, #dc1e26, #b8141b)",
-            boxShadow: "0 6px 18px rgba(220, 30, 38, 0.25)",
-            color: "#ffffff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             cursor: "pointer",
             border: "none",
             flexShrink: 0
@@ -619,19 +532,9 @@ export default function HotelSearchWidget({
           <span>Search Hotels</span>
         </button>
       ) : (
-<<<<<<< HEAD
         <button type="button" className="search-btn hotel-search-submit-btn" onClick={handleSubmit}>
           <Search size={16} strokeWidth={2.5} />
           <span>SEARCH HOTELS</span>
-=======
-        <button
-          type="button"
-          className="search-btn flight-grid-search-btn hotel-search-submit-btn"
-          onClick={handleSubmit}
-        >
-          <Search size={16} />
-          <span>Search Hotels</span>
->>>>>>> cf14845 (update on changes mentioned on 9th date)
         </button>
       )}
     </>
@@ -643,33 +546,18 @@ export default function HotelSearchWidget({
         className="hotel-discover-searchbar"
         onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
         style={{
-<<<<<<< HEAD
-          background: "rgba(255, 255, 255, 0.18)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderRadius: "40px",
-          padding: "10px 16px",
-          border: "1px solid rgba(255, 255, 255, 0.25)",
-          boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
-=======
           background: "#ffffff",
           backdropFilter: "none",
           WebkitBackdropFilter: "none",
-          borderRadius: "24px",
-          padding: "10px 16px 10px 10px",
+          borderRadius: "28px",
+          padding: "8px 20px",
           border: "1px solid rgba(0, 0, 0, 0.06)",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
->>>>>>> cf14845 (update on changes mentioned on 9th date)
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           width: "100%",
-<<<<<<< HEAD
           maxWidth: "1100px",
-=======
-          maxWidth: "1180px",
-          minHeight: "66px",
->>>>>>> cf14845 (update on changes mentioned on 9th date)
           margin: "0 auto",
           boxSizing: "border-box",
           position: "relative",

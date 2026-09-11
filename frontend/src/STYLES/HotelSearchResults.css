@@ -1564,18 +1564,6 @@
 
 /* Glass search bar overrides - translucent background and white text */
 .hotel-discover-searchbar {
-<<<<<<< HEAD
-  background: rgba(255, 255, 255, 0.18) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
-  border-radius: 40px !important;
-}
-
-.hotel-discover-searchbar span {
-  color: #cbd5e1 !important;
-=======
   background: #ffffff !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -1586,16 +1574,11 @@
 
 .hotel-discover-searchbar span {
   color: #64748b !important;
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 }
 
 .hotel-discover-searchbar strong,
 .hotel-discover-searchbar input {
-<<<<<<< HEAD
-  color: #ffffff !important;
-=======
   color: #0f172a !important;
->>>>>>> cf14845 (update on changes mentioned on 9th date)
   background: transparent !important;
 }
 
@@ -1611,10 +1594,6 @@
 .hotel-discover-searchcell svg {
   color: #dc1e26 !important;
   stroke: #dc1e26 !important;
-}
-
-.hotel-discover-searchcell svg {
-  color: #ffffff !important;
 }
 
 /* Inline sidebar filters style */

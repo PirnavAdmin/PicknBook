@@ -708,15 +708,9 @@
 .srdv-grid-seat-box.status-selected .seat-label { fill: #ffffff !important; }
 
 /* Ladies Reserved (Available) */
-<<<<<<< HEAD
-.srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .seat-body { fill: #fdf2f8 !important; stroke: #ec4899 !important; }
-.srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .seat-headrest,
-.srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .sleeper-pillow { fill: #ec4899 !important; stroke: #ec4899 !important; }
-=======
 .srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .seat-body { fill: #ffffff !important; stroke: #ec4899 !important; }
 .srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .seat-headrest,
 .srdv-grid-seat-box.status-ladies-seat:not(.status-booked):not(.status-selected) .sleeper-pillow { fill: #ffffff !important; stroke: #ec4899 !important; }
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
 /* Ladies (Booked) -> Greyed out body/border, ONLY pillow/headrest in Pink */
 .srdv-grid-seat-box.status-booked.status-ladies-seat .seat-body { fill: #d1d5db !important; stroke: #9ca3af !important; }
@@ -725,15 +719,9 @@
 .srdv-grid-seat-box.status-booked.status-ladies-seat .seat-label { display: none !important; }
 
 /* Males Reserved (Available) */
-<<<<<<< HEAD
-.srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .seat-body { fill: #eff6ff !important; stroke: #3b82f6 !important; }
-.srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .seat-headrest,
-.srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .sleeper-pillow { fill: #3b82f6 !important; stroke: #3b82f6 !important; }
-=======
 .srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .seat-body { fill: #ffffff !important; stroke: #3b82f6 !important; }
 .srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .seat-headrest,
 .srdv-grid-seat-box.status-males-seat:not(.status-booked):not(.status-selected) .sleeper-pillow { fill: #ffffff !important; stroke: #3b82f6 !important; }
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
 /* Males (Booked) -> Greyed out body/border, ONLY pillow/headrest in Blue */
 .srdv-grid-seat-box.status-booked.status-males-seat .seat-body { fill: #d1d5db !important; stroke: #9ca3af !important; }

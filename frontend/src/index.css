@@ -43,13 +43,8 @@ body {
 }
 
 #root {
-<<<<<<< HEAD
-  overflow-y: auto;
-  overflow-x: hidden;
-=======
   min-height: 100vh;
   overflow: visible;
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 }
 
 code {

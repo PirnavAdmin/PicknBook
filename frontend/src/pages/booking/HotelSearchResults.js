@@ -6,6 +6,7 @@ import {
   CalendarRange,
   Navigation,
   Map,
+  MapPin,
   Trees,
   Home,
   BellRing,
@@ -17,7 +18,6 @@ import {
   Star,
   Filter,
   Heart,
-  MapPin,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
@@ -562,12 +562,9 @@ export default function HotelSearchResults() {
           cancellationPolicy: hotelRecord.hotelPolicy || "",
         };
         const mappedOffers = [searchOffer];
-<<<<<<< HEAD
-=======
         const roomCategory = getHotelRoomCategory(hotelRecord);
         const breakfastIncluded = hotelHasBreakfast(hotelRecord);
         const propertyCategory = getHotelPropertyCategory(hotelRecord);
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
         return {
           id: hotelRecord.hotelCode || hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`,
@@ -586,14 +583,6 @@ export default function HotelSearchResults() {
             hotelRecord.tag ||
             (rating >= 4.5 ? "Top Rated" : rating >= 3.5 ? "Popular" : ""),
           price: basePrice,
-<<<<<<< HEAD
-          // Only set oldPrice if the API returned a published price that is higher than offered price
-          oldPrice: (publishedPrice > basePrice) ? publishedPrice : 0,
-          amenities: hotelRecord.facilities && hotelRecord.facilities.length > 0 && hotelRecord.facilities[0].facilitiesNames
-            ? hotelRecord.facilities[0].facilitiesNames 
-            : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : []),
-          note: searchOffer.cancellationPolicy,
-=======
           oldPrice: (publishedPrice > basePrice) ? publishedPrice : 0,
           amenities: hotelRecord.facilities && hotelRecord.facilities.length > 0 && hotelRecord.facilities[0].facilitiesNames
             ? hotelRecord.facilities[0].facilitiesNames
@@ -602,7 +591,6 @@ export default function HotelSearchResults() {
           roomCategory,
           breakfastIncluded,
           propertyCategory,
->>>>>>> cf14845 (update on changes mentioned on 9th date)
           offers: mappedOffers,
           image: apiImage || visuals.cardImage,
           thumbImage: apiImage || visuals.thumbImage,
@@ -627,11 +615,7 @@ export default function HotelSearchResults() {
           return false;
         }
 
-<<<<<<< HEAD
-        if (collectionKey === "breakfast" && !hotelRecord.amenities.some((item) => /breakfast/i.test(typeof item === "object" && item !== null ? String(item.name || item.Name || "") : String(item || "")))) {
-=======
         if (collectionKey === "breakfast" && !hotelRecord.breakfastIncluded) {
->>>>>>> cf14845 (update on changes mentioned on 9th date)
           return false;
         }
 
