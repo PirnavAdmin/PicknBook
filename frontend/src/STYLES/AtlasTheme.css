@@ -1535,18 +1535,21 @@ html:has(.cp-auth-page),
 body:has(.cp-auth-page),
 #root:has(.travel-auth-page),
 #root:has(.cp-auth-page) {
-  height: 100%;
-  overflow: hidden !important;
+  min-height: 100%;
+  height: auto;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
 }
 
 .travel-auth-page,
 .cp-auth-page {
-  width: 100vw !important;
-  height: 100vh !important;
-  height: 100svh !important;
-  min-height: 0 !important;
-  max-height: 100vh !important;
-  overflow: hidden !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   padding-block: clamp(14px, 2.6vh, 28px) !important;
 }
 
@@ -1565,8 +1568,8 @@ body:has(.cp-auth-page),
 .travel-auth-forgot .travel-auth-card,
 .travel-auth-verify .travel-auth-card,
 .cp-auth-card {
-  max-height: calc(100svh - 32px) !important;
-  overflow: hidden !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 .travel-auth-register .travel-auth-card {
@@ -2809,12 +2812,13 @@ button:focus-visible {
 /* Hard auth fit layer: all login/register-related fields visible in short browser viewports */
 .travel-auth-page,
 .cp-auth-page {
-  width: 100vw !important;
-  height: 100vh !important;
-  height: 100svh !important;
-  min-height: 0 !important;
-  max-height: 100svh !important;
-  overflow: hidden !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   box-sizing: border-box !important;
 }
 
@@ -2838,7 +2842,7 @@ button:focus-visible {
   width: min(600px, 42vw) !important;
   max-width: min(600px, 42vw) !important;
   flex: 0 0 min(600px, 42vw) !important;
-  max-height: calc(100svh - 16px) !important;
+  max-height: none !important;
   padding: 8px clamp(18px, 2vw, 28px) !important;
   margin: 0 !important;
   overflow: visible !important;
@@ -2850,7 +2854,7 @@ button:focus-visible {
 .travel-auth-verify .travel-auth-card,
 .cp-auth-card {
   width: min(470px, calc(100vw - 28px)) !important;
-  max-height: calc(100svh - 18px) !important;
+  max-height: none !important;
   padding: 14px clamp(22px, 2.4vw, 30px) !important;
   overflow: visible !important;
   box-sizing: border-box !important;

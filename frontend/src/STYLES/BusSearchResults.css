@@ -148,6 +148,10 @@
 }
 
 .bus-discover-searchbutton {
+<<<<<<< HEAD
+=======
+  align-self: flex-end;
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
   border-radius: 32px !important;
   padding: 0 20px !important;
   height: 44px !important;

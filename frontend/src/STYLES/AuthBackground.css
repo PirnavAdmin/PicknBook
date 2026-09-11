@@ -6,8 +6,10 @@
 /* Lock viewport — zero scrollbars */
 html.auth-active,
 html.auth-active body {
-  overflow: hidden !important;
-  height: 100vh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  min-height: 100% !important;
+  height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -96,8 +98,11 @@ html.auth-active body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh !important;
-  width: 100vw !important;
-  overflow: hidden !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
   padding: 16px;
 }

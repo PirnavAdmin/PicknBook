@@ -1793,7 +1793,7 @@ function createMultiCityLeg(from, to, offsetDays) {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     from,
     to,
-    departureDate: "",
+    departureDate: getDateInputValue(offsetDays || 0),
   };
 }
 
@@ -2460,12 +2460,16 @@ export default function HomePage() {
     getInitialAiChatMessages,
   );
 
+  const state = location.state || {};
+
   const [flightTripType, setFlightTripType] = useState("oneway");
   const [flightFrom, setFlightFrom] = useState("");
   const [flightTo, setFlightTo] = useState("");
   const [flightFromError, setFlightFromError] = useState("");
   const [flightToError, setFlightToError] = useState("");
-  const [flightDepartureDate, setFlightDepartureDate] = useState("");
+  const [flightDepartureDate, setFlightDepartureDate] = useState(
+    () => state.flightDepartureDate || state.departureDate || getDateInputValue(0)
+  );
   const [flightReturnDate, setFlightReturnDate] = useState("");
 
   const [adults, setAdults] = useState(0);
@@ -2487,11 +2491,16 @@ export default function HomePage() {
   const [busTo, setBusTo] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
-  const [busDepartureDate, setBusDepartureDate] = useState("");
+  const [busDepartureDate, setBusDepartureDate] = useState(
+    () => state.busDepartureDate || state.departureDate || getDateInputValue(0)
+  );
   const [busReturnDate, setBusReturnDate] = useState("");
 
+<<<<<<< HEAD
   const state = location.state || {};
 
+=======
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
   const [featuredOffers, setFeaturedOffers] = useState(DEFAULT_BUS_FEATURED_OFFERS);
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
   const [featuredOffersError, setFeaturedOffersError] = useState("");
@@ -6256,7 +6265,13 @@ export default function HomePage() {
           }
 
           /* Red Search Button */
+<<<<<<< HEAD
           .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
+=======
+          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn,
+          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn,
+          .search-panel .flight-search-bar-row .search-btn {
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
             flex: 0 0 auto !important;
             width: auto !important;
             min-width: 100px !important;
@@ -6276,10 +6291,15 @@ export default function HomePage() {
             box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
             transition: all 0.2s ease !important;
             margin-left: 8px !important;
+            margin-top: 0 !important;
+            padding: 0 16px !important;
           }
 
-
-          .homepage-flights .search-panel .search-btn.flight-grid-search-btn:hover {
+          .search-panel .flight-search-bar-row .search-btn:hover,
+          .homepage-flights .search-panel .search-btn.flight-grid-search-btn:hover,
+          .homepage-buses .search-panel .search-btn.flight-grid-search-btn:hover,
+          .homepage-hotels .search-panel .search-btn.flight-grid-search-btn:hover,
+          .homepage-hotels .search-panel .search-btn.hotel-search-submit-btn:hover {
             background: #b8141b !important;
             transform: translateY(-1px) !important;
             box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
@@ -6493,6 +6513,7 @@ export default function HomePage() {
                             <input
                               id={`leg-dep-date-${leg.id}`}
                               type="date"
+                              min={getDateInputValue(0)}
                               value={leg.departureDate}
                               onChange={(event) =>
                                 updateMultiCityLeg(
@@ -6597,6 +6618,7 @@ export default function HomePage() {
                         <input
                           id="flight-dep-date"
                           type="date"
+                          min={getDateInputValue(0)}
                           value={flightDepartureDate}
                           onChange={(event) => setFlightDepartureDate(event.target.value)}
                           style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
@@ -6621,6 +6643,7 @@ export default function HomePage() {
                             <input
                               id="flight-ret-date"
                               type="date"
+                              min={flightDepartureDate || getDateInputValue(0)}
                               value={flightReturnDate}
                               onChange={(event) => setFlightReturnDate(event.target.value)}
                               style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
@@ -6708,6 +6731,7 @@ export default function HomePage() {
                       <input
                         id="bus-dep-date"
                         type="date"
+                        min={getDateInputValue(0)}
                         value={busDepartureDate}
                         onChange={(event) => setBusDepartureDate(event.target.value)}
                         style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
@@ -6731,6 +6755,7 @@ export default function HomePage() {
                           <input
                             id="bus-ret-date"
                             type="date"
+                            min={busDepartureDate || getDateInputValue(0)}
                             value={busReturnDate}
                             onChange={(event) => setBusReturnDate(event.target.value)}
                             style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}

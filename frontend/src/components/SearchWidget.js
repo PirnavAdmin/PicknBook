@@ -21,7 +21,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { toDisplayDate } from "../utils/apiDateFormat";
+import { toDisplayDate, getDefaultDateString } from "../utils/apiDateFormat";
 import "../STYLES/HomePage.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ function createMultiCityLeg(from = "", to = "", offsetDays = 0) {
     id: Date.now() + Math.random(),
     from,
     to,
-    departureDate: offsetDays > 0 ? d.toISOString().split("T")[0] : "",
+    departureDate: d.toISOString().split("T")[0],
   };
 }
 
@@ -258,7 +258,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   const [flightTo, setFlightTo] = useState("");
   const [flightFromError, setFlightFromError] = useState("");
   const [flightToError, setFlightToError] = useState("");
-  const [flightDepartureDate, setFlightDepartureDate] = useState("");
+  const [flightDepartureDate, setFlightDepartureDate] = useState(() => getDefaultDateString(0));
   const [flightReturnDate, setFlightReturnDate] = useState("");
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
@@ -279,15 +279,15 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   const [busTo, setBusTo] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
-  const [busDepartureDate, setBusDepartureDate] = useState("");
+  const [busDepartureDate, setBusDepartureDate] = useState(() => getDefaultDateString(0));
   const [busReturnDate, setBusReturnDate] = useState("");
 
   // ── Hotel state ──
   const [hotelDestination, setHotelDestination] = useState("");
   const [hotelCityId, setHotelCityId] = useState("");
   const [hotelDestinationError, setHotelDestinationError] = useState("");
-  const [hotelCheckInDate, setHotelCheckInDate] = useState("");
-  const [hotelCheckOutDate, setHotelCheckOutDate] = useState("");
+  const [hotelCheckInDate, setHotelCheckInDate] = useState(() => getDefaultDateString(0));
+  const [hotelCheckOutDate, setHotelCheckOutDate] = useState(() => getDefaultDateString(1));
   const [hotelRooms, setHotelRooms] = useState(1);
   const [hotelAdults, setHotelAdults] = useState(1);
   const [hotelChildren, setHotelChildren] = useState(0);
@@ -643,7 +643,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                       <CalendarDays size={18} />
                       <input type="text" readOnly value={toDisplayDate(flightDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-flight-dep").showPicker?.()} />
                     </div>
-                    <input id="sw-flight-dep" type="date" value={flightDepartureDate} onChange={(e) => setFlightDepartureDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                    <input id="sw-flight-dep" type="date" min={getDefaultDateString(0)} value={flightDepartureDate} onChange={(e) => setFlightDepartureDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
                   </div>
                   {isFlightTwoWay && (
                     <div className="field field-with-icon return-field" style={{ position: "relative" }}>
@@ -652,7 +652,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                         <CalendarDays size={18} />
                         <input type="text" readOnly value={toDisplayDate(flightReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-flight-ret").showPicker?.()} />
                       </div>
-                      <input id="sw-flight-ret" type="date" value={flightReturnDate} onChange={(e) => setFlightReturnDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                      <input id="sw-flight-ret" type="date" min={flightDepartureDate || getDefaultDateString(0)} value={flightReturnDate} onChange={(e) => setFlightReturnDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
                     </div>
                   )}
                   {travellerField}
@@ -677,7 +677,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(busDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-bus-dep").showPicker?.()} />
                   </div>
-                  <input id="sw-bus-dep" type="date" value={busDepartureDate} onChange={(e) => setBusDepartureDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                  <input id="sw-bus-dep" type="date" min={getDefaultDateString(0)} value={busDepartureDate} onChange={(e) => setBusDepartureDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
                 </div>
                 {isBusTwoWay && (
                   <div className="field field-with-icon return-field" style={{ position: "relative" }}>
@@ -686,7 +686,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                       <CalendarDays size={18} />
                       <input type="text" readOnly value={toDisplayDate(busReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-bus-ret").showPicker?.()} />
                     </div>
-                    <input id="sw-bus-ret" type="date" value={busReturnDate} onChange={(e) => setBusReturnDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                    <input id="sw-bus-ret" type="date" min={busDepartureDate || getDefaultDateString(0)} value={busReturnDate} onChange={(e) => setBusReturnDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
                   </div>
                 )}
               </div>
@@ -704,7 +704,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(hotelCheckInDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-hotel-ci").showPicker?.()} />
                   </div>
-                  <input id="sw-hotel-ci" type="date" value={hotelCheckInDate} onChange={(e) => setHotelCheckInDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                  <input id="sw-hotel-ci" type="date" min={getDefaultDateString(0)} value={hotelCheckInDate} onChange={(e) => setHotelCheckInDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
                 </div>
                 <div className="field field-with-icon checkout-field" style={{ position: "relative" }}>
                   <label>Check-out</label>
@@ -712,7 +712,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(hotelCheckOutDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-hotel-co").showPicker?.()} />
                   </div>
-                  <input id="sw-hotel-co" type="date" value={hotelCheckOutDate} onChange={(e) => setHotelCheckOutDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                  <input id="sw-hotel-co" type="date" min={hotelCheckInDate || getDefaultDateString(0)} value={hotelCheckOutDate} onChange={(e) => setHotelCheckOutDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
                 </div>
                 {hotelGuestField}
               </div>

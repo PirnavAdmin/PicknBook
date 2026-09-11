@@ -10,6 +10,10 @@ using PickNBook.Api.Services;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+<<<<<<< HEAD
+=======
+using PickNBook.Api.Services.Implementations;
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
 
 namespace PickNBook.Api.Controllers
 {
@@ -250,6 +254,7 @@ namespace PickNBook.Api.Controllers
                             return BadRequest(new { message = "Hotel price could not be verified. Please block the room again." });
                         }
                         
+<<<<<<< HEAD
                         if (!string.IsNullOrWhiteSpace(request.CouponCode))
                         {
                             var normalizedCoupon = request.CouponCode.Trim().ToUpperInvariant();
@@ -272,10 +277,61 @@ namespace PickNBook.Api.Controllers
                                 }
 
                                 if (isCouponValid && coupon.IsFirstTimeUserOnly)
+=======
+                        var couponToApply = !string.IsNullOrWhiteSpace(request.CouponCode)
+                            ? request.CouponCode.Trim()
+                            : payload.CouponCode?.Trim();
+
+                        if (!string.IsNullOrWhiteSpace(couponToApply))
+                        {
+                            var normalizedCoupon = couponToApply.ToUpperInvariant();
+                            var coupon = await _dbContext.HotelCoupons
+                                .Include(c => c.Conditions)
+                                .FirstOrDefaultAsync(c => c.CouponCode == normalizedCoupon && c.Status == "Active");
+
+                            if (coupon == null)
+                            {
+                                return BadRequest(new { message = $"Hotel coupon '{couponToApply}' is invalid or inactive." });
+                            }
+
+                            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                            if (today < coupon.StartDate || today > coupon.ExpiryDate)
+                            {
+                                return BadRequest(new { message = $"Hotel coupon '{normalizedCoupon}' is not valid today." });
+                            }
+
+                            if (blockedHotel.GrandTotal < coupon.MinBookingAmount)
+                            {
+                                return BadRequest(new { message = $"Minimum booking amount of INR {coupon.MinBookingAmount} is required for this coupon." });
+                            }
+
+                            if (coupon.UseLimit > 0 && coupon.UsedCount >= coupon.UseLimit)
+                            {
+                                return BadRequest(new { message = $"Usage limit reached for coupon '{normalizedCoupon}'." });
+                            }
+
+                            if (!string.IsNullOrEmpty(userIdStr))
+                            {
+                                var userObj = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == userIdStr);
+                                if (userObj != null && userObj.Role == AuthRoles.Agent)
+                                {
+                                    return BadRequest(new { message = "Coupons are not valid for B2B Agents." });
+                                }
+
+                                var userUsageCount = await _dbContext.HotelCouponUsages
+                                    .CountAsync(u => u.CouponCode == normalizedCoupon && u.UserId == userIdStr && u.BookingStatus != "Cancelled");
+                                if (userUsageCount >= coupon.MaxUsagePerUser)
+                                {
+                                    return BadRequest(new { message = $"You have exceeded the maximum usage limit of {coupon.MaxUsagePerUser} times for coupon '{normalizedCoupon}'." });
+                                }
+
+                                if (coupon.IsFirstTimeUserOnly)
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
                                 {
                                     var hasPriorBookings = await _dbContext.HotelReservations
                                         .AnyAsync(r => r.UserId == userIdStr && r.Status != "Cancelled" && r.Status != "Failed" && !r.Status.StartsWith("Failed_"));
                                     if (hasPriorBookings)
+<<<<<<< HEAD
                                         isCouponValid = false;
                                 }
                             }
@@ -301,6 +357,55 @@ namespace PickNBook.Api.Controllers
 
                                 discountAmount += couponDiscount;
                                 calculatedFinalAmount -= couponDiscount;
+=======
+                                    {
+                                        return BadRequest(new { message = $"Coupon '{normalizedCoupon}' is only valid for your first hotel booking." });
+                                    }
+                                }
+                            }
+
+                            DateTime? cinDate = null;
+                            if (!string.IsNullOrWhiteSpace(payload.CheckInDate) && DateTime.TryParse(payload.CheckInDate, out var parsedCin))
+                            {
+                                cinDate = parsedCin;
+                            }
+
+                            if (cinDate.HasValue && coupon.Conditions != null && coupon.Conditions.Any())
+                            {
+                                var dayCond = coupon.Conditions.FirstOrDefault(c => string.Equals(c.ConditionType, "DayOfWeek", StringComparison.OrdinalIgnoreCase));
+                                if (dayCond != null && !BusPromotionEngineService.IsDayOfWeekMatching(cinDate.Value.DayOfWeek, dayCond.ConditionOperator, dayCond.Value1))
+                                {
+                                    return BadRequest(new { message = $"Hotel coupon '{normalizedCoupon}' is not valid for check-in on {cinDate.Value.DayOfWeek}." });
+                                }
+                            }
+
+                            decimal couponDiscount = 0m;
+                            decimal totalBeforeDiscount = blockedHotel.OfferedPrice + blockedHotel.Tax + blockedHotel.MarkupAmount;
+
+                            if (string.Equals(coupon.CouponType, "Percentage", StringComparison.OrdinalIgnoreCase))
+                            {
+                                couponDiscount = totalBeforeDiscount * (coupon.Value / 100m);
+                                if (coupon.MaxDiscountAmount > 0 && couponDiscount > coupon.MaxDiscountAmount)
+                                    couponDiscount = coupon.MaxDiscountAmount;
+                            }
+                            else if (string.Equals(coupon.CouponType, "Flat", StringComparison.OrdinalIgnoreCase) ||
+                                     string.Equals(coupon.CouponType, "Fixed", StringComparison.OrdinalIgnoreCase))
+                            {
+                                couponDiscount = coupon.Value;
+                            }
+
+                            couponDiscount = Math.Min(couponDiscount, totalBeforeDiscount);
+                            couponDiscount = decimal.Round(couponDiscount, 2, MidpointRounding.AwayFromZero);
+
+                            discountAmount += couponDiscount;
+                            calculatedFinalAmount -= couponDiscount;
+                            actualCouponCode = normalizedCoupon;
+
+                            if (payload.CouponCode != actualCouponCode)
+                            {
+                                payload.CouponCode = actualCouponCode;
+                                request.BookingPayloadJson = JsonSerializer.Serialize(payload);
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
                             }
                         }
                     }
@@ -308,6 +413,27 @@ namespace PickNBook.Api.Controllers
                     {
                         using var doc = JsonDocument.Parse(request.BookingPayloadJson);
                         var root = doc.RootElement;
+<<<<<<< HEAD
+=======
+
+                        bool TryGetProp(JsonElement elem, string name, out JsonElement val)
+                        {
+                            if (elem.TryGetProperty(name, out val)) return true;
+                            if (elem.ValueKind == JsonValueKind.Object)
+                            {
+                                foreach (var p in elem.EnumerateObject())
+                                {
+                                    if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        val = p.Value;
+                                        return true;
+                                    }
+                                }
+                            }
+                            val = default;
+                            return false;
+                        }
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
                         
                         string airline = "";
                         string fromCity = "";
@@ -319,6 +445,7 @@ namespace PickNBook.Api.Controllers
                         DateTime depTime = DateTime.UtcNow.AddDays(1);
                         TripType tripType = TripType.OneWay;
 
+<<<<<<< HEAD
                         if (root.TryGetProperty("Passengers", out var paxArray) && paxArray.ValueKind == JsonValueKind.Array)
                         {
                             adults = paxArray.EnumerateArray().Count(p => p.TryGetProperty("PaxType", out var pt) && pt.GetInt32() == 1);
@@ -338,6 +465,44 @@ namespace PickNBook.Api.Controllers
                             if (fareNode.TryGetProperty("TotalMealCharges", out var mealNode) && decimal.TryParse(mealNode.ToString(), out var parsedMeal)) ssrAmount += parsedMeal;
                             if (fareNode.TryGetProperty("TotalSeatCharges", out var seatNode) && decimal.TryParse(seatNode.ToString(), out var parsedSeat)) ssrAmount += parsedSeat;
                             if (fareNode.TryGetProperty("TotalSpecialServiceCharges", out var specialNode) && decimal.TryParse(specialNode.ToString(), out var parsedSpecial)) ssrAmount += parsedSpecial;
+=======
+                        if (TryGetProp(root, "Passengers", out var paxArray) && paxArray.ValueKind == JsonValueKind.Array)
+                        {
+                            adults = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 1);
+                            children = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 2);
+                            infants = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 3);
+                        }
+
+                        if (TryGetProp(root, "DepartureDate", out var depDateProp) && DateTime.TryParse(depDateProp.GetString(), out var parsedDep))
+                        {
+                            depTime = parsedDep;
+                        }
+                        else if (TryGetProp(root, "Segments", out var segArray) && segArray.ValueKind == JsonValueKind.Array && segArray.GetArrayLength() > 0)
+                        {
+                            var firstSeg = segArray[0];
+                            if (TryGetProp(firstSeg, "DepartureTime", out var segDep) && DateTime.TryParse(segDep.GetString(), out var parsedSegDep))
+                            {
+                                depTime = parsedSegDep;
+                            }
+                            else if (TryGetProp(firstSeg, "Origin", out var segOrigNode) && TryGetProp(segOrigNode, "DepTime", out var origDep) && DateTime.TryParse(origDep.GetString(), out var parsedOrigDep))
+                            {
+                                depTime = parsedOrigDep;
+                            }
+                        }
+
+                        if (TryGetProp(root, "Fare", out var fareNode))
+                        {
+                            providerAmount = TryGetProp(fareNode, "OfferedFare", out var offFare) ? offFare.GetDecimal() : 0m;
+                            decimal baseFare = TryGetProp(fareNode, "BaseFare", out var bFare) ? bFare.GetDecimal() : 0m;
+                            decimal tax = TryGetProp(fareNode, "Tax", out var tFare) ? tFare.GetDecimal() : 0m;
+
+                            if (providerAmount == 0) providerAmount = baseFare + tax;
+
+                            if (TryGetProp(fareNode, "TotalBaggageCharges", out var bagNode) && decimal.TryParse(bagNode.ToString(), out var parsedBag)) ssrAmount += parsedBag;
+                            if (TryGetProp(fareNode, "TotalMealCharges", out var mealNode) && decimal.TryParse(mealNode.ToString(), out var parsedMeal)) ssrAmount += parsedMeal;
+                            if (TryGetProp(fareNode, "TotalSeatCharges", out var seatNode) && decimal.TryParse(seatNode.ToString(), out var parsedSeat)) ssrAmount += parsedSeat;
+                            if (TryGetProp(fareNode, "TotalSpecialServiceCharges", out var specialNode) && decimal.TryParse(specialNode.ToString(), out var parsedSpecial)) ssrAmount += parsedSpecial;
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
 
                             var pricingBreakdown = await _flightPricingService.CalculatePricingAsync(
                                 supplierBaseFare: baseFare,
@@ -355,9 +520,24 @@ namespace PickNBook.Api.Controllers
                                 selectedPromotionId: null
                             );
 
+<<<<<<< HEAD
                             markupAmount = pricingBreakdown.MarkupAmount;
                             discountAmount = pricingBreakdown.PromotionDiscount + pricingBreakdown.CouponDiscount;
                             calculatedFinalAmount = pricingBreakdown.FinalAmount + ssrAmount;
+=======
+                            if (!string.IsNullOrWhiteSpace(request.CouponCode) && pricingBreakdown.CouponDiscount == 0)
+                            {
+                                return BadRequest(new { message = "The applied flight coupon is invalid, expired, or does not meet DayOfWeek conditions." });
+                            }
+
+                            markupAmount = pricingBreakdown.MarkupAmount;
+                            discountAmount = pricingBreakdown.PromotionDiscount + pricingBreakdown.CouponDiscount;
+                            calculatedFinalAmount = pricingBreakdown.FinalAmount + ssrAmount;
+                            if (!string.IsNullOrWhiteSpace(pricingBreakdown.CouponCode))
+                            {
+                                actualCouponCode = pricingBreakdown.CouponCode;
+                            }
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
                         }
                         else
                         {

@@ -304,6 +304,7 @@ namespace PickNBook.Api.Services
                 var trimmedVal1 = condition.Value1.Trim();
                 var op = string.IsNullOrWhiteSpace(condition.ConditionOperator) ? "Equals" : condition.ConditionOperator.Trim();
 
+<<<<<<< HEAD
                 switch (condition.ConditionType)
                 {
                     case "OperatorName":
@@ -547,10 +548,54 @@ namespace PickNBook.Api.Services
 
                     default:
                         return false; // Unknown/unsupported condition type must NEVER silently pass
+=======
+                // Only DayOfWeek condition is evaluated
+                if (string.Equals(condition.ConditionType, "DayOfWeek", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (context.DayOfWeek == null)
+                    {
+                        return false;
+                    }
+
+                    if (!IsDayOfWeekMatching(context.DayOfWeek.Value, condition.ConditionOperator, condition.Value1))
+                    {
+                        return false;
+                    }
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
                 }
             }
 
             return true;
         }
+<<<<<<< HEAD
+=======
+
+        public static bool IsDayOfWeekMatching(DayOfWeek dayOfWeek, string? op, string? rawValue)
+        {
+            if (string.IsNullOrWhiteSpace(rawValue) || string.Equals(rawValue.Trim(), "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var currentDay = dayOfWeek.ToString();
+            var allowedDays = rawValue.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(d => d.Trim())
+                                      .ToList();
+
+            var normalizedOp = string.IsNullOrWhiteSpace(op) ? "Equals" : op.Trim();
+            switch (normalizedOp)
+            {
+                case "Equals":
+                case "=":
+                case "==":
+                    return allowedDays.Any(d => string.Equals(currentDay, d, StringComparison.OrdinalIgnoreCase));
+                case "NotEquals":
+                case "!=":
+                    return !allowedDays.Any(d => string.Equals(currentDay, d, StringComparison.OrdinalIgnoreCase));
+                default:
+                    return false;
+            }
+        }
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
     }
 }

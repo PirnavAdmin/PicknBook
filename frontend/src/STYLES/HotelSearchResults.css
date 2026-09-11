@@ -519,6 +519,37 @@
   box-shadow: 0 12px 40px rgba(220, 30, 38, 0.12) !important;
 }
 
+.hotel-result-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hotel-meal-badge,
+.hotel-room-category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.hotel-meal-badge {
+  background: rgba(220, 30, 38, 0.1);
+  color: #b8141b;
+  border: 1px solid rgba(220, 30, 38, 0.2);
+}
+
+.hotel-room-category-badge {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .hotel-stay-card--skeleton {
   pointer-events: none;
 }
@@ -1533,6 +1564,7 @@
 
 /* Glass search bar overrides - translucent background and white text */
 .hotel-discover-searchbar {
+<<<<<<< HEAD
   background: rgba(255, 255, 255, 0.18) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -1543,11 +1575,27 @@
 
 .hotel-discover-searchbar span {
   color: #cbd5e1 !important;
+=======
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 28px !important;
+}
+
+.hotel-discover-searchbar span {
+  color: #64748b !important;
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
 }
 
 .hotel-discover-searchbar strong,
 .hotel-discover-searchbar input {
+<<<<<<< HEAD
   color: #ffffff !important;
+=======
+  color: #0f172a !important;
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
   background: transparent !important;
 }
 
@@ -1556,7 +1604,13 @@
 }
 
 .hotel-discover-searchcell svg {
-  color: #ffffff !important;
+  color: #dc1e26 !important;
+  stroke: #dc1e26 !important;
+}
+
+.hotel-discover-searchcell svg {
+  color: #dc1e26 !important;
+  stroke: #dc1e26 !important;
 }
 
 .hotel-discover-searchcell svg {
@@ -1862,4 +1916,23 @@
   background: rgba(255, 255, 255, 0.98) !important;
   border-color: rgba(220, 30, 38, 0.85) !important;
   box-shadow: 0 20px 40px rgba(220, 30, 38, 0.15) !important;
+}
+
+.hotel-results-count-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.hotel-results-count {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hotel-results-count strong {
+  color: #0f172a;
+  font-weight: 800;
 }

@@ -306,15 +306,15 @@
 
 /* Available Seat */
 .seat-button.seat-available {
-  border-color: #cbd5e0;
+  border-color: #4299e1;
   color: #4a5568;
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .seat-button.seat-available:hover:not(:disabled) {
   border-color: #4299e1;
-  background: linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%);
+  background: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
 }
@@ -365,13 +365,13 @@
 .seat-button.seat-female {
   border-color: #ed64a6;
   color: #97113f;
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  background: #ffffff;
   box-shadow: 0 2px 6px rgba(237, 100, 166, 0.2);
 }
 
 .seat-button.seat-female:hover:not(:disabled) {
   border-color: #d53f8c;
-  background: linear-gradient(135deg, #f687b3 0%, #ed64a6 100%);
+  background: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(237, 100, 166, 0.3);
 }
@@ -442,8 +442,8 @@
 }
 
 .legend-seat.seat-available {
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-  border-color: #cbd5e0;
+  background: #ffffff;
+  border-color: #4299e1;
 }
 
 .legend-seat.seat-selected {
@@ -458,7 +458,7 @@
 }
 
 .legend-seat.seat-female {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  background: #ffffff;
   border-color: #ed64a6;
 }
 

@@ -1,7 +1,7 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
 }
 
 :root {
@@ -38,12 +38,18 @@ body {
   color: var(--theme-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #root {
+<<<<<<< HEAD
   overflow-y: auto;
   overflow-x: hidden;
+=======
+  min-height: 100vh;
+  overflow: visible;
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
 }
 
 code {
@@ -71,6 +77,69 @@ a:focus {
   outline: none !important;
   outline-offset: 0 !important;
   box-shadow: none !important;
+}
+
+/* Shared location suggestions used by home and results-page search fields. */
+.place-dropdown .pnb-place-option,
+.bus-place-dropdown .pnb-place-option {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.place-dropdown .pnb-place-option:hover,
+.bus-place-dropdown .pnb-place-option:hover {
+  background: #f8fafc;
+}
+
+.pnb-place-icon-wrap {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #dc1e26 !important;
+}
+
+.pnb-place-icon-wrap svg {
+  color: #dc1e26 !important;
+  stroke: currentColor;
+}
+
+.pnb-place-text {
+  min-width: 0;
+}
+
+.pnb-place-primary,
+.pnb-place-secondary {
+  display: block;
+  line-height: 1.2;
+}
+
+.pnb-place-primary,
+.pnb-place-city {
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pnb-place-secondary {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 
 /* App-wide atlas theme guards */

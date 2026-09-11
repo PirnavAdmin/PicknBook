@@ -465,6 +465,14 @@
     "Order": 0,
     "Parameters": [
       {
+<<<<<<< HEAD
+=======
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
         "Name": "category",
         "Type": "System.String",
         "IsRequired": false
@@ -500,6 +508,14 @@
         "Name": "couponId",
         "Type": "System.Int32",
         "IsRequired": true
+<<<<<<< HEAD
+=======
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
       }
     ],
     "ReturnTypes": []
@@ -521,6 +537,14 @@
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.CreateBusCouponConditionDto",
         "IsRequired": true
+<<<<<<< HEAD
+=======
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
       }
     ],
     "ReturnTypes": []
@@ -537,6 +561,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -558,6 +587,11 @@
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BusCouponRequestDto",
         "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -574,6 +608,58 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "UpdateCouponCondition",
+    "RelativePath": "api/admin/bus/coupons/conditions/{conditionId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conditionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.UpdateBusCouponConditionDto",
+        "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "DeleteCouponCondition",
+    "RelativePath": "api/admin/bus/coupons/conditions/{conditionId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conditionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -3576,6 +3662,22 @@
   {
     "ContainingType": "PickNBook.Api.Controllers.AuthController",
     "Method": "RequestAdminLoginOtp",
+    "RelativePath": "api/Auth/admin/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.AdminLoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AuthController",
+    "Method": "RequestAdminLoginOtp",
     "RelativePath": "api/Auth/admin/login/request-otp",
     "HttpMethod": "POST",
     "IsController": true,
@@ -5414,7 +5516,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "bookingType",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -5544,7 +5652,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "PickNBook.Api.Models.DTOs.SrdvBookingCallbackResponseDto",
+        "Type": "System.String",
         "MediaTypes": [
           "text/plain",
           "application/json",

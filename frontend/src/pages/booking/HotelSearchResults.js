@@ -4,17 +4,6 @@ import {
   BedDouble,
   Building2,
   CalendarRange,
-  Check,
-  Heart,
-  Loader2,
-  MapPin,
-  Search,
-  ShieldCheck,
-  SlidersHorizontal,
-  Filter,
-  Sparkles,
-  Star,
-  Users,
   Navigation,
   Map,
   Trees,
@@ -23,9 +12,12 @@ import {
   Building,
   Briefcase,
   Umbrella,
-  Coffee,
   Wifi,
   Car,
+  Star,
+  Filter,
+  Heart,
+  MapPin,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
@@ -42,7 +34,146 @@ const HOTEL_COLLECTIONS = [
   { id: "work-ready", label: "Work-ready" },
   { id: "value", label: "Best value" },
 ];
- 
+
+const PROPERTY_TYPE_FILTERS = [
+  { id: "hotels", label: "Hotels" },
+  { id: "resorts", label: "Resorts" },
+  { id: "villas", label: "Villas" },
+  { id: "apartments", label: "Apartments" },
+  { id: "boutique", label: "Boutique Hotels" },
+  { id: "serviced", label: "Serviced Apartments" },
+  { id: "vacation", label: "Vacation Homes" },
+  { id: "business", label: "Business Hotels" },
+  { id: "beach", label: "Beach Resorts" },
+];
+
+const PRICE_FILTERS = [
+  { id: "under-4k", label: "Under INR 4,000" },
+  { id: "4k-8k", label: "INR 4,000 - INR 8,000" },
+  { id: "8k-15k", label: "INR 8,000 - INR 15,000" },
+  { id: "over-15k", label: "Over INR 15,000" },
+];
+
+const RATING_FILTERS = [
+  { id: "5", label: "5 Stars (Excellent 4.8+)" },
+  { id: "4", label: "4 Stars (Very Good 4.5+)" },
+  { id: "3", label: "3 Stars (Good 4.0+)" },
+  { id: "2", label: "2 Stars (Fair 3.0+)" },
+  { id: "1", label: "1 Star (Budget <3.0)" },
+];
+
+const AMENITY_FILTERS = [
+  { id: "Breakfast|Dining", label: "Breakfast Included" },
+  { id: "Transfer|Airport|Shuttle", label: "Airport Transfer" },
+  { id: "Wi-Fi|Internet", label: "Free Wi-Fi" },
+  { id: "Air Conditioning|AC", label: "Air Conditioning" },
+  { id: "Early Check-In", label: "Early Check-In" },
+  { id: "Late Check-Out", label: "Late Check-Out" },
+  { id: "Parking", label: "Parking" },
+  { id: "Family-Friendly|Kid", label: "Family-Friendly" },
+];
+
+const PAYMENT_FILTERS = [
+  { id: "Free Cancellation", label: "Free Cancellation" },
+  { id: "Pay at Hotel", label: "Pay at Hotel" },
+  { id: "Pay Now", label: "Pay Now" },
+  { id: "Book Without Credit Card", label: "Book Without Credit Card" },
+];
+
+function normalizeText(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function getHotelRoomCategory(hotel) {
+  return String(
+    hotel?.roomCategory || hotel?.RoomCategory ||
+    hotel?.rooms?.[0]?.cateogry || hotel?.rooms?.[0]?.category ||
+    hotel?.cateogry || hotel?.category || ""
+  ).trim();
+}
+
+function hotelHasBreakfast(hotel) {
+  const promotion = String(hotel?.hotelPromotion || hotel?.HotelPromotion || hotel?.hotelPolicy || hotel?.HotelPolicy || "");
+  const roomCategory = getHotelRoomCategory(hotel);
+  const amenities = rawHotelAmenities(hotel);
+  const combined = [promotion, roomCategory, ...amenities].join(" ");
+  return /breakfast/i.test(combined);
+}
+
+function getHotelPropertyCategory(hotel) {
+  const explicit = String(
+    hotel?.hotelCategory || hotel?.HotelCategory || hotel?.propertyType || hotel?.propertyCategory || hotel?.hotelType || ""
+  ).trim();
+  if (explicit) return explicit;
+  const name = rawHotelName(hotel);
+  if (/resort/i.test(name)) return "Resort";
+  if (/villa/i.test(name)) return "Villa";
+  if (/apartment/i.test(name)) return "Apartment";
+  if (/boutique/i.test(name)) return "Boutique Hotel";
+  if (/serviced/i.test(name)) return "Serviced Apartment";
+  if (/homestay|vacation|guest house/i.test(name)) return "Vacation Home";
+  return "Hotel";
+}
+
+function rawHotelName(hotel) {
+  return hotel.hotelName || hotel.name || "";
+}
+
+function rawHotelPrice(hotel) {
+  const price = hotel.price ?? {};
+  return Number(
+    price.b2cDisplayFare ?? price.B2CDisplayFare ?? price.b2cFinalFare ??
+    price.B2CFinalFare ?? price.offeredPriceRoundedOff ?? price.OfferedPriceRoundedOff ??
+    price.offeredPrice ?? price.OfferedPrice ?? hotel.offeredFare ?? 0
+  );
+}
+
+function rawHotelRating(hotel) {
+  return Number(hotel.starRating ?? hotel.rating ?? 0) || 0;
+}
+
+function rawHotelAmenities(hotel) {
+  const facilities = hotel.facilities?.[0]?.facilitiesNames;
+  return Array.isArray(facilities) ? facilities : (Array.isArray(hotel.amenities) ? hotel.amenities : []);
+}
+
+function hotelMatchesPropertyType(hotel, type) {
+  const name = rawHotelName(hotel);
+  const category = normalizeText(getHotelPropertyCategory(hotel));
+  if (type === "hotels") return !/resort|villa|apartment|boutique|home|serviced|guest house|vacation/i.test(name) && !/resort|villa|apartment|boutique|home|serviced|guest house|vacation/i.test(category);
+  if (type === "resorts") return /resort/i.test(name) || /resort/i.test(category);
+  if (type === "villas") return /villa/i.test(name) || /villa/i.test(category);
+  if (type === "apartments") return /apartment/i.test(name) || /apartment/i.test(category);
+  if (type === "boutique") return /boutique/i.test(name) || /boutique/i.test(category);
+  if (type === "serviced") return /serviced/i.test(name) || /serviced/i.test(category);
+  if (type === "vacation") return /vacation|home|guest house/i.test(name) || /vacation|home|guest house/i.test(category);
+  if (type === "business") return /business/i.test(name) || /business/i.test(category);
+  if (type === "beach") return /beach/i.test(name) || /beach/i.test(category);
+  return false;
+}
+
+function hotelMatchesPrice(hotel, range) {
+  const price = rawHotelPrice(hotel);
+  if (range === "under-4k") return price < 4000;
+  if (range === "4k-8k") return price >= 4000 && price <= 8000;
+  if (range === "8k-15k") return price >= 8000 && price <= 15000;
+  return price > 15000;
+}
+
+function hotelMatchesRating(hotel, rating) {
+  const value = rawHotelRating(hotel);
+  if (rating === "5") return value >= 4.8;
+  if (rating === "4") return value >= 4.5 && value < 4.8;
+  if (rating === "3") return value >= 4 && value < 4.5;
+  if (rating === "2") return value >= 3 && value < 4;
+  return value < 3;
+}
+
+function hotelMatchesAmenity(hotel, amenity) {
+  const regex = new RegExp(amenity, "i");
+  return rawHotelAmenities(hotel).some((item) => regex.test(typeof item === "object" ? item.name || item.Name || "" : item));
+}
+
 function readValue(params, state, key, fallback = "") {
   const queryValue = params.get(key);
  
@@ -274,29 +405,93 @@ export default function HotelSearchResults() {
   };
 
   const getHotelLocality = (hotelRecord) => {
-    const addr = hotelRecord.address || "";
-    if (addr.includes("Falaknuma")) return "Falaknuma";
-    if (addr.includes("Hitech City")) return "Hitech City";
-    if (addr.includes("Madhapur")) return "Madhapur";
-    if (addr.includes("Banjara Hills")) return "Banjara Hills";
-    if (addr.includes("Shamshabad")) return "Shamshabad";
-    if (addr.includes("Panaji")) return "Panaji";
-    if (addr.includes("Candolim")) return "Candolim";
-    if (addr.includes("Majorda")) return "Majorda";
-    if (addr.includes("Vagator")) return "Vagator";
-    if (addr.includes("Baga Beach")) return "Baga Beach";
-    if (addr.includes("Chanakyapuri")) return "Chanakyapuri";
-    if (addr.includes("Lodhi Road")) return "Lodhi Road";
-    if (addr.includes("Mahipalpur")) return "Mahipalpur";
-    if (addr.includes("Connaught Place")) return "Connaught Place";
-    if (addr.includes("Mansingh Road")) return "Mansingh Road";
-    return hotelRecord.area || "City centre";
+    const localitySources = [
+      hotelRecord?.hotelLocation,
+      hotelRecord?.hotelAddress,
+      hotelRecord?.hotelDescription,
+      hotelRecord?.address,
+      hotelRecord?.area,
+      hotelRecord?.location,
+      hotelRecord?.name,
+      hotelRecord?.hotelName,
+      hotelRecord?.city
+    ].filter(Boolean);
+
+    const localityText = localitySources.join(" ");
+    const normalize = (value) => String(value || "").toLowerCase();
+
+    const matches = [
+      ["nanakramguda", "Financial District", "Nanakramguda"],
+      ["hitech city", "Hitech City", "Hitech City"],
+      ["gachibowli", "Gachibowli", "Gachibowli"],
+      ["madhapur", "Madhapur", "Madhapur"],
+      ["kondapur", "Kondapur", "Kondapur"],
+      ["kukatpally", "Kukatpally", "Kukatpally"],
+      ["secunderabad", "Secunderabad", "Secunderabad"],
+      ["banjara hills", "Banjara Hills", "Banjara Hills"],
+      ["shamshabad", "Shamshabad", "Shamshabad"],
+      ["nampally", "Nampally", "Nampally"],
+      ["abids", "Abids", "Abids"],
+      ["khairatabad", "Khairatabad", "Khairatabad"],
+      ["saifabad", "Saifabad", "Saifabad"],
+      ["begumpet", "Begumpet", "Begumpet"],
+      ["himayatnagar", "Himayatnagar", "Himayatnagar"],
+      ["charminar", "Charminar", "Charminar"],
+      ["miyapur", "Miyapur", "Miyapur"],
+      ["hafeezpet", "Hafeezpet", "Hafeezpet"],
+      ["kothaguda", "Kothaguda", "Kothaguda"],
+      ["kothapet", "Kothapet", "Kothapet"],
+      ["mehdipatnam", "Mehdipatnam", "Mehdipatnam"],
+      ["attapur", "Attapur", "Attapur"],
+      ["uppal", "Uppal", "Uppal"],
+      ["falaknuma", "Falaknuma", "Falaknuma"],
+      ["panaji", "Panaji", "Panaji"],
+      ["candolim", "Candolim", "Candolim"],
+      ["majorda", "Majorda", "Majorda"],
+      ["vagator", "Vagator", "Vagator"],
+      ["baga beach", "Baga Beach", "Baga Beach"],
+      ["chanakyapuri", "Chanakyapuri", "Chanakyapuri"],
+      ["lodhi road", "Lodhi Road", "Lodhi Road"],
+      ["mahipalpur", "Mahipalpur", "Mahipalpur"],
+      ["connaught place", "Connaught Place", "Connaught Place"],
+      ["mansingh road", "Mansingh Road", "Mansingh Road"]
+    ];
+
+    for (const [needle, fallback, output] of matches) {
+      if (normalize(localityText).includes(normalize(needle))) return output;
+      if (normalize(hotelRecord?.hotelDescription || "").includes(normalize(needle))) return output;
+      if (normalize(hotelRecord?.address || "").includes(normalize(needle))) return output;
+      if (normalize(hotelRecord?.name || "").includes(normalize(needle))) return output;
+      if (normalize(hotelRecord?.hotelName || "").includes(normalize(needle))) return output;
+      if (normalize(fallback).includes(normalize(needle))) return output;
+    }
+
+    return hotelRecord?.area || hotelRecord?.hotelLocation || hotelRecord?.hotelAddress || "City centre";
   };
 
   const availableLocalities = useMemo(() => {
     const list = apiHotels.map(h => getHotelLocality(h));
     return Array.from(new Set(list.filter(Boolean)));
   }, [apiHotels]);
+
+  const filterCounts = useMemo(() => {
+    const count = (matcher) => apiHotels.filter(matcher).length;
+    return {
+      propertyType: Object.fromEntries(PROPERTY_TYPE_FILTERS.map((item) => [item.id, count((hotel) => hotelMatchesPropertyType(hotel, item.id))])),
+      price: Object.fromEntries(PRICE_FILTERS.map((item) => [item.id, count((hotel) => hotelMatchesPrice(hotel, item.id))])),
+      rating: Object.fromEntries(RATING_FILTERS.map((item) => [item.id, count((hotel) => hotelMatchesRating(hotel, item.id))])),
+      amenities: Object.fromEntries(AMENITY_FILTERS.map((item) => [item.id, count((hotel) => hotelMatchesAmenity(hotel, item.id))])),
+      payment: Object.fromEntries(
+        PAYMENT_FILTERS.map((item) => [item.id, count((hotel) => {
+          const policy = String(hotel.hotelPolicy || "");
+          if (item.id === "Free Cancellation") return /free cancellation|refundable/i.test(policy) && !/non-refundable/i.test(policy);
+          if (item.id === "Pay at Hotel" || item.id === "Book Without Credit Card") return /guarantee|pay at hotel/i.test(policy);
+          return /prepayment|pay now/i.test(policy);
+        })])
+      ),
+      localities: Object.fromEntries(availableLocalities.map((locality) => [locality, count((hotel) => getHotelLocality(hotel) === locality)])),
+    };
+  }, [apiHotels, availableLocalities]);
  
   useEffect(() => {
     let isCurrent = true;
@@ -367,30 +562,47 @@ export default function HotelSearchResults() {
           cancellationPolicy: hotelRecord.hotelPolicy || "",
         };
         const mappedOffers = [searchOffer];
+<<<<<<< HEAD
+=======
+        const roomCategory = getHotelRoomCategory(hotelRecord);
+        const breakfastIncluded = hotelHasBreakfast(hotelRecord);
+        const propertyCategory = getHotelPropertyCategory(hotelRecord);
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
 
         return {
           id: hotelRecord.hotelCode || hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`,
           hotelId: hotelRecord.hotelCode || hotelRecord.hotelId,
           TraceId: hotelRecord.traceId || hotelRecord.TraceId,
           ResultIndex: hotelRecord.resultIndex || hotelRecord.ResultIndex,
-          SrdvType: hotelRecord.srdvType || hotelRecord.SrdvType || "Single",
+          SrdvType: hotelRecord.srdvType || hotelRecord.SrdvType || "MixAPI",
           SrdvIndex: hotelRecord.srdvIndex || hotelRecord.SrdvIndex,
           name: hotelName,
           city: hotelRecord.city || hotelRecord.cityCode || destination,
           area: getHotelLocality(hotelRecord),
-          address: hotelRecord.hotelAddress || hotelRecord.address || destination,
+          address: hotelRecord.hotelAddress || hotelRecord.address || hotelRecord.hotelLocation || destination,
           rating,
           reviewCount,
           tag:
             hotelRecord.tag ||
             (rating >= 4.5 ? "Top Rated" : rating >= 3.5 ? "Popular" : ""),
           price: basePrice,
+<<<<<<< HEAD
           // Only set oldPrice if the API returned a published price that is higher than offered price
           oldPrice: (publishedPrice > basePrice) ? publishedPrice : 0,
           amenities: hotelRecord.facilities && hotelRecord.facilities.length > 0 && hotelRecord.facilities[0].facilitiesNames
             ? hotelRecord.facilities[0].facilitiesNames 
             : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : []),
           note: searchOffer.cancellationPolicy,
+=======
+          oldPrice: (publishedPrice > basePrice) ? publishedPrice : 0,
+          amenities: hotelRecord.facilities && hotelRecord.facilities.length > 0 && hotelRecord.facilities[0].facilitiesNames
+            ? hotelRecord.facilities[0].facilitiesNames
+            : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : []),
+          note: searchOffer.cancellationPolicy,
+          roomCategory,
+          breakfastIncluded,
+          propertyCategory,
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
           offers: mappedOffers,
           image: apiImage || visuals.cardImage,
           thumbImage: apiImage || visuals.thumbImage,
@@ -415,7 +627,11 @@ export default function HotelSearchResults() {
           return false;
         }
 
+<<<<<<< HEAD
         if (collectionKey === "breakfast" && !hotelRecord.amenities.some((item) => /breakfast/i.test(typeof item === "object" && item !== null ? String(item.name || item.Name || "") : String(item || "")))) {
+=======
+        if (collectionKey === "breakfast" && !hotelRecord.breakfastIncluded) {
+>>>>>>> cf14845 (update on changes mentioned on 9th date)
           return false;
         }
 
@@ -460,15 +676,17 @@ export default function HotelSearchResults() {
         if (selectedPropertyType) {
           const matchProperty = (() => {
             const type = selectedPropertyType;
-            if (type === "hotels") return !/resort|villa|apartment|boutique|home/i.test(hotelRecord.name || "");
-            if (type === "resorts") return /resort/i.test(hotelRecord.name || "");
-            if (type === "villas") return /villa/i.test(hotelRecord.name || "");
-            if (type === "apartments") return /apartment/i.test(hotelRecord.name || "");
-            if (type === "boutique") return /boutique/i.test(hotelRecord.name || "");
-            if (type === "serviced") return /serviced/i.test(hotelRecord.name || "");
-            if (type === "vacation") return /vacation|home/i.test(hotelRecord.name || "");
-            if (type === "business") return /business/i.test(hotelRecord.name || "");
-            if (type === "beach") return /beach/i.test(hotelRecord.name || "");
+            const category = normalizeText(hotelRecord.propertyCategory || getHotelPropertyCategory(hotelRecord));
+            const name = normalizeText(hotelRecord.name || "");
+            if (type === "hotels") return !/resort|villa|apartment|boutique|home|serviced|guest house|vacation/i.test(name) && !/resort|villa|apartment|boutique|home|serviced|guest house|vacation/i.test(category);
+            if (type === "resorts") return /resort/i.test(name) || /resort/i.test(category);
+            if (type === "villas") return /villa/i.test(name) || /villa/i.test(category);
+            if (type === "apartments") return /apartment/i.test(name) || /apartment/i.test(category);
+            if (type === "boutique") return /boutique/i.test(name) || /boutique/i.test(category);
+            if (type === "serviced") return /serviced/i.test(name) || /serviced/i.test(category);
+            if (type === "vacation") return /vacation|home|guest house/i.test(name) || /vacation|home|guest house/i.test(category);
+            if (type === "business") return /business/i.test(name) || /business/i.test(category);
+            if (type === "beach") return /beach/i.test(name) || /beach/i.test(category);
             return false;
           })();
           if (!matchProperty) return false;
@@ -651,26 +869,13 @@ export default function HotelSearchResults() {
                   <div className="hotel-sidebar-filter-group">
                     <h4>Property Type</h4>
                     <div className="hotel-sidebar-checklist">
-                      {[
-                        { id: "hotels", label: "Hotels" },
-                        { id: "resorts", label: "Resorts" },
-                        { id: "villas", label: "Villas" },
-                        { id: "apartments", label: "Apartments" },
-                        { id: "boutique", label: "Boutique Hotels" },
-                        { id: "serviced", label: "Serviced Apartments" },
-                        { id: "vacation", label: "Vacation Homes" },
-                        { id: "business", label: "Business Hotels" },
-                        { id: "beach", label: "Beach Resorts" },
-                      ].map((type) => {
+                      {PROPERTY_TYPE_FILTERS.map((type) => {
                         const isChecked = selectedPropertyType === type.id;
+                        const resultCount = filterCounts.propertyType[type.id] || 0;
                         return (
                           <label key={type.id} className="hotel-sidebar-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleTogglePropertyType(type.id)}
-                            />
-                            <span>{type.label}</span>
+                            <input type="checkbox" checked={isChecked} disabled={resultCount === 0 && !isChecked} onChange={() => handleTogglePropertyType(type.id)} />
+                            <span>{type.label} ({resultCount})</span>
                           </label>
                         );
                       })}
@@ -680,21 +885,13 @@ export default function HotelSearchResults() {
                   <div className="hotel-sidebar-filter-group">
                     <h4>Price Range</h4>
                     <div className="hotel-sidebar-checklist">
-                      {[
-                        { id: "under-4k", label: "Under INR 4,000" },
-                        { id: "4k-8k", label: "INR 4,000 - INR 8,000" },
-                        { id: "8k-15k", label: "INR 8,000 - INR 15,000" },
-                        { id: "over-15k", label: "Over INR 15,000" },
-                      ].map((range) => {
+                      {PRICE_FILTERS.map((range) => {
                         const isChecked = selectedPriceRanges.includes(range.id);
+                        const resultCount = filterCounts.price[range.id] || 0;
                         return (
                           <label key={range.id} className="hotel-sidebar-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleTogglePriceRange(range.id)}
-                            />
-                            <span>{range.label}</span>
+                            <input type="checkbox" checked={isChecked} disabled={resultCount === 0 && !isChecked} onChange={() => handleTogglePriceRange(range.id)} />
+                            <span>{range.label} ({resultCount})</span>
                           </label>
                         );
                       })}
@@ -704,22 +901,13 @@ export default function HotelSearchResults() {
                   <div className="hotel-sidebar-filter-group">
                     <h4>Star Rating</h4>
                     <div className="hotel-sidebar-checklist">
-                      {[
-                        { id: "5", label: "5 Stars (Excellent 4.8+)" },
-                        { id: "4", label: "4 Stars (Very Good 4.5+)" },
-                        { id: "3", label: "3 Stars (Good 4.0+)" },
-                        { id: "2", label: "2 Stars (Fair 3.0+)" },
-                        { id: "1", label: "1 Star (Budget <3.0)" },
-                      ].map((rating) => {
+                      {RATING_FILTERS.map((rating) => {
                         const isChecked = selectedRatings.includes(rating.id);
+                        const resultCount = filterCounts.rating[rating.id] || 0;
                         return (
                           <label key={rating.id} className="hotel-sidebar-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleToggleRating(rating.id)}
-                            />
-                            <span>{rating.label}</span>
+                            <input type="checkbox" checked={isChecked} disabled={resultCount === 0 && !isChecked} onChange={() => handleToggleRating(rating.id)} />
+                            <span>{rating.label} ({resultCount})</span>
                           </label>
                         );
                       })}
@@ -740,14 +928,16 @@ export default function HotelSearchResults() {
                         { id: "Family-Friendly|Kid", label: "Family-Friendly" },
                       ].map((amenity) => {
                         const isChecked = selectedAmenities.includes(amenity.id);
+                        const resultCount = filterCounts.amenities[amenity.id] || 0;
                         return (
                           <label key={amenity.id} className="hotel-sidebar-checkbox-label">
                             <input
                               type="checkbox"
                               checked={isChecked}
+                              disabled={resultCount === 0 && !isChecked}
                               onChange={() => handleToggleAmenity(amenity.id)}
                             />
-                            <span>{amenity.label}</span>
+                            <span>{amenity.label} ({resultCount})</span>
                           </label>
                         );
                       })}
@@ -760,14 +950,16 @@ export default function HotelSearchResults() {
                       <div className="hotel-sidebar-checklist">
                         {availableLocalities.map((loc) => {
                           const isChecked = selectedLocalities.includes(loc);
+                          const resultCount = filterCounts.localities[loc] || 0;
                           return (
                             <label key={loc} className="hotel-sidebar-checkbox-label">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
+                                disabled={resultCount === 0 && !isChecked}
                                 onChange={() => handleToggleLocality(loc)}
                               />
-                              <span>{loc}</span>
+                              <span>{loc} ({resultCount})</span>
                             </label>
                           );
                         })}
@@ -778,16 +970,18 @@ export default function HotelSearchResults() {
                   <div className="hotel-sidebar-filter-group">
                     <h4>Payment Preferences</h4>
                     <div className="hotel-sidebar-checklist">
-                      {["Free Cancellation", "Pay at Hotel", "Pay Now", "Book Without Credit Card"].map((pref) => {
-                        const isChecked = selectedPaymentPrefs.includes(pref);
+                      {PAYMENT_FILTERS.map((pref) => {
+                        const isChecked = selectedPaymentPrefs.includes(pref.id);
+                        const resultCount = filterCounts.payment[pref.id] || 0;
                         return (
-                          <label key={pref} className="hotel-sidebar-checkbox-label">
+                          <label key={pref.id} className="hotel-sidebar-checkbox-label">
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => handleTogglePaymentPref(pref)}
+                              disabled={resultCount === 0 && !isChecked}
+                              onChange={() => handleTogglePaymentPref(pref.id)}
                             />
-                            <span>{pref}</span>
+                            <span>{pref.label} ({resultCount})</span>
                           </label>
                         );
                       })}
@@ -807,30 +1001,35 @@ export default function HotelSearchResults() {
                   </div>
                   
                   {!loading && (
-                    <button
-                      type="button"
-                      className={`hotel-map-toggle-btn${showMap ? " is-active" : ""}`}
-                      onClick={() => setShowMap(!showMap)}
-                      title={showMap ? "Switch to list view" : "Switch to split map view"}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background: "transparent",
-                        border: "1px solid rgba(0, 0, 0, 0.08)",
-                        borderRadius: "20px",
-                        padding: "6px 14px",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        cursor: "pointer",
-                        marginBottom: "4px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-                      }}
-                    >
-                      <Map size={14} color="#dc1e26" />
-                      <span style={{ color: "#0f172a" }}>MAP</span>
-                    </button>
+                    <div className="hotel-results-count-group">
+                      <span className="hotel-results-count">
+                        Showing <strong>{hotels.length}</strong> of <strong>{apiHotels.length}</strong> hotels
+                      </span>
+                      <button
+                        type="button"
+                        className={`hotel-map-toggle-btn${showMap ? " is-active" : ""}`}
+                        onClick={() => setShowMap(!showMap)}
+                        title={showMap ? "Switch to list view" : "Switch to split map view"}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          background: "transparent",
+                          border: "1px solid rgba(0, 0, 0, 0.08)",
+                          borderRadius: "20px",
+                          padding: "6px 14px",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          cursor: "pointer",
+                          marginBottom: "4px",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+                        }}
+                      >
+                        <Map size={14} color="#dc1e26" />
+                        <span style={{ color: "#0f172a" }}>MAP</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -1016,6 +1215,10 @@ export default function HotelSearchResults() {
                             <MapPin size={12} color="#dc1e26" />
                             <span>{hotel.area}, {hotel.city}</span>
                           </p>
+                          <div className="hotel-result-badges" style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                            {hotel.breakfastIncluded && <span className="hotel-meal-badge">Breakfast Included</span>}
+                            {hotel.roomCategory && <span className="hotel-room-category-badge">{hotel.roomCategory}</span>}
+                          </div>
                         </div>
                         <hr style={{ border: "0", borderTop: "1px solid rgba(0, 0, 0, 0.06)", margin: "8px 0" }} />
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

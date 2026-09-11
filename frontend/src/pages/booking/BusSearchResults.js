@@ -1585,6 +1585,37 @@ export default function BusSearchResults() {
     return [];
   }
 
+  function formatPointDetail(name, location) {
+    const n = String(name || "").trim();
+    const loc = String(location || "").trim();
+    if (!loc) return "";
+    if (!n) return loc;
+    if (loc.toLowerCase() === n.toLowerCase()) return "";
+
+    if (loc.toLowerCase().startsWith(n.toLowerCase())) {
+      const remainder = loc.slice(n.length).trim();
+      if (!remainder) return "";
+      if (remainder.startsWith("(") || remainder.startsWith("-") || remainder.startsWith(",")) {
+        return remainder.startsWith("(") ? remainder : remainder.replace(/^[,\s-]+/, "- ");
+      }
+      return `- ${remainder}`;
+    }
+
+    if (n.length > 4 && loc.toLowerCase().startsWith(n.slice(0, -1).toLowerCase())) {
+      const remainder = loc.slice(n.length - 1).trim();
+      if (remainder.startsWith("(")) {
+        return remainder;
+      }
+      return `- ${remainder.replace(/^[,\s-]+/, "")}`;
+    }
+
+    if (loc.startsWith("(") || loc.startsWith("-") || loc.startsWith(",")) {
+      return loc.startsWith("(") ? loc : loc.replace(/^[,\s-]+/, "- ");
+    }
+
+    return `- ${loc}`;
+  }
+
   const renderBusDetailsPanel = (bus) => {
     const tab = activeDetailTab || "boarding";
 
@@ -1646,13 +1677,22 @@ export default function BusSearchResults() {
                   </div>
                 ) : boardingList.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {boardingList.map((bp, idx) => (
-                      <div key={idx} style={{ borderLeft: "3px solid #3b82f6", paddingLeft: "12px" }}>
-                        <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{bp.time}</strong>
-                        <span style={{ display: "block", fontWeight: "700", fontSize: "13.5px", color: "#0f172a" }}>{bp.name}</span>
-                        {bp.location && <small style={{ color: "#64748b", fontSize: "12px" }}>{bp.location}</small>}
-                      </div>
-                    ))}
+                    {boardingList.map((bp, idx) => {
+                      const detail = formatPointDetail(bp.name, bp.location);
+                      return (
+                        <div key={idx} style={{ borderLeft: "3px solid #3b82f6", paddingLeft: "12px" }}>
+                          <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{bp.time}</strong>
+                          <span style={{ display: "block", fontSize: "13.5px", color: "#0f172a", lineHeight: "1.35" }}>
+                            <span style={{ fontWeight: "700" }}>{bp.name}</span>
+                            {detail && (
+                              <span style={{ color: "#64748b", fontSize: "12.5px", fontWeight: "400", marginLeft: "5px" }}>
+                                {detail}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ padding: "16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
@@ -1669,13 +1709,22 @@ export default function BusSearchResults() {
                   </div>
                 ) : droppingList.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {droppingList.map((dp, idx) => (
-                      <div key={idx} style={{ borderLeft: "3px solid #ef4444", paddingLeft: "12px" }}>
-                        <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{dp.time}</strong>
-                        <span style={{ display: "block", fontWeight: "700", fontSize: "13.5px", color: "#0f172a" }}>{dp.name}</span>
-                        {dp.location && <small style={{ color: "#64748b", fontSize: "12px" }}>{dp.location}</small>}
-                      </div>
-                    ))}
+                    {droppingList.map((dp, idx) => {
+                      const detail = formatPointDetail(dp.name, dp.location);
+                      return (
+                        <div key={idx} style={{ borderLeft: "3px solid #ef4444", paddingLeft: "12px" }}>
+                          <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{dp.time}</strong>
+                          <span style={{ display: "block", fontSize: "13.5px", color: "#0f172a", lineHeight: "1.35" }}>
+                            <span style={{ fontWeight: "700" }}>{dp.name}</span>
+                            {detail && (
+                              <span style={{ color: "#64748b", fontSize: "12.5px", fontWeight: "400", marginLeft: "5px" }}>
+                                {detail}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ padding: "16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>

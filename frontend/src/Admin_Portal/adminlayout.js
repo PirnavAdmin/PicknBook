@@ -19,7 +19,7 @@ function AdminLayout() {
   }, [location.pathname]);
 
   return (
-    <div className={`admin-shell ${theme}-theme`} style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
+    <div className={`admin-shell ${theme}-theme`}>
       
       {/* Animated Skyline Overlay over PNG Background */}
       <div className="admin-skyline-bg">
@@ -63,7 +63,7 @@ function AdminLayout() {
       />
 
       {/* Main content — always full width */}
-      <main className="main-area" style={{ height: 'calc(100vh - 62px)', overflowY: 'auto' }}>
+      <main className="main-area">
         {pageLoading && (
           <div className="admin-page-top-loader">
             <div className="admin-page-top-loader-bar" />

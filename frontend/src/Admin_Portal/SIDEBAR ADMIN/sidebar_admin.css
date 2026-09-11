@@ -4,10 +4,11 @@
 
 /* ── Container — fixed overlay, hidden by default ── */
 .ds-sidebar {
-  width: 252px;
-  min-width: 252px;
+  width: min(252px, calc(100vw - 24px));
+  min-width: min(252px, calc(100vw - 24px));
   max-width: 252px;
   height: 100vh;
+  height: 100dvh;
   background: #12151f;
   display: flex;
   flex-direction: column;
