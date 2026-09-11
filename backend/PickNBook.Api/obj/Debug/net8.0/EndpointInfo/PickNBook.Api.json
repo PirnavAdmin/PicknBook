@@ -895,6 +895,14 @@
         ],
         "parameters": [
           {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
+            }
+          },
+          {
             "name": "category",
             "in": "query",
             "schema": {
@@ -952,6 +960,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
+            }
           }
         ],
         "responses": {
@@ -972,6 +988,13 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1013,6 +1036,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
+            }
           }
         ],
         "responses": {
@@ -1036,6 +1067,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
+            }
           }
         ],
         "responses": {
@@ -1056,6 +1095,14 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
             }
           }
         ],
@@ -1099,6 +1146,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
+            }
           }
         ],
         "requestBody": {
@@ -1138,6 +1193,14 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "bus"
             }
           }
         ],
@@ -1337,6 +1400,36 @@
               "type": "integer",
               "format": "int32",
               "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard/revenue-overview": {
+      "get": {
+        "tags": [
+          "AdminDashboardRevenue"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "timeframe",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "monthly"
             }
           }
         ],
@@ -3611,6 +3704,29 @@
         }
       }
     },
+    "/api/admin/flight-search-logs": {
+      "get": {
+        "tags": [
+          "AdminFlightSearchLogs"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/admin/hotel/bookings": {
       "get": {
         "tags": [
@@ -4258,6 +4374,817 @@
         }
       }
     },
+    "/api/admin/payments/metrics": {
+      "get": {
+        "tags": [
+          "AdminPayments"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/payments": {
+      "get": {
+        "tags": [
+          "AdminPayments"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/payments/{id}": {
+      "get": {
+        "tags": [
+          "AdminPayments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/payments/{id}/refund": {
+      "post": {
+        "tags": [
+          "AdminPayments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRefundRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRefundRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRefundRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonials": {
+      "get": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "Comment",
+                  "Name",
+                  "Rating",
+                  "Status"
+                ],
+                "type": "object",
+                "properties": {
+                  "Name": {
+                    "type": "string"
+                  },
+                  "Role": {
+                    "type": "string"
+                  },
+                  "Location": {
+                    "type": "string"
+                  },
+                  "Rating": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Comment": {
+                    "type": "string"
+                  },
+                  "Status": {
+                    "type": "string"
+                  },
+                  "DisplayOrder": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Featured": {
+                    "type": "boolean"
+                  },
+                  "Image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "CategoryId": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              },
+              "encoding": {
+                "Name": {
+                  "style": "form"
+                },
+                "Role": {
+                  "style": "form"
+                },
+                "Location": {
+                  "style": "form"
+                },
+                "Rating": {
+                  "style": "form"
+                },
+                "Comment": {
+                  "style": "form"
+                },
+                "Status": {
+                  "style": "form"
+                },
+                "DisplayOrder": {
+                  "style": "form"
+                },
+                "Featured": {
+                  "style": "form"
+                },
+                "Image": {
+                  "style": "form"
+                },
+                "CategoryId": {
+                  "style": "form"
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "required": [
+                  "Comment",
+                  "Name",
+                  "Rating",
+                  "Status"
+                ],
+                "type": "object",
+                "properties": {
+                  "Name": {
+                    "type": "string"
+                  },
+                  "Role": {
+                    "type": "string"
+                  },
+                  "Location": {
+                    "type": "string"
+                  },
+                  "Rating": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Comment": {
+                    "type": "string"
+                  },
+                  "Status": {
+                    "type": "string"
+                  },
+                  "DisplayOrder": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Featured": {
+                    "type": "boolean"
+                  },
+                  "Image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "CategoryId": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              },
+              "encoding": {
+                "Name": {
+                  "style": "form"
+                },
+                "Role": {
+                  "style": "form"
+                },
+                "Location": {
+                  "style": "form"
+                },
+                "Rating": {
+                  "style": "form"
+                },
+                "Comment": {
+                  "style": "form"
+                },
+                "Status": {
+                  "style": "form"
+                },
+                "DisplayOrder": {
+                  "style": "form"
+                },
+                "Featured": {
+                  "style": "form"
+                },
+                "Image": {
+                  "style": "form"
+                },
+                "CategoryId": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonials/combined": {
+      "get": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonials/dashboard-stats": {
+      "get": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonial-categories": {
+      "post": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonial-categories/{id}": {
+      "put": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonials/{id}": {
+      "put": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "Comment",
+                  "Name",
+                  "Rating",
+                  "Status"
+                ],
+                "type": "object",
+                "properties": {
+                  "Name": {
+                    "type": "string"
+                  },
+                  "Role": {
+                    "type": "string"
+                  },
+                  "Location": {
+                    "type": "string"
+                  },
+                  "Rating": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Comment": {
+                    "type": "string"
+                  },
+                  "Status": {
+                    "type": "string"
+                  },
+                  "DisplayOrder": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Featured": {
+                    "type": "boolean"
+                  },
+                  "Image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "CategoryId": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              },
+              "encoding": {
+                "Name": {
+                  "style": "form"
+                },
+                "Role": {
+                  "style": "form"
+                },
+                "Location": {
+                  "style": "form"
+                },
+                "Rating": {
+                  "style": "form"
+                },
+                "Comment": {
+                  "style": "form"
+                },
+                "Status": {
+                  "style": "form"
+                },
+                "DisplayOrder": {
+                  "style": "form"
+                },
+                "Featured": {
+                  "style": "form"
+                },
+                "Image": {
+                  "style": "form"
+                },
+                "CategoryId": {
+                  "style": "form"
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "required": [
+                  "Comment",
+                  "Name",
+                  "Rating",
+                  "Status"
+                ],
+                "type": "object",
+                "properties": {
+                  "Name": {
+                    "type": "string"
+                  },
+                  "Role": {
+                    "type": "string"
+                  },
+                  "Location": {
+                    "type": "string"
+                  },
+                  "Rating": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Comment": {
+                    "type": "string"
+                  },
+                  "Status": {
+                    "type": "string"
+                  },
+                  "DisplayOrder": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Featured": {
+                    "type": "boolean"
+                  },
+                  "Image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "CategoryId": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              },
+              "encoding": {
+                "Name": {
+                  "style": "form"
+                },
+                "Role": {
+                  "style": "form"
+                },
+                "Location": {
+                  "style": "form"
+                },
+                "Rating": {
+                  "style": "form"
+                },
+                "Comment": {
+                  "style": "form"
+                },
+                "Status": {
+                  "style": "form"
+                },
+                "DisplayOrder": {
+                  "style": "form"
+                },
+                "Featured": {
+                  "style": "form"
+                },
+                "Image": {
+                  "style": "form"
+                },
+                "CategoryId": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonials/{id}/status": {
+      "patch": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTestimonialStatusDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTestimonialStatusDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTestimonialStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/testimonials/settings": {
+      "get": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminTestimonials"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialSettingsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialSettingsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/AgentPortal/profile/logo": {
       "put": {
         "tags": [
@@ -4805,6 +5732,37 @@
         }
       }
     },
+    "/api/Auth/admin/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Auth/admin/login/request-otp": {
       "post": {
         "tags": [
@@ -4864,7 +5822,8 @@
           "200": {
             "description": "Success"
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/Auth/admin/forgot-password": {
@@ -6425,8 +7384,34 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "refundPreference",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -7814,6 +8799,15 @@
         "tags": [
           "FeaturedOffers"
         ],
+        "parameters": [
+          {
+            "name": "bookingType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -9054,8 +10048,34 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "refundPreference",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicHotelCancelRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicHotelCancelRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicHotelCancelRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -9264,6 +10284,205 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/auth/passkey/register-options": {
+      "post": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterOptionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterOptionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterOptionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/auth/passkey/register-complete": {
+      "post": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterCompleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterCompleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/auth/passkey/login-options": {
+      "post": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginOptionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginOptionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginOptionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/auth/passkey/login-complete": {
+      "post": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginCompleteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginCompleteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/auth/passkey": {
+      "get": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/auth/passkey/{id}": {
+      "delete": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PasskeyAuth"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRenameRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRenameRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRenameRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -10378,6 +11597,233 @@
         }
       }
     },
+    "/api/v1/admin/security/user-rules": {
+      "get": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/user-rules/block": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserBlockRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserBlockRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserBlockRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/user-rules/url-block": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserUrlBlockRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserUrlBlockRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserUrlBlockRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/user-rules/{id}/unblock": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockUserRuleDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockUserRuleDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnblockUserRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/user-rules/{id}/extend": {
+      "put": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendUserRuleDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendUserRuleDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendUserRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/user-rules/{id}": {
+      "delete": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/srdv/Airlines": {
+      "get": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/flight/srdv/Search": {
       "post": {
         "tags": [
@@ -10812,6 +12258,99 @@
         }
       }
     },
+    "/api/flight/srdv/BookingDetails": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/BookingDetails": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/BookingDetails": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightBookingDetailsProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/flight/srdv/HoldGDS": {
       "post": {
         "tags": [
@@ -10905,7 +12444,131 @@
         }
       }
     },
+    "/v8/SendChangeRequest": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/SendChangeRequest": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightSendChangeProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/flight/srdv/GetCancelStatus": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/GetCancelStatus": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancelStatusProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/GetCancelStatus": {
       "post": {
         "tags": [
           "SrdvFlightApi"
@@ -11059,17 +12722,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/SrdvBookingCallbackResponseDto"
+                  "type": "string"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SrdvBookingCallbackResponseDto"
+                  "type": "string"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SrdvBookingCallbackResponseDto"
+                  "type": "string"
                 }
               }
             }
@@ -11111,21 +12774,7 @@
             "description": "Success"
           }
         }
-      }
-    },
-    "/api/testimonials/admin/list": {
-      "get": {
-        "tags": [
-          "Testimonials"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/testimonials/admin": {
+      },
       "post": {
         "tags": [
           "Testimonials"
@@ -11136,7 +12785,6 @@
               "schema": {
                 "required": [
                   "Comment",
-                  "Designation",
                   "Name",
                   "Rating",
                   "Status"
@@ -11146,7 +12794,10 @@
                   "Name": {
                     "type": "string"
                   },
-                  "Designation": {
+                  "Role": {
+                    "type": "string"
+                  },
+                  "Location": {
                     "type": "string"
                   },
                   "Rating": {
@@ -11160,6 +12811,13 @@
                   },
                   "Status": {
                     "type": "string"
+                  },
+                  "DisplayOrder": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Featured": {
+                    "type": "boolean"
                   },
                   "Image": {
                     "type": "string",
@@ -11175,7 +12833,10 @@
                 "Name": {
                   "style": "form"
                 },
-                "Designation": {
+                "Role": {
+                  "style": "form"
+                },
+                "Location": {
                   "style": "form"
                 },
                 "Rating": {
@@ -11187,6 +12848,12 @@
                 "Status": {
                   "style": "form"
                 },
+                "DisplayOrder": {
+                  "style": "form"
+                },
+                "Featured": {
+                  "style": "form"
+                },
                 "Image": {
                   "style": "form"
                 },
@@ -11194,39 +12861,11 @@
                   "style": "form"
                 }
               }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/testimonials/admin/{id}": {
-      "put": {
-        "tags": [
-          "Testimonials"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
+            },
+            "application/json": {
               "schema": {
                 "required": [
                   "Comment",
-                  "Designation",
                   "Name",
                   "Rating",
                   "Status"
@@ -11236,7 +12875,10 @@
                   "Name": {
                     "type": "string"
                   },
-                  "Designation": {
+                  "Role": {
+                    "type": "string"
+                  },
+                  "Location": {
                     "type": "string"
                   },
                   "Rating": {
@@ -11250,6 +12892,13 @@
                   },
                   "Status": {
                     "type": "string"
+                  },
+                  "DisplayOrder": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Featured": {
+                    "type": "boolean"
                   },
                   "Image": {
                     "type": "string",
@@ -11265,7 +12914,10 @@
                 "Name": {
                   "style": "form"
                 },
-                "Designation": {
+                "Role": {
+                  "style": "form"
+                },
+                "Location": {
                   "style": "form"
                 },
                 "Rating": {
@@ -11275,6 +12927,12 @@
                   "style": "form"
                 },
                 "Status": {
+                  "style": "form"
+                },
+                "DisplayOrder": {
+                  "style": "form"
+                },
+                "Featured": {
                   "style": "form"
                 },
                 "Image": {
@@ -11287,177 +12945,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Testimonials"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/testimonials/admin/{id}/toggle-status": {
-      "post": {
-        "tags": [
-          "Testimonials"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/testimonials/admin/categories": {
-      "get": {
-        "tags": [
-          "Testimonials"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Testimonials"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/testimonials/admin/categories/{id}": {
-      "put": {
-        "tags": [
-          "Testimonials"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTestimonialCategoryRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Testimonials"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/testimonials/admin/categories/{id}/toggle-status": {
-      "post": {
-        "tags": [
-          "Testimonials"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -11972,6 +13459,98 @@
           }
         }
       }
+    },
+    "/api/Wallet/summary": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Wallet/transactions": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Wallet/deposits": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Wallet"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitDepositRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitDepositRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitDepositRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -12045,6 +13624,57 @@
           },
           "reason": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddUserBlockRequestDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "blockType": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddUserUrlBlockRequestDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "blockType": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           }
         },
@@ -12253,6 +13883,21 @@
         },
         "additionalProperties": false
       },
+      "AdminRefundRequestDto": {
+        "type": "object",
+        "properties": {
+          "refundAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "refundReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AdminResetPasswordRequest": {
         "type": "object",
         "properties": {
@@ -12362,6 +14007,221 @@
           }
         },
         "additionalProperties": false
+      },
+      "AssertionResponse": {
+        "type": "object",
+        "properties": {
+          "authenticatorData": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "signature": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "clientDataJSON": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "userHandle": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AttestationResponse": {
+        "required": [
+          "transports"
+        ],
+        "type": "object",
+        "properties": {
+          "attestationObject": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "clientDataJSON": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "transports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuthenticatorTransport"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticationExtensionsClientOutputs": {
+        "type": "object",
+        "properties": {
+          "example.extension.bool": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "appid": {
+            "type": "boolean"
+          },
+          "exts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "uvm": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "nullable": true
+          },
+          "credProps": {
+            "$ref": "#/components/schemas/CredentialPropertiesOutput"
+          },
+          "prf": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsPRFOutputs"
+          },
+          "largeBlob": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsLargeBlobOutputs"
+          },
+          "credProtect": {
+            "$ref": "#/components/schemas/CredentialProtectionPolicy"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticationExtensionsLargeBlobOutputs": {
+        "type": "object",
+        "properties": {
+          "supported": {
+            "type": "boolean"
+          },
+          "blob": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "written": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticationExtensionsPRFOutputs": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "results": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsPRFValues"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticationExtensionsPRFValues": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "second": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticatorAssertionRawResponse": {
+        "required": [
+          "clientExtensionResults",
+          "id",
+          "rawId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "rawId": {
+            "type": "string",
+            "format": "byte"
+          },
+          "response": {
+            "$ref": "#/components/schemas/AssertionResponse"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PublicKeyCredentialType"
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsClientOutputs"
+          },
+          "clientExtensionResults": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsClientOutputs"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticatorAttestationRawResponse": {
+        "required": [
+          "clientExtensionResults",
+          "id",
+          "rawId",
+          "response",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "rawId": {
+            "type": "string",
+            "format": "byte"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PublicKeyCredentialType"
+          },
+          "response": {
+            "$ref": "#/components/schemas/AttestationResponse"
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsClientOutputs"
+          },
+          "clientExtensionResults": {
+            "$ref": "#/components/schemas/AuthenticationExtensionsClientOutputs"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticatorTransport": {
+        "enum": [
+          "usb",
+          "nfc",
+          "ble",
+          "smart-card",
+          "hybrid",
+          "internal"
+        ],
+        "type": "string"
       },
       "B2BCommissionRule": {
         "type": "object",
@@ -12767,6 +14627,20 @@
         },
         "additionalProperties": false
       },
+      "BusCancelRequestDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "refundPreference": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BusCancelV9RequestDto": {
         "type": "object",
         "properties": {
@@ -12832,6 +14706,10 @@
       "BusCouponRequestDto": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
           "promotionCategory": {
             "type": "string",
             "nullable": true
@@ -13778,6 +15656,27 @@
         },
         "additionalProperties": false
       },
+      "CredentialPropertiesOutput": {
+        "type": "object",
+        "properties": {
+          "rk": {
+            "type": "boolean"
+          },
+          "authenticatorDisplayName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CredentialProtectionPolicy": {
+        "enum": [
+          "userVerificationOptional",
+          "userVerificationOptionalWithCredentialIDList",
+          "userVerificationRequired"
+        ],
+        "type": "string"
+      },
       "EmailReminder": {
         "required": [
           "recipientEmail",
@@ -13985,6 +15884,20 @@
         },
         "additionalProperties": false
       },
+      "ExtendUserRuleDto": {
+        "type": "object",
+        "properties": {
+          "newDurationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "FeaturedOfferConditionRequestDto": {
         "type": "object",
         "properties": {
@@ -14056,13 +15969,17 @@
       "FlightBookingCallbackProxyRequestDto": {
         "type": "object",
         "properties": {
+          "ClientId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "TraceId": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           },
           "BookingId": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int32"
           },
           "PNR": {
             "type": "string",
@@ -14086,6 +16003,68 @@
               "$ref": "#/components/schemas/SrdvCallbackPassengerDto"
             },
             "nullable": true
+          },
+          "Module": {
+            "type": "string",
+            "nullable": true
+          },
+          "Event": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ReturnPNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "ReturnStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "RefundStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "CancellationStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "Destination": {
+            "type": "string",
+            "nullable": true
+          },
+          "UpdatedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndUserIp": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlightBookingDetailsProxyRequestDto": {
+        "type": "object",
+        "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -14379,8 +16358,8 @@
         "type": "object",
         "properties": {
           "ChangeRequestId": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -14388,12 +16367,21 @@
       "FlightGetCancellationChargesProxyRequestDto": {
         "type": "object",
         "properties": {
+          "TraceId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "PNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "Remarks": {
+            "type": "string",
+            "nullable": true
+          },
           "RequestType": {
             "type": "integer",
-            "format": "int32"
-          },
-          "TraceId": {
-            "type": "string",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -14626,18 +16614,22 @@
         "type": "object",
         "properties": {
           "BookingId": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int64"
           },
           "RequestType": {
-            "type": "string",
-            "nullable": true
+            "type": "integer",
+            "format": "int32"
           },
           "CancellationType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Remarks": {
             "type": "string",
             "nullable": true
           },
-          "Remarks": {
+          "ClientRefId": {
             "type": "string",
             "nullable": true
           },
@@ -14648,14 +16640,6 @@
             },
             "nullable": true
           },
-          "SrdvType": {
-            "type": "string",
-            "nullable": true
-          },
-          "SrdvIndex": {
-            "type": "string",
-            "nullable": true
-          },
           "TicketData": {
             "type": "array",
             "items": {
@@ -14664,6 +16648,14 @@
             "nullable": true
           },
           "PNR": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SrdvIndex": {
             "type": "string",
             "nullable": true
           }
@@ -15632,7 +17624,8 @@
           },
           "Price": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "Origin": {
             "type": "string",
@@ -15682,7 +17675,8 @@
           },
           "Price": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "Origin": {
             "type": "string",
@@ -15909,7 +17903,8 @@
           },
           "Amount": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "Code": {
             "type": "string",
@@ -15983,6 +17978,62 @@
         },
         "additionalProperties": false
       },
+      "PasskeyLoginCompleteRequest": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "assertionResponse": {
+            "$ref": "#/components/schemas/AuthenticatorAssertionRawResponse"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PasskeyLoginOptionsRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PasskeyRegisterCompleteRequest": {
+        "type": "object",
+        "properties": {
+          "attestationResponse": {
+            "$ref": "#/components/schemas/AuthenticatorAttestationRawResponse"
+          },
+          "deviceName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PasskeyRegisterOptionsRequest": {
+        "type": "object",
+        "properties": {
+          "deviceName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PasskeyRenameRequest": {
+        "type": "object",
+        "properties": {
+          "deviceName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PendingAirlineRequestDto": {
         "type": "object",
         "properties": {
@@ -16038,6 +18089,27 @@
           }
         },
         "additionalProperties": false
+      },
+      "PublicHotelCancelRequestDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "refundPreference": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicKeyCredentialType": {
+        "enum": [
+          "public-key",
+          "invalid"
+        ],
+        "type": "string"
       },
       "RegisterRequest": {
         "required": [
@@ -16403,15 +18475,6 @@
         },
         "additionalProperties": false
       },
-      "SrdvBookingCallbackResponseDto": {
-        "type": "object",
-        "properties": {
-          "Error": {
-            "$ref": "#/components/schemas/SrdvCallbackErrorDto"
-          }
-        },
-        "additionalProperties": false
-      },
       "SrdvBusBookingRequestDto": {
         "type": "object",
         "properties": {
@@ -16576,20 +18639,6 @@
         },
         "additionalProperties": false
       },
-      "SrdvCallbackErrorDto": {
-        "type": "object",
-        "properties": {
-          "ErrorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "ErrorMessage": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "SrdvCallbackPassengerDto": {
         "type": "object",
         "properties": {
@@ -16606,6 +18655,10 @@
             "nullable": true
           },
           "TicketNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "ReturnTicketNumber": {
             "type": "string",
             "nullable": true
           }
@@ -16751,6 +18804,29 @@
         },
         "additionalProperties": false
       },
+      "SubmitDepositRequestDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "TeamMemberDto": {
         "type": "object",
         "properties": {
@@ -16786,6 +18862,52 @@
           },
           "templateKey": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TestimonialSettingsDto": {
+        "type": "object",
+        "properties": {
+          "approvalRequired": {
+            "type": "boolean"
+          },
+          "allowUserSubmission": {
+            "type": "boolean"
+          },
+          "allowRating": {
+            "type": "boolean"
+          },
+          "allowCustomerImage": {
+            "type": "boolean"
+          },
+          "defaultCategory": {
+            "type": "string",
+            "nullable": true
+          },
+          "featuredLimit": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "displayOrderMode": {
+            "pattern": "^(Manual Order|Latest First)$",
+            "type": "string",
+            "nullable": true
+          },
+          "autoPublish": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -16831,6 +18953,16 @@
           },
           "sendEmail": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnblockUserRuleDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -17261,6 +19393,22 @@
         },
         "additionalProperties": false
       },
+      "UpdateTestimonialStatusDto": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "featured": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "UpsertHotelCouponRequestDto": {
         "required": [
           "couponCode",
@@ -17394,6 +19542,10 @@
             "minLength": 1,
             "type": "string"
           },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
           "status": {
             "minLength": 1,
             "type": "string"
@@ -17463,6 +19615,12 @@
             "minimum": 0.01,
             "type": "number",
             "format": "double"
+          },
+          "checkInDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-08-01"
           }
         },
         "additionalProperties": false

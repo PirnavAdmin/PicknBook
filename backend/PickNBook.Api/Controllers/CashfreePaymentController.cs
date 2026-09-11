@@ -10,10 +10,7 @@ using PickNBook.Api.Services;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-<<<<<<< HEAD
-=======
 using PickNBook.Api.Services.Implementations;
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
 namespace PickNBook.Api.Controllers
 {
@@ -254,30 +251,6 @@ namespace PickNBook.Api.Controllers
                             return BadRequest(new { message = "Hotel price could not be verified. Please block the room again." });
                         }
                         
-<<<<<<< HEAD
-                        if (!string.IsNullOrWhiteSpace(request.CouponCode))
-                        {
-                            var normalizedCoupon = request.CouponCode.Trim().ToUpperInvariant();
-                            var coupon = await _dbContext.HotelCoupons.FirstOrDefaultAsync(c => c.CouponCode == normalizedCoupon && c.Status == "Active");
-                            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-                            
-                            bool isCouponValid = coupon != null && today >= coupon.StartDate && today <= coupon.ExpiryDate && blockedHotel.GrandTotal >= coupon.MinBookingAmount;
-                            
-                            if (isCouponValid)
-                            {
-                                if (coupon!.UseLimit > 0 && coupon.UsedCount >= coupon.UseLimit)
-                                    isCouponValid = false;
-                                
-                                if (isCouponValid)
-                                {
-                                    var userUsageCount = await _dbContext.HotelCouponUsages
-                                        .CountAsync(u => u.CouponCode == normalizedCoupon && u.UserId == userIdStr && u.BookingStatus != "Cancelled");
-                                    if (userUsageCount >= coupon.MaxUsagePerUser)
-                                        isCouponValid = false;
-                                }
-
-                                if (isCouponValid && coupon.IsFirstTimeUserOnly)
-=======
                         var couponToApply = !string.IsNullOrWhiteSpace(request.CouponCode)
                             ? request.CouponCode.Trim()
                             : payload.CouponCode?.Trim();
@@ -326,38 +299,10 @@ namespace PickNBook.Api.Controllers
                                 }
 
                                 if (coupon.IsFirstTimeUserOnly)
->>>>>>> cf14845 (update on changes mentioned on 9th date)
                                 {
                                     var hasPriorBookings = await _dbContext.HotelReservations
                                         .AnyAsync(r => r.UserId == userIdStr && r.Status != "Cancelled" && r.Status != "Failed" && !r.Status.StartsWith("Failed_"));
                                     if (hasPriorBookings)
-<<<<<<< HEAD
-                                        isCouponValid = false;
-                                }
-                            }
-
-                            if (isCouponValid)
-                            {
-                                decimal couponDiscount = 0m;
-                                decimal totalBeforeDiscount = blockedHotel.OfferedPrice + blockedHotel.Tax + blockedHotel.MarkupAmount;
-
-                                if (coupon!.CouponType == "Percentage")
-                                {
-                                    couponDiscount = totalBeforeDiscount * (coupon.Value / 100m);
-                                    if (coupon.MaxDiscountAmount > 0 && couponDiscount > coupon.MaxDiscountAmount)
-                                        couponDiscount = coupon.MaxDiscountAmount;
-                                }
-                                else if (coupon.CouponType == "Flat")
-                                {
-                                    couponDiscount = coupon.Value;
-                                }
-
-                                couponDiscount = Math.Min(couponDiscount, totalBeforeDiscount);
-                                couponDiscount = decimal.Round(couponDiscount, 2, MidpointRounding.AwayFromZero);
-
-                                discountAmount += couponDiscount;
-                                calculatedFinalAmount -= couponDiscount;
-=======
                                     {
                                         return BadRequest(new { message = $"Coupon '{normalizedCoupon}' is only valid for your first hotel booking." });
                                     }
@@ -405,7 +350,6 @@ namespace PickNBook.Api.Controllers
                             {
                                 payload.CouponCode = actualCouponCode;
                                 request.BookingPayloadJson = JsonSerializer.Serialize(payload);
->>>>>>> cf14845 (update on changes mentioned on 9th date)
                             }
                         }
                     }
@@ -413,8 +357,6 @@ namespace PickNBook.Api.Controllers
                     {
                         using var doc = JsonDocument.Parse(request.BookingPayloadJson);
                         var root = doc.RootElement;
-<<<<<<< HEAD
-=======
 
                         bool TryGetProp(JsonElement elem, string name, out JsonElement val)
                         {
@@ -433,7 +375,6 @@ namespace PickNBook.Api.Controllers
                             val = default;
                             return false;
                         }
->>>>>>> cf14845 (update on changes mentioned on 9th date)
                         
                         string airline = "";
                         string fromCity = "";
@@ -445,27 +386,6 @@ namespace PickNBook.Api.Controllers
                         DateTime depTime = DateTime.UtcNow.AddDays(1);
                         TripType tripType = TripType.OneWay;
 
-<<<<<<< HEAD
-                        if (root.TryGetProperty("Passengers", out var paxArray) && paxArray.ValueKind == JsonValueKind.Array)
-                        {
-                            adults = paxArray.EnumerateArray().Count(p => p.TryGetProperty("PaxType", out var pt) && pt.GetInt32() == 1);
-                            children = paxArray.EnumerateArray().Count(p => p.TryGetProperty("PaxType", out var pt) && pt.GetInt32() == 2);
-                            infants = paxArray.EnumerateArray().Count(p => p.TryGetProperty("PaxType", out var pt) && pt.GetInt32() == 3);
-                        }
-
-                        if (root.TryGetProperty("Fare", out var fareNode))
-                        {
-                            providerAmount = fareNode.TryGetProperty("OfferedFare", out var offFare) ? offFare.GetDecimal() : 0m;
-                            decimal baseFare = fareNode.TryGetProperty("BaseFare", out var bFare) ? bFare.GetDecimal() : 0m;
-                            decimal tax = fareNode.TryGetProperty("Tax", out var tFare) ? tFare.GetDecimal() : 0m;
-
-                            if (providerAmount == 0) providerAmount = baseFare + tax;
-
-                            if (fareNode.TryGetProperty("TotalBaggageCharges", out var bagNode) && decimal.TryParse(bagNode.ToString(), out var parsedBag)) ssrAmount += parsedBag;
-                            if (fareNode.TryGetProperty("TotalMealCharges", out var mealNode) && decimal.TryParse(mealNode.ToString(), out var parsedMeal)) ssrAmount += parsedMeal;
-                            if (fareNode.TryGetProperty("TotalSeatCharges", out var seatNode) && decimal.TryParse(seatNode.ToString(), out var parsedSeat)) ssrAmount += parsedSeat;
-                            if (fareNode.TryGetProperty("TotalSpecialServiceCharges", out var specialNode) && decimal.TryParse(specialNode.ToString(), out var parsedSpecial)) ssrAmount += parsedSpecial;
-=======
                         if (TryGetProp(root, "Passengers", out var paxArray) && paxArray.ValueKind == JsonValueKind.Array)
                         {
                             adults = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 1);
@@ -502,7 +422,6 @@ namespace PickNBook.Api.Controllers
                             if (TryGetProp(fareNode, "TotalMealCharges", out var mealNode) && decimal.TryParse(mealNode.ToString(), out var parsedMeal)) ssrAmount += parsedMeal;
                             if (TryGetProp(fareNode, "TotalSeatCharges", out var seatNode) && decimal.TryParse(seatNode.ToString(), out var parsedSeat)) ssrAmount += parsedSeat;
                             if (TryGetProp(fareNode, "TotalSpecialServiceCharges", out var specialNode) && decimal.TryParse(specialNode.ToString(), out var parsedSpecial)) ssrAmount += parsedSpecial;
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 
                             var pricingBreakdown = await _flightPricingService.CalculatePricingAsync(
                                 supplierBaseFare: baseFare,
@@ -520,11 +439,6 @@ namespace PickNBook.Api.Controllers
                                 selectedPromotionId: null
                             );
 
-<<<<<<< HEAD
-                            markupAmount = pricingBreakdown.MarkupAmount;
-                            discountAmount = pricingBreakdown.PromotionDiscount + pricingBreakdown.CouponDiscount;
-                            calculatedFinalAmount = pricingBreakdown.FinalAmount + ssrAmount;
-=======
                             if (!string.IsNullOrWhiteSpace(request.CouponCode) && pricingBreakdown.CouponDiscount == 0)
                             {
                                 return BadRequest(new { message = "The applied flight coupon is invalid, expired, or does not meet DayOfWeek conditions." });
@@ -537,7 +451,6 @@ namespace PickNBook.Api.Controllers
                             {
                                 actualCouponCode = pricingBreakdown.CouponCode;
                             }
->>>>>>> cf14845 (update on changes mentioned on 9th date)
                         }
                         else
                         {

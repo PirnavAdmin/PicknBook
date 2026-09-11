@@ -912,8 +912,6 @@ namespace PickNBook.Api.Data
                     .WithMany(x => x.Conditions)
                     .HasForeignKey(x => x.BusCouponId)
                     .OnDelete(DeleteBehavior.Cascade);
-<<<<<<< HEAD
-=======
             });
 
             modelBuilder.Entity<HotelCouponCondition>(entity =>
@@ -946,7 +944,6 @@ namespace PickNBook.Api.Data
                     .WithMany(x => x.Conditions)
                     .HasForeignKey(x => x.FlightCouponId)
                     .OnDelete(DeleteBehavior.Cascade);
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             });
 
             modelBuilder.Entity<BusCouponUsage>(entity =>

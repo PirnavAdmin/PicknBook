@@ -95,9 +95,6 @@ public class DashboardController : AdminApiController
         var successfulYesterday = successfulPayments.Count(p => p.CreatedAt >= yesterday && p.CreatedAt < today);
         var successfulGrowthPercent = CalculateGrowthPercent(successfulToday, successfulYesterday);
 
-<<<<<<< HEAD
-        var failedToday = await _context.Payments.CountAsync(p => p.Status != "SUCCESS" && p.CreatedAt >= today);
-=======
         // ── DB-side GROUP BY: let the database aggregate — only 6 small integers travel over the wire ──
         var todayStatusGroups = await _context.Payments
             .AsNoTracking()
@@ -127,7 +124,6 @@ public class DashboardController : AdminApiController
         // Legacy broad "failed" count (anything != SUCCESS) — kept for backward compatibility
         var failedToday = totalPaymentsToday - todaySuccess;
 
->>>>>>> cf14845 (update on changes mentioned on 9th date)
         var failedYesterday = await _context.Payments.CountAsync(p => p.Status != "SUCCESS" && p.CreatedAt >= yesterday && p.CreatedAt < today);
         var failedGrowthPercent = CalculateGrowthPercent(failedToday, failedYesterday);
 
@@ -260,14 +256,6 @@ public class DashboardController : AdminApiController
         {
             todayStatus = new
             {
-<<<<<<< HEAD
-                totalBookings = bookingsToday,
-                successfulBookings = successfulToday,
-                pendingWorks = 0,
-                failedBookings = failedToday,
-                revenueInr = Math.Round(revenueToday, 2, MidpointRounding.AwayFromZero),
-                expectedRevenueInr = Math.Round(revenueToday * 1.1m, 2, MidpointRounding.AwayFromZero)
-=======
                 // ── Legacy fields kept for backward compatibility ──────────────────────
                 totalBookings      = bookingsToday,
                 successfulBookings = successfulToday,       // SUCCESS payments today
@@ -288,7 +276,6 @@ public class DashboardController : AdminApiController
                     expired   = todayExpired,
                     unknown   = todayUnknown    // safety net for unexpected/future statuses
                 }
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             },
             metrics = new
             {

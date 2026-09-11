@@ -602,12 +602,8 @@ namespace PickNBook.Api.Controllers
             });
         }
 
-<<<<<<< HEAD
-        // ---------------- ADMIN LOGIN STEP-1 (PASSWORD -> SEND OTP) ----------------
-=======
         // ---------------- ADMIN LOGIN (DIRECT EMAIL & PASSWORD) ----------------
         [HttpPost("admin/login")]
->>>>>>> cf14845 (update on changes mentioned on 9th date)
         [HttpPost("admin/login/request-otp")]
         public async Task<IActionResult> RequestAdminLoginOtp(AdminLoginRequest request)
         {
@@ -641,10 +637,7 @@ namespace PickNBook.Api.Controllers
                 return Unauthorized("Your account is inactive. Please contact support.");
             }
 
-<<<<<<< HEAD
-=======
             // Invalidate any old unused admin login OTPs
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             await _context.OTPs
                 .Where(o =>
                     o.UserId == user.Id &&
@@ -653,66 +646,6 @@ namespace PickNBook.Api.Controllers
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(o => o.IsUsed, true));
 
-<<<<<<< HEAD
-            var (isSent, challengeId, errorMessage) = await _otpService.GenerateAndSendOtpAsync(normalizedEmail, "Email", AdminLoginOtpPurpose, user.Id);
-
-            if (!isSent)
-            {
-                return BadRequest(new { success = false, message = "Unable to send admin OTP.", error = errorMessage ?? "Email provider rejected the request." });
-            }
-
-            return Ok(new
-            {
-                message = "OTP sent to admin email.",
-                challengeId,
-                expiresInMinutes = _adminOtpExpiryMinutes
-            });
-        }
-
-        // ---------------- ADMIN LOGIN STEP-2 (VERIFY OTP -> JWT) ----------------
-        [HttpPost("admin/login/verify-otp")]
-        public async Task<IActionResult> VerifyAdminLoginOtp(AdminLoginVerifyOtpRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.ChallengeId) || string.IsNullOrWhiteSpace(request.Otp))
-            {
-                return BadRequest("ChallengeId and Otp are required.");
-            }
-
-            var challengeId = request.ChallengeId.Trim();
-            var now = DateTime.UtcNow;
-
-            var otpRecord = await _context.OTPs
-                .Include(o => o.User)
-                .FirstOrDefaultAsync(o =>
-                    o.ChallengeId == challengeId &&
-                    o.Purpose == AdminLoginOtpPurpose &&
-                    !o.IsUsed);
-
-            if (otpRecord == null || otpRecord.User == null)
-            {
-                return BadRequest("Invalid or expired OTP.");
-            }
-
-            var (isValid, message) = await _otpService.VerifyOtpAsync(otpRecord.User.Email, AdminLoginOtpPurpose, request.Otp);
-
-            if (!isValid)
-            {
-                return BadRequest(message);
-            }
-
-            var user = otpRecord.User;
-            if (!AuthRoles.IsAdminScope(user.Role))
-            {
-                return Unauthorized("Invalid admin credentials.");
-            }
-
-            if (string.Equals(user.Status, "Inactive", StringComparison.OrdinalIgnoreCase))
-            {
-                return Unauthorized("Your account is inactive. Please contact support.");
-            }
-
-=======
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             var token = _jwtService.GenerateToken(user, user.Role);
 
             return Ok(new
@@ -785,17 +718,10 @@ namespace PickNBook.Api.Controllers
 
             if (!isSent)
             {
-<<<<<<< HEAD
-                return BadRequest(new { success = false, message = "Unable to send admin OTP.", error = errorMessage ?? "Email provider rejected the request." });
-            }
-
-            return Ok("If the email is registered, an OTP has been sent.");
-=======
                 return BadRequest(new { success = false, message = "Unable to send admin password reset OTP.", error = errorMessage ?? "Email provider rejected the request." });
             }
 
             return Ok(new { success = true, message = "Admin account verified. Password reset code has been sent to your registered email." });
->>>>>>> cf14845 (update on changes mentioned on 9th date)
         }
 
         // ---------------- ADMIN RESET PASSWORD ----------------
@@ -819,13 +745,6 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(new { success = false, message = "Email is not registered." });
             }
 
-<<<<<<< HEAD
-            var (isValid, message) = await _otpService.VerifyOtpAsync(normalizedEmail, AdminPasswordResetOtpPurpose, request.Otp);
-
-            if (!isValid)
-            {
-                return BadRequest(message);
-=======
             if (!AuthRoles.IsAdminScope(user.Role))
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = "Access denied. Invalid administrator account." });
@@ -841,7 +760,6 @@ namespace PickNBook.Api.Controllers
             if (!isValid)
             {
                 return BadRequest(new { success = false, message = message });
->>>>>>> cf14845 (update on changes mentioned on 9th date)
             }
 
             var newPasswordCheck = _passwordHasher.VerifyHashedPassword(

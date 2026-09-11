@@ -4,10 +4,7 @@ namespace PickNBook.Api.Models.DTOs;
 
 public class BusCouponRequestDto
 {
-<<<<<<< HEAD
-=======
     public string Type { get; set; } = "bus"; // "bus", "hotel", "flight"
->>>>>>> cf14845 (update on changes mentioned on 9th date)
     public string PromotionCategory { get; set; } = "Coupon"; // "Coupon" or "Offer"
     public string? Title { get; set; }
     public string? Description { get; set; }
@@ -30,11 +27,7 @@ public class BusCouponRequestDto
 
 public class CreateBusCouponConditionDto
 {
-<<<<<<< HEAD
-    public string ConditionType { get; set; } = string.Empty;
-=======
     public string ConditionType { get; set; } = "DayOfWeek";
->>>>>>> cf14845 (update on changes mentioned on 9th date)
     public string ConditionOperator { get; set; } = "Equals";
     public string Value1 { get; set; } = string.Empty;
     public string? Value2 { get; set; }
@@ -42,20 +35,13 @@ public class CreateBusCouponConditionDto
 
 public class UpdateBusCouponConditionDto
 {
-<<<<<<< HEAD
-    public string ConditionType { get; set; } = string.Empty;
-=======
     public string ConditionType { get; set; } = "DayOfWeek";
->>>>>>> cf14845 (update on changes mentioned on 9th date)
     public string ConditionOperator { get; set; } = "Equals";
     public string Value1 { get; set; } = string.Empty;
     public string? Value2 { get; set; }
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> cf14845 (update on changes mentioned on 9th date)
 public class BusConvenienceFeeRequestDto
 {
     public decimal FeeInr { get; set; }
