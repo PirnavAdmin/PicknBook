@@ -1,0 +1,1198 @@
+.admin-shell,
+body .admin-shell {
+  --sidebar-float-size: 44px;
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  --admin-border: #dde8f5;
+  --admin-text: #0f172a;
+  --admin-muted: #64748b;
+  --admin-surface: rgba(255, 255, 255, 0.88);
+  --admin-soft: rgba(248, 250, 255, 0.9);
+  --admin-success: #10b981 !important;
+  --admin-success-soft: #ecfdf5;
+  --admin-danger: #ef4444;
+  --admin-danger-soft: #fef2f2;
+  --page-bg: transparent;
+  --success: #10b981 !important;
+  --success-soft: var(--admin-success-soft);
+  --primary: #A51C49 !important;
+  --primary-strong: #851237 !important;
+  --text-primary: var(--admin-text);
+  --text-secondary: var(--admin-muted);
+  --text-muted: var(--admin-muted);
+  --surface-soft: var(--admin-soft);
+  --danger: var(--admin-danger);
+  --danger-soft: var(--admin-danger-soft);
+  --panel-padding-x: 32px;
+  --panel-padding-y: 28px;
+  --panel: var(--admin-surface);
+  --border: var(--admin-border);
+  --text: var(--admin-text);
+  --muted: var(--admin-muted);
+  --accent: #A51C49 !important;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(22, 65, 128, 0.07), 0 1px 3px rgba(22, 65, 128, 0.04);
+  --shadow-sm: 0 4px 12px rgba(22, 65, 128, 0.05);
+
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  color: var(--text);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+
+/* ══════════════════════════════════════════════════════════
+   WORLD LANDMARKS TRAVEL SKYLINE — FIXED BACKGROUND LAYER
+══════════════════════════════════════════════════════════ */
+.admin-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(180deg,
+      #f9e2ea 0%,
+      #fbeaf0 25%,
+      #fdf5f7 55%,
+      #fef9fb 100%);
+}
+
+/* The actual SVG skyline canvas */
+.admin-skyline-bg {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.6;
+  background-image: url('../assets/images/admin-skyline-bg.png');
+  background-size: 100% auto;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+
+.admin-skyline-bg svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Flying Plane Animation ── */
+@keyframes adminPlaneFly {
+  0% {
+    transform: translate(-60px, 0px) rotate(-8deg) scale(0.85);
+    opacity: 0;
+  }
+
+  5% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translate(50vw, -60px) rotate(-6deg) scale(1);
+  }
+
+  95% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(110vw, -40px) rotate(-4deg) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.admin-plane-fly {
+  animation: adminPlaneFly 26s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform-origin: center;
+}
+
+/* ── Hot Air Balloon 1 ── */
+@keyframes adminBalloon1 {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(8px, -22px) scale(1.05);
+  }
+}
+
+.admin-balloon-1 {
+  animation: adminBalloon1 14s ease-in-out infinite;
+}
+
+/* ── Hot Air Balloon 2 ── */
+@keyframes adminBalloon2 {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(-6px, -18px) scale(0.95);
+  }
+}
+
+.admin-balloon-2 {
+  animation: adminBalloon2 18s ease-in-out infinite;
+}
+
+/* ── Clouds Drift ── */
+@keyframes adminCloudDrift {
+  0% {
+    transform: translateX(0px);
+  }
+
+  100% {
+    transform: translateX(30px);
+  }
+}
+
+.admin-cloud-1 {
+  animation: adminCloudDrift 20s ease-in-out infinite alternate;
+}
+
+.admin-cloud-2 {
+  animation: adminCloudDrift 25s ease-in-out infinite alternate-reverse;
+}
+
+.admin-cloud-3 {
+  animation: adminCloudDrift 18s ease-in-out infinite alternate;
+}
+
+/* ── Dotted path dash animation ── */
+@keyframes adminDashMove {
+  0% {
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dashoffset: -120;
+  }
+}
+
+.admin-flight-path {
+  stroke-dasharray: 8 6;
+  animation: adminDashMove 4s linear infinite;
+}
+
+.admin-flight-path-2 {
+  stroke-dasharray: 8 6;
+  animation: adminDashMove 5s linear infinite;
+}
+
+
+/* Dark Theme Overrides */
+.admin-shell.dark-theme {
+  --admin-border: #1e293b;
+  --admin-text: #f8fafc;
+  --admin-muted: #94a3b8;
+  --admin-surface: #0f172a;
+  --admin-soft: #1e293b;
+  --page-bg: #0b0f19;
+  --success-soft: rgba(16, 185, 129, 0.15);
+  --danger-soft: rgba(239, 68, 68, 0.15);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ══════════════════════════════════════════
+   GLOBAL TRANSPARENT PAGE BACKGROUNDS
+   — Let the fixed world-landmarks skyline
+     show through all admin pages
+* ══════════════════════════════════════════ */
+
+/* All direct page wrapper divs inside main-area with smooth fade-in page transition */
+@keyframes adminPageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.main-area>div {
+  animation: adminPageFadeIn 0.45s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+
+.main-area>div,
+.hbl-page,
+.hsh-page,
+.hcnl-page,
+.hcl-page,
+.hml-page,
+.hpd-page,
+.dash-page,
+.admin-b2c-page,
+[class$="-page"],
+[class*="-page "] {
+  background: transparent !important;
+}
+
+/* White frosted glass on all cards and panels — so they pop against the skyline */
+.metric-card-premium,
+.dashboard-card-shell,
+.admin-table-shell,
+.admin-ops-filters,
+.hbl-table-wrap,
+.hbl-stat-card,
+.hsh-top-cities,
+.hcnl-table-wrap,
+.hcnl-stat-card,
+.hml-table-wrap,
+.hpd-card,
+.admin-placeholder,
+.login-box,
+.pin-box {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+}
+
+
+
+.admin-placeholder {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 28px 30px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  max-width: 720px;
+}
+
+.admin-placeholder-kicker {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-placeholder-title {
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.admin-placeholder-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.admin-placeholder-manager {
+  margin-top: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.admin-placeholder-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.admin-placeholder-toolbar label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-placeholder-toolbar input,
+.admin-placeholder-toolbar select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  background: var(--panel);
+  color: var(--text-primary);
+}
+
+.admin-placeholder-toolbar .wide {
+  grid-column: 1 / -1;
+}
+
+.admin-placeholder-toolbar button.primary {
+  border: 1px solid var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-placeholder-error {
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.admin-placeholder-table {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.admin-placeholder-table-head,
+.admin-placeholder-row {
+  display: grid;
+  grid-template-columns: 80px 1.5fr 0.7fr 1fr 140px;
+  gap: 8px;
+  padding: 10px 14px;
+  align-items: center;
+}
+
+.admin-placeholder-table-head {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.admin-placeholder-row {
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.admin-placeholder-row .status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+
+.admin-placeholder-row .status.active {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: rgba(30, 142, 62, 0.35);
+}
+
+.admin-placeholder-row .status.inactive {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(180, 35, 24, 0.35);
+}
+
+.admin-placeholder-row .action-col button {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-primary);
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.admin-placeholder-row .action-col button.danger {
+  color: var(--danger);
+  border-color: rgba(180, 35, 24, 0.35);
+  background: var(--danger-soft);
+}
+
+.admin-placeholder-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.admin-placeholder-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 5, 5, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+}
+
+.admin-placeholder-modal {
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+  width: min(560px, 95vw);
+  padding: 16px;
+}
+
+.admin-placeholder-modal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-placeholder-modal header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.admin-placeholder-modal header button {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  border-radius: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.admin-placeholder-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.admin-placeholder-modal-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.admin-placeholder-modal-grid input,
+.admin-placeholder-modal-grid select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  background: var(--panel);
+  color: var(--text-primary);
+}
+
+.admin-placeholder-modal-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.admin-placeholder-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-placeholder-modal-actions .primary,
+.admin-placeholder-modal-actions .secondary {
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-placeholder-modal-actions .primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.admin-placeholder-modal-actions .secondary {
+  background: var(--surface-soft);
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .admin-placeholder-table-head {
+    display: none;
+  }
+
+  .admin-placeholder-row {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+.admin-b2c-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(16px, 2vw, 28px) clamp(16px, 2.5vw, 32px);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.admin-b2c-hotel-page {
+  --admin-primary: #A51C49 !important;
+  --admin-primary-strong: #851237 !important;
+  --primary: #A51C49 !important;
+  --primary-strong: #851237 !important;
+  padding-top: 2px !important;
+  gap: 4px !important;
+}
+
+.admin-b2c-hotel-page header {
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.admin-b2c-hotel-page header h1,
+.admin-b2c-hotel-page header h2,
+.admin-b2c-hotel-page header h3 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.admin-b2c-hotel-page .admin-markup-coupon-header,
+.admin-b2c-hotel-page .admin-b2c-header {
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+}
+
+.admin-b2c-hotel-page .admin-markup-coupon-actions,
+.admin-b2c-hotel-page .admin-actions-row {
+  justify-content: flex-end;
+  gap: 8px !important;
+}
+
+.admin-b2c-header h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--admin-primary);
+}
+
+.admin-shell.dark-theme .admin-b2c-header h1 {
+  color: #ffffff !important;
+}
+
+.admin-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-chip {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-soft);
+  color: var(--admin-primary);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-actions-row button {
+  border: 1px solid var(--admin-border);
+  background: #ffffff;
+  color: var(--admin-text);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-actions-row button:hover {
+  background: var(--admin-soft);
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.admin-data-error {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-ops-filters {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius);
+  padding: 8px 12px !important;
+  margin-top: 2px !important;
+  margin-bottom: 6px !important;
+  background: var(--admin-surface);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px 12px !important;
+  align-items: flex-end !important;
+}
+
+.admin-ops-filters label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  font-size: 12px !important;
+  color: var(--admin-muted) !important;
+  min-width: 140px !important;
+  max-width: 220px !important;
+  flex: 1 !important;
+}
+
+.admin-ops-filters label span {
+  font-size: 0.64rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+  color: var(--admin-muted, #475569) !important;
+  white-space: nowrap !important;
+}
+
+.admin-ops-filters input,
+.admin-ops-filters select {
+  height: 28px !important;
+  border: 1px solid rgba(29, 78, 216, 0.22) !important;
+  border-radius: 6px !important;
+  padding: 2px 8px !important;
+  font-size: 0.76rem !important;
+  background: #ffffff !important;
+  color: var(--admin-text) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-ops-filters input::placeholder {
+  font-size: 0.72rem !important;
+  color: #94a3b8 !important;
+}
+
+.admin-ops-filters input:focus,
+.admin-ops-filters select:focus {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.12) !important;
+}
+
+.admin-ops-filters .filters-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding-bottom: 0px !important;
+  margin-top: auto !important;
+  margin-left: auto !important;
+}
+
+.admin-ops-filters .filters-actions button.primary,
+.admin-ops-filters .filters-actions button[type="submit"] {
+  height: 28px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2) !important;
+}
+
+.admin-ops-filters .filters-actions button.primary:hover,
+.admin-ops-filters .filters-actions button[type="submit"]:hover {
+  background: #1e40af !important;
+  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.35) !important;
+}
+
+.admin-ops-filters .filters-actions button.secondary,
+.admin-ops-filters .filters-actions button.reset,
+.admin-ops-filters .filters-actions button[type="reset"] {
+  height: 28px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-ops-filters .filters-actions button.secondary:hover,
+.admin-ops-filters .filters-actions button.reset:hover,
+.admin-ops-filters .filters-actions button[type="reset"]:hover {
+  background: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.admin-table-shell {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius);
+  background: var(--admin-surface);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  overflow-x: auto !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.admin-table-head {
+  background: linear-gradient(135deg, #A51C49, #851237) !important;
+  min-height: 28px !important;
+  height: auto !important;
+  padding: 3px 6px !important;
+  align-items: center !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+}
+
+.admin-table-head span {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  min-height: 24px !important;
+  padding: 2px 4px !important;
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+  overflow: visible !important;
+}
+
+.admin-table-head span:last-child {
+  border-right: none !important;
+}
+
+.admin-hdr-tooltip {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+.admin-hdr-tooltip .admin-tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  width: max-content;
+  background-color: #fff0f5 !important;
+  color: #a51c49 !important;
+  text-align: center;
+  border-radius: 6px !important;
+  padding: 5px 10px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  position: absolute !important;
+  z-index: 999999 !important;
+  top: 100% !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(2px);
+  box-shadow: 0 4px 14px rgba(165, 28, 73, 0.15) !important;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  border: 1px solid #fbcfe8 !important;
+}
+
+.admin-hdr-tooltip .admin-tooltip-text::after {
+  display: none !important;
+}
+
+.admin-hdr-tooltip:hover .admin-tooltip-text {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(6px) !important;
+}
+
+.admin-table-row {
+  border-top: 1px solid var(--admin-border);
+  align-items: stretch !important;
+}
+
+.admin-table-cell,
+.admin-cancel-cell {
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  padding: 6px 8px;
+  font-size: 0.72rem;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.admin-table-cell strong {
+  font-size: 0.72rem;
+}
+
+.admin-table-cell small {
+  font-size: 0.62rem;
+}
+
+.admin-table-footnote {
+  border-top: 1px solid var(--admin-border);
+  background: var(--admin-soft);
+  color: var(--admin-text);
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+
+.ghost-btn,
+.danger-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost-btn.small,
+.danger-btn.small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.danger-btn {
+  border-color: #f5c6a8;
+  color: #c62828;
+  background: #fff8f0;
+}
+
+
+
+
+.nav-icon-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-shell button,
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea {
+  font-family: inherit;
+}
+
+.admin-shell a {
+  color: inherit;
+}
+
+/* Hide all scrollbars in admin portal (scroll still works, bar is invisible) */
+.admin-shell,
+.admin-shell *:not(.ds-nav):not(.ds-nav *) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.admin-shell::-webkit-scrollbar,
+.admin-shell *:not(.ds-nav):not(.ds-nav *)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* Show clean custom scrollbars for scrollable tables so users can scroll horizontally when they overflow */
+.admin-table-shell,
+.admin-markup-coupon-table-scroll,
+.admin-markup-used-table-scroll,
+.flight-markup-table-scroll {
+  scrollbar-width: thin !important;
+  -ms-overflow-style: auto !important;
+}
+
+.admin-table-shell::-webkit-scrollbar,
+.admin-markup-coupon-table-scroll::-webkit-scrollbar,
+.admin-markup-used-table-scroll::-webkit-scrollbar,
+.flight-markup-table-scroll::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.admin-table-shell::-webkit-scrollbar-thumb,
+.admin-markup-coupon-table-scroll::-webkit-scrollbar-thumb,
+.admin-markup-used-table-scroll::-webkit-scrollbar-thumb,
+.flight-markup-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.4) !important;
+  border-radius: 10px !important;
+  transition: background 0.2s ease;
+}
+
+.admin-table-shell::-webkit-scrollbar-thumb:hover,
+.admin-markup-coupon-table-scroll::-webkit-scrollbar-thumb:hover,
+.admin-markup-used-table-scroll::-webkit-scrollbar-thumb:hover,
+.flight-markup-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.7) !important;
+}
+
+.admin-table-shell::-webkit-scrollbar-track,
+.admin-markup-coupon-table-scroll::-webkit-scrollbar-track,
+.admin-markup-used-table-scroll::-webkit-scrollbar-track,
+.flight-markup-table-scroll::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+/* Global Dark Theme overrides for admin list filter panels and action row buttons */
+.admin-shell.dark-theme .admin-ops-filters,
+.admin-shell.dark-theme .flight-ops-filters {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.admin-shell.dark-theme .admin-ops-filters label,
+.admin-shell.dark-theme .flight-ops-filters label,
+.admin-shell.dark-theme .admin-ops-filters span,
+.admin-shell.dark-theme .flight-ops-filters span {
+  color: #f8fafc !important;
+}
+
+.admin-shell.dark-theme .admin-ops-filters input,
+.admin-shell.dark-theme .admin-ops-filters select,
+.admin-shell.dark-theme .flight-ops-filters input,
+.admin-shell.dark-theme .flight-ops-filters select {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-actions-row button {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.admin-shell.dark-theme .admin-actions-row button:hover {
+  background: #334155 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* ── Smooth Top Loading Progress Bar ── */
+.admin-page-top-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(220, 30, 38, 0.08);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.admin-page-top-loader-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #be185d 0%, #ffaa00 50%, #be185d 100%);
+  animation: adminLoaderRun 0.45s ease-out forwards;
+}
+
+@keyframes adminLoaderRun {
+  0% {
+    width: 0;
+  }
+
+  60% {
+    width: 75%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+/* Globally remove all underlines below page title headings in admin portal */
+[class*="underline"],
+[class*="Underline"],
+.admin-flight-booking-title strong::after,
+.admin-bus-booking-title strong::after {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════
+   GLOBAL BRAND RED/CERISE TO RASPBERRY OVERRIDES
+   ══════════════════════════════════════ */
+body .admin-markup-table thead,
+body .menu-list-table thead,
+body .admin-markup-table-wrap thead,
+body table thead,
+body thead,
+.admin-markup-table thead {
+  background: #A51C49 !important;
+  background-color: #A51C49 !important;
+  background-image: none !important;
+}
+
+body .admin-markup-table th,
+body .menu-list-table th,
+body table th,
+body th,
+.admin-markup-table th {
+  background: #A51C49 !important;
+  background-color: #A51C49 !important;
+  color: #ffffff !important;
+}
+
+body .primary-btn,
+body .btn.add,
+body .btn.back,
+body .btn.filter,
+body .btn.export,
+body .submit-btn,
+body .menu-list-add-btn {
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+}
+
+body .primary-btn:hover,
+body .btn.add:hover,
+body .btn.back:hover,
+body .btn.filter:hover,
+body .btn.export:hover,
+body .submit-btn:hover,
+body .menu-list-add-btn:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+  color: #ffffff !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLOBAL 3-STATE ACTION BUTTON STYLING (Menu, Page, Offer, Blog, Customer, Query, Security)
+   ══════════════════════════════════════════════════════════════════════════ */
+.actions-trigger-btn,
+.offer-action-btn-trigger,
+.admin-action-btn,
+.table-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+  border: 1px solid transparent !important;
+  /* State 1: Before mouse enter (no visible border) */
+  background: #ffffff !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s ease !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* State 2: Mouse enter -> Black border */
+.actions-trigger-btn:hover,
+.offer-action-btn-trigger:hover,
+.admin-action-btn:hover,
+.table-action-btn:hover {
+  border: 1px solid #0f172a !important;
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+/* State 3: Active / Clicked (Dropdown Open -> #A51C49 Color Border) */
+.actions-trigger-btn.active,
+.actions-trigger-btn.active:hover,
+.offer-action-btn-trigger.active,
+.offer-action-btn-trigger.active:hover,
+.admin-action-btn.active,
+.admin-action-btn.active:hover,
+.table-action-btn.active,
+.table-action-btn.active:hover {
+  border: 1px solid #A51C49 !important;
+  color: #A51C49 !important;
+  background: #fff5f8 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NAVY BLUE BORDER POPUP CLOSE / CANCEL BUTTON STYLING
+   ══════════════════════════════════════════════════════════════════════════ */
+.navy-close-btn,
+body .navy-close-btn {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #0f172a !important;
+  padding: 4px 14px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.navy-close-btn:hover,
+body .navy-close-btn:hover {
+  background: #f8fafc !important;
+  border-color: #0f172a !important;
+  color: #0f172a !important;
+}

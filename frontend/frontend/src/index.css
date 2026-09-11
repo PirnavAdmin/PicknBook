@@ -1,0 +1,369 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+
+:root {
+  --app-font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+  --theme-page: #F3F4F6;
+  --theme-page-soft: #F9FAFB;
+  --theme-surface: #ffffff;
+  --theme-surface-warm: #f9fbf6;
+  --theme-border: #E5E7EB;
+  --theme-border-soft: #F3F4F6;
+  --theme-text: #162126;
+  --theme-muted: #66757b;
+  --theme-primary: #dc1e26;
+  --theme-primary-strong: #b8141b;
+  --theme-primary-soft: #fef2f2;
+  --theme-navy: #17242d;
+  --theme-blue: #b8141b;
+  --theme-pink: #dc1e26;
+  --theme-coral: #dc1e26;
+  --theme-gold: #dc1e26;
+  --theme-shadow: 0 22px 55px rgba(12, 46, 51, 0.15);
+  --theme-shadow-sm: 0 12px 28px rgba(12, 46, 51, 0.09);
+  --theme-gradient: linear-gradient(135deg, #dc1e26 0%, #b8141b 58%, #dc1e26 100%);
+  --theme-gradient-action: linear-gradient(135deg, #dc1e26 0%, #b8141b 54%, #b8141b 100%);
+}
+
+body {
+  margin: 0;
+  font-family: var(--app-font-family);
+  background:
+    linear-gradient(135deg, rgba(220, 30, 38, 0.08) 0%, transparent 30%),
+    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
+    var(--theme-page);
+  color: var(--theme-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+#root {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus,
+select:focus,
+textarea:focus,
+button:focus,
+a:focus {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+/* App-wide atlas theme guards */
+.dashboard-layout,
+.bank-page,
+.bank-container,
+.traveller-container,
+.qr-container,
+.account-statement-page,
+.deposit-container,
+.account-page,
+.edit-profile-page,
+.flight-ops-page,
+.ticket-confirmation-page,
+.bus-results-page,
+.fetch-ticket-page,
+.bus-flow-page {
+  --dashboard-bg: var(--theme-page) !important;
+  --dashboard-surface: var(--theme-surface) !important;
+  --dashboard-surface-soft: var(--theme-surface-warm) !important;
+  --dashboard-border: var(--theme-border) !important;
+  --dashboard-text: var(--theme-navy) !important;
+  --dashboard-muted: var(--theme-muted) !important;
+  --dashboard-primary: var(--theme-primary) !important;
+  --dashboard-primary-strong: var(--theme-primary-strong) !important;
+  --dashboard-accent: var(--theme-primary) !important;
+  --dashboard-accent-strong: var(--theme-primary-strong) !important;
+  --dashboard-success: var(--theme-primary) !important;
+  --dashboard-danger: var(--theme-primary-strong) !important;
+  --bank-bg: var(--theme-page) !important;
+  --bank-border: var(--theme-border) !important;
+  --bank-text: var(--theme-navy) !important;
+  --bank-muted: var(--theme-muted) !important;
+  --bank-primary: var(--theme-primary) !important;
+  --bank-primary-strong: var(--theme-primary-strong) !important;
+  --bank-accent: var(--theme-primary) !important;
+  --trav-border: var(--theme-border) !important;
+  --trav-text: var(--theme-navy) !important;
+  --trav-muted: var(--theme-muted) !important;
+  --trav-primary: var(--theme-primary) !important;
+  --trav-primary-strong: var(--theme-primary-strong) !important;
+  --qr-border: var(--theme-border) !important;
+  --qr-text: var(--theme-navy) !important;
+  --qr-primary: var(--theme-primary) !important;
+  --qr-primary-strong: var(--theme-primary-strong) !important;
+  --stmt-border: var(--theme-border) !important;
+  --stmt-text: var(--theme-navy) !important;
+  --stmt-primary: var(--theme-primary) !important;
+  --stmt-primary-strong: var(--theme-primary-strong) !important;
+  --fr-bg: var(--theme-page) !important;
+  --fr-border: var(--theme-border) !important;
+  --fr-text: var(--theme-navy) !important;
+  --fr-primary: var(--theme-primary) !important;
+  --fr-primary-strong: var(--theme-primary-strong) !important;
+  --fr-accent: var(--theme-primary) !important;
+  --fr-accent-strong: var(--theme-primary-strong) !important;
+  --ops-border: var(--theme-border) !important;
+  --ops-text: var(--theme-navy) !important;
+  --ops-primary: var(--theme-primary) !important;
+  --ops-primary-strong: var(--theme-primary-strong) !important;
+  --ops-accent: var(--theme-primary) !important;
+  --ticket-bg: var(--theme-page) !important;
+  --ticket-border: var(--theme-border) !important;
+  --ticket-text: var(--theme-navy) !important;
+  --ticket-primary: var(--theme-primary) !important;
+  --ticket-primary-strong: var(--theme-primary-strong) !important;
+  --page-bg: var(--theme-page) !important;
+  --surface-border: var(--theme-border) !important;
+  --text: var(--theme-navy) !important;
+  --text-soft: var(--theme-muted) !important;
+  --primary: var(--theme-primary) !important;
+  --primary-strong: var(--theme-primary-strong) !important;
+  --accent: var(--theme-primary) !important;
+  
+  --bus-bg: var(--theme-page) !important;
+  --bus-border: var(--theme-border) !important;
+  --bus-text: var(--theme-navy) !important;
+  --bus-muted: var(--theme-muted) !important;
+  --bus-primary: var(--theme-primary) !important;
+  --bus-primary-strong: var(--theme-primary-strong) !important;
+  --bus-accent: var(--theme-primary) !important;
+  --bus-accent-strong: var(--theme-primary-strong) !important;
+  --bus-success: var(--theme-primary) !important;
+  --bus-danger: var(--theme-primary-strong) !important;
+  
+  --flow-bg: var(--theme-page) !important;
+  --flow-border: var(--theme-border) !important;
+  --flow-text: var(--theme-navy) !important;
+  --flow-muted: var(--theme-muted) !important;
+  --flow-primary: var(--theme-primary) !important;
+  --flow-primary-strong: var(--theme-primary-strong) !important;
+  --flow-accent: var(--theme-primary) !important;
+  --flow-accent-strong: var(--theme-primary-strong) !important;
+  --flow-success: var(--theme-primary) !important;
+  --flow-danger: var(--theme-primary-strong) !important;
+}
+
+.dashboard-layout,
+.ticket-confirmation-page,
+.account-page,
+.edit-profile-page {
+  background:
+    linear-gradient(135deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
+    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 30%),
+    var(--theme-page) !important;
+}
+
+.dashboard-sidebar,
+.sidebar-brand,
+.dashboard-card,
+.wallet-card,
+.metric-card,
+.dashboard-panel,
+.quick-action,
+.recent-card,
+.bank-page .white-card,
+.bank-container .white-card,
+.traveller-container .card,
+.qr-container .card,
+.statement-header,
+.statement-card,
+.flight-ops-header,
+.flight-ops-card,
+.ticket-card,
+.flow-card,
+.bus-result-card {
+  border-color: var(--theme-border) !important;
+  background: var(--theme-surface) !important;
+  box-shadow: var(--theme-shadow-sm) !important;
+}
+
+.sidebar-item.active,
+.sidebar-brand-icon,
+.dashboard-primary-btn,
+.quick-action.primary,
+.flow-continue-btn,
+.flow-pay-btn,
+.coupon-box button,
+.search-btn,
+.tab.active,
+.trip-chip.active,
+.menu-item.active {
+  border-color: transparent !important;
+  background: var(--theme-gradient-action) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(184, 20, 27, 0.22) !important;
+}
+
+/* Atlas theme override layer */
+.topbar,
+.travel-footer,
+.dashboard-layout,
+.bank-page,
+.bank-container,
+.traveller-container,
+.qr-container,
+.account-statement-page,
+.deposit-container,
+.account-page,
+.edit-profile-page,
+.flight-ops-page,
+.ticket-confirmation-page,
+.bus-results-page,
+.fetch-ticket-page,
+.bus-flow-page {
+  --surface: var(--theme-surface) !important;
+  --surface-soft: var(--theme-surface-warm) !important;
+  --surface-border: var(--theme-border) !important;
+  --text: var(--theme-text) !important;
+  --text-soft: var(--theme-muted) !important;
+  --primary: var(--theme-primary) !important;
+  --primary-strong: var(--theme-primary-strong) !important;
+  --accent: var(--theme-coral) !important;
+}
+
+.search-btn,
+.dashboard-primary-btn,
+.quick-action.primary,
+.flow-continue-btn,
+.flow-pay-btn,
+.coupon-box button,
+.tab.active,
+.trip-chip.active {
+  background: var(--theme-gradient-action) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.22) !important;
+}
+
+/* Hide browser-default password reveal eye and clear button in Edge/IE/Chrome */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.pulse {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Minimal floating pill scrollbar for desktop/pointer devices */
+@media (pointer: fine) {
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-muted, rgba(0, 0, 0, 0.25)) transparent;
+  }
+
+  /* Chrome, Edge, Safari */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--theme-muted, rgba(0, 0, 0, 0.25));
+    border-radius: 999px;
+    /* Creating a small gap by using a transparent border and background-clip */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-text, rgba(0, 0, 0, 0.4));
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  /* Hide scrollbar buttons (arrows) */
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+}
+
+/* ── UNIVERSAL RESPONSIVE UTILITIES FOR ALL APP TABLES, MODALS & PAGES ── */
+
+.admin-markup-coupon-table-scroll,
+.admin-markup-coupon-table-wrap,
+.hml-table-wrap,
+.table-responsive,
+.table-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box !important;
+}
+
+.admin-markup-coupon-table,
+.hml-table {
+  min-width: 680px;
+}
+
+/* Mobile & Mobile Landscapes / iPhones / Androids (Max Width 768px) */
+@media (max-width: 768px) {
+  .admin-markup-coupon-backdrop,
+  .discount-modal-overlay,
+  .modal-overlay {
+    padding: 12px !important;
+  }
+
+  .admin-markup-coupon-modal,
+  .discount-modal-container,
+  .modal-container {
+    width: 95% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  .admin-markup-coupon-form,
+  .modal-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .admin-markup-coupon-modal footer,
+  .modal-footer {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .admin-markup-coupon-modal footer button,
+  .modal-footer button {
+    width: 100% !important;
+  }
+}
