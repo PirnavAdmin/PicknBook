@@ -8929,16 +8929,90 @@ button:focus-visible {
   width: 100% !important;
   max-width: 1240px !important;
   margin: 0 auto !important;
-  background: #ffffff !important;
-  border-radius: 14px !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2)) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
   padding: 10px 14px 8px 14px !important;
   box-sizing: border-box !important;
 }
 
 .homepage-flights .search-panel.is-multicity {
   max-width: 1240px !important;
+  padding: 6px 14px 10px 14px !important;
+}
+
+.homepage-flights .search-panel .multi-city-row {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(160px, 1.2fr) minmax(140px, 1fr) auto !important;
+  gap: 0 !important;
+  align-items: center !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.18)) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+  box-sizing: border-box !important;
+  margin-bottom: 0 !important;
+  overflow: visible !important;
+  transition: all 0.2s ease !important;
+}
+
+.homepage-flights .search-panel .multi-city-row:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.24)) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+.homepage-flights .search-panel .multi-city-row .field,
+.homepage-flights .search-panel .multi-city-row .place-autocomplete {
+  height: 44px !important;
+  min-height: 44px !important;
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 0 !important;
+  padding: 3px 12px !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.homepage-flights .search-panel .multi-city-row .action-circle {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.75) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+.homepage-flights .search-panel .multi-footer-row .field,
+.homepage-flights .search-panel .multi-footer-row .traveller-field,
+.homepage-flights .search-panel .multi-footer-row .class-field {
+  height: 44px !important;
+  min-height: 44px !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.18)) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
 }
 
 /* 5. Hide Service Switcher Capsule (Flights | Buses | Hotels) for all themes as topbar handles service navigation */
@@ -8947,6 +9021,73 @@ button:focus-visible {
 .homepage-buses .search-panel .tabs-wrap,
 .homepage-hotels .search-panel .tabs-wrap {
   display: none !important;
+}
+
+/* ── Hotels: Make capsule fill the same glass card as Flights/Buses ── */
+.search-panel .hotel-capsule-wrapper {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove the capsule's own glass box — the search-panel IS the container */
+.search-panel .hotel-capsule-searchbar {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 4px 0 !important;
+  height: auto !important;
+  min-height: 52px !important;
+}
+
+.search-panel .hotel-capsule-searchbar:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Labels: slate grey (readable on white-glass card) */
+.search-panel .hotel-capsule-label {
+  color: #475569 !important;
+  text-shadow: none !important;
+}
+
+/* Values: dark navy */
+.search-panel .hotel-capsule-val {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+/* Input text: dark */
+.search-panel .hotel-capsule-input {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+.search-panel .hotel-capsule-input::placeholder {
+  color: #64748b !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* Icons: keep red */
+.search-panel .hotel-capsule-icon {
+  filter: none !important;
+}
+
+/* Dividers: subtle dark hairline */
+.search-panel .hotel-capsule-divider {
+  background: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Chevron: slate */
+.search-panel .hotel-capsule-chevron {
+  color: #64748b !important;
+  filter: none !important;
 }
 
 /* 6. Trip Switcher Pills (ONE WAY | TWO WAY | MULTI CITY) */
@@ -8986,13 +9127,66 @@ button:focus-visible {
   color: #ffffff !important;
 }
 
-/* 7. Outside Field Labels & Sleek Input Container (Container Height Reduced to 38px) */
-.homepage-flights .hero-grid .search-panel .field,
-.homepage-flights .hero-grid .search-panel .place-autocomplete,
-.homepage-flights .hero-grid .search-panel .traveller-field,
-.homepage-flights .hero-grid .search-panel .class-field,
-.homepage-flights .hero-grid .search-panel .departure-field,
-.homepage-flights .hero-grid .search-panel .return-field {
+/* Hide Field Labels in flight-search-bar-row and multi-city */
+.search-panel .flight-search-bar-row label,
+.homepage-flights .search-panel .flight-search-bar-row label,
+.homepage-flights .search-panel .multi-city-row label,
+.homepage-flights .search-panel .multi-footer-row label,
+.homepage-flights .search-panel .multi-city-list label,
+.search-panel .multi-city-row label,
+.search-panel .multi-footer-row label {
+  display: none !important;
+}
+
+/* Seamless Light White Glass Bar: No double-box on hover/focus */
+.search-panel .flight-search-bar-row .field:hover,
+.search-panel .flight-search-bar-row .place-autocomplete:hover,
+.search-panel .flight-search-bar-row .departure-field:hover,
+.search-panel .flight-search-bar-row .return-field:hover,
+.search-panel .flight-search-bar-row .traveller-field:hover,
+.search-panel .flight-search-bar-row .class-field:hover,
+.search-panel .flight-search-bar-row .field:focus-within,
+.search-panel .flight-search-bar-row .place-autocomplete:focus-within,
+.search-panel .flight-search-bar-row .departure-field:focus-within,
+.search-panel .flight-search-bar-row .return-field:focus-within,
+.search-panel .flight-search-bar-row .traveller-field:focus-within,
+.search-panel .flight-search-bar-row .class-field:focus-within,
+.homepage-buses .search-panel .flight-search-bar-row .field:hover,
+.homepage-buses .search-panel .flight-search-bar-row .field:focus-within,
+.homepage-buses .search-panel .flight-search-bar-row .place-autocomplete:hover,
+.homepage-buses .search-panel .flight-search-bar-row .place-autocomplete:focus-within {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.search-panel .flight-search-bar-row input:focus,
+.search-panel .flight-search-bar-row input:focus-visible,
+.search-panel .flight-search-bar-row .field-control:focus,
+.search-panel .flight-search-bar-row .field-control:focus-visible,
+.search-panel .flight-search-bar-row .place-input:focus,
+.search-panel .flight-search-bar-row .place-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Floating Switcher Centered Exactly in the Middle */
+.homepage-flights .search-panel .flight-search-bar-row .swap-btn,
+.homepage-buses .search-panel .flight-search-bar-row .swap-btn,
+.search-panel .flight-search-bar-row .swap-btn {
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* 7. Outside Field Labels & Sleek Input Container (Container Height Reduced to 38px) - Scoped to .standard-grid */
+.homepage-flights .hero-grid .search-panel .standard-grid .field,
+.homepage-flights .hero-grid .search-panel .standard-grid .place-autocomplete,
+.homepage-flights .hero-grid .search-panel .standard-grid .traveller-field,
+.homepage-flights .hero-grid .search-panel .standard-grid .class-field,
+.homepage-flights .hero-grid .search-panel .standard-grid .departure-field,
+.homepage-flights .hero-grid .search-panel .standard-grid .return-field {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -9005,7 +9199,7 @@ button:focus-visible {
 }
 
 /* Outside Label above the Input Container */
-.homepage-flights .search-panel label {
+.homepage-flights .search-panel .standard-grid label {
   color: #475569 !important;
   font-size: 9.5px !important;
   font-weight: 700 !important;
@@ -9017,12 +9211,12 @@ button:focus-visible {
 }
 
 /* Bordered Input Container (Height 38px) */
-.search-panel .control-wrap,
-.search-panel .traveller-trigger,
-.search-panel .class-control-wrap,
-.homepage-flights .search-panel .control-wrap,
-.homepage-flights .search-panel .traveller-trigger,
-.homepage-flights .search-panel .class-control-wrap {
+.search-panel .standard-grid .control-wrap,
+.search-panel .standard-grid .traveller-trigger,
+.search-panel .standard-grid .class-control-wrap,
+.homepage-flights .search-panel .standard-grid .control-wrap,
+.homepage-flights .search-panel .standard-grid .traveller-trigger,
+.homepage-flights .search-panel .standard-grid .class-control-wrap {
   width: 100% !important;
   height: 38px !important;
   min-height: 38px !important;
@@ -9038,21 +9232,21 @@ button:focus-visible {
   box-shadow: none !important;
 }
 
-.search-panel .control-wrap:hover,
-.search-panel .traveller-trigger:hover,
-.search-panel .class-control-wrap:hover,
-.homepage-flights .search-panel .control-wrap:hover,
-.homepage-flights .search-panel .traveller-trigger:hover,
-.homepage-flights .search-panel .class-control-wrap:hover {
+.search-panel .standard-grid .control-wrap:hover,
+.search-panel .standard-grid .traveller-trigger:hover,
+.search-panel .standard-grid .class-control-wrap:hover,
+.homepage-flights .search-panel .standard-grid .control-wrap:hover,
+.homepage-flights .search-panel .standard-grid .traveller-trigger:hover,
+.homepage-flights .search-panel .standard-grid .class-control-wrap:hover {
   border-color: #dc1e26 !important;
 }
 
-.search-panel input,
-.search-panel .field-control,
-.search-panel .place-input,
-.homepage-flights .search-panel input,
-.homepage-flights .search-panel .field-control,
-.homepage-flights .search-panel .place-input {
+.search-panel .standard-grid input,
+.search-panel .standard-grid .field-control,
+.search-panel .standard-grid .place-input,
+.homepage-flights .search-panel .standard-grid input,
+.homepage-flights .search-panel .standard-grid .field-control,
+.homepage-flights .search-panel .standard-grid .place-input {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -9070,19 +9264,19 @@ button:focus-visible {
   text-overflow: clip !important;
 }
 
-.homepage-flights .search-panel .with-leading-icon {
+.homepage-flights .search-panel .standard-grid .with-leading-icon {
   padding-left: 0 !important;
 }
 
-.homepage-flights .search-panel .traveller-summary:not(.placeholder) span,
-.homepage-flights .search-panel .class-control-wrap span,
-.homepage-flights .search-panel .date-main-bold {
+.homepage-flights .search-panel .standard-grid .traveller-summary:not(.placeholder) span,
+.homepage-flights .search-panel .standard-grid .class-control-wrap span,
+.homepage-flights .search-panel .standard-grid .date-main-bold {
   color: #0f172a !important;
   font-weight: 700 !important;
   font-size: 13px !important;
 }
 
-.homepage-flights .search-panel .date-display-wrapper {
+.homepage-flights .search-panel .standard-grid .date-display-wrapper {
   margin-left: 0 !important;
   padding-left: 0 !important;
   display: flex !important;
@@ -9092,19 +9286,19 @@ button:focus-visible {
   flex-grow: 1 !important;
 }
 
-.homepage-flights .search-panel .date-sub-day {
+.homepage-flights .search-panel .standard-grid .date-sub-day {
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #64748b !important;
   margin: 0 !important;
 }
 
-.homepage-flights .search-panel .control-wrap svg,
-.homepage-flights .search-panel .departure-field .control-wrap svg,
-.homepage-flights .search-panel .return-field .control-wrap svg,
-.homepage-flights .search-panel .traveller-summary svg,
-.homepage-flights .search-panel .traveller-caret,
-.homepage-flights .search-panel .date-custom-display svg {
+.homepage-flights .search-panel .standard-grid .control-wrap svg,
+.homepage-flights .search-panel .standard-grid .departure-field .control-wrap svg,
+.homepage-flights .search-panel .standard-grid .return-field .control-wrap svg,
+.homepage-flights .search-panel .standard-grid .traveller-summary svg,
+.homepage-flights .search-panel .standard-grid .traveller-caret,
+.homepage-flights .search-panel .standard-grid .date-custom-display svg {
   position: static !important;
   transform: none !important;
   top: auto !important;
@@ -9114,7 +9308,7 @@ button:focus-visible {
   margin: 0 !important;
 }
 
-.homepage-flights .search-panel .swap-field {
+.homepage-flights .search-panel .standard-grid .swap-field {
   display: flex !important;
   align-items: flex-end !important;
   justify-content: center !important;
@@ -9122,7 +9316,7 @@ button:focus-visible {
 }
 
 /* Swap Button */
-.homepage-flights .search-panel .swap-btn {
+.homepage-flights .search-panel .standard-grid .swap-btn {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 50% !important;
@@ -11794,54 +11988,6 @@ button:focus-visible {
   width: 100% !important;
 }
 
-/* Wrapper — image on left, cards to the right. No extra card/box styling. */
-.client-testimonials-overlap-wrap {
-  display: flex !important;
-  align-items: stretch !important;
-  width: 100% !important;
-  max-width: 1240px !important;
-  margin: 0 auto !important;
-  position: relative !important;
-  box-sizing: border-box !important;
-  min-height: 250px !important;
-}
-
-/* Left scenic image — full image, fixed width */
-.client-testimonial-left-visual {
-  flex: 0 0 280px !important;
-  width: 280px !important;
-  position: relative !important;
-  z-index: 1 !important;
-  overflow: hidden !important;
-  flex-shrink: 0 !important;
-  align-self: stretch !important;
-  border-radius: 20px !important;
-}
-
-.client-testimonial-landscape-img {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center center !important;
-  display: block !important;
-}
-
-/* Cards area — sits right of the image, clipped so marquee scrolls cleanly */
-.client-testimonials-cards-overlay {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  overflow: hidden !important;
-  position: relative !important;
-  z-index: 2 !important;
-  padding: 20px 0 20px 24px !important;
-}
-
-/* Older CSS kept for compat — kept transparent */
 .client-testimonials-container {
   display: flex !important;
   gap: 28px !important;
@@ -11850,268 +11996,6 @@ button:focus-visible {
   max-width: 1240px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
-}
-
-/* Floating Glass Pill Badge */
-.client-testimonial-badge-pill {
-  position: absolute !important;
-  top: 14px !important;
-  left: 50% !important;
-  transform: translateX(-50%) scale(0.88) !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.95) !important;
-  border-radius: 30px !important;
-  padding: 5px 14px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important;
-  white-space: nowrap !important;
-  z-index: 10 !important;
-}
-
-.client-avatar-stack {
-  display: flex !important;
-  align-items: center !important;
-}
-
-.client-avatar-stack .avatar-circle {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 50% !important;
-  border: 1.5px solid #ffffff !important;
-  display: grid !important;
-  place-items: center !important;
-  font-size: 0.52rem !important;
-  font-weight: 800 !important;
-  color: #ffffff !important;
-  margin-left: -6px !important;
-}
-
-.client-avatar-stack .avatar-circle:first-child {
-  margin-left: 0 !important;
-}
-
-.client-avatar-stack .av1 {
-  background: #3b82f6 !important;
-}
-
-.client-avatar-stack .av2 {
-  background: #ec4899 !important;
-}
-
-.client-avatar-stack .av3 {
-  background: #8b5cf6 !important;
-}
-
-.client-badge-text {
-  display: flex !important;
-  flex-direction: column !important;
-  text-align: left !important;
-}
-
-.client-badge-text strong {
-  font-size: 0.74rem !important;
-  font-weight: 900 !important;
-  color: #dc1e26 !important;
-  line-height: 1 !important;
-}
-
-.client-badge-text span {
-  font-size: 0.56rem !important;
-  color: #475569 !important;
-  font-weight: 700 !important;
-}
-
-.client-testimonials-right-dark-box {
-  flex: 1 1 64% !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  position: relative !important;
-  box-shadow: none !important;
-  overflow: visible !important;
-}
-
-.client-testimonial-kicker {
-  color: #dc1e26 !important;
-  font-size: 0.95rem !important;
-  font-style: italic !important;
-  font-weight: 700 !important;
-  display: block !important;
-  margin-bottom: 8px !important;
-  letter-spacing: 0.02em !important;
-}
-
-.client-testimonial-title {
-  font-size: clamp(1.8rem, 2.8vw, 2.4rem) !important;
-  font-weight: 900 !important;
-  color: #0f172a !important;
-  margin: 0 0 24px 0 !important;
-  line-height: 1.2 !important;
-}
-
-.client-title-muted {
-  color: #64748b !important;
-  font-weight: 400 !important;
-}
-
-/* Testimonials Auto-Scrolling Marquee */
-@keyframes client-marquee-slide {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(-33.333%);
-  }
-}
-
-.client-testimonials-marquee {
-  width: 100% !important;
-  margin-bottom: 0 !important;
-  position: relative !important;
-  z-index: 20 !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-.client-testimonials-marquee .marquee-track {
-  display: flex !important;
-  width: max-content !important;
-  animation: client-marquee-slide 20s linear infinite !important;
-  will-change: transform !important;
-}
-
-.client-testimonials-marquee:hover .marquee-track,
-.client-testimonials-marquee:active .marquee-track,
-.client-testimonials-marquee:focus-within .marquee-track,
-.client-testimonials-marquee.is-paused .marquee-track,
-.client-testimonials-marquee.is-dragging .marquee-track,
-.client-testimonials-marquee[data-paused="true"] .marquee-track,
-.client-testimonials-marquee .marquee-track.is-paused,
-.client-testimonials-marquee .client-testimonial-card:active,
-.client-testimonials-marquee .client-testimonial-card:hover {
-  animation-play-state: paused !important;
-}
-
-.client-testimonials-marquee::-webkit-scrollbar {
-  display: none !important;
-}
-
-.client-testimonials-marquee .marquee-slide {
-  width: 280px !important;
-  flex: 0 0 280px !important;
-  padding-right: 16px !important;
-}
-
-.client-testimonials-marquee .client-testimonial-card {
-  width: 100% !important;
-  min-width: 100% !important;
-  box-sizing: border-box !important;
-  height: 100% !important;
-  cursor: pointer !important;
-  user-select: none !important;
-}
-
-.client-testimonial-card {
-  background: #ffffff !important;
-  border-radius: 18px !important;
-  padding: 20px 18px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14) !important;
-  border: 1px solid rgba(241, 245, 249, 0.9) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-}
-
-.client-testimonial-card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.2) !important;
-}
-
-.client-card-stars-row {
-  display: flex !important;
-  gap: 4px !important;
-  margin-bottom: 12px !important;
-}
-
-.client-card-comment {
-  font-size: 0.8rem !important;
-  line-height: 1.6 !important;
-  color: #334155 !important;
-  font-weight: 500 !important;
-  margin: 0 0 16px 0 !important;
-  flex-grow: 1 !important;
-}
-
-.client-card-author-row {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-}
-
-.client-card-avatar {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 50% !important;
-  background: linear-gradient(135deg, #0f172a, #334155) !important;
-  color: #ffffff !important;
-  display: grid !important;
-  place-items: center !important;
-  font-size: 0.72rem !important;
-  font-weight: 800 !important;
-  flex-shrink: 0 !important;
-}
-
-.client-card-author-meta {
-  display: flex !important;
-  flex-direction: column !important;
-  text-align: left !important;
-}
-
-.client-card-author-name {
-  font-size: 0.82rem !important;
-  font-weight: 800 !important;
-  color: #0f172a !important;
-  line-height: 1.2 !important;
-}
-
-.client-card-author-role {
-  font-size: 0.7rem !important;
-  color: #64748b !important;
-  font-weight: 500 !important;
-}
-
-@media (max-width: 992px) {
-  .client-testimonials-overlap-wrap {
-    flex-direction: column !important;
-    min-height: unset !important;
-    border-radius: 16px !important;
-    overflow: hidden !important;
-  }
-
-  .client-testimonial-left-visual {
-    width: 100% !important;
-    height: 200px !important;
-    min-height: 200px !important;
-    flex: none !important;
-    align-self: auto !important;
-  }
-
-  .client-testimonials-cards-overlay {
-    width: 100% !important;
-    padding: 16px 0 !important;
-    flex: none !important;
-  }
 }
 
 /* Left Scenic Image Card */
@@ -12267,10 +12151,11 @@ button:focus-visible {
   margin-bottom: 0 !important;
   position: relative !important;
   z-index: 20 !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow: hidden !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
 }
 
 .client-testimonials-marquee .marquee-track {
@@ -14311,179 +14196,4 @@ button:focus-visible {
 .brand-slide span,
 .homepage .brand-slide span {
   font-size: 9.5px !important;
-}
-/* ==========================================================================
-   HOTEL SEARCH PILL BAR (NEW DESIGN)
-   ========================================================================== */
-.hotel-pill-bar-wrap {
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-  margin-top: -30px !important;
-  position: relative !important;
-  z-index: 50 !important;
-  padding: 0 16px !important;
-  box-sizing: border-box !important;
-}
-
-.hotel-pill-bar {
-  display: flex !important;
-  align-items: center !important;
-  background: rgba(226, 226, 221, 0.95) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border-radius: 40px !important;
-  padding: 8px 8px 8px 24px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
-  max-width: 1000px !important;
-  width: 100% !important;
-}
-
-.hotel-pill-field {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 4px 16px !important;
-  border-radius: 20px !important;
-  transition: background 0.2s ease !important;
-}
-
-
-
-.hotel-pill-destination {
-  flex: 1.5 !important;
-}
-
-.hotel-pill-date {
-  flex: 1 !important;
-}
-
-.hotel-pill-guests {
-  flex: 1.2 !important;
-}
-
-.hotel-pill-icon {
-  color: #dc1e26 !important;
-  flex-shrink: 0 !important;
-}
-
-.hotel-pill-field-content {
-  display: flex !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  width: 100% !important;
-}
-
-.hotel-pill-label {
-  font-size: 0.65rem !important;
-  font-weight: 700 !important;
-  color: #64748b !important;
-  letter-spacing: 0.05em !important;
-  text-transform: uppercase !important;
-  margin-bottom: 2px !important;
-}
-
-.hotel-pill-value {
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
-  color: #0f172a !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.hotel-pill-divider {
-  width: 1px !important;
-  height: 32px !important;
-  background: rgba(15, 23, 42, 0.1) !important;
-  margin: 0 4px !important;
-  flex-shrink: 0 !important;
-}
-
-.hotel-pill-chevron {
-  color: #64748b !important;
-  flex-shrink: 0 !important;
-  transition: transform 0.2s ease !important;
-}
-
-.hotel-pill-chevron.open {
-  transform: rotate(180deg) !important;
-}
-
-/* Override autocomplete inputs inside the pill */
-.hotel-pill-autocomplete {
-  width: 100% !important;
-}
-.hotel-pill-autocomplete input {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
-  color: #0f172a !important;
-  width: 100% !important;
-  height: auto !important;
-  box-shadow: none !important;
-}
-.hotel-pill-autocomplete input::placeholder {
-  color: #94a3b8 !important;
-  font-weight: 500 !important;
-}
-.hotel-pill-autocomplete input:focus {
-  outline: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-/* Red Search Button */
-.hotel-pill-search-btn {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  background: linear-gradient(135deg, #e11d48, #be123c) !important;
-  color: #ffffff !important;
-  border: none !important;
-  border-radius: 30px !important;
-  padding: 0 24px !important;
-  height: 48px !important;
-  font-size: 0.9rem !important;
-  font-weight: 800 !important;
-  cursor: pointer !important;
-  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.3) !important;
-  transition: all 0.2s ease !important;
-  flex-shrink: 0 !important;
-  margin-left: 8px !important;
-  white-space: nowrap !important;
-}
-
-.hotel-pill-search-btn:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.4) !important;
-}
-
-.hotel-pill-search-btn:active {
-  transform: translateY(0) !important;
-}
-
-@media (max-width: 992px) {
-  .hotel-pill-bar {
-    flex-direction: column !important;
-    border-radius: 20px !important;
-    padding: 16px !important;
-    gap: 12px !important;
-  }
-  
-  .hotel-pill-divider {
-    width: 100% !important;
-    height: 1px !important;
-    margin: 4px 0 !important;
-  }
-  
-  .hotel-pill-search-btn {
-    width: 100% !important;
-    margin-left: 0 !important;
-    margin-top: 8px !important;
-  }
 }

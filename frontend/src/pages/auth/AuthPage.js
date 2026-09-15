@@ -350,9 +350,9 @@ export default function AuthPage() {
     }
     setLoading(true); setStatus({type:"",message:""});
     try {
-      const payload = await sendRegistrationOtp({ email, channel: "Email" });
+      const payload = await sendRegistrationOtp({ phoneNumber: mobile, channel: "Mobile" });
       setOtpSent(true); setOtp(""); setTimeLeft(300); setViewMode("register-otp");
-      setStatus({ type:"success", message: readApiMessage(payload, "OTP sent to your email address.") });
+      setStatus({ type:"success", message: readApiMessage(payload, "OTP sent to your mobile number.") });
     } catch (error) {
       setStatus({ type:"error", message: error?.message || "Failed to send OTP. Please try again." });
     } finally { setLoading(false); }
@@ -364,7 +364,7 @@ export default function AuthPage() {
     if (!/^\d{6}$/.test(otp)) { setErrors({ otp:"Enter the 6-digit OTP" }); return; }
     setLoading(true); setStatus({type:"",message:""});
     try {
-      await verifyRegistrationOtp({ email, channel:"Email", otp });
+      await verifyRegistrationOtp({ phoneNumber: mobile, channel:"Mobile", otp });
       const payload = await registerCustomer({ firstName: fullName.split(" ")[0] || fullName, lastName: fullName.split(" ").slice(1).join(" ") || "", phoneNumber: mobile, email, password });
       setStatus({ type:"success", message: readApiMessage(payload, "Registration successful! You can now log in.") });
       setTimeout(() => { setOtpSent(false); setViewMode("login"); }, 2000);
@@ -527,7 +527,7 @@ export default function AuthPage() {
   const getTitle = () => {
     if (viewMode === "login")         return "Welcome back";
     if (viewMode === "register")      return "Create account";
-    if (viewMode === "register-otp")  return "Verify email";
+    if (viewMode === "register-otp")  return "Verify mobile";
     if (viewMode === "forgot-password") {
       if (fpStep === 1) return "Forgot password?";
       if (fpStep === 2) return "Enter OTP";
@@ -538,7 +538,7 @@ export default function AuthPage() {
   const getSubtitle = () => {
     if (viewMode === "login") return authMethod === "email" ? "Enter your email and password to continue." : "Enter your mobile — new users can continue with OTP.";
     if (viewMode === "register") return "Register to enjoy a seamless booking experience.";
-    if (viewMode === "register-otp") return `OTP sent to ${email}. Please check and enter below.`;
+    if (viewMode === "register-otp") return `OTP sent to +91 ${mobile}. Please check and enter below.`;
     if (viewMode === "forgot-password") {
       if (fpStep === 1) return "Enter your registered email or mobile to receive a reset OTP.";
       if (fpStep === 2) return `Enter the OTP sent to your ${fpChannel === "email" ? "email" : "mobile"}.`;
@@ -810,7 +810,7 @@ export default function AuthPage() {
                 <StatusBanner status={status} />
                 <div className="auth-otp-info">
                   <span className="auth-otp-info-icon"><ShieldCheck size={20}/></span>
-                  <div><strong>OTP sent to your email</strong><p>{email}</p></div>
+                  <div><strong>OTP sent to your mobile</strong><p>+91 {mobile}</p></div>
                 </div>
                 <div className="auth-field-group">
                   <label className="auth-field-label" htmlFor="ro-otp">Enter OTP</label>

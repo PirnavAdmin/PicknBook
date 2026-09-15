@@ -366,8 +366,8 @@ function seatDefinitionsForBus(busType, totalSeats, backendSeats = [], backendSe
   const normalizedTotalSeats = Math.max(
     1,
     backendSeatCodes.length ||
-      Number(totalSeats) ||
-      (layoutKind === "hybrid" ? 36 : layoutKind === "sleeper" ? 30 : 44)
+    Number(totalSeats) ||
+    (layoutKind === "hybrid" ? 36 : layoutKind === "sleeper" ? 30 : 44)
   );
 
   if (backendSeatCodes.length > 0 && layoutKind === "seater") {
@@ -662,13 +662,13 @@ export default function BusSeatSelectionPage({
 } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const flowState = readBusBookingFlowState();
   const stateData = embeddedState || location.state || flowState || {};
-  
+
   const bus = stateData.bus;
   const searchContext = stateData.searchContext;
-  
+
   const [selectedSeatLabels, setSelectedSeatLabels] = useState(stateData.selectedSeatLabels || []);
   const [selectedSeatPassengers, setSelectedSeatPassengers] = useState(stateData.selectedSeatPassengers || {});
   const [selectedBoardingId, setSelectedBoardingId] = useState(stateData.selectedBoardingId || "");
@@ -717,7 +717,7 @@ export default function BusSeatSelectionPage({
     setIsSeatLayoutLoading(true);
     setIsFetchingSeats(true);
     setSeatFetchError("");
-    
+
     const fetchSeatMap = async () => {
       try {
         const seatMap = await getBusSeatMap(bus);
@@ -790,7 +790,7 @@ export default function BusSeatSelectionPage({
           Number(backendSeatMap?.priceInr) ||
           Number(bus.fare) ||
           0;
-        
+
         // Determine status based on backend data
         let status = "available";
         if (isBooked) {
@@ -922,7 +922,7 @@ export default function BusSeatSelectionPage({
           }
           return;
         }
-        
+
         // Branch node traversal (handles both arrays and keyed objects)
         const items = Array.isArray(container) ? container : Object.values(container);
         items.forEach((item) => {
@@ -932,7 +932,7 @@ export default function BusSeatSelectionPage({
       if (rawLayout.Result) parseSrdvSeats(rawLayout.Result, false);
       if (rawLayout.ResultUpperSeat) parseSrdvSeats(rawLayout.ResultUpperSeat, true);
       if (map.size === 0) parseSrdvSeats(rawLayout, false);
-      
+
       if (filteredCount > 0) {
         console.log(`[SeatFilter] Filtered out ${filteredCount} non-seat structural items:`, filteredNames);
       }
@@ -1104,11 +1104,11 @@ export default function BusSeatSelectionPage({
   );
   const tripDateLabel = formatTripDateLabel(
     searchContext?.date ||
-      searchContext?.travelDate ||
-      searchContext?.journeyDate ||
-      bus.departureDate ||
-      bus.travelDate ||
-      bus.journeyDate
+    searchContext?.travelDate ||
+    searchContext?.journeyDate ||
+    bus.departureDate ||
+    bus.travelDate ||
+    bus.journeyDate
   );
 
   if (!bus) {
@@ -1237,10 +1237,10 @@ export default function BusSeatSelectionPage({
 
   const handleRetryFetchSeats = async () => {
     if (!bus) return;
-    
+
     setIsFetchingSeats(true);
     setSeatFetchError("");
-    
+
     try {
       const seatMap = await getBusSeatMap(bus);
       setBackendSeatMap(seatMap);
@@ -1349,7 +1349,7 @@ export default function BusSeatSelectionPage({
     const lanes = Array.from({ length: laneCount }, (_, laneIndex) =>
       rows.map((row) => row[laneIndex] || null)
     ).reverse();
-    
+
     const firstSeat = rows.flat().find(Boolean);
     const configuredAisleAfterColumn = Number(firstSeat?.aisleAfterColumn);
     const aisleBeforeLane = Number.isFinite(configuredAisleAfterColumn)
@@ -1394,9 +1394,8 @@ export default function BusSeatSelectionPage({
     return (
       <div
         key={section.name}
-        className={`bus-flow-vertical-section bus-flow-vertical-section--${
-          firstSeat?.kind || "seater"
-        }`}
+        className={`bus-flow-vertical-section bus-flow-vertical-section--${firstSeat?.kind || "seater"
+          }`}
       >
         <div className="bus-flow-vertical-section-grid">
           {section.rows.map((row, rowIndex) => (
@@ -1471,7 +1470,7 @@ export default function BusSeatSelectionPage({
           </React.Fragment>
         ));
       }
-      
+
       return (
         <>
           {lowerDeckRows.length > 0 && (
@@ -1504,7 +1503,7 @@ export default function BusSeatSelectionPage({
                 {renderSeatButton(row[3])}
               </React.Fragment>
             ))}
-            </div>
+          </div>
         </div>
       </section>,
       true
@@ -1515,77 +1514,77 @@ export default function BusSeatSelectionPage({
     <main className={`bus-flow-page${embedded ? " bus-flow-page--embedded" : ""}`}>
       <div className="bus-flow-shell" style={embedded ? { minWidth: 0 } : {}}>
         {!embedded && (
-        <section className="bus-flow-summary-card">
-          <div className="bus-flow-trip-strip">
-            <article className="bus-flow-operator-cell">
-              <strong>{bus.operatorName}</strong>
-              <span>{bus.busType}</span>
-            </article>
-            <article className="bus-flow-time-cell">
-              <strong>
-                {bus.departureTime}
-                {tripDateLabel && <small>{tripDateLabel}</small>}
-              </strong>
-              <span>{bus.fromCity}</span>
-            </article>
-            <article className="bus-flow-duration-cell">
-              <span>{bus.duration}</span>
-              <i />
-            </article>
-            <article className="bus-flow-time-cell">
-              <strong>
-                {bus.arrivalTime}
-                {tripDateLabel && <small>{tripDateLabel}</small>}
-              </strong>
-              <span>{bus.toCity}</span>
-            </article>
-            <article className="bus-flow-price-cell">
-              <span>Starts from</span>
-              <strong>{formatCurrency(bus.fare)}</strong>
-            </article>
-            <article className="bus-flow-seat-count-cell">
-              <strong>{bus.availableSeats} Seats Available</strong>
-            </article>
-          </div>
-          <div className="bus-flow-summary-actions">
-            <button
-              type="button"
-              className={activeCardPanel === "boarding" ? "active" : ""}
-              onClick={() => setActiveCardPanel(activeCardPanel === "boarding" ? null : "boarding")}
-            >
-              Boarding & Dropping Points
-            </button>
-            <button
-              type="button"
-              className={activeCardPanel === "policy" ? "active" : ""}
-              onClick={() => setActiveCardPanel(activeCardPanel === "policy" ? null : "policy")}
-            >
-              Cancellation Policies
-            </button>
-            <button
-              type="button"
-              className="active"
-              onClick={() => (embedded ? onClose?.() : navigate(-1))}
-            >
-              {isSeatLayoutLoading ? "VIEW SEATS" : "HIDE SEAT"}
-            </button>
-          </div>
-          {activeCardPanel && (
-            <div className="bus-flow-expand-panel">
-              {activeCardPanel === "boarding" ? (
-                <p>
-                  Boarding Point: <strong>{typeof bus.boardingPoint === "object" && bus.boardingPoint !== null ? (bus.boardingPoint.name || bus.boardingPoint.locationName || "") : bus.boardingPoint}</strong> | Dropping Point:{" "}
-                  <strong>{typeof bus.droppingPoint === "object" && bus.droppingPoint !== null ? (bus.droppingPoint.name || bus.droppingPoint.locationName || "") : bus.droppingPoint}</strong>
-                </p>
-              ) : (
-                <p>
-                  Free cancellation available up to 6 hours before departure. Partial refund
-                  may apply afterwards.
-                </p>
-              )}
+          <section className="bus-flow-summary-card">
+            <div className="bus-flow-trip-strip">
+              <article className="bus-flow-operator-cell">
+                <strong>{bus.operatorName}</strong>
+                <span>{bus.busType}</span>
+              </article>
+              <article className="bus-flow-time-cell">
+                <strong>
+                  {bus.departureTime}
+                  {tripDateLabel && <small>{tripDateLabel}</small>}
+                </strong>
+                <span>{bus.fromCity}</span>
+              </article>
+              <article className="bus-flow-duration-cell">
+                <span>{bus.duration}</span>
+                <i />
+              </article>
+              <article className="bus-flow-time-cell">
+                <strong>
+                  {bus.arrivalTime}
+                  {tripDateLabel && <small>{tripDateLabel}</small>}
+                </strong>
+                <span>{bus.toCity}</span>
+              </article>
+              <article className="bus-flow-price-cell">
+                <span>Starts from</span>
+                <strong>{formatCurrency(bus.fare)}</strong>
+              </article>
+              <article className="bus-flow-seat-count-cell">
+                <strong>{bus.availableSeats} Seats Available</strong>
+              </article>
             </div>
-          )}
-        </section>
+            <div className="bus-flow-summary-actions">
+              <button
+                type="button"
+                className={activeCardPanel === "boarding" ? "active" : ""}
+                onClick={() => setActiveCardPanel(activeCardPanel === "boarding" ? null : "boarding")}
+              >
+                Boarding & Dropping Points
+              </button>
+              <button
+                type="button"
+                className={activeCardPanel === "policy" ? "active" : ""}
+                onClick={() => setActiveCardPanel(activeCardPanel === "policy" ? null : "policy")}
+              >
+                Cancellation Policies
+              </button>
+              <button
+                type="button"
+                className="active"
+                onClick={() => (embedded ? onClose?.() : navigate(-1))}
+              >
+                {isSeatLayoutLoading ? "VIEW SEATS" : "HIDE SEAT"}
+              </button>
+            </div>
+            {activeCardPanel && (
+              <div className="bus-flow-expand-panel">
+                {activeCardPanel === "boarding" ? (
+                  <p>
+                    Boarding Point: <strong>{typeof bus.boardingPoint === "object" && bus.boardingPoint !== null ? (bus.boardingPoint.name || bus.boardingPoint.locationName || "") : bus.boardingPoint}</strong> | Dropping Point:{" "}
+                    <strong>{typeof bus.droppingPoint === "object" && bus.droppingPoint !== null ? (bus.droppingPoint.name || bus.droppingPoint.locationName || "") : bus.droppingPoint}</strong>
+                  </p>
+                ) : (
+                  <p>
+                    Free cancellation available up to 6 hours before departure. Partial refund
+                    may apply afterwards.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
         )}
 
         {isSeatLayoutLoading || isFetchingSeats ? (
@@ -1666,7 +1665,7 @@ export default function BusSeatSelectionPage({
                 </div>
               </header>
 
-              <div className="modern-seat-layout-wrapper">
+              <div className="modern-seat-layout-wrapper" style={{ zoom: '0.85' }}>
                 <SeatSelection
                   vehicleType="bus"
                   seatData={backendSeatMap?.rawLayoutData || null}
@@ -1707,7 +1706,7 @@ export default function BusSeatSelectionPage({
               )}
             </div>
 
-            <aside className="bus-flow-point-panel">
+            <aside className="bus-flow-point-panel" style={{ zoom: '0.85' }}>
               <h3>Select Boarding & Dropping</h3>
 
               <div className="point-tabs">

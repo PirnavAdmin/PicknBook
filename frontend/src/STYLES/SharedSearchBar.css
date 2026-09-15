@@ -1,570 +1,593 @@
             overflow: visible !important;
-          }
+            }
 
-          .hero-section:has(.pnb-custom-datepicker-popup) .hero-content,
-          .hero-section:has(.pnb-custom-datepicker-popup) .hero-grid,
-          .hero-section:has(.pnb-custom-datepicker-popup) .search-panel,
-          .hero-section:has(.pnb-custom-datepicker-popup) .booking-content,
-          .hero-section:has(.pnb-custom-datepicker-popup) .flight-search-bar-row,
-          .hero-section.datepicker-active .hero-content,
-          .hero-section.datepicker-active .hero-grid,
-          .hero-section.datepicker-active .search-panel,
-          .hero-section.datepicker-active .booking-content,
-          .hero-section.datepicker-active .flight-search-bar-row {
-            position: relative !important;
-            z-index: 999999 !important;
-            overflow: visible !important;
-          }
+            .hero-section:has(.pnb-custom-datepicker-popup) .hero-content,
+            .hero-section:has(.pnb-custom-datepicker-popup) .hero-grid,
+            .hero-section:has(.pnb-custom-datepicker-popup) .search-panel,
+            .hero-section:has(.pnb-custom-datepicker-popup) .booking-content,
+            .hero-section:has(.pnb-custom-datepicker-popup) .flight-search-bar-row,
+            .hero-section.datepicker-active .hero-content,
+            .hero-section.datepicker-active .hero-grid,
+            .hero-section.datepicker-active .search-panel,
+            .hero-section.datepicker-active .booking-content,
+            .hero-section.datepicker-active .flight-search-bar-row {
+              position: relative !important;
+              z-index: 999999 !important;
+              overflow: visible !important;
+            }
 
-          .flight-hero-wallpaper {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            overflow: hidden !important;
-            z-index: 0 !important;
-            pointer-events: none !important;
-            background: transparent !important;
-          }
+            .flight-hero-wallpaper {
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              overflow: hidden !important;
+              z-index: 0 !important;
+              pointer-events: none !important;
+              background: transparent !important;
+            }
 
-          .flight-hero-wallpaper-video {
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 100% !important;
-            object-fit: cover !important;
-            object-position: center center !important;
-            filter: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-          }
+            .flight-hero-wallpaper-video {
+              width: 100% !important;
+              height: 100% !important;
+              min-height: 100% !important;
+              object-fit: cover !important;
+              object-position: center center !important;
+              filter: none !important;
+              opacity: 1 !important;
+              transform: none !important;
+            }
 
-          .home-ai-chat,
-          .home-ai-toggle,
-          .home-ai-plane-orb,
-          .flight-hero-wallpaper-overlay {
-            display: none !important;
-          }
+            .home-ai-chat,
+            .home-ai-toggle,
+            .home-ai-plane-orb,
+            .flight-hero-wallpaper-overlay {
+              display: none !important;
+            }
 
-          .homepage-flights .flight-hero-header,
-          .homepage-buses .hero-header-left,
-          .homepage-hotels .hero-header-left {
-            position: absolute !important;
-            top: 18px !important;
-            left: 36px !important;
-            right: auto !important;
-            text-align: left !important;
-            max-width: 600px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            z-index: 50 !important;
-            width: auto !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-          }
+            .homepage-flights .flight-hero-header,
+            .homepage-buses .hero-header-left,
+            .homepage-hotels .hero-header-left {
+              position: absolute !important;
+              top: 18px !important;
+              left: 36px !important;
+              right: auto !important;
+              text-align: left !important;
+              max-width: 600px !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              z-index: 50 !important;
+              width: auto !important;
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: flex-start !important;
+            }
 
-          .homepage-flights .flight-hero-title,
-          .homepage-buses .hero-title-left,
-          .homepage-hotels .hero-title-left {
-            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
-            font-size: clamp(28px, 3vw, 40px) !important;
-            font-weight: 900 !important;
-            color: #ffffff !important;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65) !important;
-            margin: 0 0 4px 0 !important;
-            letter-spacing: -0.01em !important;
-            line-height: 1.18 !important;
-            text-transform: none !important;
-          }
+            .homepage-flights .flight-hero-title,
+            .homepage-buses .hero-title-left,
+            .homepage-hotels .hero-title-left {
+              font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+              font-size: clamp(28px, 3vw, 40px) !important;
+              font-weight: 900 !important;
+              color: #ffffff !important;
+              text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65) !important;
+              margin: 0 0 4px 0 !important;
+              letter-spacing: -0.01em !important;
+              line-height: 1.18 !important;
+              text-transform: none !important;
+            }
 
-          .homepage-flights .flight-hero-title-highlight,
-          .homepage-buses .hero-title-highlight,
-          .homepage-hotels .hero-title-highlight {
-            color: #dc1e26 !important;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6) !important;
-          }
+            .homepage-flights .flight-hero-title-highlight,
+            .homepage-buses .hero-title-highlight,
+            .homepage-hotels .hero-title-highlight {
+              color: #dc1e26 !important;
+              text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6) !important;
+            }
 
-          .homepage-flights .flight-hero-subtitle,
-          .homepage-buses .hero-subtitle-left,
-          .homepage-hotels .hero-subtitle-left {
-            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
-            font-size: clamp(13px, 1.35vw, 15px) !important;
-            font-weight: 600 !important;
-            color: rgba(255, 255, 255, 0.95) !important;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
-            margin: 0 !important;
-            opacity: 1 !important;
-            letter-spacing: 0.01em !important;
-            line-height: 1.35 !important;
-            max-width: 520px !important;
-          }
+            .homepage-flights .flight-hero-subtitle,
+            .homepage-buses .hero-subtitle-left,
+            .homepage-hotels .hero-subtitle-left {
+              font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+              font-size: clamp(13px, 1.35vw, 15px) !important;
+              font-weight: 600 !important;
+              color: rgba(255, 255, 255, 0.95) !important;
+              text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+              margin: 0 !important;
+              opacity: 1 !important;
+              letter-spacing: 0.01em !important;
+              line-height: 1.35 !important;
+              max-width: 520px !important;
+            }
 
-          .homepage-buses .hero-content,
-          .homepage-flights .hero-content,
-          .homepage-hotels .hero-content {
-            width: 100% !important;
-            max-width: 1240px !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-            position: static !important;
-            height: 100% !important;
-            align-self: stretch !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: flex-end !important;
-            overflow: visible !important;
-          }
+            .homepage-buses .hero-content,
+            .homepage-flights .hero-content,
+            .homepage-hotels .hero-content {
+              width: 100% !important;
+              max-width: 1240px !important;
+              margin: 0 auto !important;
+              box-sizing: border-box !important;
+              position: static !important;
+              height: 100% !important;
+              align-self: stretch !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: flex-end !important;
+              overflow: visible !important;
+            }
 
-          .homepage-flights .hero-grid,
-          .homepage-buses .hero-grid,
-          .homepage-hotels .hero-grid,
-          .homepage-flights .hero-grid.multicity-active {
-            width: 100% !important;
-            max-width: 1220px !important;
-            margin: 0 auto !important;
-            box-sizing: border-box !important;
-            overflow: visible !important;
-          }
+            .homepage-flights .hero-grid,
+            .homepage-buses .hero-grid,
+            .homepage-hotels .hero-grid,
+            .homepage-flights .hero-grid.multicity-active {
+              width: 100% !important;
+              max-width: 1220px !important;
+              margin: 0 auto !important;
+              box-sizing: border-box !important;
+              overflow: visible !important;
+            }
 
-          /* ── Sleek Glassmorphic Search Bar ── */
-          .homepage-buses .search-panel,
-          .homepage-flights .search-panel,
-          .homepage-hotels .search-panel,
-          .homepage-flights .search-panel.is-multicity {
-            width: 100% !important;
-            max-width: 1240px !important;
-            height: auto !important;
-            min-height: 58px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2)) !important;
-            backdrop-filter: blur(24px) saturate(160%) !important;
-            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-            border-radius: 20px !important;
-            padding: 6px 16px !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
-            border: 1px solid rgba(255, 255, 255, 0.65) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            box-sizing: border-box !important;
-            margin: 0 auto !important;
-            transform: none !important;
-            position: relative !important;
-            z-index: 200 !important;
-            overflow: visible !important;
-          }
+            /* ── Sleek Glassmorphic Search Bar ── */
+            .homepage-buses .search-panel,
+            .homepage-flights .search-panel,
+            .homepage-hotels .search-panel,
+            .homepage-flights .search-panel.is-multicity {
+              width: 100% !important;
+              max-width: 1240px !important;
+              height: auto !important;
+              min-height: 58px !important;
+              background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2)) !important;
+              backdrop-filter: blur(24px) saturate(160%) !important;
+              -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+              border-radius: 20px !important;
+              padding: 6px 16px !important;
+              box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+              border: 1px solid rgba(255, 255, 255, 0.65) !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: center !important;
+              box-sizing: border-box !important;
+              margin: 0 auto !important;
+              transform: none !important;
+              position: relative !important;
+              z-index: 200 !important;
+              overflow: visible !important;
+            }
 
-          .homepage-flights .search-panel .tabs-wrap,
-          .homepage-buses .search-panel .tabs-wrap,
-          .homepage-hotels .search-panel .tabs-wrap,
-          .homepage-flights .search-panel .popular-searches-row {
-            display: none !important;
-          }
+            .homepage-flights .search-panel .tabs-wrap,
+            .homepage-buses .search-panel .tabs-wrap,
+            .homepage-hotels .search-panel .tabs-wrap,
+            .homepage-flights .search-panel .popular-searches-row {
+              display: none !important;
+            }
 
-          /* Left-aligned Trip Chips */
-          .homepage-flights .search-panel .trip-switch {
-            display: flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            margin-bottom: 8px !important;
-            margin-top: 0 !important;
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-          }
+            /* Left-aligned Trip Chips */
+            .homepage-flights .search-panel .trip-switch {
+              display: flex !important;
+              align-items: center !important;
+              gap: 8px !important;
+              margin-bottom: 8px !important;
+              margin-top: 0 !important;
+              background: transparent !important;
+              border: none !important;
+              padding: 0 !important;
+            }
 
-          .homepage-flights .search-panel .trip-chip {
-            background: #f1f5f9 !important;
-            color: #334155 !important;
-            border: none !important;
-            border-radius: 18px !important;
-            padding: 3px 12px !important;
-            font-weight: 800 !important;
-            font-size: 0.68rem !important;
-            letter-spacing: 0.04em !important;
-            text-transform: uppercase !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 4px !important;
-            transition: all 0.2s ease !important;
-          }
+            .homepage-flights .search-panel .trip-chip {
+              background: #f1f5f9 !important;
+              color: #334155 !important;
+              border: none !important;
+              border-radius: 18px !important;
+              padding: 3px 12px !important;
+              font-weight: 800 !important;
+              font-size: 0.68rem !important;
+              letter-spacing: 0.04em !important;
+              text-transform: uppercase !important;
+              display: flex !important;
+              align-items: center !important;
+              gap: 4px !important;
+              transition: all 0.2s ease !important;
+            }
 
-          .homepage-flights .search-panel .trip-chip.active {
-            background: #dc1e26 !important;
-            color: #ffffff !important;
-            box-shadow: 0 3px 8px rgba(220, 30, 38, 0.3) !important;
-          }
+            .homepage-flights .search-panel .trip-chip.active {
+              background: #dc1e26 !important;
+              color: #ffffff !important;
+              box-shadow: 0 3px 8px rgba(220, 30, 38, 0.3) !important;
+            }
 
-          /* Single Line Row Layout */
-          .search-panel .flight-search-bar-row {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: stretch !important;
-            justify-content: space-between !important;
-            gap: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            background: transparent !important;
-          }
+            /* Single Line Row Layout */
+            .search-panel .flight-search-bar-row {
+              display: flex !important;
+              flex-direction: row !important;
+              flex-wrap: nowrap !important;
+              align-items: stretch !important;
+              justify-content: space-between !important;
+              gap: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+              background: transparent !important;
+            }
 
-          .search-panel .flight-search-bar-row > * {
-            margin: 0 !important;
-            flex-shrink: 1 !important;
-          }
+            .search-panel .flight-search-bar-row>* {
+              margin: 0 !important;
+              flex-shrink: 1 !important;
+            }
 
-          /* Seamless Flat Fields with Vertical Line Dividers - Strictly Aligned */
-          .search-panel .flight-search-bar-row .field,
-          .search-panel .flight-search-bar-row .place-autocomplete,
-          .search-panel .flight-search-bar-row .departure-field,
-          .search-panel .flight-search-bar-row .return-field,
-          .search-panel .flight-search-bar-row .traveller-field,
-          .search-panel .flight-search-bar-row .class-field,
-          .search-panel .flight-search-bar-row .source-field,
-          .search-panel .flight-search-bar-row .destination-field,
-          .search-panel .flight-search-bar-row .hotel-destination-field,
-          .search-panel .flight-search-bar-row .checkin-field,
-          .search-panel .flight-search-bar-row .checkout-field,
-          .search-panel .flight-search-bar-row .hotel-guests-field {
-            flex: 1 1 auto !important;
-            min-width: 80px !important;
-            height: 56px !important;
-            background: transparent !important;
-            border: none !important;
-            border-right: 1px solid #e2e8f0 !important;
-            border-radius: 0 !important;
-            padding: 6px 12px 6px 12px !important;
-            margin: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            align-items: flex-start !important;
-            box-sizing: border-box !important;
-            position: relative !important;
-          }
+            /* Seamless Flat Fields with Vertical Line Dividers - Strictly Aligned */
+            .search-panel .flight-search-bar-row .field,
+            .search-panel .flight-search-bar-row .place-autocomplete,
+            .search-panel .flight-search-bar-row .departure-field,
+            .search-panel .flight-search-bar-row .return-field,
+            .search-panel .flight-search-bar-row .traveller-field,
+            .search-panel .flight-search-bar-row .class-field,
+            .search-panel .flight-search-bar-row .source-field,
+            .search-panel .flight-search-bar-row .destination-field,
+            .search-panel .flight-search-bar-row .hotel-destination-field,
+            .search-panel .flight-search-bar-row .checkin-field,
+            .search-panel .flight-search-bar-row .checkout-field,
+            .search-panel .flight-search-bar-row .hotel-guests-field {
+              flex: 1 1 auto !important;
+              min-width: 80px !important;
+              height: 56px !important;
+              background: transparent !important;
+              border: none !important;
+              border-right: 1px solid #e2e8f0 !important;
+              border-radius: 0 !important;
+              padding: 6px 12px 6px 12px !important;
+              margin: 0 !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              align-items: flex-start !important;
+              box-sizing: border-box !important;
+              position: relative !important;
+            }
 
-          .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
-          .search-panel .flight-search-bar-row .place-autocomplete.is-open {
-            z-index: 10000 !important;
-          }
+            .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
+            .search-panel .flight-search-bar-row .place-autocomplete.is-open {
+              z-index: 10000 !important;
+            }
 
-          .search-panel .flight-search-bar-row .destination-field .place-dropdown,
-          .search-panel .flight-search-bar-row .destination-field .bus-place-dropdown,
-          .search-panel .flight-search-bar-row .destination-field .modern-place-menu {
-            left: auto !important;
-            right: 0 !important;
-          }
+            .search-panel .flight-search-bar-row .destination-field .place-dropdown,
+            .search-panel .flight-search-bar-row .destination-field .bus-place-dropdown,
+            .search-panel .flight-search-bar-row .destination-field .modern-place-menu {
+              left: auto !important;
+              right: 0 !important;
+            }
 
-          /* Field Labels - Strictly on the exact same horizontal line */
-          .search-panel .flight-search-bar-row .field label,
-          .search-panel .flight-search-bar-row .place-autocomplete label,
-          .search-panel .flight-search-bar-row .departure-field label,
-          .search-panel .flight-search-bar-row .return-field label,
-          .search-panel .flight-search-bar-row .traveller-field label,
-          .search-panel .flight-search-bar-row .class-field label,
-          .search-panel .flight-search-bar-row .hotel-destination-field label,
-          .search-panel .flight-search-bar-row .checkin-field label,
-          .search-panel .flight-search-bar-row .checkout-field label,
-          .search-panel .flight-search-bar-row .hotel-guests-field label {
-            display: flex !important;
-            align-items: center !important;
-            text-align: left !important;
-            align-self: flex-end !important;
-            color: #0f172a !important;
-            font-size: 0.68rem !important;
-            font-weight: 900 !important;
-            letter-spacing: 0.07em !important;
-            height: 14px !important;
-            min-height: 14px !important;
-            max-height: 14px !important;
-            line-height: 14px !important;
-            margin: 0 0 4px 0 !important;
-            padding: 0 !important;
-            text-transform: uppercase !important;
-            white-space: nowrap !important;
-            box-sizing: border-box !important;
-          }
+            /* Field Labels - Strictly on the exact same horizontal line */
+            .search-panel .flight-search-bar-row .field label,
+            .search-panel .flight-search-bar-row .place-autocomplete label,
+            .search-panel .flight-search-bar-row .departure-field label,
+            .search-panel .flight-search-bar-row .return-field label,
+            .search-panel .flight-search-bar-row .traveller-field label,
+            .search-panel .flight-search-bar-row .class-field label,
+            .search-panel .flight-search-bar-row .hotel-destination-field label,
+            .search-panel .flight-search-bar-row .checkin-field label,
+            .search-panel .flight-search-bar-row .checkout-field label,
+            .search-panel .flight-search-bar-row .hotel-guests-field label {
+              display: flex !important;
+              align-items: center !important;
+              text-align: left !important;
+              align-self: flex-end !important;
+              color: #0f172a !important;
+              font-size: 0.68rem !important;
+              font-weight: 900 !important;
+              letter-spacing: 0.07em !important;
+              height: 14px !important;
+              min-height: 14px !important;
+              max-height: 14px !important;
+              line-height: 14px !important;
+              margin: 0 0 4px 0 !important;
+              padding: 0 !important;
+              text-transform: uppercase !important;
+              white-space: nowrap !important;
+              box-sizing: border-box !important;
+            }
 
-          /* Uniform Control Wrappers & Input Containers */
-          .search-panel .flight-search-bar-row .field-control,
-          .search-panel .flight-search-bar-row input.field-control {
-            height: 28px !important;
-            min-height: 28px !important;
-            line-height: 28px !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            color: #334155 !important;
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            width: 100% !important;
-          }
+            /* Uniform Control Wrappers & Input Containers */
+            .search-panel .flight-search-bar-row .field-control,
+            .search-panel .flight-search-bar-row input.field-control {
+              height: 28px !important;
+              min-height: 28px !important;
+              line-height: 28px !important;
+              background: transparent !important;
+              border: none !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              color: #334155 !important;
+              font-size: 0.9rem !important;
+              font-weight: 600 !important;
+              width: 100% !important;
+            }
 
-          .search-panel .flight-search-bar-row .control-wrap,
-          .search-panel .flight-search-bar-row .traveller-trigger,
-          .search-panel .flight-search-bar-row .hotel-guests-trigger {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 8px !important;
-            width: 100% !important;
-            height: 28px !important;
-            min-height: 28px !important;
-            max-height: 28px !important;
-            flex: 0 0 28px !important;
-            margin: 4px 0 0 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            box-sizing: border-box !important;
-          }
+            .search-panel .flight-search-bar-row .control-wrap,
+            .search-panel .flight-search-bar-row .traveller-trigger,
+            .search-panel .flight-search-bar-row .hotel-guests-trigger {
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              gap: 8px !important;
+              width: 100% !important;
+              height: 28px !important;
+              min-height: 28px !important;
+              max-height: 28px !important;
+              flex: 0 0 28px !important;
+              margin: 4px 0 0 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+              background: transparent !important;
+              box-sizing: border-box !important;
+            }
 
-          .search-panel .flight-search-bar-row .control-wrap svg {
-            color: #dc1e26 !important;
-            stroke: #dc1e26 !important;
-            flex-shrink: 0 !important;
-            width: 17px !important;
-            height: 17px !important;
-          }
+            .search-panel .flight-search-bar-row .control-wrap svg {
+              color: #dc1e26 !important;
+              stroke: #dc1e26 !important;
+              flex-shrink: 0 !important;
+              width: 17px !important;
+              height: 17px !important;
+            }
 
-          /* Date fields: ensure control-wrap fills remaining vertical space */
-          .search-panel .flight-search-bar-row .departure-field .control-wrap,
-          .search-panel .flight-search-bar-row .return-field .control-wrap,
-          .search-panel .flight-search-bar-row .checkin-field .control-wrap,
-          .search-panel .flight-search-bar-row .checkout-field .control-wrap {
-            margin-top: 0 !important;
-          }
+            /* Date fields: ensure control-wrap fills remaining vertical space */
+            .search-panel .flight-search-bar-row .departure-field .control-wrap,
+            .search-panel .flight-search-bar-row .return-field .control-wrap,
+            .search-panel .flight-search-bar-row .checkin-field .control-wrap,
+            .search-panel .flight-search-bar-row .checkout-field .control-wrap {
+              margin-top: 0 !important;
+            }
 
-          .search-panel .flight-search-bar-row .departure-field .date-display-wrapper,
-          .search-panel .flight-search-bar-row .return-field .date-display-wrapper {
-            display: flex !important;
-            align-items: center !important;
-            height: 100% !important;
-          }
+            .search-panel .flight-search-bar-row .departure-field .date-display-wrapper,
+            .search-panel .flight-search-bar-row .return-field .date-display-wrapper {
+              display: flex !important;
+              align-items: center !important;
+              height: 100% !important;
+            }
 
-          .search-panel .flight-search-bar-row .field-control::placeholder {
-            color: #475569 !important;
-            font-weight: 500 !important;
-            opacity: 0.9 !important;
-          }
+            .search-panel .flight-search-bar-row .field-control::placeholder {
+              color: #475569 !important;
+              font-weight: 500 !important;
+              opacity: 0.9 !important;
+            }
 
-          .search-panel .flight-search-bar-row .date-placeholder,
-          .search-panel .flight-search-bar-row .date-main-bold,
-          .search-panel .flight-search-bar-row .traveller-summary span,
-          .search-panel .flight-search-bar-row .class-summary span {
-            color: #334155 !important;
-            font-weight: 600 !important;
-            font-size: 0.9rem !important;
-            opacity: 1 !important;
-          }
+            .search-panel .flight-search-bar-row .date-placeholder,
+            .search-panel .flight-search-bar-row .date-main-bold,
+            .search-panel .flight-search-bar-row .traveller-summary span,
+            .search-panel .flight-search-bar-row .class-summary span {
+              color: #334155 !important;
+              font-weight: 600 !important;
+              font-size: 0.9rem !important;
+              opacity: 1 !important;
+            }
 
-          .search-panel .flight-search-bar-row .source-field,
-          .search-panel .flight-search-bar-row .destination-field {
-            flex: 1.2 1 auto !important;
-          }
+            .search-panel .flight-search-bar-row .source-field,
+            .search-panel .flight-search-bar-row .destination-field {
+              flex: 1.2 1 auto !important;
+            }
 
-          .search-panel .flight-search-bar-row .source-field {
-            padding-left: 6px !important;
-            border-right: none !important;
-          }
+            .search-panel .flight-search-bar-row .source-field {
+              padding-left: 6px !important;
+              border-right: none !important;
+            }
 
-          .search-panel .flight-search-bar-row .destination-field {
-            padding-left: 8px !important;
-          }
+            .search-panel .flight-search-bar-row .destination-field {
+              padding-left: 8px !important;
+            }
 
-          .search-panel .flight-search-bar-row .hotel-destination-field {
-            flex: 1.4 1 auto !important;
-            padding-left: 6px !important;
-            border-right: 1px solid #e2e8f0 !important;
-          }
+            .search-panel .flight-search-bar-row .hotel-destination-field {
+              flex: 1.4 1 auto !important;
+              padding-left: 6px !important;
+              border-right: 1px solid #e2e8f0 !important;
+            }
 
-          .search-panel .flight-search-bar-row .hotel-guests-field {
-            flex: 1.2 1 auto !important;
-            border-right: 1px solid #e2e8f0 !important;
-            padding-left: 12px !important;
-          }
+            .search-panel .flight-search-bar-row .hotel-guests-field {
+              flex: 1.2 1 auto !important;
+              border-right: 1px solid #e2e8f0 !important;
+              padding-left: 12px !important;
+            }
 
-          .search-panel .flight-search-bar-row .hotel-destination-field svg,
-          .search-panel .flight-search-bar-row .checkin-field svg,
-          .search-panel .flight-search-bar-row .checkout-field svg,
-          .search-panel .flight-search-bar-row .hotel-guests-field svg:first-child {
-            color: #dc1e26 !important;
-            stroke: #dc1e26 !important;
-            flex-shrink: 0 !important;
-          }
+            .search-panel .flight-search-bar-row .hotel-destination-field svg,
+            .search-panel .flight-search-bar-row .checkin-field svg,
+            .search-panel .flight-search-bar-row .checkout-field svg,
+            .search-panel .flight-search-bar-row .hotel-guests-field svg:first-child {
+              color: #dc1e26 !important;
+              stroke: #dc1e26 !important;
+              flex-shrink: 0 !important;
+            }
 
-          /* Ensure dropdowns aren't covered by subsequent sibling elements with explicit z-indices */
-          .search-panel .flight-search-bar-row .departure-field {
-            z-index: 40 !important;
-          }
-          .search-panel .flight-search-bar-row .return-field {
-            z-index: 35 !important;
-          }
-          .search-panel .flight-search-bar-row .traveller-field {
-            z-index: 30 !important;
-          }
-          .search-panel .flight-search-bar-row .class-field {
-            z-index: 25 !important;
-          }
-          .search-panel .flight-search-bar-row .departure-field:focus-within,
-          .search-panel .flight-search-bar-row .return-field:focus-within,
-          .search-panel .flight-search-bar-row .traveller-field:focus-within,
-          .search-panel .flight-search-bar-row .class-field:focus-within,
-          .search-panel .flight-search-bar-row .departure-field:has(.pnb-custom-datepicker-popup),
-          .search-panel .flight-search-bar-row .return-field:has(.pnb-custom-datepicker-popup),
-          .search-panel .flight-search-bar-row .checkin-field:has(.pnb-custom-datepicker-popup),
-          .search-panel .flight-search-bar-row .checkout-field:has(.pnb-custom-datepicker-popup),
-          .search-panel .flight-search-bar-row .departure-field.is-datepicker-open,
-          .search-panel .flight-search-bar-row .return-field.is-datepicker-open,
-          .search-panel .flight-search-bar-row .checkin-field.is-datepicker-open,
-          .search-panel .flight-search-bar-row .checkout-field.is-datepicker-open {
-            z-index: 999999 !important;
-          }
+            /* Ensure dropdowns aren't covered by subsequent sibling elements with explicit z-indices */
+            .search-panel .flight-search-bar-row .departure-field {
+              z-index: 40 !important;
+            }
 
-          /* Circular Swap Button - Cleanly positioned between FROM and TO without overlap */
-          .homepage-flights .search-panel .flight-search-bar-row .swap-field,
-          .homepage-buses .search-panel .flight-search-bar-row .swap-field,
-          .search-panel .flight-search-bar-row .swap-field {
-            flex: 0 0 auto !important;
-            margin: 0 !important;
-            padding: 0 4px 10px 4px !important;
-            z-index: 10 !important;
-            display: flex !important;
-            align-items: flex-start !important;
-            align-self: flex-end !important;
-            justify-content: center !important;
-          }
+            .search-panel .flight-search-bar-row .return-field {
+              z-index: 35 !important;
+            }
 
-          .search-panel .flight-search-bar-row .swap-btn {
-            width: 28px !important;
-            height: 28px !important;
-            border-radius: 50% !important;
-            background: #ffffff !important;
-            border: 1.5px solid #fee2e2 !important;
-            color: #dc1e26 !important;
-            box-shadow: 0 2px 6px rgba(220, 30, 38, 0.15) !important;
-            display: flex !important;
-            align-items: stretch !important;
-            justify-content: center !important;
-            cursor: pointer !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            padding: 0 !important;
-          }
+            .search-panel .flight-search-bar-row .traveller-field {
+              z-index: 30 !important;
+            }
 
-          .search-panel .flight-search-bar-row .swap-btn:hover {
-            background: #dc1e26 !important;
-            color: #ffffff !important;
-            border-color: #dc1e26 !important;
-            transform: rotate(180deg) scale(1.08) !important;
-            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
-          }
-          
-          .search-panel .flight-search-bar-row .date-display-wrapper span {
-            white-space: nowrap !important;
-          }
+            .search-panel .flight-search-bar-row .class-field {
+              z-index: 25 !important;
+            }
 
-          /* Red Search Button */
-          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
-            flex: 0 0 auto !important;
-            width: auto !important;
-            min-width: 100px !important;
-            height: 36px !important;
-            background: #dc1e26 !important;
-            color: #ffffff !important;
-            border-radius: 9px !important;
-            font-weight: 800 !important;
-            font-size: 0.65rem !important;
-            letter-spacing: 0.04em !important;
-            text-transform: uppercase !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 5px !important;
-            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
-            transition: all 0.2s ease !important;
-            margin-left: 8px !important;
-            align-self: flex-end !important;
-            margin-bottom: 6px !important;
-          }
-
-          .homepage-flights .search-panel .search-btn.flight-grid-search-btn:hover {
-            background: #b8141b !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
-          }
-
-          /* Hotel Search Button — same compact style as bus/flight search button */
-          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn {
-            flex: 0 0 auto !important;
-            width: auto !important;
-            min-width: 100px !important;
-            height: 36px !important;
-            background: #dc1e26 !important;
-            color: #ffffff !important;
-            border-radius: 9px !important;
-            font-weight: 800 !important;
-            font-size: 0.65rem !important;
-            letter-spacing: 0.04em !important;
-            text-transform: uppercase !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 5px !important;
-            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
-            transition: all 0.2s ease !important;
-            margin-top: 0 !important;
-            margin-left: 8px !important;
-          }
-
-          .search-panel .flight-search-bar-row .search-btn.hotel-search-submit-btn:hover {
-            background: #b8141b !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
-          }
-
-          /* Multi-City Full Width Row Styling */
-          .homepage-flights .search-panel .multi-city-list {
-            width: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
+            .search-panel .flight-search-bar-row .departure-field:focus-within,
+            .search-panel .flight-search-bar-row .return-field:focus-within,
+            .search-panel .flight-search-bar-row .traveller-field:focus-within,
+            .search-panel .flight-search-bar-row .class-field:focus-within,
+            .search-panel .flight-search-bar-row .departure-field:has(.pnb-custom-datepicker-popup),
+            .search-panel .flight-search-bar-row .return-field:has(.pnb-custom-datepicker-popup),
+            .search-panel .flight-search-bar-row .checkin-field:has(.pnb-custom-datepicker-popup),
+            .search-panel .flight-search-bar-row .checkout-field:has(.pnb-custom-datepicker-popup),
+            .search-panel .flight-search-bar-row .departure-field.is-datepicker-open,
+            .search-panel .flight-search-bar-row .return-field.is-datepicker-open,
             gap: 10px !important;
-          }
+            }
 
-          .homepage-flights .search-panel .multi-city-row {
-            width: 100% !important;
-            display: grid !important;
-            grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(160px, 1fr) auto !important;
-            gap: 12px !important;
-            align-items: flex-end !important;
-          }
+            .homepage-flights .search-panel .multi-city-row {
+              width: 100% !important;
+              display: grid !important;
+              grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(160px, 1fr) auto !important;
+              gap: 12px !important;
+              align-items: flex-end !important;
+            }
 
-          .homepage-flights .search-panel .multi-footer-row {
-            width: 100% !important;
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 12px !important;
-            align-items: flex-end !important;
-          }
+            .homepage-flights .search-panel .multi-footer-row {
+              width: 100% !important;
+              display: grid !important;
+              grid-template-columns: 1fr 1fr !important;
+              gap: 12px !important;
+              align-items: flex-end !important;
+            }
 
-          .homepage-flights .search-panel .multi-actions {
-            display: flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            height: 38px !important;
-          }
+            .homepage-flights .search-panel .multi-actions {
+              display: flex !important;
+              align-items: center !important;
+              gap: 8px !important;
+              height: 38px !important;
+            }
 
-          .homepage-flights .search-panel .action-circle {
-            width: 38px !important;
-            height: 38px !important;
-            min-width: 38px !important;
-            min-height: 38px !important;
-            border-radius: 50% !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;}
+            .homepage-flights .search-panel .action-circle {
+              width: 38px !important;
+              height: 38px !important;
+              min-width: 38px !important;
+              min-height: 38px !important;
+              border-radius: 50% !important;
+              display: inline-flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            }
+/* --- SharedSearchBar Utility Patches ---
+   These rules safely patch gaps between SharedSearchBar.css and the
+   heavy specificity of HomePage.css. Each !important is intentional and
+   documented - see TODO comments for planned follow-up scope cleanups. */
 
+/* 1. readOnly inputs need an explicit pointer cursor. */
+.search-panel .flight-search-bar-row input.field-control[readOnly] {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+/* 2. Guaranteed .search-btn text contrast - solid white on red.
+   TODO: Re-scope HomePage.css .search-btn so this override can be simplified. */
+.search-panel .search-btn,
+.search-panel button.search-btn {
+  color: #ffffff !important;
+  background: #dc1e26 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+.search-panel .search-btn:hover,
+.search-panel button.search-btn:hover {
+  background: #b8141b !important;
+  color: #ffffff !important;
+}
+
+/* 3. .field--no-divider - applied in markup instead of fragile :nth-last-child */
+.search-panel .flight-search-bar-row .field--no-divider {
+  border-right: none !important;
+}
+
+/* 4. .search-panel--solid - Hotel hero bar uses solid white for contrast safety.
+   INTENTIONAL DIVERGENCE: Bus keeps frosted glass; Hotel uses solid white. */
+.search-panel--solid {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+}
+.search-panel--solid::before {
+  background: none !important;
+  backdrop-filter: none !important;
+}
+
+/* 5. Hotel Inline Search Bar - all text solid black on white card background */
+.hotel-search-inline label,
+.hotel-search-inline .place-autocomplete label,
+.hotel-search-inline input.place-input {
+  color: #000000 !important;
+}
+.hotel-search-inline input::placeholder {
+  color: #6b7280 !important;
+}
+
+/* ─── hotel-dest-bare: PlaceAutocomplete when embedded in the hotel inline bar's
+   custom destination cell. Strips the shared .field border/padding so the cell
+   controls layout entirely, and forces text to #000 on the white card. */
+.hotel-search-inline .hotel-dest-bare,
+.hotel-search-inline .hotel-dest-bare.field {
+  flex: 1 !important;
+  min-width: 0 !important;
+  border-right: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+.hotel-search-inline .hotel-dest-bare .control-wrap {
+  display: flex !important;
+  align-items: center !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  position: relative !important;
+}
+/* Show the MapPin icon from .control-wrap in normal flow before the input */
+.hotel-search-inline .hotel-dest-bare .control-wrap > svg:first-child,
+.hotel-search-inline .hotel-dest-bare .control-wrap svg {
+  display: inline-block !important;
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  margin-right: 4px !important;
+  color: #dc2626 !important;
+}
+/* Input field — remove all borders, text starts immediately after icon */
+.hotel-search-inline .hotel-dest-bare input.field-control {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #000000 !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+.hotel-search-inline .hotel-dest-bare input.field-control::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Force all visible text in hotel inline bar to solid black.
+   The bar sits on a white card so all slate/grey shades look washed out;
+   black gives proper legibility. */
+.hotel-search-inline span,
+.hotel-search-inline label {
+  color: #000000 !important;
+}
+
+/* Prevent PlaceAutocomplete .field class from imposing fixed height inside hotel bar */
+.hotel-search-inline .hotel-dest-bare.field,
+.hotel-search-inline .hotel-dest-bare {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  border-right: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  position: static !important;
+}
+.hotel-search-inline .hotel-dest-bare .control-wrap,
+.hotel-search-inline .hotel-dest-bare .field-group {
+  height: auto !important;
+  min-height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}

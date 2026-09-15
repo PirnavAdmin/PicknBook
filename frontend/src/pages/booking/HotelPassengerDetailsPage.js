@@ -556,6 +556,8 @@ export default function HotelPassengerDetailsPage() {
             const normalizedAmenities = Array.isArray(rawFacilities)
               ? rawFacilities.map(f => typeof f === "object" && f !== null ? String(f.name || f.Name || f.title || "").trim() : String(f || "").trim()).filter(Boolean)
               : [];
+              
+            const rawAttractions = hotelDetailsObj.Attractions || hotelDetailsObj.attractions || [];
 
             setHotel(current => ({
                 ...current,
@@ -564,6 +566,10 @@ export default function HotelPassengerDetailsPage() {
                 longitude: hotelDetailsObj.Longitude || hotelDetailsObj.longitude || current.longitude,
                 address: hotelDetailsObj.Address || hotelDetailsObj.address || current.address,
                 amenities: normalizedAmenities.length > 0 ? normalizedAmenities : current.amenities,
+                attractions: rawAttractions,
+                description: hotelDetailsObj.Description || hotelDetailsObj.description || [],
+                hotelPolicy: hotelDetailsObj.HotelPolicy || hotelDetailsObj.hotelPolicy || "",
+                policyAndInstruction: hotelDetailsObj.PolicyAndInstruction || hotelDetailsObj.policyAndInstruction || [],
                 hotelId: fetchedHotelCode
             }));
         }
@@ -617,7 +623,11 @@ export default function HotelPassengerDetailsPage() {
                             currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
                             roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
                             cancellationPolicy: cancelPolicies?.[0]?.charge || cancelPolicies?.[0]?.Charge ? `Charge: ${cancelPolicies[0].charge || cancelPolicies[0].Charge}` : "Refundable thresholds apply",
+                            cancellationPoliciesData: cancelPolicies,
                             bedType: r.bedTypes || r.BedTypes || "",
+                            amenities: r.amenities || r.Amenities || [],
+                            hotelSupplements: r.hotelSupplements || r.HotelSupplements || "",
+                            servicesStatus: r.servicesStatus || r.ServicesStatus || [],
                             isPANMandatory: hotelRoomResult.isPANMandatory || hotelRoomResult.IsPANMandatory || r.isPANMandatory || false,
                             isPassportMandatory: hotelRoomResult.isPassportMandatory || hotelRoomResult.IsPassportMandatory || r.isPassportMandatory || false
                         };

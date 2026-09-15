@@ -1,77 +1,27 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { CalendarDays, Search, Users, ChevronDown, Plus, Minus, BedDouble, Baby, MapPin } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
 import CustomDatePicker from "./CustomDatePicker";
 import { getDefaultDateString } from "../utils/apiDateFormat";
+import "../STYLES/HotelSearchWidget.css";
 
 function toDisplayDate(isoString) {
   if (!isoString) return "";
   const parts = isoString.split("-");
-  if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
   return isoString;
 }
 
 function calculateNights(checkIn, checkOut) {
   if (!checkIn || !checkOut) return 1;
-  const diffTime = new Date(checkOut) - new Date(checkIn);
+  const inDate = new Date(checkIn);
+  const outDate = new Date(checkOut);
+  const diffTime = outDate - inDate;
   if (diffTime <= 0) return 1;
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-
-function GuestsDropdown({ rooms, adults, children, childAges, onRoomsChange, onAdultsChange, onChildrenChange, onChildAgeChange, onDone, isInline }) {
-  const Counter = ({ value, onDec, onInc, min = 0, max = 99 }) => (
-    <div style={{ display:"flex", alignItems:"center", border:"1px solid #fca5a5", borderRadius:"8px", padding:"2px 8px", gap:"8px" }}>
-      <button type="button" onClick={() => onDec(Math.max(min, value-1))} disabled={value <= min}
-        style={{ background:"transparent", border:"none", width:"20px", height:"20px", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc1e26", cursor:value<=min?"not-allowed":"pointer", opacity:value<=min?0.4:1, padding:0 }}>
-        <Minus size={14} strokeWidth={2} />
-      </button>
-      <span style={{ fontSize:"0.9rem", fontWeight:700, minWidth:"18px", textAlign:"center", color:"#0f172a" }}>{value}</span>
-      <button type="button" onClick={() => onInc(Math.min(max, value+1))} disabled={value >= max}
-        style={{ background:"transparent", border:"none", width:"20px", height:"20px", display:"flex", alignItems:"center", justifyContent:"center", color:"#dc1e26", cursor:value>=max?"not-allowed":"pointer", opacity:value>=max?0.4:1, padding:0 }}>
-        <Plus size={14} strokeWidth={2} />
-      </button>
-    </div>
-  );
-  const Row = ({ icon: Icon, label, sub, value, onDec, onInc, min, max }) => (
-    <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"10px 0", borderBottom:"1px solid #f1f5f9" }}>
-      <Icon size={18} strokeWidth={1.5} style={{ color:"#64748b", flexShrink:0 }} />
-      <div style={{ flex:1 }}>
-        <div style={{ fontSize:"0.85rem", fontWeight:700, color:"#0f172a" }}>{label}</div>
-        {sub && <div style={{ fontSize:"0.7rem", color:"#94a3b8" }}>{sub}</div>}
-      </div>
-      <Counter value={value} onDec={onDec} onInc={onInc} min={min} max={max} />
-    </div>
-  );
-  return (
-    <div onClick={(e) => e.stopPropagation()} style={{
-      position:"absolute", top:"calc(100% + 10px)", left:isInline?"auto":0, right:isInline?0:"auto",
-      width:"280px", background:"#ffffff", border:"1px solid #e2e8f0", borderRadius:"16px",
-      boxShadow:"0 16px 40px rgba(15,23,42,0.16)", padding:"8px 16px 12px", zIndex:9999,
-    }}>
-      <Row icon={BedDouble} label="Rooms" sub="Max 8 rooms" value={rooms} onDec={onRoomsChange} onInc={onRoomsChange} min={1} max={8} />
-      <Row icon={Users} label="Adults" sub="13 years & above" value={adults} onDec={onAdultsChange} onInc={onAdultsChange} min={1} max={30} />
-      <Row icon={Baby} label="Children" sub="0 to 12 years" value={children} onDec={onChildrenChange} onInc={onChildrenChange} min={0} max={10} />
-      {childAges.length > 0 && (
-        <div style={{ marginTop:"6px" }}>
-          <span style={{ fontSize:"0.72rem", fontWeight:700, color:"#64748b", textTransform:"uppercase" }}>Child Ages</span>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginTop:"6px" }}>
-            {childAges.map((age, i) => (
-              <select key={i} value={age} onChange={(e) => onChildAgeChange(i, Number(e.target.value))}
-                style={{ border:"1px solid #e2e8f0", borderRadius:"8px", padding:"4px 8px", fontSize:"0.8rem", color:"#0f172a", background:"#f8fafc", cursor:"pointer" }}>
-                {Array.from({length:13},(_,n) => <option key={n} value={n}>{n===0?"< 1 yr":`${n} yr${n>1?"s":""}`}</option>)}
-              </select>
-            ))}
-          </div>
-        </div>
-      )}
-      <div style={{ display:"flex", justifyContent:"flex-end", marginTop:"12px" }}>
-        <button type="button" onClick={onDone}
-          style={{ background:"#dc1e26", color:"#fff", border:"none", borderRadius:"10px", padding:"7px 22px", fontWeight:700, cursor:"pointer", fontSize:"0.85rem", boxShadow:"0 4px 12px rgba(220,30,38,0.3)" }}>
-          Done
-        </button>
-      </div>
-    </div>
-  );
 }
 
 export default function HotelSearchWidget({
@@ -86,161 +36,411 @@ export default function HotelSearchWidget({
   const [destination, setDestination] = useState(() => initialDestination || "");
   const [destinationError, setDestinationError] = useState("");
   const [internalCityId, setInternalCityId] = useState(() => initialInternalCityId || null);
+
   const [checkInDate, setCheckInDate] = useState(() => initialCheckIn || getDefaultDateString(0));
   const [checkOutDate, setCheckOutDate] = useState(() => initialCheckOut || getDefaultDateString(1));
   const [activeDatePicker, setActiveDatePicker] = useState(null);
 
-  const parseRoomsConfig = (config) => {
-    if (!config) return null;
-    if (typeof config === "string") { try { return JSON.parse(config); } catch(e) { return null; } }
-    if (Array.isArray(config)) return config;
-    return null;
+  const [rooms, setRooms] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.length;
+      }
+    }
+    return 1;
+  });
+
+  const [adults, setAdults] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.reduce((sum, r) => sum + (r.adults || 0), 0);
+      }
+    }
+    return 2;
+  });
+
+  const [children, setChildren] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.reduce((sum, r) => sum + (r.children || 0), 0);
+      }
+    }
+    return 0;
+  });
+
+  const [childAges, setChildAges] = useState(() => {
+    if (initialRoomsConfig) {
+      let parsed = null;
+      if (typeof initialRoomsConfig === "string") {
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+      } else if (Array.isArray(initialRoomsConfig)) {
+        parsed = initialRoomsConfig;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const ages = [];
+        parsed.forEach(r => {
+          if (r.childAges) ages.push(...r.childAges);
+        });
+        return ages;
+      }
+    }
+    return [];
+  });
+
+  const handleRoomsChange = (newCount) => {
+    setRooms(newCount);
+    if (newCount === 0) {
+      setAdults(0);
+      setChildren(0);
+      setChildAges([]);
+    } else if (newCount > 0 && adults === 0) {
+      setAdults(1);
+    }
   };
-  const parsed = parseRoomsConfig(initialRoomsConfig);
 
-  const [rooms, setRooms] = useState(() => parsed && parsed.length > 0 ? parsed.length : 1);
-  const [adults, setAdults] = useState(() => parsed && parsed.length > 0 ? parsed.reduce((s,r)=>s+(r.adults||0),0) : 2);
-  const [children, setChildren] = useState(() => parsed && parsed.length > 0 ? parsed.reduce((s,r)=>s+(r.children||0),0) : 0);
-  const [childAges, setChildAges] = useState(() => { if (parsed && parsed.length > 0) { const a=[]; parsed.forEach(r=>{ if(r.childAges) a.push(...r.childAges); }); return a; } return []; });
+  const handleAdultsChange = (newCount) => {
+    setAdults(newCount);
+    if (newCount > 0 && rooms === 0) {
+      setRooms(1);
+    }
+  };
 
-  const handleRoomsChange = (n) => { setRooms(n); if(n===0){setAdults(0);setChildren(0);setChildAges([]);} else if(n>0&&adults===0) setAdults(1); };
-  const handleAdultsChange = (n) => { setAdults(n); if(n>0&&rooms===0) setRooms(1); };
-  const handleChildrenChange = (n) => { setChildren(n); if(n>0&&rooms===0){setRooms(1);if(adults===0)setAdults(1);} setChildAges(prev=>n>prev.length?[...prev,...Array(n-prev.length).fill(4)]:prev.slice(0,n)); };
-  const handleChildAgeChange = (index, age) => { setChildAges(prev=>{ const a=[...prev]; a[index]=age; return a; }); };
+  const handleChildrenChange = (newCount) => {
+    setChildren(newCount);
+    if (newCount > 0 && rooms === 0) {
+      setRooms(1);
+      if (adults === 0) setAdults(1);
+    }
+    setChildAges(prev => {
+      if (newCount > prev.length) {
+        return [...prev, ...Array(newCount - prev.length).fill(4)];
+      } else {
+        return prev.slice(0, newCount);
+      }
+    });
+  };
+
+  const handleChildAgeChange = (index, age) => {
+    setChildAges(prev => {
+      const newAges = [...prev];
+      newAges[index] = age;
+      return newAges;
+    });
+  };
 
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const guestsFieldRef = useRef(null);
 
+  const toggleGuestsDropdown = () => {
+    setShowGuestsDropdown((prev) => !prev);
+  };
+
   useEffect(() => {
-    const handler = (e) => { if(guestsFieldRef.current&&!guestsFieldRef.current.contains(e.target)) setShowGuestsDropdown(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const handleClickOutside = (event) => {
+      if (guestsFieldRef.current && !guestsFieldRef.current.contains(event.target)) {
+        setShowGuestsDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
-  useEffect(() => { if(initialDestination) setDestination(initialDestination); }, [initialDestination]);
-  useEffect(() => { if(initialInternalCityId) setInternalCityId(initialInternalCityId); }, [initialInternalCityId]);
-  useEffect(() => { if(initialCheckIn) setCheckInDate(initialCheckIn); }, [initialCheckIn]);
-  useEffect(() => { if(initialCheckOut) setCheckOutDate(initialCheckOut); }, [initialCheckOut]);
+  useEffect(() => {
+    if (initialDestination) setDestination(initialDestination);
+  }, [initialDestination]);
 
-  const handleDestinationChange = (value, cityId) => { setDestination(value); setDestinationError(""); setInternalCityId(cityId||null); };
+  useEffect(() => {
+    if (initialInternalCityId) setInternalCityId(initialInternalCityId);
+  }, [initialInternalCityId]);
 
-  const guestSummary = (rooms===0&&adults===0) ? "1 Room, 2 Adults"
-    : `${rooms} Room${rooms>1?"s":""},\u00a0${adults} Adult${adults>1?"s":""}${children>0?`, ${children} Child${children>1?"ren":""}` : ""}`;
+  useEffect(() => {
+    if (initialCheckIn) setCheckInDate(initialCheckIn);
+  }, [initialCheckIn]);
+
+  useEffect(() => {
+    if (initialCheckOut) setCheckOutDate(initialCheckOut);
+  }, [initialCheckOut]);
+
+  const handleDestinationChange = (value, cityId) => {
+    setDestination(value);
+    setDestinationError("");
+    if (cityId) {
+      setInternalCityId(cityId);
+    } else {
+      setInternalCityId(null);
+    }
+  };
+
+  const guestSummary = `${rooms} Room${rooms > 1 ? 's' : ''}, ${adults} Adult${adults > 1 ? 's' : ''}${children > 0 ? `, ${children} Child${children > 1 ? 'ren' : ''}` : ""}`;
 
   const handleSubmit = () => {
     const destVal = destination.trim();
-    if(!destVal){ setDestinationError("Destination city is required."); return; }
+    if (!destVal) {
+      setDestinationError("Destination city is required.");
+      return;
+    }
     setDestinationError("");
-    if(onSearch){
-      const cfg=[{adults:adults||2,children:children||0,childAges}];
-      onSearch({ destination:destVal, checkInDate, checkOutDate, rooms:String(rooms||1), adults:String(adults||2), children:String(children||0), guests:guestSummary, roomsConfig:cfg, roomsConfigStr:JSON.stringify(cfg), internalCityId });
+
+    if (onSearch) {
+      const dynamicRoomsConfig = [{
+        adults: adults || 2,
+        children: children || 0,
+        childAges: childAges
+      }];
+      onSearch({
+        destination: destVal,
+        checkInDate,
+        checkOutDate,
+        rooms: String(rooms || 1),
+        adults: String(adults || 2),
+        children: String(children || 0),
+        guests: guestSummary,
+        roomsConfig: dynamicRoomsConfig,
+        roomsConfigStr: JSON.stringify(dynamicRoomsConfig),
+        internalCityId: internalCityId
+      });
     }
   };
 
-  const advanceCheckOut = (val) => {
-    if(checkOutDate&&val>=checkOutDate){
-      const n=new Date(val); n.setDate(n.getDate()+1);
-      setCheckOutDate(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`);
-    }
-  };
-
-  // ─ INLINE MODE ──────────────────────────────────────────────────────────────
-  if (isInline) {
-    return (
-      <form className="hotel-discover-searchbar" onSubmit={(e)=>{e.preventDefault();handleSubmit();}}
-        style={{ background:"#ffffff", borderRadius:"28px", padding:"8px 20px", border:"1px solid rgba(0,0,0,0.06)", boxShadow:"0 4px 20px rgba(0,0,0,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", maxWidth:"1100px", margin:"0 auto", boxSizing:"border-box", position:"relative", overflow:"visible" }}>
-        <div className="hotel-discover-searchcell" style={{ display:"flex", alignItems:"center", gap:"12px", flex:"1.3 1 auto", minWidth:0, position:"relative" }}>
-          <PlaceAutocomplete label="STAY DESTINATION" value={destination} onChange={handleDestinationChange} tripType="hotel" field="destination" placeholder="Enter city, area or hotel" error={destinationError} className="hotel-discover-searchcell-autocomplete" isInline={true} />
-        </div>
-        <div className="hotel-discover-searchcell" style={{ display:"flex", alignItems:"center", gap:"12px", flex:"1.2 1 auto", borderLeft:"1px solid rgba(15,23,42,0.08)", paddingLeft:"20px", cursor:"pointer", minWidth:0, position:"relative" }}>
-          <CalendarDays size={18} color="#dc1e26" style={{ flexShrink:0 }} />
-          <div style={{ display:"flex", flexDirection:"column", width:"100%", minWidth:0 }}>
-            <span style={{ fontSize:"0.72rem", fontWeight:600, color:"#64748b", letterSpacing:"0.05em", textTransform:"uppercase" }}>TIMELINE</span>
-            <div style={{ display:"flex", alignItems:"center", gap:"6px", margin:"2px 0" }}>
-              <span style={{ cursor:"pointer", color:"#0f172a", fontWeight:500, fontSize:"14px", whiteSpace:"nowrap" }} onClick={(e)=>{e.stopPropagation();setActiveDatePicker(activeDatePicker==="checkin"?null:"checkin")}}>{toDisplayDate(checkInDate)||"Select"}</span>
-              <span style={{ color:"#94a3b8", fontWeight:700 }}>-</span>
-              <span style={{ cursor:"pointer", color:"#0f172a", fontWeight:500, fontSize:"14px", whiteSpace:"nowrap" }} onClick={(e)=>{e.stopPropagation();setActiveDatePicker(activeDatePicker==="checkout"?null:"checkout")}}>{toDisplayDate(checkOutDate)||"dates"}</span>
-            </div>
-            <span style={{ fontSize:"0.72rem", color:"#64748b", textTransform:"uppercase", letterSpacing:"0.03em" }}>{calculateNights(checkInDate,checkOutDate)} {calculateNights(checkInDate,checkOutDate)===1?"NIGHT":"NIGHTS"}</span>
-            <CustomDatePicker isOpen={activeDatePicker==="checkin"} onClose={()=>setActiveDatePicker(null)} value={checkInDate} minDate={getDefaultDateString(0)} onChange={(val)=>{setCheckInDate(val);setActiveDatePicker(null);advanceCheckOut(val);}} title="Check-in Date" />
-            <CustomDatePicker isOpen={activeDatePicker==="checkout"} onClose={()=>setActiveDatePicker(null)} value={checkOutDate} minDate={checkInDate||getDefaultDateString(0)} onChange={(val)=>{setCheckOutDate(val);setActiveDatePicker(null);}} title="Check-out Date" />
-          </div>
-        </div>
-        <div className="hotel-discover-searchcell" ref={guestsFieldRef} style={{ display:"flex", alignItems:"center", gap:"12px", flex:"1.1 1 auto", borderLeft:"1px solid rgba(255,255,255,0.15)", paddingLeft:"20px", cursor:"pointer", minWidth:0, position:"relative" }} onClick={()=>setShowGuestsDropdown(p=>!p)}>
-          <Users size={18} color="#dc1e26" style={{ flexShrink:0 }} />
-          <div style={{ display:"flex", flexDirection:"column", minWidth:0, flex:1 }}>
-            <span style={{ fontSize:"0.72rem", fontWeight:600, color:"#64748b", letterSpacing:"0.05em", textTransform:"uppercase" }}>GUESTS</span>
-            <span style={{ fontSize:"14px", fontWeight:500, color:"#0f172a", margin:"2px 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{guestSummary}</span>
-            <span style={{ fontSize:"0.72rem", color:"#64748b", textTransform:"uppercase", letterSpacing:"0.03em" }}>ROOMS & GUESTS</span>
-          </div>
-          {showGuestsDropdown && <GuestsDropdown rooms={rooms} adults={adults} children={children} childAges={childAges} onRoomsChange={handleRoomsChange} onAdultsChange={handleAdultsChange} onChildrenChange={handleChildrenChange} onChildAgeChange={handleChildAgeChange} onDone={()=>setShowGuestsDropdown(false)} isInline={true} />}
-        </div>
-        <button type="button" className="hotel-discover-searchbutton" onClick={handleSubmit} style={{ borderRadius:"32px", padding:"0 24px", height:"44px", fontSize:"0.95rem", fontWeight:700, background:"linear-gradient(135deg, #dc1e26, #991b1b)", boxShadow:"0 4px 15px rgba(220,30,38,0.4)", color:"#ffffff", display:"flex", alignItems:"center", gap:"8px", cursor:"pointer", border:"none", flexShrink:0 }}>
-          <Search size={18} /><span>Search Hotels</span>
-        </button>
-      </form>
-    );
-  }
-
-  // ─ STANDARD PILL BAR (matches the reference screenshot) ────────────────────
+  // ── Sleek Hotel Capsule Search Bar (matches reference UI) ──
   return (
-    <div className="hotel-pill-bar-wrap">
-      <div className="hotel-pill-bar">
-
+    <div className={`hotel-capsule-wrapper ${isInline ? "is-inline" : ""}`}>
+      <div className={`hotel-capsule-searchbar ${isInline ? "is-inline" : ""}`}>
         {/* DESTINATION */}
-        <div className="hotel-pill-field hotel-pill-destination">
-          <div className="hotel-pill-field-content">
-            <span className="hotel-pill-label">DESTINATION</span>
-            <PlaceAutocomplete value={destination} onChange={handleDestinationChange} tripType="hotel" field="destination" placeholder="City or hotel area" error={destinationError} className="hotel-pill-autocomplete" hideLabel={true} />
+        <div className="hotel-capsule-cell hotel-capsule-destination">
+          <MapPin size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
+          <div className="hotel-capsule-field">
+            <PlaceAutocomplete
+              label=""
+              value={destination}
+              onChange={handleDestinationChange}
+              tripType="hotel"
+              field="destination"
+              placeholder="City or hotel area"
+              error={destinationError}
+              className="hotel-capsule-autocomplete"
+              hideIcon={true}
+            />
           </div>
         </div>
 
-        <div className="hotel-pill-divider" />
+        <div className="hotel-capsule-divider" />
 
         {/* CHECK-IN */}
-        <div className={`hotel-pill-field hotel-pill-date${activeDatePicker==="checkin"?" is-active":""}`}
-          onClick={()=>setActiveDatePicker(activeDatePicker==="checkin"?null:"checkin")} style={{ position:"relative", cursor:"pointer" }}>
-          <CalendarDays size={16} className="hotel-pill-icon" />
-          <div className="hotel-pill-field-content">
-            <span className="hotel-pill-label">CHECK-IN</span>
-            <span className="hotel-pill-value">{toDisplayDate(checkInDate)||"Select date"}</span>
+        <div
+          className="hotel-capsule-cell hotel-capsule-date"
+          style={{ position: "relative" }}
+          onClick={() => setActiveDatePicker(activeDatePicker === "checkin" ? null : "checkin")}
+        >
+          <CalendarDays size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
+          <div className="hotel-capsule-field">
+            <span className="hotel-capsule-label">CHECK-IN</span>
+            <span className="hotel-capsule-val">
+              {toDisplayDate(checkInDate) || "DD-MM-YYYY"}
+            </span>
           </div>
-          <CustomDatePicker isOpen={activeDatePicker==="checkin"} onClose={()=>setActiveDatePicker(null)} value={checkInDate} minDate={getDefaultDateString(0)} onChange={(val)=>{ setCheckInDate(val); setActiveDatePicker(null); advanceCheckOut(val); }} title="Check-in Date" />
+          <CustomDatePicker
+            isOpen={activeDatePicker === "checkin"}
+            onClose={() => setActiveDatePicker(null)}
+            value={checkInDate}
+            minDate={getDefaultDateString(0)}
+            onChange={(val) => {
+              setCheckInDate(val);
+              setActiveDatePicker(null);
+              if (!checkOutDate || checkOutDate <= val) {
+                const d = new Date(val);
+                d.setDate(d.getDate() + 1);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, "0");
+                const dd = String(d.getDate()).padStart(2, "0");
+                setCheckOutDate(`${yyyy}-${mm}-${dd}`);
+              }
+            }}
+            title="Check-in Date"
+          />
         </div>
 
-        <div className="hotel-pill-divider" />
+        <div className="hotel-capsule-divider" />
 
         {/* CHECK-OUT */}
-        <div className={`hotel-pill-field hotel-pill-date${activeDatePicker==="checkout"?" is-active":""}`}
-          onClick={()=>setActiveDatePicker(activeDatePicker==="checkout"?null:"checkout")} style={{ position:"relative", cursor:"pointer" }}>
-          <CalendarDays size={16} className="hotel-pill-icon" />
-          <div className="hotel-pill-field-content">
-            <span className="hotel-pill-label">CHECK-OUT</span>
-            <span className="hotel-pill-value">{toDisplayDate(checkOutDate)||"Select date"}</span>
+        <div
+          className="hotel-capsule-cell hotel-capsule-date"
+          style={{ position: "relative" }}
+          onClick={() => setActiveDatePicker(activeDatePicker === "checkout" ? null : "checkout")}
+        >
+          <CalendarDays size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
+          <div className="hotel-capsule-field">
+            <span className="hotel-capsule-label">CHECK-OUT</span>
+            <span className="hotel-capsule-val">
+              {toDisplayDate(checkOutDate) || "DD-MM-YYYY"}
+            </span>
           </div>
-          <CustomDatePicker isOpen={activeDatePicker==="checkout"} onClose={()=>setActiveDatePicker(null)} value={checkOutDate} minDate={checkInDate||getDefaultDateString(0)} onChange={(val)=>{ setCheckOutDate(val); setActiveDatePicker(null); }} title="Check-out Date" align="right" />
+          <CustomDatePicker
+            isOpen={activeDatePicker === "checkout"}
+            onClose={() => setActiveDatePicker(null)}
+            value={checkOutDate}
+            minDate={checkInDate || getDefaultDateString(0)}
+            onChange={(val) => {
+              setCheckOutDate(val);
+              setActiveDatePicker(null);
+            }}
+            title="Check-out Date"
+            align="right"
+          />
         </div>
 
-        <div className="hotel-pill-divider" />
+        <div className="hotel-capsule-divider" />
 
         {/* ROOMS & GUESTS */}
-        <div className="hotel-pill-field hotel-pill-guests" ref={guestsFieldRef}
-          onClick={()=>setShowGuestsDropdown(p=>!p)} style={{ cursor:"pointer", position:"relative" }}>
-          <Users size={16} className="hotel-pill-icon" />
-          <div className="hotel-pill-field-content">
-            <span className="hotel-pill-label">ROOMS & GUESTS</span>
-            <span className="hotel-pill-value">{guestSummary}</span>
+        <div
+          className="hotel-capsule-cell hotel-capsule-guests"
+          ref={guestsFieldRef}
+          onClick={toggleGuestsDropdown}
+        >
+          <Users size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
+          <div className="hotel-capsule-field">
+            <span className="hotel-capsule-label">ROOMS &amp; GUESTS</span>
+            <span className="hotel-capsule-val">{guestSummary}</span>
           </div>
-          <ChevronDown size={14} className={`hotel-pill-chevron${showGuestsDropdown?" open":""}`} />
-          {showGuestsDropdown && <GuestsDropdown rooms={rooms} adults={adults} children={children} childAges={childAges} onRoomsChange={handleRoomsChange} onAdultsChange={handleAdultsChange} onChildrenChange={handleChildrenChange} onChildAgeChange={handleChildAgeChange} onDone={()=>setShowGuestsDropdown(false)} isInline={false} />}
+          <ChevronDown size={16} className={`hotel-capsule-chevron ${showGuestsDropdown ? "open" : ""}`} />
+
+          {showGuestsDropdown && (
+            <GuestsDropdown
+              rooms={rooms}
+              adults={adults}
+              children={children}
+              childAges={childAges}
+              onRoomsChange={handleRoomsChange}
+              onAdultsChange={handleAdultsChange}
+              onChildrenChange={handleChildrenChange}
+              onChildAgeChange={handleChildAgeChange}
+              onClose={() => setShowGuestsDropdown(false)}
+              isInline={isInline}
+            />
+          )}
         </div>
 
         {/* SEARCH BUTTON */}
-        <button type="button" className="hotel-pill-search-btn" onClick={handleSubmit}>
-          <Search size={16} />
+        <button
+          type="button"
+          className="hotel-capsule-btn"
+          onClick={handleSubmit}
+        >
+          <Search size={18} strokeWidth={2.2} color="#ffffff" />
           <span>SEARCH HOTELS</span>
         </button>
+      </div>
 
+      {destinationError && (
+        <span className="hotel-capsule-error-text">{destinationError}</span>
+      )}
+    </div>
+  );
+}
+
+
+// Shared guests dropdown component
+function GuestsDropdown({ rooms, adults, children, childAges, onRoomsChange, onAdultsChange, onChildrenChange, onChildAgeChange, onClose, isInline }) {
+  return (
+    <div
+      className="traveller-dropdown hotel-guests-dropdown"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "290px",
+        left: isInline ? "auto" : 0,
+        right: isInline ? 0 : "auto",
+        border: "1px solid #e2e8f0",
+        borderRadius: "16px",
+        boxShadow: "0 16px 40px rgba(15,23,42,0.18)",
+        padding: "16px",
+        zIndex: 9999,
+        background: "#ffffff",
+        color: "#1e293b",
+        position: "absolute",
+        top: isInline ? "calc(100% + 14px)" : "calc(100% + 8px)",
+      }}
+    >
+      {/* Rooms */}
+      <GuestRow icon={<BedDouble size={18} strokeWidth={1.5} />} label="ROOMS" sub="Max 8 rooms"
+        count={rooms} min={1} max={8} onChange={onRoomsChange} />
+      {/* Adults */}
+      <GuestRow icon={<Users size={18} strokeWidth={1.5} />} label="ADULTS" sub="13 years & above"
+        count={adults} min={1} max={30} onChange={onAdultsChange} />
+      {/* Children */}
+      <GuestRow icon={<Baby size={18} strokeWidth={1.5} />} label="CHILDREN" sub="0 - 12 years"
+        count={children} min={0} max={10} onChange={onChildrenChange} noBorder />
+
+      {/* Child ages */}
+      {children > 0 && (
+        <div style={{ marginTop: "10px" }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", textTransform: "uppercase" }}>Child ages</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "6px" }}>
+            {childAges.map((age, idx) => (
+              <select key={idx} value={age} onChange={(e) => onChildAgeChange(idx, Number(e.target.value))}
+                style={{ padding: "4px 8px", borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "0.82rem", color: "#1e293b", background: "#f8fafc" }}>
+                {Array.from({ length: 13 }, (_, i) => (
+                  <option key={i} value={i}>{i} yr{i !== 1 ? "s" : ""}</option>
+                ))}
+              </select>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+        <button type="button" onClick={onClose}
+          style={{ background: "#dc2626", color: "#ffffff", border: "none", borderRadius: "8px", padding: "6px 20px",
+            fontWeight: "600", cursor: "pointer", fontSize: "0.85rem", boxShadow: "0 4px 10px rgba(220,38,38,0.3)" }}>
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GuestRow({ icon, label, sub, count, min, max, onChange, noBorder }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px",
+      borderBottom: noBorder ? "none" : "1px solid #e2e8f0", marginBottom: noBorder ? 0 : "10px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "20px", color: "#475569" }}>{icon}</div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
+        <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "#1e293b" }}>{label}</span>
+        <span style={{ fontSize: "0.7rem", color: "#64748b" }}>{sub}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
+        <button type="button" onClick={() => onChange(Math.max(min, count - 1))} disabled={count <= min}
+          style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center",
+            justifyContent: "center", color: "#d32f2f", cursor: count <= min ? "not-allowed" : "pointer",
+            opacity: count <= min ? 0.4 : 1, padding: 0 }}>
+          <Minus size={14} strokeWidth={2} />
+        </button>
+        <span style={{ fontSize: "0.9rem", fontWeight: "600", minWidth: "16px", textAlign: "center", color: "#d32f2f" }}>{count}</span>
+        <button type="button" onClick={() => onChange(Math.min(max, count + 1))} disabled={count >= max}
+          style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center",
+            justifyContent: "center", color: "#d32f2f", cursor: count >= max ? "not-allowed" : "pointer",
+            opacity: count >= max ? 0.4 : 1, padding: 0 }}>
+          <Plus size={14} strokeWidth={2} />
+        </button>
       </div>
     </div>
   );

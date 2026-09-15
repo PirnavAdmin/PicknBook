@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from "react";
 import { BedDouble, ShieldCheck, Loader2 } from "lucide-react";
+import { categorizeFacilities } from "../../utils/facilityCategories";
 
 const getViewSymbol = (name) => {
   const lower = name.toLowerCase();
@@ -103,25 +104,16 @@ export default function HotelDetail({
     })
     .filter(Boolean);
 
-  // Parse amenities dynamically based on API data
-  const views = [];
-  const dining = [];
-  const attractions = [];
-  const general = [];
-
-  amenities.forEach(val => {
-    if (!val) return;
-
-    if (/view|balcony|terrace|garden|window|exterior|skyline|patio/i.test(val)) {
-      views.push(val);
-    } else if (/restaurant|breakfast|dining|bar|coffee|food|lounge|cafe|kitchen|tea|meal|chef/i.test(val)) {
-      dining.push(val);
-    } else if (/airport|metro|station|transit|shuttle|transfer|beach|lake|temple|attraction|museum|park|mall|market/i.test(val)) {
-      attractions.push(val);
-    } else {
-      general.push(val);
-    }
-  });
+  // Parse amenities dynamically based on static mapping
+  const categorized = categorizeFacilities(amenities);
+  const views = categorized.views || [];
+  const dining = categorized.dining || [];
+  const general = [...(categorized.amenities || []), ...(categorized.safety || [])];
+  
+  // Only use real attractions array from API
+  const attractions = Array.isArray(hotel.attractions) 
+    ? hotel.attractions.map(a => typeof a === "object" ? (a.name || a.Name || "") : String(a)).filter(Boolean)
+    : [];
 
   // Dynamically filter tab buttons based on available categories
   const tabsList = ["All"];
@@ -234,7 +226,7 @@ export default function HotelDetail({
                 type="button"
                 onClick={() => setLightboxIndex(index)}
                 aria-label={`View ${hotel.name} image ${index + 1}`}
-                style={{ position: "relative", width: "100%", height: "100%", border: 0, padding: 0, borderRadius: "10px", overflow: "hidden", cursor: "zoom-in", background: "#e2e8f0" }}
+                style={{ position: "relative", width: "100%", height: "100%", border: 0, padding: 0, borderRadius: "10px", overflow: "hidden", cursor: "pointer", background: "#e2e8f0" }}
               >
                 <img src={imgUrl} alt={`${hotel.name} - ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 {isLast && (
@@ -301,6 +293,33 @@ export default function HotelDetail({
               <p style={{ fontSize: "0.74rem", color: "var(--hotel-muted)", margin: 0 }}>Superhost style service · {visuals.hostYears || 2} years hosting · Curated for short city stays.</p>
             </div>
           </section>
+
+          {/* About this hotel (Description) */}
+          {hotel.description && hotel.description.length > 0 && (
+            <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
+              <div style={{ marginBottom: "8px" }}>
+                <h2 style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>About this hotel</h2>
+              </div>
+              <div>
+                {hotel.description.map((descGroup, idx) => (
+                  <div key={idx} style={{ marginBottom: idx < hotel.description.length - 1 ? "12px" : "0" }}>
+                    {descGroup.name && descGroup.name !== "Overview" && (
+                      <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 4px 0" }}>{descGroup.name}</h3>
+                    )}
+                    {Array.isArray(descGroup.detail) ? (
+                      descGroup.detail.map((text, tidx) => (
+                        <p key={tidx} style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>
+                          {text}
+                        </p>
+                      ))
+                    ) : (
+                      <p style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>{descGroup.detail}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Highlights Panel */}
           <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
@@ -404,6 +423,39 @@ export default function HotelDetail({
             </section>
           )}
 
+          {/* Hotel Policies Section */}
+          {(hotel.hotelPolicy || (hotel.policyAndInstruction && hotel.policyAndInstruction.length > 0)) && (
+            <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "1.05rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Hotel Policies &amp; Information</h3>
+              
+              {hotel.hotelPolicy && (
+                <div style={{ marginBottom: "12px" }}>
+                  <p style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: 0, lineHeight: "1.4" }}>{hotel.hotelPolicy}</p>
+                </div>
+              )}
+
+              {hotel.policyAndInstruction && hotel.policyAndInstruction.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {hotel.policyAndInstruction.map((policy, idx) => (
+                    <div key={idx}>
+                      <strong style={{ display: "block", fontSize: "0.85rem", color: "var(--hotel-ink)", marginBottom: "4px" }}>
+                        {policy.name || policy.Name || "Policy"}
+                      </strong>
+                      {(policy.data || policy.Data || []).map((subPolicy, sIdx) => (
+                        <div key={sIdx} style={{ marginBottom: "6px" }}>
+                          {subPolicy.subName && <strong style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "block" }}>{subPolicy.subName}</strong>}
+                          {(subPolicy.detail || subPolicy.Detail || []).map((desc, dIdx) => (
+                            <p key={dIdx} style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 2px 0", lineHeight: "1.4" }}>• {desc}</p>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           {/* Available Rooms & Rates List */}
           <section id="section-rooms" style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
             <div style={{ marginBottom: "12px" }}>
@@ -430,96 +482,125 @@ export default function HotelDetail({
                     <div 
                       key={roomSelectionKey}
                       style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: "110px 1fr 160px", 
-                        gap: "16px", 
-                        padding: "12px", 
+                        display: "flex", 
+                        flexDirection: "column",
                         border: isSelected ? "2px solid #dc1e26" : "1px solid rgba(0,0,0,0.06)", 
                         borderRadius: "16px", 
                         background: isSelected ? "rgba(220,30,38,0.06)" : "#fff",
                         boxShadow: "0 4px 15px rgba(0,0,0,0.01)",
-                        transition: "all 0.2s ease"
+                        transition: "all 0.2s ease",
+                        overflow: "hidden"
                       }}
                     >
-                      <div style={{ width: "100%", height: "85px", borderRadius: "10px", overflow: "hidden" }}>
-                        <img src={roomImg} alt={roomOffer.roomCategory} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                        <div>
-                          <span style={{ 
-                            display: "inline-block", 
-                            background: "rgba(220,30,38,0.05)", 
-                            color: "var(--hotel-rose)", 
-                            fontSize: "0.6rem", 
-                            fontWeight: 600, 
-                            padding: "2px 6px", 
-                            borderRadius: "4px", 
-                            textTransform: "uppercase", 
-                            marginBottom: "4px" 
-                          }}>
-                            ROOM OPTION
-                          </span>
-                          <h4 style={{ margin: "0 0 4px 0", fontSize: "0.92rem", fontWeight: 600, color: "var(--hotel-ink)" }}>
-                            {roomOffer.roomCategory ? roomOffer.roomCategory.replace(/_/g, " ") : "Standard Room"}
-                          </h4>
-                          {roomOffer.roomDescription && (
-                            <p style={{ margin: 0, fontSize: "0.74rem", color: "var(--hotel-muted)", lineHeight: "1.3" }}>
-                              {roomOffer.roomDescription}
-                            </p>
-                          )}
+                      <div style={{ 
+                        display: "grid", 
+                        gridTemplateColumns: "110px 1fr 160px", 
+                        gap: "16px", 
+                        padding: "12px", 
+                      }}>
+                        <div style={{ width: "100%", height: "85px", borderRadius: "10px", overflow: "hidden" }}>
+                          <img src={roomImg} alt={roomOffer.roomCategory} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         </div>
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px", alignItems: "center" }}>
-                          <span style={{ fontSize: "0.74rem", color: "var(--hotel-muted)", display: "flex", alignItems: "center", gap: "3px" }}>
-                            <BedDouble size={12} /> {roomOffer.bedType || "Double"} bed
-                          </span>
-                          <span style={{ 
-                            fontSize: "0.68rem", 
-                            fontWeight: 600, 
-                            padding: "1px 6px", 
-                            borderRadius: "4px", 
-                            background: roomOffer.cancellationPolicy?.includes("Charge") ? "#ffebee" : "#e8f5e9", 
-                            color: roomOffer.cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32" 
-                          }}>
-                            {roomOffer.cancellationPolicy?.includes("Charge") ? "Non-Refundable" : "Free Cancellation"}
-                          </span>
+                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                          <div>
+                            <span style={{ 
+                              display: "inline-block", 
+                              background: "rgba(220,30,38,0.05)", 
+                              color: "var(--hotel-rose)", 
+                              fontSize: "0.6rem", 
+                              fontWeight: 600, 
+                              padding: "2px 6px", 
+                              borderRadius: "4px", 
+                              textTransform: "uppercase", 
+                              marginBottom: "4px" 
+                            }}>
+                              ROOM OPTION
+                            </span>
+                            <h4 style={{ margin: "0 0 4px 0", fontSize: "0.92rem", fontWeight: 600, color: "var(--hotel-ink)" }}>
+                              {roomOffer.roomCategory ? roomOffer.roomCategory.replace(/_/g, " ") : "Standard Room"}
+                            </h4>
+                            {roomOffer.roomDescription && (
+                              <p style={{ margin: 0, fontSize: "0.74rem", color: "var(--hotel-muted)", lineHeight: "1.3" }}>
+                                {roomOffer.roomDescription}
+                              </p>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.74rem", color: "var(--hotel-muted)", display: "flex", alignItems: "center", gap: "3px" }}>
+                              <BedDouble size={12} /> {roomOffer.bedType || "Bed type not specified"}
+                            </span>
+                            <span style={{ 
+                              fontSize: "0.68rem", 
+                              fontWeight: 600, 
+                              padding: "1px 6px", 
+                              borderRadius: "4px", 
+                              background: roomOffer.cancellationPolicy?.includes("Charge") ? "#ffebee" : "#e8f5e9", 
+                              color: roomOffer.cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32" 
+                            }}>
+                              {roomOffer.cancellationPolicy?.includes("Charge") ? "Non-Refundable" : "Free Cancellation"}
+                            </span>
+                            {(() => {
+                              const mealPlan = (Array.isArray(roomOffer.servicesStatus) && roomOffer.servicesStatus.find(s => s.name === "Meal Basis")?.value) || roomOffer.hotelSupplements;
+                              if (!mealPlan) return null;
+                              const isIncluded = mealPlan.toLowerCase() !== "room only";
+                              return (
+                                <span style={{ 
+                                  fontSize: "0.68rem", 
+                                  fontWeight: 600, 
+                                  padding: "1px 6px", 
+                                  borderRadius: "4px", 
+                                  background: isIncluded ? "#fff8e1" : "#f1f5f9", 
+                                  color: isIncluded ? "#f57f17" : "#64748b" 
+                                }}>
+                                  🍽️ {mealPlan}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", borderLeft: "1px solid rgba(0,0,0,0.06)", paddingLeft: "12px" }}>
+                          <div style={{ textAlign: "right", marginBottom: "8px" }}>
+                            <strong style={{ display: "block", fontSize: "1.1rem", color: "var(--hotel-ink)" }}>{formatCurrency(roomOffer.price)}</strong>
+                            <span style={{ fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
+                              {roomsCount > 1 ? `total for ${roomsCount} Rooms` : "total per night"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectOffer(roomOffer)}
+                            disabled={selectingOfferId !== ""}
+                            style={{
+                              width: "100%",
+                              height: "32px",
+                              borderRadius: "8px",
+                              fontSize: "0.78rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              background: isSelected ? "var(--hotel-rose)" : "#546e7a",
+                              color: "#fff",
+                              border: "none",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            {isSelectingThis ? (
+                              <>
+                                <Loader2 size={11} className="hotel-spin" />
+                                {" "}Choosing...
+                              </>
+                            ) : isSelected ? (
+                              "Selected ✓"
+                            ) : (
+                              "Choose room"
+                            )}
+                          </button>
                         </div>
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", borderLeft: "1px solid rgba(0,0,0,0.06)", paddingLeft: "12px" }}>
-                        <div style={{ textAlign: "right", marginBottom: "8px" }}>
-                          <strong style={{ display: "block", fontSize: "1.1rem", color: "var(--hotel-ink)" }}>{formatCurrency(roomOffer.price)}</strong>
-                          <span style={{ fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
-                            {roomsCount > 1 ? `total for ${roomsCount} Rooms` : "total per night"}
-                          </span>
+                      {roomOffer.amenities && roomOffer.amenities.length > 0 && (
+                        <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(0,0,0,0.04)", background: "rgba(0,0,0,0.015)", fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
+                           {roomOffer.amenities.slice(0, 4).map(a => typeof a === "object" ? (a.name || a.Name) : a).filter(Boolean).join(" • ")}
+                           {roomOffer.amenities.length > 4 && ` • +${roomOffer.amenities.length - 4} more`}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSelectOffer(roomOffer)}
-                          disabled={selectingOfferId !== ""}
-                          style={{
-                            width: "100%",
-                            height: "32px",
-                            borderRadius: "8px",
-                            fontSize: "0.78rem",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            background: isSelected ? "var(--hotel-rose)" : "#546e7a",
-                            color: "#fff",
-                            border: "none",
-                            transition: "all 0.15s ease"
-                          }}
-                        >
-                          {isSelectingThis ? (
-                            <>
-                              <Loader2 size={11} className="hotel-spin" />
-                              {" "}Choosing...
-                            </>
-                          ) : isSelected ? (
-                            "Selected ✓"
-                          ) : (
-                            "Choose room"
-                          )}
-                        </button>
-                      </div>
+                      )}
                     </div>
                   );
                 })
@@ -644,11 +725,43 @@ export default function HotelDetail({
               PROCEED
             </button>
 
-            {/* Free Cancellation Note */}
-            <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "12px", color: "#166534", fontSize: "0.76rem", marginTop: "16px" }}>
-              <ShieldCheck size={16} />
-              <span><strong>Free Cancellation</strong> before {toDisplayDate(checkInDate ? String(checkInDate).split("T")[0] : "")}, 12:00 PM</span>
-            </div>
+            {/* Dynamic Cancellation Note */}
+            {(() => {
+              if (!offer) {
+                return (
+                  <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", color: "#475569", fontSize: "0.76rem", marginTop: "16px" }}>
+                    <ShieldCheck size={16} />
+                    <span>Select a room to view cancellation policies.</span>
+                  </div>
+                );
+              }
+
+              const policyData = offer.cancellationPoliciesData?.[0] || {};
+              const chargeAmt = policyData.charge || policyData.Charge;
+              const isNonRefundable = offer.cancellationPolicy?.includes("Charge") || (chargeAmt && Number(chargeAmt) > 0);
+              
+              if (isNonRefundable) {
+                return (
+                  <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#ffebee", border: "1px solid #ffcdd2", borderRadius: "12px", color: "#c62828", fontSize: "0.76rem", marginTop: "16px" }}>
+                    <ShieldCheck size={16} />
+                    <span><strong>Non-Refundable:</strong> Cancellation charges will apply.</span>
+                  </div>
+                );
+              }
+
+              const fromDate = policyData.fromDate || policyData.FromDate;
+              let dateText = checkInDate ? String(checkInDate).split("T")[0] : "";
+              if (fromDate) {
+                dateText = String(fromDate).split("T")[0];
+              }
+
+              return (
+                <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "12px", color: "#166534", fontSize: "0.76rem", marginTop: "16px" }}>
+                  <ShieldCheck size={16} />
+                  <span><strong>Free Cancellation</strong> before {toDisplayDate(dateText)}</span>
+                </div>
+              );
+            })()}
           </div>
         </aside>
       </div>

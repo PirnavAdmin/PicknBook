@@ -38,13 +38,10 @@ body {
   color: var(--theme-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: auto !important;
 }
 
 #root {
   min-height: 100vh;
-  overflow: auto !important;
-  overflow-x: hidden;
 }
 
 * {

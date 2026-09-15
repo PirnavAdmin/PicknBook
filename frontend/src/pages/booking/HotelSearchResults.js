@@ -463,7 +463,14 @@ export default function HotelSearchResults() {
       if (normalize(hotelRecord?.address || "").includes(normalize(needle))) return output;
       if (normalize(hotelRecord?.name || "").includes(normalize(needle))) return output;
       if (normalize(hotelRecord?.hotelName || "").includes(normalize(needle))) return output;
-      if (normalize(fallback).includes(normalize(needle))) return output;
+      
+      // Check fallback string against hotel fields
+      if (fallback) {
+        if (normalize(localityText).includes(normalize(fallback))) return output;
+        if (normalize(hotelRecord?.hotelDescription || "").includes(normalize(fallback))) return output;
+        if (normalize(hotelRecord?.address || "").includes(normalize(fallback))) return output;
+        if (normalize(hotelRecord?.name || "").includes(normalize(fallback))) return output;
+      }
     }
 
     return hotelRecord?.area || hotelRecord?.hotelLocation || hotelRecord?.hotelAddress || "City centre";

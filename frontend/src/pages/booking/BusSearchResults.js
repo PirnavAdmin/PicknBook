@@ -2156,7 +2156,7 @@ export default function BusSearchResults() {
                   </p>
                 </div>
               ) : (
-                <div style={{ position: 'relative', minHeight: '600px' }}>
+                <div style={{ position: 'relative', minHeight: 'auto' }}>
                   <BusSeatSelectionPage
                     embedded
                     embeddedState={{
@@ -2198,9 +2198,9 @@ export default function BusSearchResults() {
               }}
             >
               {/* LOCATIONS GROUP */}
-              <div style={{ display: 'flex', flex: '2.4 1 auto', position: 'relative', alignItems: 'center' }}>
+              <div className="bus-discover-locations">
                 {/* FROM FIELD */}
-                <div className="bus-discover-searchcell" style={{ flex: '1 1 50%', paddingLeft: '14px', paddingRight: '22px' }}>
+                <div className="bus-discover-searchcell">
                   <PlaceAutocomplete
                     label="FROM"
                     sublabel={false}
@@ -2219,27 +2219,19 @@ export default function BusSearchResults() {
                 </div>
 
                 {/* SWAP BUTTON */}
-                <button
-                  type="button"
-                  className="bus-discover-swap"
-                  onClick={handleSwapModifyCities}
-                  aria-label="Swap source and destination"
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 10,
-                    margin: 0,
-                    backgroundColor: '#ffffff',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
-                  }}
-                >
-                  <ArrowLeftRight size={16} />
-                </button>
+                <div className="bus-discover-swap-wrapper">
+                  <button
+                    type="button"
+                    className="bus-discover-swap"
+                    onClick={handleSwapModifyCities}
+                    aria-label="Swap source and destination"
+                  >
+                    <ArrowLeftRight size={18} strokeWidth={2} />
+                  </button>
+                </div>
 
                 {/* TO FIELD */}
-                <div className="bus-discover-searchcell with-divider" style={{ flex: '1 1 50%', paddingLeft: '22px' }}>
+                <div className="bus-discover-searchcell">
                   <PlaceAutocomplete
                     label="TO"
                     sublabel={false}
@@ -2259,45 +2251,47 @@ export default function BusSearchResults() {
               </div>
 
               {/* TRAVEL DATE FIELD */}
-              <div className="bus-discover-searchcell with-divider" style={{ flex: '1 1 auto' }}>
-                <div className="field field-with-icon departure-field" style={{ position: "relative", width: "100%" }}>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>TRAVEL DATE</label>
-                  <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker("bus-discover-date")}>
-                    <CalendarDays size={18} style={{ color: "#dc1e26" }} />
-                    <input
-                      type="text"
-                      readOnly
-                      value={formatBusPillDate(modifyForm.departureDate).date}
-                      placeholder="DD-MM-YYYY"
-                      className="field-control with-leading-icon"
-                      style={{ cursor: "pointer", fontWeight: 500, fontSize: '14px', color: '#0f172a' }}
-                      onClick={() => setActiveDatePicker("bus-discover-date")}
+              <div className="bus-discover-date-group">
+                <div className="bus-discover-searchcell">
+                  <div className="field field-with-icon departure-field">
+                    <label>TRAVEL DATE</label>
+                    <div className="control-wrap" onClick={() => setActiveDatePicker("bus-discover-date")}>
+                      <CalendarDays size={18} strokeWidth={2} className="field-icon" />
+                      <input
+                        type="text"
+                        readOnly
+                        value={formatBusPillDate(modifyForm.departureDate).date}
+                        placeholder="DD-MM-YYYY"
+                        className="field-control with-leading-icon"
+                      />
+                    </div>
+                    <CustomDatePicker
+                      isOpen={activeDatePicker === "bus-discover-date"}
+                      onClose={() => setActiveDatePicker(null)}
+                      value={modifyForm.departureDate}
+                      onChange={(val) => {
+                        setModifyForm((previous) => ({
+                          ...previous,
+                          departureDate: val,
+                        }));
+                        setActiveDatePicker(null);
+                      }}
                     />
                   </div>
-                  <CustomDatePicker
-                    isOpen={activeDatePicker === "bus-discover-date"}
-                    onClose={() => setActiveDatePicker(null)}
-                    value={modifyForm.departureDate}
-                    onChange={(val) => {
-                      setModifyForm((previous) => ({
-                        ...previous,
-                        departureDate: val,
-                      }));
-                      setActiveDatePicker(null);
-                    }}
-                  />
                 </div>
               </div>
 
               {/* SEARCH BUTTON */}
-              <button
-                type="button"
-                className="bus-discover-searchbutton"
-                onClick={handleApplyModifySearch}
-              >
-                <Search size={18} />
-                <span>Search Buses</span>
-              </button>
+              <div className="bus-discover-submit-wrapper">
+                <button
+                  type="button"
+                  className="bus-discover-searchbutton"
+                  onClick={handleApplyModifySearch}
+                >
+                  <Search size={18} strokeWidth={2} />
+                  <span>Search Buses</span>
+                </button>
+              </div>
             </form>
           </div>
         </section>
@@ -2555,17 +2549,18 @@ export default function BusSearchResults() {
           </section>
         ) : (
           <div className="bus-results-layout">
-            <aside className="bus-filters-rail">
-              <header className="bus-filters-header">
-                <div>
-                  <Filter size={14} />
-                  <span>Filters</span>
-                </div>
-                <button type="button" onClick={resetFilters}>
-                  <RotateCw size={13} />
-                  Reset
-                </button>
-              </header>
+            <div className="bus-filters-sidebar">
+              <aside className="bus-filters-rail">
+                <header className="bus-filters-header">
+                  <div>
+                    <Filter size={14} />
+                    <span>Filters</span>
+                  </div>
+                  <button type="button" onClick={resetFilters}>
+                    <RotateCw size={13} />
+                    Reset
+                  </button>
+                </header>
 
               <section className="bus-filter-card">
                 <h3 className="bus-price-title">
@@ -2810,6 +2805,7 @@ export default function BusSearchResults() {
                 )}
               </section>
             </aside>
+            </div>
 
             <section className="bus-results-column">
 

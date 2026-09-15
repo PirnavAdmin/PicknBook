@@ -426,7 +426,8 @@
 .bus-flow-seat-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 10px;
+  gap: 8px;
+  align-items: start;
 }
 
 .bus-flow-seat-zone {
@@ -449,28 +450,27 @@
 
 .bus-flow-fares {
   border: 1px solid #edf0f5;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #ffffff;
-  padding: 8px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 80px;
-  height: 100%;
   box-sizing: border-box;
+  zoom: 0.8;
 }
 
 .bus-flow-fares-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .bus-flow-fares h3 {
   margin: 0;
   color: #171b22;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-family: var(--flow-heading-font);
   font-weight: 700;
 }
@@ -480,8 +480,8 @@
   background: linear-gradient(135deg, var(--flow-primary, #dc1e26), var(--flow-primary-strong, #b8141b));
   color: #ffffff;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -496,22 +496,25 @@
 }
 
 .bus-flow-fare-chips {
-  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .bus-flow-fare-chips button {
   border: 1px solid #eceff4;
-  border-radius: 8px;
-  min-height: 28px;
-  padding: 0 10px;
+  border-radius: 16px;
+  min-height: 32px;
+  padding: 6px 12px;
   background: #ffffff;
   color: #383f4c;
-  font-size: 0.72rem;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .bus-flow-fare-chips button.active {
@@ -522,7 +525,7 @@
 
 .bus-flow-seat-legend {
   border: 1px solid #edf0f5;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #ffffff;
   padding: 8px 12px;
   display: flex;
@@ -531,9 +534,8 @@
   align-items: center;
   justify-content: center;
   align-content: center;
-  min-height: 80px;
-  height: 100%;
   box-sizing: border-box;
+  zoom: 0.8;
 }
 
 .bus-flow-seat-legend .legend-item {

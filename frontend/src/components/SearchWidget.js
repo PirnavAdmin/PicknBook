@@ -22,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import { toDisplayDate, getDefaultDateString } from "../utils/apiDateFormat";
+import CustomDatePicker from "./CustomDatePicker";
 import "../STYLES/HomePage.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -251,6 +252,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeDatePicker, setActiveDatePicker] = useState(null);
 
   // ── Flight state ──
   const [flightTripType, setFlightTripType] = useState("oneway");
@@ -616,11 +618,11 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                       <PlaceAutocomplete label={`Leg ${idx + 1} – To`} value={leg.to} onChange={(v) => updateMultiCityLeg(leg.id, "to", v)} tripType="flight" field="to" placeholder="Destination" />
                       <div className="field field-with-icon" style={{ position: "relative" }}>
                         <label>Departure</label>
-                        <div className="control-wrap">
+                        <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === `leg-dep-${leg.id}` ? null : `leg-dep-${leg.id}`)}>
                           <CalendarDays size={18} />
-                          <input type="text" readOnly value={toDisplayDate(leg.departureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById(`sw-leg-dep-${leg.id}`).showPicker?.()} />
+                          <input type="text" readOnly value={toDisplayDate(leg.departureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                         </div>
-                        <input id={`sw-leg-dep-${leg.id}`} type="date" value={leg.departureDate} onChange={(e) => updateMultiCityLeg(leg.id, "departureDate", e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                        <CustomDatePicker isOpen={activeDatePicker === `leg-dep-${leg.id}`} onClose={() => setActiveDatePicker(null)} value={leg.departureDate} minDate={getDefaultDateString(0)} onChange={(v) => { updateMultiCityLeg(leg.id, "departureDate", v); setActiveDatePicker(null); }} />
                       </div>
                       <div className="multi-actions">
                         <button type="button" className="action-circle action-add" onClick={addMultiCityLeg} title="Add row"><Plus size={16} /></button>
@@ -639,20 +641,20 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                   <PlaceAutocomplete label="Destination" value={flightTo} onChange={handleFlightToChange} tripType="flight" field="to" placeholder="Destination" error={flightToError} className="destination-field" />
                   <div className="field field-with-icon departure-field" style={{ position: "relative" }}>
                     <label>Departure</label>
-                    <div className="control-wrap">
+                    <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "flight-dep" ? null : "flight-dep")}>
                       <CalendarDays size={18} />
-                      <input type="text" readOnly value={toDisplayDate(flightDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-flight-dep").showPicker?.()} />
+                      <input type="text" readOnly value={toDisplayDate(flightDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                     </div>
-                    <input id="sw-flight-dep" type="date" min={getDefaultDateString(0)} value={flightDepartureDate} onChange={(e) => setFlightDepartureDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                    <CustomDatePicker isOpen={activeDatePicker === "flight-dep"} onClose={() => setActiveDatePicker(null)} value={flightDepartureDate} minDate={getDefaultDateString(0)} onChange={(v) => { setFlightDepartureDate(v); setActiveDatePicker(null); }} />
                   </div>
                   {isFlightTwoWay && (
                     <div className="field field-with-icon return-field" style={{ position: "relative" }}>
                       <label>Return</label>
-                      <div className="control-wrap">
+                      <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "flight-ret" ? null : "flight-ret")}>
                         <CalendarDays size={18} />
-                        <input type="text" readOnly value={toDisplayDate(flightReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-flight-ret").showPicker?.()} />
+                        <input type="text" readOnly value={toDisplayDate(flightReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                       </div>
-                      <input id="sw-flight-ret" type="date" min={flightDepartureDate || getDefaultDateString(0)} value={flightReturnDate} onChange={(e) => setFlightReturnDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                      <CustomDatePicker isOpen={activeDatePicker === "flight-ret"} onClose={() => setActiveDatePicker(null)} value={flightReturnDate} minDate={flightDepartureDate || getDefaultDateString(0)} onChange={(v) => { setFlightReturnDate(v); setActiveDatePicker(null); }} align="right" />
                     </div>
                   )}
                   {travellerField}
@@ -673,20 +675,20 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                 <PlaceAutocomplete label="Destination" value={busTo} onChange={handleBusToChange} tripType="bus" field="to" placeholder="Destination" error={busToError} className="destination-field" />
                 <div className="field field-with-icon departure-field" style={{ position: "relative" }}>
                   <label>Departure</label>
-                  <div className="control-wrap">
+                  <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "bus-dep" ? null : "bus-dep")}>
                     <CalendarDays size={18} />
-                    <input type="text" readOnly value={toDisplayDate(busDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-bus-dep").showPicker?.()} />
+                    <input type="text" readOnly value={toDisplayDate(busDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <input id="sw-bus-dep" type="date" min={getDefaultDateString(0)} value={busDepartureDate} onChange={(e) => setBusDepartureDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                  <CustomDatePicker isOpen={activeDatePicker === "bus-dep"} onClose={() => setActiveDatePicker(null)} value={busDepartureDate} minDate={getDefaultDateString(0)} onChange={(v) => { setBusDepartureDate(v); setActiveDatePicker(null); }} />
                 </div>
                 {isBusTwoWay && (
                   <div className="field field-with-icon return-field" style={{ position: "relative" }}>
                     <label>Return</label>
-                    <div className="control-wrap">
+                    <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "bus-ret" ? null : "bus-ret")}>
                       <CalendarDays size={18} />
-                      <input type="text" readOnly value={toDisplayDate(busReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-bus-ret").showPicker?.()} />
+                      <input type="text" readOnly value={toDisplayDate(busReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                     </div>
-                    <input id="sw-bus-ret" type="date" min={busDepartureDate || getDefaultDateString(0)} value={busReturnDate} onChange={(e) => setBusReturnDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                    <CustomDatePicker isOpen={activeDatePicker === "bus-ret"} onClose={() => setActiveDatePicker(null)} value={busReturnDate} minDate={busDepartureDate || getDefaultDateString(0)} onChange={(v) => { setBusReturnDate(v); setActiveDatePicker(null); }} align="right" />
                   </div>
                 )}
               </div>
@@ -700,19 +702,19 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                 <PlaceAutocomplete label="Destination" value={hotelDestination} onChange={handleHotelDestinationChange} tripType="hotel" field="destination" placeholder="City or hotel area" error={hotelDestinationError} className="hotel-destination-field" />
                 <div className="field field-with-icon checkin-field" style={{ position: "relative" }}>
                   <label>Check-in</label>
-                  <div className="control-wrap">
+                  <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "hotel-ci" ? null : "hotel-ci")}>
                     <CalendarDays size={18} />
-                    <input type="text" readOnly value={toDisplayDate(hotelCheckInDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-hotel-ci").showPicker?.()} />
+                    <input type="text" readOnly value={toDisplayDate(hotelCheckInDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <input id="sw-hotel-ci" type="date" min={getDefaultDateString(0)} value={hotelCheckInDate} onChange={(e) => setHotelCheckInDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                  <CustomDatePicker isOpen={activeDatePicker === "hotel-ci"} onClose={() => setActiveDatePicker(null)} value={hotelCheckInDate} minDate={getDefaultDateString(0)} onChange={(v) => { setHotelCheckInDate(v); setActiveDatePicker(null); if (!hotelCheckOutDate || hotelCheckOutDate <= v) { const d = new Date(v); d.setDate(d.getDate() + 1); const yyyy = d.getFullYear(); const mm = String(d.getMonth() + 1).padStart(2, "0"); const dd = String(d.getDate()).padStart(2, "0"); setHotelCheckOutDate(`${yyyy}-${mm}-${dd}`); } }} />
                 </div>
                 <div className="field field-with-icon checkout-field" style={{ position: "relative" }}>
                   <label>Check-out</label>
-                  <div className="control-wrap">
+                  <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "hotel-co" ? null : "hotel-co")}>
                     <CalendarDays size={18} />
-                    <input type="text" readOnly value={toDisplayDate(hotelCheckOutDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer" }} onClick={() => document.getElementById("sw-hotel-co").showPicker?.()} />
+                    <input type="text" readOnly value={toDisplayDate(hotelCheckOutDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <input id="sw-hotel-co" type="date" min={hotelCheckInDate || getDefaultDateString(0)} value={hotelCheckOutDate} onChange={(e) => setHotelCheckOutDate(e.target.value)} style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }} />
+                  <CustomDatePicker isOpen={activeDatePicker === "hotel-co"} onClose={() => setActiveDatePicker(null)} value={hotelCheckOutDate} minDate={hotelCheckInDate || getDefaultDateString(0)} onChange={(v) => { setHotelCheckOutDate(v); setActiveDatePicker(null); }} align="right" />
                 </div>
                 {hotelGuestField}
               </div>

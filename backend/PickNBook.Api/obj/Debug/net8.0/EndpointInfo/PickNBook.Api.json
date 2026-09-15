@@ -16862,51 +16862,71 @@
       },
       "ForgotPasswordResetRequest": {
         "required": [
-          "email",
           "newPassword"
         ],
         "type": "object",
         "properties": {
           "email": {
-            "minLength": 1,
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "pattern": "^[6-9]\\d{9}$",
+            "type": "string",
+            "nullable": true
           },
           "newPassword": {
             "minLength": 1,
+            "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_])[^\\s]{8,64}$",
             "type": "string"
           }
         },
         "additionalProperties": false
       },
       "ForgotPasswordSendOtpRequest": {
-        "required": [
-          "email"
-        ],
         "type": "object",
         "properties": {
           "email": {
-            "minLength": 1,
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "pattern": "^[6-9]\\d{9}$",
+            "type": "string",
+            "nullable": true
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
       },
       "ForgotPasswordVerifyOtpRequest": {
         "required": [
-          "email",
           "otp"
         ],
         "type": "object",
         "properties": {
           "email": {
-            "minLength": 1,
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "pattern": "^[6-9]\\d{9}$",
+            "type": "string",
+            "nullable": true
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true
           },
           "otp": {
-            "minLength": 1,
+            "maxLength": 6,
+            "minLength": 0,
             "type": "string"
           }
         },

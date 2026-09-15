@@ -70,7 +70,8 @@ import flightHeroThemeVideo from "../../assets/images/Give_me_a_background_scree
 import busHeroVideo from "../../assets/images/illustrations/Bus.herobanner.mp4";
 import hotelHeroVideo from "../../assets/images/illustrations/hotel banner video.mp4";
 import hotelSectionBanner from "../../assets/images/illustrations/hotel-reception-banner.jpg";
-const hotelResortBanner = hotelSectionBanner;
+import hotelEntranceBanner from "../../assets/images/illustrations/hotel-entrance-banner.jpg";
+const hotelResortBanner = hotelEntranceBanner;
 import busCoastBanner from "../../assets/images/illustrations/bus-coast-banner.jpg";
 import intercityBusBanner from "../../assets/images/bus-image.png.png";
 import footerOfferBanner from "../../assets/images/illustrations/picknbook-all-travel-banner.jpg";
@@ -6487,14 +6488,14 @@ export default function HomePage() {
             width: 100% !important;
             max-width: 1140px !important;
             height: auto !important;
-            min-height: auto !important;
-            background: transparent !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            border-radius: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
+            min-height: 64px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(248, 246, 242, 0.45)) !important;
+            backdrop-filter: blur(28px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+            border-radius: 9999px !important;
+            padding: 4px 8px 4px 20px !important;
+            box-shadow: 0 10px 32px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(255, 255, 255, 0.8) !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: center !important;
@@ -6530,29 +6531,41 @@ export default function HomePage() {
           }
 
           .homepage-flights .search-panel .trip-chip {
-            background: #f1f5f9 !important;
-            color: #334155 !important;
-            border: none !important;
+            background: rgba(255, 255, 255, 0.42) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            color: #1e293b !important;
             border-radius: 18px !important;
-            padding: 3px 12px !important;
+            padding: 4px 14px !important;
             font-weight: 800 !important;
             font-size: 0.68rem !important;
             letter-spacing: 0.04em !important;
             text-transform: uppercase !important;
             display: flex !important;
             align-items: center !important;
-            gap: 4px !important;
+            gap: 5px !important;
             transition: all 0.2s ease !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+          }
+
+          .homepage-flights .search-panel .trip-chip:hover {
+            background: rgba(255, 255, 255, 0.65) !important;
+            border-color: rgba(255, 255, 255, 0.85) !important;
+            transform: translateY(-1px) !important;
           }
 
           .homepage-flights .search-panel .trip-chip.active {
             background: #dc1e26 !important;
             color: #ffffff !important;
-            box-shadow: 0 3px 8px rgba(220, 30, 38, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 3px 10px rgba(220, 30, 38, 0.35) !important;
           }
 
           /* Single Line Row Layout */
-          .search-panel .flight-search-bar-row {
+          .search-panel .flight-search-bar-row,
+          .homepage-flights .search-panel .flight-search-bar-row,
+          .homepage-buses .search-panel .flight-search-bar-row {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
@@ -6560,40 +6573,92 @@ export default function HomePage() {
             justify-content: space-between !important;
             gap: 0 !important;
             width: 100% !important;
+            height: 56px !important;
+            min-height: 56px !important;
+            max-height: 56px !important;
             margin: 0 !important;
+            padding: 0 !important;
             background: transparent !important;
+            box-sizing: border-box !important;
           }
 
-          .search-panel .flight-search-bar-row > * {
+          .search-panel .flight-search-bar-row > *,
+          .homepage-flights .search-panel .flight-search-bar-row > * {
             margin: 0 !important;
             flex-shrink: 1 !important;
           }
 
-          /* Seamless Flat Fields with Vertical Line Dividers */
+          /* Seamless Flat Fields with Crisp Vertical Line Dividers & Container Spacing */
           .search-panel .flight-search-bar-row .field,
           .search-panel .flight-search-bar-row .place-autocomplete,
+          .search-panel .flight-search-bar-row .source-field,
+          .search-panel .flight-search-bar-row .destination-field,
+          .search-panel .flight-search-bar-row .departure-field,
+          .search-panel .flight-search-bar-row .return-field,
           .search-panel .flight-search-bar-row .traveller-field,
-          .search-panel .flight-search-bar-row .class-field {
-            flex: 1 1 auto !important;
-            min-width: 80px !important;
-            height: 54px !important;
-            background: transparent !important;
-            border: none !important;
-            border-right: 1px solid #e2e8f0 !important;
-            border-radius: 0 !important;
-            padding: 4px 12px !important;
-            margin: 0 !important;
+          .search-panel .flight-search-bar-row .class-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .place-autocomplete,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .source-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .destination-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .departure-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .return-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .class-field {
+            height: 56px !important;
+            min-height: 56px !important;
+            max-height: 56px !important;
             display: flex !important;
-            flex-direction: column !important;
+            flex-direction: row !important;
             justify-content: center !important;
-            align-items: flex-start !important;
+            align-items: center !important;
+            align-self: center !important;
             box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 14px !important;
+            background: transparent !important;
             position: relative !important;
+            gap: 0 !important;
+            border: none !important;
+            border-right: 1px solid #cbd5e1 !important;
+            border-radius: 0 !important;
+            transition: background 0.18s ease !important;
+          }
+
+          .search-panel .flight-search-bar-row .field:hover,
+          .search-panel .flight-search-bar-row .place-autocomplete:hover,
+          .search-panel .flight-search-bar-row .departure-field:hover,
+          .search-panel .flight-search-bar-row .return-field:hover,
+          .search-panel .flight-search-bar-row .traveller-field:hover,
+          .search-panel .flight-search-bar-row .class-field:hover,
+          .search-panel .flight-search-bar-row .field:focus-within,
+          .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
+          .search-panel .flight-search-bar-row .departure-field:focus-within,
+          .search-panel .flight-search-bar-row .return-field:focus-within,
+          .search-panel .flight-search-bar-row .traveller-field:focus-within,
+          .search-panel .flight-search-bar-row .class-field:focus-within {
+            background: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
           }
 
           .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
           .search-panel .flight-search-bar-row .place-autocomplete.is-open {
             z-index: 10000 !important;
+          }
+
+          .search-panel .flight-search-bar-row input:focus,
+          .search-panel .flight-search-bar-row input:focus-visible,
+          .search-panel .flight-search-bar-row .field-control:focus,
+          .search-panel .flight-search-bar-row .field-control:focus-visible,
+          .search-panel .flight-search-bar-row .place-input:focus,
+          .search-panel .flight-search-bar-row .place-input:focus-visible,
+          .homepage-flights .search-panel .flight-search-bar-row input:focus,
+          .homepage-buses .search-panel .flight-search-bar-row input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            border: none !important;
           }
 
           /* Place Dropdown default DOWNWARD positioning */
@@ -6638,28 +6703,28 @@ export default function HomePage() {
             }
           }
 
-
-          /* Remove PlaceAutocomplete internal input fixed heights so it matches Departure/Travellers */
-          .search-panel .flight-search-bar-row .field-control,
-          .search-panel .flight-search-bar-row input.field-control,
-          .homepage-flights .search-panel .multi-city-row .field-control,
-          .homepage-flights .search-panel .multi-city-row input.field-control {
-            height: 26px !important;
-            min-height: 26px !important;
-            line-height: 26px !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            color: #334155 !important;
-            font-size: 0.92rem !important;
-            font-weight: 500 !important;
-            width: 100% !important;
-          }
-
+          /* Standardized Control Wraps & Triggers across All Search Fields */
           .search-panel .flight-search-bar-row .control-wrap,
           .search-panel .flight-search-bar-row .traveller-trigger,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .control-wrap,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-trigger {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 10px !important;
+            width: 100% !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            outline: none !important;
+            cursor: pointer !important;
+          }
+
           .homepage-flights .search-panel .multi-city-row .control-wrap,
           .homepage-flights .search-panel .multi-footer-row .control-wrap,
           .homepage-flights .search-panel .multi-footer-row .traveller-trigger {
@@ -6668,25 +6733,33 @@ export default function HomePage() {
             align-items: center !important;
             gap: 8px !important;
             width: 100% !important;
-            height: 26px !important;
-            min-height: 26px !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            max-height: 24px !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
             background: transparent !important;
+            outline: none !important;
+            cursor: pointer !important;
           }
 
           .search-panel .flight-search-bar-row .control-wrap svg,
           .search-panel .flight-search-bar-row .traveller-trigger svg,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .control-wrap svg,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-trigger svg,
           .homepage-flights .search-panel .multi-city-row .control-wrap svg,
           .homepage-flights .search-panel .multi-footer-row .control-wrap svg,
           .homepage-flights .search-panel .multi-footer-row .traveller-trigger svg {
             color: #dc1e26 !important;
             stroke: #dc1e26 !important;
             flex-shrink: 0 !important;
-            width: 17px !important;
-            height: 17px !important;
+            width: 16px !important;
+            height: 16px !important;
+            position: static !important;
+            transform: none !important;
+            margin: 0 !important;
           }
 
           .search-panel .flight-search-bar-row .traveller-caret,
@@ -6694,52 +6767,125 @@ export default function HomePage() {
             margin-left: auto !important;
           }
 
-          .search-panel .flight-search-bar-row .field-control::placeholder,
-          .homepage-flights .search-panel .multi-city-row .field-control::placeholder {
-            color: #334155 !important;
+          .search-panel .flight-search-bar-row .field-control,
+          .search-panel .flight-search-bar-row input.field-control,
+          .search-panel .flight-search-bar-row .date-display-wrapper,
+          .search-panel .flight-search-bar-row .traveller-summary,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field-control,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row input.field-control,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-display-wrapper,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary {
+            height: 38px !important;
+            min-height: 38px !important;
+            line-height: 38px !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            color: #0f172a !important;
+            font-size: 0.94rem !important;
             font-weight: 500 !important;
-            opacity: 0.9 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            width: 100% !important;
           }
 
-          .search-panel .flight-search-bar-row .date-placeholder,
-          .search-panel .flight-search-bar-row .date-main-bold,
+
+          .search-panel .flight-search-bar-row .with-leading-icon,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .with-leading-icon {
+            padding-left: 0 !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-display-wrapper span,
           .search-panel .flight-search-bar-row .traveller-summary span,
-          .search-panel .flight-search-bar-row .class-summary span,
-          .homepage-flights .search-panel .multi-city-row .date-placeholder,
-          .homepage-flights .search-panel .multi-city-row .date-main-bold,
-          .homepage-flights .search-panel .multi-footer-row .traveller-summary span,
-          .homepage-flights .search-panel .multi-footer-row .class-summary span {
-            color: #334155 !important;
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-display-wrapper span,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary span {
+            white-space: nowrap !important;
+            line-height: 24px !important;
+            font-size: 0.88rem !important;
+          }
+
+          .search-panel .flight-search-bar-row .field-control::placeholder,
+          .search-panel .flight-search-bar-row .date-placeholder,
+          .search-panel .flight-search-bar-row .traveller-summary.placeholder span,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field-control::placeholder,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-placeholder,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary.placeholder span,
+          .homepage-flights .search-panel .multi-city-row .field-control::placeholder,
+          .homepage-flights .search-panel .multi-city-row .date-placeholder {
+            color: #64748b !important;
             font-weight: 500 !important;
             opacity: 1 !important;
           }
 
+          .search-panel .flight-search-bar-row .date-main-bold,
+          .search-panel .flight-search-bar-row .traveller-summary:not(.placeholder) span,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-main-bold,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary:not(.placeholder) span,
+          .homepage-flights .search-panel .multi-city-row .date-main-bold {
+            color: #0f172a !important;
+            font-weight: 600 !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-sub-day,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-sub-day {
+            font-size: 0.75rem !important;
+            color: #64748b !important;
+            font-weight: 500 !important;
+          }
+
+          /* Container-specific Padding & Divider Lines */
           .search-panel .flight-search-bar-row .source-field,
-          .search-panel .flight-search-bar-row .destination-field {
-            flex: 1.2 1 auto !important;
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .source-field {
+            flex: 1.25 1 auto !important;
+            padding: 0 28px 0 16px !important;
+            border-right: 1px solid #cbd5e1 !important;
           }
 
-          .search-panel .flight-search-bar-row .source-field {
-            padding-left: 14px !important;
-            padding-right: 8px !important;
+          .search-panel .flight-search-bar-row .destination-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .destination-field {
+            flex: 1.25 1 auto !important;
+            padding: 0 16px 0 28px !important;
+            border-right: 1px solid #cbd5e1 !important;
+          }
+
+          .search-panel .flight-search-bar-row .departure-field,
+          .search-panel .flight-search-bar-row .return-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .departure-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .return-field {
+            flex: 1.05 1 auto !important;
+            padding: 0 16px !important;
+            border-right: 1px solid #cbd5e1 !important;
+          }
+
+          .search-panel .flight-search-bar-row .traveller-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-field {
+            flex: 1.15 1 auto !important;
+            padding: 0 16px !important;
+            border-right: 1px solid #cbd5e1 !important;
+            z-index: 30 !important;
+          }
+
+          .search-panel .flight-search-bar-row .class-field,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .class-field {
+            flex: 1 1 auto !important;
+            padding: 0 16px !important;
             border-right: none !important;
-          }
-
-          .search-panel .flight-search-bar-row .destination-field {
-            padding-left: 10px !important;
-            padding-right: 12px !important;
-            border-right: 1px solid #e2e8f0 !important;
+            margin-right: 8px !important;
+            z-index: 25 !important;
           }
 
           .search-panel .flight-search-bar-row .hotel-destination-field {
             flex: 1.4 1 auto !important;
             padding-left: 6px !important;
-            border-right: 1px solid #e2e8f0 !important;
+            border-right: 1px solid #cbd5e1 !important;
           }
 
           .search-panel .flight-search-bar-row .hotel-guests-field {
             flex: 1.2 1 auto !important;
-            border-right: 1px solid #e2e8f0 !important;
+            border-right: 1px solid #cbd5e1 !important;
             padding-left: 12px !important;
           }
 
@@ -6752,70 +6898,99 @@ export default function HomePage() {
             flex-shrink: 0 !important;
           }
 
-          /* Ensure dropdowns aren't covered by subsequent sibling elements with explicit z-indices */
-          .search-panel .flight-search-bar-row .traveller-field {
-            z-index: 30 !important;
-          }
-          .search-panel .flight-search-bar-row .class-field {
-            z-index: 25 !important;
-          }
           .search-panel .flight-search-bar-row .traveller-field:focus-within,
           .search-panel .flight-search-bar-row .class-field:focus-within {
             z-index: 1200 !important;
           }
 
-          /* Dedicated Swap Button Spacing - No Overlap with Destination Icon */
+          /* Perfectly Centered Floating Switcher Button on Divider Line */
+          .homepage-flights .search-panel .flight-search-bar-row .swap-field,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-field,
           .search-panel .flight-search-bar-row .swap-field {
             flex: 0 0 auto !important;
-            margin: 0 4px !important;
-            z-index: 10 !important;
-            align-self: center !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            height: 56px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: relative !important;
+            z-index: 50 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
           }
 
+          .homepage-flights .search-panel .flight-search-bar-row .swap-btn,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-btn,
           .search-panel .flight-search-bar-row .swap-btn {
+            position: absolute !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
             width: 28px !important;
             height: 28px !important;
+            min-width: 28px !important;
+            min-height: 28px !important;
             border-radius: 50% !important;
             background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
+            border: 1.5px solid #cbd5e1 !important;
             color: #dc1e26 !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             cursor: pointer !important;
-            transition: all 0.25s ease !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            z-index: 60 !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
           }
 
+          .homepage-flights .search-panel .flight-search-bar-row .swap-btn:hover,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-btn:hover,
           .search-panel .flight-search-bar-row .swap-btn:hover {
-            transform: rotate(180deg) scale(1.08) !important;
-            box-shadow: 0 4px 10px rgba(220, 30, 38, 0.25) !important;
+            transform: translate(-50%, -50%) rotate(180deg) scale(1.1) !important;
+            border-color: #dc1e26 !important;
+            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.28) !important;
           }
 
-          /* Field Labels (SOURCE, DESTINATION, DEPARTURE, TRAVELLERS, CLASS) - Bold & Dark */
+          .search-panel .flight-search-bar-row .swap-btn svg {
+            width: 14px !important;
+            height: 14px !important;
+            color: #dc1e26 !important;
+            stroke: #dc1e26 !important;
+            flex-shrink: 0 !important;
+          }
+
+          /* Hide Field Labels in Flight Search (Single-Line & Multi-City) as requested */
+          .search-panel .flight-search-bar-row label,
           .search-panel .flight-search-bar-row .field label,
           .search-panel .flight-search-bar-row .place-autocomplete label,
+          .search-panel .flight-search-bar-row .source-field label,
+          .search-panel .flight-search-bar-row .destination-field label,
           .search-panel .flight-search-bar-row .departure-field label,
           .search-panel .flight-search-bar-row .return-field label,
           .search-panel .flight-search-bar-row .traveller-field label,
           .search-panel .flight-search-bar-row .class-field label,
+          .homepage-flights .search-panel .flight-search-bar-row label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .place-autocomplete label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .source-field label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .destination-field label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .departure-field label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .return-field label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-field label,
+          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .class-field label,
           .homepage-flights .search-panel .multi-city-row label,
-          .homepage-flights .search-panel .multi-footer-row label {
-            display: block !important;
-            text-align: left !important;
-            align-self: flex-start !important;
-            color: #0f172a !important;
-            font-size: 0.68rem !important;
-            font-weight: 900 !important;
-            letter-spacing: 0.07em !important;
-            margin: 0 0 2px 0 !important;
-            padding: 0 !important;
-            text-transform: uppercase !important;
-            white-space: nowrap !important;
-            line-height: 1.2 !important;
+          .homepage-flights .search-panel .multi-footer-row label,
+          .homepage-flights .search-panel .multi-city-list label,
+          .search-panel .multi-city-row label,
+          .search-panel .multi-footer-row label {
+            display: none !important;
           }
           
           .search-panel .flight-search-bar-row .date-display-wrapper span,
@@ -6917,116 +7092,124 @@ export default function HomePage() {
             grid-template-columns: minmax(160px, 1.2fr) minmax(160px, 1.2fr) minmax(140px, 1fr) auto !important;
             gap: 0 !important;
             align-items: center !important;
-            background: rgba(255, 255, 255, 0.84) !important;
-            backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.95) !important;
-            border-radius: 10px !important;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.18)) !important;
+            backdrop-filter: blur(20px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
             box-sizing: border-box !important;
             margin-bottom: 0 !important;
             overflow: visible !important;
+            transition: all 0.2s ease !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.24)) !important;
+            border-color: rgba(255, 255, 255, 0.8) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .field,
           .homepage-flights .search-panel .multi-city-row .place-autocomplete {
-            height: 42px !important;
-            min-height: 42px !important;
+            height: 44px !important;
+            min-height: 44px !important;
             background: transparent !important;
             border: none !important;
-            border-right: 1px solid #e2e8f0 !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
             border-radius: 0 !important;
-            padding: 2px 10px !important;
+            padding: 0 12px !important;
             margin: 0 !important;
             display: flex !important;
-            flex-direction: column !important;
+            flex-direction: row !important;
             justify-content: center !important;
-            align-items: flex-start !important;
+            align-items: center !important;
             box-sizing: border-box !important;
             position: relative !important;
+            transition: background 0.18s ease !important;
           }
 
-          .homepage-flights .search-panel .multi-city-row label,
-          .homepage-flights .search-panel .multi-footer-row label {
-            display: block !important;
-            text-align: left !important;
-            align-self: flex-start !important;
-            color: #0f172a !important;
-            font-size: 0.58rem !important;
-            font-weight: 900 !important;
-            letter-spacing: 0.06em !important;
-            margin: 0 0 1px 0 !important;
-            padding: 0 !important;
-            text-transform: uppercase !important;
-            white-space: nowrap !important;
-            line-height: 1 !important;
+          .homepage-flights .search-panel .multi-city-row .field:hover,
+          .homepage-flights .search-panel .multi-city-row .place-autocomplete:hover {
+            background: rgba(255, 255, 255, 0.22) !important;
+            border-radius: 8px !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .field-control,
           .homepage-flights .search-panel .multi-city-row input.field-control {
-            height: 20px !important;
-            min-height: 20px !important;
-            line-height: 20px !important;
-            font-size: 0.84rem !important;
-            font-weight: 500 !important;
-            color: #334155 !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            line-height: 32px !important;
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .control-wrap {
-            height: 20px !important;
-            min-height: 20px !important;
-            gap: 6px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            gap: 8px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .control-wrap svg {
-            width: 14px !important;
-            height: 14px !important;
+            width: 16px !important;
+            height: 16px !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .date-display-wrapper span {
-            font-size: 0.82rem !important;
+            font-size: 0.88rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .multi-actions {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 5px !important;
-            height: 42px !important;
-            padding: 0 8px !important;
+            gap: 6px !important;
+            height: 44px !important;
+            padding: 0 10px !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .action-circle {
-            width: 25px !important;
-            height: 25px !important;
-            min-width: 25px !important;
-            min-height: 25px !important;
+            width: 26px !important;
+            height: 26px !important;
+            min-width: 26px !important;
+            min-height: 26px !important;
             border-radius: 50% !important;
-            background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
+            background: rgba(255, 255, 255, 0.55) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.75) !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .action-add {
             color: #16a34a !important;
           }
           .homepage-flights .search-panel .multi-city-row .action-add:hover {
-            background: #f0fdf4 !important;
+            background: rgba(240, 253, 244, 0.85) !important;
             border-color: #86efac !important;
-            transform: scale(1.08) !important;
+            transform: scale(1.1) !important;
+            box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25) !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .action-delete {
             color: #dc1e26 !important;
           }
           .homepage-flights .search-panel .multi-city-row .action-delete:hover:not(:disabled) {
-            background: #fef2f2 !important;
+            background: rgba(254, 242, 242, 0.85) !important;
             border-color: #fca5a5 !important;
-            transform: scale(1.08) !important;
+            transform: scale(1.1) !important;
+            box-shadow: 0 3px 8px rgba(220, 30, 38, 0.25) !important;
           }
           .homepage-flights .search-panel .multi-city-row .action-delete:disabled {
             opacity: 0.3 !important;
@@ -7048,45 +7231,60 @@ export default function HomePage() {
           .homepage-flights .search-panel .multi-footer-row .field,
           .homepage-flights .search-panel .multi-footer-row .traveller-field,
           .homepage-flights .search-panel .multi-footer-row .class-field {
-            height: 42px !important;
-            min-height: 42px !important;
-            background: rgba(255, 255, 255, 0.84) !important;
-            backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.95) !important;
-            border-radius: 10px !important;
-            padding: 2px 10px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.18)) !important;
+            backdrop-filter: blur(20px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border-radius: 12px !important;
+            padding: 0 12px !important;
             margin: 0 !important;
             display: flex !important;
-            flex-direction: column !important;
+            flex-direction: row !important;
             justify-content: center !important;
-            align-items: flex-start !important;
+            align-items: center !important;
             box-sizing: border-box !important;
             position: relative !important;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+            transition: all 0.2s ease !important;
+          }
+
+          .homepage-flights .search-panel .multi-footer-row .field:hover,
+          .homepage-flights .search-panel .multi-footer-row .traveller-field:hover,
+          .homepage-flights .search-panel .multi-footer-row .class-field:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.24)) !important;
+            border-color: rgba(255, 255, 255, 0.8) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .control-wrap,
           .homepage-flights .search-panel .multi-footer-row .traveller-trigger {
-            height: 20px !important;
-            min-height: 20px !important;
-            gap: 6px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            gap: 8px !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .control-wrap svg,
           .homepage-flights .search-panel .multi-footer-row .traveller-trigger svg {
-            width: 14px !important;
-            height: 14px !important;
+            width: 16px !important;
+            height: 16px !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .traveller-summary span,
           .homepage-flights .search-panel .multi-footer-row .class-summary span {
-            font-size: 0.84rem !important;
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .search-btn.flight-grid-search-btn {
-            height: 42px !important;
-            min-height: 42px !important;
-            border-radius: 10px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            border-radius: 12px !important;
             background: #dc1e26 !important;
             color: #ffffff !important;
             font-weight: 800 !important;
@@ -7099,11 +7297,17 @@ export default function HomePage() {
             justify-content: center !important;
             gap: 6px !important;
             margin: 0 !important;
-            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
+            box-shadow: 0 4px 14px rgba(220, 30, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
             border: none !important;
             width: 100% !important;
+          }
+
+          .homepage-flights .search-panel .multi-footer-row .search-btn.flight-grid-search-btn:hover {
+            background: #b8141b !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
           }
 
           @media (max-width: 100px) {
@@ -7295,7 +7499,11 @@ export default function HomePage() {
                               </div>
                             </div>
                             {activeCalendarField === `leg-${leg.id}` && (
-                              <CustomDatePicker value={leg.departureDate} onChange={(newDate) => updateMultiCityLeg(leg.id, "departureDate", newDate)} isOpen={true} onClose={() => setActiveCalendarField(null)} />
+                              <CustomDatePicker isOpen={true}
+                                value={leg.departureDate}
+                                onChange={(newDate) => updateMultiCityLeg(leg.id, "departureDate", newDate)}
+                                onClose={() => setActiveCalendarField(null)}
+                              />
                             )}
                           </div>
 
@@ -7397,7 +7605,7 @@ export default function HomePage() {
                           </div>
                         </div>
                         {activeCalendarField === "flight-dep" && (
-                          <CustomDatePicker
+                          <CustomDatePicker isOpen={true}
                             value={flightDepartureDate}
                             onChange={(newDate) => {
                               setFlightDepartureDate(newDate);
@@ -7405,7 +7613,6 @@ export default function HomePage() {
                                 setFlightReturnDate("");
                               }
                             }}
-                            isOpen={true}
                             onClose={() => setActiveCalendarField(null)}
                           />
                         )}
@@ -7436,7 +7643,12 @@ export default function HomePage() {
                             </div>
                           </div>
                           {activeCalendarField === "flight-ret" && (
-                            <CustomDatePicker value={flightReturnDate} minDate={flightDepartureDate || ""} onChange={(newDate) => setFlightReturnDate(newDate)} isOpen={true} onClose={() => setActiveCalendarField(null)} />
+                            <CustomDatePicker isOpen={true}
+                              value={flightReturnDate}
+                              minDate={flightDepartureDate || ""}
+                              onChange={(newDate) => setFlightReturnDate(newDate)}
+                              onClose={() => setActiveCalendarField(null)}
+                            />
                           )}
                         </div>
                       )}
@@ -7521,7 +7733,7 @@ export default function HomePage() {
                         />
                       </div>
                       {activeCalendarField === "bus-dep" && (
-                        <CustomDatePicker
+                        <CustomDatePicker isOpen={true}
                           value={busDepartureDate}
                           onChange={(newDate) => {
                             setBusDepartureDate(newDate);
@@ -7529,7 +7741,6 @@ export default function HomePage() {
                               setBusReturnDate("");
                             }
                           }}
-                          isOpen={true}
                           onClose={() => setActiveCalendarField(null)}
                         />
                       )}
@@ -7554,7 +7765,12 @@ export default function HomePage() {
                           />
                         </div>
                         {activeCalendarField === "bus-ret" && (
-                          <CustomDatePicker value={busReturnDate} minDate={busDepartureDate || ""} onChange={(newDate) => setBusReturnDate(newDate)} isOpen={true} onClose={() => setActiveCalendarField(null)} />
+                          <CustomDatePicker isOpen={true}
+                            value={busReturnDate}
+                            minDate={busDepartureDate || ""}
+                            onChange={(newDate) => setBusReturnDate(newDate)}
+                            onClose={() => setActiveCalendarField(null)}
+                          />
                         )}
                       </div>
                     )}
@@ -8526,10 +8742,10 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Testimonials Section — image left, cards scroll to the right */}
+      {/* Testimonials Section - Matching Image 1 Design Mockup */}
       <section className="client-testimonials-section section-shell">
-        <div className="client-testimonials-overlap-wrap">
-          {/* Left Scenic Image — shown fully, no fade */}
+        <div className="client-testimonials-container">
+          {/* Left Scenic Hiker Image Card with Floating Glass Badge */}
           <div className="client-testimonial-left-visual">
             <img
               src={picknbookAllTravelBanner}
@@ -8538,12 +8754,19 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Scrolling cards — sits to the right of the image with a white background */}
-          <div className="client-testimonials-cards-overlay">
+          {/* Right Dark Navy Container */}
+          <div className="client-testimonials-right-dark-box">
+            <div className="client-testimonials-header">
+              <h2 className="client-testimonial-title">
+                What Our Client <span className="client-title-muted">Say About Us</span>
+              </h2>
+            </div>
+
+            {/* Testimonials Auto-Scrolling Marquee */}
             <AutoMarquee
               items={testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS}
               className="client-testimonials-marquee"
-              duration={45}
+              duration={12}
               pauseOnHover={true}
               renderItem={(review, idx) => (
                 <article
@@ -8813,5 +9036,4 @@ export default function HomePage() {
     </div >
   );
 }
-
 

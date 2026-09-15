@@ -373,7 +373,7 @@ export default function SiteFooter() {
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("buses", e)}
-                    className="pnb-footer-link pnb-link-active"
+                    className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Bus Ticket Booking
                   </button>
@@ -1132,3 +1132,4 @@ export default function SiteFooter() {
     </footer>
   );
 }
+

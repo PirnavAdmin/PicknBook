@@ -28,8 +28,8 @@ namespace PickNBook.Api.Services.Notifications.Implementations
             string challengeId = Guid.NewGuid().ToString("N");
             string hash = HashOtp(otpCode);
 
-            // Dynamically set expiry: 10 minutes for Login, 5 minutes for everything else
-            int expiryMinutes = purpose == "Login" ? 10 : 5;
+            // OTP expiry: 5 minutes matching approved DLT template sample content
+            int expiryMinutes = 5;
 
             var otpRecord = new PickNBook.Api.Models.OTP
             {
@@ -54,18 +54,41 @@ namespace PickNBook.Api.Services.Notifications.Implementations
             await _dbContext.SaveChangesAsync();
 
             object payload;
-            if (purpose == "Login" && channel == "SMS")
+            if (purpose == "Registration")
+            {
+                payload = new
+                {
+                    OtpCode = otpCode,
+                    ExpiryMinutes = expiryMinutes
+                };
+            }
+            else if (purpose == "Login" && channel == "SMS")
             {
                 payload = new
                 {
                     OtpCode = otpCode, // kept for backward compat / email channel
-                    Var1 = _routingSettings.LoginOtpAppName ?? "ShyamAgro", // DLT ${var1}
+                    ExpiryMinutes = expiryMinutes,
+                    Var1 = _routingSettings.LoginOtpAppName ?? "PickNBook", // DLT ${var1}
                     Var2 = otpCode // DLT ${var2}
+                };
+            }
+            else if (purpose == "PasswordReset" || purpose == "B2BPasswordReset")
+            {
+                payload = new
+                {
+                    OtpCode = otpCode,
+                    ExpiryMinutes = expiryMinutes,
+                    Var1 = otpCode,
+                    Var2 = expiryMinutes
                 };
             }
             else
             {
-                payload = new { OtpCode = otpCode };
+                payload = new 
+                { 
+                    OtpCode = otpCode,
+                    ExpiryMinutes = expiryMinutes
+                };
             }
 
             // Determine template based on purpose
