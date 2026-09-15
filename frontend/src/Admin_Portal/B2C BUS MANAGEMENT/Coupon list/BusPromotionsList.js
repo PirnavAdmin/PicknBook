@@ -109,9 +109,22 @@ export default function AdminBusCouponListPage() {
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [couponLoadError, setCouponLoadError] = useState("");
 
+  const DEFAULT_FILTERS = {
+    service: "all",
+    category: "all",
+    cpnType: "all",
+    status: "all",
+    search: "",
+    sortBy: DEFAULT_COUPON_SORT_BY,
+    sortOrder: DEFAULT_COUPON_SORT_ORDER,
+  };
+
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [sortBy, setSortBy] = useState(DEFAULT_COUPON_SORT_BY);
   const [sortOrder, setSortOrder] = useState(DEFAULT_COUPON_SORT_ORDER);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [cpnTypeFilter, setCpnTypeFilter] = useState("all");
@@ -123,6 +136,7 @@ export default function AdminBusCouponListPage() {
   const [deleteCoupon, setDeleteCoupon] = useState(null);
   const [activeActionDropdownId, setActiveActionDropdownId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewingCoupon, setViewingCoupon] = useState(null);
 
   useEffect(() => {
@@ -147,7 +161,22 @@ export default function AdminBusCouponListPage() {
     value2: "",
   });
 
-  const itemsPerPage = 10;
+  const getServiceLabel = (coupon) => {
+    const val = String(
+      coupon.type ||
+      coupon.serviceType ||
+      coupon.service ||
+      coupon.bookingType ||
+      coupon.applicableService ||
+      coupon.module ||
+      ""
+    ).toLowerCase();
+
+    if (val.includes("flight")) return "Flight";
+    if (val.includes("hotel")) return "Hotel";
+    if (val.includes("bus")) return "Bus";
+    return "Bus";
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -198,15 +227,34 @@ export default function AdminBusCouponListPage() {
 
   const visibleCoupons = useMemo(() => {
     const filteredCoupons = coupons.filter((coupon) => {
-      const matchesCategory =
-        categoryFilter === "all" ||
-        String(coupon.promotionCategory || "Offer").toLowerCase() === categoryFilter.toLowerCase();
-      const matchesStatus =
-        statusFilter === "all" || String(coupon.status || "").toLowerCase() === statusFilter;
-      const matchesType =
-        cpnTypeFilter === "all" || String(coupon.cpnType || "").toLowerCase() === cpnTypeFilter;
+      const serviceLbl = getServiceLabel(coupon).toLowerCase();
+      const matchesService =
+        serviceFilter === "all" || serviceLbl === serviceFilter.toLowerCase();
 
-      return matchesCategory && matchesStatus && matchesType;
+      const itemCategory = String(coupon.promotionCategory || "Offer").toLowerCase();
+
+      const matchesCategoryTab =
+        categoryFilter === "all" || itemCategory === categoryFilter.toLowerCase();
+
+      const matchesCategoryFilter =
+        filters.category === "all" || itemCategory === filters.category.toLowerCase();
+
+      const matchesCategory = matchesCategoryTab && matchesCategoryFilter;
+
+      const matchesStatus =
+        filters.status === "all" || String(coupon.status || "").toLowerCase() === filters.status.toLowerCase();
+
+      const matchesType =
+        filters.cpnType === "all" || String(coupon.cpnType || "").toLowerCase() === filters.cpnType.toLowerCase();
+
+      const searchQuery = filters.search.trim().toLowerCase();
+      const matchesSearch =
+        !searchQuery ||
+        String(coupon.couponCode || "").toLowerCase().includes(searchQuery) ||
+        String(coupon.title || "").toLowerCase().includes(searchQuery) ||
+        String(coupon.description || "").toLowerCase().includes(searchQuery);
+
+      return matchesService && matchesCategory && matchesStatus && matchesType && matchesSearch;
     });
 
     return [...filteredCoupons].sort((leftCoupon, rightCoupon) => {
@@ -221,7 +269,7 @@ export default function AdminBusCouponListPage() {
       }
       return 0;
     });
-  }, [coupons, categoryFilter, statusFilter, cpnTypeFilter, sortBy, sortOrder]);
+  }, [coupons, filters, categoryFilter, serviceFilter, sortBy, sortOrder]);
 
   const totalItems = visibleCoupons.length;
 
@@ -571,22 +619,56 @@ export default function AdminBusCouponListPage() {
       <header className="admin-markup-coupon-header">
         <div className="admin-markup-coupon-title-wrap">
           <h1>
-            <span style={{ color: '#A51C49' }}>B2C </span>
-            <span style={{ color: '#000000' }}>Promotions List</span>
+            <span style={{ color: '#A51C49' }}>
+              {categoryFilter === "Coupon" ? "Coupon " : categoryFilter === "Offer" ? "Offer " : "Promotions "}
+            </span>
+            <span style={{ color: '#000000' }}>List</span>
           </h1>
         </div>
 
         <div className="admin-markup-coupon-actions">
-          <button
-            type="button"
-            className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
-            onClick={() => setIsFilterPanelOpen((previous) => !previous)}
-            aria-expanded={isFilterPanelOpen}
-            aria-controls="admin-markup-coupon-filter"
+          <select
+            value={serviceFilter}
+            onChange={(e) => {
+              setServiceFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              width: "130px",
+              minWidth: "130px",
+              maxWidth: "130px",
+              height: "35px",
+              padding: "0 8px",
+              borderRadius: "10px",
+              border: "1px solid #cbd5e1",
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#1e293b",
+              background: "#ffffff",
+              cursor: "pointer",
+              outline: "none",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              boxSizing: "border-box"
+            }}
           >
-            <SlidersHorizontal size={15} />
-            <span>Filter</span>
-          </button>
+            <option value="all">All Services</option>
+            <option value="Bus">Bus</option>
+            <option value="Flight">Flight</option>
+            <option value="Hotel">Hotel</option>
+          </select>
+
+          {categoryFilter === "all" && (
+            <button
+              type="button"
+              className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
+              onClick={() => setIsFilterPanelOpen((previous) => !previous)}
+              aria-expanded={isFilterPanelOpen}
+              aria-controls="admin-markup-coupon-filter"
+            >
+              <SlidersHorizontal size={15} />
+              <span>Filter</span>
+            </button>
+          )}
 
           <div
             className="category-view-btn-group"
@@ -603,7 +685,10 @@ export default function AdminBusCouponListPage() {
             <button
               type="button"
               className={`cat-view-btn ${categoryFilter === "all" ? "active" : ""}`}
-              onClick={() => setCategoryFilter("all")}
+              onClick={() => {
+                setCategoryFilter("all");
+                setCurrentPage(1);
+              }}
               style={{
                 padding: "5px 12px",
                 borderRadius: "7px",
@@ -621,7 +706,11 @@ export default function AdminBusCouponListPage() {
             <button
               type="button"
               className={`cat-view-btn ${categoryFilter === "Coupon" ? "active" : ""}`}
-              onClick={() => setCategoryFilter("Coupon")}
+              onClick={() => {
+                setCategoryFilter("Coupon");
+                setIsFilterPanelOpen(false);
+                setCurrentPage(1);
+              }}
               style={{
                 padding: "5px 12px",
                 borderRadius: "7px",
@@ -639,7 +728,11 @@ export default function AdminBusCouponListPage() {
             <button
               type="button"
               className={`cat-view-btn ${categoryFilter === "Offer" ? "active" : ""}`}
-              onClick={() => setCategoryFilter("Offer")}
+              onClick={() => {
+                setCategoryFilter("Offer");
+                setIsFilterPanelOpen(false);
+                setCurrentPage(1);
+              }}
               style={{
                 padding: "5px 12px",
                 borderRadius: "7px",
@@ -656,36 +749,40 @@ export default function AdminBusCouponListPage() {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="admin-markup-coupon-btn generate"
-            onClick={openAddPromotionModal}
-            style={{ background: "#A51C49", borderColor: "#A51C49" }}
-          >
-            <Plus size={15} />
-            <span>Add Promotion</span>
-          </button>
+          {categoryFilter === "all" && (
+            <>
+              <button
+                type="button"
+                className="admin-markup-coupon-btn generate"
+                onClick={openAddPromotionModal}
+                style={{ background: "#A51C49", borderColor: "#A51C49" }}
+              >
+                <Plus size={15} />
+                <span>Add Promotion</span>
+              </button>
 
-          <button
-            type="button"
-            className="admin-markup-coupon-btn export"
-            onClick={handleExport}
-            disabled={visibleCoupons.length === 0}
-          >
-            <Download size={15} />
-            <span>Export CSV</span>
-          </button>
+              <button
+                type="button"
+                className="admin-markup-coupon-btn export"
+                onClick={handleExport}
+                disabled={visibleCoupons.length === 0}
+              >
+                <Download size={15} />
+                <span>Export CSV</span>
+              </button>
+            </>
+          )}
         </div>
       </header>
 
-      {isFilterPanelOpen && (
-        <section className="admin-markup-coupon-filter" id="admin-markup-coupon-filter">
+      {isFilterPanelOpen && categoryFilter === "all" && (
+        <section className="admin-markup-coupon-filter" id="admin-markup-coupon-filter" style={{ marginBottom: "20px" }}>
           <div className="admin-markup-coupon-filter-grid">
             <label>
               <span>Category</span>
               <select
-                value={categoryFilter}
-                onChange={(event) => setCategoryFilter(event.target.value)}
+                value={draftFilters.category}
+                onChange={(event) => setDraftFilters({ ...draftFilters, category: event.target.value })}
               >
                 <option value="all">All Categories</option>
                 <option value="Coupon">Coupon</option>
@@ -694,8 +791,48 @@ export default function AdminBusCouponListPage() {
             </label>
 
             <label>
+              <span>Status</span>
+              <select
+                value={draftFilters.status}
+                onChange={(event) => setDraftFilters({ ...draftFilters, status: event.target.value })}
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </label>
+
+            <label>
+              <span>CPN Type</span>
+              <select
+                value={draftFilters.cpnType}
+                onChange={(event) => setDraftFilters({ ...draftFilters, cpnType: event.target.value })}
+              >
+                <option value="all">All Types</option>
+                {availableCouponTypes.map((couponType) => (
+                  <option key={couponType} value={couponType}>
+                    {couponType}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Search</span>
+              <input
+                type="text"
+                placeholder="Search code or title..."
+                value={draftFilters.search}
+                onChange={(event) => setDraftFilters({ ...draftFilters, search: event.target.value })}
+              />
+            </label>
+
+            <label>
               <span>Sort By</span>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+              <select
+                value={draftFilters.sortBy || sortBy}
+                onChange={(event) => setDraftFilters({ ...draftFilters, sortBy: event.target.value })}
+              >
                 <option value="entryDate">Entry Date</option>
                 <option value="id">ID</option>
                 <option value="value">CPN Value</option>
@@ -709,41 +846,60 @@ export default function AdminBusCouponListPage() {
 
             <label>
               <span>Order</span>
-              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
+              <select
+                value={draftFilters.sortOrder || sortOrder}
+                onChange={(event) => setDraftFilters({ ...draftFilters, sortOrder: event.target.value })}
+              >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
               </select>
             </label>
+          </div>
 
-            <label>
-              <span>Status</span>
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-              >
-                <option value="all">All</option>
-                {availableStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              <span>CPN Type</span>
-              <select
-                value={cpnTypeFilter}
-                onChange={(event) => setCpnTypeFilter(event.target.value)}
-              >
-                <option value="all">All</option>
-                {availableCouponTypes.map((couponType) => (
-                  <option key={couponType} value={couponType}>
-                    {couponType}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setDraftFilters(DEFAULT_FILTERS);
+                setFilters(DEFAULT_FILTERS);
+                setCurrentPage(1);
+              }}
+              style={{
+                background: "#64748b",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 20px",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "13px",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilters({ ...draftFilters });
+                if (draftFilters.sortBy) setSortBy(draftFilters.sortBy);
+                if (draftFilters.sortOrder) setSortOrder(draftFilters.sortOrder);
+                setCurrentPage(1);
+              }}
+              style={{
+                background: "#2563eb",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 20px",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "13px",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Apply Filters
+            </button>
           </div>
         </section>
       )}
@@ -756,17 +912,18 @@ export default function AdminBusCouponListPage() {
               <col />
               <col />
               <col />
+              <col />
               <col className="col-value" />
               <col className="col-type" />
               <col />
               <col className="col-limit" />
               <col className="col-status" />
-              <col className="col-entry" />
               <col className="col-action" />
             </colgroup>
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Service</th>
                 <th>Category</th>
                 <th>Code</th>
                 <th>Title</th>
@@ -775,7 +932,6 @@ export default function AdminBusCouponListPage() {
                 <th>Start / Expiry Date</th>
                 <th>Use Limit</th>
                 <th className="status-col">Status</th>
-                <th>Entry Date</th>
                 <th className="action-col">Action</th>
               </tr>
             </thead>
@@ -802,6 +958,34 @@ export default function AdminBusCouponListPage() {
                 paginatedCoupons.map((coupon, index) => (
                   <tr key={coupon.id} className={activeActionDropdownId === coupon.id ? "active-dropdown-row" : ""}>
                     <td>{coupon.id}</td>
+                    <td>
+                      <span style={{
+                        padding: "3px 10px",
+                        borderRadius: "12px",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        background:
+                          getServiceLabel(coupon) === "Bus"
+                            ? "#f0fdf4"
+                            : getServiceLabel(coupon) === "Flight"
+                            ? "#eff6ff"
+                            : "#fef3c7",
+                        color:
+                          getServiceLabel(coupon) === "Bus"
+                            ? "#166534"
+                            : getServiceLabel(coupon) === "Flight"
+                            ? "#1e40af"
+                            : "#92400e",
+                        border:
+                          getServiceLabel(coupon) === "Bus"
+                            ? "1px solid #bbf7d0"
+                            : getServiceLabel(coupon) === "Flight"
+                            ? "1px solid #bfdbfe"
+                            : "1px solid #fde68a"
+                      }}>
+                        {getServiceLabel(coupon)}
+                      </span>
+                    </td>
                     <td>
                       <span style={{
                         padding: "2px 8px",
@@ -831,8 +1015,8 @@ export default function AdminBusCouponListPage() {
                       </span>
                     </td>
                     <td>
-                      <span style={{ fontSize: "11px", color: "#334155", fontWeight: "500" }}>
-                        {coupon.title || coupon.description || "--"}
+                      <span style={{ fontSize: "11px", color: "#334155", fontWeight: "600" }}>
+                        {coupon.title || coupon.description || coupon.remark || "--"}
                       </span>
                     </td>
                     <td>
@@ -864,7 +1048,6 @@ export default function AdminBusCouponListPage() {
                         <span>{coupon.status === "active" ? "Active" : "Inactive"}</span>
                       </button>
                     </td>
-                    <td>{formatCouponDateTime(coupon.entryDate)}</td>
                     <td className="action-col">
                       <div className="actions-dropdown-container">
                         <button
@@ -947,6 +1130,10 @@ export default function AdminBusCouponListPage() {
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newVal) => {
+            setItemsPerPage(newVal);
+            setCurrentPage(1);
+          }}
           itemName="promotions"
         />
       </section>
@@ -1210,8 +1397,8 @@ export default function AdminBusCouponListPage() {
             left: 0,
             width: "100vw",
             height: "100vh",
-            background: "rgba(15, 23, 42, 0.6)",
-            backdropFilter: "blur(4px)",
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(6px)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -1221,115 +1408,260 @@ export default function AdminBusCouponListPage() {
           <div 
             className="discount-modal-container edit-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ width: "90%", maxWidth: "680px", maxHeight: "90vh", overflowY: "auto", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
+            style={{
+              width: "90%",
+              maxWidth: "640px",
+              maxHeight: "88vh",
+              overflowY: "auto",
+              background: "#ffffff",
+              borderRadius: "20px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid #f1f5f9"
+            }}
           >
-            <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", marginBottom: "20px" }}>
-              <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b", fontWeight: 700 }}>
-                Promotion Details — <span style={{ color: "#A51C49" }}>{viewingCoupon.couponCode}</span>
-              </h3>
+            {/* Header */}
+            <div 
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "linear-gradient(135deg, #A51C49 0%, #7c1234 100%)",
+                padding: "18px 24px",
+                color: "#ffffff"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "#ffffff" }}>
+                  Promotion Details
+                </h3>
+                <span 
+                  style={{
+                    background: "rgba(255, 255, 255, 0.2)",
+                    color: "#ffffff",
+                    padding: "3px 10px",
+                    borderRadius: "14px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "0.5px",
+                    border: "1px solid rgba(255, 255, 255, 0.3)"
+                  }}
+                >
+                  {viewingCoupon.couponCode}
+                </span>
+              </div>
               <button 
                 type="button" 
                 onClick={() => setViewingCoupon(null)}
-                style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#64748b" }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.15)",
+                  border: "none",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  fontSize: "1.2rem",
+                  cursor: "pointer",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.2s"
+                }}
               >
                 &times;
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", fontSize: "13px", color: "#334155" }}>
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Category</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a" }}>{viewingCoupon.promotionCategory || "Offer"}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Title</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a" }}>{viewingCoupon.title || "--"}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Discount Value</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#047857" }}>
-                  {viewingCoupon.cpnType === "Percentage" ? `${viewingCoupon.value}%` : `₹${viewingCoupon.value}`}
-                  {viewingCoupon.maxDiscountAmount ? ` (Max Cap: ₹${viewingCoupon.maxDiscountAmount})` : ""}
+            {/* Content */}
+            <div style={{ padding: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Service</span>
+                  <div style={{ marginTop: "4px" }}>
+                    <span style={{
+                      padding: "3px 10px",
+                      borderRadius: "12px",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      background:
+                        getServiceLabel(viewingCoupon) === "Bus"
+                          ? "#f0fdf4"
+                          : getServiceLabel(viewingCoupon) === "Flight"
+                          ? "#eff6ff"
+                          : "#fef3c7",
+                      color:
+                        getServiceLabel(viewingCoupon) === "Bus"
+                          ? "#166534"
+                          : getServiceLabel(viewingCoupon) === "Flight"
+                          ? "#1e40af"
+                          : "#92400e",
+                      border:
+                        getServiceLabel(viewingCoupon) === "Bus"
+                          ? "1px solid #bbf7d0"
+                          : getServiceLabel(viewingCoupon) === "Flight"
+                          ? "1px solid #bfdbfe"
+                          : "1px solid #fde68a"
+                    }}>
+                      {getServiceLabel(viewingCoupon)}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Amount Type</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a" }}>{viewingCoupon.cpnType || "Fixed"}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Start Date</span>
-                <div style={{ fontWeight: 600, marginTop: "4px", color: "#047857" }}>{formatCouponDateTime(viewingCoupon.startDate)}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Expiry Date</span>
-                <div style={{ fontWeight: 600, marginTop: "4px", color: "#b91c1c" }}>{formatCouponDateTime(viewingCoupon.expiryDate)}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Usage Limit / Count</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a" }}>{viewingCoupon.usedCount || 0} / {viewingCoupon.useLimit || "∞"}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Max Usage Per User</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a" }}>{viewingCoupon.maxUsagePerUser || 1}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Min Booking Amount</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a" }}>₹{viewingCoupon.minBookingAmount || 0}</div>
-              </div>
-
-              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Status</span>
-                <div style={{ fontWeight: 700, marginTop: "4px", color: viewingCoupon.status === "active" ? "#047857" : "#b91c1c" }}>
-                  {viewingCoupon.status === "active" ? "Active" : "Inactive"}
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Category</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>
+                    <span style={{
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      fontSize: "11px",
+                      fontWeight: "500",
+                      background: viewingCoupon.promotionCategory === "Offer" ? "#eff6ff" : "#fdf2f8",
+                      color: viewingCoupon.promotionCategory === "Offer" ? "#2563eb" : "#A51C49",
+                      border: viewingCoupon.promotionCategory === "Offer" ? "1px solid #bfdbfe" : "1px solid #fbcfe8"
+                    }}>
+                      {viewingCoupon.promotionCategory || "Offer"}
+                    </span>
+                  </div>
                 </div>
+
+                {viewingCoupon.title && (
+                  <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Title</span>
+                    <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>{viewingCoupon.title}</div>
+                  </div>
+                )}
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Discount Value</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#047857", fontSize: "13px" }}>
+                    {(viewingCoupon.couponType === "Percentage" || viewingCoupon.cpnType === "Percentage")
+                      ? `${viewingCoupon.value}%`
+                      : `₹${viewingCoupon.value}`}
+                    {viewingCoupon.maxDiscountAmount ? ` (Cap: ₹${viewingCoupon.maxDiscountAmount})` : ""}
+                  </div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Amount Type</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>{viewingCoupon.couponType || viewingCoupon.cpnType || "Fixed"}</div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Start Date</span>
+                  <div style={{ fontWeight: 600, marginTop: "4px", color: "#047857", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.startDate)}</div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Expiry Date</span>
+                  <div style={{ fontWeight: 600, marginTop: "4px", color: "#b91c1c", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.expiryDate)}</div>
+                </div>
+
+                {(viewingCoupon.entryDateUtc || viewingCoupon.entryDate) && (
+                  <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Entry Date</span>
+                    <div style={{ fontWeight: 600, marginTop: "4px", color: "#334155", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.entryDateUtc || viewingCoupon.entryDate)}</div>
+                  </div>
+                )}
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Usage Limit / Count</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>{viewingCoupon.usedCount || 0} / {viewingCoupon.useLimit || "∞"}</div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Max Usage Per User</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>{viewingCoupon.maxUsagePerUser ?? 1}</div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Min Booking Amount</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>₹{viewingCoupon.minBookingAmount ?? 0}</div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Priority</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", color: "#0f172a", fontSize: "13px" }}>{viewingCoupon.priority ?? 0}</div>
+                </div>
+
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Status</span>
+                  <div style={{ marginTop: "4px" }}>
+                    <span style={{
+                      padding: "2px 8px",
+                      borderRadius: "10px",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      background: String(viewingCoupon.status).toLowerCase() === "active" ? "#dcfce7" : "#fee2e2",
+                      color: String(viewingCoupon.status).toLowerCase() === "active" ? "#166534" : "#991b1b"
+                    }}>
+                      {String(viewingCoupon.status).toLowerCase() === "active" ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Conditions & Rules</span>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
+                    <span style={{ background: viewingCoupon.isFirstTimeUserOnly ? "#dcfce7" : "#f1f5f9", color: viewingCoupon.isFirstTimeUserOnly ? "#15803d" : "#64748b", padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: 600 }}>
+                      First Time User: {viewingCoupon.isFirstTimeUserOnly ? "Yes" : "No"}
+                    </span>
+                    <span style={{ background: viewingCoupon.isAutoApply ? "#dcfce7" : "#f1f5f9", color: viewingCoupon.isAutoApply ? "#15803d" : "#64748b", padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: 600 }}>
+                      Auto Apply: {viewingCoupon.isAutoApply ? "Yes" : "No"}
+                    </span>
+                    <span style={{ background: viewingCoupon.isExclusive ? "#dcfce7" : "#f1f5f9", color: viewingCoupon.isExclusive ? "#15803d" : "#64748b", padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: 600 }}>
+                      Is Exclusive: {viewingCoupon.isExclusive ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </div>
+
+                {viewingCoupon.description && (
+                  <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Description</span>
+                    <div style={{ marginTop: "4px", color: "#334155", fontSize: "12.5px" }}>{viewingCoupon.description}</div>
+                  </div>
+                )}
+
+                {viewingCoupon.remark && (
+                  <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Remark</span>
+                    <div style={{ marginTop: "4px", color: "#334155", fontSize: "12.5px" }}>{viewingCoupon.remark}</div>
+                  </div>
+                )}
+
+                {Array.isArray(viewingCoupon.conditions) && viewingCoupon.conditions.length > 0 && (
+                  <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Applied Rule Conditions ({viewingCoupon.conditions.length})</span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
+                      {viewingCoupon.conditions.map((cond, idx) => (
+                        <div key={idx} style={{ fontSize: "12px", color: "#1e293b", background: "#ffffff", padding: "6px 10px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+                          <strong>{cond.conditionType}</strong> — {cond.conditionOperator} {cond.value1} {cond.value2 ? `(${cond.value2})` : ""}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Conditions & Rules</span>
-                <div style={{ display: "flex", gap: "12px", marginTop: "6px", flexWrap: "wrap" }}>
-                  <span style={{ background: viewingCoupon.isFirstTimeUserOnly ? "#dcfce7" : "#f1f5f9", color: viewingCoupon.isFirstTimeUserOnly ? "#15803d" : "#64748b", padding: "4px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: 600 }}>
-                    First Time User Only: {viewingCoupon.isFirstTimeUserOnly ? "Yes" : "No"}
-                  </span>
-                  <span style={{ background: viewingCoupon.isAutoApply ? "#dcfce7" : "#f1f5f9", color: viewingCoupon.isAutoApply ? "#15803d" : "#64748b", padding: "4px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: 600 }}>
-                    Auto Apply: {viewingCoupon.isAutoApply ? "Yes" : "No"}
-                  </span>
-                  <span style={{ background: viewingCoupon.isExclusive ? "#dcfce7" : "#f1f5f9", color: viewingCoupon.isExclusive ? "#15803d" : "#64748b", padding: "4px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: 600 }}>
-                    Is Exclusive: {viewingCoupon.isExclusive ? "Yes" : "No"}
-                  </span>
-                </div>
+              {/* Footer */}
+              <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setViewingCoupon(null)}
+                  style={{
+                    background: "#A51C49",
+                    color: "#ffffff",
+                    border: "none",
+                    padding: "10px 28px",
+                    borderRadius: "10px",
+                    fontWeight: "600",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(165, 28, 73, 0.25)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  Close
+                </button>
               </div>
-
-              {viewingCoupon.description && (
-                <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                  <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Description</span>
-                  <div style={{ marginTop: "4px", color: "#334155" }}>{viewingCoupon.description}</div>
-                </div>
-              )}
-
-              {viewingCoupon.remark && (
-                <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                  <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Remark</span>
-                  <div style={{ marginTop: "4px", color: "#334155" }}>{viewingCoupon.remark}</div>
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                onClick={() => setViewingCoupon(null)}
-                style={{ background: "#A51C49", color: "#fff", border: "none", padding: "10px 24px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

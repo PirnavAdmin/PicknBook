@@ -15,6 +15,7 @@ import {
 import { listBusBookings } from "../../services/busBookingService";
 import { getDashboardSummary } from "../../services/dashboardService";
 import { listFlightBookings } from "../../services/flightBookingService";
+import { getMyHotelBookings } from "../../services/hotelBookingService";
 import { getWalletSummary } from "../../services/walletService";
 import { RefreshCw } from "lucide-react";
 
@@ -331,6 +332,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
   const [busBookings, setBusBookings] = useState([]);
   const [flightBookings, setFlightBookings] = useState([]);
+  const [hotelBookings, setHotelBookings] = useState([]);
   const [walletSummary, setWalletSummary] = useState(null);
   const [travelerData, setTravelerData] = useState([]);
   const [depositData, setDepositData] = useState([]);
@@ -357,7 +359,7 @@ export default function DashboardPage() {
       setSummaryNotice("");
 
       try {
-        const [summaryResult, busBookings, flightBookings, walletRes] = await Promise.all([
+        const [summaryResult, busBookings, flightBookings, hotelBookings, walletRes] = await Promise.all([
           getDashboardSummary({
             recentLimit: RECENT_LIMIT,
             travelerPendingDays: TRAVELER_PENDING_DAYS,
@@ -367,6 +369,7 @@ export default function DashboardPage() {
           ),
           listBusBookings().catch(() => []),
           listFlightBookings().catch(() => []),
+          getMyHotelBookings().catch(() => []),
           getWalletSummary().catch(() => null),
         ]);
         if (ignore) {
@@ -375,6 +378,7 @@ export default function DashboardPage() {
 
         setBusBookings(Array.isArray(busBookings) ? busBookings : []);
         setFlightBookings(Array.isArray(flightBookings) ? flightBookings : []);
+        setHotelBookings(Array.isArray(hotelBookings) ? hotelBookings : []);
         setWalletSummary(walletRes);
         setTravelerData(readStoredArray(TRAVELER_STORAGE_KEY));
         setDepositData(readStoredArray(DEPOSIT_STORAGE_KEY));
@@ -458,7 +462,7 @@ export default function DashboardPage() {
       : "Live API View";
 
   const busBookingStatus = useMemo(() => {
-    const source = liveSummary?.busBookings || summary?.busBookings || {};
+    const source = summary?.busBookings || liveSummary?.busBookings || {};
     return [
       { name: "Completed", value: Number(source.completed) || 0 },
       { name: "Upcoming", value: Number(source.upcoming) || 0 },
@@ -467,13 +471,22 @@ export default function DashboardPage() {
   }, [liveSummary, summary]);
 
   const flightBookingStatus = useMemo(() => {
-    const source = liveSummary?.flightBookings || summary?.flightBookings || {};
+    const source = summary?.flightBookings || liveSummary?.flightBookings || {};
     return [
       { name: "Completed", value: Number(source.completed) || 0 },
       { name: "Upcoming", value: Number(source.upcoming) || 0 },
       { name: "Cancelled", value: Number(source.cancelled) || 0 },
     ];
   }, [liveSummary, summary]);
+
+  const hotelBookingStatus = useMemo(() => {
+    const source = summary?.hotelBookings || countBookingStatuses(hotelBookings);
+    return [
+      { name: "Completed", value: Number(source.completed) || 0 },
+      { name: "Upcoming", value: Number(source.upcoming) || 0 },
+      { name: "Cancelled", value: Number(source.cancelled) || 0 },
+    ];
+  }, [hotelBookings, summary]);
 
   const dashboardStats = useMemo(() => {
     const pending = liveSummary?.pendingActions || summary?.pendingActions || {};
@@ -650,147 +663,15 @@ export default function DashboardPage() {
               subtitle="Completed vs upcoming vs cancelled"
               data={flightBookingStatus}
             />
-          </div>
-        </div>
-
-        <aside className="dashboard-panel action-panel">
-          <header className="panel-head">
-            <h2>Action Center</h2>
-            <span>Tasks that need attention</span>
-          </header>
-          <div className="action-list">
-            {actionItems.map((item) => (
-              <article key={item.id} className="action-item">
-                <h3>{item.title}</h3>
-                <p>{item.detail}</p>
-                <Link to={item.to}>
-                  {item.cta}
-                  <ArrowRight size={14} />
-                </Link>
-              </article>
-            ))}
-          </div>
-        </aside>
-      </section>
-
-      <section className="dashboard-lower-grid">
-        <article className="dashboard-panel">
-          <header className="panel-head">
-            <h2>Recent Updates</h2>
-            <span>Latest activity feed</span>
-          </header>
-          <ul className="updates-list">
-            {recentUpdates.length > 0 ? (
-              recentUpdates.map((update) => (
-                <li key={update.id}>
-                  <div>
-                    <strong>{update.title}</strong>
-                    <span>{update.meta}</span>
-                  </div>
-                  <em>{update.state}</em>
-                </li>
-              ))
-            ) : (
-              <li>
-                <div>
-                  <strong>No recent updates</strong>
-                  <span>Activity feed will appear here after new events.</span>
-                </div>
-                <em>Idle</em>
-              </li>
-            )}
-          </ul>
-        </article>
-
-        <article className="dashboard-panel">
-          <header className="panel-head">
-            <h2>Top Routes</h2>
-            <span>Most searched and booked sectors</span>
-          </header>
-          <ul className="route-list">
-            {topRoutes.length > 0 ? (
-              topRoutes.map((route) => (
-                <li key={route.id}>
-                  <div className="route-copy">
-                    <Route size={14} />
-                    <span>
-                      {route.label} ({route.tripType}) - {route.bookingCount} bookings
-                    </span>
-                  </div>
-                  <div className="route-progress">
-                    <i style={{ width: `${route.share}%` }} />
-                  </div>
-                </li>
-              ))
-            ) : (
-              <li>
-                <div className="route-copy">
-                  <Route size={14} />
-                  <span>No top routes available yet</span>
-                </div>
-                <div className="route-progress">
-                  <i style={{ width: "0%" }} />
-                </div>
-              </li>
-            )}
-          </ul>
-        </article>
-
-        <article className="dashboard-panel quick-panel">
-          <header className="panel-head">
-            <h2>Quick Access</h2>
-            <span>Jump to frequent modules</span>
-          </header>
-          <div className="quick-link-grid">
-            {QUICK_LINKS.map((item) => (
-              <Link key={item.id} to={item.to} className="quick-link-card">
-                <span>{item.label}</span>
-                <ArrowRight size={13} />
-              </Link>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      <section className="dashboard-panel offers-panel">
-        <header className="panel-head">
-          <h2>Promotions and Revenue Levers</h2>
-          <span>Campaigns currently running</span>
-        </header>
-        <div className="offer-slider-box">
-          <div className="offer-slider-icon">
-            <WalletCards size={18} />
-          </div>
-          <p>{OFFER_MESSAGES[currentOffer]}</p>
-          <div className="offer-dots">
-            {OFFER_MESSAGES.map((offerText, index) => (
-              <button
-                key={offerText}
-                type="button"
-                aria-label={`Offer ${index + 1}`}
-                className={index === currentOffer ? "active" : ""}
-                onClick={() => setCurrentOffer(index)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="offers-footer">
-          <div>
-            <TicketX size={14} />
-            <span>
-              Booking updates: {Number(recentCounters.bookingUpdates) || 0} | Cancellation updates:{" "}
-              {Number(recentCounters.cancellationUpdates) || 0}
-            </span>
-          </div>
-          <div>
-            <BadgeCheck size={14} />
-            <span>
-              Traveler updates: {Number(recentCounters.travelerUpdates) || 0} | Wallet updates:{" "}
-              {Number(recentCounters.walletPaymentUpdates) || 0}
-            </span>
+            <ChartCard
+              title="Hotel Bookings"
+              subtitle="Completed vs upcoming vs cancelled"
+              data={hotelBookingStatus}
+            />
           </div>
         </div>
       </section>
+
     </div>
   );
 }

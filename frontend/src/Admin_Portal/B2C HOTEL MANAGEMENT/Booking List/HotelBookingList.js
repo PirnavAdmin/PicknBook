@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { listHotelBookings, cancelHotelBookingByAdmin } from "../../../services/adminHotelService";
 import { formatDateTime } from "../../../utils/apiDateFormat";
 import AdminPagination from "../../../components/AdminPagination";
+import { getAdminItemsPerPage } from "../../../utils/adminPortalStorage";
 import { Filter, Download } from "lucide-react";
 import "./HotelBookingList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
@@ -30,18 +31,93 @@ export default function HotelBookingList() {
       ? String(val).trim()
       : fallback;
 
-  const formatDateCell = (value) => {
-    if (!value || value === "--" || value === "-") return "--";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
+  const formatAdminDate = (dateString) => {
+    if (!dateString || dateString === "--" || dateString === "N/A" || String(dateString).startsWith("0001")) return "--";
+    try {
+      const raw = String(dateString).trim();
+      if (raw.startsWith("0001-01-01")) return "--";
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoDateMatch) {
+        const [, year, monthStr, dayStr] = isoDateMatch;
+        if (year === "0001") return "--";
+        const monthIdx = parseInt(monthStr, 10) - 1;
+        const day = parseInt(dayStr, 10);
+        if (monthIdx >= 0 && monthIdx < 12) {
+          return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+        }
+      }
+
+      const formattedMatch = raw.match(/^(\d{2})-(\d{2})-(\d{4})/);
+      if (formattedMatch) {
+        const [, dayStr, monthStr, year] = formattedMatch;
+        if (year === "0001") return "--";
+        const monthIdx = parseInt(monthStr, 10) - 1;
+        const day = parseInt(dayStr, 10);
+        if (monthIdx >= 0 && monthIdx < 12) {
+          return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+        }
+      }
+
+      const parsed = new Date(raw);
+      if (!Number.isNaN(parsed.getTime())) {
+        if (parsed.getFullYear() <= 1) return "--";
+        const day = parsed.getDate();
+        const monthIdx = parsed.getMonth();
+        const year = parsed.getFullYear();
+        return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+      }
+      return dateString;
+    } catch {
+      return dateString;
     }
-    const formatted = date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    });
-    return formatted;
+  };
+
+  const formatDateCell = (value) => formatAdminDate(value);
+
+  const formatSingleTimeAmPm = (timeStr) => {
+    if (!timeStr || timeStr === "--" || timeStr === "00:00") return "";
+    const raw = String(timeStr).trim();
+
+    const hhmmMatch = raw.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
+    if (hhmmMatch) {
+      let hours = parseInt(hhmmMatch[1], 10);
+      const minutes = hhmmMatch[2];
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+      return `${hoursStr}:${minutes} ${ampm}`;
+    }
+
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      let hours = parsed.getHours();
+      const minutes = String(parsed.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+      return `${hoursStr}:${minutes} ${ampm}`;
+    }
+
+    return raw;
+  };
+
+  const formatJourneyTimeAmPm = (journeyTime) => {
+    if (!journeyTime || journeyTime === "--" || journeyTime === "00:00") return "--:--";
+    const str = String(journeyTime).trim();
+    if (str.includes("-")) {
+      const parts = str.split("-");
+      const dep = formatSingleTimeAmPm(parts[0].trim());
+      const arr = formatSingleTimeAmPm(parts[1].trim());
+      if (dep && arr) {
+        return `${dep} - ${arr}`;
+      }
+    }
+    const single = formatSingleTimeAmPm(str);
+    return single || journeyTime || "--:--";
   };
 
   const getStatusStyle = (status) => {
@@ -112,7 +188,7 @@ export default function HotelBookingList() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState(() => getAdminItemsPerPage(50));
 
   const handleExport = () => {
     if (filteredBookings.length === 0) return;
@@ -358,7 +434,7 @@ export default function HotelBookingList() {
   };
 
   return (
-    <div className="hbl-page admin-b2c-hotel-page admin-booking-page" style={{ paddingTop: "60px" }}>
+    <section className="admin-b2c-page admin-booking-page admin-b2c-hotel-page">
       <style>{`
         .hbl-header-btn {
           transition: all 0.2s ease !important;
@@ -381,9 +457,9 @@ export default function HotelBookingList() {
           transform: translateY(-1px) !important;
         }
       `}</style>
-      <header className="admin-b2c-header" style={{ marginTop: "20px", marginBottom: "18px", paddingTop: "8px", paddingBottom: "8px" }}>
-        <h1 style={{ fontSize: "1.25rem", fontWeight: "700", marginTop: "6px", marginBottom: "10px" }}>
-          <span className="admin-heading-red">B2C Hotel</span> Booking List
+      <header className="admin-b2c-header" style={{ margin: "6px 0" }}>
+        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
+          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Hotel</span> Booking List
         </h1>
       </header>
 
@@ -549,29 +625,13 @@ export default function HotelBookingList() {
       )}
 
       <section className="admin-table-shell">
-        <header className="admin-table-head">
-          <span>
-            <span className="admin-hdr-tooltip">
-              B. ID
-              <span className="admin-tooltip-text">Booking ID</span>
-            </span>{" "}
-            /{" "}
-            <span className="admin-hdr-tooltip">
-              B.D.
-              <span className="admin-tooltip-text">Booking Date</span>
-            </span>
-          </span>
+        <header className="admin-table-head" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr" }}>
+          <span>B. ID / B.D.</span>
           <span>Name</span>
           <span>Check-in / Check-out</span>
           <span>Rooms / Guests</span>
-          <span>
-            <span className="admin-hdr-tooltip">
-              PNR
-              <span className="admin-tooltip-text">Passenger Name Record</span>
-            </span>{" "}
-            / Status
-          </span>
-          <span>Hotel / Property</span>
+          <span>PNR / R.F Status</span>
+          <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
           <span>Action</span>
@@ -584,7 +644,7 @@ export default function HotelBookingList() {
         ) : (
           <div className="admin-table-body">
             {paginatedBookings.map((b) => {
-              const statusClass = getAdminStatusClass(b.status);
+              const statusClass = getAdminStatusClass(b.paymentStatus || b.status);
               const profitVal = (b.srdvOfferedPrice !== undefined && b.srdvOfferedPrice !== null)
                 ? (Number(b.totalPrice || 0) - Number(b.srdvOfferedPrice || 0))
                 : (Number(b.profit || b.calculatedProfit || Math.round(Number(b.totalPrice || 0) * 0.06)) || 0);
@@ -592,21 +652,25 @@ export default function HotelBookingList() {
               const isLossOrZero = profitVal <= 0;
 
               return (
-                <article key={b.bookingId || b.id} className="admin-table-row">
-                  <div className="admin-table-cell" title={`Booking Ref: ${safeValue(b.bookingReference)}`}>
-                    <strong title={safeValue(b.bookingReference)}>{safeValue(b.bookingReference)}</strong>
+                <article key={b.bookingId || b.id} className="admin-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr" }}>
+                  <div className="admin-table-cell">
+                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.68rem", wordBreak: "break-all" }}>{safeValue(b.bookingReference)}</strong>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
                       <span>{formatDateCell(b.createdAt)}</span>
                     </div>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Guest: ${safeValue(b.guestName)} (${safeValue(b.guestPhone)})`}>
-                    <strong title={safeValue(b.guestName)}>{safeValue(b.guestName)}</strong>
-                    <small title={safeValue(b.guestPhone)}>{safeValue(b.guestPhone)}</small>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong className="admin-name-text" style={{ color: "#000000", fontWeight: 800, fontSize: "0.76rem", display: "block", width: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+                      {safeValue(b.guestName)}
+                    </strong>
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center" }}>
+                      {safeValue(b.guestPhone)}
+                    </small>
                   </div>
 
-                  <div className="admin-table-cell" title={`Stay Dates: ${formatDateCell(b.checkInDate)} → ${formatDateCell(b.checkOutDate)}`}>
+                  <div className="admin-table-cell">
                     <div className="admin-route-segment">
                       <span>{formatDateCell(b.checkInDate)}</span>
                       <span className="admin-segment-arrow">➔</span>
@@ -615,29 +679,29 @@ export default function HotelBookingList() {
                     <small>Stay Dates</small>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Rooms: ${b.rooms} | Guests: ${b.adults}`}>
-                    <strong title={`${b.rooms} Room(s)`}>{b.rooms} Room{b.rooms > 1 ? "s" : ""}</strong>
-                    <small title={`${b.adults} Guest(s)`}>{b.adults} Guest{b.adults > 1 ? "s" : ""}</small>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong>{b.rooms} Room{b.rooms > 1 ? "s" : ""}</strong>
+                    <small>{b.adults} Guest{b.adults > 1 ? "s" : ""}</small>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Booking ID: ${safeValue(b.bookingId)} | Status: ${safeValue(b.status)}`}>
-                    <strong title={safeValue(b.bookingId)} style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(b.bookingId)}</strong>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(b.bookingId)}</strong>
                     <span className={`admin-status-pill ${statusClass}`}>
-                      {safeValue(b.status)}
+                      {safeValue(b.paymentStatus || b.status)}
                     </span>
                   </div>
 
-                  <div className="admin-table-cell" title={`Hotel: ${b.hotelName} | ID: ${b.hotelId || "--"}`}>
-                    <strong title={b.hotelName} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block" }}>{b.hotelName}</strong>
-                    <small title={`ID: ${b.hotelId || "--"}`}>ID: {b.hotelId || "--"}</small>
+                  <div className="admin-table-cell">
+                    <strong style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block" }}>{b.hotelName}</strong>
+                    <small>ID: {b.hotelId || "--"}</small>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Total Price: ${formatCurrency(b.totalPrice)}`}>
-                    <strong title={formatCurrency(b.totalPrice)}>{formatCurrency(b.totalPrice)}</strong>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong>{formatCurrency(b.totalPrice)}</strong>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Profit: ${formatCurrency(profitVal)}`}>
-                    <strong title={`Calculated Profit: ${formatCurrency(profitVal)}`} style={{ color: isLossOrZero ? "#ef4444" : "#10b981" }}>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong style={{ color: isLossOrZero ? "#ef4444" : "#10b981" }}>
                       {isLossOrZero && profitVal < 0 ? `- ₹${Math.abs(profitVal).toLocaleString("en-IN")}` : formatCurrency(profitVal)}
                     </strong>
                     <small style={{ color: isLossOrZero ? "#ef4444" : "#10b981", fontWeight: "600" }}>
@@ -650,7 +714,6 @@ export default function HotelBookingList() {
                       type="button"
                       className="admin-action-btn"
                       onClick={() => setSelectedBooking(b)}
-                      title="View details"
                     >
                       View
                     </button>
@@ -676,131 +739,259 @@ export default function HotelBookingList() {
 
       {/* Booking Detail Backdrop Modal */}
       {selectedBooking && (
-        <div className="admin-view-backdrop" onClick={() => setSelectedBooking(null)} style={{ zIndex: 999999, backgroundColor: "rgba(0, 0, 0, 0.45)" }}>
+        <div className="admin-view-backdrop" onClick={() => setSelectedBooking(null)}>
           <article
             className="admin-view-card"
             role="dialog"
             aria-modal="true"
-            aria-label="Booking details"
+            aria-label="Hotel booking details"
             onClick={(event) => event.stopPropagation()}
+            style={{ width: "min(860px, 94vw)", padding: "20px" }}
           >
-            <header className="admin-view-header">
+            <header className="admin-view-header" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "12px", marginBottom: "16px" }}>
               <div className="admin-view-header-main">
-                <h2>Booking Detail View</h2>
-                <p className="admin-view-header-subtitle">
-                  {selectedBooking.bookingId} | {selectedBooking.guestName}
+                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: "700", color: "#1e293b" }}>Hotel Booking Detail View</h2>
+                <p className="admin-view-header-subtitle" style={{ fontSize: "0.82rem", margin: 0, color: "#64748b" }}>
+                  ID: <strong>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</strong> | Ref: <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
                 </p>
-                <div className="admin-view-meta-row">
-                  <span className={`admin-view-meta-chip ${getAdminStatusClass(selectedBooking.status)}`}>
-                    {selectedBooking.status}
+                <div className="admin-view-meta-row" style={{ marginTop: "8px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <span className="admin-view-meta-chip">
+                    Status: {safeValue(selectedBooking.status)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    Paid {formatCurrency(selectedBooking.totalPrice)}
+                    Customer Fare: {formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}
                   </span>
-                  <span className="admin-view-meta-chip success">
-                    Profit {formatCurrency(Number(selectedBooking.profit || selectedBooking.calculatedProfit || Math.round(Number(selectedBooking.totalPrice || 0) * 0.06)))}
+                  <span className="admin-view-meta-chip">
+                    {(Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0
+                      ? `Loss: -₹${Math.abs(Number(selectedBooking.profit || selectedBooking.calculatedProfit)).toLocaleString("en-IN")}`
+                      : `Profit: ${formatCurrency(Number(selectedBooking.profit || selectedBooking.calculatedProfit || Math.round(Number(selectedBooking.totalPrice || 0) * 0.06)))}`}
                   </span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelectedBooking(null)}>
+              <button
+                type="button"
+                onClick={() => setSelectedBooking(null)}
+                style={{
+                  padding: "6px 18px",
+                  fontSize: "0.85rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#A51C49",
+                  color: "#ffffff",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
+                }}
+              >
                 Close
               </button>
             </header>
 
-            <section className="admin-view-grid">
-              <div>
-                <span>Trip Type</span>
-                <strong>Hotel</strong>
+            <div style={{ maxHeight: "72vh", overflowY: "auto", paddingRight: "4px" }}>
+              {/* SECTION 1: GENERAL & RESERVATION DETAILS */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                GENERAL & RESERVATION DETAILS
               </div>
-              <div>
-                <span>Guest Name & Email</span>
-                <strong>{selectedBooking.guestName || "--"}</strong>
-                {selectedBooking.guestEmail && <small>{selectedBooking.guestEmail}</small>}
-              </div>
-              <div>
-                <span>Guest Phone</span>
-                <strong>{selectedBooking.guestPhone || "--"}</strong>
-              </div>
-              <div>
-                <span>Booking Reference</span>
-                <strong>{selectedBooking.bookingReference || "--"}</strong>
-              </div>
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Booking ID</th>
+                    <td>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</td>
+                    <th>Booking Reference</th>
+                    <td>{safeValue(selectedBooking.bookingReference, "--")}</td>
+                  </tr>
+                  <tr>
+                    <th>PNR / Conf No</th>
+                    <td>{safeValue(selectedBooking.confirmationNo || selectedBooking.bookingReference, "--")}</td>
+                    <th>Booking Date (B.D.)</th>
+                    <td>{formatAdminDate(selectedBooking.createdAt || selectedBooking.bookedAt)}</td>
+                  </tr>
+                  <tr>
+                    <th>Booking Status</th>
+                    <td>
+                      <span className={`admin-status-pill ${getAdminStatusClass(selectedBooking.status)}`}>
+                        {safeValue(selectedBooking.status)}
+                      </span>
+                    </td>
+                    <th>Pax / Guests</th>
+                    <td>{selectedBooking.rooms || 1} Room(s) / {selectedBooking.adults || 1} Guest(s)</td>
+                  </tr>
+                  <tr>
+                    <th>Hotel Property</th>
+                    <td>{safeValue(selectedBooking.hotelName, "--")}</td>
+                    <th>Check-in Date (Jd)</th>
+                    <td>{formatAdminDate(selectedBooking.checkInDate)}</td>
+                  </tr>
+                  <tr>
+                    <th>Check-out Date</th>
+                    <td>{formatAdminDate(selectedBooking.checkOutDate)}</td>
+                    <th>Last Cancel Date</th>
+                    <td>{formatAdminDate(selectedBooking.lastCancellationDate)}</td>
+                  </tr>
+                  <tr>
+                    <th>Invoice No</th>
+                    <td>{safeValue(selectedBooking.invoiceNumber, "--")}</td>
+                    <th>Booked By</th>
+                    <td>{safeValue(selectedBooking.bookedBy || selectedBooking.guestName, "--")}</td>
+                  </tr>
+                  <tr>
+                    <th>Guest Name</th>
+                    <td>{safeValue(selectedBooking.guestName, "--")}</td>
+                    <th>Phone Number (P.no)</th>
+                    <td>{safeValue(selectedBooking.guestPhone, "--")}</td>
+                  </tr>
+                </tbody>
+              </table>
 
-              <div>
-                <span>Booking ID / Provider ID</span>
-                <strong>{selectedBooking.bookingId || "--"}</strong>
-                {selectedBooking.providerBookingId && <small>Provider ID: {selectedBooking.providerBookingId}</small>}
+              {/* SECTION 2: FINANCIAL & FARE BREAKDOWN */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                FINANCIAL & FARE BREAKDOWN
               </div>
-              <div>
-                <span>Booking Date</span>
-                <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : (selectedBooking.bookedAt ? formatDateTime(selectedBooking.bookedAt) : "--")}</strong>
-              </div>
-              <div>
-                <span>Hotel Property</span>
-                <strong>{selectedBooking.hotelName || "--"}</strong>
-                {selectedBooking.hotelId && <small>ID: {selectedBooking.hotelId}</small>}
-              </div>
-              <div>
-                <span>Check-in / Check-out</span>
-                <strong>{selectedBooking.checkInDate || "--"} to {selectedBooking.checkOutDate || "--"}</strong>
-              </div>
+              <table className="admin-view-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "30%" }}>Fare Parameter</th>
+                    <th style={{ width: "30%" }}>Amount (INR)</th>
+                    <th style={{ width: "40%" }}>Description / Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Customer Fare</strong></td>
+                    <td><strong>{formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}</strong></td>
+                    <td>Total fare charged to customer</td>
+                  </tr>
+                  <tr>
+                    <td>Net Fare</td>
+                    <td>{selectedBooking.srdvOfferedPrice ? formatCurrency(selectedBooking.srdvOfferedPrice) : formatCurrency(selectedBooking.totalPrice)}</td>
+                    <td>Net payable fare amount</td>
+                  </tr>
+                  <tr>
+                    <td>Base Fare</td>
+                    <td>{formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
+                    <td>Base room tariff cost</td>
+                  </tr>
+                  <tr>
+                    <td>Taxable Fare</td>
+                    <td>₹0.00</td>
+                    <td>Fare amount subject to taxes</td>
+                  </tr>
+                  <tr>
+                    <td>Markup Amount</td>
+                    <td>₹0.00</td>
+                    <td>Admin markup added</td>
+                  </tr>
+                  <tr>
+                    <td>Discount Amount</td>
+                    <td>₹0.00</td>
+                    <td>Applied coupon / promo discount</td>
+                  </tr>
+                  <tr>
+                    <td>Convenience Fee</td>
+                    <td>₹0.00</td>
+                    <td>Platform convenience fee</td>
+                  </tr>
+                  <tr>
+                    <td>GST Percent / Amount</td>
+                    <td>0.00% / ₹0.00</td>
+                    <td>Applicable GST taxes</td>
+                  </tr>
+                  <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>
+                    <td><strong>Calculated Profit / Loss</strong></td>
+                    <td>
+                      <strong style={{ color: (Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "#ef4444" : "#10b981" }}>
+                        {formatCurrency(Number(selectedBooking.profit || selectedBooking.calculatedProfit || Math.round(Number(selectedBooking.totalPrice || 0) * 0.06)))}
+                      </strong>
+                    </td>
+                    <td style={{ color: (Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
+                      {(Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "Loss" : "Profit"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-              <div>
-                <span>Confirmation No</span>
-                <strong>{selectedBooking.confirmationNo || "--"}</strong>
+              {/* SECTION 3: PAYMENT INFORMATION */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                PAYMENT INFORMATION
               </div>
-              <div>
-                <span>Invoice No</span>
-                <strong>{selectedBooking.invoiceNumber || "--"}</strong>
-              </div>
-              <div>
-                <span>Rooms & Guests</span>
-                <strong>{selectedBooking.rooms || 1} Room(s)</strong>
-                <small>{selectedBooking.totalGuests || selectedBooking.adults || 1} Guest(s) ({selectedBooking.adults || 0} Adult{selectedBooking.children > 0 ? `, ${selectedBooking.children} Child` : ""})</small>
-              </div>
-              <div>
-                <span>Last Cancel Date</span>
-                <strong>{selectedBooking.lastCancellationDate || "--"}</strong>
-              </div>
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Payment Status</th>
+                    <td>
+                      <span className={`admin-ps-pill ${getAdminStatusClass(selectedBooking.paymentStatus || selectedBooking.status) === "success" ? "ps-success" : "ps-na"}`}>
+                        {safeValue(selectedBooking.paymentStatus || selectedBooking.status || "N/A")}
+                      </span>
+                    </td>
+                    <th>Refund Status</th>
+                    <td>
+                      <span className="admin-ps-pill ps-na">
+                        {safeValue(selectedBooking.refundStatus, "N/A")}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Fulfillment Status</th>
+                    <td colSpan="3">
+                      <span className="admin-ps-pill ps-na">
+                        {safeValue(selectedBooking.fulfillmentStatus, "N/A")}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-              <div>
-                <span>Payment Status</span>
-                <strong>{selectedBooking.paymentStatus || "N/A"}</strong>
+              {/* SECTION 4: GUEST & ROOM DETAILS */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                GUEST & ROOM DETAILS ({Array.isArray(selectedBooking.guests) ? selectedBooking.guests.length : (Array.isArray(selectedBooking.passengers) ? selectedBooking.passengers.length : 1)})
               </div>
-              <div>
-                <span>Refund Status</span>
-                <strong>{selectedBooking.refundStatus || "N/A"}</strong>
-              </div>
-              <div>
-                <span>Fulfillment Status</span>
-                <strong>{selectedBooking.fulfillmentStatus || "N/A"}</strong>
-              </div>
-              <div>
-                <span>Status</span>
-                <div>
-                  <span className={`admin-status-pill ${getAdminStatusClass(selectedBooking.status)}`}>
-                    {selectedBooking.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="admin-view-highlight-card">
-                <span>Total Paid</span>
-                <strong>{formatCurrency(selectedBooking.totalPaid || selectedBooking.totalPrice)}</strong>
-                {selectedBooking.srdvOfferedPrice ? <small>Offered: {formatCurrency(selectedBooking.srdvOfferedPrice)}</small> : null}
-              </div>
-              <div className="admin-view-highlight-card">
-                <span>Calculated Profit</span>
-                <strong className="admin-profit-value gain">
-                  {formatCurrency(Number(selectedBooking.profit || selectedBooking.calculatedProfit || Math.round(Number(selectedBooking.totalPrice || 0) * 0.06)))}
-                </strong>
-                <small>Profit</small>
-              </div>
-            </section>
+              <table className="admin-view-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "10%" }}>#</th>
+                    <th style={{ width: "40%" }}>Guest Full Name</th>
+                    <th style={{ width: "25%" }}>Phone Number</th>
+                    <th style={{ width: "25%" }}>Room Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(selectedBooking.guests) && selectedBooking.guests.length > 0 ? (
+                    selectedBooking.guests.map((g, gIdx) => (
+                      <tr key={`g-${gIdx}`}>
+                        <td>{gIdx + 1}</td>
+                        <td><strong>{safeValue(g.fullName || g.name || g.guestName, selectedBooking.guestName)}</strong></td>
+                        <td>{safeValue(g.phone || g.phoneNumber, selectedBooking.guestPhone)}</td>
+                        <td>{safeValue(g.roomType || g.roomNo, `${selectedBooking.rooms || 1} Room(s)`)}</td>
+                      </tr>
+                    ))
+                  ) : Array.isArray(selectedBooking.passengers) && selectedBooking.passengers.length > 0 ? (
+                    selectedBooking.passengers.map((p, pIdx) => (
+                      <tr key={`p-${pIdx}`}>
+                        <td>{pIdx + 1}</td>
+                        <td><strong>{safeValue(p.fullName || p.name, selectedBooking.guestName)}</strong></td>
+                        <td>{safeValue(p.phone || p.phoneNumber, selectedBooking.guestPhone)}</td>
+                        <td>{safeValue(p.roomType || p.seatNumber, `${selectedBooking.rooms || 1} Room(s)`)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td>1</td>
+                      <td><strong>{safeValue(selectedBooking.guestName)}</strong></td>
+                      <td>{safeValue(selectedBooking.guestPhone)}</td>
+                      <td>{selectedBooking.rooms || 1} Room(s) / {selectedBooking.adults || 1} Guest(s)</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

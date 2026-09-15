@@ -1,6 +1,5 @@
 /* eslint-disable */
 import { toAuthUrl, readApiMessage } from "./authService";
-import mockHyderabadHotels from "../data/mockHyderabadHotels.json";
 
 async function requestHotelJson(urlOrPath, options = {}, fallbackMessage = "Hotel request failed.") {
   const activePortal = window.sessionStorage.getItem("active_portal") || "b2c";
@@ -62,8 +61,6 @@ export async function searchHotels(options) {
   }
 
   const normalizedCityId = String(cityId || "");
-  const isHyderabadFallback = /hyderabad/i.test(cityName) || normalizedCityId === "2947514";
-
   const config = Array.isArray(roomsConfig) && roomsConfig.length > 0
     ? roomsConfig
     : [{ adults: 2, children: 0, childAges: [] }];
@@ -112,15 +109,6 @@ export async function searchHotels(options) {
       hotels = response;
     }
 
-    if (!Array.isArray(hotels) || hotels.length === 0) {
-      const fallbackHotels = Array.isArray(mockHyderabadHotels)
-        ? mockHyderabadHotels
-        : (mockHyderabadHotels?.hotels || []);
-      if (isHyderabadFallback && Array.isArray(fallbackHotels) && fallbackHotels.length > 0) {
-        hotels = fallbackHotels;
-      }
-    }
-
     return hotels.map(h => {
       const normalizedHotel = {
         ...h,
@@ -139,24 +127,6 @@ export async function searchHotels(options) {
     });
   } catch (err) {
     console.error("Backend hotel search failed:", err);
-    if (isHyderabadFallback) {
-      const fallbackHotels = Array.isArray(mockHyderabadHotels)
-        ? mockHyderabadHotels
-        : (mockHyderabadHotels?.hotels || []);
-      if (Array.isArray(fallbackHotels) && fallbackHotels.length > 0) {
-        return fallbackHotels.map(h => ({
-          ...h,
-          hotelLocation: h.hotelLocation || h.hotelAddress || h.hotelDescription || h.location || h.area || "",
-          hotelAddress: h.hotelAddress || h.hotelLocation || h.hotelDescription || h.address || "",
-          hotelDescription: h.hotelDescription || h.hotelAddress || h.location || h.description || "",
-          hotelPromotion: h.hotelPromotion || h.HotelPromotion || h.hotelPolicy || h.HotelPolicy || "",
-          hotelCategory: h.hotelCategory || h.HotelCategory || h.propertyType || h.propertyCategory || "",
-          roomCategory: h.roomCategory || h.RoomCategory || h.cateogry || h.category || h.rooms?.[0]?.cateogry || h.rooms?.[0]?.category || "",
-          SrdvType: h.SrdvType || h.srdvType || "MixAPI",
-          srdvType: h.srdvType || h.SrdvType || "MixAPI",
-        }));
-      }
-    }
     throw err;
   }
 }

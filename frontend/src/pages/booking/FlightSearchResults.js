@@ -41,6 +41,7 @@ import { resetBookingSessionTimer } from "./BookingTimer";
 import FareCalendarModal from "../../components/FareCalendarModal";
 import FlightLoadingScreen from "../../components/FlightLoadingScreen";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
+import CustomDatePicker from "../../components/CustomDatePicker";
 import "../../STYLES/FlightSearchResults.css";
 import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
 import { writeFlightBookingFlowState, clearFlightBookingFlowState } from "./flightBookingFlowStore";
@@ -551,6 +552,8 @@ export default function FlightSearchResults() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const state = location.state || {};
+
+  const [activeDatePicker, setActiveDatePicker] = useState(null);
 
   const initialSourceName = readValue(params, state, "source") || "Delhi";
   const initialDestinationName =
@@ -1903,77 +1906,69 @@ export default function FlightSearchResults() {
               {/* TIMELINE / DEPARTURE (+ RETURN) FIELD */}
               <div
                 className="flight-discover-searchcell with-divider"
-                style={{ flex: '1.2 1 auto', cursor: 'pointer' }}
-                onClick={() => {
-                  const picker = document.getElementById("flight-discover-dep-date");
-                  if (picker) {
-                    try { picker.showPicker(); } catch (e) { picker.click(); }
-                  }
-                }}
+                style={{ flex: '1.2 1 auto', cursor: 'pointer', position: 'relative' }}
+                onClick={() => setActiveDatePicker("flight-discover-dep-date")}
               >
-                <CalendarRange size={18} color="#ffffff" style={{ flexShrink: 0 }} />
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2px' }}>
                     TIMELINE
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
-                    <span
-                      style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const picker = document.getElementById("flight-discover-dep-date");
-                        if (picker) {
-                          try { picker.showPicker(); } catch (err) { picker.click(); }
-                        }
-                      }}
-                    >
-                      {formatFlightPillDate(modifyForm.departureDate).date}
-                    </span>
-                    {modifyForm.tripType === "twoway" && (
-                      <>
-                        <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
-                        <span
-                          style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const picker = document.getElementById("flight-discover-ret-date");
-                            if (picker) {
-                              try { picker.showPicker(); } catch (err) { picker.click(); }
-                            }
-                          }}
-                        >
-                          {formatFlightPillDate(modifyForm.returnDate).date}
-                        </span>
-                      </>
-                    )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
+                    <CalendarRange size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDatePicker("flight-discover-dep-date");
+                        }}
+                      >
+                        {formatFlightPillDate(modifyForm.departureDate).date}
+                      </span>
+                      {modifyForm.tripType === "twoway" && (
+                        <>
+                          <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
+                          <span
+                            style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDatePicker("flight-discover-ret-date");
+                            }}
+                          >
+                            {formatFlightPillDate(modifyForm.returnDate).date}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: '2px' }}>
                     {modifyForm.tripType === "twoway" ? "ROUND TRIP" : formatFlightPillDate(modifyForm.departureDate).day}
                   </span>
-                  <input
-                    id="flight-discover-dep-date"
-                    type="date"
+                  <CustomDatePicker
+                    isOpen={activeDatePicker === "flight-discover-dep-date"}
+                    onClose={() => setActiveDatePicker(null)}
                     value={modifyForm.departureDate}
-                    onChange={(event) =>
+                    onChange={(val) => {
                       setModifyForm((previous) => ({
                         ...previous,
-                        departureDate: event.target.value,
-                      }))
-                    }
-                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                        departureDate: val,
+                      }));
+                      setActiveDatePicker(null);
+                    }}
                   />
                   {modifyForm.tripType === "twoway" && (
-                    <input
-                      id="flight-discover-ret-date"
-                      type="date"
+                    <CustomDatePicker
+                      isOpen={activeDatePicker === "flight-discover-ret-date"}
+                      onClose={() => setActiveDatePicker(null)}
                       value={modifyForm.returnDate}
-                      onChange={(event) =>
+                      minDate={modifyForm.departureDate}
+                      onChange={(val) => {
                         setModifyForm((previous) => ({
                           ...previous,
-                          returnDate: event.target.value,
-                        }))
-                      }
-                      style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                          returnDate: val,
+                        }));
+                        setActiveDatePicker(null);
+                      }}
                     />
                   )}
                 </div>
@@ -1986,15 +1981,17 @@ export default function FlightSearchResults() {
                 style={{ flex: '1.1 1 auto', cursor: 'pointer' }}
                 onClick={() => setShowTravellersDropdown((prev) => !prev)}
               >
-                <Users size={18} color="#ffffff" style={{ flexShrink: 0 }} />
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2px' }}>
                     TRAVELLERS & CLASS
                   </span>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#ffffff', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "Economy"}
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
+                    <Users size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "Economy"}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: '2px' }}>
                     CABIN & SEATS
                   </span>
                 </div>

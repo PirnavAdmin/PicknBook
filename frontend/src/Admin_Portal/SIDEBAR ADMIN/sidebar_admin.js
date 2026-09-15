@@ -74,11 +74,6 @@ const navGroups = [
               { label: 'Hotel', to: p('hotel-management/cancellation-list'), icon: icons.hotel },
             ],
           },
-          {
-            label: 'Payments / Failed',
-            to: p('payments'),
-            icon: icons.payment,
-          },
         ],
       },
       {
@@ -87,32 +82,6 @@ const navGroups = [
         icon: icons.offer,
         submenu: [
           { label: 'Promotions', to: p('b2c-bus/coupon-list') },
-          {
-            label: 'Coupons',
-            to: p('promotions/coupons'),
-            submenu: [
-              { label: 'Flight', to: p('b2c-flight/coupon-list'), icon: icons.flight },
-              { label: 'Hotel', to: p('hotel-management/coupon-list'), icon: icons.hotel },
-            ],
-          },
-          {
-            label: 'Offers',
-            to: p('offer-management/offers'),
-            submenu: [
-              { label: 'Offer List', to: p('offer-management/offers') },
-              { label: 'Add New Offer', to: p('offer-management/add-offer') },
-              { label: 'Category List', to: p('offer-management/category-list') },
-              { label: 'Add Category', to: p('offer-management/add-category') },
-            ],
-          },
-          {
-            label: 'Discounts',
-            to: p('promotions/discounts'),
-            submenu: [
-              { label: 'Flight', to: p('b2c-flight/discount-list'), icon: icons.flight },
-              { label: 'Hotel', to: p('hotel-management/discount-list'), icon: icons.hotel },
-            ],
-          },
           {
             label: 'Markup',
             to: p('promotions/markup'),
@@ -143,23 +112,12 @@ const navGroups = [
         ],
       },
       {
-        label: 'Account Management', to: p('account-management'), icon: icons.account, submenu: [
-          { label: 'Account Dashboard', to: p('account-management/dashboard') },
-          { label: 'Account Adjustment', to: p('account-management/account-adjustment') },
-          { label: 'Balance Sheet', to: p('account-management/balance-sheet') },
-          { label: 'Bank List', to: p('account-management/bank-list') },
-          { label: 'Reconciliation', to: p('account-management/reconciliation') },
-          { label: 'Transaction Log', to: p('account-management/transaction-log') },
-        ],
-      },
-      {
         label: 'Payment Management', to: p('payment-management'), icon: icons.payment, submenu: [
-          { label: 'Payment Settings', to: p('payment-management/payment-settings') },
-          { label: 'Payment Gateway', to: p('payment-management/payment-gateway') },
-          { label: 'Payment Transactions', to: p('payment-management/payment-transactions') },
-          { label: 'QR Code List', to: p('payment-management/qrcode-list') },
-          { label: 'Manual Invoice', to: p('payment-management/manual-invoice') },
-          { label: 'Tax Management', to: p('payment-management/tax-management') },
+          { label: 'Wallet Settings', to: p('payment-management/payment-settings') },
+          { label: 'Wallet Transactions', to: p('payment-management/wallet-transactions') },
+          { label: 'Reconciliation', to: p('payment-management/reconciliation') },
+          { label: 'Transaction Log', to: p('payment-management/transaction-log') },
+          { label: 'Payments / Failed', to: p('payments') },
         ],
       },
       {
@@ -184,14 +142,10 @@ const navGroups = [
       },
       {
         label: 'Security Management', to: p('security-management'), icon: icons.security, submenu: [
-          { label: 'Security Dashboard', to: p('security-management') },
           { label: 'IP Management', to: p('security-management/ip-management') },
-          { label: 'Authentication Security', to: p('security-management/auth-security') },
-          { label: 'API Security', to: p('security-management/api-security') },
-          { label: 'Account Security', to: p('security-management/account-security') },
           { label: 'User Security Rules', to: p('security-management/user-security-rules') },
-          { label: 'Security Limits', to: p('security-management/security-limits') },
-          { label: 'Security Audit Logs', to: p('security-management/security-logs') },
+          { label: 'Account Security', to: p('security-management/account-security') },
+          { label: 'Authentication Security', to: p('security-management/auth-security') },
         ],
       },
       {

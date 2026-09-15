@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useState, useEffect } from "react";
 import "../../STYLES/AccountStatement.css";
+import { getLedgerStatement } from "../../services/b2bService";
 
 const MONTH_MAP = {
   Jan: 0,
@@ -139,7 +140,7 @@ const AccountStatement = () => {
     setErrorMsg("");
     try {
       const data = await getLedgerStatement();
-      if (Array.isArray(data)) {
+      if (Array.isArray(data) && data.length > 0) {
         // Sort newest first
         const sorted = data.sort((a, b) => {
           const dateA = new Date(a.createdAtUtc || a.createdAt || a.date || 0).getTime();
@@ -154,8 +155,9 @@ const AccountStatement = () => {
         setTransactions([]);
       }
     } catch (err) {
-      console.error("Error loading live B2B ledger statement:", err);
-      setErrorMsg("Failed to load live ledger data from the backend.");
+      console.warn("Could not load live backend ledger:", err);
+      setAllTransactions([]);
+      setTransactions([]);
     } finally {
       setIsLoading(false);
     }

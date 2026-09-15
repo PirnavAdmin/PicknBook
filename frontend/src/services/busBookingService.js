@@ -1,9 +1,6 @@
 /* eslint-disable */
 import { toDdMmYyyy } from "../utils/apiDateFormat";
 
-const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
-
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 function getAuthHeaders() {
   const isAdminRoute =
@@ -54,7 +51,7 @@ function resolveApiBaseUrl() {
     return explicitBase.trim();
   }
 
-  return FALLBACK_API_BASE_URL;
+  return "";
 }
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -2257,12 +2254,7 @@ export async function cancelBusBooking(bookingId, reason, refundPreference = "Or
     reason,
     refundPreference,
   });
-  const legacyUrl = buildUrl(`${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel`, {
-    reason,
-    refundPreference,
-  });
-
-  const data = await requestJsonWithFallback([url, legacyUrl], { method: "POST" });
+  const data = await requestJson(url, { method: "POST" });
   return normalizeBusActionResponse(data);
 }
 
@@ -2383,13 +2375,26 @@ export async function getFeaturedBusOffers() {
   }
 }
 
-export async function cancelBusPassengers(bookingId, seatNumbers, reason, refundPreference = "Original") {
+export async function cancelBusPassengers(bookingId, seatNumbers, reason) {
   const url = `${BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
-  const legacyUrl = `${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}/cancel-passengers`;
 
-  const data = await requestJsonWithFallback([url, legacyUrl], {
+  const passengerIds = Array.isArray(seatNumbers)
+    ? seatNumbers
+        .map((passenger) =>
+          typeof passenger === "object"
+            ? Number(passenger.id ?? passenger.Id)
+            : Number(passenger)
+        )
+        .filter((id) => Number.isInteger(id) && id > 0)
+    : [];
+
+  if (passengerIds.length === 0) {
+    throw new Error("Select at least one valid passenger to cancel.");
+  }
+
+  const data = await requestJson(url, {
     method: "POST",
-    body: JSON.stringify({ seatNumbers, reason, refundPreference }),
+    body: JSON.stringify({ PassengerIds: passengerIds, Reason: reason }),
   });
   return normalizeBusBookingRecord(data);
 }

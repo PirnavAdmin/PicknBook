@@ -451,9 +451,9 @@
   background: rgba(11, 22, 36, 0.58);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   z-index: 1600;
-  padding: 40px 14px;
+  padding: 16px 14px;
   overflow-y: auto;
   scrollbar-width: auto !important;
   -ms-overflow-style: auto !important;
@@ -476,15 +476,37 @@
 
 .ops-modal {
   width: min(780px, 100%);
+  max-height: calc(100vh - 32px);
   border: 1px solid #c8d7eb;
   border-radius: 14px;
   background: #ffffff;
   box-shadow: 0 28px 48px rgba(13, 27, 45, 0.35);
-  overflow: hidden;
-  margin-bottom: 40px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #b8141b #fef2f2;
+}
+
+.ops-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ops-modal::-webkit-scrollbar-track {
+  background: #fef2f2;
+  border-radius: 0 14px 14px 0;
+}
+
+.ops-modal::-webkit-scrollbar-thumb {
+  background: #b8141b;
+  border-radius: 999px;
+  border: 2px solid #fef2f2;
 }
 
 .ops-modal header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   border-bottom: 1px solid #d3dfef;
   padding: 12px 14px;
   display: flex;

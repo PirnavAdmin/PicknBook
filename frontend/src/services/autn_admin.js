@@ -44,71 +44,30 @@ export const verifyAdminLoginOtp = adminLoginVerifyOtp;
  * Response: 200 OK plain text ("If the email is registered, an OTP has been sent.")
  */
 export async function adminForgotPassword(payload) {
-  const candidateEndpoints = [
-    "/api/Auth/admin/forgot-password",
-    "/api/auth/forgot-password/send-otp",
-    "/api/auth/forgot-password",
-    "/api/Auth/forgot-password",
-  ];
-
-  let lastError = null;
-  for (const endpoint of candidateEndpoints) {
-    try {
-      return await requestAuth(
-        endpoint,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: payload?.email || "",
-          }),
-        },
-        "Failed to process forgot password request."
-      );
-    } catch (err) {
-      lastError = err;
-      if (String(err?.message || "").includes("404")) {
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw lastError || new Error("Failed to process forgot password request.");
-}
-
-export async function adminResetPassword(payload) {
-  return requestAuth(
-    "/api/Auth/admin/reset-password",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        email: payload?.email || "",
-        otp: payload?.otp || "",
-        newPassword: payload?.newPassword || "",
-      }),
-    },
-    "Failed to reset admin password."
-  );
-}
-
-export const adminVerifyOtpAndResetPassword = adminResetPassword;
-
-/**
- * 5. Direct Admin Login (Email + Password)
- * Endpoint: POST /api/Auth/admin/login
- * Request Body: { email, password }
- * Response: { token, userId, role, message }
- * Note: Unregistered emails & wrong passwords fail with generic error.
- */
-export async function adminDirectLogin(payload) {
-  return requestAuth("/api/Auth/admin/login", {
+  return requestAuth("/api/Auth/admin/forgot-password", {
     method: "POST",
     body: JSON.stringify({
       email: payload?.email || "",
-      password: payload?.password || "",
     }),
-  }, "Admin login failed.");
+  }, "Failed to process forgot password request.");
 }
 
-export const adminLogin = adminDirectLogin;
+/**
+ * 4. Admin Verify OTP & Set New Password (Step 2: Verify OTP & Reset Password)
+ * Endpoint: POST /api/Auth/admin/forgot-password/verify-otp
+ * Request Body: { email, otp, newPassword }
+ * Response: { success: true, message: "Password has been reset successfully." }
+ */
+export async function adminResetPassword(payload) {
+  return requestAuth("/api/Auth/admin/forgot-password/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({
+      email: payload?.email || "",
+      otp: payload?.otp || "",
+      newPassword: payload?.newPassword || "",
+    }),
+  }, "Failed to reset admin password.");
+}
 
+export const adminVerifyOtpAndResetPassword = adminResetPassword;
 

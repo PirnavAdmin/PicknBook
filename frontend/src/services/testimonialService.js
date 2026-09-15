@@ -179,32 +179,20 @@ export async function getAdminTestimonials(params = {}) {
   if (params.search) queryParams.append("search", params.search);
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
-  let rawData = null;
   if (resolvedTestimonialRoot) {
     try {
-      rawData = await requestJson(`${resolvedTestimonialRoot}${queryString}`, { method: "GET" });
+      return await requestJson(`${resolvedTestimonialRoot}${queryString}`, { method: "GET" });
     } catch (err) {
       if (err.status !== 404 && err.status !== 405) throw err;
     }
   }
 
-  if (!rawData) {
-    const candidatesWithQuery = TESTIMONIAL_CANDIDATES.map(c => `${c}${queryString}`);
-    try {
-      rawData = await requestWithCandidates(
-        candidatesWithQuery,
-        { method: "GET" },
-        (path) => { resolvedTestimonialRoot = path.split("?")[0]; }
-      );
-    } catch (err) {
-      console.warn("Unable to fetch testimonials:", err?.message || err);
-      return [];
-    }
-  }
-
-  if (Array.isArray(rawData)) return rawData;
-  const list = rawData?.testimonials || rawData?.data || rawData?.items || rawData?.results || rawData?.result || [];
-  return Array.isArray(list) ? list : [];
+  const candidatesWithQuery = TESTIMONIAL_CANDIDATES.map(c => `${c}${queryString}`);
+  return requestWithCandidates(
+    candidatesWithQuery,
+    { method: "GET" },
+    (path) => { resolvedTestimonialRoot = path.split("?")[0]; }
+  );
 }
 
 export async function getPublicTestimonials() {

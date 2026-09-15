@@ -806,7 +806,7 @@ export default function SecurityManagement() {
         <div className="sd-panel">
           <div className="sd-panel-header">
             <h3>Top Security Events</h3>
-            <span className="sd-view-all" onClick={() => navigate('/admin/security-management/security-logs')}>View All</span>
+            <span className="sd-view-all" onClick={() => navigate('/admin/security-management/user-security-rules')}>View All</span>
           </div>
           <table className="sd-mini-table">
             <thead>
@@ -841,7 +841,7 @@ export default function SecurityManagement() {
         <div className="sd-panel">
           <div className="sd-panel-header">
             <h3>Recent Security Activities</h3>
-            <span className="sd-view-all" onClick={() => navigate('/admin/security-management/security-logs')}>View All</span>
+            <span className="sd-view-all" onClick={() => navigate('/admin/security-management/user-security-rules')}>View All</span>
           </div>
           <div className="sd-activity-list">
             {recentActivities.length > 0 ? recentActivities.map((act, i) => {

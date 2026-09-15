@@ -349,7 +349,11 @@ export default function HotelBookings() {
                 </thead>
                 <tbody>
                   {filteredBookings.map((booking) => {
-                    const isCancelled = String(booking.status || "").toLowerCase().includes("cancel");
+                    const bookingStatus = String(booking.status || "").trim();
+                    const isCancelled = bookingStatus.toLowerCase().includes("cancel");
+                    const isCompleted = bookingStatus.toLowerCase().includes("complete") ||
+                      bookingStatus.toLowerCase().includes("success") ||
+                      bookingStatus.toLowerCase() === "completed";
                     const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
                     const checkIn = formatHotelDate(booking.checkInDate || booking.dates, booking.checkInTime || "14:00");
                     const checkOut = formatHotelDate(booking.checkOutDate, booking.checkOutTime || "11:00");
@@ -398,7 +402,11 @@ export default function HotelBookings() {
                               className="ops-btn-action"
                               title="Cancel booking"
                               onClick={() => triggerCancelBooking(booking)}
-                              disabled={isCancelled || cancellingBookingId === (booking.id || booking.Id || booking.bookingId)}
+                              disabled={
+                                isCancelled ||
+                                isCompleted ||
+                                cancellingBookingId === (booking.id || booking.Id || booking.bookingId)
+                              }
                             >
                               {cancellingBookingId === (booking.id || booking.Id || booking.bookingId) ? (
                                 <Loader2 size={15} className="hotel-spin" />

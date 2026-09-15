@@ -88,3 +88,7 @@ export const getNextNumericId = (items, fallback = 1) => {
 
   return max + 1;
 };
+
+export const getAdminItemsPerPage = (fallback = 10) => {
+  return getStoredValue("items_per_page", fallback);
+};

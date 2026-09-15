@@ -39,7 +39,7 @@
 }
 
 .account-shell {
-  width: min(1220px, 100%);
+  width: 100%;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
@@ -239,8 +239,9 @@
 
 .account-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+  width: 100%;
 }
 
 .account-card {

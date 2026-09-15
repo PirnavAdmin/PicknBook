@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./FlightBookingList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
 import { Filter, Download } from "lucide-react";
-import { useAdminList } from "../../../utils/adminPortalStorage";
+import { useAdminList, getAdminItemsPerPage } from "../../../utils/adminPortalStorage";
 import AdminPagination from "../../../components/AdminPagination";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
@@ -43,18 +43,96 @@ const safeValue = (val, fallback = "--") =>
     ? String(val).trim()
     : fallback;
 
-const formatDateCell = (value) => {
-  if (!value || value === "--" || value === "-") return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
+const formatAdminDate = (dateString) => {
+  if (!dateString || dateString === "--" || dateString === "N/A" || String(dateString).startsWith("0001")) return "--";
+  try {
+    const raw = String(dateString).trim();
+    if (raw.startsWith("0001-01-01")) return "--";
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // 1. Match YYYY-MM-DD
+    const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoDateMatch) {
+      const [, year, monthStr, dayStr] = isoDateMatch;
+      if (year === "0001") return "--";
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const day = parseInt(dayStr, 10);
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+      }
+    }
+
+    // 2. Match DD-MM-YYYY
+    const formattedMatch = raw.match(/^(\d{2})-(\d{2})-(\d{4})/);
+    if (formattedMatch) {
+      const [, dayStr, monthStr, year] = formattedMatch;
+      if (year === "0001") return "--";
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const day = parseInt(dayStr, 10);
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+      }
+    }
+
+    // 3. Fallback standard Date parsing
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      if (parsed.getFullYear() <= 1) return "--";
+      const day = parsed.getDate();
+      const monthIdx = parsed.getMonth();
+      const year = parsed.getFullYear();
+      return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+    }
+    return dateString;
+  } catch {
+    return dateString;
   }
-  const formatted = date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  });
-  return formatted;
+};
+
+const formatDateCell = (value) => formatAdminDate(value);
+
+const formatSingleTimeAmPm = (timeStr) => {
+  if (!timeStr || timeStr === "--" || timeStr === "00:00") return "";
+  const raw = String(timeStr).trim();
+
+  const hhmmMatch = raw.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
+  if (hhmmMatch) {
+    let hours = parseInt(hhmmMatch[1], 10);
+    const minutes = hhmmMatch[2];
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+    return `${hoursStr}:${minutes} ${ampm}`;
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    let hours = parsed.getHours();
+    const minutes = String(parsed.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+    return `${hoursStr}:${minutes} ${ampm}`;
+  }
+
+  return raw;
+};
+
+const formatJourneyTimeAmPm = (journeyTime) => {
+  if (!journeyTime || journeyTime === "--" || journeyTime === "00:00") return "--:--";
+  const str = String(journeyTime).trim();
+  if (str.includes("-")) {
+    const parts = str.split("-");
+    const dep = formatSingleTimeAmPm(parts[0].trim());
+    const arr = formatSingleTimeAmPm(parts[1].trim());
+    if (dep && arr) {
+      return `${dep} - ${arr}`;
+    }
+  }
+  const single = formatSingleTimeAmPm(str);
+  return single || journeyTime || "--:--";
 };
 
 const FALLBACK_API_BASE_URL =
@@ -880,7 +958,7 @@ export default function AdminFlightBookingListPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(() => getAdminItemsPerPage(50));
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1145,9 +1223,9 @@ export default function AdminFlightBookingListPage() {
 
   return (
     <section className="admin-b2c-page admin-booking-page admin-flight-booking-page">
-      <header className="admin-b2c-header admin-flight-booking-header" style={{ marginBottom: "4px" }}>
+      <header className="admin-b2c-header admin-flight-booking-header" style={{ margin: "6px 0" }}>
         <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
-          <span className="admin-heading-red">B2C Flight</span> Booking List
+          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Flight</span> Booking List
         </h1>
       </header>
 
@@ -1329,38 +1407,12 @@ export default function AdminFlightBookingListPage() {
       ) : null}
 
       <section className="admin-table-shell admin-flight-table-shell">
-        <header className="admin-table-head admin-flight-table-head">
-          <span>
-            <span className="admin-hdr-tooltip">
-              B. ID
-              <span className="admin-tooltip-text">Booking ID</span>
-            </span>{" "}
-            /{" "}
-            <span className="admin-hdr-tooltip">
-              B.D.
-              <span className="admin-tooltip-text">Booking Date</span>
-            </span>
-          </span>
+        <header className="admin-table-head admin-flight-table-head" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
+          <span>B. ID / B.D.</span>
           <span>Name</span>
-          <span>
-            <span className="admin-hdr-tooltip">
-              Segment
-              <span className="admin-tooltip-text">Source & Destination</span>
-            </span>{" "}
-            /{" "}
-            <span className="admin-hdr-tooltip">
-              Jd
-              <span className="admin-tooltip-text">Journey Date</span>
-            </span>
-          </span>
-          <span>Time</span>
-          <span>
-            <span className="admin-hdr-tooltip">
-              PNR
-              <span className="admin-tooltip-text">Passenger Name Record</span>
-            </span>{" "}
-            / Status
-          </span>
+          <span>Segment / Journey Date</span>
+          <span>Timings</span>
+          <span>PNR / Status</span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -1374,7 +1426,7 @@ export default function AdminFlightBookingListPage() {
         ) : filteredBookings.length ? (
           <div className="admin-table-body">
             {paginatedBookings.map((booking, idx) => {
-              const statusClass = resolveFlightStatusClass(booking.status);
+              const statusClass = resolveFlightStatusClass(booking.paymentStatus || booking.status);
               const flightNumber = safeValue(booking.raw?.tripNumber, "--");
               const fare = Number(booking.fare) || 0;
               const profit = Number(booking.profit) || 0;
@@ -1383,28 +1435,32 @@ export default function AdminFlightBookingListPage() {
                 <article
                   key={`flight-${booking.id || idx}-${booking.createdAt || idx}-${idx}`}
                   className="admin-table-row"
+                  style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}
                 >
                   <div
                     className="admin-table-cell"
-                    title={`Click to view full details for Booking ID: ${safeValue(booking.id)}`}
                     style={{ cursor: "pointer" }}
                     onClick={() => setSelectedBooking(booking)}
                   >
-                    <strong title={safeValue(booking.id)} style={{ color: "var(--admin-primary)" }}>
+                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.68rem", wordBreak: "break-all" }}>
                       {safeValue(booking.id)}
                     </strong>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
-                      <span>{formatDateCell(booking.createdAt)}</span>
+                      <span>{formatAdminDate(booking.createdAtValue || booking.createdAt)}</span>
                     </div>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Passenger: ${safeValue(booking.passengerName)} (${safeValue(booking.passengerPhone)})`}>
-                    <strong title={safeValue(booking.passengerName)}>{safeValue(booking.passengerName)}</strong>
-                    <small title={safeValue(booking.passengerPhone)}>{safeValue(booking.passengerPhone)}</small>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong className="admin-name-text" style={{ color: "#000000", fontWeight: 800, fontSize: "0.76rem", display: "block", width: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+                      {safeValue(booking.passengerName)}
+                    </strong>
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center" }}>
+                      {safeValue(booking.passengerPhone)}
+                    </small>
                   </div>
 
-                  <div className="admin-table-cell" title={`Segment: ${safeValue(booking.from)} → ${safeValue(booking.to)}`}>
+                  <div className="admin-table-cell">
                     <div className="admin-route-segment">
                       <span>{safeValue(booking.from)}</span>
                       <span className="admin-segment-arrow">➔</span>
@@ -1412,34 +1468,34 @@ export default function AdminFlightBookingListPage() {
                     </div>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
-                      <span>{formatDateCell(booking.journeyDate)}</span>
+                      <span>{formatAdminDate(booking.journeyDate)}</span>
                     </div>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Time: ${safeValue(booking.journeyTime)}`}>
-                    <strong title={safeValue(booking.journeyTime)}>{safeValue(booking.journeyTime) || "--:--"}</strong>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong>{formatJourneyTimeAmPm(booking.journeyTime)}</strong>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`PNR: ${safeValue(booking.pnr)} | Status: ${safeValue(booking.status)}`}>
-                    <strong title={safeValue(booking.pnr)} style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(booking.pnr)}</strong>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(booking.pnr)}</strong>
                     <span className={`admin-status-pill ${statusClass}`}>
-                      {safeValue(booking.status)}
+                      {safeValue(booking.paymentStatus || booking.status)}
                     </span>
                   </div>
 
-                  <div className="admin-table-cell" title={`Operator: ${booking.operator} | Type: ${booking.tripType} | Class: ${booking.travelClass}`}>
-                    <strong title={booking.operator}>{booking.operator !== "--" ? booking.operator : "Flight Airlines"}</strong>
-                    <small title={`${booking.tripType} | ${booking.travelClass}`}>
+                  <div className="admin-table-cell">
+                    <span>{booking.operator !== "--" ? booking.operator : "Flight Airlines"}</span>
+                    <small>
                       {flightNumber !== "--" ? `${flightNumber} • ` : ""}{booking.tripType} ({booking.travelClass})
                     </small>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Fare: ${adminCurrencyFormatter.format(fare)}`}>
-                    <strong title={`Customer Fare: ${adminCurrencyFormatter.format(fare)}`}>{adminCurrencyFormatter.format(fare)}</strong>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong>{adminCurrencyFormatter.format(fare)}</strong>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered" title={`Profit: ${adminCurrencyFormatter.format(profit)}`}>
-                    <strong title={`Calculated Profit: ${adminCurrencyFormatter.format(profit)}`} style={{ color: profit < 0 ? "#ef4444" : "#10b981" }}>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong style={{ color: profit < 0 ? "#ef4444" : "#10b981" }}>
                       {profit < 0 ? `- ₹${Math.abs(profit).toLocaleString("en-IN")}` : `₹${profit.toLocaleString("en-IN")}`}
                     </strong>
                     <small style={{ color: profit < 0 ? "#ef4444" : "#10b981", fontWeight: "600" }}>{profit < 0 ? "Loss" : "Profit"}</small>
@@ -1450,7 +1506,6 @@ export default function AdminFlightBookingListPage() {
                       type="button"
                       className="admin-action-btn"
                       onClick={() => setSelectedBooking(booking)}
-                      title="View details"
                     >
                       View
                     </button>
@@ -1468,6 +1523,10 @@ export default function AdminFlightBookingListPage() {
           totalItems={filteredBookings.length}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newSize) => {
+            setItemsPerPage(newSize);
+            setCurrentPage(1);
+          }}
           itemName="bookings"
         />
       </section>
@@ -1480,40 +1539,25 @@ export default function AdminFlightBookingListPage() {
             aria-modal="true"
             aria-label="Flight booking details"
             onClick={(event) => event.stopPropagation()}
-            style={{ width: "min(760px, 92vw)", padding: "16px 20px" }}
+            style={{ width: "min(860px, 94vw)", padding: "20px" }}
           >
-            <header className="admin-view-header" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "8px", marginBottom: "10px" }}>
+            <header className="admin-view-header" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "12px", marginBottom: "16px" }}>
               <div className="admin-view-header-main">
-                <h2 style={{ fontSize: "1.15rem", margin: "0 0 3px", fontWeight: "700" }}>Flight Booking Details</h2>
-                <p className="admin-view-header-subtitle" style={{ fontSize: "0.78rem", margin: 0 }}>
-                  Booking ID: <strong>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</strong>
-                  {selectedBooking.bookingReference && selectedBooking.bookingReference !== "--" && selectedBooking.bookingReference !== String(selectedBooking.bookingId) && (
-                    <span> | Ref: <strong>{selectedBooking.bookingReference}</strong></span>
-                  )}
-                  {selectedBooking.rawPnr && selectedBooking.rawPnr !== "--" && (
-                    <span> | PNR: <strong>{selectedBooking.rawPnr}</strong></span>
-                  )}
-                  {selectedBooking.rawPassenger && (
-                    <span> | Lead Passenger: <strong>{selectedBooking.rawPassenger}</strong></span>
-                  )}
+                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: "700", color: "#1e293b" }}>Flight Booking Detail View</h2>
+                <p className="admin-view-header-subtitle" style={{ fontSize: "0.82rem", margin: 0, color: "#64748b" }}>
+                  ID: <strong>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</strong> | PNR: <strong>{safeValue(selectedBooking.rawPnr || selectedBooking.pnr, "--")}</strong> | Ref: <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
                 </p>
-                <div className="admin-view-meta-row" style={{ marginTop: "6px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  <span
-                    className={`admin-view-meta-chip ${resolveFlightStatusClass(
-                      selectedBooking.status
-                    )}`}
-                    style={{ fontSize: "0.74rem", padding: "3px 8px" }}
-                  >
+                <div className="admin-view-meta-row" style={{ marginTop: "8px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <span className="admin-view-meta-chip">
                     Status: {safeValue(selectedBooking.status)}
                   </span>
-                  <span className="admin-view-meta-chip" style={{ fontSize: "0.74rem", padding: "3px 8px" }}>
+                  <span className="admin-view-meta-chip">
                     Customer Fare: {adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}
                   </span>
-                  <span className="admin-view-meta-chip" style={{ fontSize: "0.74rem", padding: "3px 8px" }}>
-                    Net Fare: {adminCurrencyFormatter.format(Number(selectedBooking.netFareInr) || resolveNetFare(selectedBooking))}
-                  </span>
-                  <span className="admin-view-meta-chip" style={{ fontSize: "0.74rem", padding: "3px 8px" }}>
-                    Profit: {adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}
+                  <span className="admin-view-meta-chip">
+                    {Number(selectedBooking.profit) < 0
+                      ? `Loss: -₹${Math.abs(Number(selectedBooking.profit)).toLocaleString("en-IN")}`
+                      : `Profit: ${adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}`}
                   </span>
                 </div>
               </div>
@@ -1521,187 +1565,209 @@ export default function AdminFlightBookingListPage() {
                 type="button"
                 onClick={() => setSelectedBooking(null)}
                 style={{
-                  padding: "4px 12px",
-                  fontSize: "0.78rem",
-                  borderRadius: "6px",
-                  border: "1px solid var(--admin-border)",
-                  background: "var(--admin-soft)",
-                  color: "var(--admin-primary)",
+                  padding: "6px 18px",
+                  fontSize: "0.85rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#A51C49",
+                  color: "#ffffff",
                   fontWeight: "700",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
                 }}
               >
                 Close
               </button>
             </header>
 
-            {/* Section 1: Flight & Route Information */}
-            <div className="admin-view-section-title" style={{ fontSize: "0.85rem", marginTop: "4px", marginBottom: "4px", fontWeight: "700" }}>
-              Flight & Route Information
-            </div>
-            <section className="admin-view-grid" style={{ padding: "0 0 10px", borderBottom: "1px solid var(--admin-border)" }}>
-              <div>
-                <span>Trip Type</span>
-                <strong>{safeValue(selectedBooking.tripType, "One-Way")}</strong>
+            <div style={{ maxHeight: "72vh", overflowY: "auto", paddingRight: "4px" }}>
+              {/* SECTION 1: GENERAL & JOURNEY DETAILS */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                GENERAL & JOURNEY DETAILS
               </div>
-              <div>
-                <span>From (Source)</span>
-                <strong>{safeValue(selectedBooking.from, "Not Specified")}</strong>
-              </div>
-              <div>
-                <span>To (Destination)</span>
-                <strong>{safeValue(selectedBooking.to, "Not Specified")}</strong>
-              </div>
-              <div>
-                <span>Segment (Route)</span>
-                <strong>
-                  {selectedBooking.from !== "--" && selectedBooking.to !== "--"
-                    ? `${selectedBooking.from} → ${selectedBooking.to}`
-                    : safeValue(selectedBooking.segment, "--")}
-                </strong>
-              </div>
-              <div>
-                <span>Departure / Journey Date</span>
-                <strong>
-                  {selectedBooking.journeyDate !== "--"
-                    ? `${selectedBooking.journeyDate} | ${safeValue(selectedBooking.journeyTime)}`
-                    : "Not Specified (--)"}
-                </strong>
-              </div>
-              <div>
-                <span>Travellers / Seats</span>
-                <strong>{selectedBooking.seatsBooked || (selectedBooking.passengers?.length || 1)} Traveller(s)</strong>
-              </div>
-              <div>
-                <span>Class</span>
-                <strong>{safeValue(selectedBooking.travelClass || selectedBooking.vehicleType, "Economy")}</strong>
-              </div>
-              <div>
-                <span>Airline / Carrier</span>
-                <strong>{safeValue(selectedBooking.operator, "Airlines")}</strong>
-              </div>
-              <div>
-                <span>Booking ID</span>
-                <strong>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</strong>
-              </div>
-              <div>
-                <span>Booking Reference</span>
-                <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
-              </div>
-              <div>
-                <span>PNR</span>
-                <strong>{safeValue(selectedBooking.rawPnr || selectedBooking.pnr, "--")}</strong>
-              </div>
-              <div>
-                <span>Booking Date (IST / UTC)</span>
-                <strong>{safeValue(selectedBooking.createdAt, "--")}</strong>
-              </div>
-              <div>
-                <span>Payment Status</span>
-                <strong>{safeValue(selectedBooking.paymentStatus, "N/A")}</strong>
-              </div>
-              <div>
-                <span>Refund Status</span>
-                <strong>{safeValue(selectedBooking.refundStatus, "N/A")}</strong>
-              </div>
-              <div>
-                <span>Fulfillment Status</span>
-                <strong>{safeValue(selectedBooking.fulfillmentStatus, "N/A")}</strong>
-              </div>
-            </section>
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Booking ID</th>
+                    <td>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</td>
+                    <th>Booking Reference</th>
+                    <td>{safeValue(selectedBooking.bookingReference, "--")}</td>
+                  </tr>
+                  <tr>
+                    <th>PNR</th>
+                    <td>{safeValue(selectedBooking.rawPnr || selectedBooking.pnr, "--")}</td>
+                    <th>Booking Date (B.D.)</th>
+                    <td>{formatAdminDate(selectedBooking.raw?.bookingDateIst || selectedBooking.createdAtValue || selectedBooking.createdAt)}</td>
+                  </tr>
+                  <tr>
+                    <th>Booking Status</th>
+                    <td>
+                      <span className={`admin-status-pill ${resolveFlightStatusClass(selectedBooking.status)}`}>
+                        {safeValue(selectedBooking.status)}
+                      </span>
+                    </td>
+                    <th>Pax / Passengers</th>
+                    <td>{selectedBooking.seatsBooked || (selectedBooking.passengers?.length || 1)} Pax</td>
+                  </tr>
+                  <tr>
+                    <th>Segment / Route</th>
+                    <td>{safeValue(selectedBooking.segment, "--")}</td>
+                    <th>Journey Date (Jd)</th>
+                    <td>{formatAdminDate(selectedBooking.raw?.journeyDateIst || selectedBooking.journeyDate)}</td>
+                  </tr>
+                  <tr>
+                    <th>Departure Time</th>
+                    <td>{formatJourneyTimeAmPm(selectedBooking.raw?.departureTimeUtc || selectedBooking.journeyTime)}</td>
+                    <th>Arrival Time</th>
+                    <td>{formatJourneyTimeAmPm(selectedBooking.raw?.arrivalTimeUtc || "--:--")}</td>
+                  </tr>
+                  <tr>
+                    <th>Airline / Carrier</th>
+                    <td>{safeValue(selectedBooking.operator, "Flight Airlines")}</td>
+                    <th>Travel Class</th>
+                    <td>{safeValue(selectedBooking.travelClass, "Economy")}</td>
+                  </tr>
+                  <tr>
+                    <th>Passenger Name</th>
+                    <td>{safeValue(selectedBooking.passengerName, "--")}</td>
+                    <th>Phone Number (P.no)</th>
+                    <td>{safeValue(selectedBooking.passengerPhone, "--")}</td>
+                  </tr>
+                </tbody>
+              </table>
 
-            {/* Section 2: Contact Information */}
-            <div className="admin-view-section-title" style={{ marginTop: "10px", marginBottom: "6px" }}>
-              Contact Information
-            </div>
-            <section className="admin-view-grid" style={{ padding: "0 0 10px", borderBottom: "1px solid var(--admin-border)" }}>
-              <div>
-                <span>Lead Passenger</span>
-                <strong>{safeValue(selectedBooking.rawPassenger, "Not Specified")}</strong>
+              {/* SECTION 2: FINANCIAL & FARE BREAKDOWN */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                FINANCIAL & FARE BREAKDOWN
               </div>
-              <div>
-                <span>Passenger Phone</span>
-                <strong>{safeValue(selectedBooking.rawPhone, "Not Specified")}</strong>
-              </div>
-              <div>
-                <span>Passenger Email</span>
-                <strong>{safeValue(selectedBooking.passengerEmail, "Not Provided")}</strong>
-              </div>
-              <div>
-                <span>Booked By (User ID)</span>
-                <strong>{safeValue(selectedBooking.bookedBy, "N/A")}</strong>
-              </div>
-            </section>
+              <table className="admin-view-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "30%" }}>Fare Parameter</th>
+                    <th style={{ width: "30%" }}>Amount (INR)</th>
+                    <th style={{ width: "40%" }}>Description / Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Customer Fare</strong></td>
+                    <td><strong>{adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}</strong></td>
+                    <td>Total fare charged to customer</td>
+                  </tr>
+                  <tr>
+                    <td>Net Fare</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.netFareInr) || resolveNetFare(selectedBooking))}</td>
+                    <td>Net payable fare amount</td>
+                  </tr>
+                  <tr>
+                    <td>Base Fare</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}</td>
+                    <td>Base ticket fare cost</td>
+                  </tr>
+                  <tr>
+                    <td>Taxable Fare</td>
+                    <td>₹0.00</td>
+                    <td>Fare amount subject to taxes</td>
+                  </tr>
+                  <tr>
+                    <td>Markup Amount</td>
+                    <td>₹0.00</td>
+                    <td>Admin markup added</td>
+                  </tr>
+                  <tr>
+                    <td>Discount Amount</td>
+                    <td>₹0.00</td>
+                    <td>Applied coupon / promo discount</td>
+                  </tr>
+                  <tr>
+                    <td>Convenience Fee</td>
+                    <td>₹0.00</td>
+                    <td>Platform convenience fee</td>
+                  </tr>
+                  <tr>
+                    <td>GST Percent / Amount</td>
+                    <td>0.00% / ₹0.00</td>
+                    <td>Applicable GST taxes</td>
+                  </tr>
+                  <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>
+                    <td><strong>Calculated Profit / Loss</strong></td>
+                    <td>
+                      <strong style={{ color: Number(selectedBooking.profit) < 0 ? "#ef4444" : "#10b981" }}>
+                        {adminProfitFormatter.format(Number(selectedBooking.profit) || 0)}
+                      </strong>
+                    </td>
+                    <td style={{ color: Number(selectedBooking.profit) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
+                      {Number(selectedBooking.profit) < 0 ? "Loss" : "Profit"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-            {/* Section 3: Passenger Details List */}
-            {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
-              <div className="admin-view-passengers-section" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "20px" }}>
-                <div className="admin-view-section-title" style={{ marginTop: "16px" }}>
-                  Passenger List ({selectedBooking.passengers.length})
-                </div>
-                <div className="admin-view-passengers-list">
-                  {selectedBooking.passengers.map((p, pIdx) => (
-                    <div key={`p-${pIdx}`} className="admin-view-passenger-row">
-                      <div className="p-info">
-                        <span className="p-num">{pIdx + 1}.</span>
-                        <strong>{p.fullName || "Name Not Available"}</strong>
-                        <span className="p-type-chip">{p.passengerType || "Adult"}</span>
-                      </div>
-                      <div className="p-meta">
-                        {p.gender && <span>Gender: <strong>{p.gender}</strong></span>}
-                        {p.seatNumber && <span className="p-seat">Seat: {p.seatNumber}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {/* SECTION 3: PAYMENT INFORMATION */}
+              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                PAYMENT INFORMATION
               </div>
-            )}
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Payment Status</th>
+                    <td>
+                      <span className={`admin-ps-pill ${resolveFlightStatusClass(selectedBooking.paymentStatus || selectedBooking.status) === "success" ? "ps-success" : "ps-na"}`}>
+                        {safeValue(selectedBooking.paymentStatus || selectedBooking.status || "N/A")}
+                      </span>
+                    </td>
+                    <th>Refund Status</th>
+                    <td>
+                      <span className="admin-ps-pill ps-na">
+                        {safeValue(selectedBooking.refundStatus, "N/A")}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Fulfillment Status</th>
+                    <td colSpan="3">
+                      <span className="admin-ps-pill ps-na">
+                        {safeValue(selectedBooking.fulfillmentStatus, "N/A")}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-            {/* Section 4: Cancellation Request Details */}
-            {selectedBooking.status === "Cancelled" && (
-              <div className="admin-view-cancellation-section" style={{ borderBottom: "1px solid var(--admin-border)", paddingBottom: "20px" }}>
-                <div className="admin-view-section-title" style={{ marginTop: "16px", color: "var(--admin-danger)" }}>
-                  Cancellation Information
-                </div>
-                <div className="admin-view-cancellation-card">
-                  <div>
-                    <span>Reason</span>
-                    <strong>{selectedBooking.cancellationReason || "No reason specified"}</strong>
+              {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
+                <div style={{ marginTop: "16px" }}>
+                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                    PASSENGER DETAILS ({selectedBooking.passengers.length})
                   </div>
-                  {selectedBooking.cancelledAtValue && (
-                    <div>
-                      <span>Cancellation Date</span>
-                      <strong>{toDateKey(selectedBooking.cancelledAtValue)}</strong>
-                    </div>
-                  )}
+                  <table className="admin-view-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "10%" }}>#</th>
+                        <th style={{ width: "40%" }}>Full Name</th>
+                        <th style={{ width: "20%" }}>Type</th>
+                        <th style={{ width: "15%" }}>Gender</th>
+                        <th style={{ width: "15%" }}>Seat</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedBooking.passengers.map((p, pIdx) => (
+                        <tr key={`p-${pIdx}`}>
+                          <td>{pIdx + 1}</td>
+                          <td><strong>{p.fullName || "N/A"}</strong></td>
+                          <td>{p.passengerType || "Adult"}</td>
+                          <td>{p.gender || "--"}</td>
+                          <td>{p.seatNumber || "--"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-            )}
-
-            {/* Section 5: Financial Summary Breakdown */}
-            <div className="admin-view-section-title" style={{ marginTop: "16px" }}>
-              Financial Summary Breakdown
+              )}
             </div>
-            <section className="admin-view-highlight-grid" style={{ marginTop: "8px" }}>
-              <div className="admin-view-highlight-card">
-                <span>Customer Fare (CF)</span>
-                <strong>
-                  {adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}
-                </strong>
-              </div>
-              <div className="admin-view-highlight-card net-fare">
-                <span>Net Fare (NF)</span>
-                <strong>
-                  {adminCurrencyFormatter.format(Number(selectedBooking.netFareInr) || resolveNetFare(selectedBooking))}
-                </strong>
-              </div>
-              <div className="admin-view-highlight-card profit">
-                <span>Calculated Profit</span>
-                <strong>
-                  {adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}
-                </strong>
-              </div>
-            </section>
           </article>
         </div>
       ) : null}

@@ -612,36 +612,73 @@
 
 /* Compact Table Header & Typography */
 .admin-b2c-hotel-page .admin-table-head {
-  min-height: 28px !important;
+  display: grid !important;
+  min-height: 34px !important;
   height: auto !important;
-  padding: 3px 6px !important;
+  padding: 8px !important;
+  gap: 8px !important;
   align-items: center !important;
   border-top-left-radius: 8px !important;
   border-top-right-radius: 8px !important;
-  grid-template-columns: 1.1fr 1.1fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1.1fr 0.7fr !important;
+  grid-template-columns: 1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr !important;
   background: linear-gradient(135deg, #A51C49, #851237) !important;
+  box-sizing: border-box !important;
 }
 
 .admin-b2c-hotel-page .admin-table-row {
-  grid-template-columns: 1.1fr 1.1fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1.1fr 0.7fr !important;
+  display: grid !important;
+  padding: 8px !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  grid-template-columns: 1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr !important;
 }
 
-.admin-b2c-hotel-page .admin-table-head span {
+.admin-b2c-hotel-page .admin-table-head > span {
   font-size: 0.76rem !important;
   font-weight: 700 !important;
   min-height: 24px !important;
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 2px 4px !important;
   text-align: center !important;
   color: #ffffff !important;
   white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   border-right: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
 }
 
-.admin-b2c-hotel-page .admin-table-head span:last-child {
+.admin-b2c-hotel-page .admin-table-head > span:last-child {
   border-right: none !important;
+}
+
+/* ── Hotel Booking List Header & Name Cell Overrides ── */
+.admin-heading-red {
+  color: #A51C49 !important;
+}
+
+.admin-b2c-hotel-page .admin-b2c-header,
+.admin-b2c-hotel-page .admin-markup-coupon-header {
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+}
+
+.admin-b2c-hotel-page .admin-name-text {
+  color: #000000 !important;
+  font-weight: 800 !important;
+  font-size: 0.76rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+.admin-shell.dark-theme .admin-b2c-hotel-page .admin-name-text {
+  color: #ffffff !important;
 }

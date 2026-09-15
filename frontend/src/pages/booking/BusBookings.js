@@ -105,7 +105,7 @@ export default function BusBookings() {
   const [loadingDetailFor, setLoadingDetailFor] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
-  const [selectedSeatNumbers, setSelectedSeatNumbers] = useState([]);
+  const [selectedPassengerIds, setSelectedPassengerIds] = useState([]);
   const [cancelReason, setCancelReason] = useState("");
   const [isCancellingPassengers, setIsCancellingPassengers] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -220,7 +220,7 @@ export default function BusBookings() {
     try {
       const detail = await getBusBookingById(bookingId);
       setSelectedBooking(detail);
-      setSelectedSeatNumbers([]);
+      setSelectedPassengerIds([]);
       setCancelReason("");
     } catch (error) {
       setErrorMessage(error.message || "Unable to fetch booking details.");
@@ -258,7 +258,7 @@ export default function BusBookings() {
   };
 
   const handleCancelSelectedPassengers = async () => {
-    if (selectedSeatNumbers.length === 0) return;
+    if (selectedPassengerIds.length === 0) return;
 
     setIsCancellingPassengers(true);
     setErrorMessage("");
@@ -267,13 +267,13 @@ export default function BusBookings() {
     try {
       const updatedBooking = await cancelBusPassengers(
         selectedBooking.bookingId,
-        selectedSeatNumbers,
+        selectedPassengerIds,
         cancelReason || undefined,
         refundPreference
       );
 
       setSelectedBooking(updatedBooking);
-      setSelectedSeatNumbers([]);
+      setSelectedPassengerIds([]);
       setCancelReason("");
       setActionMessage("Selected passengers cancelled successfully.");
       await fetchBookings();
@@ -284,16 +284,6 @@ export default function BusBookings() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <TravelLoadingScreen
-        title="Loading bus bookings..."
-        message="Fetching your latest bus trips and ticket details."
-        variant="bus"
-        icon="bus"
-      />
-    );
-  }
 
   return (
     <div className="flight-ops-page bus-booking-status-page">
@@ -523,6 +513,24 @@ export default function BusBookings() {
                             <Eye size={15} />
                           )}
                         </button>
+
+                        <button
+                          type="button"
+                          className="ops-btn-action-cancel"
+                          title="Cancel booking"
+                          onClick={() => triggerCancelBooking(booking.bookingId)}
+                          disabled={
+                            displayStatus === "Cancelled" ||
+                            displayStatus === "Completed" ||
+                            cancellingBookingId === booking.bookingId
+                          }
+                        >
+                          {cancellingBookingId === booking.bookingId ? (
+                            <Loader2 size={15} className="spin" />
+                          ) : (
+                            <ShieldX size={15} />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -535,11 +543,11 @@ export default function BusBookings() {
       </section>
 
       {selectedBooking && (
-        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedSeatNumbers([]); setCancelReason(""); }}>
+        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
           <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
             <header>
               <h3>Bus Booking Details</h3>
-              <button type="button" onClick={() => { setSelectedBooking(null); setSelectedSeatNumbers([]); setCancelReason(""); }}>
+              <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
                 <X size={16} />
               </button>
             </header>
@@ -631,12 +639,12 @@ export default function BusBookings() {
                             {!p.isCancelled && (
                               <input
                                 type="checkbox"
-                                checked={selectedSeatNumbers.includes(p.seatNumber)}
+                                checked={selectedPassengerIds.includes(p.id)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setSelectedSeatNumbers([...selectedSeatNumbers, p.seatNumber]);
+                                    setSelectedPassengerIds([...selectedPassengerIds, p.id]);
                                   } else {
-                                    setSelectedSeatNumbers(selectedSeatNumbers.filter(sn => sn !== p.seatNumber));
+                                    setSelectedPassengerIds(selectedPassengerIds.filter((id) => id !== p.id));
                                   }
                                 }}
                               />
@@ -660,7 +668,7 @@ export default function BusBookings() {
                   </table>
                 </div>
 
-                {selectedSeatNumbers.length > 0 && (
+                {selectedPassengerIds.length > 0 && (
                   <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>

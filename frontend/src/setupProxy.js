@@ -30,18 +30,6 @@ try {
     {
       src: 'C:\\\\Users\\\\vinay\\\\.gemini\\\\antigravity-ide\\\\brain\\\\fd6618d5-9516-4436-8c9b-be2339f429cd\\\\media__1786456745530.png',
       dest: path.join(__dirname, 'assets/images/indian-travel-banner-hd.png')
-    },
-    {
-      src: 'C:\\\\Users\\\\vinay\\\\.gemini\\\\antigravity-ide\\\\brain\\\\85cc4498-d689-4030-af42-1551d39febae\\\\.user_uploaded\\\\media_1789125181497.jpg',
-      dest: path.join(__dirname, 'assets/images/illustrations/hotel-offers-banner.jpg')
-    },
-    {
-      src: 'C:\\\\Users\\\\vinay\\\\.gemini\\\\antigravity-ide\\\\brain\\\\85cc4498-d689-4030-af42-1551d39febae\\\\.user_uploaded\\\\media_1789125181497.jpg',
-      dest: path.join(__dirname, '../public/hotel-offers-banner.jpg')
-    },
-    {
-      src: path.join(__dirname, 'assets/images/illustrations/hotel-herobanner.mp4'),
-      dest: path.join(__dirname, '../public/hotel-herobanner.mp4')
     }
   ];
   targets.forEach(t => {
@@ -114,19 +102,6 @@ module.exports = function setupProxy(app) {
     const fallbackPath = path.join(__dirname, '../public/home_flight.mp4');
     if (fs.existsSync(fallbackPath)) {
       return res.sendFile(fallbackPath);
-    }
-    res.status(404).end();
-  });
-
-  // Serve local bus hero banner video directly
-  app.get(["/bus.herobanner.mp4", "/Bus.herobanner.mp4"], (req, res) => {
-    const videoPath = path.join(__dirname, 'assets/images/illustrations/Bus.herobanner.mp4');
-    if (fs.existsSync(videoPath)) {
-      return res.sendFile(videoPath);
-    }
-    const publicPath = path.join(__dirname, '../public/bus.herobanner.mp4');
-    if (fs.existsSync(publicPath)) {
-      return res.sendFile(publicPath);
     }
     res.status(404).end();
   });

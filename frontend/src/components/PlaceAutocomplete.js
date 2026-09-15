@@ -27,6 +27,7 @@ export default function PlaceAutocomplete({
   error,
   isInline = false,
   sublabel,
+  hideLabel = false,
 }) {
   const [inputValue, setInputValue] = useState(value || "");
   const [results, setResults] = useState([]);
@@ -157,44 +158,57 @@ export default function PlaceAutocomplete({
 
   return (
     <div className={`${isInline ? "" : "field"} place-autocomplete ${className || ""}`} ref={wrapperRef} style={{ position: "relative", width: isInline ? "100%" : undefined, minWidth: 0 }}>
-      {label && !isInline && <label>{label}</label>}
-      <div className={isInline ? "inline-autocomplete-wrap" : "control-wrap"} style={isInline ? { display: 'flex', alignItems: 'center', gap: '8px', width: '100%', minWidth: 0 } : {}}>
-        {tripType === "flight" ? (
-          <Plane size={18} color={isInline ? "#ffffff" : "currentColor"} style={{ flexShrink: 0 }} />
-        ) : tripType === "hotel" ? (
-          <MapPin size={18} color={isInline ? "#ffffff" : "#dc2626"} style={{ flexShrink: 0 }} />
-        ) : isBusMode && (field === "to" || field === "destination") ? (
-          <MapPin size={18} color={isInline ? "#ffffff" : "currentColor"} style={{ flexShrink: 0 }} />
-        ) : (
-          <Bus size={18} color={isInline ? "#ffffff" : "currentColor"} style={{ flexShrink: 0 }} />
+      {label && !isInline && !hideLabel && <label>{label}</label>}
+      <div className={isInline ? "inline-autocomplete-wrap" : "control-wrap"} style={isInline ? { display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 } : {}}>
+        {!isInline && (
+          tripType === "flight" ? (
+            <Plane size={18} color="currentColor" style={{ flexShrink: 0 }} />
+          ) : tripType === "hotel" ? (
+            <MapPin size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+          ) : isBusMode && (field === "to" || field === "destination") ? (
+            <MapPin size={18} color="currentColor" style={{ flexShrink: 0 }} />
+          ) : (
+            <Bus size={18} color="currentColor" style={{ flexShrink: 0 }} />
+          )
         )}
         {isInline ? (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2px' }}>
               {label || (tripType === "hotel" ? "STAY DESTINATION" : (field === "to" || field === "destination") ? "TO" : "FROM")}
             </span>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onFocus={() => setOpen(inputValue.trim().length > 0)}
-              className={`inline-autocomplete-input ${error ? "error" : ""}`}
-              placeholder={placeholder || (tripType === "hotel" ? "Enter city, area or hotel" : "Enter city")}
-              autoComplete="off"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                boxShadow: 'none',
-                color: '#ffffff',
-                fontWeight: 500, fontSize: '14px',
-                padding: 0,
-                margin: '2px 0',
-                width: '100%'
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
+              {tripType === "flight" ? (
+                <Plane size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+              ) : tripType === "hotel" ? (
+                <MapPin size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+              ) : isBusMode && (field === "to" || field === "destination") ? (
+                <MapPin size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+              ) : (
+                <Bus size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+              )}
+              <input
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onFocus={() => setOpen(inputValue.trim().length > 0)}
+                className={`inline-autocomplete-input ${error ? "error" : ""}`}
+                placeholder={placeholder || (tripType === "hotel" ? "Enter city, area or hotel" : "Enter city")}
+                autoComplete="off"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  boxShadow: 'none',
+                  color: '#ffffff',
+                  fontWeight: 500, fontSize: '14px',
+                  padding: 0,
+                  margin: 0,
+                  width: '100%'
+                }}
+              />
+            </div>
             {sublabel !== false && sublabel !== null && (
-              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
                 {sublabel !== undefined && sublabel !== "" ? sublabel : (tripType === "hotel" ? "ENTER CITY, AREA OR HOTEL" : tripType === "flight" ? (field === "to" || field === "destination" ? "DESTINATION AIRPORT" : "ORIGIN AIRPORT") : (field === "to" || field === "destination" ? "DROPPING STOP" : "BOARDING STOP"))}
               </span>
             )}

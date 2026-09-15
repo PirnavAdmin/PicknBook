@@ -38,6 +38,7 @@ import {
 import { searchBuses, getBoardingPointsProxy } from "../../services/busBookingService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
+import CustomDatePicker from "../../components/CustomDatePicker";
 import "../../STYLES/BusSearchResults.css";
 
 function formatBusPillDate(dateStr) {
@@ -603,6 +604,8 @@ export default function BusSearchResults() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const state = location.state || {};
+
+  const [activeDatePicker, setActiveDatePicker] = useState(null);
 
   const initialSourceName = readValue(params, state, "source", ["from", "fromCity", "sourceCity", "origin"]) || "";
   const initialDestinationName =
@@ -2259,8 +2262,8 @@ export default function BusSearchResults() {
               <div className="bus-discover-searchcell with-divider" style={{ flex: '1 1 auto' }}>
                 <div className="field field-with-icon departure-field" style={{ position: "relative", width: "100%" }}>
                   <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>TRAVEL DATE</label>
-                  <div className="control-wrap">
-                    <CalendarDays size={18} />
+                  <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker("bus-discover-date")}>
+                    <CalendarDays size={18} style={{ color: "#dc1e26" }} />
                     <input
                       type="text"
                       readOnly
@@ -2268,25 +2271,20 @@ export default function BusSearchResults() {
                       placeholder="DD-MM-YYYY"
                       className="field-control with-leading-icon"
                       style={{ cursor: "pointer", fontWeight: 500, fontSize: '14px', color: '#0f172a' }}
-                      onClick={() => {
-                        const picker = document.getElementById("bus-discover-date");
-                        if (picker) {
-                          try { picker.showPicker(); } catch (e) { picker.click(); }
-                        }
-                      }}
+                      onClick={() => setActiveDatePicker("bus-discover-date")}
                     />
                   </div>
-                  <input
-                    id="bus-discover-date"
-                    type="date"
+                  <CustomDatePicker
+                    isOpen={activeDatePicker === "bus-discover-date"}
+                    onClose={() => setActiveDatePicker(null)}
                     value={modifyForm.departureDate}
-                    onChange={(event) =>
+                    onChange={(val) => {
                       setModifyForm((previous) => ({
                         ...previous,
-                        departureDate: event.target.value,
-                      }))
-                    }
-                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                        departureDate: val,
+                      }));
+                      setActiveDatePicker(null);
+                    }}
                   />
                 </div>
               </div>

@@ -337,50 +337,7 @@ export default function SiteFooter() {
     <footer className="pnb-site-footer">
       <div className="pnb-footer-wrapper">
 
-        {/* ── 1. Top Trust Features Row (4 White Cards) ─────────── */}
-        <div className="pnb-footer-trust-row">
-          
-          <div className="pnb-trust-card">
-            <div className="pnb-trust-icon-box">
-              <ShieldCheck size={26} className="pnb-trust-svg" />
-            </div>
-            <div className="pnb-trust-text">
-              <h4 className="pnb-trust-title">100% Safe &amp; Secure</h4>
-              <p className="pnb-trust-sub">Verified Payment Gateways</p>
-            </div>
-          </div>
 
-          <div className="pnb-trust-card">
-            <div className="pnb-trust-icon-box">
-              <Sparkles size={26} className="pnb-trust-svg" />
-            </div>
-            <div className="pnb-trust-text">
-              <h4 className="pnb-trust-title">Best Price Guarantee</h4>
-              <p className="pnb-trust-sub">Unbeatable Low Fares</p>
-            </div>
-          </div>
-
-          <div className="pnb-trust-card">
-            <div className="pnb-trust-icon-box">
-              <Plane size={26} className="pnb-trust-svg" />
-            </div>
-            <div className="pnb-trust-text">
-              <h4 className="pnb-trust-title">Instant Confirmation</h4>
-              <p className="pnb-trust-sub">E-Tickets on SMS &amp; WhatsApp</p>
-            </div>
-          </div>
-
-          <div className="pnb-trust-card">
-            <div className="pnb-trust-icon-box">
-              <PhoneCall size={26} className="pnb-trust-svg" />
-            </div>
-            <div className="pnb-trust-text">
-              <h4 className="pnb-trust-title">24/7 Dedicated Support</h4>
-              <p className="pnb-trust-sub">Always Here to Help You</p>
-            </div>
-          </div>
-
-        </div>
 
         {/* ── 2. Main Content Card (Large White Card) ──────────── */}
         <div className="pnb-footer-main-card">

@@ -241,7 +241,7 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.2s ease, background-color 0.2s ease;
-  margin: 0 2px;
+  margin: 0 12px;
 }
 
 .flight-discover-swap:hover {
@@ -2631,3 +2631,21 @@
   font-weight: 700;
   color: #0f172a;
 }
+
+/* ── Datepicker visibility: ensure calendar popup is never clipped ── */
+.flight-search-hero,
+.flight-hero-content-wrapper,
+.flight-discover-searchbar,
+.flight-discover-searchcell {
+  overflow: visible !important;
+}
+
+/* When datepicker is open, propagate overflow: visible up the chain */
+.flight-search-hero:has(.pnb-custom-datepicker-popup),
+.flight-hero-content-wrapper:has(.pnb-custom-datepicker-popup),
+.flight-discover-searchbar:has(.pnb-custom-datepicker-popup),
+.flight-discover-searchcell:has(.pnb-custom-datepicker-popup) {
+  overflow: visible !important;
+  z-index: 999999 !important;
+  position: relative !important;
+}

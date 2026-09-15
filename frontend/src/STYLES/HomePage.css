@@ -680,6 +680,87 @@
   padding-right: 12px;
 }
 
+/* ── pnb-place-* styles for PlaceAutocomplete dropdown items ─────────────── */
+.place-meta {
+  padding: 12px 16px !important;
+  color: #64748b !important;
+  font-size: 0.82rem !important;
+  text-align: left !important;
+}
+
+.pnb-place-option {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: background 0.12s ease !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+}
+
+.pnb-place-option:hover {
+  background: #f1f5f9 !important;
+}
+
+.pnb-place-icon-wrap {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: #fef2f2 !important;
+  color: #dc1e26 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.pnb-place-text {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.pnb-place-primary {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+.pnb-place-city {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pnb-place-code {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  color: #dc1e26 !important;
+  background: #fef2f2 !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+.pnb-place-secondary {
+  font-size: 0.68rem !important;
+  color: #64748b !important;
+  margin-top: 1px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
 /* Autocomplete Dropdown Menu */
 .place-dropdown,
 .bus-place-dropdown,
@@ -7301,38 +7382,34 @@ select.field-control option {
 
 /* Hotel mode */
 .homepage-hotels {
-  /* Background handled by the hero video — keep transparent */
-  background: transparent !important;
+  background:
+    linear-gradient(135deg, rgba(220, 30, 38, 0.12), transparent 34%),
+    linear-gradient(225deg, rgba(220, 30, 38, 0.11), transparent 32%),
+    linear-gradient(180deg, #F9FAFB 0%, #F3F4F6 52%, #ffffff 100%) !important;
 }
 
 .homepage-hotels .hero-section {
-  /* No static background — the video element is the background */
-  background-color: transparent !important;
-  background-image: none !important;
+  background-color: #F3F4F6 !important;
+  background-image: url("../assets/images/illustrations/hotel-hero-theme.jpg") !important;
+  background-position: center center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
 }
 
-/* ─── Hero Video Wallpaper — Global (applies at all breakpoints) ─────────── */
-.flight-hero-wallpaper {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  overflow: hidden !important;
-  z-index: 0 !important;
-  background-color: #0b1728 !important;
+.homepage-hotels .search-panel {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: 1140px !important;
 }
 
-.flight-hero-wallpaper-video {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center !important;
+.homepage-hotels .search-panel::before,
+.homepage-hotels .search-panel::after {
+  display: none !important;
 }
-
 
 .homepage-hotels .search-panel .field,
 .homepage-hotels .search-panel .place-autocomplete,
@@ -7350,275 +7427,10 @@ select.field-control option {
   min-width: min(340px, 88vw) !important;
 }
 
-/* ─── Hotel Pill Search Bar (Homepage) ─────────────────────────────────────── */
-.hotel-pill-searchbar-wrap {
-  width: 100%;
-  padding: 0 4px;
-  box-sizing: border-box;
-}
-
-.hotel-pill-searchbar {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 60px;
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(220, 30, 38, 0.08);
-  padding: 6px 6px 6px 20px;
-  gap: 0;
-  width: 100%;
-  box-sizing: border-box;
-  overflow: visible;
-  position: relative;
-  min-height: 62px;
-}
-
-.hotel-pill-cell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px 8px 0;
-  flex: 1 1 0;
-  min-width: 0;
-  position: relative;
-  transition: background 0.15s ease;
-  border-radius: 50px;
-}
-
-.hotel-pill-cell:hover {
-  background: rgba(220, 30, 38, 0.04);
-}
-
-.hotel-pill-destination {
-  flex: 1.6 1 0;
-}
-
-.hotel-pill-date {
-  flex: 1.1 1 0;
-}
-
-.hotel-pill-guests {
-  flex: 1.2 1 0;
-  padding-right: 12px;
-}
-
-.hotel-pill-icon {
-  color: #dc1e26;
-  flex-shrink: 0;
-  margin-left: 4px;
-}
-
-.hotel-pill-field-inner {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.hotel-pill-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #64748b;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  line-height: 1;
-  margin-bottom: 3px;
-}
-
-.hotel-pill-value {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #0f172a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-}
-
-.hotel-pill-placeholder {
-  color: #94a3b8 !important;
-  font-weight: 400 !important;
-}
-
-.hotel-pill-divider {
-  width: 1px;
-  height: 36px;
-  background: rgba(15, 23, 42, 0.1);
-  flex-shrink: 0;
-  margin: 0 4px;
-}
-
-.hotel-pill-caret {
-  color: #64748b;
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-
-.hotel-pill-caret.open {
-  transform: rotate(180deg);
-}
-
-.hotel-pill-search-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #dc1e26 0%, #b8141b 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 50px;
-  padding: 0 28px;
-  height: 50px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  flex-shrink: 0;
-  box-shadow: 0 4px 18px rgba(220, 30, 38, 0.45);
-  transition: all 0.22s ease;
-  white-space: nowrap;
-}
-
-.hotel-pill-search-btn:hover {
-  background: linear-gradient(135deg, #c41920 0%, #991b1b 100%);
-  box-shadow: 0 6px 24px rgba(220, 30, 38, 0.55);
-  transform: translateY(-1px);
-}
-
-.hotel-pill-search-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 12px rgba(220, 30, 38, 0.4);
-}
-
-/* Autocomplete inside pill bar */
-.hotel-pill-autocomplete .place-autocomplete-label,
-.hotel-pill-searchbar .hotel-pill-autocomplete label {
-  display: none !important;
-}
-
-.hotel-pill-searchbar .hotel-pill-autocomplete .field-control,
-.hotel-pill-searchbar .hotel-pill-autocomplete input {
-  border: none !important;
-  outline: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  height: auto !important;
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
-  color: #0f172a !important;
-  width: 100% !important;
-}
-
-.hotel-pill-searchbar .hotel-pill-autocomplete input::placeholder {
-  color: #94a3b8 !important;
-  font-weight: 400 !important;
-}
-
-.hotel-pill-searchbar .hotel-pill-autocomplete .place-autocomplete,
-.hotel-pill-searchbar .hotel-pill-autocomplete {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  height: auto !important;
-  min-height: 0 !important;
-  gap: 0 !important;
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-  .hotel-pill-searchbar {
-    flex-wrap: wrap;
-    border-radius: 20px;
-    padding: 12px 16px;
-    gap: 10px;
-  }
-
-  .hotel-pill-cell {
-    flex: 1 1 45%;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-    padding-bottom: 10px;
-  }
-
-  .hotel-pill-divider {
-    display: none;
-  }
-
-  .hotel-pill-search-btn {
-    width: 100%;
-    justify-content: center;
-    height: 46px;
-    border-radius: 12px;
-  }
-}
-
-@media (max-width: 600px) {
-  .hotel-pill-cell {
-    flex: 1 1 100%;
-  }
-}
-
-/* Hide duplicate prefix icon in hotel pill bar's PlaceAutocomplete */
-.hotel-pill-searchbar .hotel-pill-autocomplete .control-wrap > svg:first-child {
-  display: none !important;
-}
-
-.hotel-pill-searchbar .hotel-pill-autocomplete .control-wrap {
-  gap: 0 !important;
-  background: transparent !important;
-}
-
-/* Override search-panel generic field CSS that bleeds into pill bar */
-.search-panel .hotel-pill-searchbar-wrap .place-autocomplete,
-.search-panel .hotel-pill-searchbar .hotel-pill-autocomplete {
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  min-height: 0 !important;
-  height: auto !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  gap: 0 !important;
-}
-
-.search-panel .hotel-pill-searchbar .field-control,
-.search-panel .hotel-pill-searchbar .place-input {
-  border: none !important;
-  outline: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
-  color: #0f172a !important;
-}
-
-.search-panel .hotel-pill-searchbar .field-control::placeholder,
-.search-panel .hotel-pill-searchbar .place-input::placeholder {
-  color: #94a3b8 !important;
-  font-weight: 400 !important;
-}
-
-.search-panel .hotel-pill-searchbar .hotel-pill-autocomplete:hover,
-.search-panel .hotel-pill-searchbar .hotel-pill-autocomplete:focus-within {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-
 .pop-hotel-card {
   min-height: unset !important;
   height: auto !important;
 }
-
 
 .hotel-card-city-row {
   display: grid;
@@ -9754,7 +9566,7 @@ button:focus-visible {
   position: relative;
   width: 100%;
   max-width: 1280px;
-  margin: -24px auto 4px;
+  margin: -42px auto 0;
   padding: 0 12px;
   box-sizing: border-box;
 }
@@ -9764,15 +9576,20 @@ button:focus-visible {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 4px !important;
   flex-wrap: wrap !important;
   gap: 12px !important;
+  position: relative !important;
+  z-index: 40 !important;
 }
 
 .bus-offers-title-wrap {
   display: flex !important;
   flex-direction: column !important;
   flex: 0 1 auto !important;
+  position: relative !important;
+  z-index: 41 !important;
+  transform: translateY(-6px) !important;
 }
 
 .bus-offers-title {
@@ -9790,10 +9607,15 @@ button:focus-visible {
 
 .bus-offers-subtitle {
   font-size: 0.88rem !important;
-  color: #64748b !important;
+  color: #526b86 !important;
   font-weight: 500 !important;
-  margin: 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  margin: 2px 0 0 !important;
   line-height: 1.4 !important;
+  min-height: 20px !important;
+  white-space: nowrap !important;
 }
 
 .bus-offers-tabs-bar {
@@ -9891,8 +9713,8 @@ button:focus-visible {
 .offer-img-marquee.offer-marquee {
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  padding: 0 0 6px 0 !important;
-  margin-top: -6px !important;
+  padding: 0 0 2px 0 !important;
+  margin-top: -18px !important;
 }
 
 .offer-img-marquee.offer-marquee .marquee-track {
@@ -9902,15 +9724,15 @@ button:focus-visible {
 }
 
 .offer-img-marquee.offer-marquee .marquee-slide {
-  width: 280px !important;
-  flex: 0 0 280px !important;
-  padding: 0 6px !important;
+  width: 220px !important;
+  flex: 0 0 220px !important;
+  padding: 0 5px !important;
 }
 
 .img-offer-card {
   position: relative !important;
-  width: 280px !important;
-  height: 114px !important;
+  width: 220px !important;
+  height: 88px !important;
   border-radius: 16px !important;
   overflow: hidden !important;
   cursor: pointer !important;
@@ -10014,7 +9836,7 @@ button:focus-visible {
   z-index: 3 !important;
   width: 56% !important;
   height: 100% !important;
-  padding: 8px 10px 8px 12px !important;
+  padding: 6px 8px 6px 10px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -11972,6 +11794,54 @@ button:focus-visible {
   width: 100% !important;
 }
 
+/* Wrapper — image on left, cards to the right. No extra card/box styling. */
+.client-testimonials-overlap-wrap {
+  display: flex !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 1240px !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  min-height: 250px !important;
+}
+
+/* Left scenic image — full image, fixed width */
+.client-testimonial-left-visual {
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  align-self: stretch !important;
+  border-radius: 20px !important;
+}
+
+.client-testimonial-landscape-img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+}
+
+/* Cards area — sits right of the image, clipped so marquee scrolls cleanly */
+.client-testimonials-cards-overlay {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 2 !important;
+  padding: 20px 0 20px 24px !important;
+}
+
+/* Older CSS kept for compat — kept transparent */
 .client-testimonials-container {
   display: flex !important;
   gap: 28px !important;
@@ -11980,6 +11850,268 @@ button:focus-visible {
   max-width: 1240px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
+}
+
+/* Floating Glass Pill Badge */
+.client-testimonial-badge-pill {
+  position: absolute !important;
+  top: 14px !important;
+  left: 50% !important;
+  transform: translateX(-50%) scale(0.88) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  border-radius: 30px !important;
+  padding: 5px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important;
+  white-space: nowrap !important;
+  z-index: 10 !important;
+}
+
+.client-avatar-stack {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.client-avatar-stack .avatar-circle {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid #ffffff !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 0.52rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  margin-left: -6px !important;
+}
+
+.client-avatar-stack .avatar-circle:first-child {
+  margin-left: 0 !important;
+}
+
+.client-avatar-stack .av1 {
+  background: #3b82f6 !important;
+}
+
+.client-avatar-stack .av2 {
+  background: #ec4899 !important;
+}
+
+.client-avatar-stack .av3 {
+  background: #8b5cf6 !important;
+}
+
+.client-badge-text {
+  display: flex !important;
+  flex-direction: column !important;
+  text-align: left !important;
+}
+
+.client-badge-text strong {
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+  color: #dc1e26 !important;
+  line-height: 1 !important;
+}
+
+.client-badge-text span {
+  font-size: 0.56rem !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+.client-testimonials-right-dark-box {
+  flex: 1 1 64% !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  position: relative !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.client-testimonial-kicker {
+  color: #dc1e26 !important;
+  font-size: 0.95rem !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+  letter-spacing: 0.02em !important;
+}
+
+.client-testimonial-title {
+  font-size: clamp(1.8rem, 2.8vw, 2.4rem) !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  margin: 0 0 24px 0 !important;
+  line-height: 1.2 !important;
+}
+
+.client-title-muted {
+  color: #64748b !important;
+  font-weight: 400 !important;
+}
+
+/* Testimonials Auto-Scrolling Marquee */
+@keyframes client-marquee-slide {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+.client-testimonials-marquee {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+  position: relative !important;
+  z-index: 20 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.client-testimonials-marquee .marquee-track {
+  display: flex !important;
+  width: max-content !important;
+  animation: client-marquee-slide 20s linear infinite !important;
+  will-change: transform !important;
+}
+
+.client-testimonials-marquee:hover .marquee-track,
+.client-testimonials-marquee:active .marquee-track,
+.client-testimonials-marquee:focus-within .marquee-track,
+.client-testimonials-marquee.is-paused .marquee-track,
+.client-testimonials-marquee.is-dragging .marquee-track,
+.client-testimonials-marquee[data-paused="true"] .marquee-track,
+.client-testimonials-marquee .marquee-track.is-paused,
+.client-testimonials-marquee .client-testimonial-card:active,
+.client-testimonials-marquee .client-testimonial-card:hover {
+  animation-play-state: paused !important;
+}
+
+.client-testimonials-marquee::-webkit-scrollbar {
+  display: none !important;
+}
+
+.client-testimonials-marquee .marquee-slide {
+  width: 280px !important;
+  flex: 0 0 280px !important;
+  padding-right: 16px !important;
+}
+
+.client-testimonials-marquee .client-testimonial-card {
+  width: 100% !important;
+  min-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 100% !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.client-testimonial-card {
+  background: #ffffff !important;
+  border-radius: 18px !important;
+  padding: 20px 18px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(241, 245, 249, 0.9) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.client-testimonial-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.2) !important;
+}
+
+.client-card-stars-row {
+  display: flex !important;
+  gap: 4px !important;
+  margin-bottom: 12px !important;
+}
+
+.client-card-comment {
+  font-size: 0.8rem !important;
+  line-height: 1.6 !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+  margin: 0 0 16px 0 !important;
+  flex-grow: 1 !important;
+}
+
+.client-card-author-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.client-card-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #0f172a, #334155) !important;
+  color: #ffffff !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  flex-shrink: 0 !important;
+}
+
+.client-card-author-meta {
+  display: flex !important;
+  flex-direction: column !important;
+  text-align: left !important;
+}
+
+.client-card-author-name {
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
+}
+
+.client-card-author-role {
+  font-size: 0.7rem !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+@media (max-width: 992px) {
+  .client-testimonials-overlap-wrap {
+    flex-direction: column !important;
+    min-height: unset !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+
+  .client-testimonial-left-visual {
+    width: 100% !important;
+    height: 200px !important;
+    min-height: 200px !important;
+    flex: none !important;
+    align-self: auto !important;
+  }
+
+  .client-testimonials-cards-overlay {
+    width: 100% !important;
+    padding: 16px 0 !important;
+    flex: none !important;
+  }
 }
 
 /* Left Scenic Image Card */
@@ -12135,11 +12267,10 @@ button:focus-visible {
   margin-bottom: 0 !important;
   position: relative !important;
   z-index: 20 !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
-  mask-image: none !important;
-  -webkit-mask-image: none !important;
 }
 
 .client-testimonials-marquee .marquee-track {
@@ -14180,4 +14311,179 @@ button:focus-visible {
 .brand-slide span,
 .homepage .brand-slide span {
   font-size: 9.5px !important;
+}
+/* ==========================================================================
+   HOTEL SEARCH PILL BAR (NEW DESIGN)
+   ========================================================================== */
+.hotel-pill-bar-wrap {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: -30px !important;
+  position: relative !important;
+  z-index: 50 !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
+}
+
+.hotel-pill-bar {
+  display: flex !important;
+  align-items: center !important;
+  background: rgba(226, 226, 221, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 40px !important;
+  padding: 8px 8px 8px 24px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  max-width: 1000px !important;
+  width: 100% !important;
+}
+
+.hotel-pill-field {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 4px 16px !important;
+  border-radius: 20px !important;
+  transition: background 0.2s ease !important;
+}
+
+
+
+.hotel-pill-destination {
+  flex: 1.5 !important;
+}
+
+.hotel-pill-date {
+  flex: 1 !important;
+}
+
+.hotel-pill-guests {
+  flex: 1.2 !important;
+}
+
+.hotel-pill-icon {
+  color: #dc1e26 !important;
+  flex-shrink: 0 !important;
+}
+
+.hotel-pill-field-content {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.hotel-pill-label {
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 2px !important;
+}
+
+.hotel-pill-value {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hotel-pill-divider {
+  width: 1px !important;
+  height: 32px !important;
+  background: rgba(15, 23, 42, 0.1) !important;
+  margin: 0 4px !important;
+  flex-shrink: 0 !important;
+}
+
+.hotel-pill-chevron {
+  color: #64748b !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.hotel-pill-chevron.open {
+  transform: rotate(180deg) !important;
+}
+
+/* Override autocomplete inputs inside the pill */
+.hotel-pill-autocomplete {
+  width: 100% !important;
+}
+.hotel-pill-autocomplete input {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  width: 100% !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+.hotel-pill-autocomplete input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+.hotel-pill-autocomplete input:focus {
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Red Search Button */
+.hotel-pill-search-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: linear-gradient(135deg, #e11d48, #be123c) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 30px !important;
+  padding: 0 24px !important;
+  height: 48px !important;
+  font-size: 0.9rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.3) !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+  margin-left: 8px !important;
+  white-space: nowrap !important;
+}
+
+.hotel-pill-search-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.4) !important;
+}
+
+.hotel-pill-search-btn:active {
+  transform: translateY(0) !important;
+}
+
+@media (max-width: 992px) {
+  .hotel-pill-bar {
+    flex-direction: column !important;
+    border-radius: 20px !important;
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+  
+  .hotel-pill-divider {
+    width: 100% !important;
+    height: 1px !important;
+    margin: 4px 0 !important;
+  }
+  
+  .hotel-pill-search-btn {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-top: 8px !important;
+  }
 }

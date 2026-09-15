@@ -12,9 +12,9 @@ async function request(path, options = {}) {
 
 const json = (method, body) => ({ method, body: JSON.stringify(body) });
 export const b2bAdminService = {
-  getB2bStats: () => Promise.resolve({ totalRevenue: 0, totalBookings: 0, totalAgents: 0, activeAgents: 0, totalDepositsApproved: 0 }),
-  getB2bActivities: () => Promise.resolve([]),
-  getB2bBookingsList: () => Promise.resolve([]),
+  getB2bStats: () => request("/api/admin/b2b/stats"),
+  getB2bActivities: () => request("/api/admin/b2b/activities"),
+  getB2bBookingsList: (search = {}) => request(`/api/admin/b2b/bookings?${new URLSearchParams(search).toString()}`),
   getAgents: (status = "All", search = "") => request(`/api/admin/b2b/agents?status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}`),
   getAgentById: (id) => request(`/api/admin/b2b/agents/${id}`),
   createAgent: (payload) => request("/api/admin/b2b/agents", json("POST", payload)),

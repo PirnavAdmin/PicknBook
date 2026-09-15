@@ -48,26 +48,26 @@
 }
 
 .deposit-btn-secondary,
-.deposit-btn-muted {
+.deposit-btn-muted,
+.deposit-icon-btn {
   border-color: var(--theme-border, #E5E7EB) !important;
   background: var(--theme-primary-soft, #fef2f2) !important;
   color: var(--theme-primary-strong, #b8141b) !important;
 }
 
 .deposit-table-head {
-  background: #981b3d !important;
+  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
 }
 
 .deposit-table-head th {
   color: #ffffff !important;
-  font-size: 0.72rem !important;
+  font-size: 0.85rem !important;
   font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  padding: 14px 16px !important;
-  white-space: nowrap !important;
-  border: none !important;
-  text-align: center !important;
+}
+
+.deposit-label,
+.deposit-filter-badge {
+  color: #7c3f2b !important;
 }
 
 .deposit-input:focus {
@@ -283,103 +283,149 @@ textarea.deposit-input {
 }
 
 .deposit-table-card {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  margin-top: 14px !important;
+  padding: 0;
+  overflow: hidden;
 }
 
 .deposit-table-wrap {
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  width: 100% !important;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .deposit-table {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  min-width: 950px !important;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.756rem;
+  min-width: 860px;
 }
 
 .deposit-table-head {
-  background: #981b3d !important;
+  background: linear-gradient(135deg, #1447b0, #0c2f81);
+  color: #ffffff;
 }
 
 .deposit-table-head th {
-  padding: 14px 16px !important;
-  border: none !important;
-  font-size: 0.72rem !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-  font-weight: 700 !important;
-  color: #ffffff !important;
-  text-align: center !important;
-  white-space: nowrap !important;
+  padding: 0.68rem 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.684rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
-.deposit-row:hover td {
-  background: #fafbfc !important;
+.deposit-row:hover {
+  background: #f7faff;
 }
 
 .deposit-cell {
-  padding: 14px 14px !important;
-  border-top: 1px solid #f1f5f9 !important;
-  border-bottom: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  text-align: center !important;
-  color: #334155 !important;
-  font-size: 0.82rem !important;
-  vertical-align: middle !important;
+  padding: 0.65rem 0.6rem;
+  border: 1px solid #e2eaf7;
+  text-align: center;
+  color: #27426d;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
-.deposit-cell-sr {
-  font-weight: 700 !important;
-  color: #334155 !important;
+.deposit-date-cell {
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.deposit-empty {
-  padding: 30px !important;
-  color: #7890b3 !important;
-  font-weight: 600 !important;
+.deposit-ref-badge {
+  font-family: monospace;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.18rem 0.45rem;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+}
+
+.deposit-running-balance {
+  font-weight: 700;
+  color: #059669;
+}
+
+.deposit-cell-left {
+  text-align: left;
+}
+
+.deposit-trns-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deposit-trns-title {
+  color: #1e293b;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.deposit-trns-code {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.deposit-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.deposit-status-approved,
+.deposit-status-success {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.deposit-status-pending {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.deposit-status-failed {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .deposit-amount {
-  font-weight: 700 !important;
-  color: #b91c1c !important;
-  font-size: 0.84rem !important;
-  white-space: nowrap !important;
+  font-weight: 700;
+  color: var(--theme-primary, #dc1e26);
 }
 
 .deposit-action-group {
-  display: inline-flex !important;
-  gap: 6px !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.deposit-btn-action {
-  background: #fff1f2 !important;
-  color: #e11d48 !important;
-  border: 1px solid #ffe4e6 !important;
-  border-radius: 9999px !important;
-  padding: 4px 12px !important;
-  font-size: 0.72rem !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.deposit-btn-action:hover {
-  background: #ffe4e6 !important;
-  color: #be123c !important;
-  transform: translateY(-1px) !important;
+.deposit-icon-btn {
+  border: 1px solid #d3def0;
+  background: #f8fbff;
+  color: #2f4f7d;
+  border-radius: 8px;
+  min-height: 30px;
+  padding: 0 0.55rem;
+  font-size: 0.648rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
 }
 
 .deposit-icon-btn:hover {
@@ -515,22 +561,13 @@ textarea.deposit-input {
 }
 
 .deposit-table-head {
-  background: #981b3d !important;
+  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
 }
 
 .deposit-table-head th {
   color: #ffffff !important;
-  background: #981b3d !important;
-  font-size: 0.72rem !important;
+  font-size: 0.85rem !important;
   font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  padding: 14px 16px !important;
-  white-space: nowrap !important;
-  border: none !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  text-align: center !important;
 }
 
 .deposit-label,
@@ -542,3 +579,100 @@ textarea.deposit-input {
   border-color: #d3e1f7 !important;
   box-shadow: none !important;
 }
+
+/* Wallet Balance Summary Card */
+.wallet-balance-card {
+  background: var(--theme-surface, #ffffff);
+  border: 1px solid var(--theme-border, #e5e7eb);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.wallet-balance-header-row {
+  margin-bottom: 1.2rem;
+}
+
+.wallet-balance-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 0.2rem 0;
+  line-height: 1.2;
+}
+
+.wallet-balance-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wallet-balance-subtag {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.wallet-balance-subcards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.wallet-subcard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.wallet-subcard:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+}
+
+.wallet-subcard-amount {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.wallet-subcard-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.wallet-subcard-hint {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.promo-subcard {
+  background: #fdf8f6;
+  border-color: #fee2e2;
+}
+
+.promo-subcard .wallet-subcard-title {
+  color: #991b1b;
+}
+
+.nonpromo-subcard {
+  background: #f0fdf4;
+  border-color: #dcfce7;
+}
+
+.nonpromo-subcard .wallet-subcard-title {
+  color: #166534;
+}
+
+

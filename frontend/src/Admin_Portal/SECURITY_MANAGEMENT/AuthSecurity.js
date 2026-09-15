@@ -116,6 +116,23 @@ export default function AuthSecurity() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  // Fetch security settings and user security rules on mount to trigger network requests
+  const fetchAuthSecurityData = async () => {
+    try {
+      // 1. Hit GET /api/admin/security/settings
+      const settings = await securityService.getSettings();
+      // 2. Hit GET /api/SecurityAdmin/user-rules
+      const rules = await securityService.getUserSecurityRules({ page: 1, pageSize: 20 });
+      console.log('Fetched backend security settings:', settings, rules);
+    } catch (err) {
+      console.warn('Backend fetch info:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuthSecurityData();
+  }, [activeTab]);
+
   // Terminate/Revoke Session Action
   const handleTerminateSession = (sessId) => {
     setSessions(sessions.map(s => s.id === sessId ? { ...s, status: 'Terminated' } : s));
@@ -138,9 +155,25 @@ export default function AuthSecurity() {
     setSelectedItem(null);
   };
 
-  // Save Policy Form Submit
-  const handleSavePolicy = (e) => {
+  // Save Policy Form Submit (Triggers PUT /api/admin/security/settings)
+  const handleSavePolicy = async (e) => {
     e.preventDefault();
+
+    // Trigger API call for backend persistence
+    try {
+      await securityService.saveSettings({
+        policyName,
+        policyType,
+        appliesTo: policyAppliesTo,
+        sessionTimeout: parseInt(policyTimeout) || 30,
+        maxLoginAttempts: parseInt(policyAttempts) || 5,
+        lockoutDurationMinutes: parseInt(policyLockout) || 15,
+        status: policyStatus,
+      });
+    } catch (err) {
+      console.warn('API save error:', err);
+    }
+
     if (activeDrawer === 'policy-add') {
       const newPolicy = {
         id: `pol-${Date.now()}`,

@@ -40,17 +40,17 @@ function formatDate(dateStr) {
 /* ─── styles (inline so no extra CSS file needed) ────────────────  */
 const S = {
   card: {
-    padding: "24px",
+    padding: "16px",
     background: "#ffffff",
     borderRadius: "16px",
     border: "1px solid #e2e8f0",
-    marginBottom: "20px",
+    marginBottom: "0px",
   },
   header: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    marginBottom: "20px",
+    marginBottom: "12px",
   },
   iconBubble: {
     background: "#f0f9ff",
@@ -146,7 +146,7 @@ const S = {
   },
   emptyState: {
     textAlign: "center",
-    padding: "24px",
+    padding: "16px",
     color: "#94a3b8",
     fontSize: "0.9rem",
   },

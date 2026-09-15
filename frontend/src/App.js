@@ -40,7 +40,7 @@ import FlightPassengerDetailsPage from "./pages/booking/FlightPassengerDetailsPa
 import HotelBookings from "./pages/booking/HotelBookings";
 import TicketConfirmationPage from "./pages/public/TicketConfirmationPage";
 import MyAccount from "./pages/account/MyAccount";
-import WalletPage from "./pages/account/WalletPage";
+import UserWalletDashboard from "./pages/account/UserWalletDashboard";
 import WebCheckinPage from "./pages/public/WebCheckinPage";
 import LegalPage from "./pages/public/LegalPage";
 import ContactUsPage from "./pages/public/ContactUsPage";
@@ -101,12 +101,6 @@ import HotelGstSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/GstSettings/Ho
 import HotelBookingList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Booking List/HotelBookingList";
 import HotelCancellationList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Cancellation List/HotelCancellationList";
 import HotelSearchHistory from "./Admin_Portal/B2C HOTEL MANAGEMENT/Search History/HotelSearchHistory";
-import HotelMarkupList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Markup List/HotelMarkupList";
-import AdminPaymentsList from "./Admin_Portal/PAYMENTS ADMIN/AdminPaymentsList";
-import AdminOfferListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER LIST/OfferList";
-import AdminAddOfferPage from "./Admin_Portal/OFFER MANAGEMENT/ADD NEW OFFER/AddOffer";
-import AdminOfferCategoryListPage from "./Admin_Portal/OFFER MANAGEMENT/OFFER CATEGORY LIST/OfferCategoryList";
-import AdminAddOfferCategoryPage from "./Admin_Portal/OFFER MANAGEMENT/ADD OFFER CATEGORY/AddOfferCategory";
 import TaxManagement from "./Admin_Portal/PAYMENT MANAGEMENT/Tax Management/TaxManagement";
 import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
@@ -141,17 +135,6 @@ import HotelSearchResults from "./pages/booking/HotelSearchResults";
 import HotelPassengerDetailsPage from "./pages/booking/HotelPassengerDetailsPage";
 
 import CashfreeReturnPage from "./pages/booking/CashfreeReturnPage";
-
-import SecurityManagementDashboard from "./Admin_Portal/SECURITY_MANAGEMENT/SecurityManagement";
-import IpManagement from "./Admin_Portal/SECURITY_MANAGEMENT/IpManagement";
-import AuthSecurity from "./Admin_Portal/SECURITY_MANAGEMENT/AuthSecurity";
-import ApiSecurity from "./Admin_Portal/SECURITY_MANAGEMENT/ApiSecurity";
-import AccountSecurity from "./Admin_Portal/SECURITY_MANAGEMENT/AccountSecurity";
-import UserSecurityRules from "./Admin_Portal/SECURITY_MANAGEMENT/UserSecurityRules";
-import SecurityLimits from "./Admin_Portal/SECURITY_MANAGEMENT/SecurityLimits";
-import SecurityAuditLogs from "./Admin_Portal/SECURITY_MANAGEMENT/SecurityAuditLogs";
-import EmailLogs from "./Admin_Portal/SECURITY_MANAGEMENT/EMAIL_MANAGEMENT/EmailLogs";
-import EmailTemplates from "./Admin_Portal/SECURITY_MANAGEMENT/EMAIL_MANAGEMENT/EmailTemplates";
 
 const ADMIN_PATHS = {
   base: "/admin",
@@ -567,20 +550,6 @@ function AppContent() {
           <Route path="b2c-flight/popular-destination" element={<FlightPopularDestination />} />
           <Route path="b2c-flight/voucher-settings" element={<FlightVoucherSettings />} />
 
-          {/* Payments Admin */}
-          <Route path="payments" element={<AdminPaymentsList />} />
-          <Route path="payments/failed" element={<AdminPaymentsList initialStatus="FAILED" />} />
-          <Route path="payment-management/payment-transactions" element={<AdminPaymentsList />} />
-
-          {/* Offer Management */}
-          <Route path="offer-management/offers" element={<AdminOfferListPage />} />
-          <Route path="offer-management/offer-list" element={<AdminOfferListPage />} />
-          <Route path="offer-management/add-offer" element={<AdminAddOfferPage />} />
-          <Route path="offer-management/add-new-offer" element={<AdminAddOfferPage />} />
-          <Route path="offer-management/category-list" element={<AdminOfferCategoryListPage />} />
-          <Route path="offer-management/add-category" element={<AdminAddOfferCategoryPage />} />
-          <Route path="offer-management/add-offer-category" element={<AdminAddOfferCategoryPage />} />
-
           {/* B2C Hotel Management */}
           <Route path="b2c-hotel/discount-list" element={<HotelDiscountList />} />
           <Route path="b2c-hotel/coupon-list" element={<HotelCouponList />} />
@@ -588,19 +557,15 @@ function AppContent() {
           <Route path="b2c-hotel/add-convenience-fee" element={<HotelEditConvenienceFee />} />
           <Route path="b2c-hotel/gst-settings" element={<HotelGstSettings />} />
           <Route path="b2c-hotel/voucher-settings" element={<HotelVoucherSettings />} />
-          <Route path="b2c-hotel/markup-list" element={<HotelMarkupList />} />
-          <Route path="b2c-hotel/markup" element={<HotelMarkupList />} />
 
           {/* Hotel Management */}
           <Route path="hotel-management/booking-list" element={<HotelBookingList />} />
           <Route path="hotel-management/cancellation-list" element={<HotelCancellationList />} />
           <Route path="hotel-management/search-history" element={<HotelSearchHistory />} />
           <Route path="hotel-management/discounts" element={<HotelDiscountList />} />
-          <Route path="hotel-management/discount-list" element={<HotelDiscountList />} />
           <Route path="hotel-management/coupon-list" element={<HotelCouponList />} />
           <Route path="hotel-management/convenience-fee" element={<HotelConvenienceFee />} />
           <Route path="hotel-management/gst-settings" element={<HotelGstSettings />} />
-          <Route path="hotel-management/markup-list" element={<HotelMarkupList />} />
           <Route path="hotel-management/popular-destinations" element={<HotelPopularDestinations />} />
 
           {/* Page Management */}
@@ -640,17 +605,8 @@ function AppContent() {
           {/* Query Management */}
           <Route path="query-management/query-list" element={<AdminQueryList />} />
           {/* Security Management */}
-          <Route path="security-management" element={<SecurityManagementDashboard />} />
-          <Route path="security-management/ip-management" element={<IpManagement />} />
-          <Route path="security-management/auth-security" element={<AuthSecurity />} />
-          <Route path="security-management/api-security" element={<ApiSecurity />} />
-          <Route path="security-management/account-security" element={<AccountSecurity />} />
-          <Route path="security-management/user-security-rules" element={<UserSecurityRules />} />
-          <Route path="security-management/security-limits" element={<SecurityLimits />} />
-          <Route path="security-management/security-logs" element={<SecurityAuditLogs />} />
-          {/* Email Management */}
-          <Route path="email-management/email-logs" element={<EmailLogs />} />
-          <Route path="email-management/email-templates" element={<EmailTemplates />} />
+          <Route path="security-management/black-list-ip" element={adminPlaceholder("Black List IP")} />
+          <Route path="security-management/white-list-ip" element={adminPlaceholder("White List IP")} />
           {/* Site Management */}
           <Route path="site-management/site-setting" element={adminPlaceholder("Site Setting")} />
           <Route path="site-management/social-links" element={adminPlaceholder("Social Links")} />
@@ -662,8 +618,6 @@ function AppContent() {
           <Route path="site-management/meta-data-list" element={adminPlaceholder("Meta Data List")} />
           <Route path="site-management/seo-link-list" element={adminPlaceholder("SEO Link List")} />
           {/* Testimonial Management */}
-          <Route path="testimonial-management/dashboard" element={<AdminTestimonialList />} />
-          <Route path="testimonial-management" element={<AdminTestimonialList />} />
           <Route path="testimonial-management/testimonial-list" element={<AdminTestimonialList />} />
           <Route path="testimonial-management/add-testimonial" element={<AdminAddTestimonial />} />
           {/* Theme Management */}
@@ -696,7 +650,7 @@ function AppContent() {
           <Route path="account-statement" element={<AccountStatement />} />
           <Route path="web-checkin" element={<WebCheckinPage />} />
           <Route path="fetch-ticket" element={<FetchTicket />} />
-          <Route path="wallet" element={<WalletPage />} />
+          <Route path="wallet" element={<UserWalletDashboard />} />
           <Route path="my-account" element={<MyAccount />} />
           <Route path="edit-profile" element={<Navigate to="/edit-profile" replace />} />
           <Route path="change-password" element={<Navigate to="/change-password" replace />} />

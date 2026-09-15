@@ -14,15 +14,6 @@ const ADMIN_FLIGHT_CONVENIENCE_FEE_RULES_ROOT =
 // â”€â”€â”€ SRDV API Root â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SRDV_ROOT = "/api/flight/srdv";
 
-const FLIGHT_API_CREDENTIALS = {
-  ClientId: "180232",
-  UserName: "PickNBk6",
-  Password: "PickNB@486",
-  ApiToken: "PickNB@486#170$",
-  EndUserIp: "103.86.74.125"
-};
-
-
 function toAbsoluteUrl(urlOrPath) {
   if (/^https?:\/\//i.test(urlOrPath)) {
     return urlOrPath;
@@ -1054,14 +1045,6 @@ function toAirlineWebCheckRequestPayload(link) {
 }
 
 function normalizePopularDestinationRecord(record) {
-  if (!record || typeof record !== "object") {
-    return null;
-  }
-  const rawPlacement = pickFirst(record, ["placement", "Placement"], 1);
-  const parsedPlacement = typeof rawPlacement === "number" 
-    ? rawPlacement 
-    : (!isNaN(parseInt(rawPlacement, 10)) ? parseInt(rawPlacement, 10) : rawPlacement || 1);
-
   return {
     ...record,
     id: pickFirst(record, ["id", "Id"], null),
@@ -1070,8 +1053,8 @@ function normalizePopularDestinationRecord(record) {
       ""
     ),
     subTitle: String(pickFirst(record, ["subTitle", "SubTitle"], "") || ""),
-    category: String(pickFirst(record, ["category", "Category"], "Domestic") || "Domestic"),
-    placement: parsedPlacement,
+    category: String(pickFirst(record, ["category", "Category"], "") || ""),
+    placement: String(pickFirst(record, ["placement", "Placement"], "main") || "main"),
     url: String(pickFirst(record, ["url", "Url"], "") || ""),
     imageUrl: String(pickFirst(record, ["imageUrl", "ImageUrl"], "") || ""),
     status: String(pickFirst(record, ["status", "Status"], "Active") || "Active"),
@@ -1084,11 +1067,6 @@ function normalizePopularDestinationRecord(record) {
 }
 
 function toPopularDestinationRequestPayload(destination) {
-  const rawPlacement = pickFirst(destination, ["placement", "Placement"], 1);
-  const parsedPlacement = typeof rawPlacement === "number"
-    ? rawPlacement
-    : (!isNaN(parseInt(rawPlacement, 10)) ? parseInt(rawPlacement, 10) : rawPlacement || 1);
-
   return {
     title: String(
       pickFirst(destination, ["title", "Title", "destinationName", "DestinationName"], "") ||
@@ -1099,7 +1077,9 @@ function toPopularDestinationRequestPayload(destination) {
     category: String(
       pickFirst(destination, ["category", "Category"], "Domestic") || "Domestic"
     ).trim(),
-    placement: parsedPlacement,
+    placement: String(
+      pickFirst(destination, ["placement", "Placement"], "main") || "main"
+    ).trim(),
     url: String(pickFirst(destination, ["url", "Url"], "") || "").trim(),
     status: String(pickFirst(destination, ["status", "Status"], "Active") || "Active").trim(),
   };
@@ -1285,7 +1265,21 @@ function normalizeErrorMessage(payload) {
   }
 
   if (payload && typeof payload?.message === "string") {
+    const details = payload.details || payload.Details || payload.errorMessage || payload.ErrorMessage;
+    if (typeof details === "string" && details.trim()) {
+      return `${payload.message.trim()} ${details.trim()}`;
+    }
+    if (details && typeof details === "object") {
+      const detailMessage = details.message || details.Message || details.errorMessage || details.ErrorMessage;
+      if (typeof detailMessage === "string" && detailMessage.trim()) {
+        return `${payload.message.trim()} ${detailMessage.trim()}`;
+      }
+    }
     return payload.message.trim();
+  }
+
+  if (payload?.Error?.ErrorMessage) {
+    return String(payload.Error.ErrorMessage).trim();
   }
 
   return "";
@@ -2056,10 +2050,6 @@ export async function getFlightFareQuote(params = {}) {
   const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || flight.srdvIndex || flight.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
 
   const payload = {
-    EndUserIp: params.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     SrdvType: activeSrdvType,
@@ -2124,11 +2114,6 @@ export async function getFlightFareRule(params = {}) {
   const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || flight.srdvIndex || flight.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
 
   const payload = {
-    EndUserIp: params.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
-    ApiToken: "PickNB@486#170$",
     SrdvType: activeSrdvType,
     SrdvIndex: activeSrdvIndex,
     TraceId: activeTraceId,
@@ -2181,10 +2166,6 @@ export async function getFlightSSR(params = {}) {
   const activeSrdvIndex = String(params.srdvIndex || params.SrdvIndex || flight.srdvIndex || flight.SrdvIndex || resolveSrdvIndexFromResultIndex(activeResultIndex, "2"));
 
   const payload = {
-    EndUserIp: params.endUserIp || "192.168.1.1",
-    ClientId: FLIGHT_API_CREDENTIALS.ClientId,
-    UserName: FLIGHT_API_CREDENTIALS.UserName,
-    Password: FLIGHT_API_CREDENTIALS.Password,
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     SrdvType: activeSrdvType,
@@ -2989,13 +2970,8 @@ export async function saveFlightBooking(bookingPayload) {
     logFlightApiResponse("POST", endpoint, 200, rawData);
     return rawData;
   } catch (error) {
-    console.warn("[FlightService] POST /api/flight/bookings failed:", error?.message);
-    return {
-      success: true,
-      persistedLocal: true,
-      bookingId: bookingPayload?.bookingId || bookingPayload?.pnr,
-      data: bookingPayload,
-    };
+    console.error("[FlightService] Flight booking persistence failed:", error?.message);
+    throw error;
   }
 }
 
@@ -3100,8 +3076,11 @@ export async function bookFlight(paramPayload = {}) {
       throw new Error(lccRes.error || "Airline ticket issuance failed.");
     }
 
-    pnr = lccRes.pnr || `PNB${Date.now().toString().slice(-8)}`;
-    bookingId = lccRes.bookingId || pnr;
+    pnr = String(lccRes.pnr || "").trim();
+    bookingId = String(lccRes.bookingId || "").trim();
+    if (!pnr || !bookingId) {
+      throw new Error("Supplier did not return a valid flight booking reference.");
+    }
     ticketStatus = lccRes.status || "Confirmed";
     rawTicketResponse = lccRes;
   } else {
@@ -3146,8 +3125,11 @@ export async function bookFlight(paramPayload = {}) {
       throw new Error(ticketErr.ErrorMessage || "GDS Ticket issuance failed.");
     }
 
-    pnr = holdPnr || String(ticketData?.PNR || ticketData?.pnr || "") || `PNB${Date.now().toString().slice(-8)}`;
-    bookingId = String(holdBookingId || ticketData?.BookingId || pnr);
+    pnr = holdPnr || String(ticketData?.PNR || ticketData?.pnr || "").trim();
+    bookingId = String(holdBookingId || ticketData?.BookingId || "").trim();
+    if (!pnr || !bookingId) {
+      throw new Error("Supplier did not return a valid flight booking reference.");
+    }
     ticketStatus = ticketData?.Status || "Confirmed";
     rawTicketResponse = gdsTicketRes;
   }
@@ -3170,11 +3152,7 @@ export async function bookFlight(paramPayload = {}) {
     createdAt: new Date().toISOString(),
   };
 
-  try {
-    await saveFlightBooking(confirmedBooking);
-  } catch (err) {
-    console.warn("[FlightService] Failed to persist booking to database:", err?.message);
-  }
+  await saveFlightBooking(confirmedBooking);
 
   return {
     success: true,
@@ -3606,13 +3584,7 @@ export async function getFlightBookingById(bookingId, { userId } = {}) {
   );
   if (found) return found;
 
-  return {
-    bookingId: String(bookingId),
-    bookingReference: String(bookingId),
-    passengerName: "Passenger",
-    fromCity: "",
-    toCity: ""
-  };
+  throw new Error("Flight booking was not found in the backend.");
 }
 
 function persistCancelledStatusToStorage(targetRef, cancelDetails = {}) {
@@ -3724,35 +3696,8 @@ function persistCancelledStatusToStorage(targetRef, cancelDetails = {}) {
 }
 
 async function fetchLiveBookingRecordFromBackend(targetRef, fallbackObj = {}) {
-  const refStr = String(targetRef || "").trim().toLowerCase();
-  if (!refStr && !fallbackObj) return null;
-  const pnrOrRef = String(fallbackObj?.bookingReference || fallbackObj?.BookingReference || fallbackObj?.pnr || fallbackObj?.PNR || refStr).trim().toLowerCase();
-
-  const candidateEndpoints = [
-    "/api/flight/srdv/bookings",
-    "/api/FlightBookings",
-    "/api/flight/bookings",
-    "/api/bookings/history"
-  ];
-
-  for (const ep of candidateEndpoints) {
-    try {
-      const list = await requestJson(ep, { method: "GET" });
-      if (Array.isArray(list)) {
-        const matched = list.find(b => {
-          const r1 = String(b.bookingReference || b.BookingReference || b.pnr || b.PNR || "").trim().toLowerCase();
-          const r2 = String(b.bookingId || b.BookingId || b.id || b.Id || "").trim().toLowerCase();
-          const r3 = String(b.srdvBookingId || b.SrdvBookingId || b.supplierBookingId || b.SupplierBookingId || "").trim().toLowerCase();
-          return (r1 && (r1 === pnrOrRef || r1 === refStr)) || (r2 && (r2 === pnrOrRef || r2 === refStr)) || (r3 && (r3 === pnrOrRef || r3 === refStr));
-        });
-        if (matched && typeof matched === "object") {
-          return normalizeFlightBookingRecord({ ...fallbackObj, ...matched });
-        }
-      }
-    } catch (err) {
-      // ignore endpoint failure
-    }
-  }
+  // listFlightBookings() already reads the authenticated, authoritative
+  // /api/flight/srdv/my-bookings endpoint. Do not probe guessed endpoints here.
   return null;
 }
 
@@ -3883,47 +3828,9 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId, refu
   const providerBookingId = numericId || distinctId || allBookingIdCandidates[0] || "";
 
   let cancelResult = null;
-  const clientId = String(booking?.clientId || booking?.ClientId || FLIGHT_API_CREDENTIALS.ClientId || "180170");
-  const userName = String(booking?.userName || booking?.UserName || FLIGHT_API_CREDENTIALS.UserName || "PickNBk6");
-  const password = String(booking?.password || booking?.Password || FLIGHT_API_CREDENTIALS.Password || "PickNB@486");
-  const apiToken = String(booking?.apiToken || booking?.ApiToken || FLIGHT_API_CREDENTIALS.ApiToken || "PickNB@486#170$");
-  const endUserIp = String(booking?.endUserIp || booking?.EndUserIp || FLIGHT_API_CREDENTIALS.EndUserIp || "103.86.74.125");
-
-  // Optional/Additional API: Check Cancellation Charges before cancelling
-  let chargesResult = {};
-  const candidateTraceId = [
-    booking?.traceId,
-    booking?.TraceId,
-    booking?.trace_id,
-    booking?.rawResponse?.TraceId,
-    booking?.rawResponse?.traceId,
-    booking?.ticketLccResponse?.rawResponse?.TraceId,
-    booking?.ticketLccResponse?.rawResponse?.traceId,
-    booking?.ticketLccResponse?.TraceId,
-    booking?.ticketLccResponse?.traceId,
-    booking?.ticketGdsResponse?.rawResponse?.TraceId,
-    booking?.ticketGdsResponse?.TraceId,
-    booking?.srdvResponse?.TraceId,
-    booking?.apiResponse?.TraceId,
-    booking?.details?.TraceId,
-    booking?.itinerary?.TraceId,
-    booking?.flight?.traceId,
-    booking?.flight?.TraceId,
-    typeof window !== "undefined" ? window.sessionStorage.getItem("last_booking_trace_id") || window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId") : ""
-  ].map(val => String(val || "").trim()).find(Boolean) || "";
-
-  try {
-    const chargesResponse = await getCancellationCharges({
-      traceId: candidateTraceId,
-      bookingId: providerBookingId,
-      requestType: 1,
-      srdvType: booking?.srdvType || "MixAPI",
-      srdvIndex: booking?.srdvIndex || "2"
-    });
-    chargesResult = chargesResponse?.result || chargesResponse?.Result || {};
-  } catch (err) {
-    console.warn("Fetch cancellation charges failed:", err);
-  }
+  // Cancellation charges are optional and this provider rejects stale TraceIds.
+  // The cancellation response remains the authoritative source for charges/refunds.
+  const chargesResult = {};
 
   // Build Sectors array per Flight Cancellation API Integration Guide using standard IATA city resolution
   const sectors = [];
@@ -4033,11 +3940,6 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId, refu
     remarks: reason || "Customer requested cancellation",
     srdvType: booking?.srdvType || "MixAPI",
     srdvIndex: String(booking?.srdvIndex || (booking?.isLcc ? "2" : "1")),
-    endUserIp,
-    clientId,
-    userName,
-    password,
-    apiToken,
     sectors,
     ticketData
   });
@@ -4154,13 +4056,6 @@ export async function cancelFlightBooking(bookingIdOrObj, reason, { userId, refu
   if (providerBookingId) persistCancelledStatusToStorage(providerBookingId, cancelResult);
   if (booking?.id) persistCancelledStatusToStorage(booking.id, cancelResult);
 
-  // Production DB API Sync: Persist cancellation status to SQL Database
-  try {
-    await syncCancelledStatusToDatabase(cancelResult);
-  } catch (dbErr) {
-    console.warn("DB cancellation sync encountered an issue:", dbErr);
-  }
-
   return cancelResult;
 }
 
@@ -4210,29 +4105,50 @@ export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes =
     });
   }
 
-  const clientId = String(booking?.clientId || booking?.ClientId || FLIGHT_API_CREDENTIALS.ClientId || "180170");
-  const userName = String(booking?.userName || booking?.UserName || FLIGHT_API_CREDENTIALS.UserName || "PickNBk6");
-  const password = String(booking?.password || booking?.Password || FLIGHT_API_CREDENTIALS.Password || "PickNB@486");
-  const apiToken = String(booking?.apiToken || booking?.ApiToken || FLIGHT_API_CREDENTIALS.ApiToken || "PickNB@486#170$");
-  const endUserIp = String(booking?.endUserIp || booking?.EndUserIp || FLIGHT_API_CREDENTIALS.EndUserIp || "103.86.74.125");
 
+  const allSegments = Array.isArray(booking.segments) ? booking.segments : [];
+  const allPassengers = Array.isArray(booking.passengers) ? booking.passengers : [];
+  const validSelectedSectors = sectors.filter(
+    (sector) => sector.Origin.length === 3 && sector.Destination.length === 3
+  );
+  const requestSectors = validSelectedSectors.length > 0
+    ? validSelectedSectors
+    : allSegments.map((segment) => {
+        const fromCode = String(segment.fromCode || segment.origin || segment.sourceCode || "").toUpperCase();
+        const toCode = String(segment.toCode || segment.destination || segment.destinationCode || "").toUpperCase();
+        return { Origin: fromCode, Destination: toCode };
+      }).filter((sector) => sector.Origin.length === 3 && sector.Destination.length === 3);
+  const requestTicketData = ticketData.length > 0
+    ? ticketData
+    : allPassengers.map((passenger, idx) => ({
+        TicketId: String(passenger.ticketId || passenger.srdvTicketId || idx + 1),
+        FirstName: String(passenger.firstName || passenger.fullName || `Passenger ${idx + 1}`).trim().split(/\s+/)[0] || "Passenger",
+        LastName: String(passenger.lastName || passenger.fullName || "Doe").trim().split(/\s+/).slice(1).join(" ") || "Doe"
+      }));
+
+  if (requestSectors.length === 0 || requestTicketData.length === 0) {
+    throw new Error("Flight cancellation details are incomplete. Refresh the booking and try again.");
+  }
+
+  const cancellationType = selectedLegIndexes.length > 0
+    ? (selectedPassengerIds.length > 0 ? "3" : "2")
+    : "1";
   // Step 1: Send Change Request with Sectors & TicketData
   const changeRequestResponse = await sendChangeRequest({
     bookingId: providerBookingId,
     pnr: pnr,
     requestType: "2",
-    cancellationType: sectors.length > 0 ? "2" : (ticketData.length > 0 ? "1" : "3"),
+    cancellationType,
     remarks: reason || "Customer requested partial flight leg/passenger cancellation",
     srdvType: booking?.srdvType || "MixAPI",
     srdvIndex: String(booking?.srdvIndex || (booking?.isLcc ? "2" : "1")),
-    endUserIp,
-    clientId,
-    userName,
-    password,
-    apiToken,
-    sectors,
-    ticketData
+    sectors: requestSectors,
+    ticketData: requestTicketData
   });
+
+  if (changeRequestResponse?.success === false || (changeRequestResponse?.errorCode && String(changeRequestResponse.errorCode) !== "0")) {
+    throw new Error(changeRequestResponse?.error || changeRequestResponse?.errorMessage || "Provider rejected the partial cancellation request.");
+  }
 
   let changeRequestId = "";
   if (changeRequestResponse?.success !== false && (!changeRequestResponse?.errorCode || String(changeRequestResponse.errorCode) === "0")) {
@@ -4245,46 +4161,41 @@ export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes =
   }
 
   // Step 2: Verification step via GetCancelStatus
-  if (changeRequestId) {
-    try {
-      let attempts = 0;
-      const maxAttempts = 12;
-      while (attempts < maxAttempts) {
-        attempts++;
-        const cancelStatusResponse = await getCancelStatus({
-          changeRequestId,
-          srdvType: booking?.srdvType || "MixAPI",
-          endUserIp,
-          clientId,
-          userName,
-          password,
-          apiToken
-        });
+  if (!changeRequestId) {
+    throw new Error("Provider did not return a valid change request ID for partial cancellation.");
+  }
 
-        if (cancelStatusResponse?.success === false) {
-          throw new Error(cancelStatusResponse.error || "Failed to verify cancellation status.");
-        }
+  let partialCancellationConfirmed = false;
+  let partialCancelStatusResponse = null;
+  let attempts = 0;
+  const maxAttempts = 12;
+  while (attempts < maxAttempts) {
+    attempts++;
+    partialCancelStatusResponse = await getCancelStatus({ changeRequestId });
 
-        const currentStatus = String(
-          cancelStatusResponse?.cancelStatus ||
-          cancelStatusResponse?.rawResponse?.CancelStatus ||
-          cancelStatusResponse?.rawResponse?.RefundDetails?.CancellationStatus ||
-          ""
-        ).toLowerCase();
-
-        if (cancelStatusResponse?.success !== false && (!cancelStatusResponse?.errorCode || String(cancelStatusResponse.errorCode) === "0" || String(cancelStatusResponse.errorCode) === "000")) {
-          if (currentStatus === "pending" || currentStatus === "inprocess" || currentStatus === "processing") {
-            if (attempts < maxAttempts) {
-              await new Promise((resolve) => setTimeout(resolve, 5000));
-              continue;
-            }
-          }
-          break;
-        }
-      }
-    } catch (e) {
-      console.warn("GetCancelStatus step encountered issue:", e);
+    if (partialCancelStatusResponse?.success === false || (partialCancelStatusResponse?.errorCode && String(partialCancelStatusResponse.errorCode) !== "0" && String(partialCancelStatusResponse.errorCode) !== "000")) {
+      throw new Error(partialCancelStatusResponse?.error || partialCancelStatusResponse?.errorMessage || "Provider rejected partial cancellation verification.");
     }
+
+    const currentStatus = String(
+      partialCancelStatusResponse?.cancelStatus ||
+      partialCancelStatusResponse?.rawResponse?.CancelStatus ||
+      partialCancelStatusResponse?.rawResponse?.RefundDetails?.CancellationStatus ||
+      ""
+    ).toLowerCase();
+
+    if (!["pending", "inprocess", "processing"].includes(currentStatus)) {
+      partialCancellationConfirmed = true;
+      break;
+    }
+
+    if (attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+
+  if (!partialCancellationConfirmed) {
+    throw new Error("Partial cancellation is still processing and was not confirmed by the provider.");
   }
 
   // Mark selected segments as Cancelled locally
@@ -4318,20 +4229,13 @@ export async function cancelFlightPartial(bookingIdOrObj, { selectedLegIndexes =
     passengers: updatedPassengers,
     cancelledAtUtc: new Date().toISOString(),
     cancellationReason: reason || "Partial leg cancellation requested",
-    changeRequestId: changeRequestId || booking.changeRequestId,
+    changeRequestId,
     message: "Selected flight leg cancelled successfully."
   };
 
   if (pnr) persistCancelledStatusToStorage(pnr, cancelResult);
   if (providerBookingId) persistCancelledStatusToStorage(providerBookingId, cancelResult);
   if (booking.bookingId) persistCancelledStatusToStorage(booking.bookingId, cancelResult);
-
-  // Production DB API Sync: Persist cancellation status to SQL Database
-  try {
-    await syncCancelledStatusToDatabase(cancelResult);
-  } catch (dbErr) {
-    console.warn("DB cancellation sync encountered an issue:", dbErr);
-  }
 
   return cancelResult;
 }
@@ -4425,8 +4329,9 @@ export async function updateFlightPromotion(id, payload) {
 }
 
 export async function getPopularFlightRoutes() {
-  const data = await requestJson(`${ADMIN_FLIGHT_ROOT}/popular-routes`, {
+  const data = await requestJson("/api/flight/popular-routes", {
     method: "GET",
+    skipAuth: true,
   });
   return data || [];
 }

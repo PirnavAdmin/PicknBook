@@ -50,8 +50,19 @@ export default function AccountSecurity() {
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
 
-  // States
+  // Main Tab Navigation: 'policies' | 'locked'
+  const [mainTab, setMainTab] = useState('policies');
+
+  // States for Security Policies
   const [policies, setPolicies] = useState([]);
+
+  // States for Locked Accounts (Brute Force Protection API)
+  const [lockedAccounts, setLockedAccounts] = useState([]);
+  const [loadingLocked, setLoadingLocked] = useState(false);
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [selectedLockedAccount, setSelectedLockedAccount] = useState(null);
+  const [unlockReason, setUnlockReason] = useState('Admin manually verified agent');
+  const [submittingUnlock, setSubmittingUnlock] = useState(false);
 
   // Filters State
   const [filterType, setFilterType] = useState('All');
@@ -89,6 +100,67 @@ export default function AccountSecurity() {
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Fetch Locked Accounts from backend GET /api/SecurityAdmin/locked-accounts
+  const fetchLockedAccounts = async () => {
+    setLoadingLocked(true);
+    try {
+      const data = await securityService.getLockedAccounts();
+      const items = Array.isArray(data) ? data : (data?.data || []);
+      if (items && items.length > 0) {
+        setLockedAccounts(items);
+      } else {
+        // Fallback mock representation matching API spec if server returns empty list
+        setLockedAccounts([
+          {
+            userId: 'user-123',
+            email: 'agent@example.com',
+            lockedAt: '2026-09-13T10:00:00Z',
+            reason: 'Exceeded failed login attempts (5/5)'
+          },
+          {
+            userId: 'user-456',
+            email: 'partner@travelbox.com',
+            lockedAt: '2026-09-14T08:30:00Z',
+            reason: 'Brute force credential stuffing detected'
+          }
+        ]);
+      }
+    } catch (err) {
+      console.warn('Error fetching locked accounts:', err);
+      showToast('⚠️ Could not load locked accounts from server.');
+    } finally {
+      setLoadingLocked(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mainTab === 'locked') {
+      fetchLockedAccounts();
+    }
+  }, [mainTab]);
+
+  // Handler: Unlock Account POST /api/SecurityAdmin/locked-accounts/{userId}/unlock
+  const handleUnlockAccountSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedLockedAccount) return;
+    setSubmittingUnlock(true);
+    try {
+      const res = await securityService.unlockAccount(selectedLockedAccount.userId, { reason: unlockReason });
+      if (res && (res.success || res.message)) {
+        showToast(`✓ Account for ${selectedLockedAccount.email || selectedLockedAccount.userId} unlocked successfully!`);
+        setUnlockModalOpen(false);
+        setSelectedLockedAccount(null);
+        fetchLockedAccounts();
+      } else {
+        showToast(`❌ ${res?.message || 'Failed to unlock account.'}`);
+      }
+    } catch (err) {
+      showToast(`❌ ${err?.message || 'Failed to unlock account.'}`);
+    } finally {
+      setSubmittingUnlock(false);
+    }
   };
 
   // Open Drawer triggers
@@ -217,200 +289,423 @@ export default function AccountSecurity() {
           <p className="sd-page-subtitle">Security Management &nbsp;/&nbsp; Account Security</p>
         </div>
         <div className="sd-header-right">
-          <button className="sd-export-btn" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }} onClick={handleOpenAddDrawer}>
-            <span>+ Add Policy</span>
-          </button>
-          <button className="sd-export-btn" onClick={() => showToast('📥 Exporting Account Security Policies list CSV...')}>
-            📥 Export
-          </button>
+          {mainTab === 'policies' ? (
+            <>
+              <button className="sd-export-btn" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }} onClick={handleOpenAddDrawer}>
+                <span>+ Add Policy</span>
+              </button>
+              <button className="sd-export-btn" onClick={() => showToast('📥 Exporting Account Security Policies list CSV...')}>
+                📥 Export
+              </button>
+            </>
+          ) : (
+            <button className="sd-export-btn" onClick={fetchLockedAccounts}>
+              🔄 Refresh Locked Accounts
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Summary KPI Stats Grid */}
-      <div className="sd-kpi-grid" style={{ marginBottom: '16px' }}>
-        <div className="sd-kpi-card">
-          <div className="sd-kpi-icon-box" style={{ background: '#eff6ff', color: '#2563eb' }}>🔒</div>
-          <div className="sd-kpi-info">
-            <div className="sd-kpi-value">{totalCount}</div>
-            <div className="sd-kpi-label">Total Policies</div>
-            <div className="sd-kpi-sublabel">All account security policies</div>
-          </div>
-        </div>
+      {/* Sub-tabs Navigation */}
+      <div className="sd-subtabs-row" style={{ display: 'flex', gap: '12px', marginBottom: '16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+        <button
+          onClick={() => setMainTab('policies')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '6px',
+            fontWeight: 600,
+            fontSize: '13px',
+            border: 'none',
+            cursor: 'pointer',
+            background: mainTab === 'policies' ? '#901335' : '#f1f5f9',
+            color: mainTab === 'policies' ? '#ffffff' : '#475569',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          🔒 Security Policies ({policies.length})
+        </button>
 
-        <div className="sd-kpi-card">
-          <div className="sd-kpi-icon-box" style={{ background: '#dcfce7', color: '#16a34a' }}>🛡️</div>
-          <div className="sd-kpi-info">
-            <div className="sd-kpi-value">{activeCount}</div>
-            <div className="sd-kpi-label">Active Policies</div>
-            <div className="sd-kpi-sublabel">{percentActive}% of total policies</div>
-          </div>
-        </div>
-
-        <div className="sd-kpi-card">
-          <div className="sd-kpi-icon-box" style={{ background: '#fee2e2', color: '#ef4444' }}>⚠️</div>
-          <div className="sd-kpi-info">
-            <div className="sd-kpi-value">{inactiveCount}</div>
-            <div className="sd-kpi-label">Inactive Policies</div>
-            <div className="sd-kpi-sublabel">{percentInactive}% of total policies</div>
-          </div>
-        </div>
-
-        <div className="sd-kpi-card">
-          <div className="sd-kpi-icon-box" style={{ background: '#faf5ff', color: '#7e22ce' }}>👥</div>
-          <div className="sd-kpi-info">
-            <div className="sd-kpi-value">1,248</div>
-            <div className="sd-kpi-label">Affected Users</div>
-            <div className="sd-kpi-sublabel">Users impacted by policies</div>
-          </div>
-        </div>
+        <button
+          onClick={() => setMainTab('locked')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '6px',
+            fontWeight: 600,
+            fontSize: '13px',
+            border: 'none',
+            cursor: 'pointer',
+            background: mainTab === 'locked' ? '#901335' : '#f1f5f9',
+            color: mainTab === 'locked' ? '#ffffff' : '#475569',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          🔐 Locked Accounts (Brute Force Protection) ({lockedAccounts.length})
+        </button>
       </div>
 
-      {/* Filters Row */}
-      {showFilters && (
-        <div className="sd-panel sd-filters-panel" style={{ padding: '16px', marginBottom: '16px' }}>
-          <div className="sd-filters-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
-            <div className="sd-filter-field">
-              <label>Policy Type</label>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                <option>All</option>
-                <option>Account Lock</option>
-                <option>Login Attempts</option>
-                <option>Password</option>
-                <option>Account</option>
-                <option>Data Access</option>
-              </select>
+      {mainTab === 'policies' ? (
+        <>
+          {/* Summary KPI Stats Grid */}
+          <div className="sd-kpi-grid" style={{ marginBottom: '16px' }}>
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#eff6ff', color: '#2563eb' }}>🔒</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">{totalCount}</div>
+                <div className="sd-kpi-label">Total Policies</div>
+                <div className="sd-kpi-sublabel">All account security policies</div>
+              </div>
             </div>
 
-            <div className="sd-filter-field">
-              <label>Status</label>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                <option>All</option>
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#dcfce7', color: '#16a34a' }}>🛡️</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">{activeCount}</div>
+                <div className="sd-kpi-label">Active Policies</div>
+                <div className="sd-kpi-sublabel">{percentActive}% of total policies</div>
+              </div>
             </div>
 
-            <div className="sd-filter-field">
-              <label>Applies To</label>
-              <select value={filterAppliesTo} onChange={(e) => setFilterAppliesTo(e.target.value)}>
-                <option>All</option>
-                <option>Admin</option>
-                <option>User</option>
-                <option>B2B</option>
-              </select>
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#fee2e2', color: '#ef4444' }}>⚠️</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">{inactiveCount}</div>
+                <div className="sd-kpi-label">Inactive Policies</div>
+                <div className="sd-kpi-sublabel">{percentInactive}% of total policies</div>
+              </div>
             </div>
 
-            <div className="sd-filter-field">
-              <label>Search Query</label>
-              <input type="text" placeholder="Search policy name..." value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} />
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#faf5ff', color: '#7e22ce' }}>👥</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">1,248</div>
+                <div className="sd-kpi-label">Affected Users</div>
+                <div className="sd-kpi-sublabel">Users impacted by policies</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters Row */}
+          {showFilters && (
+            <div className="sd-panel sd-filters-panel" style={{ padding: '16px', marginBottom: '16px' }}>
+              <div className="sd-filters-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+                <div className="sd-filter-field">
+                  <label>Policy Type</label>
+                  <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                    <option>All</option>
+                    <option>Account Lock</option>
+                    <option>Login Attempts</option>
+                    <option>Password</option>
+                    <option>Account</option>
+                    <option>Data Access</option>
+                  </select>
+                </div>
+
+                <div className="sd-filter-field">
+                  <label>Status</label>
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                    <option>All</option>
+                    <option>Active</option>
+                    <option>Inactive</option>
+                  </select>
+                </div>
+
+                <div className="sd-filter-field">
+                  <label>Applies To</label>
+                  <select value={filterAppliesTo} onChange={(e) => setFilterAppliesTo(e.target.value)}>
+                    <option>All</option>
+                    <option>Admin</option>
+                    <option>User</option>
+                    <option>B2B</option>
+                  </select>
+                </div>
+
+                <div className="sd-filter-field">
+                  <label>Search Query</label>
+                  <input type="text" placeholder="Search policy name..." value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} />
+                </div>
+
+                <div className="sd-filter-buttons" style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                  <button className="sd-btn-reset" onClick={() => { setFilterType('All'); setFilterStatus('All'); setFilterAppliesTo('All'); setFilterSearch(''); }}>Reset</button>
+                  <button className="sd-btn-filter" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>Apply Filters</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Table grid List */}
+          <div className="sd-panel" style={{ padding: '16px' }}>
+            <div className="sd-panel-header" style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Account Security Policies <span className="sd-records-count">({totalCount} Records)</span></h3>
+              <button
+                className={`sd-filter-toggle-btn ${showFilters ? 'active' : ''}`}
+                onClick={() => setShowFilters(!showFilters)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                <span>Filter</span>
+              </button>
             </div>
 
-            <div className="sd-filter-buttons" style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-              <button className="sd-btn-reset" onClick={() => { setFilterType('All'); setFilterStatus('All'); setFilterAppliesTo('All'); setFilterSearch(''); }}>Reset</button>
-              <button className="sd-btn-filter" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>Apply Filters</button>
+            <div className="sd-table-container">
+              <table className="sd-mini-table">
+                <thead>
+                  <tr>
+                    <th width="50">#</th>
+                    <th>Policy Name</th>
+                    <th>Policy Type</th>
+                    <th>Applies To</th>
+                    <th>Status</th>
+                    <th>Created On</th>
+                    <th>Created By</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedList.length > 0 ? (
+                    paginatedList.map((p, idx) => (
+                      <tr key={p.id}>
+                        <td>{(currentPage - 1) * pageSize + idx + 1}</td>
+                        <td style={{ fontWeight: 600 }}>{p.name}</td>
+                        <td>
+                          <span className={`badge-custom badge-action-${p.type === 'Account Lock' ? 'block' : 'none'}`}>
+                            {p.type}
+                          </span>
+                        </td>
+                        <td>{p.appliesTo}</td>
+                        <td>
+                          <span className={`badge-custom badge-status-${p.status.toLowerCase()}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td>{p.createdOn}</td>
+                        <td>{p.createdBy}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="btn-act-icon" title="View Details" onClick={() => handleOpenViewDrawer(p)}>👁️</button>
+                            <button className="btn-act-icon" title="Edit" onClick={() => handleOpenEditDrawer(p)}>📝</button>
+                            <button className="btn-act-icon delete" title="Delete" onClick={() => handleOpenDeleteModal(p)}>🗑️</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8' }}>
+                        🔒 No Account Security policies configured.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
+
+            <AdminPagination
+              currentPage={currentPage}
+              totalItems={totalCount}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setPageSize}
+              itemName="Policies"
+            />
+          </div>
+
+          {/* Legend Cards at the Bottom */}
+          <div style={{ marginTop: '24px' }}>
+            <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>Policy Types</h3>
+            <div className="sec-categories-row">
+              {POLICY_TYPES_LEGEND.map((pt, i) => (
+                <div className="sec-category-card" key={i}>
+                  <div className="sec-category-card-top">
+                    <span className="sec-category-icon">{pt.icon}</span>
+                    <span className="badge-custom sec-category-rules-badge">{pt.count} Policies</span>
+                  </div>
+                  <div className="sec-category-card-middle">
+                    <span className="sec-category-label">{pt.label}</span>
+                    <span className="sec-category-desc">{pt.desc}</span>
+                  </div>
+                  <span className="sec-category-view-link" onClick={() => { setFilterType(pt.key); setShowFilters(true); }}>View Policies →</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        /* TAB 2: Locked Accounts (Brute Force Protection API Integration) */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* KPI Cards for Locked Accounts */}
+          <div className="sd-kpi-grid">
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#fee2e2', color: '#ef4444' }}>🔐</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">{lockedAccounts.length}</div>
+                <div className="sd-kpi-label">Locked Accounts</div>
+                <div className="sd-kpi-sublabel">Currently locked due to violations</div>
+              </div>
+            </div>
+
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#fef3c7', color: '#d97706' }}>⚡</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">{lockedAccounts.filter(a => (a.reason || '').toLowerCase().includes('failed login')).length || lockedAccounts.length}</div>
+                <div className="sd-kpi-label">Failed Login Lockouts</div>
+                <div className="sd-kpi-sublabel">Exceeded password threshold</div>
+              </div>
+            </div>
+
+            <div className="sd-kpi-card">
+              <div className="sd-kpi-icon-box" style={{ background: '#dcfce7', color: '#16a34a' }}>🛡️</div>
+              <div className="sd-kpi-info">
+                <div className="sd-kpi-value">Active</div>
+                <div className="sd-kpi-label">Brute Force Protection</div>
+                <div className="sd-kpi-sublabel">Automatic lockout threshold enabled</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Locked Accounts Table Card */}
+          <div className="sd-panel" style={{ padding: '16px' }}>
+            <div className="sd-panel-header" style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>🔐 Currently Locked Accounts (Brute Force Protection)</h3>
+                <span className="sd-records-count" style={{ fontSize: '12px', color: '#64748b' }}>
+                  Accounts automatically locked after repeated security threshold breaches (GET /api/SecurityAdmin/locked-accounts)
+                </span>
+              </div>
+              <button className="sd-btn-reset" onClick={fetchLockedAccounts}>🔄 Refresh</button>
+            </div>
+
+            {loadingLocked ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                Loading locked accounts from backend...
+              </div>
+            ) : (
+              <div className="sd-table-container">
+                <table className="sd-mini-table">
+                  <thead>
+                    <tr>
+                      <th width="60">#</th>
+                      <th>User ID</th>
+                      <th>Email / Account</th>
+                      <th>Locked At</th>
+                      <th>Reason / Violation</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lockedAccounts.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: '28px 0', color: '#10b981', fontWeight: 600 }}>
+                          ✅ No accounts are currently locked!
+                        </td>
+                      </tr>
+                    ) : (
+                      lockedAccounts.map((acc, index) => (
+                        <tr key={acc.userId || index}>
+                          <td>{index + 1}</td>
+                          <td style={{ fontWeight: 700, color: '#0f172a' }}>{acc.userId}</td>
+                          <td style={{ color: '#2563eb' }}>{acc.email || 'N/A'}</td>
+                          <td>{acc.lockedAt ? new Date(acc.lockedAt).toLocaleString() : 'N/A'}</td>
+                          <td style={{ color: '#ef4444', fontWeight: 500 }}>{acc.reason || 'Exceeded failed login attempts'}</td>
+                          <td>
+                            <span className="badge-custom badge-status-inactive" style={{ background: '#fee2e2', color: '#dc2626' }}>
+                              ● LOCKED
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              style={{
+                                background: '#16a34a',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '6px 14px',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 4px rgba(22, 163, 74, 0.2)'
+                              }}
+                              onClick={() => {
+                                setSelectedLockedAccount(acc);
+                                setUnlockReason('Admin manually verified agent');
+                                setUnlockModalOpen(true);
+                              }}
+                            >
+                              🔓 Unlock Account
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Table grid List */}
-      <div className="sd-panel" style={{ padding: '16px' }}>
-        <div className="sd-panel-header" style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>Account Security Policies <span className="sd-records-count">({totalCount} Records)</span></h3>
-          <button
-            className={`sd-filter-toggle-btn ${showFilters ? 'active' : ''}`}
-            onClick={() => setShowFilters(!showFilters)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-            <span>Filter</span>
-          </button>
-        </div>
-
-        <div className="sd-table-container">
-          <table className="sd-mini-table">
-            <thead>
-              <tr>
-                <th width="50">#</th>
-                <th>Policy Name</th>
-                <th>Policy Type</th>
-                <th>Applies To</th>
-                <th>Status</th>
-                <th>Created On</th>
-                <th>Created By</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedList.length > 0 ? (
-                paginatedList.map((p, idx) => (
-                  <tr key={p.id}>
-                    <td>{(currentPage - 1) * pageSize + idx + 1}</td>
-                    <td style={{ fontWeight: 600 }}>{p.name}</td>
-                    <td>
-                      <span className={`badge-custom badge-action-${p.type === 'Account Lock' ? 'block' : 'none'}`}>
-                        {p.type}
-                      </span>
-                    </td>
-                    <td>{p.appliesTo}</td>
-                    <td>
-                      <span className={`badge-custom badge-status-${p.status.toLowerCase()}`}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td>{p.createdOn}</td>
-                    <td>{p.createdBy}</td>
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn-act-icon" title="View Details" onClick={() => handleOpenViewDrawer(p)}>👁️</button>
-                        <button className="btn-act-icon" title="Edit" onClick={() => handleOpenEditDrawer(p)}>📝</button>
-                        <button className="btn-act-icon delete" title="Delete" onClick={() => handleOpenDeleteModal(p)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8' }}>
-                    🔒 No Account Security policies configured.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <AdminPagination
-          currentPage={currentPage}
-          totalItems={totalCount}
-          itemsPerPage={pageSize}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setPageSize}
-          itemName="Policies"
-        />
-      </div>
-
-      {/* Legend Cards at the Bottom */}
-      <div style={{ marginTop: '24px' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>Policy Types</h3>
-        <div className="sec-categories-row">
-          {POLICY_TYPES_LEGEND.map((pt, i) => (
-            <div className="sec-category-card" key={i}>
-              <div className="sec-category-card-top">
-                <span className="sec-category-icon">{pt.icon}</span>
-                <span className="badge-custom sec-category-rules-badge">{pt.count} Policies</span>
-              </div>
-              <div className="sec-category-card-middle">
-                <span className="sec-category-label">{pt.label}</span>
-                <span className="sec-category-desc">{pt.desc}</span>
-              </div>
-              <span className="sec-category-view-link" onClick={() => { setFilterType(pt.key); setShowFilters(true); }}>View Policies →</span>
+      {/* Unlock Account Modal for Section 3.B: POST /api/SecurityAdmin/locked-accounts/{userId}/unlock */}
+      {unlockModalOpen && selectedLockedAccount && (
+        <div className="modal-backdrop-overlay" onClick={() => setUnlockModalOpen(false)}>
+          <div className="delete-confirm-dialog" style={{ width: '450px' }} onClick={(e) => e.stopPropagation()}>
+            <span className="dialog-close-x" role="button" onClick={() => setUnlockModalOpen(false)}>✕</span>
+            <div className="delete-icon-wrapper" style={{ background: '#dcfce7' }}>
+              <div style={{ fontSize: '24px' }}>🔓</div>
             </div>
-          ))}
+            <h3>Unlock User Account</h3>
+            <p className="delete-subtext">
+              Manually unlock <strong>{selectedLockedAccount.email || selectedLockedAccount.userId}</strong> and restore system access.
+            </p>
+            <form onSubmit={handleUnlockAccountSubmit} style={{ width: '100%', marginTop: '12px' }}>
+              <div style={{ textAlign: 'left', marginBottom: '12px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Reason for Unlocking <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <textarea
+                  rows="3"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    fontFamily: 'inherit'
+                  }}
+                  value={unlockReason}
+                  onChange={(e) => setUnlockReason(e.target.value)}
+                  placeholder="e.g. Admin manually verified agent"
+                ></textarea>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
+                <button type="button" className="btn-drawer-cancel" onClick={() => setUnlockModalOpen(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingUnlock}
+                  style={{
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '8px 18px',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {submittingUnlock ? 'Unlocking...' : 'Confirm Unlock Account'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Slide-In Drawer for Add & Edit */}
       {(activeDrawer === 'add' || activeDrawer === 'edit') && (

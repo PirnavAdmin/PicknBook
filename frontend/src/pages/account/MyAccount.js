@@ -122,6 +122,10 @@ const MyAccount = () => {
         navigate("/b2b/dashboard/traveler-list");
         return;
       }
+      if (action === "wallet") {
+        navigate("/b2b/dashboard/wallet");
+        return;
+      }
       if (action === "security") {
         navigate("/b2b/dashboard/change-password");
         return;
@@ -192,9 +196,9 @@ const MyAccount = () => {
               <button
                 type="button"
                 className={isB2B ? "account-primary-btn" : "account-secondary-btn"}
-                onClick={() => navigate(isB2B ? "/b2b/dashboard/change-password" : "/change-password")}
+                onClick={() => navigate("/forgot-password")}
               >
-                Change Password
+                Forgot Password
               </button>
             </div>
           </div>
@@ -206,27 +210,28 @@ const MyAccount = () => {
             <p>Manage your account and settings here.</p>
           </div>
 
+          {/* Passkey Manager — only shown for B2C (non-B2B) users */}
           {!isB2B && (
-            <div style={{ marginBottom: "20px" }}>
+            <div>
               <PasskeyManager />
             </div>
           )}
-
-          <div className="account-grid">
-            {accountCards.map((card) => (
-              <button
-                key={card.id}
-                type="button"
-                className="account-card"
-                onClick={() => handleCardClick(card.action)}
-              >
-                <div className="account-card-icon">{card.icon}</div>
-                <h3 className="account-card-title">{card.title}</h3>
-                <p className="account-card-desc">{card.desc}</p>
-              </button>
-            ))}
-          </div>
         </main>
+      </div>
+
+      <div className="account-grid" style={{ marginTop: '20px' }}>
+        {accountCards.map((card) => (
+          <button
+            key={card.id}
+            type="button"
+            className="account-card"
+            onClick={() => handleCardClick(card.action)}
+          >
+            <div className="account-card-icon">{card.icon}</div>
+            <h3 className="account-card-title">{card.title}</h3>
+            <p className="account-card-desc">{card.desc}</p>
+          </button>
+        ))}
       </div>
     </div>
   );

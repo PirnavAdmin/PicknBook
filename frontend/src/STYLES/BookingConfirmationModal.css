@@ -1,0 +1,422 @@
+/* BookingConfirmationModal.css - Compact, Enhanced Payment Method & Modal Styling */
+
+.bcm-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  animation: bcmFadeIn 0.2s ease-out;
+}
+
+.bcm-modal-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 440px;
+  border-radius: 14px;
+  padding: 16px 18px;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  animation: bcmSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bcmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bcmSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bcm-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.bcm-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: rotate(90deg);
+}
+
+.bcm-modal-title {
+  margin: 0 0 12px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  padding-right: 32px;
+}
+
+/* Passenger Summary Section */
+.bcm-passenger-card {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.bcm-section-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+
+.bcm-passenger-item {
+  margin-bottom: 4px;
+  font-size: 0.84rem;
+}
+
+.bcm-passenger-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.bcm-contact-footer {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+/* Fare Summary Section */
+.bcm-fare-card {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.bcm-fare-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.bcm-fare-row.discount {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.bcm-fare-divider {
+  margin: 6px 0;
+  border: 0;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.bcm-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+/* Payment Method Section (Side-by-Side) */
+.bcm-payment-section {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.bcm-payment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bcm-payment-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.bcm-secure-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  border-radius: 12px;
+  letter-spacing: 0.01em;
+}
+
+/* Side by Side Grid */
+.bcm-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* Individual Payment Option Card */
+.bcm-payment-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 9px 10px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.bcm-payment-card:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.bcm-payment-card.selected {
+  border-color: #dc2626 !important;
+  background: #fff8f8 !important;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Top row inside card: Icon & Radio */
+.bcm-payment-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.bcm-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.bcm-icon-badge.cashfree-badge {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.bcm-icon-badge.wallet-badge {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.bcm-payment-card:hover .bcm-icon-badge {
+  transform: scale(1.05);
+}
+
+/* Radio button strict reset */
+.bcm-radio-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bcm-payment-card input[type="radio"] {
+  appearance: auto !important;
+  -webkit-appearance: radio !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  flex: 0 0 16px !important;
+  accent-color: #dc2626 !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+}
+
+/* Bottom info inside card */
+.bcm-payment-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+
+.bcm-card-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bcm-card-subtext {
+  font-size: 0.70rem;
+  color: #64748b;
+  line-height: 1.25;
+  margin-top: 1px;
+}
+
+.bcm-wallet-badge-ok {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.bcm-wallet-badge-low {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* Shortfall & Inactive Warnings */
+.bcm-warning-box {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  animation: bcmFadeIn 0.2s ease-out;
+}
+
+.bcm-warning-box.insufficient {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+}
+
+.bcm-warning-box.inactive {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.bcm-warning-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.bcm-topup-link {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: underline;
+  margin-left: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Error message banner */
+.bcm-error-banner {
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 7px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* Pay Now CTA button */
+.bcm-pay-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #e60000 0%, #c40000 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.22);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.01em;
+}
+
+.bcm-pay-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c40000 0%, #a30000 100%);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.32);
+  transform: translateY(-1px);
+}
+
+.bcm-pay-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.18);
+}
+
+.bcm-pay-button:disabled {
+  background: #cbd5e1 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 420px) {
+  .bcm-modal-card {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+
+  .bcm-payment-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

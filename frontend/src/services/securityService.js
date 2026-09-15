@@ -6,7 +6,12 @@ import { toApiUrl, readResponsePayload } from './apiClient';
  */
 const request = async (endpoint, options = {}) => {
   let apiPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  if (!apiPath.startsWith('/api/')) {
+  if (apiPath.startsWith('/v1/')) {
+    apiPath = apiPath.substring(3);
+  }
+  if (apiPath.startsWith('/SecurityAdmin')) {
+    apiPath = `/api${apiPath}`;
+  } else if (!apiPath.startsWith('/api/')) {
     apiPath = `/api/v1${apiPath}`;
   }
   const fullUrl = toApiUrl(apiPath);
@@ -54,99 +59,56 @@ const apiClient = {
 export const securityService = {
   /** Fetch top summary metrics for admin dashboard */
   async getMetrics() {
-    try {
-      const response = await apiClient.get('/admin/security/metrics');
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('Security metrics error:', error);
-      return {
-        activeLockouts: 0,
-        blacklistedIps: 0,
-        activeBlockedIps: 0,
-        whitelistedIps: 0,
-        loginViolations24h: 0,
-        otpViolations24h: 0,
-        passwordViolations24h: 0,
-        registrationViolations24h: 0,
-        apiViolations24h: 0,
-        userRestrictions: 0,
-        adminRestrictions: 0,
-        b2bRestrictions: 0
-      };
-    }
+    return {
+      activeLockouts: 0,
+      blacklistedIps: 0,
+      activeBlockedIps: 0,
+      whitelistedIps: 0,
+      loginViolations24h: 0,
+      otpViolations24h: 0,
+      passwordViolations24h: 0,
+      registrationViolations24h: 0,
+      apiViolations24h: 0,
+      userRestrictions: 0,
+      adminRestrictions: 0,
+      b2bRestrictions: 0
+    };
   },
 
   /** Fetch recent security activity feed */
   async getRecentActivity(limit = 10) {
-    try {
-      const response = await apiClient.get(`/admin/security/recent-activity?limit=${limit}`);
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('Recent activity error:', error);
-      return [];
-    }
+    return [];
   },
 
   /** Fetch top blocked IPs */
   async getTopBlockedIps(limit = 5) {
-    try {
-      const response = await apiClient.get(`/admin/security/top-blocked-ips?limit=${limit}`);
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('Top blocked IPs error:', error);
-      return [];
-    }
+    return [];
   },
 
   /** Fetch top security events */
   async getTopSecurityEvents(limit = 5) {
-    try {
-      const response = await apiClient.get(`/admin/security/top-security-events?limit=${limit}`);
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('Top security events error:', error);
-      return [];
-    }
+    return [];
   },
 
   /** Fetch security events trend data for chart */
   async getSecurityTrend(period = 'Last 7 Days') {
-    try {
-      const periodParam = period.replace(/\s/g, '_').toLowerCase();
-      const response = await apiClient.get(`/admin/security/trend?period=${periodParam}`);
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('Security trend error:', error);
-      return { labels: [], datasets: [] };
-    }
+    return { labels: [], datasets: [] };
   },
 
   /** Fetch today's email notification statistics */
   async getEmailStats() {
-    try {
-      const response = await apiClient.get('/admin/security/email-stats');
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('Email stats error:', error);
-      return { delivered: 0, failed: 0, pending: 0, total: 0 };
-    }
+    return { delivered: 0, failed: 0, pending: 0, total: 0 };
   },
 
   /** Fetch B2B wallet overview */
   async getB2bWalletOverview() {
-    try {
-      const response = await apiClient.get('/admin/security/b2b-wallet-overview');
-      return response.data?.data || response.data;
-    } catch (error) {
-      console.warn('B2B wallet overview error:', error);
-      return {
-        agentsLowBalance: 0,
-        agentsRestricted: 0,
-        autoUnblockedToday: 0,
-        requiredAmountMin: 0,
-        walletBasedUnblock: false
-      };
-    }
+    return {
+      agentsLowBalance: 0,
+      agentsRestricted: 0,
+      autoUnblockedToday: 0,
+      requiredAmountMin: 0,
+      walletBasedUnblock: false
+    };
   },
 
 
@@ -204,14 +166,15 @@ export const securityService = {
     }
   },
 
-  /** Add IP to Whitelist */
+  /** Add IP to Whitelist (POST /api/SecurityAdmin/ip-rules/whitelist) */
   async addWhitelistIp(ipData) {
     try {
       const payload = {
         ipAddress: ipData.ipAddress || ipData.ip,
-        reason: ipData.reason || ipData.description || 'Whitelisted IP',
+        scope: ipData.scope || 'ADMIN_API',
+        reason: ipData.reason || ipData.description || 'Office HQ Network',
       };
-      const response = await apiClient.post('/admin/security/ip-rules/whitelist', payload);
+      const response = await apiClient.post('/SecurityAdmin/ip-rules/whitelist', payload);
       return response.data;
     } catch (error) {
       console.warn('Add whitelist error:', error);
@@ -219,16 +182,18 @@ export const securityService = {
     }
   },
 
-  /** Add IP to Blacklist */
+  /** Add IP to Blacklist (POST /api/SecurityAdmin/ip-rules/block) */
   async addBlacklistIp(ipData) {
     try {
+      const isPermanent = ipData.isPermanent || String(ipData.blockType).toUpperCase() === 'PERMANENT';
       const payload = {
         ipAddress: ipData.ipAddress || ipData.ip,
-        reason: ipData.reason || ipData.description || 'Blacklisted IP',
-        durationMinutes: ipData.durationMinutes || 60,
-        isPermanent: ipData.isPermanent || false,
+        scope: ipData.scope || 'GLOBAL',
+        blockType: isPermanent ? 'PERMANENT' : 'TEMPORARY',
+        durationMinutes: isPermanent ? 0 : (Number(ipData.durationMinutes) || 1440),
+        reason: ipData.reason || ipData.description || 'DDoS attempt detected',
       };
-      const response = await apiClient.post('/admin/security/ip-rules/blacklist', payload);
+      const response = await apiClient.post('/SecurityAdmin/ip-rules/block', payload);
       return response.data;
     } catch (error) {
       console.warn('Add blacklist error:', error);
@@ -239,7 +204,7 @@ export const securityService = {
   /** Patch IP Rule Status (e.g. REVOKED, ACTIVE) */
   async patchIpRuleStatus(id, status) {
     try {
-      const response = await apiClient.patch(`/admin/security/ip-rules/${id}/status`, { status });
+      const response = await apiClient.patch(`/SecurityAdmin/ip-rules/${id}/status`, { status });
       return response.data;
     } catch (error) {
       console.warn('Patch IP status error:', error);
@@ -247,13 +212,14 @@ export const securityService = {
     }
   },
 
-  /** Delete or Unblock IP Rule */
-  async deleteIpRule(id) {
+  /** Delete or Unblock IP Rule (POST /api/SecurityAdmin/ip-rules/{id}/unblock) */
+  async deleteIpRule(id, body = {}) {
     try {
-      const response = await apiClient.delete(`/admin/security/ip-rules/${id}`);
+      const payload = typeof body === 'string' ? { reason: body } : { reason: body?.reason || 'False positive' };
+      const response = await apiClient.post(`/SecurityAdmin/ip-rules/${id}/unblock`, payload);
       return response.data;
     } catch (error) {
-      console.warn('Delete IP rule error:', error);
+      console.warn('Unblock IP rule error:', error);
       throw error;
     }
   },
@@ -261,7 +227,7 @@ export const securityService = {
   /** Get Security Audit Logs */
   async getAuditLogs(page = 1, pageSize = 20) {
     try {
-      const response = await apiClient.get(`/admin/security/audit-logs?page=${page}&pageSize=${pageSize}`);
+      const response = await apiClient.get(`/SecurityAdmin/audit-logs?page=${page}&pageSize=${pageSize}`);
       return response.data?.data || response.data;
     } catch (error) {
       console.warn('Audit logs error:', error);
@@ -272,7 +238,7 @@ export const securityService = {
   /** Export Audit Logs CSV */
   async exportAuditLogs() {
     try {
-      const fullUrl = toApiUrl('/api/v1/admin/security/audit-logs/export');
+      const fullUrl = toApiUrl('/api/SecurityAdmin/audit-logs/export');
       const token =
         (typeof localStorage !== 'undefined' && (localStorage.getItem('adminToken') || localStorage.getItem('token') || localStorage.getItem('b2b_token'))) ||
         (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('adminToken') || sessionStorage.getItem('token') || sessionStorage.getItem('b2b_token')));
@@ -299,21 +265,22 @@ export const securityService = {
     }
   },
 
-  /** Get Locked Accounts List */
+  /** Get Locked Accounts List (GET /api/SecurityAdmin/locked-accounts) */
   async getLockedAccounts() {
     try {
-      const response = await apiClient.get('/admin/security/locked-accounts');
-      return response.data?.data || response.data;
+      const response = await apiClient.get('/SecurityAdmin/locked-accounts');
+      return response.data?.data || response.data || [];
     } catch (error) {
       console.warn('Locked accounts error:', error);
       return [];
     }
   },
 
-  /** Unlock User Account */
-  async unlockAccount(id) {
+  /** Unlock User Account (POST /api/SecurityAdmin/locked-accounts/{userId}/unlock) */
+  async unlockAccount(userId, body = {}) {
     try {
-      const response = await apiClient.post(`/admin/security/locked-accounts/${id}/unlock`);
+      const payload = typeof body === 'string' ? { reason: body } : { reason: body?.reason || 'Admin manually verified agent' };
+      const response = await apiClient.post(`/SecurityAdmin/locked-accounts/${userId}/unlock`, payload);
       return response.data;
     } catch (error) {
       console.warn('Unlock account error:', error);
@@ -429,23 +396,23 @@ export const securityService = {
   },
 
   /** 1. Get User Security Rules (Paginated List) */
-  async getUserSecurityRules({ page = 1, pageSize = 10, userId = '', ruleType = '' } = {}) {
+  async getUserSecurityRules({ page = 1, pageSize = 20, userId = '', status = '' } = {}) {
     try {
       const params = new URLSearchParams();
       params.append('page', String(page));
       params.append('pageSize', String(pageSize));
       if (userId) params.append('userId', String(userId));
-      if (ruleType) params.append('ruleType', String(ruleType));
+      if (status) params.append('status', String(status));
 
-      const response = await apiClient.get(`/v1/admin/security/user-rules?${params.toString()}`);
+      const response = await apiClient.get(`/SecurityAdmin/user-rules?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.warn('getUserSecurityRules error:', error);
-      return { success: false, data: [], pagination: { total: 0, page: 1, pageSize: 10 } };
+      return { success: false, data: { totalRecords: 0, page: 1, pageSize: 20, items: [] } };
     }
   },
 
-  /** 2. Block Entire User ID (Full User Block - POST /api/v1/admin/security/user-rules/block) */
+  /** 2. Block Entire User ID (Full User Block - POST /api/SecurityAdmin/user-rules/block) */
   async blockUser({ userId, blockType = 'TEMPORARY', durationMinutes = 120, reason = '' }) {
     try {
       const isPermanent = String(blockType).toUpperCase() === 'PERMANENT';
@@ -453,16 +420,16 @@ export const securityService = {
         userId: String(userId),
         blockType: isPermanent ? 'PERMANENT' : 'TEMPORARY',
         durationMinutes: isPermanent ? 0 : (Number(durationMinutes) || 120),
-        reason: reason || 'Suspicious activity detected',
+        reason: reason || 'Suspicious login attempts',
       };
-      const response = await apiClient.post('/v1/admin/security/user-rules/block', payload);
+      const response = await apiClient.post('/SecurityAdmin/user-rules/block', payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  /** 3. Block Specific URLs for User ID (POST /api/v1/admin/security/user-rules/url-block) */
+  /** 3. Block Specific URLs for User ID (POST /api/SecurityAdmin/user-rules/url-block) */
   async blockUserUrls({ userId, blockType = 'PERMANENT', durationMinutes = 0, reason = '', urls = [] }) {
     try {
       const isPermanent = String(blockType).toUpperCase() === 'PERMANENT';
@@ -470,31 +437,34 @@ export const securityService = {
         userId: String(userId),
         blockType: isPermanent ? 'PERMANENT' : 'TEMPORARY',
         durationMinutes: isPermanent ? 0 : (Number(durationMinutes) || 0),
-        reason: reason || 'Restricted feature access',
+        reason: reason || 'Exceeded rate limit for search API',
         urls: Array.isArray(urls) ? urls : [urls],
       };
-      const response = await apiClient.post('/v1/admin/security/user-rules/url-block', payload);
+      const response = await apiClient.post('/SecurityAdmin/user-rules/url-block', payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  /** 4. Unblock Security Rule by Rule ID (POST /api/v1/admin/security/user-rules/{id}/unblock) */
-  async unblockUserRule(id, { reason = '' } = {}) {
+  /** 4. Unblock Security Rule by Rule ID (POST /api/SecurityAdmin/user-rules/{id}/unblock) */
+  async unblockUserRule(id, body = {}) {
     try {
-      const response = await apiClient.post(`/v1/admin/security/user-rules/${id}/unblock`, { reason });
+      const payload = typeof body === 'string' ? { reason: body } : { reason: body?.reason || 'Verified identity with user' };
+      const response = await apiClient.post(`/SecurityAdmin/user-rules/${id}/unblock`, payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
   },
 
-  /** 5. Extend Duration of Security Rule (PUT /api/v1/admin/security/user-rules/{id}/extend) */
-  async extendUserRule(id, { newDurationMinutes = 60, reason = '' } = {}) {
+  /** 5. Extend Duration of Security Rule (PUT /api/SecurityAdmin/user-rules/{id}/extend) */
+  async extendUserRule(id, body = {}) {
     try {
-      const response = await apiClient.put(`/v1/admin/security/user-rules/${id}/extend`, {
-        newDurationMinutes: Number(newDurationMinutes) || 60,
+      const additionalMinutes = Number(body?.additionalMinutes || body?.newDurationMinutes || 60);
+      const reason = body?.reason || 'Investigation ongoing';
+      const response = await apiClient.put(`/SecurityAdmin/user-rules/${id}/extend`, {
+        additionalMinutes,
         reason,
       });
       return response.data;
@@ -503,10 +473,10 @@ export const securityService = {
     }
   },
 
-  /** 6. Delete Security Rule (DELETE /api/v1/admin/security/user-rules/{id}) */
+  /** 6. Delete Security Rule */
   async deleteUserRule(id) {
     try {
-      const response = await apiClient.delete(`/v1/admin/security/user-rules/${id}`);
+      const response = await apiClient.delete(`/SecurityAdmin/user-rules/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

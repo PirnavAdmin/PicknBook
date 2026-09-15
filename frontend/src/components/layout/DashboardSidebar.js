@@ -41,20 +41,7 @@ const MAIN_LINKS = [
     description: "All hotel stays",
     icon: BedDouble,
   },
-  {
-    id: "nav-6",
-    to: "/dashboard/web-checkin",
-    label: "Web Check-in",
-    description: "Check-in online",
-    icon: Ticket,
-  },
-  {
-    id: "nav-7",
-    to: "/dashboard/fetch-ticket",
-    label: "Print Ticket",
-    description: "Retrieve travel ticket",
-    icon: Ticket,
-  },
+
   {
     id: "nav-8",
     to: "/dashboard/wallet",

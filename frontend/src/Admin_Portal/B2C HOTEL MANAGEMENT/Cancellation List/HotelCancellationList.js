@@ -57,8 +57,23 @@ export default function HotelCancellationList() {
       const data = await listHotelCancellations();
       const mapped = (Array.isArray(data) ? data : []).map((c) => {
         const rawPayload = c?.raw || c || {};
+        let calcProfit = c?.calculatedProfit;
+        if (calcProfit === undefined || calcProfit === null) {
+          const totalFare = Number(c?.totalPriceInr ?? c?.totalAmountInr ?? c?.fare ?? rawPayload?.totalPriceInr ?? 0);
+          const refundAmt = Number(c?.refundAmountInr ?? c?.refundAmount ?? rawPayload?.refundAmountInr ?? 0);
+          const cancelChg = Number(c?.cancellationChargesInr ?? c?.cancellationCharge ?? rawPayload?.cancellationChargesInr ?? 0);
+
+          if (cancelChg > 0 && refundAmt === 0) {
+            calcProfit = cancelChg;
+          } else if (totalFare > 0) {
+            calcProfit = totalFare - refundAmt;
+          } else {
+            calcProfit = cancelChg - refundAmt;
+          }
+        }
         return {
           ...c,
+          calculatedProfit: calcProfit,
           paymentMethod: c?.paymentMethod || rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || "--",
           paymentDetails: c?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--",
           paymentStatus: c?.paymentStatus || rawPayload?.paymentStatus || "Completed",
@@ -162,6 +177,18 @@ export default function HotelCancellationList() {
     }).format(Number(val) || 0);
   };
 
+  const formatProfitDisplay = (profitVal) => {
+    const num = Number(profitVal) || 0;
+    const absFormatted = formatCurrency(Math.abs(num));
+    if (num > 0) {
+      return { text: `+${absFormatted}`, color: "#10b981" };
+    } else if (num < 0) {
+      return { text: `-${absFormatted}`, color: "#ef4444" };
+    } else {
+      return { text: `+${absFormatted}`, color: "#64748b" };
+    }
+  };
+
   const formatAdminDate = (value) => {
     if (!value) return "--";
     try {
@@ -254,10 +281,10 @@ export default function HotelCancellationList() {
           background-color: rgba(165, 28, 73, 0.03) !important;
         }
       `}</style>
-      <header className="admin-b2c-header admin-cancel-header" style={{ marginBottom: "12px" }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: '28px' }}>
-          <span style={{ color: '#A51C49' }}>B2C Hotel</span> Cancellation List
-        </h2>
+      <header className="admin-b2c-header admin-cancel-header" style={{ margin: "6px 0" }}>
+        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
+          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Hotel</span> Cancellation List
+        </h1>
       </header>
 
       {/* Toolbar row */}
@@ -433,29 +460,12 @@ export default function HotelCancellationList() {
 
       {/* Grid Table Card-Rows */}
       <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1fr 0.7fr" }}>
-          <span>
-            <span className="admin-hdr-tooltip">
-              B. ID
-              <span className="admin-tooltip-text">Booking ID</span>
-            </span>{" "}
-            /{" "}
-            <span className="admin-hdr-tooltip">
-              B.D.
-              <span className="admin-tooltip-text">Booking Date</span>
-            </span>
-          </span>
+        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.8fr 1.3fr 1.4fr 1.1fr 1.1fr 0.8fr" }}>
+          <span>B. ID / B.D.</span>
           <span>Name</span>
-          <span>Segment / Check-in Check-out Dates</span>
-          <span>Rooms / Guests</span>
-          <span>
-            <span className="admin-hdr-tooltip">
-              PNR
-              <span className="admin-tooltip-text">Passenger Name Record</span>
-            </span>{" "}
-            / Status
-          </span>
-          <span>Operator / Type</span>
+          <span>Check-in / Check-out</span>
+          <span>PNR / R.F Status</span>
+          <span>Cancellation Reason</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
           <span>Action</span>
@@ -466,7 +476,7 @@ export default function HotelCancellationList() {
         ) : filteredCancellations.length ? (
           <div className="admin-cancel-table-body">
             {paginatedCancellations.map((booking) => (
-              <article key={booking.bookingId} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.6fr 1.1fr 1.1fr 1.3fr 0.8fr 1fr 0.7fr" }}>
+              <article key={booking.bookingId} className="admin-cancel-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.8fr 1.3fr 1.4fr 1.1fr 1.1fr 0.8fr" }}>
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.bookingId)}</strong>
                   <div className="admin-date-badge">
@@ -477,7 +487,7 @@ export default function HotelCancellationList() {
 
                 <div className="admin-cancel-cell">
                   <strong>{safeValue(booking.passengerName)}</strong>
-                  <small>{safeValue(booking.passengerPhone)}</small>
+                  {booking.passengerPhone ? <small>{safeValue(booking.passengerPhone)}</small> : null}
                 </div>
 
                 <div className="admin-cancel-cell">
@@ -490,45 +500,39 @@ export default function HotelCancellationList() {
                   </div>
                 </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>--:--</strong>
-                </div>
-
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.bookingReference)}</strong>
-                  <select
-                    value={booking.paymentStatus}
-                    onChange={(e) => handleUpdatePaymentStatus(booking.bookingId, e.target.value)}
+                  <strong>{safeValue(booking.bookingReference || booking.pnr)}</strong>
+                  <span
                     style={{
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      backgroundColor: booking.paymentStatus === "Completed" ? "#ecfdf5" : "#fffbeb",
-                      color: booking.paymentStatus === "Completed" ? "#10b981" : "#d97706",
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      backgroundColor: "#fef2f2",
+                      color: "#dc2626",
                       fontSize: "0.72rem",
                       fontWeight: "600",
-                      cursor: "pointer",
-                      marginTop: "2px"
+                      marginTop: "4px",
+                      display: "inline-block"
                     }}
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Failed">Failed</option>
-                  </select>
+                    {safeValue(booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : "Cancelled")}
+                  </span>
                 </div>
 
                 <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.hotelName || "Hotel Stay")}</strong>
-                  <small>{safeValue(booking.roomType || "Hotel Room")}</small>
+                  <span style={{ fontSize: "0.74rem", fontWeight: "600", color: "#334155" }}>
+                    {safeValue(booking.cancellationReason, "N/A")}
+                  </span>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{formatCurrency(booking.totalAmountInr || booking.fare || 0)}</strong>
+                  <strong>{formatCurrency(booking.totalPriceInr || booking.totalAmountInr || booking.fare || 0)}</strong>
                   <small>Refund: {formatCurrency(booking.refundAmountInr)}</small>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
-                  <strong style={{ color: "#d97706" }}>Charge: {formatCurrency(booking.cancellationChargesInr)}</strong>
+                  <strong style={{ color: formatProfitDisplay(booking.calculatedProfit).color }}>
+                    {formatProfitDisplay(booking.calculatedProfit).text}
+                  </strong>
                 </div>
 
                 <div className="admin-cancel-cell admin-cell-centered">
@@ -579,95 +583,115 @@ export default function HotelCancellationList() {
 
       {/* View Detail Backdrop Modal */}
       {selectedCancellation && (
-        <div className="admin-view-backdrop" onClick={() => setSelectedCancellation(null)} style={{ zIndex: 1000 }}>
+        <div className="admin-view-backdrop" onClick={() => setSelectedCancellation(null)}>
           <article
             className="admin-view-card"
             role="dialog"
             aria-modal="true"
-            aria-label="Cancellation details"
+            aria-label="Hotel Cancellation Details"
             onClick={(event) => event.stopPropagation()}
+            style={{ width: "min(900px, 95vw)", padding: "20px", maxHeight: "90vh", overflowY: "auto" }}
           >
             <header className="admin-view-header">
               <div className="admin-view-header-main">
-                <h2>Cancellation Detail View</h2>
+                <h2>Hotel Cancellation Detail View</h2>
                 <p className="admin-view-header-subtitle">
-                  {safeValue(selectedCancellation.bookingId)} | {safeValue(selectedCancellation.passengerName)}
+                  Booking ID: <strong>{safeValue(selectedCancellation.bookingId)}</strong> | Ref: <strong>{safeValue(selectedCancellation.bookingReference)}</strong> | Guest: <strong>{safeValue(selectedCancellation.passengerName)}</strong>
                 </p>
                 <div className="admin-view-meta-row">
-                  <span className="admin-view-meta-chip cancelled">Cancelled</span>
                   <span className="admin-view-meta-chip">
-                    RA {formatCurrency(selectedCancellation.refundAmountInr)}
+                    Status: {safeValue(selectedCancellation.status || "Cancelled")}
                   </span>
                   <span className="admin-view-meta-chip">
-                    CC {formatCurrency(selectedCancellation.cancellationChargesInr)}
+                    Refund Amount: {formatCurrency(selectedCancellation.refundAmountInr)}
+                  </span>
+                  <span className="admin-view-meta-chip">
+                    Calculated Profit: {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
                   </span>
                 </div>
               </div>
-              <button type="button" className="admin-view-close" aria-label="Close" onClick={() => setSelectedCancellation(null)}>
-                &times;
+              <button type="button" className="admin-view-close-btn" onClick={() => setSelectedCancellation(null)}>
+                ✕
               </button>
             </header>
 
-            <section className="admin-view-grid">
-              <div>
-                <span>Hotel Property</span>
-                <strong>{safeValue(selectedCancellation.hotelName)}</strong>
-              </div>
-              <div>
-                <span>Passenger Phone</span>
-                <strong>{safeValue(selectedCancellation.passengerPhone)}</strong>
-              </div>
-              <div>
-                <span>Booking Reference</span>
-                <strong>{safeValue(selectedCancellation.bookingReference)}</strong>
-              </div>
-              <div>
-                <span>Booked Date</span>
-                <strong>{formatDateTime(selectedCancellation.bookedAtUtc)}</strong>
-              </div>
-              <div>
-                <span>Cancelled Date</span>
-                <strong>{formatDateTime(selectedCancellation.cancelledAtUtc)}</strong>
-              </div>
-              <div>
-                <span>Cancellation Reason</span>
-                <strong>{selectedCancellation.cancellationReason || "No reason given"}</strong>
-              </div>
-              <div>
-                <span>Payment Method</span>
-                <strong>{safeValue(selectedCancellation.paymentMethod)}</strong>
-              </div>
-              <div>
-                <span>Payment Details (Txn)</span>
-                <strong>{safeValue(selectedCancellation.paymentDetails)}</strong>
-              </div>
-              <div>
-                <span>Payment Status</span>
-                <select
-                  value={selectedCancellation.paymentStatus}
-                  onChange={(e) => handleUpdatePaymentStatus(selectedCancellation.bookingId, e.target.value)}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    border: "1.5px solid var(--border)",
-                    fontSize: "0.85rem",
-                    fontWeight: "600",
-                    cursor: "pointer"
-                  }}
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-              <div className="admin-view-highlight-card">
-                <span>Refund Amount</span>
-                <strong>{formatCurrency(selectedCancellation.refundAmountInr)}</strong>
-              </div>
-              <div className="admin-view-highlight-card">
-                <span>Cancellation Charge</span>
-                <strong>{formatCurrency(selectedCancellation.cancellationChargesInr)}</strong>
-              </div>
-            </section>
+            {/* Section 1: Hotel & Guest Details Table */}
+            <div className="admin-view-section">
+              <h3 className="admin-view-section-title">Hotel &amp; Guest Details</h3>
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Booking ID</th>
+                    <td>{safeValue(selectedCancellation.bookingId)}</td>
+                    <th>Booking Reference</th>
+                    <td>{safeValue(selectedCancellation.bookingReference)}</td>
+                  </tr>
+                  <tr>
+                    <th>Hotel Property</th>
+                    <td>{safeValue(selectedCancellation.hotelName)}</td>
+                    <th>Primary Guest</th>
+                    <td>{safeValue(selectedCancellation.passengerName)}</td>
+                  </tr>
+                  <tr>
+                    <th>Guest Phone</th>
+                    <td>{safeValue(selectedCancellation.passengerPhone)}</td>
+                    <th>Cancellation Reason</th>
+                    <td>{selectedCancellation.cancellationReason || "No reason given"}</td>
+                  </tr>
+                  <tr>
+                    <th>Booked Date</th>
+                    <td>{formatDateTime(selectedCancellation.bookedAtUtc)}</td>
+                    <th>Cancelled Date</th>
+                    <td>{formatDateTime(selectedCancellation.cancelledAtUtc)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Section 2: Financial & Payment Details Table */}
+            <div className="admin-view-section">
+              <h3 className="admin-view-section-title">Financial &amp; Payment Details</h3>
+              <table className="admin-view-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Amount / Status</th>
+                    <th>Description / Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Total Price</strong></td>
+                    <td><strong>{formatCurrency(selectedCancellation.totalPriceInr || selectedCancellation.totalAmountInr || selectedCancellation.fare || 0)}</strong></td>
+                    <td>Total booking price</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Refund Amount</strong></td>
+                    <td><strong style={{ color: "#10b981" }}>{formatCurrency(selectedCancellation.refundAmountInr)}</strong></td>
+                    <td>Refund amount credited</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cancellation Charge</strong></td>
+                    <td><strong style={{ color: "#d97706" }}>{formatCurrency(selectedCancellation.cancellationChargesInr)}</strong></td>
+                    <td>Cancellation charges applied</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Payment Method</strong></td>
+                    <td>{safeValue(selectedCancellation.paymentMethod)}</td>
+                    <td>Payment gateway method</td>
+                  </tr>
+                  <tr className="admin-view-highlight-row">
+                    <td><strong>Calculated Net Profit / Loss</strong></td>
+                    <td>
+                      <strong style={{ color: formatProfitDisplay(selectedCancellation.calculatedProfit).color }}>
+                        {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
+                      </strong>
+                    </td>
+                    <td>Net profit margin calculated on hotel cancellation</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </article>
         </div>
       )}

@@ -9,18 +9,6 @@ import AdminPagination from "../../../components/AdminPagination";
 const safeValue = (val, fallback = "--") =>
   val !== undefined && val !== null && val !== "" ? val : fallback;
 
-const formatRequestDate = (rawDate) => {
-  if (!rawDate) return "--";
-  const parsed = new Date(rawDate);
-  if (Number.isNaN(parsed.getTime())) return String(rawDate);
-  const formatted = parsed.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  return `🗓️ ${formatted}`;
-};
-
 const toNumberDate = (rawDate) => {
   if (!rawDate) return 0;
   const parsed = new Date(rawDate);
@@ -111,6 +99,56 @@ function toAbsoluteUrl(urlOrPath) {
 
   return urlOrPath;
 }
+
+const formatAdminDate = (dateString) => {
+  if (!dateString || dateString === "--" || dateString === "N/A" || String(dateString).startsWith("0001")) return "--";
+  try {
+    const raw = String(dateString).trim();
+    if (raw.startsWith("0001-01-01")) return "--";
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoDateMatch) {
+      const [, year, monthStr, dayStr] = isoDateMatch;
+      if (year === "0001") return "--";
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const day = parseInt(dayStr, 10);
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+      }
+    }
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      if (parsed.getFullYear() <= 1) return "--";
+      const day = parsed.getDate();
+      const monthIdx = parsed.getMonth();
+      const year = parsed.getFullYear();
+      return `${day < 10 ? '0' + day : day} ${months[monthIdx]} ${year}`;
+    }
+    return dateString;
+  } catch {
+    return dateString;
+  }
+};
+
+const formatRequestDate = (dateString) => {
+  if (!dateString || dateString === "--") return "--";
+  try {
+    const parsed = new Date(dateString);
+    if (Number.isNaN(parsed.getTime())) {
+      return formatAdminDate(dateString);
+    }
+    const dateFormatted = formatAdminDate(dateString);
+    let hours = parsed.getHours();
+    const minutes = String(parsed.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+    return `${dateFormatted}, ${hoursStr}:${minutes} ${ampm}`;
+  } catch {
+    return formatAdminDate(dateString);
+  }
+};
 
 function shouldUseNgrokBypass(urlOrPath) {
   try {
@@ -578,43 +616,109 @@ export default function AdminFlightCancellationRequestListPage() {
 
       const mapped = flightResults
         .map((record) => {
-          const status = toAdminStatusLabel(record?.status);
-          const bookingReference = normalizeText(record?.bookingReference, "");
-          const bookingId = normalizeText(record?.bookingId, "");
+          const status = toAdminStatusLabel(record?.status || record?.details?.cancellationStatus);
+          const bookingReference = normalizeText(record?.bookingReference || record?.id, "");
+          const bookingId = normalizeText(record?.bookingId || record?.id, "");
           const tripNumber = normalizeText(record?.tripNumber, "");
-          const bookedAtValue = record?.bookedAtUtc || null;
+          const bookedAtValue = record?.requestDateUtc || record?.bookedAtUtc || record?.cancelledAtUtc || null;
           const departureValue = record?.departureTimeUtc || null;
           const rawPayload = record?.raw || record || {};
+          const rawDetails = record?.details || record?.Details || rawPayload?.details || rawPayload?.Details || {};
 
           const fare = Math.max(parseNumber(record?.totalPriceInr, 0), 0);
           const inferredProfit = Math.round(fare * 0.04);
           const profit = parseNumber(record?.profit, inferredProfit);
 
+          const customerRefundAmountInr = parseNumber(
+            record?.customerRefundAmountInr ?? record?.CustomerRefundAmountInr ?? rawDetails?.customerRefundAmountInr ?? record?.refundAmount,
+            0
+          );
+          const adminRefundAmountInr = parseNumber(
+            record?.adminRefundAmountInr ?? record?.AdminRefundAmountInr ?? rawDetails?.adminRefundAmountInr,
+            0
+          );
+
+          const customerCancellationChargeInr = parseNumber(
+            rawDetails?.customerCancellationChargeInr ?? record?.cancellationCharge,
+            0
+          );
+          const adminCancellationChargeInr = parseNumber(
+            rawDetails?.adminCancellationChargeInr,
+            0
+          );
+          const customerServiceChargeInr = parseNumber(
+            rawDetails?.customerServiceChargeInr,
+            0
+          );
+          const adminServiceChargeInr = parseNumber(
+            rawDetails?.adminServiceChargeInr,
+            0
+          );
+
+          const customerRefundStatus = String(
+            rawDetails?.customerRefundStatus || record?.customerRefundStatus || record?.status || "Pending"
+          );
+          const adminRefundStatus = String(
+            rawDetails?.adminRefundStatus || record?.adminRefundStatus || "Pending"
+          );
+
+          const customerRemark = String(
+            rawDetails?.customerRemark || record?.customerRemark || record?.remark || record?.cancellationReason || ""
+          );
+          const supplierRemark = String(
+            rawDetails?.supplierRemark || record?.supplierRemark || ""
+          );
+          const adminRemark = String(
+            rawDetails?.adminRemark || record?.adminRemark || ""
+          );
+
+          const segment = String(record?.segment || "").trim();
+          const [fromFallback, toFallback] = segment.includes(" - ")
+            ? segment.split(" - ").map(s => s.trim())
+            : (segment.includes("➔") ? segment.split("➔").map(s => s.trim()) : ["", ""]);
+
           return {
-            id: bookingReference || bookingId || "--",
-            bookingId,
+            id: bookingReference || bookingId || record?.id || "--",
+            bookingId: bookingId || record?.id || "--",
             bookingReference,
             tripType: "Flight",
             createdAt: toDateKey(bookedAtValue),
             createdAtValue: bookedAtValue,
-            passengerName: normalizeText(record?.passengerName, "--"),
+            requestDateUtc: bookedAtValue,
+            bookedAtUtc: record?.bookedAtUtc || record?.bookingDate || rawDetails?.bookedAtUtc || null,
+            passengerName: normalizeText(record?.passengerName || record?.customer, "--"),
             passengerPhone: normalizeText(record?.passengerPhone, "--"),
             passengerEmail: normalizeText(record?.passengerEmail, ""),
-            from: normalizeText(record?.fromCity, "--"),
-            to: normalizeText(record?.toCity, "--"),
+            from: normalizeText(record?.fromCity || fromFallback, "--"),
+            to: normalizeText(record?.toCity || toFallback, "--"),
+            segment: segment || (fromFallback && toFallback ? `${fromFallback} - ${toFallback}` : "--"),
             journeyDate: toDateKey(departureValue),
             journeyTime: toTimeKey(departureValue),
-            pnr: bookingReference || tripNumber || bookingId || "--",
+            pnr: bookingReference || tripNumber || bookingId || String(record?.id || "--"),
             status,
-            operator: normalizeText(record?.providerName, "--"),
-            vehicleType: normalizeText(record?.travelClass, "Flight"),
+            cancellationStatus: String(rawDetails?.cancellationStatus || record?.status || "Pending"),
+            operator: normalizeText(record?.providerName, "Flight Airlines"),
+            vehicleType: normalizeText(record?.travelClass, "Economy"),
             fare,
             profit,
             paymentMethod: record?.paymentMethod || rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || "--",
             paymentDetails: record?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--",
             paymentStatus: record?.paymentStatus || rawPayload?.paymentStatus || "Completed",
-            cancellationReason: normalizeText(record?.cancellationReason, ""),
-            cancelledAtValue: record?.cancelledAtUtc || null,
+            cancellationReason: customerRemark || normalizeText(record?.cancellationReason, ""),
+            cancelledAtValue: record?.cancelledAtUtc || record?.requestDateUtc || null,
+            customerRefundAmountInr,
+            adminRefundAmountInr,
+            customerCancellationChargeInr,
+            adminCancellationChargeInr,
+            customerServiceChargeInr,
+            adminServiceChargeInr,
+            customerRefundStatus,
+            adminRefundStatus,
+            customerRemark,
+            supplierRemark,
+            adminRemark,
+            mainRemark: String(record?.remark || rawDetails?.remark || ""),
+            details: rawDetails,
             raw: record,
           };
         })
@@ -626,12 +730,19 @@ export default function AdminFlightCancellationRequestListPage() {
           const fare = Math.max(parseNumber(unifiedBooking?.fare, 0), 0);
           const raw = unifiedBooking?.raw || {};
 
+          const customerRefundAmountInr = unifiedBooking.customerRefundAmountInr;
+          const adminRefundAmountInr = unifiedBooking.adminRefundAmountInr;
+          const customerCancellationChargeInr = unifiedBooking.customerCancellationChargeInr;
+          const adminCancellationChargeInr = unifiedBooking.adminCancellationChargeInr;
+          const customerServiceChargeInr = unifiedBooking.customerServiceChargeInr;
+          const adminServiceChargeInr = unifiedBooking.adminServiceChargeInr;
+
           const cancellationChargeRaw = parseNumber(
-            raw.cancellationCharge ?? raw.CancellationCharge ?? raw?.RefundDetails?.CancellationCharge ?? unifiedBooking.cancellationCharge,
+            customerCancellationChargeInr || (raw.cancellationCharge ?? raw.CancellationCharge ?? raw?.RefundDetails?.CancellationCharge ?? unifiedBooking.cancellationCharge),
             0
           );
           const refundAmountRaw = parseNumber(
-            raw.refundAmount ?? raw.RefundAmount ?? raw?.RefundDetails?.RefundAmount ?? unifiedBooking.refundAmount,
+            customerRefundAmountInr || (raw.refundAmount ?? raw.RefundAmount ?? raw?.RefundDetails?.RefundAmount ?? unifiedBooking.refundAmount),
             0
           );
 
@@ -643,10 +754,18 @@ export default function AdminFlightCancellationRequestListPage() {
             ? Math.max(refundAmountRaw, 0)
             : Math.max(fare - cancellationCharge, 0);
 
+          // Profit Calculation (+ or - amount)
+          // Difference between refund amounts and charge margins
+          const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) +
+            (customerCancellationChargeInr - adminCancellationChargeInr) +
+            (customerServiceChargeInr - adminServiceChargeInr) ||
+            unifiedBooking.profit || 0;
+
           return {
             ...unifiedBooking,
             cancellationCharge,
             refundAmount,
+            calculatedProfit,
           };
         })
         .sort((first, second) => {
@@ -673,12 +792,26 @@ export default function AdminFlightCancellationRequestListPage() {
     loadCancellationRequests(filters);
   }, [filters, loadCancellationRequests]);
 
+  const [showRawJsonModal, setShowRawJsonModal] = useState(false);
+
   const handleUpdatePaymentStatus = (bookingId, newStatus) => {
     setCancellationRequests((prev) =>
       prev.map((c) => (c.bookingId === bookingId ? { ...c, paymentStatus: newStatus } : c))
     );
     if (selectedCancellation && selectedCancellation.bookingId === bookingId) {
       setSelectedCancellation((prev) => ({ ...prev, paymentStatus: newStatus }));
+    }
+  };
+
+  const formatProfitDisplay = (amount) => {
+    const num = Number(amount) || 0;
+    const absFormatted = adminCurrencyFormatter.format(Math.abs(num));
+    if (num > 0) {
+      return { text: `+${absFormatted}`, color: "#10b981", isPositive: true };
+    } else if (num < 0) {
+      return { text: `-${absFormatted}`, color: "#ef4444", isNegative: true };
+    } else {
+      return { text: `+${absFormatted}`, color: "#64748b", isZero: true };
     }
   };
 
@@ -751,6 +884,7 @@ export default function AdminFlightCancellationRequestListPage() {
   const handleExport = () => {
     const headers = [
       "id",
+      "bookingDate",
       "requestDate",
       "segmentFrom",
       "segmentTo",
@@ -758,31 +892,40 @@ export default function AdminFlightCancellationRequestListPage() {
       "pnr",
       "customerName",
       "customerPhone",
-      "status",
+      "cancellationStatus",
+      "customerRefundStatus",
+      "adminRefundStatus",
       "customerRefundAmount",
+      "adminRefundAmount",
+      "customerCancellationCharge",
       "adminCancellationCharge",
-      "paymentMethod",
-      "paymentDetails",
-      "paymentStatus",
-      "remark",
+      "calculatedProfit",
+      "customerRemark",
+      "supplierRemark",
+      "adminRemark",
     ];
 
     const rows = filteredRequests.map((booking) => [
       booking.id,
-      formatRequestDate(booking.cancelledAtValue || booking.createdAtValue),
+      formatAdminDate(booking.bookedAtUtc),
+      formatRequestDate(booking.requestDateUtc || booking.cancelledAtValue || booking.createdAtValue),
       booking.from,
       booking.to,
       `${booking.journeyDate} ${booking.journeyTime}`.trim(),
       booking.pnr,
       booking.passengerName,
       booking.passengerPhone,
-      booking.status,
-      booking.refundAmount,
-      booking.cancellationCharge,
-      booking.paymentMethod,
-      booking.paymentDetails,
-      booking.paymentStatus,
-      booking.cancellationReason,
+      booking.cancellationStatus || booking.status,
+      booking.customerRefundStatus,
+      booking.adminRefundStatus,
+      booking.customerRefundAmountInr,
+      booking.adminRefundAmountInr,
+      booking.customerCancellationChargeInr,
+      booking.adminCancellationChargeInr,
+      booking.calculatedProfit,
+      booking.customerRemark,
+      booking.supplierRemark,
+      booking.adminRemark,
     ]);
 
     const csvBody = [
@@ -803,17 +946,16 @@ export default function AdminFlightCancellationRequestListPage() {
 
   return (
     <section className="admin-b2c-page admin-cancel-page admin-flight-cancel-page">
-      <header className="admin-b2c-header admin-flight-cancel-header" style={{ marginBottom: "6px" }}>
-        <h1 className="admin-flight-cancel-title" style={{ fontWeight: 500, margin: 0 }}>
-          <span style={{ color: "#be185d", fontWeight: 700 }}>B2C Flight </span>
-          <span style={{ color: "black" }}>Cancellation List</span>
+      <header className="admin-b2c-header admin-flight-cancel-header" style={{ margin: "6px 0" }}>
+        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
+          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Flight</span> Cancellation List
         </h1>
       </header>
 
       <div className="admin-toolbar-row admin-cancel-toolbar" style={{ marginBottom: "6px" }}>
         <div className="admin-chip-row">
-          <span className="admin-chip">Today Cancelled: {filteredRequests.filter(r => r.paymentStatus === "Completed").length}</span>
-          <span className="admin-chip">Today Pending: {filteredRequests.filter(r => r.paymentStatus === "Pending").length}</span>
+          <span className="admin-chip">Today Cancelled: {filteredRequests.filter(r => r.paymentStatus === "Completed" || r.cancellationStatus === "Completed").length}</span>
+          <span className="admin-chip">Today Pending: {filteredRequests.filter(r => r.paymentStatus === "Pending" || r.cancellationStatus === "Pending").length}</span>
           <span className="admin-chip admin-total-chip">
             Total Records: {filteredRequests.length}
           </span>
@@ -925,38 +1067,12 @@ export default function AdminFlightCancellationRequestListPage() {
       ) : null}
 
       <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head admin-flight-cancel-table-head" style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}>
-          <span>
-            <span className="admin-hdr-tooltip">
-              B. ID
-              <span className="admin-tooltip-text">Booking ID</span>
-            </span>{" "}
-            /{" "}
-            <span className="admin-hdr-tooltip">
-              B.D.
-              <span className="admin-tooltip-text">Booking Date</span>
-            </span>
-          </span>
+        <header className="admin-cancel-table-head admin-flight-cancel-table-head" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
+          <span>B. ID / B.D.</span>
           <span>Name</span>
-          <span>
-            <span className="admin-hdr-tooltip">
-              Segment
-              <span className="admin-tooltip-text">Source & Destination</span>
-            </span>{" "}
-            /{" "}
-            <span className="admin-hdr-tooltip">
-              Jd
-              <span className="admin-tooltip-text">Journey Date</span>
-            </span>
-          </span>
-          <span>Time</span>
-          <span>
-            <span className="admin-hdr-tooltip">
-              PNR
-              <span className="admin-tooltip-text">Passenger Name Record</span>
-            </span>{" "}
-            / Status
-          </span>
+          <span>Segment / Journey Date</span>
+          <span>Timings</span>
+          <span>PNR / R.F Status</span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -967,84 +1083,97 @@ export default function AdminFlightCancellationRequestListPage() {
           <div className="admin-cancel-empty">Loading cancellation records...</div>
         ) : paginatedRequests.length ? (
           <div className="admin-cancel-table-body">
-            {paginatedRequests.map((booking) => (
-              <article
-                key={`flight-cancel-${booking.id}-${booking.createdAt}`}
-                className="admin-cancel-table-row admin-flight-cancel-table-row"
-                style={{ gridTemplateColumns: "1.1fr 1.2fr 1.5fr 0.9fr 1.1fr 1.2fr 1fr 1fr 0.8fr" }}
-              >
-                <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.id)}</strong>
-                  <small>
-                    {formatRequestDate(booking.cancelledAtValue || booking.createdAtValue)}
-                  </small>
-                </div>
+            {paginatedRequests.map((booking) => {
+              const profitInfo = formatProfitDisplay(booking.calculatedProfit);
+              return (
+                <article
+                  key={`flight-cancel-${booking.id}-${booking.createdAt}`}
+                  className="admin-cancel-table-row admin-flight-cancel-table-row"
+                  style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}
+                >
+                  <div className="admin-cancel-cell admin-cell-centered">
+                    <strong>#{safeValue(booking.id)}</strong>
+                  </div>
 
-                <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.passengerName)}</strong>
-                  <small>{safeValue(booking.passengerPhone)}</small>
-                </div>
+                  <div className="admin-cancel-cell">
+                    <small style={{ display: "block", fontSize: "0.72rem", color: "#334155" }}>
+                      <strong>B.D:</strong> {formatAdminDate(booking.bookedAtUtc)}
+                    </small>
+                    <small style={{ display: "block", fontSize: "0.72rem", color: "#64748b", marginTop: "2px" }}>
+                      <strong>C.D:</strong> {formatRequestDate(booking.requestDateUtc || booking.cancelledAtValue)}
+                    </small>
+                  </div>
 
-                <div className="admin-cancel-cell">
-                  <strong>
-                    {safeValue(booking.from)} ➔ {safeValue(booking.to)}
-                  </strong>
-                  <small>
-                    {safeValue(booking.journeyDate)}
-                  </small>
-                </div>
+                  <div className="admin-cancel-cell">
+                    <strong>{safeValue(booking.passengerName)}</strong>
+                    {booking.passengerPhone && booking.passengerPhone !== "--" && (
+                      <small>{booking.passengerPhone}</small>
+                    )}
+                  </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{safeValue(booking.journeyTime) || "--:--"}</strong>
-                </div>
+                  <div className="admin-cancel-cell">
+                    <strong>
+                      {safeValue(booking.from)} ➔ {safeValue(booking.to)}
+                    </strong>
+                    <small>
+                      {safeValue(booking.journeyDate)}
+                    </small>
+                  </div>
 
-                <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.pnr)}</strong>
-                  <select
-                    value={booking.paymentStatus}
-                    onChange={(e) => handleUpdatePaymentStatus(booking.bookingId, e.target.value)}
-                    style={{
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      backgroundColor: booking.paymentStatus === "Completed" ? "#ecfdf5" : "#fffbeb",
-                      color: booking.paymentStatus === "Completed" ? "#10b981" : "#d97706",
-                      fontSize: "0.72rem",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      marginTop: "2px"
-                    }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
+                  <div className="admin-cancel-cell">
+                    <strong>{safeValue(booking.pnr)}</strong>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
+                      <span style={{ fontSize: "0.68rem", background: booking.customerRefundStatus === "Completed" ? "#dcfce7" : "#fef3c7", color: booking.customerRefundStatus === "Completed" ? "#15803d" : "#b45309", padding: "2px 6px", borderRadius: "4px", fontWeight: "600" }}>
+                        Cust R.F: {safeValue(booking.customerRefundStatus)}
+                      </span>
+                      <span style={{ fontSize: "0.68rem", background: booking.adminRefundStatus === "Completed" ? "#e0f2fe" : "#f3f4f6", color: booking.adminRefundStatus === "Completed" ? "#0369a1" : "#4b5563", padding: "2px 6px", borderRadius: "4px", fontWeight: "600" }}>
+                        Admin R.F: {safeValue(booking.adminRefundStatus)}
+                      </span>
+                    </div>
+                  </div>
 
-                <div className="admin-cancel-cell">
-                  <strong>{safeValue(booking.operator || "Airline")}</strong>
-                  <small>{safeValue(booking.vehicleType || "Flight")}</small>
-                </div>
+                  <div className="admin-cancel-cell">
+                    <strong>{safeValue(booking.operator || "Airline")}</strong>
+                    <small>{safeValue(booking.vehicleType || "Flight")}</small>
+                  </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong>{adminCurrencyFormatter.format(booking.fare || 0)}</strong>
-                  <small>Refund: {adminCurrencyFormatter.format(booking.refundAmount)}</small>
-                </div>
+                  <div className="admin-cancel-cell admin-cell-centered">
+                    <strong>{adminCurrencyFormatter.format(booking.fare || 0)}</strong>
+                    <small style={{ display: "block", color: "#10b981", fontSize: "0.7rem", fontWeight: "600" }}>
+                      Cust Ref: {adminCurrencyFormatter.format(booking.customerRefundAmountInr || booking.refundAmount || 0)}
+                    </small>
+                    <small style={{ display: "block", color: "#0369a1", fontSize: "0.7rem" }}>
+                      Admin Ref: {adminCurrencyFormatter.format(booking.adminRefundAmountInr || 0)}
+                    </small>
+                  </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <strong style={{ color: "#d97706" }}>Charge: {adminCurrencyFormatter.format(booking.cancellationCharge)}</strong>
-                </div>
+                  <div className="admin-cancel-cell admin-cell-centered">
+                    <strong style={{ color: profitInfo.color, fontSize: "0.92rem", fontWeight: "700" }}>
+                      {profitInfo.text}
+                    </strong>
+                    <small style={{ display: "block", color: "#d97706", fontSize: "0.7rem", marginTop: "2px" }}>
+                      Cust Chg: {adminCurrencyFormatter.format(booking.customerCancellationChargeInr || booking.cancellationCharge || 0)}
+                    </small>
+                    <small style={{ display: "block", color: "#64748b", fontSize: "0.7rem" }}>
+                      Admin Chg: {adminCurrencyFormatter.format(booking.adminCancellationChargeInr || 0)}
+                    </small>
+                  </div>
 
-                <div className="admin-cancel-cell admin-cell-centered">
-                  <button
-                    type="button"
-                    className="admin-cancel-view-btn"
-                    onClick={() => setSelectedRequest(booking)}
-                  >
-                    View
-                  </button>
-                </div>
-              </article>
-            ))}
+                  <div className="admin-cancel-cell admin-cell-centered">
+                    <button
+                      type="button"
+                      className="admin-cancel-view-btn"
+                      onClick={() => {
+                        setSelectedCancellation(booking);
+                        setShowRawJsonModal(false);
+                      }}
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="admin-cancel-empty">No cancellation requests found.</div>
@@ -1068,118 +1197,207 @@ export default function AdminFlightCancellationRequestListPage() {
             aria-modal="true"
             aria-label="Cancellation details"
             onClick={(event) => event.stopPropagation()}
+            style={{ width: "min(920px, 96vw)", padding: "20px", maxHeight: "90vh", overflowY: "auto" }}
           >
             <header className="admin-view-header">
               <div className="admin-view-header-main">
-                <h2>Cancellation Request Detail</h2>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", margin: 0, color: "var(--admin-text, #0f172a)" }}>
+                  Flight Cancellation Details &amp; Response Data
+                </h2>
                 <p className="admin-view-header-subtitle">
-                  {safeValue(selectedCancellation.id)} |{" "}
-                  {safeValue(selectedCancellation.passengerName)}
+                  Req ID: #{safeValue(selectedCancellation.id)} | PNR: {safeValue(selectedCancellation.pnr)} | Customer: <strong>{safeValue(selectedCancellation.passengerName)}</strong>
                 </p>
                 <div className="admin-view-meta-row">
-                  <span className="admin-view-meta-chip cancelled">Cancelled</span>
-                  <span className="admin-view-meta-chip">
-                    CRA{" "}
-                    {adminCurrencyFormatter.format(
-                      Number(selectedCancellation.refundAmount) || 0
-                    )}
+                  <span className={`admin-view-meta-chip ${mapAdminStatusClass(selectedCancellation.status)}`}>
+                    Status: {safeValue(selectedCancellation.cancellationStatus || selectedCancellation.status)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    CCC{" "}
-                    {adminCurrencyFormatter.format(
-                      Number(selectedCancellation.cancellationCharge) || 0
-                    )}
+                    Cust R.F: {safeValue(selectedCancellation.customerRefundStatus)}
+                  </span>
+                  <span className="admin-view-meta-chip">
+                    Admin R.F: {safeValue(selectedCancellation.adminRefundStatus)}
+                  </span>
+                  <span className="admin-view-meta-chip">
+                    Calculated Profit: {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
                   </span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelectedCancellation(null)}>
-                Close
+              <button
+                type="button"
+                className="admin-view-close-btn"
+                onClick={() => setSelectedCancellation(null)}
+              >
+                ✕
               </button>
             </header>
 
-            <section className="admin-view-grid">
-              <div>
-                <span>Request Date</span>
-                <strong>
-                  {formatRequestDate(
-                    selectedCancellation.cancelledAtValue || selectedCancellation.createdAtValue
-                  )}
-                </strong>
-              </div>
-              <div>
-                <span>PNR</span>
-                <strong>{safeValue(selectedCancellation.pnr)}</strong>
-              </div>
-              <div>
-                <span>Customer</span>
-                <strong>{safeValue(selectedCancellation.passengerName)}</strong>
-              </div>
-              <div>
-                <span>Customer Phone</span>
-                <strong>{safeValue(selectedCancellation.passengerPhone)}</strong>
-              </div>
-              <div>
-                <span>Segment</span>
-                <strong>
-                  {safeValue(selectedCancellation.from)} to {safeValue(selectedCancellation.to)}
-                </strong>
-              </div>
-              <div>
-                <span>Journey Date &amp; Time</span>
-                <strong>
-                  {safeValue(selectedCancellation.journeyDate)} |{" "}
-                  {safeValue(selectedCancellation.journeyTime)}
-                </strong>
-              </div>
-              <div>
-                <span>Payment Method</span>
-                <strong>{safeValue(selectedCancellation.paymentMethod)}</strong>
-              </div>
-              <div>
-                <span>Payment Details (Txn)</span>
-                <strong>{safeValue(selectedCancellation.paymentDetails)}</strong>
-              </div>
-              <div>
-                <span>Payment Status</span>
-                <select
-                  value={selectedCancellation.paymentStatus}
-                  onChange={(e) => handleUpdatePaymentStatus(selectedCancellation.bookingId, e.target.value)}
+            {/* Section 1: General & Journey Details Table */}
+            <div className="admin-view-section">
+              <h3 className="admin-view-section-title">General &amp; Request Details</h3>
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Request ID</th>
+                    <td>#{safeValue(selectedCancellation.id)}</td>
+                    <th>PNR</th>
+                    <td>{safeValue(selectedCancellation.pnr)}</td>
+                  </tr>
+                  <tr>
+                    <th>Booking Date (B.D.)</th>
+                    <td>{formatAdminDate(selectedCancellation.bookedAtUtc)}</td>
+                    <th>Cancellation Request Date (C.D.)</th>
+                    <td>{formatRequestDate(selectedCancellation.requestDateUtc || selectedCancellation.cancelledAtValue || selectedCancellation.createdAtValue)}</td>
+                  </tr>
+                  <tr>
+                    <th>Cancellation Status</th>
+                    <td>{safeValue(selectedCancellation.cancellationStatus || selectedCancellation.status)}</td>
+                    <th>Customer Name</th>
+                    <td>{safeValue(selectedCancellation.passengerName)}</td>
+                  </tr>
+                  <tr>
+                    <th>Customer Contact</th>
+                    <td>{safeValue(selectedCancellation.passengerPhone)} {selectedCancellation.passengerEmail ? `(${selectedCancellation.passengerEmail})` : ""}</td>
+                    <th>Segment / Route</th>
+                    <td>{safeValue(selectedCancellation.segment || `${selectedCancellation.from} ➔ ${selectedCancellation.to}`)}</td>
+                  </tr>
+                  <tr>
+                    <th>Journey Date &amp; Time</th>
+                    <td>{safeValue(selectedCancellation.journeyDate)} {selectedCancellation.journeyTime ? `at ${selectedCancellation.journeyTime}` : ""}</td>
+                    <th>Airline / Vehicle Class</th>
+                    <td>{safeValue(selectedCancellation.operator || "Flight Airlines")} ({safeValue(selectedCancellation.vehicleType || "Economy")})</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Section 2: Financial & Refund Breakdown Table */}
+            <div className="admin-view-section">
+              <h3 className="admin-view-section-title">Financial &amp; Refund Breakdown</h3>
+              <table className="admin-view-table">
+                <thead>
+                  <tr>
+                    <th>Refund Parameter</th>
+                    <th>Amount (INR)</th>
+                    <th>Description / Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Total Fare Amount</strong></td>
+                    <td><strong>{adminCurrencyFormatter.format(selectedCancellation.fare || 0)}</strong></td>
+                    <td>Total original ticket fare</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Customer Refund Amount</strong></td>
+                    <td><strong style={{ color: "#10b981" }}>{adminCurrencyFormatter.format(selectedCancellation.customerRefundAmountInr || 0)}</strong></td>
+                    <td>Refund credited to customer ({safeValue(selectedCancellation.customerRefundStatus)})</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Customer Cancellation Charge</strong></td>
+                    <td><strong style={{ color: "#d97706" }}>{adminCurrencyFormatter.format(selectedCancellation.customerCancellationChargeInr || 0)}</strong></td>
+                    <td>Cancellation fee charged to customer</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Customer Service Charge</strong></td>
+                    <td>{adminCurrencyFormatter.format(selectedCancellation.customerServiceChargeInr || 0)}</td>
+                    <td>Platform service charge</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Admin Refund Amount</strong></td>
+                    <td><strong style={{ color: "#0369a1" }}>{adminCurrencyFormatter.format(selectedCancellation.adminRefundAmountInr || 0)}</strong></td>
+                    <td>Refund received from airline/supplier ({safeValue(selectedCancellation.adminRefundStatus)})</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Admin Cancellation Charge</strong></td>
+                    <td>{adminCurrencyFormatter.format(selectedCancellation.adminCancellationChargeInr || 0)}</td>
+                    <td>Airline cancellation fee</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Admin Service Charge</strong></td>
+                    <td>{adminCurrencyFormatter.format(selectedCancellation.adminServiceChargeInr || 0)}</td>
+                    <td>Airline supplier service fee</td>
+                  </tr>
+                  <tr className="admin-view-highlight-row">
+                    <td><strong>Calculated Net Profit / Loss</strong></td>
+                    <td>
+                      <strong style={{ color: formatProfitDisplay(selectedCancellation.calculatedProfit).color }}>
+                        {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
+                      </strong>
+                    </td>
+                    <td>Net profit margin calculated on flight cancellation</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Section 3: Remarks & Cancellation Reason Notes */}
+            <div className="admin-view-section">
+              <h3 className="admin-view-section-title">Remarks &amp; Reason Notes</h3>
+              <table className="admin-view-table">
+                <tbody>
+                  <tr>
+                    <th>Customer Remark</th>
+                    <td><em>"{safeValue(selectedCancellation.customerRemark || selectedCancellation.cancellationReason, "No customer remark provided")}"</em></td>
+                  </tr>
+                  <tr>
+                    <th>Supplier Remark</th>
+                    <td>{safeValue(selectedCancellation.supplierRemark, "--")}</td>
+                  </tr>
+                  <tr>
+                    <th>Admin Remark</th>
+                    <td>{safeValue(selectedCancellation.adminRemark, "--")}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Section 4: Complete Response Data (Raw JSON) */}
+            <div className="admin-view-section" style={{ background: "#1e293b", padding: "14px 16px", borderRadius: "8px", color: "#f8fafc" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ margin: 0, fontSize: "0.85rem", fontWeight: "700", color: "#38bdf8", textTransform: "uppercase" }}>
+                  Complete Response Data (Raw JSON)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowRawJsonModal(prev => !prev)}
                   style={{
-                    padding: "6px 12px",
+                    background: "#0284c7",
+                    color: "#ffffff",
+                    border: "none",
+                    padding: "4px 12px",
                     borderRadius: "6px",
-                    border: "1.5px solid var(--border)",
-                    fontSize: "0.85rem",
+                    fontSize: "0.76rem",
                     fontWeight: "600",
                     cursor: "pointer"
                   }}
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Completed">Completed</option>
-                </select>
+                  {showRawJsonModal ? "Hide Raw JSON" : "View Raw JSON"}
+                </button>
               </div>
-              <div className="admin-view-highlight-card">
-                <span>Customer Refund Amount</span>
-                <strong>
-                  {adminCurrencyFormatter.format(Number(selectedCancellation.refundAmount) || 0)}
-                </strong>
-              </div>
-              <div className="admin-view-highlight-card">
-                <span>Customer Cancellation Charge</span>
-                <strong>
-                  {adminCurrencyFormatter.format(
-                    Number(selectedCancellation.cancellationCharge) || 0
-                  )}
-                </strong>
-              </div>
-              <div>
-                <span>Remark</span>
-                <strong>{safeValue(selectedCancellation.cancellationReason, "--")}</strong>
-              </div>
-            </section>
+              {showRawJsonModal && (
+                <pre
+                  style={{
+                    marginTop: "12px",
+                    padding: "12px",
+                    background: "#0f172a",
+                    color: "#38bdf8",
+                    borderRadius: "6px",
+                    fontSize: "0.78rem",
+                    overflowX: "auto",
+                    maxHeight: "260px",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-all"
+                  }}
+                >
+                  {JSON.stringify(selectedCancellation.raw || selectedCancellation, null, 2)}
+                </pre>
+              )}
+            </div>
           </article>
         </div>
       ) : null}
     </section>
   );
 }
+
 

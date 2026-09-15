@@ -156,17 +156,18 @@ export default function UserSecurityRules() {
         page: currentPage,
         pageSize,
         userId: searchUserId.trim(),
-        ruleType: filterRuleType === 'ALL' ? '' : filterRuleType
+        status: filterStatus === 'ALL' ? '' : filterStatus
       });
 
-      if (response && response.success && Array.isArray(response.data)) {
-        let fetchedData = response.data;
-        // Filter locally if status filter selected
+      const rawItems = response?.data?.items || (Array.isArray(response?.data) ? response.data : null);
+
+      if (response && response.success && Array.isArray(rawItems)) {
+        let fetchedData = rawItems;
         if (filterStatus !== 'ALL') {
           fetchedData = fetchedData.filter(r => (r.status || 'ACTIVE').toUpperCase() === filterStatus);
         }
         setRules(fetchedData.length > 0 ? fetchedData : MOCK_FALLBACK_RULES);
-        setTotalItems(response.pagination?.total || fetchedData.length || MOCK_FALLBACK_RULES.length);
+        setTotalItems(response?.data?.totalRecords || response?.pagination?.total || fetchedData.length || MOCK_FALLBACK_RULES.length);
       } else {
         // Fallback to mock data for presentation
         let filteredMock = MOCK_FALLBACK_RULES;

@@ -503,13 +503,16 @@ export async function getAdminDashboardRevenueStats() {
   );
 }
 
-export async function getAdminDashboardRevenueOverview({ year, timeframe } = {}) {
-  return null;
-}
-
 export async function getAdminDashboardBookingStats() {
   return requestJson(
     buildUrl(`${DASHBOARD_ROOT}/booking-stats`),
+    { headers: getAdminAuthHeaders() }
+  );
+}
+
+export async function getAdminDashboardRevenueOverview(params = {}) {
+  return requestJson(
+    buildUrl(`${DASHBOARD_ROOT}/revenue-overview`, params),
     { headers: getAdminAuthHeaders() }
   );
 }
