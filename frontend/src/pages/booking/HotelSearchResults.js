@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
-import { searchHotels, getOfferDetails } from "../../services/hotelBookingService";
+import { searchHotels } from "../../services/hotelBookingService";
 import { buildStayFacts, getHotelVisuals } from "./hotelPresentation";
 import HotelInteractiveMap from "./HotelInteractiveMap";
 import HotelSearchWidget from "../../components/HotelSearchWidget";
@@ -544,6 +544,7 @@ export default function HotelSearchResults() {
         // Use ?? (nullish coalescing) to avoid skipping valid 0 values from the API
         const priceObj = hotelRecord.price ?? {};
         const basePrice = Number(
+          priceObj.b2CTotalPrice ?? priceObj.B2CTotalPrice ??
           priceObj.b2cDisplayFare ?? priceObj.B2CDisplayFare ??
           priceObj.b2cFinalFare ?? priceObj.B2CFinalFare ??
           priceObj.offeredPriceRoundedOff ?? priceObj.OfferedPriceRoundedOff ??
@@ -595,8 +596,9 @@ export default function HotelSearchResults() {
             ? hotelRecord.facilities[0].facilitiesNames
             : (Array.isArray(hotelRecord.amenities) ? hotelRecord.amenities : []),
           note: searchOffer.cancellationPolicy,
-          roomCategory,
+          roomCategory: typeof roomCategory === "string" ? roomCategory.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : roomCategory,
           breakfastIncluded,
+          hotelPromotion: hotelRecord.hotelPromotion || hotelRecord.HotelPromotion || "",
           propertyCategory,
           offers: mappedOffers,
           image: apiImage || visuals.cardImage,
@@ -798,7 +800,15 @@ export default function HotelSearchResults() {
       </div>
     </article>
   );
- 
+  const localFavouritesCount = useMemo(() => {
+    return apiHotels.filter(hotelRecord => {
+      const hotelName = hotelRecord.hotelName || hotelRecord.name || "Hotel stay";
+      const id = hotelRecord.hotelCode || hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`;
+      return savedStayIds.includes(id);
+    }).length;
+  }, [apiHotels, savedStayIds]);
+
+
   return (
     <main className="hotel-discover-page">
       <section className="hotel-discover-hero">
@@ -1071,7 +1081,7 @@ export default function HotelSearchResults() {
                       }}
                     >
                       <Heart size={14} fill={collectionKey === "favourites" ? "#dc1e26" : "none"} color="#dc1e26" />
-                      <span style={{ color: "#0f172a" }}>FAVOURITES ({savedStayIds.length})</span>
+                      <span style={{ color: "#0f172a" }}>FAVOURITES ({localFavouritesCount})</span>
                     </button>
 
                     <select
@@ -1180,9 +1190,10 @@ export default function HotelSearchResults() {
                         </div>
                         
                         {/* Rating Overlay top-left */}
-                        <div className="hotel-stay-rating-overlay-topleft">
-                          <Star size={12} fill="#eab308" color="#eab308" />
-                          <strong>{hotel.rating.toFixed(1)}</strong>
+                        <div className="hotel-stay-rating-overlay-topleft" style={{ height: "24px", background: "rgba(0,0,0,0.6)", color: "white", fontSize: "11px", borderRadius: "20px", padding: "4px 8px", display: "flex", alignItems: "center", gap: "2px", position: "absolute", top: "12px", left: "12px" }}>
+                          {Array.from({ length: Math.floor(hotel.rating) || 1 }).map((_, i) => (
+                            <Star key={i} size={11} fill="#ffffff" color="#ffffff" />
+                          ))}
                         </div>
  
                         {/* Save Button top-right */}
@@ -1206,29 +1217,27 @@ export default function HotelSearchResults() {
                             <MapPin size={12} color="#dc1e26" />
                             <span>{hotel.area}, {hotel.city}</span>
                           </p>
-                          <div className="hotel-result-badges" style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
-                            {hotel.breakfastIncluded && <span className="hotel-meal-badge">Breakfast Included</span>}
-                            {hotel.roomCategory && <span className="hotel-room-category-badge">{hotel.roomCategory}</span>}
+                          <div className="hotel-result-badges" style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: "6px", marginTop: "8px", height: "22px", overflow: "hidden" }}>
+                            {hotel.hotelPromotion === "Breakfast" && <span className="hotel-meal-badge" style={{ backgroundColor: "#dc1e26", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Breakfast Included</span>}
+                            {hotel.hotelPromotion === "Room Only" && <span className="hotel-meal-badge" style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Room Only</span>}
+                            {hotel.roomCategory && <span className="hotel-room-category-badge" style={{ backgroundColor: "#e2e8f0", color: "#334155", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{hotel.roomCategory}</span>}
                           </div>
                         </div>
-                        <hr style={{ border: "0", borderTop: "1px solid rgba(0, 0, 0, 0.06)", margin: "8px 0" }} />
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <hr style={{ border: "0", borderTop: "0.5px solid var(--border-token, #e2e8f0)", margin: "8px 0 0 0" }} />
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: "8px" }}>
                           <div style={{ display: "flex", flexDirection: "column" }}>
-                            <span style={{ color: "#dc1e26", fontWeight: "700", fontSize: "1rem" }}>
+                            <span style={{ color: "#0f172a", fontWeight: "600", fontSize: "16px" }}>
                               ₹{hotel.price.toLocaleString()}
                             </span>
-                            <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: "500" }}>
-                              {roomsCount > 1 ? `total for ${roomsCount} Rooms` : "total per night"}
+                            <span style={{ fontSize: "10px", color: "#64748b" }}>
+                              total per night
                             </span>
                           </div>
-                          {hotel.oldPrice > 0 && hotel.oldPrice > hotel.price && (
-                            <span style={{ textDecoration: "line-through", color: "#94a3b8", fontSize: "0.8rem" }}>
-                              ₹{hotel.oldPrice.toLocaleString()}
-                            </span>
-                          )}
+                          <span style={{ fontSize: "10px", color: "#dc1e26", fontWeight: "600" }}>
+                            View →
+                          </span>
                         </div>
                       </div>
-                      <div style={{ height: "2px", backgroundColor: "#dc1e26", width: "100%" }} />
                     </article>
                   );
                 })}

@@ -112,25 +112,172 @@ namespace PickNBook.Api.Services.Implementations
             var payment = await _dbContext.Payments.FindAsync(paymentId);
             if (payment == null) return;
 
+            string? customerEmail = null;
+            string? customerPhone = null;
+
+            if (int.TryParse(payment.UserId, out int uid))
+            {
+                var user = await _dbContext.Users.FindAsync(uid);
+                if (user != null)
+                {
+                    customerEmail = user.Email;
+                    customerPhone = user.PhoneNumber;
+                }
+            }
+
+            // Fallback to PendingPaymentBooking payload if user record is not found or contacts missing
+            if (string.IsNullOrWhiteSpace(customerPhone) || string.IsNullOrWhiteSpace(customerEmail))
+            {
+                var pending = await _dbContext.PendingPaymentBookings
+                    .FirstOrDefaultAsync(p => p.PaymentId == payment.Id);
+                if (pending != null && !string.IsNullOrWhiteSpace(pending.BookingPayloadJson))
+                {
+                    try
+                    {
+                        using var doc = System.Text.Json.JsonDocument.Parse(pending.BookingPayloadJson);
+                        var root = doc.RootElement;
+                        if (string.IsNullOrWhiteSpace(customerPhone))
+                        {
+                            if (root.TryGetProperty("CustomerPhone", out var cp)) customerPhone = cp.GetString();
+                            else if (root.TryGetProperty("customerPhone", out cp)) customerPhone = cp.GetString();
+                            else if (root.TryGetProperty("ContactDetails", out var cd) && cd.TryGetProperty("Mobile", out var m)) customerPhone = m.GetString();
+                            else if (root.TryGetProperty("contactDetails", out cd) && cd.TryGetProperty("mobile", out m)) customerPhone = m.GetString();
+                            else if (root.TryGetProperty("Passengers", out var pax) && pax.ValueKind == System.Text.Json.JsonValueKind.Array && pax.GetArrayLength() > 0)
+                            {
+                                var first = pax[0];
+                                if (first.TryGetProperty("ContactNo", out var pPhone)) customerPhone = pPhone.GetString();
+                                else if (first.TryGetProperty("contactNo", out pPhone)) customerPhone = pPhone.GetString();
+                                else if (first.TryGetProperty("PhoneNumber", out pPhone)) customerPhone = pPhone.GetString();
+                            }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(customerEmail))
+                        {
+                            if (root.TryGetProperty("CustomerEmail", out var ce)) customerEmail = ce.GetString();
+                            else if (root.TryGetProperty("customerEmail", out ce)) customerEmail = ce.GetString();
+                            else if (root.TryGetProperty("ContactDetails", out var cd) && cd.TryGetProperty("Email", out var e)) customerEmail = e.GetString();
+                            else if (root.TryGetProperty("contactDetails", out cd) && cd.TryGetProperty("email", out e)) customerEmail = e.GetString();
+                            else if (root.TryGetProperty("Passengers", out var pax) && pax.ValueKind == System.Text.Json.JsonValueKind.Array && pax.GetArrayLength() > 0)
+                            {
+                                var first = pax[0];
+                                if (first.TryGetProperty("Email", out var pEmail)) customerEmail = pEmail.GetString();
+                                else if (first.TryGetProperty("email", out pEmail)) customerEmail = pEmail.GetString();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to parse contact details from PendingPaymentBooking payload for Payment {PaymentId}", payment.Id);
+                    }
+                }
+            }
+
+            string cleanReason = string.IsNullOrWhiteSpace(failureReason)
+                ? "Transaction declined"
+                : failureReason.Trim();
+
+            // Telecom DLT length constraint: keep Reason concise so total SMS stays within standard single SMS limit
+            if (cleanReason.Length > 45)
+            {
+                cleanReason = cleanReason.Substring(0, 42) + "...";
+            }
+
             if (status == PaymentStatus.Success && payment.Status != PaymentStatus.Success)
             {
-                await _notificationService.EnqueueAsync(
-                    eventType: "PaymentSuccess",
-                    channel: "Email",
-                    recipient: payment.UserId, // Assuming we send it to UserId as email, or we have User info
-                    templateKey: "PAYMENT_SUCCESS",
-                    payload: new { Amount = payment.FinalPayableAmount, OrderId = payment.CashfreeOrderId }
-                );
+                // 1. Enqueue SMS notification if customer mobile is available
+                if (!string.IsNullOrWhiteSpace(customerPhone))
+                {
+                    string formattedAmount = payment.FinalPayableAmount.ToString("0.00");
+                    await _notificationService.EnqueueAsync(
+                        eventType: "PaymentSuccess",
+                        channel: "SMS",
+                        recipient: customerPhone.Trim(),
+                        templateKey: "PAYMENT_SUCCESS",
+                        payload: new
+                        {
+                            Reference = payment.PaymentReference,
+                            Amount = formattedAmount,
+                            Var1 = payment.PaymentReference,
+                            Var2 = formattedAmount
+                        },
+                        bookingId: payment.PaymentReference,
+                        userId: payment.UserId
+                    );
+                }
+                else
+                {
+                    _logger.LogWarning("Cannot enqueue PaymentSuccess SMS for Payment {PaymentId}: No phone number available.", payment.Id);
+                }
+
+                // 2. Enqueue Email notification if customer email is available
+                var emailRecipient = !string.IsNullOrWhiteSpace(customerEmail) ? customerEmail.Trim() : (payment.UserId.Contains('@') ? payment.UserId : null);
+                if (!string.IsNullOrWhiteSpace(emailRecipient))
+                {
+                    await _notificationService.EnqueueAsync(
+                        eventType: "PaymentSuccess",
+                        channel: "Email",
+                        recipient: emailRecipient,
+                        templateKey: "PAYMENT_SUCCESS",
+                        payload: new { Amount = payment.FinalPayableAmount, OrderId = payment.CashfreeOrderId },
+                        bookingId: payment.PaymentReference,
+                        userId: payment.UserId
+                    );
+                }
             }
             else if (status == PaymentStatus.Failed && payment.Status != PaymentStatus.Failed)
             {
-                await _notificationService.EnqueueAsync(
-                    eventType: "PaymentFailed",
-                    channel: "Email",
-                    recipient: payment.UserId,
-                    templateKey: "PAYMENT_FAILED",
-                    payload: new { Amount = payment.FinalPayableAmount, OrderId = payment.CashfreeOrderId, Reason = failureReason ?? "Unknown Error" }
-                );
+                // 1. Enqueue SMS notification if customer mobile is available
+                if (!string.IsNullOrWhiteSpace(customerPhone))
+                {
+                    await _notificationService.EnqueueAsync(
+                        eventType: "PaymentFailed",
+                        channel: "SMS",
+                        recipient: customerPhone.Trim(),
+                        templateKey: "PAYMENT_FAILED",
+                        payload: new
+                        {
+                            Reference = payment.PaymentReference,
+                            Reason = cleanReason,
+                            Var1 = payment.PaymentReference,
+                            Var2 = cleanReason,
+                            Amount = payment.FinalPayableAmount,
+                            OrderId = payment.PaymentReference
+                        },
+                        bookingId: payment.PaymentReference,
+                        userId: payment.UserId
+                    );
+                }
+                else
+                {
+                    _logger.LogWarning("Cannot enqueue PaymentFailed SMS for Payment {PaymentId}: No phone number available.", payment.Id);
+                }
+
+                // 2. Enqueue Email notification if customer email is available
+                var emailRecipient = !string.IsNullOrWhiteSpace(customerEmail) ? customerEmail.Trim() : (payment.UserId.Contains('@') ? payment.UserId : null);
+                if (!string.IsNullOrWhiteSpace(emailRecipient))
+                {
+                    await _notificationService.EnqueueAsync(
+                        eventType: "PaymentFailed",
+                        channel: "Email",
+                        recipient: emailRecipient,
+                        templateKey: "PAYMENT_FAILED",
+                        payload: new
+                        {
+                            Amount = payment.FinalPayableAmount,
+                            OrderId = payment.PaymentReference,
+                            Reason = cleanReason,
+                            Reference = payment.PaymentReference,
+                            Var1 = payment.PaymentReference,
+                            Var2 = cleanReason
+                        },
+                        bookingId: payment.PaymentReference,
+                        userId: payment.UserId
+                    );
+                }
+                else
+                {
+                    _logger.LogWarning("Cannot enqueue PaymentFailed Email for Payment {PaymentId}: No valid email recipient available.", payment.Id);
+                }
             }
 
             payment.Status = status;
@@ -154,7 +301,8 @@ namespace PickNBook.Api.Services.Implementations
         }
 
         public async Task<bool> ProcessWebhookAsync(string cashfreeOrderId, string eventType,
-            string paymentStatus, decimal amount, string? paymentId, string? paymentMethod)
+            string paymentStatus, decimal amount, string? paymentId, string? paymentMethod,
+            string? failureReason = null)
         {
             var payment = await GetPaymentByCashfreeOrderIdAsync(cashfreeOrderId);
             if (payment == null)
@@ -187,7 +335,7 @@ namespace PickNBook.Api.Services.Implementations
                 _ => PaymentStatus.Pending
             };
 
-            await UpdatePaymentStatusAsync(payment.Id, newStatus, paymentId, paymentMethod, null, DateTime.UtcNow);
+            await UpdatePaymentStatusAsync(payment.Id, newStatus, paymentId, paymentMethod, failureReason, DateTime.UtcNow);
             
             _logger.LogInformation("Webhook processed for {OrderId}, new status: {Status}", cashfreeOrderId, newStatus);
 
@@ -213,29 +361,42 @@ namespace PickNBook.Api.Services.Implementations
             bool isSuccess = false;
             string? cfPaymentId = null;
             string? paymentMethod = null;
+            string? failureMsg = null;
+            string? failedPaymentId = null;
+            bool hasFailedAttempt = false;
             
             try 
             {
                 var paymentsArray = cfPaymentsResponse.RootElement.EnumerateArray();
                 foreach (var cfPayment in paymentsArray)
                 {
-                    if (cfPayment.TryGetProperty("payment_status", out var statusEl) && statusEl.GetString() == "SUCCESS")
+                    if (cfPayment.TryGetProperty("payment_status", out var statusEl))
                     {
-                        if (cfPayment.TryGetProperty("payment_amount", out var amtEl) && 
-                            Math.Round(amtEl.GetDecimal(), 2) == Math.Round(payment.FinalPayableAmount, 2))
+                        var statusStr = statusEl.GetString();
+                        if (statusStr == "SUCCESS")
                         {
-                            isSuccess = true;
-                            if (cfPayment.TryGetProperty("cf_payment_id", out var idEl)) cfPaymentId = idEl.ToString();
-                            
-                            if (cfPayment.TryGetProperty("payment_method", out var methodEl))
+                            if (cfPayment.TryGetProperty("payment_amount", out var amtEl) && 
+                                Math.Round(amtEl.GetDecimal(), 2) == Math.Round(payment.FinalPayableAmount, 2))
                             {
-                                var methodDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(methodEl.GetRawText());
-                                if (methodDict != null && methodDict.Count > 0)
+                                isSuccess = true;
+                                if (cfPayment.TryGetProperty("cf_payment_id", out var idEl)) cfPaymentId = idEl.ToString();
+                                
+                                if (cfPayment.TryGetProperty("payment_method", out var methodEl))
                                 {
-                                    paymentMethod = methodDict.Keys.First();
+                                    var methodDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(methodEl.GetRawText());
+                                    if (methodDict != null && methodDict.Count > 0)
+                                    {
+                                        paymentMethod = methodDict.Keys.First();
+                                    }
                                 }
+                                break;
                             }
-                            break;
+                        }
+                        else if (statusStr == "FAILED" || statusStr == "CANCELLED" || statusStr == "USER_DROPPED")
+                        {
+                            hasFailedAttempt = true;
+                            if (cfPayment.TryGetProperty("cf_payment_id", out var idEl)) failedPaymentId = idEl.ToString();
+                            if (cfPayment.TryGetProperty("payment_message", out var msgEl)) failureMsg = msgEl.GetString();
                         }
                     }
                 }
@@ -252,6 +413,11 @@ namespace PickNBook.Api.Services.Implementations
                 
                 // Fulfillment will be picked up durably by FulfillmentRecoveryWorker
                 _logger.LogInformation("Payment {PaymentId} marked for durable fulfillment queue via Verify API.", payment.Id);
+            }
+            else if (!isSuccess && hasFailedAttempt && payment.Status != PaymentStatus.Success && payment.Status != PaymentStatus.Failed)
+            {
+                await UpdatePaymentStatusAsync(payment.Id, PaymentStatus.Failed, failedPaymentId, null, failureMsg, DateTime.UtcNow);
+                payment.Status = PaymentStatus.Failed;
             }
 
             return new PaymentVerificationResponse
@@ -281,6 +447,23 @@ namespace PickNBook.Api.Services.Implementations
                     return true;
                 }
 
+                string? customerPhone = null;
+                if (int.TryParse(refundRecord.UserId, out int uid))
+                {
+                    var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == uid);
+                    customerPhone = user?.PhoneNumber;
+                }
+                if (string.IsNullOrWhiteSpace(customerPhone) && refundRecord.BookingType == "Bus")
+                {
+                    var bus = await _dbContext.BusReservations.AsNoTracking().FirstOrDefaultAsync(b => b.BookingReference == refundRecord.BookingReference);
+                    customerPhone = bus?.PassengerPhone;
+                }
+                else if (string.IsNullOrWhiteSpace(customerPhone) && refundRecord.BookingType == "Hotel")
+                {
+                    var hotel = await _dbContext.HotelReservations.AsNoTracking().FirstOrDefaultAsync(h => h.BookingReference == refundRecord.BookingReference);
+                    customerPhone = hotel?.GuestPhone;
+                }
+
                 if (refundStatus.Equals("SUCCESS", StringComparison.OrdinalIgnoreCase))
                 {
                     if (refundRecord.Status != "Completed")
@@ -292,11 +475,35 @@ namespace PickNBook.Api.Services.Implementations
                             templateKey: "REFUND_COMPLETED",
                             payload: new { Amount = refundRecord.CustomerRefundAmount, BookingId = refundRecord.BookingReference }
                         );
+
+                        if (!string.IsNullOrWhiteSpace(customerPhone))
+                        {
+                            string formattedAmount = refundRecord.CustomerRefundAmount.ToString("N2");
+                            await _notificationService.EnqueueAsync(
+                                eventType: "RefundCompleted",
+                                channel: "SMS",
+                                recipient: customerPhone.Trim(),
+                                templateKey: "REFUND_STATUS",
+                                payload: new
+                                {
+                                    Status = "completed",
+                                    Reference = refundRecord.BookingReference,
+                                    RefundRef = cashfreeRefundId,
+                                    Amount = formattedAmount,
+                                    Var1 = "completed",
+                                    Var2 = refundRecord.BookingReference,
+                                    Var3 = cashfreeRefundId,
+                                    Var4 = formattedAmount
+                                },
+                                bookingId: refundRecord.BookingReference,
+                                userId: refundRecord.UserId
+                            );
+                        }
                     }
                     refundRecord.Status = "Completed";
                     refundRecord.CompletedAtUtc = DateTime.UtcNow;
                 }
-                else if (refundStatus.Equals("FAILED", StringComparison.OrdinalIgnoreCase))
+                else if (refundStatus.Equals("FAILED", StringComparison.OrdinalIgnoreCase) || refundStatus.Equals("CANCELLED", StringComparison.OrdinalIgnoreCase))
                 {
                     if (refundRecord.Status != "RefundFailed")
                     {
@@ -307,6 +514,30 @@ namespace PickNBook.Api.Services.Implementations
                             templateKey: "REFUND_FAILED",
                             payload: new { Amount = refundRecord.CustomerRefundAmount, BookingId = refundRecord.BookingReference }
                         );
+
+                        if (!string.IsNullOrWhiteSpace(customerPhone))
+                        {
+                            string statusText = refundStatus.Equals("CANCELLED", StringComparison.OrdinalIgnoreCase) ? "Cancelled" : "Failed";
+                            await _notificationService.EnqueueAsync(
+                                eventType: "RefundFailed",
+                                channel: "SMS",
+                                recipient: customerPhone.Trim(),
+                                templateKey: "REFUND_FAILED",
+                                payload: new
+                                {
+                                    Status = statusText,
+                                    Reference = refundRecord.BookingReference,
+                                    RefundRef = cashfreeRefundId,
+                                    SupportUrl = "https://www.picknbook.in/contact",
+                                    Var1 = statusText,
+                                    Var2 = refundRecord.BookingReference,
+                                    Var3 = cashfreeRefundId,
+                                    Var4 = "https://www.picknbook.in/contact"
+                                },
+                                bookingId: refundRecord.BookingReference,
+                                userId: refundRecord.UserId
+                            );
+                        }
                     }
                     refundRecord.Status = "RefundFailed";
                 }
@@ -321,6 +552,30 @@ namespace PickNBook.Api.Services.Implementations
                             templateKey: "REFUND_INITIATED",
                             payload: new { Amount = refundRecord.CustomerRefundAmount, BookingId = refundRecord.BookingReference }
                         );
+
+                        if (!string.IsNullOrWhiteSpace(customerPhone))
+                        {
+                            string formattedAmount = refundRecord.CustomerRefundAmount.ToString("N2");
+                            await _notificationService.EnqueueAsync(
+                                eventType: "RefundInitiated",
+                                channel: "SMS",
+                                recipient: customerPhone.Trim(),
+                                templateKey: "REFUND_STATUS",
+                                payload: new
+                                {
+                                    Status = "initiated",
+                                    Reference = refundRecord.BookingReference,
+                                    RefundRef = cashfreeRefundId,
+                                    Amount = formattedAmount,
+                                    Var1 = "initiated",
+                                    Var2 = refundRecord.BookingReference,
+                                    Var3 = cashfreeRefundId,
+                                    Var4 = formattedAmount
+                                },
+                                bookingId: refundRecord.BookingReference,
+                                userId: refundRecord.UserId
+                            );
+                        }
                     }
                     refundRecord.Status = "RefundInitiated";
                 }
@@ -359,11 +614,71 @@ namespace PickNBook.Api.Services.Implementations
                         templateKey: "REFUND_COMPLETED",
                         payload: new { Amount = paymentRecord.FinalPayableAmount, BookingId = paymentRecord.PaymentReference }
                     );
+
+                    string? pPhone = null;
+                    if (int.TryParse(paymentRecord.UserId, out int pUid))
+                    {
+                        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == pUid);
+                        pPhone = user?.PhoneNumber;
+                    }
+                    if (!string.IsNullOrWhiteSpace(pPhone))
+                    {
+                        string formattedAmount = paymentRecord.FinalPayableAmount.ToString("N2");
+                        await _notificationService.EnqueueAsync(
+                            eventType: "RefundCompleted",
+                            channel: "SMS",
+                            recipient: pPhone.Trim(),
+                            templateKey: "REFUND_STATUS",
+                            payload: new
+                            {
+                                Status = "completed",
+                                Reference = paymentRecord.PaymentReference,
+                                RefundRef = cashfreeRefundId,
+                                Amount = formattedAmount,
+                                Var1 = "completed",
+                                Var2 = paymentRecord.PaymentReference,
+                                Var3 = cashfreeRefundId,
+                                Var4 = formattedAmount
+                            },
+                            bookingId: paymentRecord.PaymentReference,
+                            userId: paymentRecord.UserId
+                        );
+                    }
                 }
                 else if (refundStatus.Equals("FAILED", StringComparison.OrdinalIgnoreCase) || refundStatus.Equals("CANCELLED", StringComparison.OrdinalIgnoreCase))
                 {
                     paymentRecord.RefundStatus = "RefundFailed";
                     paymentRecord.UpdatedAt = DateTime.UtcNow;
+
+                    string? pPhone = null;
+                    if (int.TryParse(paymentRecord.UserId, out int pUid))
+                    {
+                        var user = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == pUid);
+                        pPhone = user?.PhoneNumber;
+                    }
+                    if (!string.IsNullOrWhiteSpace(pPhone))
+                    {
+                        string statusText = refundStatus.Equals("CANCELLED", StringComparison.OrdinalIgnoreCase) ? "Cancelled" : "Failed";
+                        await _notificationService.EnqueueAsync(
+                            eventType: "RefundFailed",
+                            channel: "SMS",
+                            recipient: pPhone.Trim(),
+                            templateKey: "REFUND_FAILED",
+                            payload: new
+                            {
+                                Status = statusText,
+                                Reference = paymentRecord.PaymentReference,
+                                RefundRef = cashfreeRefundId,
+                                SupportUrl = "https://www.picknbook.in/contact",
+                                Var1 = statusText,
+                                Var2 = paymentRecord.PaymentReference,
+                                Var3 = cashfreeRefundId,
+                                Var4 = "https://www.picknbook.in/contact"
+                            },
+                            bookingId: paymentRecord.PaymentReference,
+                            userId: paymentRecord.UserId
+                        );
+                    }
                 }
                 else if (refundStatus.Equals("ONHOLD", StringComparison.OrdinalIgnoreCase))
                 {

@@ -11,7 +11,7 @@ import { isTokenExpired } from "../../services/authSession";
 import { blockRoom, getHotelInfo, getHotelRoom, bookHotelRoom } from "../../services/hotelBookingService";
 import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
-import BookingTimer from "./BookingTimer";
+
 import HotelDetail from "./HotelDetail";
 import "../../STYLES/HotelCheckoutExperience.css";
 import { readHotelBookingFlowState, writeHotelBookingFlowState } from "./hotelBookingFlowStore";
@@ -1119,39 +1119,10 @@ export default function HotelPassengerDetailsPage() {
   const stayLocation = hotel.address || [hotel.area, hotel.city].filter(Boolean).join(", ");
   return (
     <main className="hotel-checkout-page">
-      <BookingTimer hideBanner={true} />
+
       <div className="hotel-checkout-shell">
         
-        {/* Top bar: Breadcrumbs on the left, Timer on the right */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", width: "100%", flexWrap: "wrap", gap: "10px" }}>
-          {/* Breadcrumbs trail */}
-          <div className="hotel-breadcrumbs" style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "0.82rem", color: "var(--hotel-muted)", margin: 0 }}>
-            <span onClick={() => navigate("/")} style={{ cursor: "pointer" }}>Search</span>
-            <span>&gt;</span>
-            <span onClick={() => navigate("/search/hotels")} style={{ cursor: "pointer" }}>Hotel</span>
-            <span>&gt;</span>
-            <span 
-              onClick={() => {
-                if (currentStep === 2) {
-                  setCurrentStep(1);
-                  setOffer(null);
-                }
-              }} 
-              style={{ cursor: currentStep === 2 ? "pointer" : "default", fontWeight: currentStep === 1 ? 700 : 500, color: currentStep === 1 ? "var(--hotel-ink)" : "inherit" }}
-            >
-              Hotel Details
-            </span>
-            {currentStep === 2 && (
-              <>
-                <span>&gt;</span>
-                <span style={{ fontWeight: 700, color: "var(--hotel-ink)" }}>Passenger Details</span>
-              </>
-            )}
-          </div>
-
-          {/* Compact Timer Container */}
-          <BookingTimer mode="compact" />
-        </div>
+        {/* Top bar removed as per user request */}
 
         {currentStep === 1 ? (
           <HotelDetail

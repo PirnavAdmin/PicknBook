@@ -26,14 +26,6 @@ export function getHotelVisuals(hotelInput = []) {
     gallery: images,
     cardImage: cardImg,
     thumbImage: thumbImg,
-    hostName: "Hotel Host",
-    hostYears: 2,
-    propertyLabel: "Premium Stay",
-    highlightLabel: "Top-rated location",
-    avatarStyle: {
-      background: `linear-gradient(135deg, hsl(200 80% 92%), hsl(224 86% 84%))`,
-      color: `hsl(200 54% 28%)`,
-    },
   };
 }
  
@@ -76,42 +68,10 @@ export function buildStayFacts(hotel = {}, offer = {}, searchContext = {}) {
 }
  
 export function buildStayHighlights(hotel = {}, offer = {}, nights = 1) {
-  const hotelAmenities = Array.isArray(hotel?.amenities) ? hotel.amenities.filter(Boolean) : [];
-  const highlights = [];
- 
-  if (hotelAmenities[0]) {
-    const first = hotelAmenities[0];
-    const amenityTitle =
-      typeof first === "object" && first !== null
-        ? String(first.name || first.Name || first.title || "").trim()
-        : String(first || "").trim();
-
-    if (amenityTitle && amenityTitle !== "[object Object]") {
-      highlights.push({
-        title: amenityTitle,
-        text: "Frequently chosen by guests booking city stays.",
-      });
-    }
-  }
- 
-  highlights.push({
-    title: `${formatNightLabel(nights)} ready`,
-    text: "Dates and room pricing are already synced from the hotel API.",
-  });
- 
-  if (offer?.cancellationPolicy) {
-    highlights.push({
-      title: "Policy clarity",
-      text: String(offer.cancellationPolicy),
-    });
-  }
- 
-  highlights.push({
-    title: hotel?.tag || "Great for planning",
-    text: hotel?.address || hotel?.area || hotel?.city || "Central location",
-  });
- 
-  return highlights.slice(0, 4);
+  // We no longer build fabricated highlights.
+  // This function is kept for backward compatibility if any legacy code imports it,
+  // but it returns an empty array to ensure no mock data is displayed.
+  return [];
 }
  
  

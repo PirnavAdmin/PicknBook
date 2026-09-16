@@ -438,8 +438,21 @@
 
 .hotel-stay-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .hotel-stay-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .hotel-stay-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 /* Entry animations keyframes and helper classes */
@@ -556,7 +569,8 @@
 
 .hotel-stay-media {
   position: relative;
-  aspect-ratio: 1.65 / 1;
+  width: 100%;
+  height: 200px;
   background: linear-gradient(135deg, #f4f4f5, #ececee);
   overflow: hidden;
 }
@@ -943,29 +957,7 @@
   }
 }
 
-@media (max-width: 1600px) {
-  .hotel-stay-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
 
-@media (max-width: 1200px) {
-  .hotel-stay-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 1100px) {
-  .hotel-stay-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .hotel-stay-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 
 @media (max-width: 980px) {
   .hotel-discover-searchbar {
@@ -1006,10 +998,6 @@
 @media (max-width: 760px) {
   .hotel-discover-page {
     padding: 16px 12px 36px;
-  }
-
-  .hotel-stay-grid {
-    grid-template-columns: 1fr;
   }
 
   .hotel-offer-item,
@@ -1086,11 +1074,6 @@
 
 .hotel-split-layout .hotel-split-left {
   min-width: 0;
-}
-
-.hotel-split-layout .hotel-stay-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 16px;
 }
 
 .hotel-split-right {
@@ -1395,22 +1378,8 @@
     margin-top: 16px;
   }
 
-  .hotel-split-layout .hotel-stay-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 
-@media (max-width: 900px) {
-  .hotel-split-layout .hotel-stay-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 600px) {
-  .hotel-split-layout .hotel-stay-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
 
 /* Hotel search sidebar filter layouts */
 .hotel-discover-results-container {
@@ -1695,9 +1664,6 @@
   min-width: 0;
 }
 
-.hotel-discover-results.has-sidebar .hotel-stay-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
 
 /* Card hover style - red border */
 .hotel-stay-card:hover {

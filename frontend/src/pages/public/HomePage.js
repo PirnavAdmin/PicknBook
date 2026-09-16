@@ -5321,7 +5321,7 @@ export default function HomePage() {
 
         /* ─── FEATURED OFFERS SECTION & HEADER (Moved towards upside) ─── */
         .bus-offers-section {
-            margin-top: -42px !important;
+            margin-top: 150px !important;
            position: relative !important;
            z-index: 1 !important;
         }

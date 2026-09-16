@@ -71,6 +71,30 @@ export default function HotelDetail({
   nights
 }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [openDescIndex, setOpenDescIndex] = useState(0);
+  const [showAllDesc, setShowAllDesc] = useState(false);
+
+  const [savedStayIds, setSavedStayIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem("savedStayIds");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const hotelId = hotel.id || hotel.code;
+  const isFavourite = savedStayIds.includes(hotelId);
+
+  const toggleFavourite = () => {
+    setSavedStayIds((current) => {
+      const next = current.includes(hotelId)
+        ? current.filter(id => id !== hotelId)
+        : [...current, hotelId];
+      localStorage.setItem("savedStayIds", JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (lightboxIndex === null) return undefined;
@@ -134,10 +158,38 @@ export default function HotelDetail({
     }
   };
 
+  const uniqueDescriptions = [];
+  const seenTexts = new Set();
+  
+  if (Array.isArray(hotel.description)) {
+    hotel.description.forEach(descGroup => {
+      // Filter out descriptions named "Default", "Attractions", or that contain raw JSON strings
+      if (descGroup.name === "Default" || descGroup.name === "Attractions") return;
+
+      let textContent = "";
+      if (Array.isArray(descGroup.detail)) {
+        textContent = descGroup.detail.join(" ").trim();
+      } else {
+        textContent = String(descGroup.detail || "").trim();
+      }
+      
+      // Also skip if it looks like raw JSON
+      if (textContent.startsWith("{") && textContent.endsWith("}")) return;
+      
+      // Basic normalization to ignore minor whitespace differences
+      const normalizedText = textContent.toLowerCase().replace(/\s+/g, ' ');
+      
+      if (normalizedText && !seenTexts.has(normalizedText)) {
+        seenTexts.add(normalizedText);
+        uniqueDescriptions.push(descGroup);
+      }
+    });
+  }
+
   return (
     <>
       {/* Category Image Tabs */}
-      <div className="hotel-category-tabs" style={{ padding: "4px 8px", marginBottom: "12px", gap: "8px" }}>
+      <div className="hotel-category-tabs" style={{ padding: "4px 8px", marginBottom: "4px", gap: "8px" }}>
         {tabsList.map((tab) => (
           <button
             key={tab}
@@ -154,101 +206,268 @@ export default function HotelDetail({
         ))}
       </div>
 
-      {/* Top Section: Left Details & Right Image side-by-side in one line */}
-      <section style={{ 
-        display: "grid", 
-        gridTemplateColumns: `1fr ${displayedImages.length > 1 ? "240px" : "180px"}`, 
-        gap: "16px", 
-        marginBottom: "16px",
-        background: "#fff",
-        border: "1px solid rgba(0,0,0,0.06)",
-        borderRadius: "16px",
-        padding: "10px 12px",
-        boxShadow: "0 4px 15px rgba(0,0,0,0.02)",
-        alignItems: "center"
-      }}>
-        {/* Left Side: Hotel Details */}
-        <div style={{ padding: "4px" }}>
-          <span style={{ 
-            textTransform: "uppercase", 
-            fontSize: "0.62rem", 
-            fontWeight: 600, 
-            color: "var(--hotel-rose)", 
-            background: "rgba(220,30,38,0.05)", 
-            padding: "3px 8px", 
-            borderRadius: "4px", 
-            display: "inline-block", 
-            letterSpacing: "0.5px" 
-          }}>
-            {visuals.propertyLabel || "PREMIUM STAY"}
-          </span>
-          <h1 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "6px 0 4px 0", lineHeight: "1.25" }}>{hotel.name}</h1>
-          
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", fontSize: "0.75rem", color: "var(--hotel-muted)", margin: "0 0 6px 0" }}>
+      {/* Top Header: Title, Stars & Actions */}
+      <section style={{ marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "6px" }}>
+            <h1 style={{ fontSize: "1.65rem", fontWeight: 700, color: "var(--hotel-ink)", margin: 0, lineHeight: "1.2" }}>
+              {hotel.name}
+            </h1>
             {hotel.rating > 0 && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
-                <span style={{ color: "#ffb000" }}>★</span> <strong style={{ fontWeight: 600 }}>{Number(hotel.rating).toFixed(1)}</strong>
+              <span style={{ color: "#ffb000", fontSize: "1.1rem" }}>
+                {"★".repeat(Math.floor(hotel.rating))}
               </span>
             )}
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>📍 {stayLocation}</span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>📅 {formatNightLabel(nights)}</span>
           </div>
-          
-          <p style={{ margin: "0 0 8px 0", fontSize: "0.72rem", color: "var(--hotel-muted)", fontWeight: 400 }}>
-            Stay in {hotel.city || "New Delhi"}
-          </p>
-
-          {/* Pricing display at the top */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-            <span style={{ fontSize: "0.72rem", color: "var(--hotel-muted)" }}>Starting from</span>
-            <strong style={{ fontSize: "1.1rem", color: "#10b981", fontWeight: 700 }}>
-              {offer ? formatCurrency(finalPayable) : (hotel.price ? formatCurrency(hotel.price) : (hotel.offers?.[0]?.price ? formatCurrency(hotel.offers[0].price) : ""))}
-            </strong>
-            <span style={{ fontSize: "0.68rem", color: "var(--hotel-muted)" }}>/ night</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem", color: "var(--hotel-ink)", flexWrap: "wrap" }}>
+            <span style={{ color: "#dc1e26" }}>📍</span>
+            <span>{stayLocation}</span>
+            <a href="#section-map" onClick={(e) => { e.preventDefault(); const el = document.getElementById("section-map"); if(el) el.scrollIntoView({behavior: "smooth"}); }} style={{ color: "#dc1e26", textDecoration: "none", fontWeight: 600, marginLeft: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <img src="/location-pin.png" alt="Location" style={{ width: "18px", height: "18px", objectFit: "contain" }} /> Show in map
+            </a>
           </div>
         </div>
+        
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <button 
+            onClick={toggleFavourite}
+            style={{ background: "none", border: "none", color: "#dc1e26", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "opacity 0.2s" }} 
+            onMouseOver={e=>e.currentTarget.style.opacity=0.7} 
+            onMouseOut={e=>e.currentTarget.style.opacity=1}
+          >
+            <span style={{ fontSize: "1.2rem", color: "#dc1e26" }}>{isFavourite ? "♥" : "♡"}</span> {isFavourite ? "Added to Favourites" : "Add to Favourites"}
+          </button>
+          <button 
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: hotel.name, url: window.location.href }).catch(console.error);
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert("Link copied to clipboard!");
+              }
+            }}
+            style={{ background: "none", border: "none", color: "#dc1e26", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "opacity 0.2s" }} 
+            onMouseOver={e=>e.currentTarget.style.opacity=0.7} 
+            onMouseOut={e=>e.currentTarget.style.opacity=1}
+          >
+            <span style={{ fontSize: "1.2rem" }}>➦</span> Share
+          </button>
+        </div>
+      </section>
 
-        {/* Right Side: Equal-sized Image Containers */}
-        <div style={{
-          width: "100%",
-          height: "90px",
-          display: "grid",
-          gap: "6px",
-          gridTemplateColumns: `repeat(${Math.min(4, displayedImages.length)}, 1fr)`
-        }}>
-          {displayedImages.slice(0, Math.min(4, displayedImages.length)).map((imgUrl, index) => {
-            const maxVisible = Math.min(4, displayedImages.length);
-            const isLast = index === maxVisible - 1 && displayedImages.length > 4;
-            const extraCount = displayedImages.length - 4;
-            return (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setLightboxIndex(index)}
-                aria-label={`View ${hotel.name} image ${index + 1}`}
-                style={{ position: "relative", width: "100%", height: "100%", border: 0, padding: 0, borderRadius: "10px", overflow: "hidden", cursor: "pointer", background: "#e2e8f0" }}
-              >
-                <img src={imgUrl} alt={`${hotel.name} - ${index + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                {isLast && (
-                  <div style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "rgba(0,0,0,0.55)",
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    borderRadius: "10px"
-                  }} onClick={(event) => { event.stopPropagation(); setLightboxIndex(3); }}>
-                    +{extraCount} more
+      {/* Embedded CSS for Gallery */}
+      <style>{`
+        .hotel-gallery-grid {
+          display: grid;
+          grid-template-columns: ${hotel.offers && hotel.offers.length > 0 ? "2fr 1fr 340px" : "2fr 1fr"};
+          gap: 12px;
+          height: 400px;
+          max-height: 400px;
+          margin-bottom: 32px;
+          position: relative;
+        }
+        .hotel-gallery-grid > div {
+          min-height: 0;
+          height: 100%;
+        }
+        @media (max-width: 900px) {
+          .hotel-gallery-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+            max-height: none;
+          }
+          .hotel-gallery-middle {
+            display: none !important;
+          }
+          .hotel-gallery-main-wrapper {
+            height: 300px !important;
+          }
+          .hotel-deal-card {
+            height: auto !important;
+          }
+        }
+        
+        .hotel-gallery-btn {
+          width: 100%;
+          height: 100%;
+          padding: 0;
+          border: 0;
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+          border-radius: 12px;
+          display: block;
+        }
+        .hotel-gallery-btn img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.4s ease;
+          display: block;
+        }
+        .hotel-gallery-btn img:hover {
+          transform: scale(1.03);
+        }
+        .hotel-gallery-btn::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0);
+          transition: background 0.3s ease;
+          border-radius: 12px;
+          pointer-events: none;
+        }
+        .hotel-gallery-btn:hover::after {
+          background: rgba(0,0,0,0.05);
+        }
+      `}</style>
+
+      {/* Immersive Image Gallery (3 columns) */}
+      <section className="hotel-gallery-grid">
+        {/* Main Image (Left) */}
+        {displayedImages.length > 0 && (
+          <div className="hotel-gallery-main-wrapper" style={{ height: "100%", position: "relative" }}>
+            <button type="button" onClick={() => setLightboxIndex(0)} className="hotel-gallery-btn">
+              <img src={displayedImages[0]} alt={hotel.name} />
+            </button>
+          </div>
+        )}
+        
+        {/* 2 Stacked Images (Middle) */}
+        {displayedImages.length > 1 && (
+          <div className="hotel-gallery-middle" style={{ display: "grid", gridTemplateRows: "1fr 1fr", gap: "12px", height: "100%", minHeight: 0 }}>
+            {displayedImages.slice(1, 3).map((imgUrl, index) => {
+              const actualIndex = index + 1;
+              const isLast = index === 1;
+              const remainingCount = displayedImages.length - 3;
+              
+              return (
+                <button key={actualIndex} type="button" onClick={() => setLightboxIndex(isLast ? 0 : actualIndex)} className="hotel-gallery-btn" style={{ minHeight: 0 }}>
+                  <img src={imgUrl} alt={`${hotel.name} - ${actualIndex + 1}`} />
+                  
+                  {isLast && remainingCount > 0 && (
+                    <div style={{ 
+                      position: "absolute", 
+                      inset: 0, 
+                      background: "rgba(0,0,0,0.45)", 
+                      color: "#fff", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      fontSize: "1.15rem", 
+                      fontWeight: 700,
+                      backdropFilter: "blur(2px)",
+                      transition: "background 0.3s ease"
+                    }}
+                    onMouseOver={e=>e.currentTarget.style.background="rgba(0,0,0,0.55)"}
+                    onMouseOut={e=>e.currentTarget.style.background="rgba(0,0,0,0.45)"}
+                    >
+                      +{remainingCount} Photos
+                    </div>
+                  )}
+                  {isLast && remainingCount <= 0 && (
+                     <div style={{ 
+                      position: "absolute", 
+                      inset: 0, 
+                      background: "rgba(0,0,0,0.45)", 
+                      color: "#fff", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      fontSize: "1.05rem", 
+                      fontWeight: 700,
+                      backdropFilter: "blur(2px)",
+                      transition: "background 0.3s ease"
+                    }}
+                    onMouseOver={e=>e.currentTarget.style.background="rgba(0,0,0,0.55)"}
+                    onMouseOut={e=>e.currentTarget.style.background="rgba(0,0,0,0.45)"}
+                    >
+                      See All Photos
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Recommended Deal Card (Right) */}
+        {hotel.offers && hotel.offers.length > 0 && (
+          <div className="hotel-deal-card" style={{ height: "100%", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", background: "#fff", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", overflow: "hidden" }}>
+            {/* Top image thumbnail */}
+            <div style={{ height: "95px", borderRadius: "8px", overflow: "hidden", marginBottom: "10px", flexShrink: 0 }}>
+              <img src={hotel.offers[0].images?.[0] || gallery[0] || displayedImages[0]} alt="Room thumbnail" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+            
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexShrink: 0 }}>
+              <span style={{ fontSize: "0.65rem", fontWeight: 600, color: "#1d4ed8", background: "#eff6ff", padding: "3px 8px", borderRadius: "12px", border: "1px solid #bfdbfe" }}>
+                Recommended Deal
+              </span>
+            </div>
+            
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 8px 0", color: "var(--hotel-ink)", lineHeight: "1.2", flexShrink: 0 }}>
+              {hotel.offers[0].roomCategory ? hotel.offers[0].roomCategory.replace(/_/g, " ") : "Standard Room"}
+            </h3>
+            
+            {/* Amenities (can shrink and scroll if needed) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", flexGrow: 1, minHeight: 0, overflowY: "auto", paddingRight: "4px" }}>
+              <div style={{ fontSize: "0.78rem", color: hotel.offers[0].cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                <span style={{ fontSize: "0.9rem", lineHeight: "1" }}>{hotel.offers[0].cancellationPolicy?.includes("Charge") ? "⊗" : "✓"}</span> 
+                <span>{hotel.offers[0].cancellationPolicy?.includes("Charge") ? "Non-refundable" : "Free Cancellation"}</span>
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                <span style={{ fontSize: "0.9rem", lineHeight: "1", color: "#2e7d32" }}>✓</span> <span>Complimentary Wifi</span>
+              </div>
+              {(() => {
+                const mealPlan = (Array.isArray(hotel.offers[0].servicesStatus) && hotel.offers[0].servicesStatus.find(s => s.name === "Meal Basis")?.value) || hotel.offers[0].hotelSupplements;
+                if (!mealPlan || mealPlan.toLowerCase() === "room only") return null;
+                return (
+                  <div style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                    <span style={{ fontSize: "0.9rem", lineHeight: "1", color: "#2e7d32" }}>✓</span> <span>Includes {mealPlan}</span>
                   </div>
+                );
+              })()}
+            </div>
+            
+            {/* Price and Buttons (fixed at bottom) */}
+            <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #e2e8f0", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginBottom: "2px" }}>
+                <strong style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--hotel-ink)" }}>
+                  {formatCurrency(hotel.offers[0].price)}
+                </strong>
+                {hotel.offers[0].originalPrice && (
+                  <span style={{ fontSize: "0.8rem", color: "var(--hotel-muted)", textDecoration: "line-through" }}>
+                    {formatCurrency(hotel.offers[0].originalPrice)}
+                  </span>
                 )}
-              </button>
-            );
-          })}
-        </div>
+              </div>
+              <p style={{ fontSize: "0.68rem", color: "var(--hotel-muted)", margin: "0 0 10px 0" }}>
+                + taxes & fees, per night for 1 room
+              </p>
+              
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button 
+                  type="button" 
+                  onClick={() => { handleSelectOffer(hotel.offers[0]); setCurrentStep(2); }}
+                  style={{ flex: 1, background: "#dc1e26", color: "#fff", border: "none", padding: "10px 4px", borderRadius: "8px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", transition: "background 0.2s" }}
+                  onMouseOver={(e) => e.target.style.background = "#b91920"}
+                  onMouseOut={(e) => e.target.style.background = "#dc1e26"}
+                >
+                  Reserve 1 Room
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => scrollToSection("Rooms")}
+                  style={{ flex: 1, background: "#fdf2f2", color: "#dc1e26", border: "1px solid #dc1e26", padding: "10px 4px", borderRadius: "8px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", transition: "background 0.2s" }}
+                  onMouseOver={(e) => e.target.style.background = "#fce8e8"}
+                  onMouseOut={(e) => e.target.style.background = "#fdf2f2"}
+                >
+                  View All Rooms
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {lightboxIndex !== null && displayedImages.length > 0 && (
@@ -267,32 +486,8 @@ export default function HotelDetail({
         </div>
       )}
 
-      {/* Two-Column Checkout/Detail Layout */}
-      <div className="hotel-checkout-layout">
-        {/* Left Column Content */}
-        <div className="hotel-checkout-main">
-
-          {/* Host Panel */}
-          <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "8px 12px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-            <div style={{ 
-              width: "32px", 
-              height: "32px", 
-              borderRadius: "50%", 
-              background: "rgba(220,30,38,0.05)", 
-              color: "var(--hotel-rose)", 
-              display: "flex", 
-              justifyContent: "center", 
-              alignItems: "center", 
-              fontSize: "0.9rem", 
-              fontWeight: 600 
-            }}>
-              {visuals.hostName ? visuals.hostName.slice(0, 1) : "H"}
-            </div>
-            <div>
-              <h2 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>Hosted by {visuals.hostName || "Hotel Host"}</h2>
-              <p style={{ fontSize: "0.74rem", color: "var(--hotel-muted)", margin: 0 }}>Superhost style service · {visuals.hostYears || 2} years hosting · Curated for short city stays.</p>
-            </div>
-          </section>
+      {/* Main Details Section */}
+      <div style={{ maxWidth: "100%" }}>
 
           {/* About this hotel (Description) */}
           {hotel.description && hotel.description.length > 0 && (
@@ -301,67 +496,53 @@ export default function HotelDetail({
                 <h2 style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>About this hotel</h2>
               </div>
               <div>
-                {hotel.description.map((descGroup, idx) => (
-                  <div key={idx} style={{ marginBottom: idx < hotel.description.length - 1 ? "12px" : "0" }}>
-                    {descGroup.name && descGroup.name !== "Overview" && (
-                      <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 4px 0" }}>{descGroup.name}</h3>
-                    )}
-                    {Array.isArray(descGroup.detail) ? (
-                      descGroup.detail.map((text, tidx) => (
-                        <p key={tidx} style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>
-                          {text}
-                        </p>
-                      ))
-                    ) : (
-                      <p style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>{descGroup.detail}</p>
+                {(showAllDesc ? uniqueDescriptions : uniqueDescriptions.slice(0, 3)).map((descGroup, idx) => {
+                  const isOpen = openDescIndex === idx;
+                  const title = descGroup.name && descGroup.name !== "Overview" ? descGroup.name : "Overview";
+                  return (
+                  <div key={idx} style={{ marginBottom: "8px", border: "1px solid #f1f5f9", borderRadius: "12px", overflow: "hidden" }}>
+                    <button 
+                      type="button"
+                      onClick={() => setOpenDescIndex(isOpen ? -1 : idx)}
+                      style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: isOpen ? "#f8fafc" : "#fff", border: "none", cursor: "pointer", textAlign: "left", transition: "background 0.2s" }}
+                      onMouseOver={(e) => e.currentTarget.style.background = "#f8fafc"}
+                      onMouseOut={(e) => e.currentTarget.style.background = isOpen ? "#f8fafc" : "#fff"}
+                    >
+                      <h3 style={{ fontSize: "0.9rem", fontWeight: 700, color: isOpen ? "var(--hotel-ink)" : "#475569", margin: 0 }}>{title}</h3>
+                      <span style={{ fontSize: "0.8rem", color: "#94a3b8", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }}>▼</span>
+                    </button>
+                    {isOpen && (
+                      <div style={{ padding: "0 16px 16px 16px", background: "#f8fafc" }}>
+                        {Array.isArray(descGroup.detail) ? (
+                          descGroup.detail.map((text, tidx) => (
+                            <p key={tidx} style={{ fontSize: "0.85rem", color: "var(--hotel-muted)", margin: tidx === 0 ? "0 0 6px 0" : "6px 0", lineHeight: "1.6" }}>
+                              {text}
+                            </p>
+                          ))
+                        ) : (
+                          <p style={{ fontSize: "0.85rem", color: "var(--hotel-muted)", margin: 0, lineHeight: "1.6" }}>{descGroup.detail}</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
+                {uniqueDescriptions.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllDesc(!showAllDesc)}
+                    style={{ background: "transparent", color: "#dc1e26", border: "none", padding: "4px 8px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", marginTop: "4px" }}
+                    onMouseOver={(e) => e.currentTarget.style.textDecoration = "underline"}
+                    onMouseOut={(e) => e.currentTarget.style.textDecoration = "none"}
+                  >
+                    {showAllDesc ? "View less" : "View more"}
+                  </button>
+                )}
               </div>
             </section>
           )}
 
-          {/* Highlights Panel */}
-          <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
-            <div style={{ marginBottom: "8px" }}>
-              <h2 style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>What makes this stay feel easy</h2>
-              <p style={{ fontSize: "0.74rem", color: "var(--hotel-muted)", margin: 0 }}>These highlights are built from the live hotel record and details.</p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {stayHighlights.map((highlight) => (
-                <article key={highlight.title} style={{ 
-                  display: "flex", 
-                  gap: "10px", 
-                  alignItems: "center", 
-                  padding: "8px 10px", 
-                  border: "1px solid rgba(220,30,38,0.08)", 
-                  borderRadius: "10px", 
-                  background: "#ffffff" 
-                }}>
-                  <span style={{ 
-                    width: "24px", 
-                    height: "24px", 
-                    borderRadius: "50%", 
-                    background: "#fff5f2", 
-                    color: "#ff6b4a", 
-                    display: "flex", 
-                    justifyContent: "center", 
-                    alignItems: "center", 
-                    fontSize: "0.85rem", 
-                    flexShrink: 0 
-                  }}>
-                    ✨
-                  </span>
-                  <div>
-                    <strong style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--hotel-ink)", margin: "0 0 1px 0" }}>
-                      {typeof highlight.title === "object" && highlight.title !== null ? (highlight.title.name || highlight.title.Name || highlight.title.title || "") : highlight.title}
-                    </strong>
-                    <p style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", margin: 0, lineHeight: "1.3" }}>{highlight.text}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+
 
           {/* Property Views Section (Rendered dynamically if available in API data) */}
           {views.length > 0 && (
@@ -567,16 +748,16 @@ export default function HotelDetail({
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleSelectOffer(roomOffer)}
+                            onClick={() => { handleSelectOffer(roomOffer); setCurrentStep(2); }}
                             disabled={selectingOfferId !== ""}
                             style={{
                               width: "100%",
-                              height: "32px",
+                              height: "36px",
                               borderRadius: "8px",
-                              fontSize: "0.78rem",
-                              fontWeight: 600,
+                              fontSize: "0.8rem",
+                              fontWeight: 700,
                               cursor: "pointer",
-                              background: isSelected ? "var(--hotel-rose)" : "#546e7a",
+                              background: isSelected ? "var(--hotel-rose)" : "#dc1e26",
                               color: "#fff",
                               border: "none",
                               transition: "all 0.15s ease"
@@ -590,7 +771,7 @@ export default function HotelDetail({
                             ) : isSelected ? (
                               "Selected ✓"
                             ) : (
-                              "Choose room"
+                              "Reserve Room"
                             )}
                           </button>
                         </div>
@@ -614,10 +795,12 @@ export default function HotelDetail({
 
           {/* Location Map Section */}
           {hotel.address && (
-            <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px" }}>
+            <section id="section-map" style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px" }}>
               <div style={{ marginBottom: "12px" }}>
                 <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Location</h3>
-                <p style={{ margin: "4px 0 0 0", color: "var(--hotel-muted)", fontSize: "0.78rem" }}>📍 {hotel.address}</p>
+                <p style={{ margin: "4px 0 0 0", color: "var(--hotel-muted)", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ color: "#dc1e26", fontSize: "1.1rem" }}>📍</span> {hotel.address}
+                </p>
               </div>
               <div style={{ position: "relative", width: "100%", height: "240px", borderRadius: "14px", overflow: "hidden", border: "1px solid var(--hotel-border)" }}>
                 <iframe
@@ -631,140 +814,6 @@ export default function HotelDetail({
             </section>
           )}
         </div>
-
-        {/* Right Column Booking Sidebar */}
-        <aside className="hotel-reserve-rail">
-          <div className="hotel-reserve-card hotel-your-stay-card" style={{ position: "sticky", top: "20px", background: "var(--hotel-surface)", borderRadius: "24px", border: "1px solid var(--hotel-border)", padding: "24px", boxShadow: "var(--hotel-shadow)" }}>
-            <div className="hotel-your-stay-header" style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>YOUR STAY</h3>
-            </div>
-
-            {/* Check-in and Check-out Date row (flexbox layout prevents overlapping) */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", padding: "10px 12px", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.04)", marginBottom: "16px" }}>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: "block", fontSize: "0.68rem", color: "var(--hotel-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3px" }}>Check-in</span>
-                <strong style={{ display: "block", fontSize: "0.82rem", color: "var(--hotel-ink)", marginTop: "2px" }}>
-                  {checkInDate ? toDisplayDate(String(checkInDate).split("T")[0]) : "Select date"}
-                </strong>
-                <span style={{ fontSize: "0.64rem", color: "var(--hotel-muted)", display: "block", marginTop: "1px" }}>From 2:00 PM</span>
-              </div>
-              
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 8px", borderLeft: "1px solid rgba(0,0,0,0.06)", borderRight: "1px solid rgba(0,0,0,0.06)", minWidth: "60px" }}>
-                <span style={{ fontSize: "0.65rem", color: "var(--hotel-muted)" }}>➔</span>
-                <span style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "20px", padding: "2px 6px", fontSize: "0.58rem", fontWeight: 700, color: "var(--hotel-ink)", marginTop: "2px", whiteSpace: "nowrap" }}>
-                  {nights} {nights > 1 ? "Nights" : "Night"}
-                </span>
-              </div>
-
-              <div style={{ flex: 1, paddingLeft: "8px", textAlign: "right" }}>
-                <span style={{ display: "block", fontSize: "0.68rem", color: "var(--hotel-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3px" }}>Check-out</span>
-                <strong style={{ display: "block", fontSize: "0.82rem", color: "var(--hotel-ink)", marginTop: "2px" }}>
-                  {checkOutDate ? toDisplayDate(String(checkOutDate).split("T")[0]) : "Select date"}
-                </strong>
-                <span style={{ fontSize: "0.64rem", color: "var(--hotel-muted)", display: "block", marginTop: "1px" }}>Before 11:00 AM</span>
-              </div>
-            </div>
-
-            {/* Guest dropdown preview */}
-            <div style={{ border: "1px solid rgba(0,0,0,0.06)", borderRadius: "14px", padding: "12px", background: "#f8fafc", marginBottom: "16px" }}>
-              <span style={{ display: "block", fontSize: "0.68rem", color: "var(--hotel-muted)", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px" }}>GUESTS & ROOMS</span>
-              <strong style={{ display: "block", fontSize: "0.82rem", color: "var(--hotel-ink)" }}>
-                {guestSummary}
-              </strong>
-            </div>
-
-            {offer ? (
-              <>
-                <div style={{ border: "1px solid rgba(0,0,0,0.06)", borderRadius: "14px", padding: "12px", background: "#f8fafc", marginBottom: "16px" }}>
-                  <span style={{ display: "block", fontSize: "0.68rem", color: "var(--hotel-muted)", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px" }}>Selected Room Type</span>
-                  <strong style={{ display: "block", fontSize: "0.82rem", color: "var(--hotel-ink)" }}>
-                    {offer.roomCategory ? offer.roomCategory.replace(/_/g, " ") : "Standard Room"}
-                  </strong>
-                </div>
-
-                <div className="hotel-fare-breakdown" style={{ display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "14px" }}>
-                  <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
-                    <span>Room charges ({formatNightLabel(nights)})</span>
-                    <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(basePrice)}</strong>
-                  </div>
-                  <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
-                    <span>Taxes and GST (12%)</span>
-                    <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(tax)}</strong>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "16px" }}>
-                  <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Total Price</span>
-                  <strong style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981" }}>{formatCurrency(finalPayable)}</strong>
-                </div>
-              </>
-            ) : (
-              <div style={{ padding: "12px", border: "1.5px dashed #cbd5e1", borderRadius: "14px", background: "#fafafa", textAlign: "center", marginBottom: "16px", color: "var(--hotel-muted)", fontSize: "0.78rem" }}>
-                Choose an available room option from the list to display pricing details.
-              </div>
-            )}
-
-            {/* Proceed Button */}
-            <button
-              type="button"
-              className="booking-btn-filled"
-              disabled={!offer}
-              onClick={() => setCurrentStep(2)}
-              style={{
-                width: "100%",
-                height: "46px",
-                borderRadius: "12px",
-                fontSize: "0.9rem",
-                fontWeight: 700,
-                cursor: offer ? "pointer" : "not-allowed",
-                background: offer ? "var(--hotel-rose)" : "#cbd5e1",
-                border: "none",
-                color: "#fff"
-              }}
-            >
-              PROCEED
-            </button>
-
-            {/* Dynamic Cancellation Note */}
-            {(() => {
-              if (!offer) {
-                return (
-                  <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", color: "#475569", fontSize: "0.76rem", marginTop: "16px" }}>
-                    <ShieldCheck size={16} />
-                    <span>Select a room to view cancellation policies.</span>
-                  </div>
-                );
-              }
-
-              const policyData = offer.cancellationPoliciesData?.[0] || {};
-              const chargeAmt = policyData.charge || policyData.Charge;
-              const isNonRefundable = offer.cancellationPolicy?.includes("Charge") || (chargeAmt && Number(chargeAmt) > 0);
-              
-              if (isNonRefundable) {
-                return (
-                  <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#ffebee", border: "1px solid #ffcdd2", borderRadius: "12px", color: "#c62828", fontSize: "0.76rem", marginTop: "16px" }}>
-                    <ShieldCheck size={16} />
-                    <span><strong>Non-Refundable:</strong> Cancellation charges will apply.</span>
-                  </div>
-                );
-              }
-
-              const fromDate = policyData.fromDate || policyData.FromDate;
-              let dateText = checkInDate ? String(checkInDate).split("T")[0] : "";
-              if (fromDate) {
-                dateText = String(fromDate).split("T")[0];
-              }
-
-              return (
-                <div className="hotel-stay-assurance-note" style={{ display: "flex", gap: "8px", alignItems: "center", padding: "12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "12px", color: "#166534", fontSize: "0.76rem", marginTop: "16px" }}>
-                  <ShieldCheck size={16} />
-                  <span><strong>Free Cancellation</strong> before {toDisplayDate(dateText)}</span>
-                </div>
-              );
-            })()}
-          </div>
-        </aside>
-      </div>
     </>
   );
 }

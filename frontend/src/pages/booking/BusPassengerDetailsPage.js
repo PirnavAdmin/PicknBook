@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Check, Copy, Mail, Phone, User, X, ShieldCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
-import BookingTimer from "./BookingTimer";
+
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import {
   readBusBookingFlowState,
@@ -1922,7 +1922,7 @@ export default function BusPassengerDetailsPage() {
 
   return (
     <main className="bus-flow-page">
-      <BookingTimer />
+
       <div className="bus-flow-shell">
         <section className="bus-passenger-layout">
 

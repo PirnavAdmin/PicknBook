@@ -186,8 +186,10 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
                 <h4 className="hotel-map-info-title">{selectedHotel.name}</h4>
                 <p className="hotel-map-info-address">{selectedHotel.address}</p>
                 <div className="hotel-map-info-meta">
-                  <span className="hotel-map-info-rating">
-                    ★ {Number(selectedHotel.rating || 0).toFixed(1)}
+                  <span className="hotel-map-info-rating" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+                    {Array.from({ length: Math.floor(Number(selectedHotel.rating || 0)) || 1 }).map((_, i) => (
+                      <span key={i} style={{ color: "#eab308", fontSize: "12px" }}>★</span>
+                    ))}
                   </span>
                   <span className="hotel-map-info-price">
                     {formatCurrency(selectedHotel.price || selectedHotel.offers?.[0]?.price || 0)}/night

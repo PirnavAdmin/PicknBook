@@ -104,7 +104,7 @@
 /* Bold Slate Value — crisp and readable */
 .hotel-capsule-val {
   font-size: 14.5px !important;
-  font-weight: 700 !important;
+  font-weight: 400 !important;
   color: #1e293b !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -140,7 +140,7 @@
   outline: none !important;
   box-shadow: none !important;
   font-size: 14.5px !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   color: #1e293b !important;
   padding: 0 !important;
   margin: 0 !important;

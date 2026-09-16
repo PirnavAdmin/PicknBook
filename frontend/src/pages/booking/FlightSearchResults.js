@@ -37,7 +37,7 @@ import {
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { bookFlight, searchFlights, getFareRule, getCalendarFare } from "../../services/flightBookingService";
-import { resetBookingSessionTimer } from "./BookingTimer";
+
 import FareCalendarModal from "../../components/FareCalendarModal";
 import FlightLoadingScreen from "../../components/FlightLoadingScreen";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
@@ -1474,7 +1474,7 @@ export default function FlightSearchResults() {
   };
 
   const handleStartBookingJourney = (flight, selectedPrice = null, selectedClass = null, explicitMultiCitySelections = null) => {
-    resetBookingSessionTimer();
+
     setBookingError("");
     setBookingSuccess("");
     const bookingTravellerCounts = getTravellerCounts(travellerText);

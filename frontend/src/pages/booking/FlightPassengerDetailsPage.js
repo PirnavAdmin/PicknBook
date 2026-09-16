@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
-import BookingTimer from "./BookingTimer";
+
 import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
@@ -667,7 +667,6 @@ export default function FlightPassengerDetailsPage() {
         traceId: searchContext?.traceId || flight.traceId || flight.TraceId,
         resultIndex: flight.resultIndex || flight.ResultIndex || flight.id,
         travelClass: flight.className || searchContext?.cabinClass || "Economy",
-        flight,
         passengers,
         contact,
         gstInfo,
@@ -1353,7 +1352,7 @@ export default function FlightPassengerDetailsPage() {
 
   return (
     <main className="flight-flow-page">
-      <BookingTimer />
+
       {/* ── STEPPER PROGRESS HEADER ── */}
       <div className="flight-stepper-header">
         <div className="step-item completed">

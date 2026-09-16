@@ -68,14 +68,11 @@
 
 .brand-logo {
   display: block;
-  height: 66px;
+  height: 40px;
   width: auto;
   object-fit: contain;
   object-position: left center;
-  transform: scale(1.5);
-  transform-origin: left center;
-  margin-left: -16px;
-  margin-right: 32px;
+  margin-right: 24px;
 }
 
 /* Scrolling Transition Menu Links */
