@@ -3495,6 +3495,16 @@ export default function HomePage() {
     });
   };
 
+  const swapMultiCityLeg = (legId) => {
+    setMultiCityLegs((previousLegs) =>
+      previousLegs.map((leg) => (
+        leg.id === legId
+          ? { ...leg, from: leg.to, to: leg.from }
+          : leg
+      )),
+    );
+  };
+
   const addMultiCityLeg = () => {
     setMultiCityLegs((previousLegs) => {
       const lastLeg = previousLegs[previousLegs.length - 1];
@@ -3502,7 +3512,7 @@ export default function HomePage() {
 
       return [
         ...previousLegs,
-        createMultiCityLeg(defaultFrom, "Mumbai", previousLegs.length + 1),
+        createMultiCityLeg(defaultFrom, "", previousLegs.length + 1),
       ];
     });
   };
@@ -7463,6 +7473,18 @@ export default function HomePage() {
                             className="source-field"
                           />
 
+                          <div className="multi-swap-field">
+                            <button
+                              type="button"
+                              className="multi-swap-btn"
+                              onClick={() => swapMultiCityLeg(leg.id)}
+                              aria-label={`Swap source and destination for leg ${multiCityLegs.indexOf(leg) + 1}`}
+                              title="Swap source and destination"
+                            >
+                              <ArrowLeftRight size={15} />
+                            </button>
+                          </div>
+
                           <PlaceAutocomplete
                             label="TO"
                             value={leg.to}
@@ -8756,12 +8778,6 @@ export default function HomePage() {
 
           {/* Right Dark Navy Container */}
           <div className="client-testimonials-right-dark-box">
-            <div className="client-testimonials-header">
-              <h2 className="client-testimonial-title">
-                What Our Client <span className="client-title-muted">Say About Us</span>
-              </h2>
-            </div>
-
             {/* Testimonials Auto-Scrolling Marquee */}
             <AutoMarquee
               items={testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS}
