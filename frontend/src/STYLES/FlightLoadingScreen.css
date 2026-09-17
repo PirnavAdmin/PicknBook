@@ -31,9 +31,9 @@
   background: #ffffff;
   border-radius: 28px;
   box-shadow:
-    0 24px 60px rgba(220, 30, 38, 0.08),
+    0 24px 60px rgba(255, 0, 0, 0.08),
     0 10px 24px rgba(15, 23, 42, 0.04),
-    0 0 0 1px rgba(220, 30, 38, 0.12);
+    0 0 0 1px rgba(255, 0, 0, 0.12);
   display: grid;
   grid-template-columns: 38% 62%;
   overflow: hidden;
@@ -110,7 +110,7 @@
 }
 
 .fls-pin-icon {
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 /* Carousel Dots */
@@ -138,8 +138,8 @@
 
 .fls-dot.active {
   width: 20px;
-  background: #dc1e26;
-  box-shadow: 0 0 8px rgba(220, 30, 38, 0.6);
+  background: #ff0000;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
 }
 
 /* ── Right Column: Info & Status (Clean Ocean Cyan Theme) ── */
@@ -185,7 +185,7 @@
   border-radius: 50%;
   border: 1px solid #fecaca;
   background: #fef2f2;
-  color: #b8141b;
+  color: #ff0000;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -193,9 +193,9 @@
 }
 
 .fls-arrow-btn:hover {
-  background: #dc1e26;
+  background: #ff0000;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
   transform: scale(1.05);
 }
 
@@ -220,14 +220,14 @@
 /* RED ACCENTS */
 .fls-magenta {
   font-weight: 800;
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 .fls-serif-magenta {
   font-family: "Playfair Display", Georgia, serif;
   font-style: italic;
   font-weight: 600;
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 .fls-slide-anim {
@@ -276,7 +276,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: linear-gradient(90deg, #f43f5e 0%, #b8141b 100%);
+  background: linear-gradient(90deg, #f43f5e 0%, #ff0000 100%);
   border-radius: 999px;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -289,7 +289,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 2px 4px rgba(220, 30, 38, 0.4));
+  filter: drop-shadow(0 2px 4px rgba(255, 0, 0, 0.4));
 }
 
 /* 4 Feature Steps Indicator Row */
@@ -335,12 +335,12 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #dc1e26;
+  background: #ff0000;
   color: #ffffff;
   display: grid;
   place-items: center;
   margin-bottom: 8px;
-  box-shadow: 0 6px 14px rgba(220, 30, 38, 0.22);
+  box-shadow: 0 6px 14px rgba(255, 0, 0, 0.22);
   transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
 }
 

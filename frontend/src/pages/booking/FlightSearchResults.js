@@ -2381,9 +2381,9 @@ export default function FlightSearchResults() {
                     flex: 1,
                     padding: "10px 16px",
                     borderRadius: "8px",
-                    border: twoWayActiveTab === "return" ? "2px solid #dc1e26" : "1px solid #cbd5e1",
+                    border: twoWayActiveTab === "return" ? "2px solid #ff0000" : "1px solid #cbd5e1",
                     backgroundColor: twoWayActiveTab === "return" ? "#fef2f2" : "#ffffff",
-                    color: twoWayActiveTab === "return" ? "#dc1e26" : "#475569",
+                    color: twoWayActiveTab === "return" ? "#ff0000" : "#475569",
                     fontWeight: 700,
                     fontSize: "0.9rem",
                     cursor: "pointer",
@@ -2397,7 +2397,7 @@ export default function FlightSearchResults() {
                     <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", display: "block" }}>2. RETURN FLIGHT</span>
                     <strong>{destinationName} ➔ {sourceName}</strong>
                     {selectedReturnFlightObj && (
-                      <span style={{ display: "block", fontSize: "0.8rem", color: "#dc1e26", fontWeight: 700, marginTop: "2px" }}>
+                      <span style={{ display: "block", fontSize: "0.8rem", color: "#ff0000", fontWeight: 700, marginTop: "2px" }}>
                         Selected: ₹{new Intl.NumberFormat("en-IN").format(selectedReturnFlightObj.fare)}
                       </span>
                     )}
@@ -2445,9 +2445,9 @@ export default function FlightSearchResults() {
                         minWidth: "210px",
                         padding: "10px 14px",
                         borderRadius: "8px",
-                        border: isActive ? "2px solid #e11d48" : "1px solid #cbd5e1",
+                        border: isActive ? "2px solid #ff0000" : "1px solid #cbd5e1",
                         backgroundColor: isActive ? "#fff1f2" : "#ffffff",
-                        color: isActive ? "#e11d48" : "#475569",
+                        color: isActive ? "#ff0000" : "#475569",
                         fontWeight: 700,
                         fontSize: "0.88rem",
                         cursor: "pointer",
@@ -2459,17 +2459,17 @@ export default function FlightSearchResults() {
                       onClick={() => setMultiCityActiveTab(index)}
                     >
                       <div style={{ textAlign: "left" }}>
-                        <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px", color: isActive ? "#e11d48" : "#64748b", display: "block", fontWeight: 800 }}>
+                        <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px", color: isActive ? "#ff0000" : "#64748b", display: "block", fontWeight: 800 }}>
                           {index + 1}. FLIGHT LEG {index + 1}
                         </span>
                         <strong style={{ color: "#0f172a" }}>{displaySrc} ➔ {displayDest}</strong>
                         {selectedObj && (
-                          <span style={{ display: "block", fontSize: "0.78rem", color: "#e11d48", fontWeight: 700, marginTop: "2px" }}>
+                          <span style={{ display: "block", fontSize: "0.78rem", color: "#ff0000", fontWeight: 700, marginTop: "2px" }}>
                             {displayAirline} {displayFare ? `· ₹${new Intl.NumberFormat("en-IN").format(displayFare)}` : ""}
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: "0.8rem", background: isActive ? "#ffe4e6" : "#f1f5f9", color: isActive ? "#9f1239" : "#475569", padding: "4px 8px", borderRadius: "6px", fontWeight: 700, whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "0.8rem", background: isActive ? "#ffe4e6" : "#f1f5f9", color: isActive ? "#ff0000" : "#475569", padding: "4px 8px", borderRadius: "6px", fontWeight: 700, whiteSpace: "nowrap" }}>
                         {legArray.length} Available
                       </span>
                     </button>
@@ -2616,12 +2616,12 @@ export default function FlightSearchResults() {
                         <div style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: "10px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
                           <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span>All Flights in this Multi-City Journey ({flight.fullMultiSectorSegments.length} Sectors)</span>
-                            <span style={{ color: "#e11d48", fontWeight: 800 }}>Total Combined Fare: ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</span>
+                            <span style={{ color: "#ff0000", fontWeight: 800 }}>Total Combined Fare: ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</span>
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: `repeat(${flight.fullMultiSectorSegments.length}, minmax(0, 1fr))`, gap: "8px" }}>
                             {flight.fullMultiSectorSegments.map((sec, secIdx) => (
                               <div key={`mc-sec-${secIdx}`} style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "6px 10px", fontSize: "0.78rem" }}>
-                                <div style={{ fontWeight: 800, color: "#e11d48", fontSize: "0.7rem" }}>LEG {secIdx + 1}</div>
+                                <div style={{ fontWeight: 800, color: "#ff0000", fontSize: "0.7rem" }}>LEG {secIdx + 1}</div>
                                 <strong style={{ color: "#0f172a", fontSize: "0.82rem" }}>{sec.sourceCode} ➔ {sec.destinationCode}</strong>
                                 <div style={{ color: "#64748b", fontSize: "0.72rem" }}>{sec.airline} ({sec.flightNumber})</div>
                                 <div style={{ color: "#334155", fontSize: "0.72rem", marginTop: "2px", fontWeight: 600 }}>
@@ -2934,7 +2934,7 @@ export default function FlightSearchResults() {
           justifyContent: "space-between",
           zIndex: 9999,
           boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.45)",
-          borderTop: "3px solid #e11d48",
+          borderTop: "3px solid #ff0000",
           backdropFilter: "blur(12px)",
           gap: "16px"
         }}>
@@ -2949,12 +2949,12 @@ export default function FlightSearchResults() {
                     padding: "6px 12px",
                     borderRadius: "8px",
                     background: twoWayActiveTab === "onward" ? "rgba(225, 29, 72, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                    border: twoWayActiveTab === "onward" ? "1.5px solid #e11d48" : "1px solid rgba(255, 255, 255, 0.1)",
+                    border: twoWayActiveTab === "onward" ? "1.5px solid #ff0000" : "1px solid rgba(255, 255, 255, 0.1)",
                     cursor: "pointer"
                   }}
                   onClick={() => setTwoWayActiveTab("onward")}
                 >
-                  <div style={{ background: "#e11d48", color: "#ffffff", padding: "4px 8px", borderRadius: "5px", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.5px", flexShrink: 0 }}>
+                  <div style={{ background: "#ff0000", color: "#ffffff", padding: "4px 8px", borderRadius: "5px", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.5px", flexShrink: 0 }}>
                     1. ONWARD
                   </div>
                   <div>
@@ -2977,12 +2977,12 @@ export default function FlightSearchResults() {
                     padding: "6px 12px",
                     borderRadius: "8px",
                     background: twoWayActiveTab === "return" ? "rgba(220, 30, 38, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                    border: twoWayActiveTab === "return" ? "1.5px solid #dc1e26" : "1px solid rgba(255, 255, 255, 0.1)",
+                    border: twoWayActiveTab === "return" ? "1.5px solid #ff0000" : "1px solid rgba(255, 255, 255, 0.1)",
                     cursor: "pointer"
                   }}
                   onClick={() => setTwoWayActiveTab("return")}
                 >
-                  <div style={{ background: "#dc1e26", color: "#ffffff", padding: "4px 8px", borderRadius: "5px", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.5px", flexShrink: 0 }}>
+                  <div style={{ background: "#ff0000", color: "#ffffff", padding: "4px 8px", borderRadius: "5px", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.5px", flexShrink: 0 }}>
                     2. RETURN
                   </div>
                   <div>
@@ -3020,14 +3020,14 @@ export default function FlightSearchResults() {
                       padding: "6px 12px",
                       borderRadius: "8px",
                       background: isActive ? "rgba(225, 29, 72, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                      border: isActive ? "1.5px solid #e11d48" : "1px solid rgba(255, 255, 255, 0.1)",
+                      border: isActive ? "1.5px solid #ff0000" : "1px solid rgba(255, 255, 255, 0.1)",
                       cursor: "pointer"
                     }}
                     onClick={() => {
                       setMultiCityActiveTab(index);
                     }}
                   >
-                    <div style={{ background: isActive ? "#e11d48" : "#334155", color: "#ffffff", padding: "4px 8px", borderRadius: "5px", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.5px", flexShrink: 0 }}>
+                    <div style={{ background: isActive ? "#ff0000" : "#334155", color: "#ffffff", padding: "4px 8px", borderRadius: "5px", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.5px", flexShrink: 0 }}>
                       {index + 1}. LEG {index + 1}
                     </div>
                     <div>
@@ -3060,7 +3060,7 @@ export default function FlightSearchResults() {
             <button
               type="button"
               style={{
-                backgroundColor: "#e11d48",
+                backgroundColor: "#ff0000",
                 color: "#ffffff",
                 border: "2px solid #f43f5e",
                 borderRadius: "8px",

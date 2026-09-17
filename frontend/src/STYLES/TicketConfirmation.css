@@ -6,8 +6,8 @@
   --ticket-border: #cfdbea;
   --ticket-text: #1c395f;
   --ticket-muted: #5a7394;
-  --ticket-primary: var(--theme-primary-strong, #b8141b);
-  --ticket-primary-strong: #b8141b;
+  --ticket-primary: var(--theme-primary-strong, #ff0000);
+  --ticket-primary-strong: #ff0000;
   --ticket-success: #265088;
   --ticket-shadow: 0 14px 28px rgba(13, 30, 52, 0.11);
   --ticket-heading-font: var(--app-font-family);
@@ -363,9 +363,9 @@
   --ticket-border: #d8e5ee !important;
   --ticket-text: #050b18 !important;
   --ticket-muted: #5f6875 !important;
-  --ticket-primary: #dc1e26 !important;
-  --ticket-primary-strong: #b8141b !important;
-  --ticket-success: #dc1e26 !important;
+  --ticket-primary: #ff0000 !important;
+  --ticket-primary-strong: #ff0000 !important;
+  --ticket-success: #ff0000 !important;
   background: #edf7ff !important;
 }
 
@@ -381,7 +381,7 @@
 
 .ticket-empty button,
 .ticket-actions .primary {
-  background: #dc1e26 !important;
+  background: #ff0000 !important;
   color: #ffffff !important;
   box-shadow: none !important;
 }
@@ -466,7 +466,7 @@
 }
 
 .pass-class-badge {
-  background-color: #dc1e26;
+  background-color: #ff0000;
   color: #ffffff;
   font-size: 0.625rem;
   font-weight: 800;
@@ -525,7 +525,7 @@
 
 .airport-connector-arrow .airplane-icon {
   font-size: 1.375rem;
-  color: #dc1e26;
+  color: #ff0000;
   transform: rotate(90deg);
   display: inline-block;
 }
@@ -569,11 +569,11 @@
 .detail-val.seat-glow {
   font-size: 1.125rem;
   font-weight: 800;
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 .detail-val.highlight-val {
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 /* Perforation Divider */
@@ -669,7 +669,7 @@
 }
 
 .arrow-stub {
-  color: #dc1e26;
+  color: #ff0000;
   font-weight: 800;
 }
 
@@ -704,7 +704,7 @@
 }
 
 .detail-val-stub.seat-glow {
-  color: #dc1e26;
+  color: #ff0000;
   font-weight: 800;
   font-size: 0.938rem;
 }

@@ -194,7 +194,7 @@ export default function FlightCancelRequest() {
             zIndex: 999999,
             background: errorMessage ? "#fef2f2" : "#f0fdf4",
             border: `2px solid ${errorMessage ? "#f87171" : "#4ade80"}`,
-            color: errorMessage ? "#991b1b" : "#166534",
+            color: errorMessage ? "#ff0000" : "#166534",
             padding: "14px 20px",
             borderRadius: "10px",
             boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
@@ -410,7 +410,7 @@ export default function FlightCancelRequest() {
 
             {(actionMessage || errorMessage) && (
               <div style={{ background: errorMessage ? "#fef2f2" : "#ecfdf5", borderLeft: `4px solid ${errorMessage ? "#ef4444" : "#10b981"}`, padding: "12px 18px", margin: "16px 20px 4px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: errorMessage ? "#b91c1c" : "#047857", fontWeight: 700, fontSize: "0.93rem" }}>
+                <span style={{ color: errorMessage ? "#ff0000" : "#047857", fontWeight: 700, fontSize: "0.93rem" }}>
                   {errorMessage ? "❌ " + errorMessage : actionMessage}
                 </span>
                 <button type="button" onClick={() => { setActionMessage(""); setErrorMessage(""); }} style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 800, color: "inherit" }}>✕</button>
@@ -435,7 +435,7 @@ export default function FlightCancelRequest() {
               </div>
               <div>
                 <span>Status</span>
-                <strong style={{ color: selectedBooking.status === "Cancelled" ? "#dc2626" : "#16a34a", fontWeight: 800 }}>
+                <strong style={{ color: selectedBooking.status === "Cancelled" ? "#ff0000" : "#16a34a", fontWeight: 800 }}>
                   {selectedBooking.status}
                 </strong>
               </div>
@@ -481,8 +481,8 @@ export default function FlightCancelRequest() {
               )}
               {(selectedBooking.cancellationCharge > 0 || selectedBooking.cancellationChargeInr > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0 || selectedBooking.status === "Cancelled") && (
                 <div>
-                  <span style={{ color: "#dc2626", fontWeight: 700 }}>Cancellation Fee / Penalty</span>
-                  <strong style={{ color: "#dc2626" }}>
+                  <span style={{ color: "#ff0000", fontWeight: 700 }}>Cancellation Fee / Penalty</span>
+                  <strong style={{ color: "#ff0000" }}>
                     {formatCurrency(selectedBooking.cancellationCharge ?? selectedBooking.cancellationChargeInr ?? selectedBooking?.CancellationCharge ?? selectedBooking?.RefundDetails?.CancellationCharge ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.15))}
                   </strong>
                 </div>

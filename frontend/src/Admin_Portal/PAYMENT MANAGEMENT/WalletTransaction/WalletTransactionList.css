@@ -238,7 +238,7 @@
 
 .wt-badge-debit {
   background: #fee2e2;
-  color: #b91c1c;
+  color: #ff0000;
 }
 
 .wt-badge-refund {
@@ -263,7 +263,7 @@
 
 .wt-badge-failed {
   background: #fef2f2;
-  color: #dc2626;
+  color: #ff0000;
 }
 
 /* Action Icon Button */

@@ -478,7 +478,7 @@ function BlogCategoryList() {
         },
         statusInactive: {
             background: '#fef2f2',
-            color: '#b91c1c',
+            color: '#ff0000',
             borderColor: '#ef4444',
         },
         actionButtons: {
@@ -771,7 +771,7 @@ function BlogCategoryList() {
                                 <div>
                                     <strong style={{ color: 'var(--text-secondary)' }}>Status:</strong>
                                     <div>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedCategory.status === 'Active' ? '#047857' : '#b91c1c', border: selectedCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedCategory.status === 'Active' ? '#047857' : '#ff0000', border: selectedCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
                                             {selectedCategory.status}
                                         </div>
                                     </div>

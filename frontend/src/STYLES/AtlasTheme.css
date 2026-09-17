@@ -11,25 +11,25 @@
   --theme-border-soft: #F3F4F6;
   --theme-text: #162126;
   --theme-muted: #66757b;
-  --theme-primary: #dc1e26;
-  --theme-primary-strong: #b8141b;
+  --theme-primary: #ff0000;
+  --theme-primary-strong: #ff0000;
   --theme-primary-soft: #fef2f2;
   --theme-navy: #17242d;
-  --theme-blue: #b8141b;
-  --theme-coral: #dc1e26;
-  --theme-gold: #dc1e26;
-  --theme-danger: #d94f48;
+  --theme-blue: #ff0000;
+  --theme-coral: #ff0000;
+  --theme-gold: #ff0000;
+  --theme-danger: #ff0000;
   --theme-danger-soft: #fff0ee;
   --theme-shadow: 0 22px 55px rgba(12, 46, 51, 0.15);
   --theme-shadow-sm: 0 12px 28px rgba(12, 46, 51, 0.09);
-  --theme-gradient: linear-gradient(135deg, #dc1e26 0%, #b8141b 58%, #dc1e26 100%);
-  --theme-gradient-action: linear-gradient(135deg, #dc1e26 0%, #b8141b 54%, #b8141b 100%);
+  --theme-gradient: linear-gradient(135deg, #ff0000 0%, #ff0000 58%, #ff0000 100%);
+  --theme-gradient-action: linear-gradient(135deg, #ff0000 0%, #ff0000 54%, #ff0000 100%);
 }
 
 body {
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.08) 0%, transparent 30%),
-    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.08) 0%, transparent 30%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.1) 0%, transparent 34%),
     var(--theme-page) !important;
   color: var(--theme-text) !important;
 }
@@ -47,9 +47,9 @@ body {
   isolation: isolate;
   font-family: var(--app-font-family);
   background:
-    radial-gradient(circle at 14% 18%, rgba(220, 30, 38, 0.22), transparent 24%),
+    radial-gradient(circle at 14% 18%, rgba(255, 0, 0, 0.22), transparent 24%),
     radial-gradient(circle at 86% 12%, rgba(255, 189, 89, 0.22), transparent 25%),
-    radial-gradient(circle at 52% 92%, rgba(184, 20, 27, 0.14), transparent 31%),
+    radial-gradient(circle at 52% 92%, rgba(255, 0, 0, 0.14), transparent 31%),
     linear-gradient(135deg, #fff7f4 0%, #fffdf9 42%, #eef7ff 100%);
   color: var(--theme-navy);
 }
@@ -71,7 +71,7 @@ body {
   transform: translateX(-50%);
   border-radius: 50%;
   background:
-    repeating-radial-gradient(circle, rgba(220, 30, 38, 0.1) 0 2px, transparent 2px 32px),
+    repeating-radial-gradient(circle, rgba(255, 0, 0, 0.1) 0 2px, transparent 2px 32px),
     radial-gradient(circle, rgba(255, 255, 255, 0.9), transparent 68%);
   opacity: 0.55;
 }
@@ -106,7 +106,7 @@ body {
   border-radius: 18px 18px 0 0;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.32) 12%, transparent 12% 36%, rgba(255, 255, 255, 0.28) 36% 48%, transparent 48%),
-    linear-gradient(180deg, rgba(220, 30, 38, 0.16), rgba(184, 20, 27, 0.05));
+    linear-gradient(180deg, rgba(255, 0, 0, 0.16), rgba(255, 0, 0, 0.05));
 }
 
 .travel-loading-skyline span:nth-child(2),
@@ -137,8 +137,8 @@ body {
   display: grid;
   place-items: center;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-strong));
-  box-shadow: 0 18px 38px rgba(184, 20, 27, 0.25);
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000));
+  box-shadow: 0 18px 38px rgba(255, 0, 0, 0.25);
 }
 
 .travel-loading-road {
@@ -146,9 +146,9 @@ body {
   height: 10px;
   border-radius: 999px;
   background:
-    repeating-linear-gradient(90deg, rgba(184, 20, 27, 0.78) 0 18px, transparent 18px 31px),
-    rgba(220, 30, 38, 0.14);
-  box-shadow: 0 12px 28px rgba(184, 20, 27, 0.14);
+    repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.78) 0 18px, transparent 18px 31px),
+    rgba(255, 0, 0, 0.14);
+  box-shadow: 0 12px 28px rgba(255, 0, 0, 0.14);
 }
 
 .travel-loading-vehicle {
@@ -161,8 +161,8 @@ body {
   display: grid;
   place-items: center;
   color: #ffffff;
-  background: linear-gradient(135deg, #dc1e26, #b8141b);
-  box-shadow: 0 18px 34px rgba(184, 20, 27, 0.28);
+  background: linear-gradient(135deg, #ff0000, #ff0000);
+  box-shadow: 0 18px 34px rgba(255, 0, 0, 0.28);
   transform: translate(-8%, -50%);
   animation: travelLoadingDrive 2.6s ease-in-out infinite;
 }
@@ -175,7 +175,7 @@ body {
 }
 
 .travel-loading-spinner {
-  color: var(--theme-primary);
+  color: var(--theme-primary, #ff0000);
   animation: travelLoadingSpin 0.9s linear infinite;
 }
 
@@ -270,10 +270,10 @@ body {
   --surface-border: var(--theme-border) !important;
   --text: var(--theme-navy) !important;
   --text-soft: var(--theme-muted) !important;
-  --primary: var(--theme-primary) !important;
-  --primary-strong: var(--theme-primary-strong) !important;
-  --accent: var(--theme-coral) !important;
-  --success: var(--theme-primary) !important;
+  --primary: var(--theme-primary, #ff0000) !important;
+  --primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --accent: var(--theme-coral, #ff0000) !important;
+  --success: var(--theme-primary, #ff0000) !important;
   --danger: var(--theme-danger) !important;
   color: var(--theme-navy) !important;
 }
@@ -300,8 +300,8 @@ body {
 .flight-flow-page,
 .admin-shell {
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
-    linear-gradient(225deg, rgba(220, 30, 38, 0.05) 0%, transparent 32%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, transparent 34%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.05) 0%, transparent 32%),
     var(--theme-page) !important;
 }
 
@@ -322,39 +322,39 @@ body {
   --dashboard-border: var(--theme-border) !important;
   --dashboard-text: var(--theme-navy) !important;
   --dashboard-muted: var(--theme-muted) !important;
-  --dashboard-primary: var(--theme-primary) !important;
-  --dashboard-primary-strong: var(--theme-primary-strong) !important;
-  --dashboard-accent: var(--theme-primary) !important;
-  --dashboard-accent-strong: var(--theme-primary-strong) !important;
-  --dashboard-success: var(--theme-primary) !important;
-  --dashboard-danger: var(--theme-primary-strong) !important;
+  --dashboard-primary: #ff0000;
+  --dashboard-primary-strong: #ff0000;
+  --dashboard-accent: #ff0000;
+  --dashboard-accent-strong: #ff0000;
+  --dashboard-success: #ff0000;
+  --dashboard-danger: #ff0000;
   --bank-bg: var(--theme-page) !important;
   --bank-border: var(--theme-border) !important;
   --bank-text: var(--theme-navy) !important;
   --bank-muted: var(--theme-muted) !important;
-  --bank-primary: var(--theme-primary) !important;
-  --bank-primary-strong: var(--theme-primary-strong) !important;
-  --bank-accent: var(--theme-coral) !important;
+  --bank-primary: var(--theme-primary, #ff0000) !important;
+  --bank-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --bank-accent: var(--theme-coral, #ff0000) !important;
   --trav-border: var(--theme-border) !important;
   --trav-text: var(--theme-navy) !important;
   --trav-muted: var(--theme-muted) !important;
-  --trav-primary: var(--theme-primary) !important;
-  --trav-primary-strong: var(--theme-primary-strong) !important;
+  --trav-primary: var(--theme-primary, #ff0000) !important;
+  --trav-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --qr-border: var(--theme-border) !important;
   --qr-text: var(--theme-navy) !important;
-  --qr-primary: var(--theme-primary) !important;
-  --qr-primary-strong: var(--theme-primary-strong) !important;
+  --qr-primary: var(--theme-primary, #ff0000) !important;
+  --qr-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --stmt-border: var(--theme-border) !important;
   --stmt-text: var(--theme-navy) !important;
-  --stmt-primary: var(--theme-primary) !important;
-  --stmt-primary-strong: var(--theme-primary-strong) !important;
+  --stmt-primary: var(--theme-primary, #ff0000) !important;
+  --stmt-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --ops-border: var(--theme-border) !important;
   --ops-text: var(--theme-navy) !important;
-  --ops-primary: var(--theme-primary) !important;
-  --ops-primary-strong: var(--theme-primary-strong) !important;
-  --ops-accent: var(--theme-coral) !important;
-  --ops-accent-strong: #c85048 !important;
-  --ops-success: var(--theme-primary) !important;
+  --ops-primary: var(--theme-primary, #ff0000) !important;
+  --ops-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --ops-accent: var(--theme-coral, #ff0000) !important;
+  --ops-accent-strong: #ff0000 !important;
+  --ops-success: var(--theme-primary, #ff0000) !important;
   --ops-danger: var(--theme-danger) !important;
 }
 
@@ -365,11 +365,11 @@ body {
   --bus-border: var(--theme-border) !important;
   --bus-text: var(--theme-navy) !important;
   --bus-muted: var(--theme-muted) !important;
-  --bus-primary: var(--theme-primary) !important;
-  --bus-primary-strong: var(--theme-primary-strong) !important;
-  --bus-accent: var(--theme-coral) !important;
-  --bus-accent-strong: #c85048 !important;
-  --bus-success: var(--theme-primary) !important;
+  --bus-primary: var(--theme-primary, #ff0000) !important;
+  --bus-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --bus-accent: var(--theme-coral, #ff0000) !important;
+  --bus-accent-strong: #ff0000 !important;
+  --bus-success: var(--theme-primary, #ff0000) !important;
   --bus-danger: var(--theme-danger) !important;
   --flow-bg: var(--theme-page) !important;
   --flow-surface: var(--theme-surface) !important;
@@ -377,11 +377,11 @@ body {
   --flow-border: var(--theme-border) !important;
   --flow-text: var(--theme-navy) !important;
   --flow-muted: var(--theme-muted) !important;
-  --flow-primary: var(--theme-primary) !important;
-  --flow-primary-strong: var(--theme-primary-strong) !important;
-  --flow-accent: var(--theme-coral) !important;
-  --flow-accent-strong: #c85048 !important;
-  --flow-success: var(--theme-primary) !important;
+  --flow-primary: var(--theme-primary, #ff0000) !important;
+  --flow-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --flow-accent: var(--theme-coral, #ff0000) !important;
+  --flow-accent-strong: #ff0000 !important;
+  --flow-success: var(--theme-primary, #ff0000) !important;
   --flow-danger: var(--theme-danger) !important;
   --flow-primary-soft: var(--theme-primary-soft) !important;
 }
@@ -393,11 +393,11 @@ body {
   --fr-border: var(--theme-border) !important;
   --fr-text: var(--theme-navy) !important;
   --fr-muted: var(--theme-muted) !important;
-  --fr-primary: var(--theme-primary) !important;
-  --fr-primary-strong: var(--theme-primary-strong) !important;
-  --fr-accent: var(--theme-blue) !important;
+  --fr-primary: var(--theme-primary, #ff0000) !important;
+  --fr-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --fr-accent: var(--theme-blue, #ff0000) !important;
   --fr-accent-strong: #273fb0 !important;
-  --fr-success: var(--theme-primary) !important;
+  --fr-success: var(--theme-primary, #ff0000) !important;
   --fr-danger: var(--theme-danger) !important;
   --flight-bg: var(--theme-page) !important;
   --flight-surface: var(--theme-surface) !important;
@@ -405,11 +405,11 @@ body {
   --flight-border: var(--theme-border) !important;
   --flight-text: var(--theme-navy) !important;
   --flight-muted: var(--theme-muted) !important;
-  --flight-primary: var(--theme-primary) !important;
-  --flight-primary-strong: var(--theme-primary-strong) !important;
-  --flight-accent: var(--theme-blue) !important;
+  --flight-primary: var(--theme-primary, #ff0000) !important;
+  --flight-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --flight-accent: var(--theme-blue, #ff0000) !important;
   --flight-accent-soft: #eef1ff !important;
-  --flight-success: var(--theme-primary) !important;
+  --flight-success: var(--theme-primary, #ff0000) !important;
   --flight-danger: var(--theme-danger) !important;
 }
 
@@ -420,22 +420,22 @@ body {
   --ticket-bg: var(--theme-page) !important;
   --ticket-border: var(--theme-border) !important;
   --ticket-text: var(--theme-navy) !important;
-  --ticket-primary: var(--theme-primary) !important;
-  --ticket-primary-strong: var(--theme-primary-strong) !important;
-  --ticket-success: var(--theme-primary) !important;
-  --conf-primary: var(--theme-primary) !important;
-  --conf-primary-strong: var(--theme-primary-strong) !important;
+  --ticket-primary: var(--theme-primary, #ff0000) !important;
+  --ticket-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --ticket-success: var(--theme-primary, #ff0000) !important;
+  --conf-primary: var(--theme-primary, #ff0000) !important;
+  --conf-primary-strong: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .admin-shell {
-  --admin-primary: var(--theme-primary) !important;
-  --admin-primary-strong: var(--theme-primary-strong) !important;
+  --admin-primary: var(--theme-primary, #ff0000) !important;
+  --admin-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --admin-border: var(--theme-border) !important;
   --admin-text: var(--theme-navy) !important;
   --admin-muted: var(--theme-muted) !important;
   --admin-surface: var(--theme-surface) !important;
   --admin-soft: var(--theme-surface-warm) !important;
-  --admin-success: var(--theme-primary) !important;
+  --admin-success: var(--theme-primary, #ff0000) !important;
   --admin-success-soft: var(--theme-primary-soft) !important;
   --admin-danger: var(--theme-danger) !important;
   --admin-danger-soft: var(--theme-danger-soft) !important;
@@ -445,7 +445,7 @@ body {
   border-bottom-color: rgba(207, 222, 216, 0.92) !important;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.97), rgba(247, 251, 248, 0.95)),
-    linear-gradient(135deg, rgba(220, 30, 38, 0.1), rgba(220, 30, 38, 0.03)) !important;
+    linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 0, 0, 0.03)) !important;
   box-shadow: 0 12px 34px rgba(12, 46, 51, 0.1) !important;
 }
 
@@ -490,7 +490,7 @@ body {
   background: var(--theme-gradient-action) !important;
   color: #ffffff !important;
   border-color: transparent !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.22) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.22) !important;
 }
 
 .menu-item.active,
@@ -515,7 +515,7 @@ body {
   background: var(--theme-gradient-action) !important;
   color: #ffffff !important;
   border-color: transparent !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.22) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.22) !important;
 }
 
 .dashboard-card,
@@ -601,14 +601,14 @@ body {
   --sidebar-bg-top: #15252b !important;
   --sidebar-bg-mid: #101d23 !important;
   --sidebar-bg-bottom: #091317 !important;
-  --sidebar-accent: var(--theme-primary) !important;
-  --sidebar-accent-strong: var(--theme-coral) !important;
+  --sidebar-accent: var(--theme-primary, #ff0000) !important;
+  --sidebar-accent-strong: var(--theme-coral, #ff0000) !important;
 }
 
 .admin-shell .sidebar {
   background:
-    linear-gradient(160deg, rgba(220, 30, 38, 0.18), transparent 40%),
-    linear-gradient(20deg, rgba(220, 30, 38, 0.12), transparent 44%),
+    linear-gradient(160deg, rgba(255, 0, 0, 0.18), transparent 40%),
+    linear-gradient(20deg, rgba(255, 0, 0, 0.12), transparent 44%),
     linear-gradient(180deg, #15252b 0%, #101d23 58%, #091317 100%) !important;
 }
 
@@ -650,7 +650,7 @@ body {
 .homepage .travel-service-eyebrow,
 .homepage .offer-kicker,
 .homepage .pop-route-kicker {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-field label span,
@@ -660,11 +660,11 @@ body {
 .dropdown-item.logout,
 .trend-warn,
 .quick-icon.atlas {
-  color: var(--theme-coral) !important;
+  color: var(--theme-coral, #ff0000) !important;
 }
 
 .quick-icon.atlas {
-  background: rgba(220, 30, 38, 0.14) !important;
+  background: rgba(255, 0, 0, 0.14) !important;
 }
 
 
@@ -676,12 +676,12 @@ textarea:focus {
 
 input[type="checkbox"],
 input[type="radio"] {
-  accent-color: var(--theme-primary) !important;
+  accent-color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-captcha-display {
-  border-color: rgba(220, 30, 38, 0.5) !important;
-  color: var(--theme-primary-strong) !important;
+  border-color: rgba(255, 0, 0, 0.5) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
   background: repeating-linear-gradient(
     135deg,
     #f5fbf8,
@@ -693,19 +693,19 @@ input[type="radio"] {
 
 .travel-captcha-display::before,
 .travel-captcha-display::after {
-  background: rgba(220, 30, 38, 0.38) !important;
+  background: rgba(255, 0, 0, 0.38) !important;
 }
 
 .captcha-text,
 .travel-captcha-display span:nth-child(even),
 .travel-captcha-display span:nth-child(odd) {
-  color: var(--theme-primary-strong) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .travel-auth-page::before {
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.22), transparent 34%),
-    linear-gradient(225deg, rgba(220, 30, 38, 0.18), transparent 38%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.22), transparent 34%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.18), transparent 38%),
     linear-gradient(0deg, rgba(238, 247, 244, 0.42), rgba(238, 247, 244, 0.42)) !important;
 }
 
@@ -726,13 +726,13 @@ input[type="radio"] {
 .travel-auth-page .travel-custom-dropdown-option.is-selected,
 .travel-auth-page .strength-text,
 .travel-auth-page .check-icon {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-page .strength-bars .bar.active,
 .travel-auth-page .travel-otp-timer-highlight,
 .travel-auth-page .travel-custom-dropdown-option:hover {
-  background: var(--theme-primary) !important;
+  background: var(--theme-primary, #ff0000) !important;
   color: #ffffff !important;
 }
 
@@ -745,20 +745,20 @@ input[type="radio"] {
 
 .travel-auth-page .travel-otp-boxes input:focus,
 .travel-auth-page .travel-custom-dropdown-container:focus-within {
-  border-color: var(--theme-primary) !important;
-  box-shadow: 0 0 0 3px rgba(220, 30, 38, 0.12) !important;
+  border-color: var(--theme-primary, #ff0000) !important;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.12) !important;
 }
 
 .travel-auth-page .travel-social-btn:hover,
 .travel-auth-page .travel-inline-edit-box:hover {
-  border-color: var(--theme-primary) !important;
+  border-color: var(--theme-primary, #ff0000) !important;
   background: var(--theme-primary-soft) !important;
 }
 
 .homepage {
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
-    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 32%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, transparent 34%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.1) 0%, transparent 32%),
     var(--theme-page) !important;
 }
 
@@ -788,8 +788,8 @@ input[type="radio"] {
 
 .travel-footer {
   background:
-    linear-gradient(145deg, rgba(220, 30, 38, 0.18), transparent 38%),
-    linear-gradient(25deg, rgba(220, 30, 38, 0.16), transparent 42%),
+    linear-gradient(145deg, rgba(255, 0, 0, 0.18), transparent 38%),
+    linear-gradient(25deg, rgba(255, 0, 0, 0.16), transparent 42%),
     linear-gradient(135deg, #101e24, #162a30 58%, #0b171b) !important;
   border-top-color: rgba(207, 222, 216, 0.28) !important;
 }
@@ -803,20 +803,20 @@ input[type="radio"] {
 
 .holographic-bus,
 .holographic-bus * {
-  --bus-primary: var(--theme-primary) !important;
-  --bus-primary-strong: var(--theme-primary-strong) !important;
+  --bus-primary: var(--theme-primary, #ff0000) !important;
+  --bus-primary-strong: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .holographic-bus .mirror-arm,
 .holographic-bus .seat-selected,
 .holographic-bus .deck-active {
-  background: var(--theme-primary) !important;
+  background: var(--theme-primary, #ff0000) !important;
 }
 
 .holographic-bus,
 .holographic-bus .bus-body,
 .holographic-bus .deck-active {
-  border-color: var(--theme-primary) !important;
+  border-color: var(--theme-primary, #ff0000) !important;
 }
 
 /* Final auth image and theme layer: loaded last so it wins every auth screen */
@@ -865,7 +865,7 @@ input[type="radio"] {
   object-fit: contain;
   object-position: center;
   margin: 0 auto 10px;
-  filter: drop-shadow(0 8px 16px rgba(184, 20, 27, 0.12));
+  filter: drop-shadow(0 8px 16px rgba(255, 0, 0, 0.12));
 }
 
 .auth-brand-logo-register {
@@ -926,15 +926,15 @@ input[type="radio"] {
   background: var(--theme-gradient-action) !important;
   color: #ffffff !important;
   border-color: transparent !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.24) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.24) !important;
 }
 
 .travel-btn-primary:hover,
 .travel-captcha-refresh:hover,
 .travel-inline-otp-btn:hover:not(:disabled),
 .cp-btn-primary:hover {
-  background: linear-gradient(135deg, #dc1e26 0%, #b8141b 54%, #b8141b 100%) !important;
-  box-shadow: 0 16px 34px rgba(184, 20, 27, 0.3) !important;
+  background: linear-gradient(135deg, #ff0000 0%, #ff0000 54%, #ff0000 100%) !important;
+  box-shadow: 0 16px 34px rgba(255, 0, 0, 0.3) !important;
 }
 
 .travel-field-check,
@@ -953,14 +953,14 @@ input[type="radio"] {
 .travel-auth-page .check-icon,
 .cp-eye-btn,
 .cp-btn-secondary {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-register .travel-hero-title,
 .travel-auth-register .travel-hero-subtitle,
 .travel-auth-register .travel-benefit-text strong,
 .travel-auth-register .travel-benefit-text span {
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
   background: rgba(255, 255, 255, 0.78) !important;
   box-shadow: 0 10px 24px rgba(17, 24, 39, 0.1) !important;
 }
@@ -976,7 +976,7 @@ input[type="radio"] {
 
 .travel-auth-page .travel-social-btn:hover,
 .travel-auth-page .travel-inline-edit-box:hover {
-  border-color: var(--theme-primary) !important;
+  border-color: var(--theme-primary, #ff0000) !important;
   background: var(--theme-primary-soft) !important;
 }
 
@@ -986,7 +986,7 @@ input[type="radio"] {
 }
 
 .travel-auth-page .travel-field-select option:checked {
-  background-color: var(--theme-primary) !important;
+  background-color: var(--theme-primary, #ff0000) !important;
   color: #ffffff !important;
 }
 
@@ -1007,7 +1007,7 @@ input[type="radio"] {
 .travel-auth-register .check-icon,
 .travel-auth-register .travel-step2-wrapper > div,
 .travel-auth-register .travel-step4-icon {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-register .stepper-item.active .step-circle,
@@ -1021,17 +1021,17 @@ input[type="radio"] {
 }
 
 .travel-auth-register .stepper-item.active .step-label {
-  color: var(--theme-primary-strong) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .travel-auth-register .travel-step2-wrapper > div {
   background: var(--theme-primary-soft) !important;
-  border-color: var(--theme-primary) !important;
+  border-color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-register .travel-step4-icon {
   background: var(--theme-primary-soft) !important;
-  box-shadow: 0 12px 30px rgba(220, 30, 38, 0.24) !important;
+  box-shadow: 0 12px 30px rgba(255, 0, 0, 0.24) !important;
 }
 
 .travel-auth-register .travel-custom-dropdown-options {
@@ -1052,11 +1052,11 @@ input[type="radio"] {
 /* Reference-style auth glass composition in Pick N Book theme */
 .travel-auth-page,
 .cp-auth-page {
-  --auth-orange: var(--theme-primary) !important;
-  --auth-orange-strong: var(--theme-blue) !important;
-  --auth-orange-soft: rgba(220, 30, 38, 0.12) !important;
-  --auth-orange-lighter: rgba(220, 30, 38, 0.08) !important;
-  --auth-orange-border: rgba(220, 30, 38, 0.36) !important;
+  --auth-orange: var(--theme-primary, #ff0000) !important;
+  --auth-orange-strong: var(--theme-blue, #ff0000) !important;
+  --auth-orange-soft: rgba(255, 0, 0, 0.12) !important;
+  --auth-orange-lighter: rgba(255, 0, 0, 0.08) !important;
+  --auth-orange-border: rgba(255, 0, 0, 0.36) !important;
   min-height: 100vh !important;
   overflow-y: auto;
   background-attachment: fixed !important;
@@ -1168,7 +1168,7 @@ input[type="radio"] {
   min-height: 54px !important;
   border-radius: 11px !important;
   background: rgba(255, 255, 255, 0.96) !important;
-  border: 1px solid rgba(220, 30, 38, 0.26) !important;
+  border: 1px solid rgba(255, 0, 0, 0.26) !important;
   box-shadow: 0 10px 26px rgba(17, 24, 39, 0.06) !important;
 }
 
@@ -1195,7 +1195,7 @@ input[type="radio"] {
   min-height: 54px !important;
   border-radius: 10px !important;
   background: var(--theme-gradient-action) !important;
-  box-shadow: 0 15px 32px rgba(184, 20, 27, 0.28) !important;
+  box-shadow: 0 15px 32px rgba(255, 0, 0, 0.28) !important;
   color: #ffffff !important;
 }
 
@@ -1204,8 +1204,8 @@ input[type="radio"] {
 .travel-auth-login .travel-btn-primary:hover,
 .travel-auth-forgot .travel-btn-primary:hover,
 .cp-btn-primary:hover {
-  background: linear-gradient(135deg, #dc1e26 0%, #b8141b 52%, #b8141b 100%) !important;
-  box-shadow: 0 18px 40px rgba(184, 20, 27, 0.34) !important;
+  background: linear-gradient(135deg, #ff0000 0%, #ff0000 52%, #ff0000 100%) !important;
+  box-shadow: 0 18px 40px rgba(255, 0, 0, 0.34) !important;
 }
 
 .travel-captcha-row {
@@ -1215,9 +1215,9 @@ input[type="radio"] {
 .travel-captcha-display {
   min-height: 54px !important;
   border-radius: 10px !important;
-  border: 2px solid rgba(220, 30, 38, 0.72) !important;
+  border: 2px solid rgba(255, 0, 0, 0.72) !important;
   background:
-    repeating-linear-gradient(-18deg, rgba(220, 30, 38, 0.13) 0 8px, rgba(255, 255, 255, 0.78) 8px 16px),
+    repeating-linear-gradient(-18deg, rgba(255, 0, 0, 0.13) 0 8px, rgba(255, 255, 255, 0.78) 8px 16px),
     rgba(255, 255, 255, 0.9) !important;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.74) !important;
 }
@@ -1226,13 +1226,13 @@ input[type="radio"] {
 .travel-captcha-display span,
 .travel-captcha-display span:nth-child(even),
 .travel-captcha-display span:nth-child(odd) {
-  color: #b8141b !important;
+  color: #ff0000 !important;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) !important;
 }
 
 .travel-captcha-display::before,
 .travel-captcha-display::after {
-  background: rgba(220, 30, 38, 0.5) !important;
+  background: rgba(255, 0, 0, 0.5) !important;
 }
 
 .travel-captcha-refresh {
@@ -1246,7 +1246,7 @@ input[type="radio"] {
   color: #ffffff !important;
   background: var(--theme-gradient-action) !important;
   border: 8px solid rgba(255, 255, 255, 0.92) !important;
-  box-shadow: 0 16px 38px rgba(184, 20, 27, 0.34) !important;
+  box-shadow: 0 16px 38px rgba(255, 0, 0, 0.34) !important;
 }
 
 .travel-auth-forgot .travel-auth-lock-icon {
@@ -1279,12 +1279,12 @@ input[type="radio"] {
   height: 54px !important;
   border-radius: 50% !important;
   background: rgba(255, 255, 255, 0.94) !important;
-  border: 1px solid rgba(220, 30, 38, 0.18) !important;
+  border: 1px solid rgba(255, 0, 0, 0.18) !important;
 }
 
 .travel-auth-page .travel-social-btn:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.22) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.22) !important;
 }
 
 .travel-stepper {
@@ -1301,7 +1301,7 @@ input[type="radio"] {
   background: var(--theme-gradient-action) !important;
   color: #ffffff !important;
   border-color: transparent !important;
-  box-shadow: 0 12px 26px rgba(184, 20, 27, 0.26) !important;
+  box-shadow: 0 12px 26px rgba(255, 0, 0, 0.26) !important;
 }
 
 .step-label {
@@ -1309,7 +1309,7 @@ input[type="radio"] {
 }
 
 .stepper-item.active .step-label {
-  color: #b8141b !important;
+  color: #ff0000 !important;
 }
 
 .stepper-line,
@@ -1319,7 +1319,7 @@ input[type="radio"] {
 }
 
 .stepper-line.active {
-  background: linear-gradient(90deg, #dc1e26, #2f62d9) !important;
+  background: linear-gradient(90deg, #ff0000, #2f62d9) !important;
 }
 
 .travel-auth-register .travel-hero-title {
@@ -1347,7 +1347,7 @@ input[type="radio"] {
   color: #ffffff !important;
   background: var(--theme-gradient-action) !important;
   border: 3px solid rgba(255, 255, 255, 0.92) !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.2) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.2) !important;
 }
 
 .travel-auth-register .travel-benefit-text strong,
@@ -1361,7 +1361,7 @@ input[type="radio"] {
 
 .travel-auth-register .travel-stats-bar {
   background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid rgba(220, 30, 38, 0.16) !important;
+  border: 1px solid rgba(255, 0, 0, 0.16) !important;
   border-radius: 18px !important;
 }
 
@@ -1379,25 +1379,25 @@ input[type="radio"] {
 .travel-auth-page .travel-eye-btn,
 .travel-auth-page .travel-input-icon-left,
 .cp-eye-btn {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-page .travel-benefit-icon {
   color: #ffffff !important;
   background: var(--theme-gradient-action) !important;
   border: 3px solid rgba(255, 255, 255, 0.92) !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.2) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.2) !important;
 }
 
 .travel-auth-page .travel-stat-icon,
 .travel-auth-page .travel-stat-icon.text-orange,
 .travel-auth-page .travel-stat-icon.text-green {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-page .travel-stat-icon.text-blue,
 .travel-auth-page .travel-stat-icon.text-purple {
-  color: var(--theme-blue) !important;
+  color: var(--theme-blue, #ff0000) !important;
 }
 
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-orange,
@@ -1406,7 +1406,7 @@ input[type="radio"] {
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-green svg,
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-orange svg *,
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-green svg * {
-  color: var(--theme-primary) !important;
+  color: var(--theme-primary, #ff0000) !important;
   fill: currentColor !important;
   stroke: currentColor !important;
   opacity: 1 !important;
@@ -1418,7 +1418,7 @@ input[type="radio"] {
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-purple svg,
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-blue svg *,
 .travel-auth-page .travel-stats-bar .travel-stat-icon.text-purple svg * {
-  color: var(--theme-blue) !important;
+  color: var(--theme-blue, #ff0000) !important;
   fill: currentColor !important;
   stroke: currentColor !important;
   opacity: 1 !important;
@@ -1459,7 +1459,7 @@ input[type="radio"] {
 }
 
 .travel-auth-register .travel-terms input[type="checkbox"] {
-  accent-color: var(--theme-primary) !important;
+  accent-color: var(--theme-primary, #ff0000) !important;
 }
 
 .travel-auth-register .travel-terms input[type="checkbox"]:checked {
@@ -2344,7 +2344,7 @@ body:has(.cp-auth-page),
 }
 
 .travel-auth-register .travel-auth-card:has(.travel-step2-wrapper) .stepper-line.active {
-  background: linear-gradient(90deg, #dc1e26, #2f62d9) !important;
+  background: linear-gradient(90deg, #ff0000, #2f62d9) !important;
 }
 
 .travel-auth-register .travel-step2-wrapper {
@@ -2353,11 +2353,11 @@ body:has(.cp-auth-page),
 }
 
 .travel-auth-register .travel-step2-icon {
-  background: linear-gradient(135deg, #dc1e26, #b8141b 52%, #b8141b) !important;
+  background: linear-gradient(135deg, #ff0000, #ff0000 52%, #ff0000) !important;
   border: 9px solid rgba(255, 255, 255, 0.92) !important;
   box-shadow:
-    0 14px 30px rgba(184, 20, 27, 0.22),
-    0 0 0 1px rgba(220, 30, 38, 0.12) !important;
+    0 14px 30px rgba(255, 0, 0, 0.22),
+    0 0 0 1px rgba(255, 0, 0, 0.12) !important;
 }
 
 .travel-auth-register .travel-step2-text {
@@ -2373,7 +2373,7 @@ body:has(.cp-auth-page),
   justify-content: center !important;
   gap: 10px !important;
   padding: 8px 14px !important;
-  border: 1px solid rgba(220, 30, 38, 0.34) !important;
+  border: 1px solid rgba(255, 0, 0, 0.34) !important;
   border-radius: 12px !important;
   background: rgba(255, 255, 255, 0.88) !important;
   box-shadow: 0 12px 24px rgba(17, 24, 39, 0.12) !important;
@@ -2389,7 +2389,7 @@ body:has(.cp-auth-page),
 }
 
 .travel-auth-register .travel-inline-edit-icon {
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
   flex: 0 0 auto !important;
 }
 
@@ -2412,7 +2412,7 @@ body:has(.cp-auth-page),
   height: clamp(40px, 5.6vh, 52px) !important;
   min-height: 0 !important;
   border-radius: 12px !important;
-  border: 1.5px solid rgba(220, 30, 38, 0.46) !important;
+  border: 1.5px solid rgba(255, 0, 0, 0.46) !important;
   background: rgba(255, 255, 255, 0.92) !important;
   color: #102033 !important;
   font-weight: 800 !important;
@@ -2422,10 +2422,10 @@ body:has(.cp-auth-page),
 }
 
 .travel-auth-register .travel-otp-boxes input:focus {
-  border-color: #dc1e26 !important;
+  border-color: #ff0000 !important;
   box-shadow:
-    0 0 0 3px rgba(220, 30, 38, 0.14),
-    0 12px 22px rgba(184, 20, 27, 0.16) !important;
+    0 0 0 3px rgba(255, 0, 0, 0.14),
+    0 12px 22px rgba(255, 0, 0, 0.16) !important;
 }
 
 .travel-auth-register .travel-otp-timer-text {
@@ -2439,8 +2439,8 @@ body:has(.cp-auth-page),
   min-height: 22px !important;
   padding: 2px 7px !important;
   border-radius: 7px !important;
-  background: rgba(184, 20, 27, 0.12) !important;
-  color: #b8141b !important;
+  background: rgba(255, 0, 0, 0.12) !important;
+  color: #ff0000 !important;
   font-weight: 800 !important;
 }
 
@@ -2452,8 +2452,8 @@ body:has(.cp-auth-page),
   margin: clamp(8px, 1.2vh, 12px) auto 0 !important;
   border-radius: 12px !important;
   border: 0 !important;
-  background: linear-gradient(135deg, #dc1e26 0%, #007985 50%, #b8141b 100%) !important;
-  box-shadow: 0 16px 32px rgba(184, 20, 27, 0.24) !important;
+  background: linear-gradient(135deg, #ff0000 0%, #007985 50%, #ff0000 100%) !important;
+  box-shadow: 0 16px 32px rgba(255, 0, 0, 0.24) !important;
   font-weight: 800 !important;
 }
 
@@ -2517,7 +2517,7 @@ body:has(.cp-auth-page),
   gap: 10px !important;
   padding: 0 14px !important;
   border-radius: 9px !important;
-  border: 1px solid rgba(220, 30, 38, 0.28) !important;
+  border: 1px solid rgba(255, 0, 0, 0.28) !important;
   background: rgba(255, 255, 255, 0.96) !important;
   box-shadow: 0 10px 22px rgba(17, 24, 39, 0.07) !important;
   cursor: pointer !important;
@@ -2531,7 +2531,7 @@ body:has(.cp-auth-page),
   transform: none !important;
   width: 18px !important;
   height: 18px !important;
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
   flex: 0 0 18px !important;
 }
 
@@ -2547,7 +2547,7 @@ body:has(.cp-auth-page),
 }
 
 .travel-auth-register .travel-step2-contact-field .travel-inline-edit-icon {
-  color: #b8141b !important;
+  color: #ff0000 !important;
   flex: 0 0 auto !important;
 }
 
@@ -2571,7 +2571,7 @@ body:has(.cp-auth-page),
   width: 100% !important;
   height: clamp(36px, 5vh, 44px) !important;
   border-radius: 9px !important;
-  border: 1px solid rgba(220, 30, 38, 0.32) !important;
+  border: 1px solid rgba(255, 0, 0, 0.32) !important;
   background: rgba(255, 255, 255, 0.96) !important;
   color: #172235 !important;
   font-size: clamp(16px, 2.4vh, 22px) !important;
@@ -2745,7 +2745,7 @@ button:focus-visible {
   gap: 10px !important;
   padding: 0 14px !important;
   border-radius: 9px !important;
-  border: 1px solid rgba(220, 30, 38, 0.28) !important;
+  border: 1px solid rgba(255, 0, 0, 0.28) !important;
   background: rgba(255, 255, 255, 0.96) !important;
   box-shadow: 0 10px 22px rgba(17, 24, 39, 0.07) !important;
 }
@@ -2756,7 +2756,7 @@ button:focus-visible {
   width: 18px !important;
   height: 18px !important;
   flex: 0 0 18px !important;
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
 }
 
 .travel-auth-register .travel-step2-contact-field span:not(.travel-input-icon-left) {
@@ -2787,7 +2787,7 @@ button:focus-visible {
   height: clamp(36px, 5vh, 44px) !important;
   min-height: 0 !important;
   border-radius: 9px !important;
-  border: 1px solid rgba(220, 30, 38, 0.32) !important;
+  border: 1px solid rgba(255, 0, 0, 0.32) !important;
   background: rgba(255, 255, 255, 0.96) !important;
   color: #172235 !important;
   font-size: clamp(16px, 2.4vh, 22px) !important;
@@ -3225,7 +3225,7 @@ button:focus-visible {
 .travel-auth-page .travel-required-star,
 .travel-auth-page label span,
 .cp-auth-page label span {
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
   text-shadow: none !important;
 }
 
@@ -3306,7 +3306,7 @@ button:focus-visible {
 .travel-auth-page .travel-required-star,
 .travel-auth-page label span,
 .cp-auth-page label span {
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
   font-weight: 900 !important;
 }
 
@@ -3398,7 +3398,7 @@ button:focus-visible {
   margin: clamp(1px, 0.4vh, 4px) auto !important;
   border: 7px solid rgba(255, 255, 255, 0.88) !important;
   background: var(--theme-gradient-action) !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.24) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.24) !important;
 }
 
 .travel-auth-register .travel-step2-icon svg {
@@ -3487,7 +3487,7 @@ button:focus-visible {
   border: clamp(8px, 1.4vh, 12px) solid rgba(255, 255, 255, 0.94) !important;
   color: #ffffff !important;
   background: var(--theme-gradient-action) !important;
-  box-shadow: 0 16px 36px rgba(184, 20, 27, 0.28) !important;
+  box-shadow: 0 16px 36px rgba(255, 0, 0, 0.28) !important;
 }
 
 .travel-auth-lock-icon svg {
@@ -3573,7 +3573,7 @@ button:focus-visible {
   gap: 10px !important;
   padding: 0 14px !important;
   border-radius: 9px !important;
-  border: 1px solid rgba(220, 30, 38, 0.28) !important;
+  border: 1px solid rgba(255, 0, 0, 0.28) !important;
   background: rgba(255, 255, 255, 0.96) !important;
   box-shadow: 0 10px 22px rgba(17, 24, 39, 0.07) !important;
 }
@@ -3584,7 +3584,7 @@ button:focus-visible {
   width: 18px !important;
   height: 18px !important;
   flex: 0 0 18px !important;
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
 }
 
 .travel-auth-register .travel-step2-contact-field span:not(.travel-input-icon-left) {
@@ -3619,7 +3619,7 @@ button:focus-visible {
   height: clamp(36px, 5vh, 44px) !important;
   min-height: 0 !important;
   border-radius: 9px !important;
-  border: 1px solid rgba(220, 30, 38, 0.32) !important;
+  border: 1px solid rgba(255, 0, 0, 0.32) !important;
   background: rgba(255, 255, 255, 0.96) !important;
   color: #172235 !important;
   font-size: clamp(16px, 2.4vh, 22px) !important;

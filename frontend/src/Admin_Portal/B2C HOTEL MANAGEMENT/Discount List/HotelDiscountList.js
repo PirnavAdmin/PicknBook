@@ -472,7 +472,7 @@ export default function HotelDiscountList() {
         .status-pill-btn.inactive {
           border: 1px solid #ef4444 !important;
           background-color: #fef2f2 !important;
-          color: #b91c1c !important;
+          color: #ff0000 !important;
         }
         .status-pill-btn:hover {
           transform: scale(1.02) !important;

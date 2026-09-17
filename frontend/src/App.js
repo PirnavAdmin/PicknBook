@@ -300,8 +300,8 @@ function AppContent() {
           const theme = JSON.parse(fallback);
           const root = document.documentElement;
           if (theme.primaryColor) {
-            root.style.setProperty("--theme-primary", theme.primaryColor);
-            root.style.setProperty("--theme-primary-strong", theme.primaryColor);
+            root.style.setProperty("--theme-primary", "#ff0000");
+            root.style.setProperty("--theme-primary-strong", "#ff0000");
           }
           if (theme.secondaryColor) {
             root.style.setProperty("--theme-secondary", theme.secondaryColor);
@@ -317,8 +317,8 @@ function AppContent() {
         const theme = await getActiveTheme();
         if (theme) {
           const root = document.documentElement;
-          if (theme.primaryColor) root.style.setProperty("--theme-primary", theme.primaryColor);
-          if (theme.primaryStrongColor) root.style.setProperty("--theme-primary-strong", theme.primaryStrongColor);
+          if (theme.primaryColor) root.style.setProperty("--theme-primary", "#ff0000");
+          if (theme.primaryStrongColor) root.style.setProperty("--theme-primary-strong", "#ff0000");
           if (theme.pageBgColor) root.style.setProperty("--theme-page", theme.pageBgColor);
           if (theme.surfaceColor) root.style.setProperty("--theme-surface", theme.surfaceColor);
           if (theme.textColor) root.style.setProperty("--theme-text", theme.textColor);

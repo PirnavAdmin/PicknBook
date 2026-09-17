@@ -300,7 +300,7 @@ export default function PasskeyManager() {
         </p>
 
         {listError && (
-          <div style={S.alert("#991b1b", "#fef2f2")}>
+          <div style={S.alert("#ff0000", "#fef2f2")}>
             <AlertCircle size={16} />
             <span>{listError}</span>
           </div>
@@ -382,7 +382,7 @@ export default function PasskeyManager() {
                   </button>
                   <button
                     id={`passkey-delete-${pk.id}`}
-                    style={S.iconBtn("#dc2626")}
+                    style={S.iconBtn("#ff0000")}
                     onClick={() => handleDelete(pk.id)}
                     disabled={deletingId === pk.id}
                     title="Remove"
@@ -412,7 +412,7 @@ export default function PasskeyManager() {
           </div>
         )}
         {regError && (
-          <div style={S.alert("#991b1b", "#fef2f2")}>
+          <div style={S.alert("#ff0000", "#fef2f2")}>
             <AlertCircle size={16} />
             <span>{regError}</span>
           </div>

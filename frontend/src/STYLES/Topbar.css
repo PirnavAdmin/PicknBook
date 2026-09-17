@@ -20,12 +20,12 @@
 
 /* Base selection states */
 ::selection {
-  background: var(--theme-primary, #009b8f);
+  background: var(--theme-primary, #ff0000);
   color: #ffffff;
 }
 
 ::-moz-selection {
-  background: var(--theme-primary, #009b8f);
+  background: var(--theme-primary, #ff0000);
   color: #ffffff;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .menu-item:hover {
-  color: var(--theme-primary-strong, #006f7a);
+  color: var(--theme-primary-strong, #ff0000);
   background: rgba(0, 155, 143, 0.08);
 }
 
@@ -232,7 +232,7 @@
 
 .dropdown-item:hover {
   background: rgba(0, 155, 143, 0.08);
-  color: var(--theme-primary-strong, #006f7a);
+  color: var(--theme-primary-strong, #ff0000);
 }
 
 .dropdown-item.logout {
@@ -340,7 +340,7 @@
 
 .drawer-item:hover {
   background-color: rgba(0, 155, 143, 0.08);
-  color: var(--theme-primary-strong, #006f7a);
+  color: var(--theme-primary-strong, #ff0000);
 }
 
 .drawer-item.active {
@@ -437,24 +437,24 @@
 }
 
 .nav-menu-links .menu-item:hover {
-  color: #dc2626 !important;
+  color: #ff0000 !important;
   background: transparent !important;
 }
 
 .nav-menu-links .menu-item:hover svg {
-  color: #dc2626 !important;
+  color: #ff0000 !important;
 }
 
 /* Active Nav Item (Red Icon, Red Text, Red Underline Indicator) */
 .nav-menu-links .menu-item.active {
-  color: #dc2626 !important;
+  color: #ff0000 !important;
   background: transparent !important;
   box-shadow: none !important;
   font-weight: 700 !important;
 }
 
 .nav-menu-links .menu-item.active svg {
-  color: #dc2626 !important;
+  color: #ff0000 !important;
 }
 
 .nav-menu-links .menu-item.active::after {
@@ -464,7 +464,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background-color: #dc2626;
+  background-color: #ff0000;
   border-radius: 3px 3px 0 0;
 }
 
@@ -496,17 +496,17 @@
 }
 
 .topbar-nav-link:hover {
-  color: #dc2626;
+  color: #ff0000;
 }
 
 .topbar-nav-link:hover svg {
-  color: #dc2626;
+  color: #ff0000;
 }
 
 /* Single Login / Sign Up Red Button */
 .topbar-login-btn {
-  background: #dc2626 !important;
-  border: 1.5px solid #dc2626 !important;
+  background: #ff0000 !important;
+  border: 1.5px solid #ff0000 !important;
   color: #ffffff !important;
   border-radius: 8px !important;
   font-size: 14px !important;
@@ -525,8 +525,8 @@
 }
 
 .topbar-login-btn:hover {
-  background: #b91c1c !important;
-  border-color: #b91c1c !important;
+  background: #ff0000 !important;
+  border-color: #ff0000 !important;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
 }
 
@@ -569,14 +569,14 @@
 }
 
 .menu-item.airbnb-tab-item.active {
-  color: #e11d48 !important; /* Airbnb Signature Brand Red */
+  color: #ff0000 !important; /* Airbnb Signature Brand Red */
   font-weight: 700 !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
 .menu-item.airbnb-tab-item.active .tab-icon-wrap {
-  color: #e11d48 !important;
+  color: #ff0000 !important;
 }
 
 .tab-icon-wrap {
@@ -591,7 +591,7 @@
   left: 0 !important;
   right: 0 !important;
   height: 3px !important;
-  background: linear-gradient(90deg, #ff385c, #e11d48) !important;
+  background: linear-gradient(90deg, #ff385c, #ff0000) !important;
   border-radius: 3px !important;
   box-shadow: 0 2px 10px rgba(225, 29, 72, 0.45) !important;
 }

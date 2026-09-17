@@ -15,7 +15,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   // Agent Wallet Info
   const [isAgent, setIsAgent] = useState(false);
   const [agentProfile, setAgentProfile] = useState(null);
-  
+
   // B2C Wallet Info
   const [b2cWallet, setB2cWallet] = useState(null);
   const [useWallet, setUseWallet] = useState(false);
@@ -31,7 +31,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       } else {
         const token = localStorage.getItem("token");
         if (token) {
-           getWalletSummary()
+          getWalletSummary()
             .then(data => setB2cWallet(data))
             .catch(err => console.warn("Failed to fetch B2C wallet summary", err));
         }
@@ -59,7 +59,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     ? Math.min(walletBalance, totalPayable)
     : 0;
   const gatewayPayableAmount = Math.max(0, totalPayable - walletAppliedAmount);
-  
+
   // --- Agent Wallet Logic ---
   const handleAgentPay = async () => {
     if (isProcessing) return;
@@ -80,7 +80,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
     try {
       await new Promise(res => setTimeout(res, 1200));
-      
+
       // Update Agent Balance in localStorage
       const updatedBalance = balance - wholesalePrice;
       const updatedProfile = { ...agentProfile, walletBalance: updatedBalance };
@@ -130,7 +130,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       const lastName = guestName?.split(" ").slice(1).join(" ") || "";
       const cleanPhone = String(guestPhone || "9876543210").replace(/\D/g, "").slice(-10);
       const cleanEmail = String(guestEmail || "guest@gopickandbook.in").trim();
-      
+
       const rawCheckIn = offer?.checkInDate || flowState.searchContext?.checkInDate || checkInDate || "";
       const rawCheckOut = offer?.checkOutDate || flowState.searchContext?.checkOutDate || checkOutDate || "";
       const checkInStr = typeof rawCheckIn === "string" ? rawCheckIn.split("T")[0] : "";
@@ -218,7 +218,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         </button>
 
         <h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.5rem" }}>Review Booking ({bookingType})</h2>
-        
+
         {/* Passenger Summary */}
         <div style={{ marginBottom: "20px", padding: "16px", background: "#f8f9fa", borderRadius: "8px" }}>
           <h3 style={{ fontSize: "1.1rem", margin: "0 0 12px 0" }}>Passenger Details</h3>
@@ -236,7 +236,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
               <strong>{flowState.guestName || "Guest"}</strong>
             </div>
           )}
-          
+
           <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #ddd", fontSize: "0.9rem" }}>
             Contact: {contact?.mobile || flowState.guestPhone} | {contact?.email || flowState.guestEmail}
           </div>
@@ -278,8 +278,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           </div>
         )}
 
-        <button 
-          onClick={handlePayNow} 
+        <button
+          onClick={handlePayNow}
           disabled={isProcessing || cfIsSubmitting || (useWallet && (!b2cWallet || walletStatus !== "Active" || walletBalance <= 0))}
           style={{
             width: "100%", padding: "14px", backgroundColor: "var(--pnb-red, #e60000)", color: "white",

@@ -1391,7 +1391,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
                   </label>
 
                   {conditionsError && (
-                    <p style={{ color: "#dc2626", fontSize: "13px", margin: "4px 0 0 0", fontWeight: "500" }}>{conditionsError}</p>
+                    <p style={{ color: "#ff0000", fontSize: "13px", margin: "4px 0 0 0", fontWeight: "500" }}>{conditionsError}</p>
                   )}
 
                   <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "10px" }}>
@@ -1462,7 +1462,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
                             <span style={{
                               padding: "2px 6px", borderRadius: "12px", fontSize: "10px", fontWeight: "700",
                               background: cond.isActive ? "#dcfce7" : "#fee2e2",
-                              color: cond.isActive ? "#15803d" : "#b91c1c"
+                              color: cond.isActive ? "#15803d" : "#ff0000"
                             }}>
                               {cond.isActive ? "Active" : "Inactive"}
                             </span>
@@ -1496,7 +1496,7 @@ export default function AdminOfferListPage({ onAddOffer }) {
                             style={{
                               display: "flex", alignItems: "center", justifyContent: "center",
                               width: "32px", height: "32px", borderRadius: "8px", border: "1px solid rgba(220,38,38,0.2)",
-                              background: "rgba(220,38,38,0.05)", color: "#dc2626", cursor: "pointer"
+                              background: "rgba(220,38,38,0.05)", color: "#ff0000", cursor: "pointer"
                             }}
                             title="Delete"
                           >

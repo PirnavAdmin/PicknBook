@@ -571,9 +571,9 @@ export default function BalanceSheet() {
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Total Debit</span>
                 <h3 style={{ margin: '4px 0 2px', fontSize: '19px', fontWeight: 700, color: '#0f172a' }}>₹ 3,15,200</h3>
-                <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 500 }}>412 Transactions</span>
+                <span style={{ fontSize: '11px', color: '#ff0000', fontWeight: 500 }}>412 Transactions</span>
               </div>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fee2e2', color: '#ff0000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ArrowUpRight size={20} />
               </div>
             </div>
@@ -816,7 +816,7 @@ export default function BalanceSheet() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
                 <thead>
-                  <tr style={{ background: '#fff1f2', borderBottom: '1px solid #fecdd3', color: '#9f1239', fontWeight: 600 }}>
+                  <tr style={{ background: '#fff1f2', borderBottom: '1px solid #fecdd3', color: '#ff0000', fontWeight: 600 }}>
                     <th style={{ padding: '10px 10px' }}>#</th>
                     <th style={{ padding: '10px 10px' }}>Date</th>
                     <th style={{ padding: '10px 10px' }}>Reference ID</th>
@@ -871,7 +871,7 @@ export default function BalanceSheet() {
                               ? '#1e40af'
                               : row.type === 'Credit'
                               ? '#15803d'
-                              : '#991b1b'
+                              : '#ff0000'
                         }}>
                           {row.type}
                         </span>
@@ -881,7 +881,7 @@ export default function BalanceSheet() {
                       <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: '#16a34a' }}>
                         {row.credit > 0 ? row.credit.toLocaleString('en-IN') : '-'}
                       </td>
-                      <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: '#dc2626' }}>
+                      <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: '#ff0000' }}>
                         {row.debit > 0 ? row.debit.toLocaleString('en-IN') : '-'}
                       </td>
                       <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>
@@ -904,7 +904,7 @@ export default function BalanceSheet() {
                               ? '#15803d'
                               : row.status === 'Pending'
                               ? '#854d0e'
-                              : '#991b1b'
+                              : '#ff0000'
                         }}>
                           {row.status}
                         </span>
@@ -1010,14 +1010,14 @@ export default function BalanceSheet() {
                                     border: 'none',
                                     textAlign: 'left',
                                     fontSize: '11px',
-                                    color: '#dc2626',
+                                    color: '#ff0000',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px'
                                   }}
                                 >
-                                  <XCircle size={12} color="#dc2626" /> Reject
+                                  <XCircle size={12} color="#ff0000" /> Reject
                                 </button>
                               </>
                             )}
@@ -1050,7 +1050,7 @@ export default function BalanceSheet() {
                                 border: 'none',
                                 textAlign: 'left',
                                 fontSize: '11px',
-                                color: '#dc2626',
+                                color: '#ff0000',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -1058,7 +1058,7 @@ export default function BalanceSheet() {
                                 borderTop: '1px solid #f1f5f9'
                               }}
                             >
-                              <Trash2 size={12} color="#dc2626" /> Delete
+                              <Trash2 size={12} color="#ff0000" /> Delete
                             </button>
                           </div>
                         )}
@@ -1145,7 +1145,7 @@ export default function BalanceSheet() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <ArrowUpRight size={14} color="#dc2626" /> Total Debits
+                    <ArrowUpRight size={14} color="#ff0000" /> Total Debits
                   </span>
                   <strong style={{ color: '#0f172a' }}>₹ 3,15,200</strong>
                 </div>
@@ -1169,7 +1169,7 @@ export default function BalanceSheet() {
 
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: '#fff1f2', color: '#9f1239', fontWeight: 600 }}>
+                  <tr style={{ background: '#fff1f2', color: '#ff0000', fontWeight: 600 }}>
                     <th style={{ padding: '6px 8px' }}>Module</th>
                     <th style={{ padding: '6px 8px', textAlign: 'right' }}>Credit (₹)</th>
                     <th style={{ padding: '6px 8px', textAlign: 'right' }}>Debit (₹)</th>
@@ -1281,7 +1281,7 @@ export default function BalanceSheet() {
                           checked={formData.type === 'Debit'}
                           onChange={() => setFormData(prev => ({ ...prev, type: 'Debit' }))}
                         />
-                        <span style={{ fontWeight: 600, color: '#dc2626' }}>Debit</span>
+                        <span style={{ fontWeight: 600, color: '#ff0000' }}>Debit</span>
                       </label>
                     </div>
                   </div>
@@ -1629,14 +1629,14 @@ export default function BalanceSheet() {
 
                   <div>
                     <span style={{ color: '#64748b' }}>Type:</span>
-                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.type === 'Opening' ? '#dbeafe' : selectedItem.type === 'Credit' ? '#dcfce7' : '#fee2e2', color: selectedItem.type === 'Opening' ? '#1e40af' : selectedItem.type === 'Credit' ? '#15803d' : '#991b1b' }}>
+                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.type === 'Opening' ? '#dbeafe' : selectedItem.type === 'Credit' ? '#dcfce7' : '#fee2e2', color: selectedItem.type === 'Opening' ? '#1e40af' : selectedItem.type === 'Credit' ? '#15803d' : '#ff0000' }}>
                       {selectedItem.type}
                     </span>
                   </div>
 
                   <div><span style={{ color: '#64748b' }}>Module:</span> <strong style={{ color: '#0f172a', marginLeft: '8px' }}>{selectedItem.module}</strong></div>
                   <div><span style={{ color: '#64748b' }}>Credit Amount:</span> <strong style={{ color: '#16a34a', marginLeft: '8px' }}>{selectedItem.credit > 0 ? `₹ ${selectedItem.credit.toLocaleString('en-IN')}` : '-'}</strong></div>
-                  <div><span style={{ color: '#64748b' }}>Debit Amount:</span> <strong style={{ color: '#dc2626', marginLeft: '8px' }}>{selectedItem.debit > 0 ? `₹ ${selectedItem.debit.toLocaleString('en-IN')}` : '-'}</strong></div>
+                  <div><span style={{ color: '#64748b' }}>Debit Amount:</span> <strong style={{ color: '#ff0000', marginLeft: '8px' }}>{selectedItem.debit > 0 ? `₹ ${selectedItem.debit.toLocaleString('en-IN')}` : '-'}</strong></div>
                   <div><span style={{ color: '#64748b' }}>Closing Balance:</span> <strong style={{ color: '#0f172a', marginLeft: '8px' }}>₹ {selectedItem.balance.toLocaleString('en-IN')}</strong></div>
                   <div><span style={{ color: '#64748b' }}>Status:</span> <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.status === 'Approved' ? '#dcfce7' : '#fef9c3', color: selectedItem.status === 'Approved' ? '#15803d' : '#854d0e' }}>{selectedItem.status}</span></div>
 

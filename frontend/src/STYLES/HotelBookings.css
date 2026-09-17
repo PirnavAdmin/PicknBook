@@ -62,17 +62,17 @@
   padding: 8px 18px;
   border: none;
   border-radius: 8px;
-  background: #b91c1c;
+  background: #ff0000;
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
   transition: all 0.15s ease;
 }
 
 .hotel-bookings-btn:hover {
-  background: #991b1b;
+  background: #ff0000;
   transform: translateY(-1px);
 }
 
@@ -123,7 +123,7 @@
 
 .hotel-bookings-filters input:focus,
 .hotel-bookings-filters select:focus {
-  border-color: #dc2626;
+  border-color: #ff0000;
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
   outline: none;
 }
@@ -279,7 +279,7 @@
 
 .hotel-card-price {
   font-size: 1.22rem;
-  color: #dc2626;
+  color: #ff0000;
   font-weight: 800;
   display: block;
 }
@@ -305,7 +305,7 @@
 .btn-view-details {
   width: 100%;
   padding: 7px 14px;
-  background: #dc2626;
+  background: #ff0000;
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -316,15 +316,15 @@
 }
 
 .btn-view-details:hover {
-  background: #b91c1c;
+  background: #ff0000;
 }
 
 .btn-cancel-booking {
   width: 100%;
   padding: 6px 14px;
   background: transparent;
-  color: #dc2626;
-  border: 1px solid #dc2626;
+  color: #ff0000;
+  border: 1px solid #ff0000;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -369,9 +369,9 @@
 }
 
 .hotel-bookings-btn--primary {
-  background: #dc2626;
+  background: #ff0000;
   color: #ffffff;
-  border-color: #dc2626;
+  border-color: #ff0000;
 }
 
 .hotel-bookings-empty,
@@ -521,7 +521,7 @@
   font-size: 0.72rem;
   text-transform: uppercase;
   font-weight: 700;
-  color: #dc2626;
+  color: #ff0000;
   letter-spacing: 0.05em;
 }
 
@@ -594,28 +594,28 @@
   padding: 0 12px;
   border: 0;
   border-radius: 10px;
-  background: #b91c1c;
+  background: #ff0000;
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
 }
 
 .hotel-bookings-btn:hover {
-  background: #991b1b;
+  background: #ff0000;
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(185, 28, 28, 0.28);
+  box-shadow: 0 6px 16px rgba(255, 0, 0, 0.28);
 }
 
 .hotel-bookings-btn--primary {
-  border-color: #b91c1c;
-  background: #b91c1c;
+  border-color: #ff0000;
+  background: #ff0000;
   color: #ffffff;
 }
 
 .hotel-bookings-btn--primary:hover {
-  background: #991b1b;
+  background: #ff0000;
   color: #ffffff;
 }
 

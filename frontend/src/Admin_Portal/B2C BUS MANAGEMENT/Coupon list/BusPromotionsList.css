@@ -365,7 +365,7 @@
 
 .admin-markup-coupon-status.inactive {
   background: #fef2f2 !important;
-  color: #b91c1c !important;
+  color: #ff0000 !important;
   border-color: #ef4444 !important;
 }
 
@@ -546,8 +546,8 @@
 }
 
 .admin-markup-coupon-modal-actions .danger:hover {
-  background: #dc2626 !important;
-  border-color: #dc2626 !important;
+  background: #ff0000 !important;
+  border-color: #ff0000 !important;
   transform: translateY(-3px) !important;
   box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3) !important;
 }

@@ -507,7 +507,7 @@ export default function HotelCancellationList() {
                       padding: "2px 8px",
                       borderRadius: "12px",
                       backgroundColor: "#fef2f2",
-                      color: "#dc2626",
+                      color: "#ff0000",
                       fontSize: "0.72rem",
                       fontWeight: "600",
                       marginTop: "4px",

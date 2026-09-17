@@ -257,9 +257,9 @@ export default function WalletTransactionList() {
         <div className="wt-metric-card">
           <div>
             <div className="wt-metric-label">Total Wallet Debits</div>
-            <div className="wt-metric-val" style={{ color: '#dc2626' }}>-₹{metrics.totalDebit.toLocaleString('en-IN')}</div>
+            <div className="wt-metric-val" style={{ color: '#ff0000' }}>-₹{metrics.totalDebit.toLocaleString('en-IN')}</div>
           </div>
-          <div className="wt-metric-icon" style={{ background: '#fee2e2', color: '#b91c1c' }}>
+          <div className="wt-metric-icon" style={{ background: '#fee2e2', color: '#ff0000' }}>
             <ArrowDownLeft size={22} />
           </div>
         </div>
@@ -359,7 +359,7 @@ export default function WalletTransactionList() {
                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.method}</div>
                   </td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{t.referenceId}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: t.type === 'Credit' ? '#15803d' : '#b91c1c' }}>
+                  <td style={{ textAlign: 'right', fontWeight: 700, color: t.type === 'Credit' ? '#15803d' : '#ff0000' }}>
                     {t.type === 'Credit' ? '+' : '-'}₹{t.amount.toLocaleString('en-IN')}
                   </td>
                   <td style={{ textAlign: 'center' }}>
@@ -421,7 +421,7 @@ export default function WalletTransactionList() {
                 </div>
                 <div>
                   <div className="wt-label">Transaction Amount</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 700, color: selectedTxn.type === 'Credit' ? '#15803d' : '#b91c1c' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, color: selectedTxn.type === 'Credit' ? '#15803d' : '#ff0000' }}>
                     {selectedTxn.type === 'Credit' ? '+' : '-'}₹{selectedTxn.amount.toLocaleString('en-IN')}
                   </div>
                 </div>

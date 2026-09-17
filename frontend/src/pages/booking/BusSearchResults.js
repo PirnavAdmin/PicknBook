@@ -1464,7 +1464,7 @@ export default function BusSearchResults() {
       textColor = "#9333ea";
     } else if (name.includes("picknbook")) {
       bgColor = "#fef2f2"; // red
-      textColor = "#dc1e26";
+      textColor = "#ff0000";
     }
 
     return (
@@ -1765,7 +1765,7 @@ export default function BusSearchResults() {
                         return (
                           <tr key={idx}>
                             <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>{timeText}</td>
-                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#dc2626" }}>{chargeText}</td>
+                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#ff0000" }}>{chargeText}</td>
                           </tr>
                         );
                       })}
@@ -2337,9 +2337,9 @@ export default function BusSearchResults() {
                       <stop offset="100%" stopColor="#f9c0ac" />
                     </linearGradient>
                     <linearGradient id="trailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#dc1e26" />
+                      <stop offset="0%" stopColor="#ff0000" />
                       <stop offset="50%" stopColor="#ff6b3d" />
-                      <stop offset="100%" stopColor="#b8141b" />
+                      <stop offset="100%" stopColor="#ff0000" />
                     </linearGradient>
                     <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
                       <stop offset="0%" stopColor="#ffdd57" />
@@ -2347,7 +2347,7 @@ export default function BusSearchResults() {
                       <stop offset="100%" stopColor="#ffaa00" stopOpacity="0" />
                     </radialGradient>
                     <filter id="glow3"><feGaussianBlur stdDeviation="3.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-                    <filter id="pinShadow"><feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#dc1e26" floodOpacity="0.3" /></filter>
+                    <filter id="pinShadow"><feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#ff0000" floodOpacity="0.3" /></filter>
                   </defs>
 
 
@@ -2416,16 +2416,16 @@ export default function BusSearchResults() {
                   {/* Origin (top-left) */}
                   <g filter="url(#pinShadow)">
                     <g className="bus-landmark bus-landmark-origin">
-                      <rect x="54" y="70" width="52" height="4" rx="2" fill="#dc1e26" opacity="0.7" />
-                      <rect x="68" y="62" width="24" height="12" rx="2" fill="#dc1e26" opacity="0.6" />
-                      <polygon points="80,58 87,65 73,65" fill="#dc1e26" opacity="0.8" />
-                      <rect x="73" y="74" width="3" height="9" fill="#dc1e26" opacity="0.5" />
-                      <rect x="84" y="74" width="3" height="9" fill="#dc1e26" opacity="0.5" />
+                      <rect x="54" y="70" width="52" height="4" rx="2" fill="#ff0000" opacity="0.7" />
+                      <rect x="68" y="62" width="24" height="12" rx="2" fill="#ff0000" opacity="0.6" />
+                      <polygon points="80,58 87,65 73,65" fill="#ff0000" opacity="0.8" />
+                      <rect x="73" y="74" width="3" height="9" fill="#ff0000" opacity="0.5" />
+                      <rect x="84" y="74" width="3" height="9" fill="#ff0000" opacity="0.5" />
                     </g>
-                    <circle cx="80" cy="120" r="18" fill="#fff" stroke="#dc1e26" strokeWidth="3" />
-                    <circle cx="80" cy="120" r="7" fill="#dc1e26" className="bus-map-pulse" />
+                    <circle cx="80" cy="120" r="18" fill="#fff" stroke="#ff0000" strokeWidth="3" />
+                    <circle cx="80" cy="120" r="7" fill="#ff0000" className="bus-map-pulse" />
                     <text x="80" y="152" textAnchor="middle" fill="#1f2a44" fontSize="13" fontWeight="900" fontFamily="inherit">{sourceName}</text>
-                    <text x="80" y="165" textAnchor="middle" fill="#dc1e26" fontSize="8" fontWeight="800" letterSpacing="2" fontFamily="inherit">START</text>
+                    <text x="80" y="165" textAnchor="middle" fill="#ff0000" fontSize="8" fontWeight="800" letterSpacing="2" fontFamily="inherit">START</text>
                   </g>
 
                   {/* Milestone 1 - Fort */}
@@ -2433,43 +2433,43 @@ export default function BusSearchResults() {
                     <rect x="210" y="196" width="20" height="24" rx="2" fill="#f9a88c" />
                     <rect x="207" y="193" width="5" height="7" rx="1" fill="#f9a88c" /><rect x="226" y="193" width="5" height="7" rx="1" fill="#f9a88c" />
                     <rect x="217" y="203" width="6" height="7" rx="1" fill="#fff" opacity="0.8" />
-                    <circle cx="220" cy="220" r="5" fill="#fff" stroke="#dc1e26" strokeWidth="1.5" /><circle cx="220" cy="220" r="2" fill="#dc1e26" />
+                    <circle cx="220" cy="220" r="5" fill="#fff" stroke="#ff0000" strokeWidth="1.5" /><circle cx="220" cy="220" r="2" fill="#ff0000" />
                   </g>
                   {/* Milestone 2 - Mosque */}
                   <g className="bus-milestone bus-milestone-2">
                     <ellipse cx="180" cy="318" rx="12" ry="7" fill="#f9a88c" />
                     <rect x="171" y="320" width="18" height="14" rx="1" fill="#f9a88c" />
                     <ellipse cx="180" cy="314" rx="4" ry="7" fill="#fbc4af" />
-                    <circle cx="180" cy="309" r="2" fill="#dc1e26" />
-                    <circle cx="180" cy="340" r="5" fill="#fff" stroke="#dc1e26" strokeWidth="1.5" /><circle cx="180" cy="340" r="2" fill="#dc1e26" />
+                    <circle cx="180" cy="309" r="2" fill="#ff0000" />
+                    <circle cx="180" cy="340" r="5" fill="#fff" stroke="#ff0000" strokeWidth="1.5" /><circle cx="180" cy="340" r="2" fill="#ff0000" />
                   </g>
                   {/* Milestone 3 - Gateway */}
                   <g className="bus-milestone bus-milestone-3">
                     <rect x="510" y="286" width="5" height="20" rx="1" fill="#f9a88c" /><rect x="535" y="286" width="5" height="20" rx="1" fill="#f9a88c" />
                     <path d="M 510 288 Q 525 275,540 288" fill="none" stroke="#f9a88c" strokeWidth="3.5" />
-                    <circle cx="525" cy="278" r="3" fill="#dc1e26" opacity="0.6" />
-                    <circle cx="525" cy="310" r="5" fill="#fff" stroke="#dc1e26" strokeWidth="1.5" /><circle cx="525" cy="310" r="2" fill="#dc1e26" />
+                    <circle cx="525" cy="278" r="3" fill="#ff0000" opacity="0.6" />
+                    <circle cx="525" cy="310" r="5" fill="#fff" stroke="#ff0000" strokeWidth="1.5" /><circle cx="525" cy="310" r="2" fill="#ff0000" />
                   </g>
                   {/* Milestone 4 - Tower */}
                   <g className="bus-milestone bus-milestone-4">
                     <rect x="644" y="386" width="14" height="24" rx="2" fill="#f9a88c" />
                     <polygon points="651,381 660,390 642,390" fill="#f9a88c" />
                     <rect x="647" y="394" width="7" height="4" rx="1" fill="#fff" opacity="0.6" />
-                    <circle cx="651" cy="410" r="5" fill="#fff" stroke="#dc1e26" strokeWidth="1.5" /><circle cx="651" cy="410" r="2" fill="#dc1e26" />
+                    <circle cx="651" cy="410" r="5" fill="#fff" stroke="#ff0000" strokeWidth="1.5" /><circle cx="651" cy="410" r="2" fill="#ff0000" />
                   </g>
 
                   {/* Destination (bottom-right) */}
                   <g filter="url(#pinShadow)">
                     <g className="bus-landmark bus-landmark-dest">
-                      <rect x="884" y="370" width="52" height="5" rx="2" fill="#b8141b" opacity="0.7" />
-                      <path d="M 894 370 Q 910 354,926 370" fill="none" stroke="#b8141b" strokeWidth="3" opacity="0.8" />
-                      <rect x="892" y="370" width="3.5" height="11" fill="#b8141b" opacity="0.5" />
-                      <rect x="924" y="370" width="3.5" height="11" fill="#b8141b" opacity="0.5" />
+                      <rect x="884" y="370" width="52" height="5" rx="2" fill="#ff0000" opacity="0.7" />
+                      <path d="M 894 370 Q 910 354,926 370" fill="none" stroke="#ff0000" strokeWidth="3" opacity="0.8" />
+                      <rect x="892" y="370" width="3.5" height="11" fill="#ff0000" opacity="0.5" />
+                      <rect x="924" y="370" width="3.5" height="11" fill="#ff0000" opacity="0.5" />
                     </g>
-                    <circle cx="910" cy="410" r="18" fill="#fff" stroke="#b8141b" strokeWidth="3" />
-                    <circle cx="910" cy="410" r="7" fill="#b8141b" className="bus-map-pulse" />
+                    <circle cx="910" cy="410" r="18" fill="#fff" stroke="#ff0000" strokeWidth="3" />
+                    <circle cx="910" cy="410" r="7" fill="#ff0000" className="bus-map-pulse" />
                     <text x="910" y="442" textAnchor="middle" fill="#1f2a44" fontSize="13" fontWeight="900" fontFamily="inherit">{destinationName}</text>
-                    <text x="910" y="455" textAnchor="middle" fill="#b8141b" fontSize="8" fontWeight="800" letterSpacing="2" fontFamily="inherit">END</text>
+                    <text x="910" y="455" textAnchor="middle" fill="#ff0000" fontSize="8" fontWeight="800" letterSpacing="2" fontFamily="inherit">END</text>
                   </g>
 
                   {/* Opposing Traffic */}
@@ -2504,7 +2504,7 @@ export default function BusSearchResults() {
                     <animateMotion dur="4.5s" repeatCount="indefinite" rotate="auto" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.25 0.1 0.25 1">
                       <mpath href="#snakeRoad" />
                     </animateMotion>
-                    <rect x="-22" y="-11" width="44" height="22" rx="6" fill="#dc1e26" />
+                    <rect x="-22" y="-11" width="44" height="22" rx="6" fill="#ff0000" />
                     <rect x="-18" y="-8" width="12" height="10" rx="2" fill="#fff" opacity="0.9" />
                     <rect x="-3" y="-8" width="12" height="10" rx="2" fill="#fff" opacity="0.9" />
                     <circle cx="-14" cy="13" r="4" fill="#1f2a44" /><circle cx="12" cy="13" r="4" fill="#1f2a44" />
@@ -2534,7 +2534,7 @@ export default function BusSearchResults() {
                           x="470"
                           y="175"
                           textAnchor="middle"
-                          fill="#dc1e26"
+                          fill="#ff0000"
                           fontSize="10.5"
                           fontWeight="800"
                           fontFamily="inherit"

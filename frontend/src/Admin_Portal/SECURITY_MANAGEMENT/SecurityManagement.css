@@ -460,9 +460,9 @@
 .security-mgmt-container .sec-tab-btn.active-blacklist,
 .security-mgmt-container div.sec-tab-btn.active-blacklist,
 .security-mgmt-container button.sec-tab-btn.active-blacklist {
-  background: #dc2626 !important;
+  background: #ff0000 !important;
   color: #ffffff !important;
-  border-color: #dc2626 !important;
+  border-color: #ff0000 !important;
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
 }
 
@@ -809,7 +809,7 @@
 
 .sec-audit-metric-card.card-total-logs .sec-audit-metric-icon { color: #901335; }
 .sec-audit-metric-card.card-success-events .sec-audit-metric-icon { color: #059669; }
-.sec-audit-metric-card.card-failed-events .sec-audit-metric-icon { color: #dc2626; }
+.sec-audit-metric-card.card-failed-events .sec-audit-metric-icon { color: #ff0000; }
 .sec-audit-metric-card.card-security-alerts .sec-audit-metric-icon { color: #d97706; }
 
 .sec-audit-metric-info {
@@ -1161,7 +1161,7 @@
   font-size: 10px;
   font-weight: 700;
   background: #fef2f2;
-  color: #b91c1c;
+  color: #ff0000;
   border: 1px solid #fecaca;
 }
 
@@ -1169,7 +1169,7 @@
 .badge-status.inactive { background: #f1f5f9; color: #64748b; }
 .badge-status.failed { background: #fdf2f4; color: #901335; }
 .badge-status.locked { background: #fdf2f4; color: #901335; }
-.badge-status.blacklisted { background: #dc2626; color: #ffffff; }
+.badge-status.blacklisted { background: #ff0000; color: #ffffff; }
 .badge-status.expired { background: #fff7ed; color: #c2410c; }
 
 .sec-card-footer-link {
@@ -1758,7 +1758,7 @@
 }
 
 .email-form-field label span.req {
-  color: #dc2626;
+  color: #ff0000;
 }
 
 .email-form-field input,
@@ -2131,7 +2131,7 @@ input:checked + .switch-slider:before {
 
 .badge-status-failed {
   background: #fee2e2;
-  color: #991b1b;
+  color: #ff0000;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 10px;
@@ -2350,7 +2350,7 @@ input:checked + .switch-slider:before {
 .sd-error-banner {
   background: #fef2f2;
   border: 1px solid #fca5a5;
-  color: #991b1b;
+  color: #ff0000;
   padding: 14px 20px;
   border-radius: 10px;
   margin-bottom: 20px;
@@ -2772,8 +2772,8 @@ input:checked + .switch-slider:before {
 }
 
 .sd-metric-card:nth-child(1):hover::after { background: #ef4444; }
-.sd-metric-card:nth-child(2):hover::after { background: #b91c1c; }
-.sd-metric-card:nth-child(3):hover::after { background: #dc2626; }
+.sd-metric-card:nth-child(2):hover::after { background: #ff0000; }
+.sd-metric-card:nth-child(3):hover::after { background: #ff0000; }
 .sd-metric-card:nth-child(4):hover::after { background: #16a34a; }
 .sd-metric-card:nth-child(5):hover::after { background: #f59e0b; }
 
@@ -3565,8 +3565,8 @@ input:checked + .switch-slider:before {
 
 /* Action Badges */
 .badge-action-whitelist { background: #dcfce7; color: #15803d; }
-.badge-action-blocked { background: #fee2e2; color: #b91c1c; }
-.badge-action-blacklist { background: #fef2f2; color: #991b1b; }
+.badge-action-blocked { background: #fee2e2; color: #ff0000; }
+.badge-action-blacklist { background: #fef2f2; color: #ff0000; }
 .badge-action-expired { background: #f1f5f9; color: #64748b; }
 
 /* Source Badges */
@@ -4153,7 +4153,7 @@ input:checked + .switch-slider:before {
 /* Security Limits Action Badges */
 .badge-action-block {
   background: #fee2e2 !important;
-  color: #b91c1c !important;
+  color: #ff0000 !important;
   border: 1px solid #fca5a5 !important;
 }
 

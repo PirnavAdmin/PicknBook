@@ -76,7 +76,7 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
     if (!window.google) return null;
     return {
       path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm3 7.5H9v2H7.5v-5H9v2h3v-2h1.5v3H15v-3H16.5v5H15v-2z",
-      fillColor: "#dc1e26", // hotel brand red/rose color
+      fillColor: "#ff0000", // hotel brand red/rose color
       fillOpacity: 1.0,
       strokeColor: "#ffffff",
       strokeWeight: 1.5,

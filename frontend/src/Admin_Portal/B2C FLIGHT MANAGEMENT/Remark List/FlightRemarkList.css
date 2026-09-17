@@ -209,7 +209,7 @@
 }
 
 .admin-flight-remark-icon-btn.delete:hover {
-  background: #b91c1c !important;
+  background: #ff0000 !important;
   transform: translateY(-2px);
 }
 

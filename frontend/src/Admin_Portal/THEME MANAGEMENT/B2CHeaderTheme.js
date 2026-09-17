@@ -793,7 +793,7 @@ export default function B2CHeaderTheme() {
         }
         .btn-delete-card:hover {
           background: #fca5a5;
-          color: #b91c1c;
+          color: #ff0000;
           transform: scale(1.1);
         }
         .theme-card-item h3 {

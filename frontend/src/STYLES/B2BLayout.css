@@ -171,7 +171,7 @@
   gap: 8px;
   background: transparent;
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: #ff0000;
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 0.85rem;
@@ -182,7 +182,7 @@
 
 .b2b-signout-btn:hover {
   background-color: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
+  border-color: #ff0000;
 }
 
 /* ─── Layout Body (Sidebar + Content) ─────────────────────────────────────── */

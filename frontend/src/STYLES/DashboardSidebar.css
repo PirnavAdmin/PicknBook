@@ -7,15 +7,15 @@
     --dashboard-border: #fca5a5;
     --dashboard-text: #1c395f;
     --dashboard-muted: #597293;
-    --dashboard-primary: var(--theme-primary-strong, #df3f1f);
-    --dashboard-primary-strong: #0c2f5d;
-    --dashboard-accent: var(--theme-primary, #f04423);
-    --dashboard-accent-strong: var(--theme-primary-strong, #df3f1f);
-    --dashboard-success: var(--theme-primary, #f04423);
-    --dashboard-danger: var(--theme-primary, #f04423);
+    --dashboard-primary: #ff0000;
+    --dashboard-primary-strong: #ff0000;
+    --dashboard-accent: #ff0000;
+    --dashboard-accent-strong: #ff0000;
+    --dashboard-success: #ff0000;
+    --dashboard-danger: #ff0000;
     --dashboard-shadow-md: 0 12px 26px rgba(13, 30, 52, 0.1);
     --dashboard-shadow-sm: 0 8px 18px rgba(13, 30, 52, 0.08);
-    --dashboard-sidebar-expanded-width: 240px;
+    --dashboard-sidebar-expanded-width: 250px;
     --dashboard-sidebar-collapsed-width: 88px;
     --dashboard-heading-font: var(--app-font-family);
     --dashboard-body-font: var(--app-font-family);
@@ -83,8 +83,8 @@
     justify-content: center;
     color: #ffffff;
     background: linear-gradient(135deg,
-            var(--dashboard-primary),
-            var(--dashboard-primary-strong));
+            var(--dashboard-primary, #ff0000),
+            var(--dashboard-primary-strong, #ff0000));
     box-shadow: 0 10px 16px rgba(25, 66, 120, 0.3);
 }
 
@@ -142,7 +142,7 @@
 
 .sidebar-item.active {
     color: #ffffff;
-    background: linear-gradient(135deg, var(--theme-primary, #f04423), var(--theme-primary-strong, #df3f1f));
+    background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000));
     box-shadow: 0 10px 18px rgba(32, 78, 139, 0.28);
 }
 
@@ -231,7 +231,7 @@
 }
 
 .dashboard-content.dashboard-home {
-    max-width: 1260px;
+    max-width: 250px;
     margin: 0 auto;
 }
 
@@ -258,7 +258,7 @@
     border-radius: 999px;
     border: 1px solid #c3d6ee;
     background: #f5f8fe;
-    color: var(--theme-primary, #f04423);
+    color: var(--theme-primary, #ff0000);
     font-size: 9px;
     font-weight: 800;
     letter-spacing: 0.11em;
@@ -280,7 +280,7 @@
     color: #4e6788;
     font-size: 0.864rem;
     line-height: 1.55;
-    max-width: 680px;
+    max-width: 250px;
 }
 
 .dashboard-header-meta {
@@ -375,8 +375,8 @@
     justify-content: center;
     color: #ffffff;
     background: linear-gradient(135deg,
-            var(--dashboard-accent),
-            var(--dashboard-accent-strong));
+            var(--dashboard-accent, #ff0000),
+            var(--dashboard-accent-strong, #ff0000));
     box-shadow: 0 8px 14px rgba(28, 95, 181, 0.25);
     flex: 0 0 auto;
 }
@@ -638,7 +638,7 @@
     display: inline-flex;
     align-items: center;
     background: #f1f6fd;
-    color: var(--theme-primary, #f04423);
+    color: var(--theme-primary, #ff0000);
     font-size: 0.63rem;
     font-weight: 700;
 }
@@ -672,7 +672,7 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(135deg, var(--dashboard-primary), var(--theme-primary, #f04423));
+    background: linear-gradient(135deg, var(--dashboard-primary, #ff0000), var(--theme-primary, #ff0000));
 }
 
 .route-meta {
@@ -710,7 +710,7 @@
 }
 
 .quick-link-card:hover {
-    color: var(--theme-primary, #f04423);
+    color: var(--theme-primary, #ff0000);
     border-color: #b5ccea;
     background: #f6f9fe;
 }
@@ -746,8 +746,8 @@
     justify-content: center;
     color: #ffffff;
     background: linear-gradient(135deg,
-            var(--dashboard-accent),
-            var(--dashboard-accent-strong));
+            var(--dashboard-accent, #ff0000),
+            var(--dashboard-accent-strong, #ff0000));
 }
 
 .offer-slider-box p {
@@ -893,12 +893,12 @@
     --dashboard-border: var(--theme-border, #f2cbbf);
     --dashboard-text: var(--theme-navy, #1f2a44);
     --dashboard-muted: var(--theme-muted, #64748b);
-    --dashboard-primary: var(--theme-primary, #f04423);
-    --dashboard-primary-strong: var(--theme-primary-strong, #df3f1f);
-    --dashboard-accent: var(--theme-primary, #f04423);
-    --dashboard-accent-strong: var(--theme-primary-strong, #df3f1f);
-    --dashboard-success: var(--theme-primary, #f04423);
-    --dashboard-danger: var(--theme-primary-strong, #df3f1f);
+    --dashboard-primary: #ff0000;
+    --dashboard-primary-strong: #ff0000;
+    --dashboard-accent: #ff0000;
+    --dashboard-accent-strong: #ff0000;
+    --dashboard-success: #ff0000;
+    --dashboard-danger: #ff0000;
     --dashboard-shadow-md: var(--theme-shadow, 0 18px 45px rgba(125, 59, 31, 0.12));
     --dashboard-shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(125, 59, 31, 0.08));
 }
@@ -910,30 +910,31 @@
 
 .sidebar-item.active,
 .sidebar-brand-icon {
-    background: linear-gradient(135deg, var(--dashboard-primary), var(--dashboard-primary-strong));
+    background: linear-gradient(135deg, var(--dashboard-primary, #ff0000), var(--dashboard-primary-strong, #ff0000));
     color: #ffffff;
-    box-shadow: 0 14px 28px rgba(240, 68, 35, 0.2);
+    box-shadow: 0 14px 28px rgba(255, 0, 0, 0.2);
 }
 
 .sidebar-item:hover,
 .sidebar-toggle.open {
-    color: var(--dashboard-primary-strong);
+    color: var(--dashboard-primary-strong, #ff0000);
     background: var(--theme-primary-soft, #fff0e9);
 }
 
 /* Account sidebar mockup */
 .dashboard-layout {
-    --dashboard-sidebar-expanded-width: 240px;
-    --dashboard-sidebar-collapsed-width: 240px;
+    --dashboard-sidebar-expanded-width: 250px;
+    --dashboard-sidebar-collapsed-width: 250px;
 }
 
 .dashboard-sidebar {
     width: var(--dashboard-sidebar-expanded-width);
-    max-width: 240px;
+    max-width: 250px;
     padding: 24px 16px 20px 16px;
     border-right: 1px solid #f0d2ca;
     background: #ffffff;
     box-shadow: none;
+    overflow: hidden;
 }
 
 .dashboard-sidebar .sidebar-nav {
@@ -949,6 +950,7 @@
     color: #2b5183;
     background: transparent;
     box-shadow: none;
+    overflow: hidden;
     font-size: 14px;
     font-weight: 700;
 }
@@ -987,12 +989,12 @@
 }
 
 .dashboard-sidebar .sidebar-item:not(.active):hover {
-    color: #b8141b !important;
+    color: #ff0000 !important;
     background: #fef2f2 !important;
 }
 
 .dashboard-sidebar .sidebar-item:not(.active):hover .sidebar-copy strong {
-    color: #b8141b !important;
+    color: #ff0000 !important;
 }
 
 .dashboard-sidebar .sidebar-item:not(.active):hover .sidebar-copy small {
@@ -1000,7 +1002,7 @@
 }
 
 .dashboard-sidebar .sidebar-item:not(.active):hover svg {
-    color: #dc1e26 !important;
+    color: #ff0000 !important;
 }
 
 .dashboard-sidebar .sidebar-item.active,
@@ -1008,8 +1010,8 @@
 .dashboard-sidebar .sidebar-item.active:focus {
     min-height: 56px;
     color: #ffffff !important;
-    background: linear-gradient(135deg, var(--theme-primary, #dc1e26) 0%, var(--theme-primary-strong, #b8141b) 100%) !important;
-    box-shadow: 0 8px 18px rgba(220, 30, 38, 0.28) !important;
+    background: linear-gradient(135deg, var(--theme-primary, #ff0000) 0%, var(--theme-primary-strong, #ff0000) 100%) !important;
+    box-shadow: 0 8px 18px rgba(255, 0, 0, 0.28) !important;
 }
 
 .dashboard-sidebar .sidebar-item.active *,

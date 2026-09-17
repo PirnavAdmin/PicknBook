@@ -6,9 +6,9 @@
   --qr-border: #cfdbea;
   --qr-text: #1c395f;
   --qr-muted: #597293;
-  --qr-primary: var(--theme-primary-strong, #b8141b);
+  --qr-primary: var(--theme-primary-strong, #ff0000);
   --qr-primary-strong: #17242d;
-  --qr-danger: var(--theme-primary, #dc1e26);
+  --qr-danger: var(--theme-primary, #ff0000);
   --qr-shadow-sm: 0 8px 18px rgba(13, 30, 52, 0.08);
   --qr-heading-font: var(--app-font-family);
   --qr-body-font: var(--app-font-family);
@@ -26,9 +26,9 @@
   --qr-border: var(--theme-border, #E5E7EB);
   --qr-text: var(--theme-navy, #1f2a44);
   --qr-muted: var(--theme-muted, #64748b);
-  --qr-primary: var(--theme-primary, #dc1e26);
-  --qr-primary-strong: var(--theme-primary-strong, #b8141b);
-  --qr-danger: var(--theme-primary-strong, #b8141b);
+  --qr-primary: var(--theme-primary, #ff0000);
+  --qr-primary-strong: var(--theme-primary-strong, #ff0000);
+  --qr-danger: var(--theme-primary-strong, #ff0000);
   --qr-shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(125, 59, 31, 0.08));
 }
 
@@ -105,7 +105,7 @@
 
 .qr-container .error-text {
   margin: 6px 0 0;
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
   font-size: 0.684rem;
   font-weight: 600;
 }
@@ -175,7 +175,7 @@
 }
 
 .qr-container .qr-feedback.success {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
   border-color: #cad9eb;
 }
 
@@ -200,7 +200,7 @@
 }
 
 .qr-container .qr-table thead {
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b));
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000));
   color: #ffffff;
 }
 
@@ -257,15 +257,15 @@
 }
 
 .qr-container .action-edit {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
 }
 
 .qr-container .action-delete {
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
 }
 
 .qr-container .action-save {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
 }
 
 .qr-container .action-cancel {

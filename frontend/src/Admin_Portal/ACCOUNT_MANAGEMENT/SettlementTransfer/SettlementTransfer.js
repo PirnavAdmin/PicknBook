@@ -118,7 +118,7 @@ function SettlementTransfer() {
                 <Layers size={18} />
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#9f1239', letterSpacing: '0.02em' }}>FROM ACCOUNT *</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ff0000', letterSpacing: '0.02em' }}>FROM ACCOUNT *</span>
                 <select
                   value={form.fromAccount}
                   onChange={e => setForm(prev => ({ ...prev, fromAccount: e.target.value }))}
@@ -137,7 +137,7 @@ function SettlementTransfer() {
                 <Layers size={18} />
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#9f1239', letterSpacing: '0.02em' }}>TO ACCOUNT / PARTY *</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ff0000', letterSpacing: '0.02em' }}>TO ACCOUNT / PARTY *</span>
                 <select
                   value={form.toAccount}
                   onChange={e => setForm(prev => ({ ...prev, toAccount: e.target.value }))}
@@ -157,7 +157,7 @@ function SettlementTransfer() {
                 <DollarSign size={18} />
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#9f1239', letterSpacing: '0.02em' }}>AMOUNT (₹) *</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ff0000', letterSpacing: '0.02em' }}>AMOUNT (₹) *</span>
                 <input
                   type="number"
                   required
@@ -175,7 +175,7 @@ function SettlementTransfer() {
                 <Calendar size={18} />
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#9f1239', letterSpacing: '0.02em' }}>TRANSFER DATE *</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ff0000', letterSpacing: '0.02em' }}>TRANSFER DATE *</span>
                 <input
                   type="date"
                   required
@@ -188,7 +188,7 @@ function SettlementTransfer() {
 
             {/* Purpose / Description */}
             <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#9f1239', letterSpacing: '0.02em' }}>PURPOSE / DESCRIPTION *</span>
+              <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ff0000', letterSpacing: '0.02em' }}>PURPOSE / DESCRIPTION *</span>
               <textarea
                 required
                 placeholder="Enter transfer purpose description..."
@@ -218,7 +218,7 @@ function SettlementTransfer() {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            color: '#9f1239',
+            color: '#ff0000',
             fontSize: '0.78rem',
             fontWeight: 500,
             border: '1px solid #fecdd3',

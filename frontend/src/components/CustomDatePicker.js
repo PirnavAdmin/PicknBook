@@ -208,7 +208,7 @@ export default function CustomDatePicker({
         }
         .pnb-dp-nav-btn {
           width: 24px; height: 24px; border-radius: 8px;
-          border: 1px solid #fee2e2; background: #ffffff; color: #dc1e26;
+          border: 1px solid #fee2e2; background: #ffffff; color: #ff0000;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer; transition: all 0.2s ease; padding: 0;
         }
@@ -221,19 +221,19 @@ export default function CustomDatePicker({
           cursor: pointer; transition: all 0.18s ease; margin: 0 auto;
           padding: 0; position: relative;
         }
-        .pnb-dp-day-cell:hover:not(.disabled):not(.selected) { background: #fef2f2; color: #dc1e26; border-color: #fecaca; }
-        .pnb-dp-day-cell.selected { background: linear-gradient(135deg,#ef4444 0%,#dc1e26 100%) !important; color:#fff !important; box-shadow: 0 4px 10px rgba(220,30,38,0.4) !important; border-color:#dc1e26 !important; font-weight:700 !important; }
-        .pnb-dp-day-cell.today:not(.selected) { border-color: #dc1e26; color: #dc1e26; }
-        .pnb-dp-day-cell.today:not(.selected)::after { content:""; position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:#dc1e26; }
+        .pnb-dp-day-cell:hover:not(.disabled):not(.selected) { background: #fef2f2; color: #ff0000; border-color: #fecaca; }
+        .pnb-dp-day-cell.selected { background: linear-gradient(135deg,#ef4444 0%,#ff0000 100%) !important; color:#fff !important; box-shadow: 0 4px 10px rgba(220,30,38,0.4) !important; border-color:#ff0000 !important; font-weight:700 !important; }
+        .pnb-dp-day-cell.today:not(.selected) { border-color: #ff0000; color: #ff0000; }
+        .pnb-dp-day-cell.today:not(.selected)::after { content:""; position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:#ff0000; }
         .pnb-dp-day-cell.disabled { color:#cbd5e1 !important; cursor:not-allowed !important; opacity:0.45; }
-        .pnb-dp-quick-btn { border-radius:10px; border:1px solid #fee2e2; background:#fff5f5; color:#dc1e26; font-size:0.65rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; cursor:pointer; transition:all 0.2s ease; }
-        .pnb-dp-quick-btn:hover { background:#dc1e26; color:#fff; border-color:#dc1e26; box-shadow:0 2px 6px rgba(220,30,38,0.25); }
+        .pnb-dp-quick-btn { border-radius:10px; border:1px solid #fee2e2; background:#fff5f5; color:#ff0000; font-size:0.65rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; cursor:pointer; transition:all 0.2s ease; }
+        .pnb-dp-quick-btn:hover { background:#ff0000; color:#fff; border-color:#ff0000; box-shadow:0 2px 6px rgba(220,30,38,0.25); }
       `}</style>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"8px", borderBottom:"1px solid #f1f5f9", paddingBottom:"6px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-          <CalendarIcon size={13} style={{ color:"#dc1e26" }} />
+          <CalendarIcon size={13} style={{ color:"#ff0000" }} />
           <span style={{ fontSize:"0.68rem", fontWeight:800, color:"#0f172a", textTransform:"uppercase", letterSpacing:"0.06em" }}>{title}</span>
         </div>
         <button type="button" onClick={onClose} style={{ background:"transparent", border:"none", color:"#94a3b8", cursor:"pointer", padding:"2px", display:"flex", alignItems:"center", borderRadius:"6px" }} aria-label="Close calendar">
@@ -251,7 +251,7 @@ export default function CustomDatePicker({
       {/* Weekday Row */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", textAlign:"center", marginBottom:"4px" }}>
         {WEEKDAYS.map((wd) => (
-          <span key={wd} style={{ fontSize:"0.62rem", fontWeight:800, color: wd==="Su"||wd==="Sa" ? "#dc1e26" : "#64748b", textTransform:"uppercase", letterSpacing:"0.04em", padding:"1px 0" }}>{wd}</span>
+          <span key={wd} style={{ fontSize:"0.62rem", fontWeight:800, color: wd==="Su"||wd==="Sa" ? "#ff0000" : "#64748b", textTransform:"uppercase", letterSpacing:"0.04em", padding:"1px 0" }}>{wd}</span>
         ))}
       </div>
 

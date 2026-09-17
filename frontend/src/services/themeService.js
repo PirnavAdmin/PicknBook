@@ -5,8 +5,8 @@ const DEFAULT_THEMES = [
   {
     id: 1,
     name: "Default Crimson",
-    primaryColor: "#dc1e26",
-    primaryStrongColor: "#b8141b",
+    primaryColor: "#ff0000",
+    primaryStrongColor: "#ff0000",
     pageBgColor: "#F3F4F6",
     surfaceColor: "#ffffff",
     textColor: "#162126",

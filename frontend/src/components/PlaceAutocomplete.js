@@ -164,7 +164,7 @@ export default function PlaceAutocomplete({
           tripType === "flight" ? (
             <Plane size={18} color="currentColor" style={{ flexShrink: 0 }} />
           ) : tripType === "hotel" ? (
-            <MapPin size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+            <MapPin size={18} color="#ff0000" style={{ flexShrink: 0 }} />
           ) : isBusMode && (field === "to" || field === "destination") ? (
             <MapPin size={18} color="currentColor" style={{ flexShrink: 0 }} />
           ) : (

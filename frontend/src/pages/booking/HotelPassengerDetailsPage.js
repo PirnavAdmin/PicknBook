@@ -92,7 +92,7 @@ function HotelDetailsPremiumLoader() {
           bottom: 0,
           borderRadius: "50%",
           border: "4px solid #f1f5f9",
-          borderTopColor: "#dc1e26",
+          borderTopColor: "#ff0000",
           animation: "hotel-spin 1s linear infinite"
         }} />
         <div style={{
@@ -103,7 +103,7 @@ function HotelDetailsPremiumLoader() {
           bottom: "-6px",
           borderRadius: "50%",
           border: "4px solid transparent",
-          borderBottomColor: "#991b1b",
+          borderBottomColor: "#ff0000",
           opacity: 0.6,
           animation: "hotel-spin 1.8s linear infinite reverse"
         }} />
@@ -148,7 +148,7 @@ function HotelDetailsPremiumLoader() {
         <div style={{
           width: "70%",
           height: "100%",
-          background: "linear-gradient(90deg, #dc1e26, #991b1b)",
+          background: "linear-gradient(90deg, #ff0000, #ff0000)",
           borderRadius: "2px",
           animation: "hotel-pulse-progress 2s ease-in-out infinite"
         }} />
@@ -620,6 +620,7 @@ export default function HotelPassengerDetailsPage() {
                           offerId: r.roomId || r.RatePlanCode || `room-${i}`,
                           selectionKey: `room-${i}-${r.roomId || r.RatePlanCode || r.roomTypeName || r.RoomTypeName || "option"}`,
                             price: extractedPrice,
+                            originalPrice: priceObj,
                             currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
                             roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
                             cancellationPolicy: cancelPolicies?.[0]?.charge || cancelPolicies?.[0]?.Charge ? `Charge: ${cancelPolicies[0].charge || cancelPolicies[0].Charge}` : "Refundable thresholds apply",
@@ -849,8 +850,25 @@ export default function HotelPassengerDetailsPage() {
   } else if (offer) {
       // Use the selected offer's price until blockRoom confirms the final rate
       const offerPrice = Number(offer.price ?? 0);
-      basePrice = offerPrice > 0 ? offerPrice : 0;
-      finalPayable = basePrice;
+      if (offer.originalPrice) {
+          const op = offer.originalPrice;
+          tax = Number(op.Tax ?? op.tax ?? op.TotalGSTAmount ?? op.totalGSTAmount ?? 0);
+          basePrice = Number(op.RoomPrice ?? op.roomPrice ?? op.PublishedPrice ?? op.publishedPrice ?? 0);
+          
+          let markup = Number(op.AgentMarkUp ?? op.agentMarkUp ?? op.agentMarkup ?? 0);
+          if (!isAgent) {
+              basePrice = Number(op.b2CBasePrice ?? op.b2cBasePrice ?? (basePrice + markup));
+              markup = 0;
+          }
+          markupValue = markup;
+          couponDiscount = Number(op.CouponDiscount ?? op.couponDiscount ?? 0);
+          convenienceFee = Number(op.ConvenienceFee ?? op.convenienceFee ?? 0);
+          
+          finalPayable = offerPrice;
+      } else {
+          basePrice = offerPrice > 0 ? offerPrice : 0;
+          finalPayable = basePrice;
+      }
   }
   // If no offer selected and no blocked rooms, all prices remain 0 — UI shows "Select a room"
 
@@ -1159,7 +1177,7 @@ export default function HotelPassengerDetailsPage() {
             {/* Left Column Content */}
             <div className="hotel-checkout-main">
               {/* Hotel Summary Card (Search Result Style) */}
-              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "20px", padding: "16px", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "20px", background: "#fff", marginBottom: "24px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "20px", padding: "16px", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "20px", background: "#fff", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
                 <div style={{ width: "100%", height: "110px", borderRadius: "14px", overflow: "hidden" }}>
                   <img src={gallery[0]} alt={hotel.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
@@ -1200,7 +1218,7 @@ export default function HotelPassengerDetailsPage() {
                 </div>
               </div>
               {/* Primary Guest Form Card */}
-              <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+              <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="form-title-section" style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "14px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Primary Guest Details</h3>
@@ -1370,7 +1388,7 @@ export default function HotelPassengerDetailsPage() {
 
               {/* Optional Co-Traveler Details Accordions */}
               {guests.length > 1 && (
-                <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)" }}>
                   <h3 style={{ margin: "0 0 16px 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Other Guest Details</h3>
                   {guests.slice(1).map((guest, index) => {
                     const actualIdx = index + 1;
@@ -1460,57 +1478,6 @@ export default function HotelPassengerDetailsPage() {
                 </section>
               )}
 
-              {/* Special Requests Grid */}
-              <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "24px" }}>
-                <h3 style={{ margin: "0 0 4px 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Special Requests (Optional)</h3>
-                <p style={{ margin: "0 0 16px 0", fontSize: "0.8rem", color: "var(--hotel-muted)" }}>Select preferences to share with the hotel host. Requests are subject to availability.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
-                  {["Smoking Room", "Non-Smoking Room", "Large Bed", "Twin Beds", "Late Check-in", "Early Check-in", "High Floor", "Quiet Room", "Wheelchair Accessible"].map((req) => {
-                    const isSelected = specialRequests.includes(req);
-                    return (
-                      <button
-                        type="button"
-                        key={req}
-                        onClick={() => {
-                          setSpecialRequests((prev) => 
-                            prev.includes(req) ? prev.filter((r) => r !== req) : [...prev, req]
-                          );
-                        }}
-                        className={`special-request-pill ${isSelected ? "is-selected" : ""}`}
-                        style={{
-                          padding: "10px 14px",
-                          borderRadius: "10px",
-                          border: isSelected ? "1.5px solid var(--hotel-rose)" : "1px solid #e2e8f0",
-                          background: isSelected ? "rgba(220,30,38,0.03)" : "#fff",
-                          color: isSelected ? "var(--hotel-rose)" : "var(--hotel-ink)",
-                          fontWeight: 600,
-                          fontSize: "0.8rem",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          transition: "all 0.15s ease"
-                        }}
-                      >
-                        <span>{req}</span>
-                        {isSelected && <span style={{ fontSize: "0.85rem", color: "var(--hotel-rose)" }}>✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div style={{ marginTop: "16px" }}>
-                  <label htmlFor="hotel-additional-notes" style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--hotel-ink)", display: "block", marginBottom: "6px" }}>Any other requests or comments?</label>
-                  <textarea
-                    id="hotel-additional-notes"
-                    placeholder="Enter special instructions or requests..."
-                    value={additionalNotes}
-                    onChange={(e) => setAdditionalNotes(e.target.value)}
-                    style={{ width: "100%", height: "80px", borderRadius: "10px", border: "1px solid #cbd5e1", padding: "10px", fontSize: "0.85rem", resize: "none" }}
-                  />
-                </div>
-              </section>
 
               {/* Review Selection Container */}
               <section className="hotel-panel" style={{ padding: "20px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)", marginBottom: "20px" }}>

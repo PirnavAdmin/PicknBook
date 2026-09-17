@@ -78,7 +78,7 @@
   color: #ef4444 !important;
 }
 .stat-card.inactive .stat-value {
-  color: #b91c1c !important;
+  color: #ff0000 !important;
 }
 
 .stat-value {
@@ -649,12 +649,12 @@
 .dropdown-item.edit:hover,
 .dropdown-item.delete:hover {
   background: #fef2f2 !important;
-  color: #dc2626 !important;
+  color: #ff0000 !important;
 }
 .dropdown-item.view:hover .item-icon,
 .dropdown-item.edit:hover .item-icon,
 .dropdown-item.delete:hover .item-icon {
-  color: #dc2626 !important;
+  color: #ff0000 !important;
 }
 
 /* ══════════════════════════════════════
@@ -749,5 +749,5 @@
 .custom-dropdown-item:hover,
 .custom-dropdown-item.active {
   background: #fef2f2 !important;
-  color: #dc2626 !important;
+  color: #ff0000 !important;
 }

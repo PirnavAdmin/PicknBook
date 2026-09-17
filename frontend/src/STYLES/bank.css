@@ -8,11 +8,11 @@
   --bank-border: #cfdbea;
   --bank-text: #1c395f;
   --bank-muted: #597293;
-  --bank-primary: var(--theme-primary-strong, #b8141b);
+  --bank-primary: var(--theme-primary-strong, #ff0000);
   --bank-primary-strong: #17242d;
-  --bank-accent: var(--theme-primary, #dc1e26);
-  --bank-danger: var(--theme-primary, #dc1e26);
-  --bank-success: var(--theme-primary, #dc1e26);
+  --bank-accent: var(--theme-primary, #ff0000);
+  --bank-danger: var(--theme-primary, #ff0000);
+  --bank-success: var(--theme-primary, #ff0000);
   --bank-shadow-sm: 0 8px 18px rgba(13, 30, 52, 0.08);
   --bank-heading-font: var(--app-font-family);
   --bank-body-font: var(--app-font-family);
@@ -30,11 +30,11 @@
   --bank-border: var(--theme-border, #E5E7EB);
   --bank-text: var(--theme-navy, #1f2a44);
   --bank-muted: var(--theme-muted, #64748b);
-  --bank-primary: var(--theme-primary, #dc1e26);
-  --bank-primary-strong: var(--theme-primary-strong, #b8141b);
-  --bank-accent: var(--theme-primary, #dc1e26);
-  --bank-danger: var(--theme-primary-strong, #b8141b);
-  --bank-success: var(--theme-primary, #dc1e26);
+  --bank-primary: var(--theme-primary, #ff0000);
+  --bank-primary-strong: var(--theme-primary-strong, #ff0000);
+  --bank-accent: var(--theme-primary, #ff0000);
+  --bank-danger: var(--theme-primary-strong, #ff0000);
+  --bank-success: var(--theme-primary, #ff0000);
   --bank-shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(125, 59, 31, 0.08));
 }
 
@@ -95,7 +95,7 @@
   height: 4px;
   border-radius: 999px;
   margin-top: 6px;
-  background: linear-gradient(135deg, var(--bank-primary), var(--theme-primary, #dc1e26));
+  background: linear-gradient(135deg, var(--bank-primary), var(--theme-primary, #ff0000));
 }
 
 .bank-page .bank-form,
@@ -154,7 +154,7 @@
 .bank-page .error-text,
 .bank-container .error-text {
   margin: 6px 0 0;
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
   font-size: 0.684rem;
   font-weight: 600;
 }
@@ -170,11 +170,7 @@
   border-radius: 10px;
   min-height: 40px;
   padding: 0 15px;
-  background: linear-gradient(
-    135deg,
-    var(--bank-primary),
-    var(--bank-primary-strong)
-  );
+  background: #ff0000;
   color: #ffffff;
   font-size: 0.747rem;
   font-weight: 700;
@@ -227,7 +223,7 @@
 
 .bank-page .bank-feedback.success,
 .bank-container .bank-feedback.success {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
   border-color: #cad9eb;
 }
 
@@ -248,7 +244,7 @@
 
 .bank-page .table-header,
 .bank-container .table-header {
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b));
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000));
   color: #ffffff;
 }
 
@@ -315,17 +311,17 @@
 
 .bank-page .text-blue,
 .bank-container .text-blue {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
 }
 
 .bank-page .text-red,
 .bank-container .text-red {
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
 }
 
 .bank-page .text-green,
 .bank-container .text-green {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
 }
 
 .bank-page .text-gray,

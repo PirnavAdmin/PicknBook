@@ -384,7 +384,7 @@ export default function UserWalletDashboard() {
             background: "#fef2f2",
             border: "1px solid #fecdd3",
             borderRadius: "8px",
-            color: "#9f1239",
+            color: "#ff0000",
             marginBottom: "16px",
             display: "flex",
             alignItems: "center",
@@ -441,14 +441,14 @@ export default function UserWalletDashboard() {
             <span style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", fontWeight: 600 }}>
               Available Balance
             </span>
-            <div style={{ padding: "8px", background: "#fef2f2", borderRadius: "8px", color: "#dc1e26" }}>
+            <div style={{ padding: "8px", background: "#fef2f2", borderRadius: "8px", color: "#ff0000" }}>
               <Wallet size={20} />
             </div>
           </div>
           <div style={{ fontSize: "2rem", fontWeight: 800, color: "#111827", letterSpacing: "-0.5px" }}>
             {summaryLoading ? "₹..." : `₹${availableBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
-          <div style={{ marginTop: "8px", fontSize: "0.8rem", color: isInactive ? "#dc2626" : "#16a34a", fontWeight: 600 }}>
+          <div style={{ marginTop: "8px", fontSize: "0.8rem", color: isInactive ? "#ff0000" : "#16a34a", fontWeight: 600 }}>
             ● Status: {walletStatus}
           </div>
         </div>
@@ -496,7 +496,7 @@ export default function UserWalletDashboard() {
                 type="button"
                 className={filterType === "" ? "deposit-btn-primary" : "deposit-btn-secondary"}
                 onClick={() => { setFilterType(""); setPage(1); }}
-                style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                style={{ padding: "6px 14px", fontSize: "0.85rem", borderRadius: "9999px" }}
               >
                 All
               </button>
@@ -504,7 +504,7 @@ export default function UserWalletDashboard() {
                 type="button"
                 className={filterType === "Credit" ? "deposit-btn-primary" : "deposit-btn-secondary"}
                 onClick={() => { setFilterType("Credit"); setPage(1); }}
-                style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                style={{ padding: "6px 14px", fontSize: "0.85rem", borderRadius: "9999px" }}
               >
                 Credits (+)
               </button>
@@ -512,7 +512,7 @@ export default function UserWalletDashboard() {
                 type="button"
                 className={filterType === "Debit" ? "deposit-btn-primary" : "deposit-btn-secondary"}
                 onClick={() => { setFilterType("Debit"); setPage(1); }}
-                style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                style={{ padding: "6px 14px", fontSize: "0.85rem", borderRadius: "9999px" }}
               >
                 Debits (-)
               </button>
@@ -520,7 +520,7 @@ export default function UserWalletDashboard() {
                 type="button"
                 className={filterType === "Refund" ? "deposit-btn-primary" : "deposit-btn-secondary"}
                 onClick={() => { setFilterType("Refund"); setPage(1); }}
-                style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                style={{ padding: "6px 14px", fontSize: "0.85rem", borderRadius: "9999px" }}
               >
                 Refunds (+)
               </button>
@@ -528,17 +528,25 @@ export default function UserWalletDashboard() {
           </div>
 
           {/* Transactions Table */}
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+            <style>{`
+              .deposit-table thead, .deposit-table th, .deposit-table thead tr {
+                background: #ff0000 !important;
+                background-color: #ff0000 !important;
+                background-image: none !important;
+                color: #ffffff !important;
+              }
+            `}</style>
             <table className="deposit-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr className="deposit-table-head">
-                  <th style={{ padding: "12px", textAlign: "left" }}>ID / Ref Code</th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Date & Time</th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Type</th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Description</th>
-                  <th style={{ padding: "12px", textAlign: "right" }}>Amount</th>
-                  <th style={{ padding: "12px", textAlign: "right" }}>Running Balance</th>
-                  <th style={{ padding: "12px", textAlign: "center" }}>Status</th>
+              <thead style={{ background: "#ff0000", color: "#ffffff" }}>
+                <tr>
+                  <th style={{ padding: "12px", textAlign: "left", background: "#ff0000" }}>ID / Ref Code</th>
+                  <th style={{ padding: "12px", textAlign: "left", background: "#ff0000" }}>Date & Time</th>
+                  <th style={{ padding: "12px", textAlign: "left", background: "#ff0000" }}>Type</th>
+                  <th style={{ padding: "12px", textAlign: "left", background: "#ff0000" }}>Description</th>
+                  <th style={{ padding: "12px", textAlign: "right", background: "#ff0000" }}>Amount</th>
+                  <th style={{ padding: "12px", textAlign: "right", background: "#ff0000" }}>Running Balance</th>
+                  <th style={{ padding: "12px", textAlign: "center", background: "#ff0000" }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -570,10 +578,10 @@ export default function UserWalletDashboard() {
                           {tx.createdAt
                             ? new Date(tx.createdAt).toLocaleString("en-IN")
                             : tx.date
-                            ? new Date(tx.date).toLocaleString("en-IN")
-                            : tx._derived
-                            ? <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>Admin Credited</span>
-                            : "—"}
+                              ? new Date(tx.date).toLocaleString("en-IN")
+                              : tx._derived
+                                ? <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>Admin Credited</span>
+                                : "—"}
                         </td>
                         <td style={{ padding: "12px" }}>
                           <span
@@ -583,7 +591,7 @@ export default function UserWalletDashboard() {
                               fontSize: "0.75rem",
                               fontWeight: 700,
                               background: isRefund ? "#e0f2fe" : isCredit ? "#dcfce7" : "#fee2e2",
-                              color: isRefund ? "#0369a1" : isCredit ? "#15803d" : "#b91c1c",
+                              color: isRefund ? "#0369a1" : isCredit ? "#15803d" : "#ff0000",
                             }}
                           >
                             {tx.transactionType || tx.type || "Credit"}
@@ -592,7 +600,7 @@ export default function UserWalletDashboard() {
                         <td style={{ padding: "12px", fontSize: "0.9rem", color: "#1e293b" }}>
                           {tx.description || tx.remark || tx.userRemark || "Wallet Transaction"}
                         </td>
-                        <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: isCredit ? "#16a34a" : "#dc2626" }}>
+                        <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: isCredit ? "#16a34a" : "#ff0000" }}>
                           {isCredit ? "+" : "-"} ₹{amountVal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                         <td style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#334155" }}>
@@ -620,7 +628,7 @@ export default function UserWalletDashboard() {
                 )}
               </tbody>
             </table>
-            </div>
+          </div>
         </div>
       </div>
     </div>

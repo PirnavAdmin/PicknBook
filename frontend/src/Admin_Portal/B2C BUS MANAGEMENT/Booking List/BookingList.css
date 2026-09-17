@@ -871,7 +871,7 @@
 
 .admin-booking-page .admin-ps-pill.ps-failed {
   background: #fef2f2;
-  color: #dc2626;
+  color: #ff0000;
   border: 1px solid #fecaca;
 }
 
@@ -918,7 +918,7 @@
 
 .admin-booking-page .admin-ps-badge.ps-failed {
   background: linear-gradient(135deg, #fef2f2, #fee2e2);
-  color: #dc2626;
+  color: #ff0000;
   border: 1px solid #fecaca;
 }
 

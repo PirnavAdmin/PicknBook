@@ -4,10 +4,10 @@
   --trav-border: #cfdbea;
   --trav-text: #1c395f;
   --trav-muted: #597293;
-  --trav-primary: var(--theme-primary-strong, #b8141b);
+  --trav-primary: var(--theme-primary-strong, #ff0000);
   --trav-primary-strong: #17242d;
-  --trav-danger: var(--theme-primary, #dc1e26);
-  --trav-success: var(--theme-primary, #dc1e26);
+  --trav-danger: var(--theme-primary, #ff0000);
+  --trav-success: var(--theme-primary, #ff0000);
   --trav-shadow-sm: 0 8px 18px rgba(13, 30, 52, 0.08);
   --trav-heading-font: var(--app-font-family);
   --trav-body-font: var(--app-font-family);
@@ -26,10 +26,10 @@
   --trav-border: var(--theme-border, #E5E7EB);
   --trav-text: var(--theme-navy, #1f2a44);
   --trav-muted: var(--theme-muted, #64748b);
-  --trav-primary: var(--theme-primary, #dc1e26);
-  --trav-primary-strong: var(--theme-primary-strong, #b8141b);
-  --trav-danger: var(--theme-primary-strong, #b8141b);
-  --trav-success: var(--theme-primary, #dc1e26);
+  --trav-primary: var(--theme-primary, #ff0000);
+  --trav-primary-strong: var(--theme-primary-strong, #ff0000);
+  --trav-danger: var(--theme-primary-strong, #ff0000);
+  --trav-success: var(--theme-primary, #ff0000);
   --trav-shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(13, 74, 83, 0.08));
   color: var(--theme-navy, #1f2a44);
 }
@@ -76,7 +76,7 @@
   border-radius: 999px;
   border: 1px solid #c3d6ee;
   background: #f5f8fe;
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
   font-size: 0.648rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -102,7 +102,7 @@
 .traveller-container .section-kicker,
 .traveller-container .title-text,
 .traveller-container .traveler-table td:first-child {
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: #000000 !important;
 }
 
 .traveller-container .header-actions {
@@ -120,7 +120,7 @@
   border-radius: 999px;
   border: 1px solid #c3d6ee;
   background: #f5f8fe;
-  color: #b8141b;
+  color: #ff0000;
   font-size: 0.648rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -204,7 +204,7 @@
 
 .traveller-container .error-text {
   margin: 6px 0 0;
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
   font-size: 0.684rem;
   font-weight: 600;
 }
@@ -242,9 +242,9 @@
 .traveller-container .btn-blue,
 .traveller-container .icon-save {
   border-color: transparent !important;
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000)) !important;
   color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(220, 30, 38, 0.2) !important;
+  box-shadow: 0 14px 28px rgba(255, 0, 0, 0.2) !important;
 }
 
 .traveller-container .btn-gray {
@@ -265,13 +265,13 @@
 .traveller-container .icon-btn {
   border-color: var(--theme-border, #E5E7EB) !important;
   background: var(--theme-primary-soft, #fef2f2) !important;
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .traveller-container .btn-red {
-  background: linear-gradient(135deg, #dc1e26, #b8141b);
+  background: linear-gradient(135deg, #ff0000, #ff0000);
   color: #ffffff;
-  box-shadow: 0 14px 28px rgba(220, 30, 38, 0.2);
+  box-shadow: 0 14px 28px rgba(255, 0, 0, 0.2);
   transition: all 0.3s ease;
 }
 
@@ -316,7 +316,7 @@
 }
 
 .traveller-container .traveler-table thead {
-  background: #981b3d !important;
+  background: #ff0000 !important;
 }
 
 .traveller-container .traveler-table th {
@@ -349,7 +349,7 @@
 }
 
 .traveller-container .traveler-table .traveler-sr {
-  color: #b91c1c !important;
+  color: #ff0000 !important;
   font-weight: 700;
   font-size: 0.85rem;
 }
@@ -408,7 +408,7 @@
   border-radius: 8px;
   border: none;
   background: #fee2e2;
-  color: #ef4444;
+  color: #ff0000;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -437,7 +437,7 @@
 }
 
 .traveller-container .btn-add-traveler {
-  background: #b91c1c;
+  background: #ff0000;
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -445,12 +445,12 @@
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
   transition: all 0.15s ease;
 }
 
 .traveller-container .btn-add-traveler:hover {
-  background: #991b1b;
+  background: #ff0000;
 }
 
 /* ── Icon Buttons for inline edit ── */
@@ -478,7 +478,7 @@
   margin-left: 6px;
 }
 
-.traveller-container .icon-save   { color: var(--theme-primary, #dc1e26); }
+.traveller-container .icon-save   { color: var(--theme-primary, #ff0000); }
 .traveller-container .icon-cancel { color: #5a7394; }
 
 /* ── Misc ── */

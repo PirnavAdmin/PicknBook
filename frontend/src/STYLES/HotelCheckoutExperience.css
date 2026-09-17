@@ -1,21 +1,21 @@
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
  
 .hotel-checkout-page {
-  --hotel-rose: #dc1e26;
-  --hotel-rose-deep: #b8141b;
+  --hotel-rose: #ff0000;
+  --hotel-rose-deep: #ff0000;
   --hotel-ink: #1f2a44;
   --hotel-muted: #64748b;
-  --hotel-border: rgba(220, 30, 38, 0.15);
+  --hotel-border: rgba(255, 0, 0, 0.15);
   --hotel-surface: rgba(255, 255, 255, 0.95);
   --hotel-soft: rgba(255, 255, 255, 0.7);
-  --hotel-shadow: 0 20px 40px rgba(220, 30, 38, 0.08);
+  --hotel-shadow: 0 20px 40px rgba(255, 0, 0, 0.08);
  
   min-height: calc(100vh - 76px);
   padding: 22px 16px 56px;
   color: var(--hotel-ink);
   font-family: "Manrope", var(--app-font-family, sans-serif);
   background:
-    radial-gradient(circle at 10% 10%, rgba(220, 30, 38, 0.08), transparent 40%),
+    radial-gradient(circle at 10% 10%, rgba(255, 0, 0, 0.08), transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(47, 116, 237, 0.06), transparent 40%),
     #F3F4F6;
 }
@@ -100,7 +100,7 @@
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.7);
   border-radius: 20px;
-  border: 1px solid rgba(220, 30, 38, 0.08);
+  border: 1px solid rgba(255, 0, 0, 0.08);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
  
@@ -120,13 +120,13 @@
  
 .hotel-category-tab-btn:hover {
   color: var(--hotel-rose);
-  background: rgba(220, 30, 38, 0.05);
+  background: rgba(255, 0, 0, 0.05);
 }
  
 .hotel-category-tab-btn.is-active {
   color: #ffffff;
   background: linear-gradient(135deg, var(--hotel-rose), var(--hotel-rose-deep));
-  box-shadow: 0 8px 20px rgba(220, 30, 38, 0.2);
+  box-shadow: 0 8px 20px rgba(255, 0, 0, 0.2);
 }
  
 .hotel-gallery-hero {
@@ -174,7 +174,7 @@
  
 .hotel-checkout-main {
   display: grid;
-  gap: 20px;
+  gap: 10px;
 }
  
 .hotel-panel,
@@ -414,7 +414,7 @@
  
 .hotel-field .is-error,
 .hotel-checkbox.is-error {
-  border-color: #f04438;
+  border-color: #ff0000;
 }
  
 .hotel-field small,
@@ -1073,10 +1073,10 @@
 }
 
 .special-request-pill.selected {
-  background: rgba(220, 30, 38, 0.08);
+  background: rgba(255, 0, 0, 0.08);
   border-color: var(--hotel-rose);
   color: var(--hotel-rose);
-  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.05);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.05);
 }
 
 .important-info-box {
@@ -1154,7 +1154,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1162,7 +1162,7 @@
 
 .booking-btn-filled:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 30, 38, 0.35);
+  box-shadow: 0 6px 16px rgba(255, 0, 0, 0.35);
 }
 
 .booking-btn-filled:disabled {
@@ -1175,7 +1175,7 @@
 /* Redesigned Room Available Select Buttons */
 .hotel-room-select-btn.is-selected {
   background: var(--hotel-rose) !important;
-  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25) !important;
 }
 
 .hotel-room-select-btn.is-normal {

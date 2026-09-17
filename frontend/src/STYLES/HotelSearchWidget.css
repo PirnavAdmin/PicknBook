@@ -212,7 +212,7 @@
   border-radius: 9999px !important;
   height: 48px !important;
   padding: 0 26px !important;
-  background: #dc2626 !important;
+  background: #ff0000 !important;
   color: #ffffff !important;
   font-size: 13.5px !important;
   font-weight: 800 !important;
@@ -224,7 +224,7 @@
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  box-shadow: 0 4px 14px rgba(220, 30, 38, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.4) !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -232,21 +232,21 @@
 }
 
 .hotel-capsule-btn:hover {
-  background: #b91c1c !important;
+  background: #ff0000 !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 8px 20px rgba(220, 30, 38, 0.5) !important;
+  box-shadow: 0 8px 20px rgba(255, 0, 0, 0.5) !important;
 }
 
 .hotel-capsule-btn:active {
   transform: translateY(0) !important;
-  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
 }
 
 .hotel-capsule-error-text {
   position: absolute;
   top: calc(100% + 6px);
   left: 24px;
-  color: #dc2626;
+  color: #ff0000;
   font-size: 12px;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.95);

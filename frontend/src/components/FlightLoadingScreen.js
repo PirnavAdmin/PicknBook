@@ -241,7 +241,7 @@ export default function FlightLoadingScreen({
                   viewBox="0 0 24 24"
                   width="20"
                   height="20"
-                  fill="#dc1e26"
+                  fill="#ff0000"
                   className="fls-progress-plane-svg"
                 >
                   <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
@@ -278,14 +278,14 @@ export default function FlightLoadingScreen({
             >
               <path
                 d="M 20 100 Q 140 40 300 30"
-                stroke="#dc1e26"
+                stroke="#ff0000"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
                 opacity="0.35"
               />
-              <circle cx="20" cy="100" r="3" fill="#dc1e26" opacity="0.6" />
-              <circle cx="160" cy="58" r="3" fill="#dc1e26" opacity="0.6" />
-              <path d="M 295 24 L 305 30 L 297 36 Z" fill="#dc1e26" opacity="0.7" />
+              <circle cx="20" cy="100" r="3" fill="#ff0000" opacity="0.6" />
+              <circle cx="160" cy="58" r="3" fill="#ff0000" opacity="0.6" />
+              <path d="M 295 24 L 305 30 L 297 36 Z" fill="#ff0000" opacity="0.7" />
             </svg>
           </div>
         </div>

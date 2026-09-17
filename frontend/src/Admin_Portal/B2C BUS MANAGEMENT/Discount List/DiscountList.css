@@ -580,7 +580,7 @@ body .discount-list-page-container .primary-btn:hover {
 
 .discount-status-pill.inactive {
   background: #fef2f2 !important;
-  color: #b91c1c !important;
+  color: #ff0000 !important;
   border-color: #ef4444 !important;
 }
 
@@ -962,7 +962,7 @@ body .discount-list-page-container .export-btn:hover {
 }
 
 .modal-btn.delete-confirm-btn:hover {
-  background: #dc2626 !important;
+  background: #ff0000 !important;
 }
 
 .modal-form-error {

@@ -51,7 +51,7 @@ const collectionChartData = [
 
 const paymentMethodData = [
   { name: 'UPI', value: 1118529, percentage: '45%', color: '#A51C49' },
-  { name: 'Credit Card', value: 621405, percentage: '25%', color: '#e11d48' },
+  { name: 'Credit Card', value: 621405, percentage: '25%', color: '#ff0000' },
   { name: 'Net Banking', value: 372843, percentage: '15%', color: '#f59e0b' },
   { name: 'Wallet', value: 248562, percentage: '10%', color: '#8b5cf6' },
   { name: 'Other', value: 124281, percentage: '5%', color: '#06b6d4' },
@@ -278,10 +278,10 @@ export default function AccountDashboard() {
         border: '1px solid #fecdd3',
         borderRadius: '8px',
         marginBottom: '16px',
-        color: '#9f1239'
+        color: '#ff0000'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 500 }}>
-          <AlertTriangle size={15} color="#e11d48" />
+          <AlertTriangle size={15} color="#ff0000" />
           <span>7 transactions are unmatched in reconciliation.</span>
         </div>
         <button
@@ -364,7 +364,7 @@ export default function AccountDashboard() {
         {/* Card 4: Total Refunds */}
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#ffe4e6', display: 'grid', placeItems: 'center', color: '#e11d48' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#ffe4e6', display: 'grid', placeItems: 'center', color: '#ff0000' }}>
               <RotateCcw size={18} />
             </div>
             <div>
@@ -404,7 +404,7 @@ export default function AccountDashboard() {
             <div>
               <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Reconciliation</span>
               <h3 style={{ margin: '1px 0 0', fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>₹ 1,25,600</h3>
-              <div style={{ fontSize: '10px', color: '#e11d48', fontWeight: 500, marginTop: '1px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ fontSize: '10px', color: '#ff0000', fontWeight: 500, marginTop: '1px', display: 'flex', alignItems: 'center', gap: '3px' }}>
                 📍 7 Pending
               </div>
             </div>
@@ -423,7 +423,7 @@ export default function AccountDashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '11px', fontWeight: 500 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748b' }}>
-                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#e11d48' }}></span> Collection
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ff0000' }}></span> Collection
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748b' }}>
                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#f43f5e' }}></span> Refunds
@@ -471,7 +471,7 @@ export default function AccountDashboard() {
                 formatter={(val) => [`₹ ${val.toLocaleString()}`, '']}
               />
               <Area type="monotone" dataKey="Collection" stroke="#A51C49" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCollection)" dot={{ r: 3, fill: '#A51C49' }} />
-              <Area type="monotone" dataKey="NetCollection" stroke="#e11d48" strokeWidth={1.8} fillOpacity={0} dot={{ r: 2.5, fill: '#e11d48' }} />
+              <Area type="monotone" dataKey="NetCollection" stroke="#ff0000" strokeWidth={1.8} fillOpacity={0} dot={{ r: 2.5, fill: '#ff0000' }} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -486,7 +486,7 @@ export default function AccountDashboard() {
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead>
-              <tr style={{ background: '#fff1f2', color: '#9f1239', textAlign: 'left' }}>
+              <tr style={{ background: '#fff1f2', color: '#ff0000', textAlign: 'left' }}>
                 <th style={{ padding: '8px 10px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px', fontWeight: 500 }}>Module</th>
                 <th style={{ padding: '8px 10px', fontWeight: 500, textAlign: 'center' }}>Transactions</th>
                 <th style={{ padding: '8px 10px', fontWeight: 500, textAlign: 'right' }}>Collection</th>
@@ -498,11 +498,11 @@ export default function AccountDashboard() {
             <tbody>
               <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '10px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Plane size={14} color="#e11d48" /> Flight
+                  <Plane size={14} color="#ff0000" /> Flight
                 </td>
                 <td style={{ padding: '10px', textAlign: 'center', color: '#64748b' }}>1,545</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 500 }}>₹ 13,35,000</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: '#e11d48' }}>₹ 1,20,000</td>
+                <td style={{ padding: '10px', textAlign: 'right', color: '#ff0000' }}>₹ 1,20,000</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>₹ 12,15,000</td>
                 <td style={{ padding: '10px', textAlign: 'right' }}><ChevronRight size={13} color="#A51C49" /></td>
               </tr>
@@ -512,7 +512,7 @@ export default function AccountDashboard() {
                 </td>
                 <td style={{ padding: '10px', textAlign: 'center', color: '#64748b' }}>720</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 500 }}>₹ 4,20,000</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: '#e11d48' }}>₹ 65,000</td>
+                <td style={{ padding: '10px', textAlign: 'right', color: '#ff0000' }}>₹ 65,000</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>₹ 3,55,000</td>
                 <td style={{ padding: '10px', textAlign: 'right' }}><ChevronRight size={13} color="#A51C49" /></td>
               </tr>
@@ -522,7 +522,7 @@ export default function AccountDashboard() {
                 </td>
                 <td style={{ padding: '10px', textAlign: 'center', color: '#64748b' }}>660</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 500 }}>₹ 7,30,620</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: '#e11d48' }}>₹ 1,30,200</td>
+                <td style={{ padding: '10px', textAlign: 'right', color: '#ff0000' }}>₹ 1,30,200</td>
                 <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>₹ 6,00,420</td>
                 <td style={{ padding: '10px', textAlign: 'right' }}><ChevronRight size={13} color="#A51C49" /></td>
               </tr>
@@ -530,7 +530,7 @@ export default function AccountDashboard() {
                 <td style={{ padding: '10px', color: '#0f172a' }}>Total</td>
                 <td style={{ padding: '10px', textAlign: 'center', color: '#0f172a' }}>2,925</td>
                 <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>₹ 24,85,620</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: '#e11d48' }}>₹ 3,15,200</td>
+                <td style={{ padding: '10px', textAlign: 'right', color: '#ff0000' }}>₹ 3,15,200</td>
                 <td style={{ padding: '10px', textAlign: 'right', color: '#A51C49' }}>₹ 21,70,420</td>
                 <td></td>
               </tr>
@@ -610,7 +610,7 @@ export default function AccountDashboard() {
 
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
           <thead>
-            <tr style={{ background: '#fff1f2', color: '#9f1239', textAlign: 'left' }}>
+            <tr style={{ background: '#fff1f2', color: '#ff0000', textAlign: 'left' }}>
               <th style={{ padding: '8px 10px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px', fontWeight: 500 }}>Gateway</th>
               <th style={{ padding: '8px 10px', fontWeight: 500, textAlign: 'right' }}>Expected Amount</th>
               <th style={{ padding: '8px 10px', fontWeight: 500, textAlign: 'right' }}>Settled Amount</th>
@@ -627,7 +627,7 @@ export default function AccountDashboard() {
               </td>
               <td style={{ padding: '10px', textAlign: 'right', fontWeight: 500 }}>₹ 20,50,400</td>
               <td style={{ padding: '10px', textAlign: 'right', fontWeight: 500, color: '#16a34a' }}>₹ 19,18,800</td>
-              <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600, color: '#e11d48' }}>₹ 1,31,600</td>
+              <td style={{ padding: '10px', textAlign: 'right', fontWeight: 600, color: '#ff0000' }}>₹ 1,31,600</td>
               <td style={{ padding: '10px', textAlign: 'center', color: '#64748b' }}>08 Sep 2026</td>
               <td style={{ padding: '10px', textAlign: 'center' }}>
                 <span style={{ padding: '2px 8px', background: '#fef3c7', color: '#d97706', borderRadius: '10px', fontWeight: 600, fontSize: '10px' }}>
@@ -663,15 +663,15 @@ export default function AccountDashboard() {
                 <span>+ Account Credits</span>
                 <span style={{ fontWeight: 500 }}>₹ 1,25,000</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e11d48' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff0000' }}>
                 <span>- Refunds</span>
                 <span style={{ fontWeight: 500 }}>₹ 4,15,160</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e11d48' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff0000' }}>
                 <span>- Account Debits</span>
                 <span style={{ fontWeight: 500 }}>₹ 3,10,000</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e11d48' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff0000' }}>
                 <span>- Gateway Fees</span>
                 <span style={{ fontWeight: 500 }}>₹ 1,15,480</span>
               </div>
@@ -905,7 +905,7 @@ export default function AccountDashboard() {
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
             <thead>
-              <tr style={{ background: '#fff1f2', color: '#9f1239', textAlign: 'left' }}>
+              <tr style={{ background: '#fff1f2', color: '#ff0000', textAlign: 'left' }}>
                 <th style={{ padding: '7px 8px', fontWeight: 500 }}>ID</th>
                 <th style={{ padding: '7px 8px', fontWeight: 500 }}>Date</th>
                 <th style={{ padding: '7px 8px', fontWeight: 500 }}>Type</th>
@@ -920,7 +920,7 @@ export default function AccountDashboard() {
                 <tr key={adj.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '8px', fontWeight: 600, color: '#0f172a' }}>{adj.id}</td>
                   <td style={{ padding: '8px', color: '#64748b' }}>{adj.date}</td>
-                  <td style={{ padding: '8px', fontWeight: 500, color: adj.type === 'Credit' ? '#16a34a' : '#e11d48' }}>{adj.type}</td>
+                  <td style={{ padding: '8px', fontWeight: 500, color: adj.type === 'Credit' ? '#16a34a' : '#ff0000' }}>{adj.type}</td>
                   <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{adj.amount}</td>
                   <td style={{ padding: '8px', color: '#475569' }}>{adj.reason}</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>
@@ -952,7 +952,7 @@ export default function AccountDashboard() {
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
             <thead>
-              <tr style={{ background: '#fff1f2', color: '#9f1239', textAlign: 'left' }}>
+              <tr style={{ background: '#fff1f2', color: '#ff0000', textAlign: 'left' }}>
                 <th style={{ padding: '7px 8px', fontWeight: 500 }}>Transaction ID</th>
                 <th style={{ padding: '7px 8px', fontWeight: 500 }}>Reference</th>
                 <th style={{ padding: '7px 8px', fontWeight: 500 }}>Type</th>

@@ -409,7 +409,7 @@ function GuestsDropdown({ rooms, adults, children, childAges, onRoomsChange, onA
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
         <button type="button" onClick={onClose}
-          style={{ background: "#dc2626", color: "#ffffff", border: "none", borderRadius: "8px", padding: "6px 20px",
+          style={{ background: "#ff0000", color: "#ffffff", border: "none", borderRadius: "8px", padding: "6px 20px",
             fontWeight: "600", cursor: "pointer", fontSize: "0.85rem", boxShadow: "0 4px 10px rgba(220,38,38,0.3)" }}>
           Done
         </button>

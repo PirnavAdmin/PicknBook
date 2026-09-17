@@ -24,6 +24,14 @@ const TravelerTable = ({ data, onUpdate, onDelete }) => {
 
   return (
     <div className="table-wrapper">
+      <style>{`
+        .traveler-table thead, .traveler-table th {
+          background: #ff0000 !important;
+          background-color: #ff0000 !important;
+          background-image: none !important;
+          color: #ffffff !important;
+        }
+      `}</style>
       <table className="traveler-table">
         <thead>
           <tr>

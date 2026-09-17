@@ -134,6 +134,7 @@ builder.Services.AddHttpClient<PickNBook.Api.Services.Interfaces.ISrdvMasterData
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.ISrdvSqlDumpParser, PickNBook.Api.Services.Implementations.SrdvSqlDumpParser>();
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.ISrdvMasterDataImporter, PickNBook.Api.Services.Implementations.SrdvMasterDataImporter>();
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IPlacesService, PickNBook.Api.Services.Implementations.PlacesService>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Implementations.PlacesCachePrewarmService>();
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IAirlineLookupService, PickNBook.Api.Services.Implementations.AirlineLookupService>();
 // Email Settings
 builder.Services.Configure<EmailSettings>(
@@ -168,6 +169,8 @@ builder.Services.AddHttpClient(nameof(PickNBook.Api.Services.Notifications.Provi
 builder.Services.AddSingleton<PickNBook.Api.Services.Notifications.Interfaces.ISmsProvider, PickNBook.Api.Services.Notifications.Providers.PointerItSmsProvider>();
 builder.Services.AddSingleton<PickNBook.Api.Services.Notifications.Interfaces.IWhatsAppProvider, PickNBook.Api.Services.Notifications.Providers.MockWhatsAppProvider>();
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.NotificationOutboxWorker>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.BusBoardingReminderHostedService>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.HotelCheckInReminderHostedService>();
 
 builder.Services.AddScoped<IExclusiveOfferSubscriptionService, ExclusiveOfferSubscriptionService>();
 builder.Services.AddScoped<ITicketPdfService, TicketPdfService>();

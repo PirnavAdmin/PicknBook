@@ -17,7 +17,7 @@
   position: relative;
   width: min(480px, 100%);
   background: #ffffff;
-  border: 1px solid rgba(220, 30, 38, 0.12);
+  border: 1px solid rgba(255, 0, 0, 0.12);
   border-radius: 28px;
   padding: 32px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
@@ -56,10 +56,10 @@
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: rgba(220, 30, 38, 0.08);
+  background: rgba(255, 0, 0, 0.08);
   display: grid;
   place-items: center;
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 .cancel-modal-header h3 {
@@ -99,7 +99,7 @@
   width: 100%;
   min-height: 52px;
   padding: 12px 16px;
-  border: 1px solid rgba(220, 30, 38, 0.15);
+  border: 1px solid rgba(255, 0, 0, 0.15);
   border-radius: 14px;
   font: inherit;
   font-size: 0.94rem;
@@ -110,8 +110,8 @@
 
 .cancel-modal-input:focus {
   outline: none;
-  border-color: #dc1e26;
-  box-shadow: 0 0 0 4px rgba(220, 30, 38, 0.1);
+  border-color: #ff0000;
+  box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.1);
 }
 
 .cancel-modal-actions {
@@ -137,7 +137,7 @@
 }
 
 .cancel-btn-secondary {
-  border: 1px solid rgba(220, 30, 38, 0.15);
+  border: 1px solid rgba(255, 0, 0, 0.15);
   background: #ffffff;
   color: #1f2a44;
 }
@@ -148,14 +148,14 @@
 
 .cancel-btn-primary {
   border: none;
-  background: linear-gradient(135deg, #dc1e26, #b8141b);
+  background: linear-gradient(135deg, #ff0000, #ff0000);
   color: #ffffff;
-  box-shadow: 0 10px 24px rgba(220, 30, 38, 0.15);
+  box-shadow: 0 10px 24px rgba(255, 0, 0, 0.15);
 }
 
 .cancel-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(220, 30, 38, 0.25);
+  box-shadow: 0 12px 28px rgba(255, 0, 0, 0.25);
 }
 
 @keyframes cancelFadeIn {

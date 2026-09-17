@@ -81,7 +81,7 @@
             .homepage-flights .flight-hero-title-highlight,
             .homepage-buses .hero-title-highlight,
             .homepage-hotels .hero-title-highlight {
-              color: #dc1e26 !important;
+              color: #ff0000 !important;
               text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6) !important;
             }
 
@@ -190,9 +190,9 @@
             }
 
             .homepage-flights .search-panel .trip-chip.active {
-              background: #dc1e26 !important;
+              background: #ff0000 !important;
               color: #ffffff !important;
-              box-shadow: 0 3px 8px rgba(220, 30, 38, 0.3) !important;
+              box-shadow: 0 3px 8px rgba(255, 0, 0, 0.3) !important;
             }
 
             /* Single Line Row Layout */
@@ -323,8 +323,8 @@
             }
 
             .search-panel .flight-search-bar-row .control-wrap svg {
-              color: #dc1e26 !important;
-              stroke: #dc1e26 !important;
+              color: #ff0000 !important;
+              stroke: #ff0000 !important;
               flex-shrink: 0 !important;
               width: 17px !important;
               height: 17px !important;
@@ -391,8 +391,8 @@
             .search-panel .flight-search-bar-row .checkin-field svg,
             .search-panel .flight-search-bar-row .checkout-field svg,
             .search-panel .flight-search-bar-row .hotel-guests-field svg:first-child {
-              color: #dc1e26 !important;
-              stroke: #dc1e26 !important;
+              color: #ff0000 !important;
+              stroke: #ff0000 !important;
               flex-shrink: 0 !important;
             }
 
@@ -475,12 +475,12 @@
 .search-panel .search-btn,
 .search-panel button.search-btn {
   color: #ffffff !important;
-  background: #dc1e26 !important;
+  background: #ff0000 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 .search-panel .search-btn:hover,
 .search-panel button.search-btn:hover {
-  background: #b8141b !important;
+  background: #ff0000 !important;
   color: #ffffff !important;
 }
 
@@ -541,7 +541,7 @@
   flex-shrink: 0 !important;
   margin: 0 !important;
   margin-right: 4px !important;
-  color: #dc2626 !important;
+  color: #ff0000 !important;
 }
 /* Input field — remove all borders, text starts immediately after icon */
 .hotel-search-inline .hotel-dest-bare input.field-control {

@@ -828,7 +828,7 @@ export default function HotelSearchResults() {
 
         <div className="hero-content-wrapper">
           <div className="hotel-discover-copy">
-            <span className="hotel-discover-kicker" style={{ display: "inline-flex", alignItems: "center", background: "rgba(0,0,0,0.5)", border: "1px solid #dc1e26", padding: "4px 12px", borderRadius: "20px", color: "#fff", fontSize: "0.75rem", letterSpacing: "1px", textTransform: "uppercase" }}><Star size={12} fill="#eab308" color="#eab308" style={{ marginRight: 6 }} /> HOTEL BOOKING, REIMAGINED</span>
+            <span className="hotel-discover-kicker" style={{ display: "inline-flex", alignItems: "center", background: "rgba(0,0,0,0.5)", border: "1px solid #ff0000", padding: "4px 12px", borderRadius: "20px", color: "#fff", fontSize: "0.75rem", letterSpacing: "1px", textTransform: "uppercase" }}><Star size={12} fill="#eab308" color="#eab308" style={{ marginRight: 6 }} /> HOTEL BOOKING, REIMAGINED</span>
             <h1 style={{ color: "#ffffff", whiteSpace: "nowrap", textShadow: "0 2px 10px rgba(0, 0, 0, 0.5)" }}>
               Compare smarter. Save more. Book with confidence.
             </h1>
@@ -994,11 +994,11 @@ export default function HotelSearchResults() {
               <header className="hotel-discover-resultshead" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", flexWrap: "wrap", gap: "16px", marginBottom: "24px" }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: "24px", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.06em", color: "#dc1e26", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Hotel results</span>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.06em", color: "#ff0000", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Hotel results</span>
                     <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
                       {loading ? "Finding the Best Hotels for You..." : "Best Hotels for You"}
                     </h2>
-                    <div style={{ width: "32px", height: "3px", backgroundColor: "#dc1e26", marginTop: "6px", borderRadius: "2px" }} />
+                    <div style={{ width: "32px", height: "3px", backgroundColor: "#ff0000", marginTop: "6px", borderRadius: "2px" }} />
                   </div>
                   
                   {!loading && (
@@ -1027,7 +1027,7 @@ export default function HotelSearchResults() {
                           boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
                         }}
                       >
-                        <Map size={14} color="#dc1e26" />
+                        <Map size={14} color="#ff0000" />
                         <span style={{ color: "#0f172a" }}>MAP</span>
                       </button>
                     </div>
@@ -1056,7 +1056,7 @@ export default function HotelSearchResults() {
                         boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
                       }}
                     >
-                      <Filter size={14} color="#dc1e26" />
+                      <Filter size={14} color="#ff0000" />
                       <span style={{ color: "#0f172a" }}>FILTER</span>
                     </button>
                     
@@ -1080,7 +1080,7 @@ export default function HotelSearchResults() {
                         boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
                       }}
                     >
-                      <Heart size={14} fill={collectionKey === "favourites" ? "#dc1e26" : "none"} color="#dc1e26" />
+                      <Heart size={14} fill={collectionKey === "favourites" ? "#ff0000" : "none"} color="#ff0000" />
                       <span style={{ color: "#0f172a" }}>FAVOURITES ({localFavouritesCount})</span>
                     </button>
 
@@ -1206,7 +1206,7 @@ export default function HotelSearchResults() {
                           }}
                           aria-label={isSaved ? "Remove saved stay" : "Save stay"}
                         >
-                          <Heart size={16} fill={isSaved ? "#dc1e26" : "none"} color="#dc1e26" />
+                          <Heart size={16} fill={isSaved ? "#ff0000" : "none"} color="#ff0000" />
                         </button>
                       </div>
   
@@ -1214,11 +1214,11 @@ export default function HotelSearchResults() {
                         <div style={{ flexGrow: 1 }}>
                           <h3 className="hotel-stay-title" style={{ fontSize: "0.92rem", fontWeight: 500, color: "#0f172a", margin: 0 }}>{hotel.name}</h3>
                           <p className="hotel-stay-address" style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", color: "#64748b", fontSize: "0.78rem" }}>
-                            <MapPin size={12} color="#dc1e26" />
+                            <MapPin size={12} color="#ff0000" />
                             <span>{hotel.area}, {hotel.city}</span>
                           </p>
                           <div className="hotel-result-badges" style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: "6px", marginTop: "8px", height: "22px", overflow: "hidden" }}>
-                            {hotel.hotelPromotion === "Breakfast" && <span className="hotel-meal-badge" style={{ backgroundColor: "#dc1e26", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Breakfast Included</span>}
+                            {hotel.hotelPromotion === "Breakfast" && <span className="hotel-meal-badge" style={{ backgroundColor: "#ff0000", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Breakfast Included</span>}
                             {hotel.hotelPromotion === "Room Only" && <span className="hotel-meal-badge" style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Room Only</span>}
                             {hotel.roomCategory && <span className="hotel-room-category-badge" style={{ backgroundColor: "#e2e8f0", color: "#334155", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{hotel.roomCategory}</span>}
                           </div>
@@ -1233,7 +1233,7 @@ export default function HotelSearchResults() {
                               total per night
                             </span>
                           </div>
-                          <span style={{ fontSize: "10px", color: "#dc1e26", fontWeight: "600" }}>
+                          <span style={{ fontSize: "10px", color: "#ff0000", fontWeight: "600" }}>
                             View →
                           </span>
                         </div>

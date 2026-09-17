@@ -1218,7 +1218,6 @@ export default function BusSeatSelectionPage({
         taxableFare: seatBaseFare,
         gstPercent: 5,
         gstAmount: seatTax,
-        gstAmount: seatTax,
         tax: seatTax,
         convenienceFee: 0,
         markup: 0,

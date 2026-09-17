@@ -80,9 +80,9 @@
 }
 
 .filter-chip.active {
-  background: #dc1e26;
+  background: #ff0000;
   color: white;
-  border-color: #dc1e26;
+  border-color: #ff0000;
 }
 
 .offers-grid {
@@ -101,7 +101,7 @@
   overflow: hidden;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
-  border: 1px solid rgba(220, 30, 38, 0.12);
+  border: 1px solid rgba(255, 0, 0, 0.12);
   position: relative;
 }
 
@@ -115,7 +115,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 9px;
-  background: linear-gradient(180deg, #ef242c, #b90f17);
+  background: linear-gradient(180deg, #ff0000, #ff0000);
   z-index: 3;
 }
 
@@ -130,7 +130,7 @@
 
 .voucher-kicker {
   margin-bottom: 10px;
-  color: #dc1e26;
+  color: #ff0000;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -177,7 +177,7 @@
   min-width: 0;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #ef242c, #b90f17);
+  background: linear-gradient(135deg, #ff0000, #ff0000);
 }
 
 .voucher-image-container,
@@ -198,9 +198,8 @@
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.9);
-  background:
-    radial-gradient(circle at 75% 18%, rgba(255, 255, 255, 0.24), transparent 30%),
-    linear-gradient(135deg, #ef242c, #b90f17);
+  background: radial-gradient(circle at 75% 18%, rgba(255, 255, 255, 0.24), transparent 30%),
+    linear-gradient(135deg, #ff0000, #ff0000);
 }
 
 .voucher-discount-badge {
@@ -210,7 +209,7 @@
   width: 116px;
   height: 116px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #f52b33 0 64%, #cf1119 64% 100%);
+  background: linear-gradient(145deg, #ff0000 0 64%, #ff0000 64% 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -261,7 +260,7 @@
   margin-top: 10px;
   padding: 8px 14px;
   background: #fff5f5;
-  border: 1px dashed rgba(220, 30, 38, 0.55);
+  border: 1px dashed rgba(255, 0, 0, 0.55);
   border-radius: 7px;
   display: inline-flex;
   flex-direction: column;
@@ -278,13 +277,13 @@
 
 .coupon-code {
   font-size: 16px;
-  color: #dc1e26;
+  color: #ff0000;
   font-family: 'Courier New', Courier, monospace;
 }
 
 .voucher-book-btn {
   margin-top: 20px;
-  background: #dc1e26;
+  background: #ff0000;
   color: white;
   border: none;
   padding: 11px 24px;
@@ -295,7 +294,7 @@
 }
 
 .voucher-book-btn:hover {
-  background: #b90f17;
+  background: #ff0000;
   transform: translateY(-2px);
 }
 
@@ -361,7 +360,7 @@
 }
 
 .offers-state-msg.error {
-  color: #ef4444;
+  color: #ff0000;
 }
 
 @media (max-width: 768px) {

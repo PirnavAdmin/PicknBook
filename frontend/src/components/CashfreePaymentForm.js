@@ -24,7 +24,7 @@ export default function CashfreePaymentForm({ cashfree, paymentSessionId, onPaym
           "::placeholder": { color: "#9ca3af" },
           padding: "12px"
         },
-        invalid: { color: "#e11d48" }
+        invalid: { color: "#ff0000" }
       };
 
       if (activeTab === "card" && !elementsRef.current.cardMounted) {
@@ -218,7 +218,7 @@ export default function CashfreePaymentForm({ cashfree, paymentSessionId, onPaym
           {error && (
             <div style={{ 
               padding: "12px 16px", background: "#fef2f2", borderLeft: "4px solid #ef4444", 
-              color: "#b91c1c", fontSize: "0.85rem", fontWeight: 500, marginBottom: "24px"
+              color: "#ff0000", fontSize: "0.85rem", fontWeight: 500, marginBottom: "24px"
             }}>
               {error}
             </div>

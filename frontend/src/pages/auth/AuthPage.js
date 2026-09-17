@@ -606,10 +606,10 @@ export default function AuthPage() {
 
           {/* Trust Badges */}
           <div className="scenic-trust-row">
-            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Best Prices Guaranteed</span>
-            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Safe & Secure Payments</span>
-            <span className="scenic-trust-badge"><Phone size={14} color="#dc1e26" /> 24/7 Customer Support</span>
-            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#dc1e26" /> Easy Booking Experience</span>
+            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#ff0000" /> Best Prices Guaranteed</span>
+            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#ff0000" /> Safe & Secure Payments</span>
+            <span className="scenic-trust-badge"><Phone size={14} color="#ff0000" /> 24/7 Customer Support</span>
+            <span className="scenic-trust-badge"><ShieldCheck size={14} color="#ff0000" /> Easy Booking Experience</span>
           </div>
         </div>
 

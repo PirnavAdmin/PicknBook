@@ -268,7 +268,7 @@
 .b2b-status-alert.error {
   background-color: #fef2f2;
   border: 1px solid #fca5a5;
-  color: #b91c1c;
+  color: #ff0000;
 }
 
 .b2b-status-alert.success {

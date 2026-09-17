@@ -8,10 +8,10 @@
   --fr-muted: #597293;
   --fr-primary: #17242d;
   --fr-primary-strong: #17242d;
-  --fr-accent: #b8141b;
+  --fr-accent: #ff0000;
   --fr-accent-strong: #144f9c;
-  --fr-success: #b8141b;
-  --fr-danger: #b8141b;
+  --fr-success: #ff0000;
+  --fr-danger: #ff0000;
   --fr-shadow: 0 12px 26px rgba(13, 30, 52, 0.1);
   --fr-heading-font: var(--app-font-family);
   --fr-body-font: var(--app-font-family);
@@ -38,7 +38,7 @@
   --fr-accent: #0284c7 !important;
   --fr-accent-strong: #0369a1 !important;
   --fr-success: #16a34a !important;
-  --fr-danger: #dc2626 !important;
+  --fr-danger: #ff0000 !important;
   --fr-shadow: 0 14px 32px rgba(2, 132, 199, 0.08) !important;
   background:
     linear-gradient(135deg, rgba(2, 132, 199, 0.06) 0%, transparent 34%),
@@ -104,7 +104,7 @@
   position: absolute;
   inset: 0;
   border-radius: 28px;
-  background: radial-gradient(circle at 10% 20%, rgba(220, 30, 38, 0.12), transparent 40%),
+  background: radial-gradient(circle at 10% 20%, rgba(255, 0, 0, 0.12), transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(2, 132, 199, 0.12), transparent 40%);
   pointer-events: none;
 }
@@ -156,8 +156,8 @@
 }
 
 .flight-hero-calendar-btn {
-  background: rgba(220, 30, 38, 0.25);
-  border: 1px solid rgba(220, 30, 38, 0.5);
+  background: rgba(255, 0, 0, 0.25);
+  border: 1px solid rgba(255, 0, 0, 0.5);
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
@@ -171,8 +171,8 @@
 }
 
 .flight-hero-calendar-btn:hover {
-  background: rgba(220, 30, 38, 0.45);
-  border-color: #dc1e26;
+  background: rgba(255, 0, 0, 0.45);
+  border-color: #ff0000;
   transform: translateY(-1px);
 }
 
@@ -255,8 +255,8 @@
   height: 46px !important;
   font-size: 0.95rem !important;
   font-weight: 700 !important;
-  background: linear-gradient(135deg, #dc1e26, #991b1b) !important;
-  box-shadow: 0 4px 15px rgba(220, 30, 38, 0.4) !important;
+  background: linear-gradient(135deg, #ff0000, #ff0000) !important;
+  box-shadow: 0 4px 15px rgba(255, 0, 0, 0.4) !important;
   color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
@@ -269,7 +269,7 @@
 
 .flight-discover-searchbutton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(220, 30, 38, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5) !important;
 }
 
 /* Flight Dropdowns & Popovers inside floating pill */
@@ -336,7 +336,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #d32f2f;
+  border: 1px solid #ff0000;
   border-radius: 8px;
   padding: 2px 8px;
 }
@@ -398,7 +398,7 @@
   width: 100%;
   margin-top: 12px;
   padding: 8px;
-  background: #dc2626;
+  background: #ff0000;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -410,7 +410,7 @@
 }
 
 .flight-popover-done-btn:hover {
-  background: #b91c1c;
+  background: #ff0000;
 }
 
 @media (max-width: 1024px) {
@@ -514,7 +514,7 @@
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 10px 20px rgba(220, 30, 38, 0.28);
+  box-shadow: 0 10px 20px rgba(255, 0, 0, 0.28);
 }
 
 .modify-search-panel {
@@ -621,7 +621,7 @@
 .search-feedback.success {
   border: 1px solid #e4eefc;
   background: #f6f9fe;
-  color: #b8141b;
+  color: #ff0000;
 }
 
 .flight-results-page.is-loading {
@@ -994,7 +994,7 @@
 }
 
 .flights-count {
-  background: linear-gradient(135deg, var(--theme-primary-strong) 0%, var(--theme-primary) 100%) !important;
+  background: linear-gradient(135deg, var(--theme-primary-strong, #ff0000) 0%, var(--theme-primary, #ff0000) 100%) !important;
   color: #ffffff !important;
   min-height: 42px;
   display: flex;
@@ -1002,7 +1002,7 @@
   padding: 0 12px;
   font-size: 0.81rem;
   font-weight: 800;
-  border-bottom: 1px solid var(--theme-primary-strong) !important;
+  border-bottom: 1px solid var(--theme-primary-strong, #ff0000) !important;
 }
 
 .flights-count strong {
@@ -1016,7 +1016,7 @@
 
 .filter-group h3 {
   margin: 0 0 12px;
-  color: var(--theme-primary);
+  color: var(--theme-primary, #ff0000);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1034,7 +1034,7 @@
   bottom: -8px;
   width: 28px;
   height: 3px;
-  background: var(--theme-primary);
+  background: var(--theme-primary, #ff0000);
 }
 
 .range-head {
@@ -1052,7 +1052,7 @@
 
 .range-stack input[type="range"] {
   width: 100%;
-  accent-color: var(--theme-primary);
+  accent-color: var(--theme-primary, #ff0000);
   cursor: pointer;
   margin: 0;
 }
@@ -1170,12 +1170,12 @@
   right: 0;
   bottom: 0;
   height: 4px;
-  background: var(--fr-primary, #dc1e26);
+  background: var(--fr-primary, #ff0000);
 }
 
 .fare-date-card.active strong,
 .fare-date-card.active span {
-  color: var(--fr-primary, #dc1e26);
+  color: var(--fr-primary, #ff0000);
 }
 
 .fare-date-nav {
@@ -1260,7 +1260,7 @@
 }
 
 .flight-sort-pill.active {
-  color: var(--fr-primary, #dc1e26);
+  color: var(--fr-primary, #ff0000);
   background: #ffffff !important;
   border-color: #e2e6ee !important;
   box-shadow: none !important;
@@ -1283,7 +1283,7 @@
 }
 
 .flight-sort-pill.active .sort-subtitle {
-  color: var(--fr-primary, #dc1e26);
+  color: var(--fr-primary, #ff0000);
 }
 
 .table-head {
@@ -1820,15 +1820,15 @@
   --fr-border: #fecaca !important;
   --fr-text: #162126 !important;
   --fr-muted: #66757b !important;
-  --fr-primary: #dc1e26 !important;
-  --fr-primary-strong: #b8141b !important;
-  --fr-accent: #dc1e26 !important;
-  --fr-accent-strong: #b8141b !important;
+  --fr-primary: #ff0000 !important;
+  --fr-primary-strong: #ff0000 !important;
+  --fr-accent: #ff0000 !important;
+  --fr-accent-strong: #ff0000 !important;
   --fr-success: #16a34a !important;
-  --fr-danger: #dc2626 !important;
+  --fr-danger: #ff0000 !important;
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.06) 0%, transparent 34%),
-    linear-gradient(225deg, rgba(184, 20, 27, 0.04) 0%, transparent 32%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.06) 0%, transparent 34%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.04) 0%, transparent 32%),
     #fef2f2 !important;
 }
 
@@ -1841,7 +1841,7 @@
 .fare-card {
   border-color: #fecaca !important;
   background: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 14px 32px rgba(220, 30, 38, 0.08) !important;
+  box-shadow: 0 14px 32px rgba(255, 0, 0, 0.08) !important;
 }
 
 .modify-btn,
@@ -1850,15 +1850,15 @@
 .flight-action-btn,
 .fare-select-btn,
 .flight-filter-apply {
-  background: linear-gradient(135deg, #dc1e26, #b8141b) !important;
+  background: linear-gradient(135deg, #ff0000, #ff0000) !important;
   color: #ffffff !important;
   border-color: transparent !important;
-  box-shadow: 0 14px 30px rgba(220, 30, 38, 0.22) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.22) !important;
 }
 
 .route-block h2,
 .meta-line svg {
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
 }
 
 /* Neutralize focus outlines on modify search and booking form fields */
@@ -1884,7 +1884,7 @@
 }
 
 .expanded-flight-header {
-  background: #b8141b;
+  background: #ff0000;
   color: #ffffff;
   padding: 12px 24px;
   display: flex;
@@ -2327,7 +2327,7 @@
 }
 
 .feature-icon.danger {
-  color: #ef4444;
+  color: #ff0000;
 }
 
 .feature-item.warning {
@@ -2386,7 +2386,7 @@
 }
 
 .fare-next-btn {
-  background: #b8141b;
+  background: #ff0000;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -2395,13 +2395,13 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(184, 20, 27, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
 }
 
 .fare-next-btn:hover {
-  background: #dc1e26;
+  background: #ff0000;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(184, 20, 27, 0.35);
+  box-shadow: 0 6px 16px rgba(255, 0, 0, 0.35);
 }
 
 .fare-next-btn:active {
@@ -2500,7 +2500,7 @@
   overflow-x: auto;
   padding: 2px 2px 8px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(220, 30, 38, 0.42) transparent;
+  scrollbar-color: rgba(255, 0, 0, 0.42) transparent;
 }
 
 .flight-promo-scroller::-webkit-scrollbar {
@@ -2509,7 +2509,7 @@
 
 .flight-promo-scroller::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(220, 30, 38, 0.42);
+  background: rgba(255, 0, 0, 0.42);
 }
 
 .flight-promo-chip {

@@ -1,6 +1,6 @@
 /* ============================================================
    AuthPage.css — Centered Fullscreen Auth with Cinematic Background
-   Theme: Clean White & Brand Red (#d90429 / #be123c / #e11d48)
+   Theme: Clean White & Brand Red (#d90429 / #ff0000 / #ff0000)
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -91,7 +91,7 @@
 .auth-feature-icon {
   width: 42px;
   height: 42px;
-  background: #d90429;
+  background: #ff0000;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -276,7 +276,7 @@
   background: #e2e8f0;
   transition: background 0.3s ease, transform 0.3s ease;
 }
-.auth-step-dot--active { background: #be123c; transform: scale(1.3); }
+.auth-step-dot--active { background: #ff0000; transform: scale(1.3); }
 .auth-step-dot--done   { background: #16a34a; }
 
 /* ── Status Banner ── */
@@ -296,7 +296,7 @@
 }
 .auth-page-status.is-error {
   background: #fff1f2;
-  color: #be123c;
+  color: #ff0000;
   border: 1px solid #fecdd3;
 }
 
@@ -387,7 +387,7 @@
 
 .auth-field-error {
   font-size: 11px;
-  color: #e11d48;
+  color: #ff0000;
   font-weight: 600;
   animation: fade-up 0.2s ease both;
 }
@@ -482,8 +482,8 @@
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 .auth-checkbox:checked + .auth-checkbox-custom {
-  background: #be123c;
-  border-color: #be123c;
+  background: #ff0000;
+  border-color: #ff0000;
 }
 .auth-checkbox:checked + .auth-checkbox-custom::after {
   content: "";
@@ -499,7 +499,7 @@
 .auth-primary-btn {
   height: 48px; width: 100%;
   border: none; border-radius: 12px;
-  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  background: linear-gradient(135deg, #ff0000 0%, #ff0000 100%);
   color: #000000;
   font-size: 14.5px; font-weight: 700;
   cursor: pointer;
@@ -580,7 +580,7 @@
 .auth-social-btn:hover {
   background: #fff1f2;
   border-color: #fecdd3;
-  color: #be123c;
+  color: #ff0000;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(190, 18, 60, 0.08);
 }
@@ -676,7 +676,7 @@
   font-family: inherit;
 }
 .auth-channel-btn + .auth-channel-btn { border-left: 1.5px solid #e2e8f0; }
-.auth-channel-btn--active { background: #be123c; color: #ffffff; }
+.auth-channel-btn--active { background: #ff0000; color: #ffffff; }
 .auth-channel-btn:not(.auth-channel-btn--active):hover {
   background: #f1f5f9; color: #1e293b;
 }
@@ -686,7 +686,7 @@
   font-size: 11px; color: #94a3b8;
   text-align: center; margin: 0; line-height: 1.5;
 }
-.auth-terms a { color: #be123c; font-weight: 600; text-decoration: none; }
+.auth-terms a { color: #ff0000; font-weight: 600; text-decoration: none; }
 .auth-terms a:hover { text-decoration: underline; }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -787,7 +787,7 @@
 }
 .scenic-text-black { color: #0f172a; }
 .scenic-text-red {
-  color: #dc1e26;
+  color: #ff0000;
   font-style: italic;
   font-weight: 900;
 }

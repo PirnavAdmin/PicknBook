@@ -937,7 +937,7 @@ export default function SiteFooter() {
                           />
                         </div>
 
-                        {queryError && <p style={{ margin: 0, color: "#dc2626", fontSize: "12px" }}>{queryError}</p>}
+                        {queryError && <p style={{ margin: 0, color: "#ff0000", fontSize: "12px" }}>{queryError}</p>}
 
                         <button
                           type="submit"

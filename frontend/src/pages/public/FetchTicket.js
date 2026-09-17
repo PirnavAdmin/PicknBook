@@ -137,7 +137,7 @@ const FetchTicket = () => {
           <div className="left-arc-header">
             {/* SVG Arc path behind the buttons */}
             <svg className="arc-path-svg" viewBox="0 0 320 80" fill="none">
-              <path d="M15,48 Q160,18 305,48" stroke="#dc1e26" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.3" />
+              <path d="M15,48 Q160,18 305,48" stroke="#ff0000" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.3" />
             </svg>
 
             <div className="arc-buttons-wrap">

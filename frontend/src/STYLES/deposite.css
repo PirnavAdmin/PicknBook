@@ -5,8 +5,8 @@
   --surface-border: #d2ddf1;
   --text: #11213f;
   --text-soft: #56678a;
-  --primary: var(--theme-primary, #dc1e26);
-  --primary-strong: var(--theme-primary-strong, #b8141b);
+  --primary: var(--theme-primary, #ff0000);
+  --primary-strong: var(--theme-primary-strong, #ff0000);
   --shadow-md: 0 12px 24px rgba(8, 18, 44, 0.12);
   --shadow-sm: 0 8px 16px rgba(8, 18, 44, 0.08);
   --heading-font: var(--app-font-family);
@@ -35,16 +35,16 @@
 .deposit-section-kicker,
 .deposit-page-title span,
 .deposit-amount {
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .deposit-btn-primary,
 .deposit-icon-blue,
 .deposit-icon-green {
   border-color: transparent !important;
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000)) !important;
   color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(220, 30, 38, 0.2) !important;
+  box-shadow: 0 14px 28px rgba(255, 0, 0, 0.2) !important;
 }
 
 .deposit-btn-secondary,
@@ -52,11 +52,11 @@
 .deposit-icon-btn {
   border-color: var(--theme-border, #E5E7EB) !important;
   background: var(--theme-primary-soft, #fef2f2) !important;
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .deposit-table-head {
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000)) !important;
 }
 
 .deposit-table-head th {
@@ -83,8 +83,8 @@
   --surface-border: var(--theme-border, #E5E7EB);
   --text: var(--theme-navy, #1f2a44);
   --text-soft: var(--theme-muted, #64748b);
-  --primary: var(--theme-primary, #dc1e26);
-  --primary-strong: var(--theme-primary-strong, #b8141b);
+  --primary: var(--theme-primary, #ff0000);
+  --primary-strong: var(--theme-primary-strong, #ff0000);
   --shadow-md: var(--theme-shadow, 0 18px 45px rgba(125, 59, 31, 0.12));
   --shadow-sm: var(--theme-shadow-sm, 0 10px 24px rgba(125, 59, 31, 0.08));
 }
@@ -396,13 +396,13 @@ textarea.deposit-input {
 
 .deposit-status-failed {
   background: #fef2f2;
-  color: #dc2626;
+  color: #ff0000;
   border: 1px solid #fecaca;
 }
 
 .deposit-amount {
   font-weight: 700;
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
 }
 
 .deposit-action-group {
@@ -540,16 +540,16 @@ textarea.deposit-input {
 .deposit-section-kicker,
 .deposit-page-title span,
 .deposit-amount {
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .deposit-btn-primary,
 .deposit-icon-blue,
 .deposit-icon-green {
   border-color: transparent !important;
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000)) !important;
   color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(220, 30, 38, 0.2) !important;
+  box-shadow: 0 14px 28px rgba(255, 0, 0, 0.2) !important;
 }
 
 .deposit-btn-secondary,
@@ -557,11 +557,11 @@ textarea.deposit-input {
 .deposit-icon-btn {
   border-color: var(--theme-border, #E5E7EB) !important;
   background: var(--theme-primary-soft, #fef2f2) !important;
-  color: var(--theme-primary-strong, #b8141b) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .deposit-table-head {
-  background: linear-gradient(135deg, var(--theme-primary, #dc1e26), var(--theme-primary-strong, #b8141b)) !important;
+  background: linear-gradient(135deg, var(--theme-primary, #ff0000), var(--theme-primary-strong, #ff0000)) !important;
 }
 
 .deposit-table-head th {
@@ -663,7 +663,7 @@ textarea.deposit-input {
 }
 
 .promo-subcard .wallet-subcard-title {
-  color: #991b1b;
+  color: #ff0000;
 }
 
 .nonpromo-subcard {

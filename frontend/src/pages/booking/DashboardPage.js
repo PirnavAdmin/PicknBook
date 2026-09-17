@@ -6,7 +6,7 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarClock,
-  CircleDollarSign,
+  IndianRupee,
   Clock4,
   Route,
   TicketX,
@@ -33,7 +33,7 @@ const BOOKING_COLORS = {
 const QUICK_LINKS = [
   { id: "quick-1", label: "Bus Bookings", to: "/dashboard/bus-bookings" },
   { id: "quick-2", label: "Print Ticket", to: "/fetch-ticket" },
-  { id: "quick-3", label: "Web Check-in", to: "/web-checkin" },
+  { id: "quick-3", label: "Web Check-in", to: "/dashboard/web-checkin" },
 ];
 
 const OFFER_MESSAGES = [
@@ -525,7 +525,7 @@ export default function DashboardPage() {
         hint: `Savings ${formatCurrencyCompact(revenue.totalSavingsInr)} | Cancelled ${formatCurrencyCompact(
           revenue.cancelledValueInr
         )}`,
-        icon: CircleDollarSign,
+        icon: IndianRupee,
       },
     ];
   }, [liveSummary, summary]);
@@ -613,7 +613,7 @@ export default function DashboardPage() {
       </header>
 
       {walletSummary && (
-        <section className="dashboard-wallet-card" style={{ display: 'flex', justifyContent: 'space-between', padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #eee' }}>
+        <section className="dashboard-wallet-card" style={{ display: 'flex', justifyContent: 'space-between', padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', marginTop: '14px', border: '1px solid #eee' }}>
           <div>
             <p style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', marginBottom: '5px' }}>Wallet Balance</p>
             <h2 style={{ margin: '0 0 5px 0', fontSize: '28px', color: '#1a1a1a' }}>₹ {walletSummary.availableBalance?.toLocaleString('en-IN', {minimumFractionDigits:2})}</h2>
@@ -625,7 +625,6 @@ export default function DashboardPage() {
             <span style={{ fontSize: '12px', color: '#666' }}>Loyalty Rewards</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '10px' }}>
-            <Link to="/dashboard/wallet" style={{ background: '#007bff', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontWeight: '500', textAlign: 'center' }}>Add Money</Link>
             <Link to="/dashboard/wallet" style={{ color: '#007bff', textDecoration: 'none', fontWeight: '500', textAlign: 'center', fontSize: '14px' }}>View Wallet</Link>
           </div>
         </section>

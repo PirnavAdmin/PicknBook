@@ -71,7 +71,7 @@
   margin-left: 8px;
   border-radius: 999px;
   background: #fef2f2;
-  color: #b8141b;
+  color: #ff0000;
   padding: 0 11px;
   font-size: 0.66rem;
   font-weight: 900;
@@ -126,7 +126,7 @@
 .pb-type-pill {
   width: max-content;
   border-radius: 999px;
-  background: #dc1e26;
+  background: #ff0000;
   color: #ffffff;
   padding: 5px 10px;
   font-size: 0.6rem;
@@ -144,7 +144,7 @@
 }
 
 .pb-type-pill.bus-badge {
-  background: #dc1e26 !important;
+  background: #ff0000 !important;
 }
 
 .pb-select-main strong {
@@ -195,14 +195,14 @@
 .pb-ticket-actions button {
   border: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, #dc1e26 0%, #b8141b 100%);
+  background: linear-gradient(135deg, #ff0000 0%, #ff0000 100%);
   color: #ffffff;
   min-height: 56px;
   padding: 0 24px;
   font-size: 0.82rem;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 16px 30px rgba(220, 30, 38, 0.18);
+  box-shadow: 0 16px 30px rgba(255, 0, 0, 0.18);
   transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
 }
 
@@ -210,12 +210,12 @@
 .pb-ticket-actions button:hover {
   filter: brightness(1.03);
   transform: translateY(-1px);
-  box-shadow: 0 20px 38px rgba(220, 30, 38, 0.24);
+  box-shadow: 0 20px 38px rgba(255, 0, 0, 0.24);
 }
 
 .pb-ticket-actions .pb-secondary-action {
-  background: linear-gradient(135deg, #80dcd4 0%, #dc1e26 100%);
-  box-shadow: 0 16px 30px rgba(220, 30, 38, 0.18);
+  background: linear-gradient(135deg, #80dcd4 0%, #ff0000 100%);
+  box-shadow: 0 16px 30px rgba(255, 0, 0, 0.18);
 }
 
 .pb-select-note,
@@ -252,13 +252,13 @@
   width: 40px; /* smaller */
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #dc1e26 0%, #b8141b 100%);
+  background: linear-gradient(135deg, #ff0000 0%, #ff0000 100%);
   color: #ffffff;
   display: grid;
   place-items: center;
   font-size: 0.78rem;
   font-weight: 900;
-  box-shadow: 0 10px 20px rgba(220, 30, 38, 0.12);
+  box-shadow: 0 10px 20px rgba(255, 0, 0, 0.12);
 }
 
 .pb-ticket-title strong {
@@ -300,7 +300,7 @@
 
 .pb-ticket-head {
   min-height: 48px; /* reduced */
-  background: linear-gradient(135deg, var(--theme-primary-strong, #b8141b) 0%, var(--theme-primary, #dc1e26) 100%);
+  background: linear-gradient(135deg, var(--theme-primary-strong, #ff0000) 0%, var(--theme-primary, #ff0000) 100%);
   color: #ffffff;
   padding: 10px 18px; /* reduced */
   display: flex;
@@ -496,7 +496,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #dc1e26;
+  background: #ff0000;
   color: #ffffff;
   font-size: 0.64rem;
 }
@@ -563,7 +563,7 @@
 }
 
 .pb-ticket-stub strong {
-  color: #b8141b;
+  color: #ff0000;
   font-size: 0.64rem;
   font-weight: 900;
   line-height: 1.2;
@@ -703,7 +703,7 @@
 .pb-ticket-head,
 .pb-stub-label,
 .pb-active-chip {
-  background: #dc1e26 !important;
+  background: #ff0000 !important;
   color: #ffffff !important;
 }
 

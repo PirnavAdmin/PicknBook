@@ -171,7 +171,7 @@ export default function AdminLogin() {
 
       ctx.translate(x, y);
       ctx.rotate(angle);
-      ctx.fillStyle = "#b91c1c";
+      ctx.fillStyle = "#ff0000";
       ctx.shadowColor = "rgba(185, 28, 28, 0.2)";
       ctx.shadowBlur = 2;
       ctx.fillText(char, -4, 0);

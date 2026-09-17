@@ -2,8 +2,8 @@
   min-height: calc(100vh - 76px);
   padding: 34px 18px 48px;
   background:
-    radial-gradient(circle at 8% 10%, rgba(220, 30, 38, 0.14), transparent 30%),
-    radial-gradient(circle at 94% 4%, rgba(220, 30, 38, 0.12), transparent 28%),
+    radial-gradient(circle at 8% 10%, rgba(255, 0, 0, 0.14), transparent 30%),
+    radial-gradient(circle at 94% 4%, rgba(255, 0, 0, 0.12), transparent 28%),
     var(--theme-page, #F3F4F6);
   color: var(--theme-navy, #17242d);
   font-family: var(--app-font-family);
@@ -18,7 +18,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
   font-size: 0.92rem;
   font-weight: 800;
   text-decoration: none;
@@ -26,11 +26,11 @@
 }
 
 .legal-back-link:hover {
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
 }
 
 .legal-hero {
-  border: 1px solid rgba(220, 30, 38, 0.18);
+  border: 1px solid rgba(255, 0, 0, 0.18);
   border-radius: 20px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(247, 251, 248, 0.92)),
@@ -41,7 +41,7 @@
 
 .legal-hero p {
   margin: 0;
-  color: var(--theme-primary, #dc1e26);
+  color: var(--theme-primary, #ff0000);
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -95,7 +95,7 @@
 
 .legal-section h2 {
   margin: 0 0 10px;
-  color: var(--theme-primary-strong, #b8141b);
+  color: var(--theme-primary-strong, #ff0000);
   font-size: 1.18rem;
   line-height: 1.3;
 }

@@ -107,8 +107,8 @@ const WebCheckInPage = () => {
         @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
         .web-checkin-page {
-          --web-primary: var(--theme-primary, #dc1e26);
-          --web-primary-strong: var(--theme-primary-strong, #b8141b);
+          --web-primary: var(--theme-primary, #ff0000);
+          --web-primary-strong: var(--theme-primary-strong, #ff0000);
           --web-navy: var(--theme-navy, #1f2a44);
           --web-muted: #596985;
           --web-border: #E5E7EB;
@@ -257,7 +257,7 @@ const WebCheckInPage = () => {
           align-content: center;
           background:
             radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.84), transparent 28%),
-            linear-gradient(135deg, #fffcf8 0%, #fef2f2 30%, #dc1e26 100%);
+            linear-gradient(135deg, #fffcf8 0%, #fef2f2 30%, #ff0000 100%);
         }
 
         .web-checkin-pass-card {

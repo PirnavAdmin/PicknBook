@@ -69,7 +69,7 @@
 
 .payment-metric-card.failed .metric-icon {
   background: #fef2f2;
-  color: #dc2626;
+  color: #ff0000;
 }
 
 .payment-metric-card.pending .metric-icon {
@@ -127,7 +127,7 @@
 
 .payment-status-badge.failed {
   background: #fef2f2;
-  color: #dc2626;
+  color: #ff0000;
   border: 1px solid #fecaca;
 }
 

@@ -230,9 +230,9 @@
   margin: 16px 0;
   padding: 6px 0;
   background-color: #fef2f2;
-  border-top: 2px dashed #f87171;
-  border-bottom: 2px dashed #f87171;
-  color: #dc2626;
+  border-top: 2px dashed #ff0000;
+  border-bottom: 2px dashed #ff0000;
+  color: #ff0000;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -602,7 +602,7 @@
 .srdv-grid-deck-container {
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: #dc1e26 #f1f5f9;
+  scrollbar-color: #ff0000 #f1f5f9;
 }
 
 .srdv-coach-scroll {

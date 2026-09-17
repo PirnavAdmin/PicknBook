@@ -1199,7 +1199,7 @@ const AdminDashboard = () => {
                 {isRevenueOutOfRange ? (
                   <span style={{
                     fontSize: '0.74rem',
-                    color: '#b91c1c',
+                    color: '#ff0000',
                     background: '#fef2f2',
                     border: '1px solid #fca5a5',
                     padding: '2px 10px',
@@ -1212,7 +1212,7 @@ const AdminDashboard = () => {
                   }}>
                     <span>⚠️ No records found for {noRecordsYear || revenueDate}</span>
                     {dynamicSystemStartDate && (
-                      <span style={{ color: '#991b1b', fontWeight: '500' }}>(Records Available From: {dynamicSystemStartDate})</span>
+                      <span style={{ color: '#ff0000', fontWeight: '500' }}>(Records Available From: {dynamicSystemStartDate})</span>
                     )}
                   </span>
                 ) : (
@@ -1470,10 +1470,10 @@ const AdminDashboard = () => {
 
                   {/* Failed */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#b91c1c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.66rem', color: '#ff0000', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span>❌</span> Failed
                     </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#991b1b' }}>{todayStatusData.paymentBreakdown.failed}</strong>
+                    <strong style={{ fontSize: '0.82rem', color: '#ff0000' }}>{todayStatusData.paymentBreakdown.failed}</strong>
                   </div>
 
                   {/* Pending */}
@@ -1526,7 +1526,7 @@ const AdminDashboard = () => {
                       ✓ Integrity Verified ({todayStatusData.breakdownSum} = {todayStatusData.totalPayments})
                     </span>
                   ) : (
-                    <span style={{ fontSize: '0.62rem', color: '#b91c1c', background: '#fef2f2', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block' }}>
+                    <span style={{ fontSize: '0.62rem', color: '#ff0000', background: '#fef2f2', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block' }}>
                       ⚠️ Mismatch: Sum ({todayStatusData.breakdownSum}) ≠ Attempts ({todayStatusData.totalPayments})
                     </span>
                   )}

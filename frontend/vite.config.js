@@ -82,7 +82,7 @@ export default defineConfig({
             { src: srcPng, dest: path.join(__dirname, 'src/assets/images/illustrations/flight-hero-theme.png') },
             { src: srcPng, dest: path.join(__dirname, 'src/assets/images/illustrations/flight-hero-theme.jpg') },
             { src: srcPng, dest: path.join(__dirname, 'public/flight-hero-theme.png') },
-            { 
+            {
               src: 'C:\\Users\\vinay\\.gemini\\antigravity-ide\\brain\\fd6618d5-9516-4436-8c9b-be2339f429cd\\media__1786455540235.jpg',
               dest: path.join(__dirname, 'src/assets/images/illustrations/bus-hero-theme.png')
             },
@@ -133,7 +133,7 @@ export default defineConfig({
           }
 
           if (["/flight-hero-theme.png", "/flight-hero-theme.jpg"].includes(req.url)) {
-            const imgPath = 'C:\\Users\\vinay\\Downloads\\flight-hero-theme.png';
+            const imgPath = path.join(__dirname, 'src/assets/images/illustrations/flight-hero-theme.png');
             if (fs.existsSync(imgPath)) {
               res.setHeader('Content-Type', 'image/png');
               return fs.createReadStream(imgPath).pipe(res);
@@ -166,7 +166,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 5173,
     open: true,
     proxy: {
       '^/(api|uploads|offers|Images|images|Content)': {
@@ -184,12 +184,12 @@ export default defineConfig({
               const originalEnd = proxyReq.end;
               let reqBodyStr = "";
 
-              proxyReq.write = function(chunk) {
+              proxyReq.write = function (chunk) {
                 if (chunk) reqBodyStr += chunk.toString();
                 return originalWrite.apply(this, arguments);
               };
 
-              proxyReq.end = function(chunk) {
+              proxyReq.end = function (chunk) {
                 if (chunk) reqBodyStr += chunk.toString();
                 try {
                   if (reqBodyStr && reqBodyStr.startsWith("{")) {
@@ -200,7 +200,7 @@ export default defineConfig({
                     console.log(`📦 Request Payload:`, JSON.stringify(parsed, null, 2));
                     console.log(`==================================================\n`);
                   }
-                } catch (e) {}
+                } catch (e) { }
                 return originalEnd.apply(this, arguments);
               };
             }
@@ -222,7 +222,7 @@ export default defineConfig({
                     console.log(`📥 Response Data:`, str.length > 800 ? str.substring(0, 800) + '...\n  }\n}' : str);
                     console.log(`==================================================\n`);
                   }
-                } catch (e) {}
+                } catch (e) { }
               });
             }
           });

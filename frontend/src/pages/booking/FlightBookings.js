@@ -358,7 +358,7 @@ export default function FlightBookings() {
             zIndex: 999999,
             background: errorMessage ? "#fef2f2" : "#f0fdf4",
             border: `2px solid ${errorMessage ? "#f87171" : "#4ade80"}`,
-            color: errorMessage ? "#991b1b" : "#166534",
+            color: errorMessage ? "#ff0000" : "#166534",
             padding: "14px 20px",
             borderRadius: "10px",
             boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
@@ -537,7 +537,7 @@ export default function FlightBookings() {
               <tbody>
                 {filteredBookings.map((booking) => {
                   const dep = formatSplitDeparture(booking.departureTimeUtc || booking.departureDate);
-                  const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
+                  const bookedAt = formatBookedAt(booking.createdAt || booking.createdAtUtc || booking.bookingDate || booking.bookedAt || booking.bookedAtUtc || booking.entryDate || booking.entryDateUtc);
                   const totalFormatted = Number(booking.totalPriceInr || booking.totalAmount || 0).toLocaleString("en-IN");
                   return (
                   <tr key={booking.bookingId || booking.bookingReference}>
@@ -558,7 +558,7 @@ export default function FlightBookings() {
                               ? booking.segments.map(s => s.fromCity || s.sourceCode).join(" → ") + " → " + (booking.toCity || booking.segments[booking.segments.length - 1]?.toCity)
                               : `${booking.fromCity} to ${booking.toCity}`}
                           </strong>
-                          <small style={{ color: "#e11d48", fontWeight: 700, display: "block" }}>
+                          <small style={{ color: "#ff0000", fontWeight: 700, display: "block" }}>
                             {booking.providerName || booking.airline || "Flight Service"} · Multi-City ({booking.segments?.length || 2} Legs)
                           </small>
                         </>
@@ -644,7 +644,7 @@ export default function FlightBookings() {
 
             {(actionMessage || errorMessage) && (
               <div style={{ background: errorMessage ? "#fef2f2" : "#ecfdf5", borderLeft: `4px solid ${errorMessage ? "#ef4444" : "#10b981"}`, padding: "12px 18px", margin: "16px 20px 4px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: errorMessage ? "#b91c1c" : "#047857", fontWeight: 700, fontSize: "0.93rem" }}>
+                <span style={{ color: errorMessage ? "#ff0000" : "#047857", fontWeight: 700, fontSize: "0.93rem" }}>
                   {errorMessage ? "❌ " + errorMessage : actionMessage}
                 </span>
                 <button type="button" onClick={() => { setActionMessage(""); setErrorMessage(""); }} style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 800, color: "inherit" }}>✕</button>
@@ -669,7 +669,7 @@ export default function FlightBookings() {
               </div>
               <div>
                 <span>Status</span>
-                <strong style={{ color: selectedBooking.status === "Cancelled" ? "#dc2626" : "#16a34a", fontWeight: 800 }}>
+                <strong style={{ color: selectedBooking.status === "Cancelled" ? "#ff0000" : "#16a34a", fontWeight: 800 }}>
                   {selectedBooking.status}
                 </strong>
               </div>
@@ -727,8 +727,8 @@ export default function FlightBookings() {
               )}
               {(selectedBooking.cancellationChargeInr > 0 || selectedBooking.cancellationCharge > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0 || selectedBooking.status === "Cancelled") && (
                 <div>
-                  <span style={{ color: "#dc2626", fontWeight: 700 }}>Cancellation Fee</span>
-                  <strong style={{ color: "#dc2626" }}>
+                  <span style={{ color: "#ff0000", fontWeight: 700 }}>Cancellation Fee</span>
+                  <strong style={{ color: "#ff0000" }}>
                     {formatCurrency(selectedBooking.cancellationChargeInr ?? selectedBooking.cancellationCharge ?? selectedBooking?.CancellationCharge ?? selectedBooking?.RefundDetails?.CancellationCharge ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.15))}
                   </strong>
                 </div>
@@ -767,7 +767,7 @@ export default function FlightBookings() {
                               style={{ cursor: "pointer", width: 15, height: 15 }}
                             />
                           )}
-                          <span style={{ background: isLegCancelled ? "#991b1b" : "#e11d48", color: "#ffffff", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
+                          <span style={{ background: isLegCancelled ? "#ff0000" : "#ff0000", color: "#ffffff", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 800 }}>
                             LEG {sIdx + 1}
                           </span>
                           <strong style={{ color: "#0f172a", textDecoration: isLegCancelled ? "line-through" : "none" }}>{seg.fromCity} → {seg.toCity}</strong>
@@ -778,7 +778,7 @@ export default function FlightBookings() {
                             {seg.departureTimeUtc ? formatDateTime(seg.departureTimeUtc) : (seg.departureTime || "--")}
                           </span>
                           {isLegCancelled ? (
-                            <span style={{ background: "#fee2e2", color: "#dc2626", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700 }}>Cancelled</span>
+                            <span style={{ background: "#fee2e2", color: "#ff0000", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700 }}>Cancelled</span>
                           ) : (
                             <span style={{ background: "#ecfdf5", color: "#16a34a", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700 }}>Active</span>
                           )}
@@ -881,10 +881,10 @@ export default function FlightBookings() {
                 {(selectedLegIndexes.length > 0 || selectedPassengerIds.length > 0) && (
                   <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 14, marginTop: 12 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 12, color: "#991b1b" }}>
+                      <div style={{ fontWeight: 700, fontSize: 12, color: "#ff0000" }}>
                         ⚠️ Selected Items for Partial Cancellation:
                       </div>
-                      <div style={{ fontSize: 11.5, color: "#7f1d1d" }}>
+                      <div style={{ fontSize: 11.5, color: "#ff0000" }}>
                         {selectedLegIndexes.length > 0 && (
                           <div style={{ marginBottom: 4 }}>
                             <strong>Flight Legs ({selectedLegIndexes.length}):</strong>{" "}
@@ -924,7 +924,7 @@ export default function FlightBookings() {
                       <button
                         type="button"
                         className="ops-icon-btn primary"
-                        style={{ padding: "8px 16px", background: "#dc1e26", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
+                        style={{ padding: "8px 16px", background: "#ff0000", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
                         onClick={handleCancelPartialSelection}
                         disabled={isCancellingPassengers}
                       >

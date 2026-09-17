@@ -142,11 +142,11 @@ export default function EmailLogs() {
           </div>
         </div>
 
-        <div className="email-stats-card card-inactive" style={{ borderLeft: '4px solid #dc2626' }}>
-          <div className="email-stats-icon" style={{ background: '#fef2f2', color: '#dc2626' }}>✗</div>
+        <div className="email-stats-card card-inactive" style={{ borderLeft: '4px solid #ff0000' }}>
+          <div className="email-stats-icon" style={{ background: '#fef2f2', color: '#ff0000' }}>✗</div>
           <div className="email-stats-info">
             <span className="email-stats-title">Sent Failed</span>
-            <span className="email-stats-val" style={{ color: '#dc2626' }}>{logs.filter(l => l.status === 'Failed').length}</span>
+            <span className="email-stats-val" style={{ color: '#ff0000' }}>{logs.filter(l => l.status === 'Failed').length}</span>
           </div>
         </div>
       </div>
@@ -275,14 +275,14 @@ export default function EmailLogs() {
                 </div>
                 <div>
                   <span style={{ color: '#64748b' }}>Status:</span>
-                  <div style={{ fontWeight: 'bold', color: selectedLog.status === 'Sent' ? '#16a34a' : '#dc2626' }}>
+                  <div style={{ fontWeight: 'bold', color: selectedLog.status === 'Sent' ? '#16a34a' : '#ff0000' }}>
                     {selectedLog.status}
                   </div>
                 </div>
               </div>
 
               {selectedLog.failureReason && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', padding: '10px', borderRadius: '6px', color: '#991b1b' }}>
+                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', padding: '10px', borderRadius: '6px', color: '#ff0000' }}>
                   <strong>Failure Reason:</strong> {selectedLog.failureReason}
                 </div>
               )}

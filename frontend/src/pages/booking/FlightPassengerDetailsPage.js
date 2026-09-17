@@ -1457,7 +1457,7 @@ export default function FlightPassengerDetailsPage() {
                 {/* Return Flight Segment */}
                 {flowState.isTwoWay && flowState.returnFlight && (
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
-                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#dc1e26", textTransform: "uppercase", marginBottom: 6 }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ff0000", textTransform: "uppercase", marginBottom: 6 }}>
                       2. Return Flight
                     </div>
                     <div className="flight-segment">
@@ -2287,7 +2287,7 @@ export default function FlightPassengerDetailsPage() {
                   <p style={{ marginTop: "12px", color: "#555", fontWeight: 500 }}>Fetching live fare rules from airline API...</p>
                 </div>
               ) : activeFareRuleModal.error ? (
-                <div className="booking-error" style={{ padding: "16px", borderRadius: "8px", background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", display: "flex", alignItems: "center", gap: "10px" }}>
+                <div className="booking-error" style={{ padding: "16px", borderRadius: "8px", background: "#fef2f2", border: "1px solid #fecaca", color: "#ff0000", display: "flex", alignItems: "center", gap: "10px" }}>
                   <XCircle size={18} />
                   <span>{activeFareRuleModal.error}</span>
                 </div>

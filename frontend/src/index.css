@@ -14,26 +14,26 @@ body,
   --theme-border-soft: #F3F4F6;
   --theme-text: #162126;
   --theme-muted: #66757b;
-  --theme-primary: #dc1e26;
-  --theme-primary-strong: #b8141b;
+  --theme-primary: #ff0000;
+  --theme-primary-strong: #ff0000;
   --theme-primary-soft: #fef2f2;
   --theme-navy: #17242d;
-  --theme-blue: #b8141b;
-  --theme-pink: #dc1e26;
-  --theme-coral: #dc1e26;
-  --theme-gold: #dc1e26;
+  --theme-blue: #ff0000;
+  --theme-pink: #ff0000;
+  --theme-coral: #ff0000;
+  --theme-gold: #ff0000;
   --theme-shadow: 0 22px 55px rgba(12, 46, 51, 0.15);
   --theme-shadow-sm: 0 12px 28px rgba(12, 46, 51, 0.09);
-  --theme-gradient: linear-gradient(135deg, #dc1e26 0%, #b8141b 58%, #dc1e26 100%);
-  --theme-gradient-action: linear-gradient(135deg, #dc1e26 0%, #b8141b 54%, #b8141b 100%);
+  --theme-gradient: linear-gradient(135deg, #ff0000 0%, #ff0000 58%, #ff0000 100%);
+  --theme-gradient-action: linear-gradient(135deg, #ff0000 0%, #ff0000 54%, #ff0000 100%);
 }
 
 body {
   margin: 0;
   font-family: var(--app-font-family);
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.08) 0%, transparent 30%),
-    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.08) 0%, transparent 30%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.1) 0%, transparent 34%),
     var(--theme-page);
   color: var(--theme-text);
   -webkit-font-smoothing: antialiased;
@@ -121,11 +121,11 @@ a:focus {
   place-items: center;
   border-radius: 8px;
   background: #f1f5f9;
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
 }
 
 .pnb-place-icon-wrap svg {
-  color: #dc1e26 !important;
+  color: #ff0000 !important;
   stroke: currentColor;
 }
 
@@ -174,78 +174,78 @@ a:focus {
   --dashboard-border: var(--theme-border) !important;
   --dashboard-text: var(--theme-navy) !important;
   --dashboard-muted: var(--theme-muted) !important;
-  --dashboard-primary: var(--theme-primary) !important;
-  --dashboard-primary-strong: var(--theme-primary-strong) !important;
-  --dashboard-accent: var(--theme-primary) !important;
-  --dashboard-accent-strong: var(--theme-primary-strong) !important;
-  --dashboard-success: var(--theme-primary) !important;
-  --dashboard-danger: var(--theme-primary-strong) !important;
+  --dashboard-primary: #ff0000;
+  --dashboard-primary-strong: #ff0000;
+  --dashboard-accent: #ff0000;
+  --dashboard-accent-strong: #ff0000;
+  --dashboard-success: #ff0000;
+  --dashboard-danger: #ff0000;
   --bank-bg: var(--theme-page) !important;
   --bank-border: var(--theme-border) !important;
   --bank-text: var(--theme-navy) !important;
   --bank-muted: var(--theme-muted) !important;
-  --bank-primary: var(--theme-primary) !important;
-  --bank-primary-strong: var(--theme-primary-strong) !important;
-  --bank-accent: var(--theme-primary) !important;
+  --bank-primary: var(--theme-primary, #ff0000) !important;
+  --bank-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --bank-accent: var(--theme-primary, #ff0000) !important;
   --trav-border: var(--theme-border) !important;
   --trav-text: var(--theme-navy) !important;
   --trav-muted: var(--theme-muted) !important;
-  --trav-primary: var(--theme-primary) !important;
-  --trav-primary-strong: var(--theme-primary-strong) !important;
+  --trav-primary: var(--theme-primary, #ff0000) !important;
+  --trav-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --qr-border: var(--theme-border) !important;
   --qr-text: var(--theme-navy) !important;
-  --qr-primary: var(--theme-primary) !important;
-  --qr-primary-strong: var(--theme-primary-strong) !important;
+  --qr-primary: var(--theme-primary, #ff0000) !important;
+  --qr-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --stmt-border: var(--theme-border) !important;
   --stmt-text: var(--theme-navy) !important;
-  --stmt-primary: var(--theme-primary) !important;
-  --stmt-primary-strong: var(--theme-primary-strong) !important;
+  --stmt-primary: var(--theme-primary, #ff0000) !important;
+  --stmt-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --fr-bg: var(--theme-page) !important;
   --fr-border: var(--theme-border) !important;
   --fr-text: var(--theme-navy) !important;
-  --fr-primary: var(--theme-primary) !important;
-  --fr-primary-strong: var(--theme-primary-strong) !important;
-  --fr-accent: var(--theme-primary) !important;
-  --fr-accent-strong: var(--theme-primary-strong) !important;
+  --fr-primary: var(--theme-primary, #ff0000) !important;
+  --fr-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --fr-accent: var(--theme-primary, #ff0000) !important;
+  --fr-accent-strong: var(--theme-primary-strong, #ff0000) !important;
   --ops-border: var(--theme-border) !important;
   --ops-text: var(--theme-navy) !important;
-  --ops-primary: var(--theme-primary) !important;
-  --ops-primary-strong: var(--theme-primary-strong) !important;
-  --ops-accent: var(--theme-primary) !important;
+  --ops-primary: var(--theme-primary, #ff0000) !important;
+  --ops-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --ops-accent: var(--theme-primary, #ff0000) !important;
   --ticket-bg: var(--theme-page) !important;
   --ticket-border: var(--theme-border) !important;
   --ticket-text: var(--theme-navy) !important;
-  --ticket-primary: var(--theme-primary) !important;
-  --ticket-primary-strong: var(--theme-primary-strong) !important;
+  --ticket-primary: var(--theme-primary, #ff0000) !important;
+  --ticket-primary-strong: var(--theme-primary-strong, #ff0000) !important;
   --page-bg: var(--theme-page) !important;
   --surface-border: var(--theme-border) !important;
   --text: var(--theme-navy) !important;
   --text-soft: var(--theme-muted) !important;
-  --primary: var(--theme-primary) !important;
-  --primary-strong: var(--theme-primary-strong) !important;
-  --accent: var(--theme-primary) !important;
+  --primary: var(--theme-primary, #ff0000) !important;
+  --primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --accent: var(--theme-primary, #ff0000) !important;
   
   --bus-bg: var(--theme-page) !important;
   --bus-border: var(--theme-border) !important;
   --bus-text: var(--theme-navy) !important;
   --bus-muted: var(--theme-muted) !important;
-  --bus-primary: var(--theme-primary) !important;
-  --bus-primary-strong: var(--theme-primary-strong) !important;
-  --bus-accent: var(--theme-primary) !important;
-  --bus-accent-strong: var(--theme-primary-strong) !important;
-  --bus-success: var(--theme-primary) !important;
-  --bus-danger: var(--theme-primary-strong) !important;
+  --bus-primary: var(--theme-primary, #ff0000) !important;
+  --bus-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --bus-accent: var(--theme-primary, #ff0000) !important;
+  --bus-accent-strong: var(--theme-primary-strong, #ff0000) !important;
+  --bus-success: var(--theme-primary, #ff0000) !important;
+  --bus-danger: var(--theme-primary-strong, #ff0000) !important;
   
   --flow-bg: var(--theme-page) !important;
   --flow-border: var(--theme-border) !important;
   --flow-text: var(--theme-navy) !important;
   --flow-muted: var(--theme-muted) !important;
-  --flow-primary: var(--theme-primary) !important;
-  --flow-primary-strong: var(--theme-primary-strong) !important;
-  --flow-accent: var(--theme-primary) !important;
-  --flow-accent-strong: var(--theme-primary-strong) !important;
-  --flow-success: var(--theme-primary) !important;
-  --flow-danger: var(--theme-primary-strong) !important;
+  --flow-primary: var(--theme-primary, #ff0000) !important;
+  --flow-primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --flow-accent: var(--theme-primary, #ff0000) !important;
+  --flow-accent-strong: var(--theme-primary-strong, #ff0000) !important;
+  --flow-success: var(--theme-primary, #ff0000) !important;
+  --flow-danger: var(--theme-primary-strong, #ff0000) !important;
 }
 
 .dashboard-layout,
@@ -253,8 +253,8 @@ a:focus {
 .account-page,
 .edit-profile-page {
   background:
-    linear-gradient(135deg, rgba(220, 30, 38, 0.1) 0%, transparent 34%),
-    linear-gradient(225deg, rgba(220, 30, 38, 0.1) 0%, transparent 30%),
+    linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, transparent 34%),
+    linear-gradient(225deg, rgba(255, 0, 0, 0.1) 0%, transparent 30%),
     var(--theme-page) !important;
 }
 
@@ -296,7 +296,7 @@ a:focus {
   border-color: transparent !important;
   background: var(--theme-gradient-action) !important;
   color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(184, 20, 27, 0.22) !important;
+  box-shadow: 0 14px 28px rgba(255, 0, 0, 0.22) !important;
 }
 
 /* Atlas theme override layer */
@@ -321,9 +321,9 @@ a:focus {
   --surface-border: var(--theme-border) !important;
   --text: var(--theme-text) !important;
   --text-soft: var(--theme-muted) !important;
-  --primary: var(--theme-primary) !important;
-  --primary-strong: var(--theme-primary-strong) !important;
-  --accent: var(--theme-coral) !important;
+  --primary: var(--theme-primary, #ff0000) !important;
+  --primary-strong: var(--theme-primary-strong, #ff0000) !important;
+  --accent: var(--theme-coral, #ff0000) !important;
 }
 
 .search-btn,
@@ -336,7 +336,7 @@ a:focus {
 .trip-chip.active {
   background: var(--theme-gradient-action) !important;
   color: #ffffff !important;
-  box-shadow: 0 14px 30px rgba(184, 20, 27, 0.22) !important;
+  box-shadow: 0 14px 30px rgba(255, 0, 0, 0.22) !important;
 }
 
 /* Hide browser-default password reveal eye and clear button in Edge/IE/Chrome */

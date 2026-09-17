@@ -7,8 +7,8 @@
   --surface-border: #d2ddf1;
   --text: #11213f;
   --text-soft: #56678a;
-  --primary: var(--theme-primary, #dc1e26);
-  --primary-strong: var(--theme-primary-strong, #b8141b);
+  --primary: var(--theme-primary, #ff0000);
+  --primary-strong: var(--theme-primary-strong, #ff0000);
   --accent: #e46e2a;
   --shadow-lg: 0 18px 38px rgba(8, 18, 44, 0.18);
   --shadow-md: 0 12px 24px rgba(8, 18, 44, 0.12);

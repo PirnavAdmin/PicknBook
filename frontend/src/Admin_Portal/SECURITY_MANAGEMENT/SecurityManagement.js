@@ -451,7 +451,7 @@ export default function SecurityManagement() {
           <line x1="15" y1="17" x2="15.01" y2="17" />
         </svg>
       ),
-      color: '#e11d48',
+      color: '#ff0000',
       bg: '#fff1f2',
       key: 'otpViolations24h'
     },

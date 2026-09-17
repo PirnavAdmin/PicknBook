@@ -140,7 +140,7 @@ function PaymentQrCodeList() {
             </div>
 
             <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#b91c1c' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#ff0000' }}>
                 <X size={20} />
               </div>
               <div>
@@ -217,7 +217,7 @@ function PaymentQrCodeList() {
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         background: q.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                        color: q.status === 'Active' ? '#15803d' : '#b91c1c'
+                        color: q.status === 'Active' ? '#15803d' : '#ff0000'
                       }}>
                         {q.status}
                       </span>
@@ -263,7 +263,7 @@ function PaymentQrCodeList() {
             
             <form onSubmit={handleCreate}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px 32px', marginBottom: '28px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
                   QR NAME *
                   <input
                     type="text"
@@ -275,7 +275,7 @@ function PaymentQrCodeList() {
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
                   BANK / ACCOUNT *
                   <select
                     value={form.bank}
@@ -288,7 +288,7 @@ function PaymentQrCodeList() {
                   </select>
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
                   UPI ID / WEB *
                   <input
                     type="text"
@@ -300,7 +300,7 @@ function PaymentQrCodeList() {
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
                   STATUS *
                   <select
                     value={form.status}

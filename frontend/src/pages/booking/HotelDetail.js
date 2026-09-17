@@ -71,7 +71,7 @@ export default function HotelDetail({
   nights
 }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [openDescIndex, setOpenDescIndex] = useState(0);
+  const [openDescIndex, setOpenDescIndex] = useState(-1);
   const [showAllDesc, setShowAllDesc] = useState(false);
 
   const [savedStayIds, setSavedStayIds] = useState(() => {
@@ -220,9 +220,9 @@ export default function HotelDetail({
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem", color: "var(--hotel-ink)", flexWrap: "wrap" }}>
-            <span style={{ color: "#dc1e26" }}>📍</span>
+            <span style={{ color: "#ff0000" }}>📍</span>
             <span>{stayLocation}</span>
-            <a href="#section-map" onClick={(e) => { e.preventDefault(); const el = document.getElementById("section-map"); if(el) el.scrollIntoView({behavior: "smooth"}); }} style={{ color: "#dc1e26", textDecoration: "none", fontWeight: 600, marginLeft: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+            <a href="#section-map" onClick={(e) => { e.preventDefault(); const el = document.getElementById("section-map"); if(el) el.scrollIntoView({behavior: "smooth"}); }} style={{ color: "#ff0000", textDecoration: "none", fontWeight: 600, marginLeft: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
               <img src="/location-pin.png" alt="Location" style={{ width: "18px", height: "18px", objectFit: "contain" }} /> Show in map
             </a>
           </div>
@@ -231,11 +231,11 @@ export default function HotelDetail({
         <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
           <button 
             onClick={toggleFavourite}
-            style={{ background: "none", border: "none", color: "#dc1e26", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "opacity 0.2s" }} 
+            style={{ background: "none", border: "none", color: "#ff0000", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "opacity 0.2s" }} 
             onMouseOver={e=>e.currentTarget.style.opacity=0.7} 
             onMouseOut={e=>e.currentTarget.style.opacity=1}
           >
-            <span style={{ fontSize: "1.2rem", color: "#dc1e26" }}>{isFavourite ? "♥" : "♡"}</span> {isFavourite ? "Added to Favourites" : "Add to Favourites"}
+            <span style={{ fontSize: "1.2rem", color: "#ff0000" }}>{isFavourite ? "♥" : "♡"}</span> {isFavourite ? "Added to Favourites" : "Add to Favourites"}
           </button>
           <button 
             onClick={() => {
@@ -246,7 +246,7 @@ export default function HotelDetail({
                 alert("Link copied to clipboard!");
               }
             }}
-            style={{ background: "none", border: "none", color: "#dc1e26", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "opacity 0.2s" }} 
+            style={{ background: "none", border: "none", color: "#ff0000", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "opacity 0.2s" }} 
             onMouseOver={e=>e.currentTarget.style.opacity=0.7} 
             onMouseOut={e=>e.currentTarget.style.opacity=1}
           >
@@ -449,16 +449,16 @@ export default function HotelDetail({
                 <button 
                   type="button" 
                   onClick={() => { handleSelectOffer(hotel.offers[0]); setCurrentStep(2); }}
-                  style={{ flex: 1, background: "#dc1e26", color: "#fff", border: "none", padding: "10px 4px", borderRadius: "8px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", transition: "background 0.2s" }}
+                  style={{ flex: 1, background: "#ff0000", color: "#fff", border: "none", padding: "10px 4px", borderRadius: "8px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", transition: "background 0.2s" }}
                   onMouseOver={(e) => e.target.style.background = "#b91920"}
-                  onMouseOut={(e) => e.target.style.background = "#dc1e26"}
+                  onMouseOut={(e) => e.target.style.background = "#ff0000"}
                 >
                   Reserve 1 Room
                 </button>
                 <button 
                   type="button" 
                   onClick={() => scrollToSection("Rooms")}
-                  style={{ flex: 1, background: "#fdf2f2", color: "#dc1e26", border: "1px solid #dc1e26", padding: "10px 4px", borderRadius: "8px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", transition: "background 0.2s" }}
+                  style={{ flex: 1, background: "#fdf2f2", color: "#ff0000", border: "1px solid #ff0000", padding: "10px 4px", borderRadius: "8px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", transition: "background 0.2s" }}
                   onMouseOver={(e) => e.target.style.background = "#fce8e8"}
                   onMouseOut={(e) => e.target.style.background = "#fdf2f2"}
                 >
@@ -531,7 +531,7 @@ export default function HotelDetail({
                   <button
                     type="button"
                     onClick={() => setShowAllDesc(!showAllDesc)}
-                    style={{ background: "transparent", color: "#dc1e26", border: "none", padding: "4px 8px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", marginTop: "4px" }}
+                    style={{ background: "transparent", color: "#ff0000", border: "none", padding: "4px 8px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", marginTop: "4px" }}
                     onMouseOver={(e) => e.currentTarget.style.textDecoration = "underline"}
                     onMouseOut={(e) => e.currentTarget.style.textDecoration = "none"}
                   >
@@ -609,7 +609,7 @@ export default function HotelDetail({
             <section style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
               <h3 style={{ margin: "0 0 12px 0", fontSize: "1.05rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Hotel Policies &amp; Information</h3>
               
-              {hotel.hotelPolicy && (
+              {hotel.hotelPolicy && (!hotel.policyAndInstruction || hotel.policyAndInstruction.length === 0) && (
                 <div style={{ marginBottom: "12px" }}>
                   <p style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: 0, lineHeight: "1.4" }}>{hotel.hotelPolicy}</p>
                 </div>
@@ -617,21 +617,64 @@ export default function HotelDetail({
 
               {hotel.policyAndInstruction && hotel.policyAndInstruction.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {hotel.policyAndInstruction.map((policy, idx) => (
-                    <div key={idx}>
-                      <strong style={{ display: "block", fontSize: "0.85rem", color: "var(--hotel-ink)", marginBottom: "4px" }}>
-                        {policy.name || policy.Name || "Policy"}
-                      </strong>
-                      {(policy.data || policy.Data || []).map((subPolicy, sIdx) => (
-                        <div key={sIdx} style={{ marginBottom: "6px" }}>
-                          {subPolicy.subName && <strong style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "block" }}>{subPolicy.subName}</strong>}
-                          {(subPolicy.detail || subPolicy.Detail || []).map((desc, dIdx) => (
-                            <p key={dIdx} style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 2px 0", lineHeight: "1.4" }}>• {desc}</p>
-                          ))}
+                  {(() => {
+                    const renderedTexts = new Set();
+                    return hotel.policyAndInstruction.reduce((acc, current) => {
+                      const name = current.name || current.Name || "Policy";
+                      const existing = acc.find(item => (item.name || item.Name || "Policy") === name);
+                      if (existing) {
+                        existing.data = [...(existing.data || existing.Data || []), ...(current.data || current.Data || [])];
+                      } else {
+                        acc.push({ ...current, data: [...(current.data || current.Data || [])] });
+                      }
+                      return acc;
+                    }, []).map((policy, idx) => {
+                      const policyName = policy.name || policy.Name || "Policy";
+                      
+                      const formattedData = (policy.data || []).map(subPolicy => {
+                        const details = (subPolicy.detail || subPolicy.Detail || []).map(desc => {
+                          let cleanDesc = desc;
+                          try {
+                            if (typeof desc === 'string' && (desc.trim().startsWith('{') || desc.trim().startsWith('['))) {
+                              const parsed = JSON.parse(desc);
+                              if (typeof parsed === 'object' && parsed !== null) {
+                                cleanDesc = Object.values(parsed).join(' ');
+                              }
+                            }
+                          } catch (e) {}
+                          return cleanDesc;
+                        }).filter(desc => {
+                          if (!desc) return false;
+                          const norm = String(desc).toLowerCase().replace(/[^a-z0-9]/g, '');
+                          if (renderedTexts.has(norm)) return false;
+                          renderedTexts.add(norm);
+                          return true;
+                        });
+                        return { ...subPolicy, finalDetails: details };
+                      }).filter(sub => sub.finalDetails.length > 0);
+
+                      if (formattedData.length === 0) return null;
+
+                      return (
+                        <div key={idx}>
+                          <strong style={{ display: "block", fontSize: "0.85rem", color: "var(--hotel-ink)", margin: "0 0 4px 0" }}>
+                            {policyName}
+                          </strong>
+                          {formattedData.map((subPolicy, sIdx) => {
+                            const showSubName = subPolicy.subName && subPolicy.subName.trim().toLowerCase() !== policyName.trim().toLowerCase();
+                            return (
+                              <div key={sIdx} style={{ marginBottom: "6px" }}>
+                                {showSubName && <strong style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "block" }}>{subPolicy.subName}</strong>}
+                                {subPolicy.finalDetails.map((desc, dIdx) => (
+                                  <p key={dIdx} style={{ fontSize: "0.78rem", color: "var(--hotel-muted)", margin: "0 0 2px 0", lineHeight: "1.4" }}>• {desc}</p>
+                                ))}
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  ))}
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </section>
@@ -665,7 +708,7 @@ export default function HotelDetail({
                       style={{ 
                         display: "flex", 
                         flexDirection: "column",
-                        border: isSelected ? "2px solid #dc1e26" : "1px solid rgba(0,0,0,0.06)", 
+                        border: isSelected ? "2px solid #ff0000" : "1px solid rgba(0,0,0,0.06)", 
                         borderRadius: "16px", 
                         background: isSelected ? "rgba(220,30,38,0.06)" : "#fff",
                         boxShadow: "0 4px 15px rgba(0,0,0,0.01)",
@@ -757,7 +800,7 @@ export default function HotelDetail({
                               fontSize: "0.8rem",
                               fontWeight: 700,
                               cursor: "pointer",
-                              background: isSelected ? "var(--hotel-rose)" : "#dc1e26",
+                              background: isSelected ? "var(--hotel-rose)" : "#ff0000",
                               color: "#fff",
                               border: "none",
                               transition: "all 0.15s ease"
@@ -799,7 +842,7 @@ export default function HotelDetail({
               <div style={{ marginBottom: "12px" }}>
                 <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Location</h3>
                 <p style={{ margin: "4px 0 0 0", color: "var(--hotel-muted)", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#dc1e26", fontSize: "1.1rem" }}>📍</span> {hotel.address}
+                  <span style={{ color: "#ff0000", fontSize: "1.1rem" }}>📍</span> {hotel.address}
                 </p>
               </div>
               <div style={{ position: "relative", width: "100%", height: "240px", borderRadius: "14px", overflow: "hidden", border: "1px solid var(--hotel-border)" }}>

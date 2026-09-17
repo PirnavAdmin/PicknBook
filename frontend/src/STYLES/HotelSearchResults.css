@@ -1,11 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
 
 .hotel-discover-page {
-  --hotel-brand: #dc1e26;
-  --hotel-brand-hover: #b8141b;
+  --hotel-brand: #ff0000;
+  --hotel-brand-hover: #ff0000;
   --hotel-brand-light: #fff0ef;
-  --hotel-rose: #dc1e26;
-  --hotel-rose-deep: #b8141b;
+  --hotel-rose: #ff0000;
+  --hotel-rose-deep: #ff0000;
   --hotel-emerald: #059669;
   --hotel-emerald-bg: #ecfdf5;
   --hotel-ink: #0f172a;
@@ -141,9 +141,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(220, 30, 38, 0.15);
-  color: #dc1e26;
-  border: 1px solid rgba(220, 30, 38, 0.3);
+  background: rgba(255, 0, 0, 0.15);
+  color: #ff0000;
+  border: 1px solid rgba(255, 0, 0, 0.3);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -164,7 +164,7 @@
 }
 
 .hotel-hero-highlight {
-  color: #dc1e26;
+  color: #ff0000;
 }
 
 /* SEARCH BAR - Bug Fix & Redesign: Single Cohesive Control */
@@ -236,14 +236,14 @@
   font-size: 0.94rem;
   font-weight: 700;
   background: var(--hotel-brand);
-  box-shadow: 0 4px 14px rgba(220, 30, 38, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.35);
   transition: all 0.2s ease;
 }
 
 .hotel-discover-searchbutton:hover {
   background: var(--hotel-brand-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(220, 30, 38, 0.45);
+  box-shadow: 0 6px 18px rgba(255, 0, 0, 0.45);
 }
 
 .hotel-discover-toolbar {
@@ -294,7 +294,7 @@
   color: #ffffff;
   background: var(--hotel-brand);
   border-color: var(--hotel-brand);
-  box-shadow: 0 4px 14px rgba(220, 30, 38, 0.4);
+  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.4);
 }
 
 /* Bug Fix #2: Distinct Sort and Filter Container with Separate Positioning Contexts */
@@ -368,7 +368,7 @@
 }
 
 .hotel-inline-alert--error {
-  color: #991b1b;
+  color: #ff0000;
   background: #fef2f2;
   border: 1px solid #fecaca;
 }
@@ -520,16 +520,16 @@
 }
 
 .hotel-stay-card.is-selected-card {
-  border-color: rgba(220, 30, 38, 0.5) !important;
-  box-shadow: 0 0 12px rgba(220, 30, 38, 0.25) !important;
+  border-color: rgba(255, 0, 0, 0.5) !important;
+  box-shadow: 0 0 12px rgba(255, 0, 0, 0.25) !important;
 }
 
 .hotel-stay-card:hover {
   transform: translateY(-5px);
   background: rgba(255, 255, 255, 0.9) !important;
-  border-color: rgba(220, 30, 38, 0.65) !important;
+  border-color: rgba(255, 0, 0, 0.65) !important;
   /* Red hover border */
-  box-shadow: 0 12px 40px rgba(220, 30, 38, 0.12) !important;
+  box-shadow: 0 12px 40px rgba(255, 0, 0, 0.12) !important;
 }
 
 .hotel-result-badges {
@@ -552,9 +552,9 @@
 }
 
 .hotel-meal-badge {
-  background: rgba(220, 30, 38, 0.1);
-  color: #b8141b;
-  border: 1px solid rgba(220, 30, 38, 0.2);
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff0000;
+  border: 1px solid rgba(255, 0, 0, 0.2);
 }
 
 .hotel-room-category-badge {
@@ -1095,8 +1095,8 @@
   gap: 7px;
   padding: 8px 16px 6px;
   border-radius: 999px;
-  border: 1px solid rgba(220, 30, 38, 0.25);
-  background: rgba(220, 30, 38, 0.06);
+  border: 1px solid rgba(255, 0, 0, 0.25);
+  background: rgba(255, 0, 0, 0.06);
   color: var(--hotel-rose-deep);
   font-size: 0.82rem;
   font-weight: 700;
@@ -1104,7 +1104,7 @@
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   vertical-align: middle;
-  box-shadow: 0 2px 10px rgba(220, 30, 38, 0.05);
+  box-shadow: 0 2px 10px rgba(255, 0, 0, 0.05);
 }
 
 .hotel-map-toggle-btn svg {
@@ -1123,7 +1123,7 @@
   color: #ffffff;
   border-color: var(--hotel-rose-deep);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(220, 30, 38, 0.2);
+  box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2);
 }
 
 .hotel-map-toggle-btn.is-active {
@@ -1478,10 +1478,10 @@
 }
 
 .hotel-filters-btn.is-active {
-  background: rgba(220, 30, 38, 0.3) !important;
-  border-color: #dc1e26 !important;
+  background: rgba(255, 0, 0, 0.3) !important;
+  border-color: #ff0000 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 15px rgba(220, 30, 38, 0.3);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
 }
 
 .hotel-filters-badge {
@@ -1525,10 +1525,10 @@
 }
 
 .hotel-glass-filter-pill.is-active {
-  background: rgba(220, 30, 38, 0.3) !important;
-  border-color: #dc1e26 !important;
+  background: rgba(255, 0, 0, 0.3) !important;
+  border-color: #ff0000 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 15px rgba(220, 30, 38, 0.3);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
 }
 
 /* Glass search bar overrides - translucent background and white text */
@@ -1556,13 +1556,13 @@
 }
 
 .hotel-discover-searchcell svg {
-  color: #dc1e26 !important;
-  stroke: #dc1e26 !important;
+  color: #ff0000 !important;
+  stroke: #ff0000 !important;
 }
 
 .hotel-discover-searchcell svg {
-  color: #dc1e26 !important;
-  stroke: #dc1e26 !important;
+  color: #ff0000 !important;
+  stroke: #ff0000 !important;
 }
 
 /* Inline sidebar filters style */
@@ -1669,8 +1669,8 @@
 .hotel-stay-card:hover {
   transform: translateY(-5px);
   background: rgba(255, 255, 255, 0.5) !important;
-  border-color: #dc1e26 !important;
-  box-shadow: 0 12px 30px rgba(220, 30, 38, 0.15) !important;
+  border-color: #ff0000 !important;
+  box-shadow: 0 12px 30px rgba(255, 0, 0, 0.15) !important;
 }
 
 /* Spacing and heights optimization to fit properly on screen */
@@ -1812,7 +1812,7 @@
 
 /* Red checked checkbox color symbol */
 .hotel-sidebar-filters-inline input[type="checkbox"] {
-  accent-color: #dc1e26 !important;
+  accent-color: #ff0000 !important;
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -1859,8 +1859,8 @@
   transform: translateY(-8px) scale(1.04) !important;
   z-index: 10 !important;
   background: rgba(255, 255, 255, 0.98) !important;
-  border-color: rgba(220, 30, 38, 0.85) !important;
-  box-shadow: 0 20px 40px rgba(220, 30, 38, 0.15) !important;
+  border-color: rgba(255, 0, 0, 0.85) !important;
+  box-shadow: 0 20px 40px rgba(255, 0, 0, 0.15) !important;
 }
 
 .hotel-results-count-group {

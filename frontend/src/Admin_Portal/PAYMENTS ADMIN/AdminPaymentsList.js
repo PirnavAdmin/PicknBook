@@ -859,8 +859,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
                 {viewingPayment.lastError && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px", background: "#fef2f2", padding: "12px", borderRadius: "8px", border: "1px solid #fecaca" }}>
-                    <span style={{ fontSize: "10px", color: "#dc2626", fontWeight: "700" }}>LAST GATEWAY / SYSTEM ERROR</span>
-                    <span style={{ fontSize: "12px", color: "#991b1b", fontFamily: "monospace" }}>{viewingPayment.lastError}</span>
+                    <span style={{ fontSize: "10px", color: "#ff0000", fontWeight: "700" }}>LAST GATEWAY / SYSTEM ERROR</span>
+                    <span style={{ fontSize: "12px", color: "#ff0000", fontFamily: "monospace" }}>{viewingPayment.lastError}</span>
                   </div>
                 )}
 
@@ -887,7 +887,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
             <form onSubmit={handleProcessRefund} style={{ padding: "16px 0 0" }}>
               {refundError && (
-                <p style={{ color: "#dc2626", background: "#fef2f2", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", marginBottom: "12px" }}>
+                <p style={{ color: "#ff0000", background: "#fef2f2", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", marginBottom: "12px" }}>
                   {refundError}
                 </p>
               )}

@@ -120,7 +120,7 @@ const DataTable = ({ headers, legend, data = [] }) => {
                         <span
                           style={{
                             backgroundColor: '#fee2e2',
-                            color: '#b91c1c',
+                            color: '#ff0000',
                             padding: '2px 8px',
                             borderRadius: '9999px',
                             fontSize: '9.9px',

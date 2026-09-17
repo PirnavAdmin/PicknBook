@@ -7,11 +7,11 @@
   --surface-border: #d2ddf1;
   --text: #11213f;
   --text-soft: #56678a;
-  --primary: var(--theme-primary, #dc1e26);
-  --primary-strong: var(--theme-primary-strong, #b8141b);
-  --accent: var(--theme-primary-strong, #b8141b);
+  --primary: var(--theme-primary, #ff0000);
+  --primary-strong: var(--theme-primary-strong, #ff0000);
+  --accent: var(--theme-primary-strong, #ff0000);
   --success: #1d7c51;
-  --danger: #b42318;
+  --danger: #ff0000;
   --shadow-lg: 0 18px 38px rgba(8, 18, 44, 0.18);
   --shadow-md: 0 12px 24px rgba(8, 18, 44, 0.12);
   --heading-font: "Space Grotesk", "Trebuchet MS", sans-serif;
@@ -103,7 +103,7 @@
 }
 
 .edit-profile-input.is-error {
-  border-color: #cf3f42;
+  border-color: #ff0000;
 }
 
 .edit-profile-error {
@@ -223,7 +223,7 @@
 }
 
 .edit-profile-upload-btn {
-  background: linear-gradient(135deg, var(--accent), #c64b10);
+  background: linear-gradient(135deg, var(--accent), #ff0000);
   color: #ffffff;
   padding: 0 14px;
   font-size: 0.648rem;

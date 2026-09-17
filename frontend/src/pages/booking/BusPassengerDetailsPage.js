@@ -263,12 +263,12 @@ function isCouponVisible(coupon) {
 function getFeaturedOfferIdentity(offer) {
   return String(
     offer?.selectedFeaturedOfferId ||
-      offer?.id ||
-      offer?.offerId ||
-      offer?.promotionId ||
-      offer?.offerCode ||
-      offer?.couponCode ||
-      ""
+    offer?.id ||
+    offer?.offerId ||
+    offer?.promotionId ||
+    offer?.offerCode ||
+    offer?.couponCode ||
+    ""
   )
     .trim()
     .toLowerCase();
@@ -300,8 +300,8 @@ function getPromotionDiscountAmount(pricingPreview, fallbackDiscount = 0) {
 function hasBackendConfirmedPromotion(pricingPreview) {
   return Boolean(
     pricingPreview?.appliedPromotionCode ||
-      pricingPreview?.appliedPromotionTitle ||
-      getPromotionDiscountAmount(pricingPreview, 0) > 0
+    pricingPreview?.appliedPromotionTitle ||
+    getPromotionDiscountAmount(pricingPreview, 0) > 0
   );
 }
 
@@ -498,15 +498,15 @@ export default function BusPassengerDetailsPage() {
 
   const initialFareSummary = flowState.fareSummary || (() => {
     const baseFareSum = selectedSeats.reduce((sum, seat) => sum + resolvedSeatBaseFare(seat), 0);
-    const taxSum      = selectedSeats.reduce((sum, seat) => sum + (Number(seat?.tax) || Number(seat?.gstAmount) || 0), 0);
-    const total       = baseFareSum + taxSum;
+    const taxSum = selectedSeats.reduce((sum, seat) => sum + (Number(seat?.tax) || Number(seat?.gstAmount) || 0), 0);
+    const total = baseFareSum + taxSum;
     return { baseFare: baseFareSum, subtotalBeforeCoupon: baseFareSum, tax: taxSum, gstAmount: taxSum, convenienceFee: 0, totalFare: total, grandTotal: total };
   })();
 
   const [pricingPreview, setPricingPreview] = useState(() => {
-    const baseFareSum  = selectedSeats.reduce((sum, seat) => sum + resolvedSeatBaseFare(seat), 0);
-    const seatTax      = selectedSeats.reduce((sum, seat) => sum + (Number(seat?.tax) || Number(seat?.gstAmount) || 0), 0);
-    const grandTotal   = baseFareSum + seatTax;
+    const baseFareSum = selectedSeats.reduce((sum, seat) => sum + resolvedSeatBaseFare(seat), 0);
+    const seatTax = selectedSeats.reduce((sum, seat) => sum + (Number(seat?.tax) || Number(seat?.gstAmount) || 0), 0);
+    const grandTotal = baseFareSum + seatTax;
 
     if (flowState.pricingPreview) {
       const p = flowState.pricingPreview;
@@ -829,13 +829,13 @@ export default function BusPassengerDetailsPage() {
       selectedFeaturedOfferId !== null && selectedFeaturedOfferId !== undefined && selectedFeaturedOfferId !== ""
         ? selectedFeaturedOfferId
         : promotionId !== null && promotionId !== undefined && promotionId !== ""
-        ? promotionId
-        : null;
+          ? promotionId
+          : null;
     const couponCodeParam = featuredOfferIdParam
       ? null
       : couponCode
-      ? String(couponCode).trim().toUpperCase()
-      : null;
+        ? String(couponCode).trim().toUpperCase()
+        : null;
 
     setIsCalculatingPrice(true);
     try {
@@ -952,21 +952,21 @@ export default function BusPassengerDetailsPage() {
 
     const initialFeaturedOfferId = validatedContextOffer
       ? (
-          validatedContextOffer.selectedFeaturedOfferId ||
-          validatedContextOffer.id ||
-          validatedContextOffer.offerId ||
-          validatedContextOffer.promotionId ||
-          null
-        )
+        validatedContextOffer.selectedFeaturedOfferId ||
+        validatedContextOffer.id ||
+        validatedContextOffer.offerId ||
+        validatedContextOffer.promotionId ||
+        null
+      )
       : (
-          flowState.selectedFeaturedOfferId ||
-          flowState.selectedOffer?.selectedFeaturedOfferId ||
-          flowState.selectedOffer?.id ||
-          flowState.selectedOffer?.offerId ||
-          flowState.promotionId ||
-          flowState.selectedOffer?.promotionId ||
-          null
-        );
+        flowState.selectedFeaturedOfferId ||
+        flowState.selectedOffer?.selectedFeaturedOfferId ||
+        flowState.selectedOffer?.id ||
+        flowState.selectedOffer?.offerId ||
+        flowState.promotionId ||
+        flowState.selectedOffer?.promotionId ||
+        null
+      );
     const initialCouponCode = initialFeaturedOfferId ? null : (flowState.couponCode || null);
     loadPricingPreview({ selectedFeaturedOfferId: initialFeaturedOfferId, couponCode: initialCouponCode })
       .then((preview) => {
@@ -996,7 +996,7 @@ export default function BusPassengerDetailsPage() {
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -1016,8 +1016,8 @@ export default function BusPassengerDetailsPage() {
             </button>
           </section>
         </div>
-        </main>
-      );
+      </main>
+    );
   }
 
   const updatePassenger = (index, field, value) => {
@@ -1080,12 +1080,12 @@ export default function BusPassengerDetailsPage() {
       previous.map((passenger, i) =>
         i === index
           ? {
-              ...passenger,
-              [field]: nextValue,
-              ...(field === "mobile" ? { phone: nextValue } : {}),
-              ...(targetTitle !== undefined ? { title: targetTitle } : {}),
-              ...(targetGender !== undefined ? { gender: targetGender } : {}),
-            }
+            ...passenger,
+            [field]: nextValue,
+            ...(field === "mobile" ? { phone: nextValue } : {}),
+            ...(targetTitle !== undefined ? { title: targetTitle } : {}),
+            ...(targetGender !== undefined ? { gender: targetGender } : {}),
+          }
           : passenger
       )
     );
@@ -1344,12 +1344,12 @@ export default function BusPassengerDetailsPage() {
         prev.map((passenger, i) =>
           i === index
             ? {
-                ...passenger,
-                selectedTravelerId: "",
-                email: "",
-                mobile: "",
-                phone: "",
-              }
+              ...passenger,
+              selectedTravelerId: "",
+              email: "",
+              mobile: "",
+              phone: "",
+            }
             : passenger
         )
       );
@@ -1409,19 +1409,19 @@ export default function BusPassengerDetailsPage() {
       prev.map((passenger, i) =>
         i === index
           ? {
-              ...passenger,
-              selectedTravelerId: travelerId,
-              title:     finalTitle || "Mr",
-              firstName: found.firstName || "",
-              lastName:  found.lastName  || "",
-              gender:    finalGender || "Male",
-              age:       found.age       ? String(found.age) : "",
-              idNumber:  found.idNumber || found.aadhaar || found.idCardNumber || found.idNo || "",
-              idType:    found.idType || "Aadhar",
-              email:     travelerEmail,
-              mobile:    travelerMobile,
-              phone:     travelerMobile,
-            }
+            ...passenger,
+            selectedTravelerId: travelerId,
+            title: finalTitle || "Mr",
+            firstName: found.firstName || "",
+            lastName: found.lastName || "",
+            gender: finalGender || "Male",
+            age: found.age ? String(found.age) : "",
+            idNumber: found.idNumber || found.aadhaar || found.idCardNumber || found.idNo || "",
+            idType: found.idType || "Aadhar",
+            email: travelerEmail,
+            mobile: travelerMobile,
+            phone: travelerMobile,
+          }
           : passenger
       )
     );
@@ -1708,12 +1708,12 @@ export default function BusPassengerDetailsPage() {
     const finalCouponCode = isFeatured ? null : (appliedCoupon?.couponCode || manualCouponCode || null);
     const finalFeaturedOfferId = isFeatured
       ? (
-          selectedFeaturedOffer.selectedFeaturedOfferId ||
-          selectedFeaturedOffer.id ||
-          selectedFeaturedOffer.offerId ||
-          selectedFeaturedOffer.promotionId ||
-          null
-        )
+        selectedFeaturedOffer.selectedFeaturedOfferId ||
+        selectedFeaturedOffer.id ||
+        selectedFeaturedOffer.offerId ||
+        selectedFeaturedOffer.promotionId ||
+        null
+      )
       : null;
 
     const blockPayload = {
@@ -1917,7 +1917,7 @@ export default function BusPassengerDetailsPage() {
         )}
 
       </div>
-      );
+    );
   };
 
   return (
@@ -2069,8 +2069,8 @@ export default function BusPassengerDetailsPage() {
                                   {t.mobile
                                     ? ` — ${t.mobile}`
                                     : t.email
-                                    ? ` — ${t.email}`
-                                    : ""}
+                                      ? ` — ${t.email}`
+                                      : ""}
                                 </option>
                               ))
                             )}
@@ -2083,7 +2083,7 @@ export default function BusPassengerDetailsPage() {
                         renderPassengerFields(passenger, index)
                       )}
                     </div>
-      );
+                  );
                 })}
               </div>
             </article>
@@ -2305,7 +2305,7 @@ export default function BusPassengerDetailsPage() {
                         checked={useWallet}
                         onChange={(event) => setUseWallet(event.target.checked)}
                         disabled={!walletSummary || walletStatus !== "Active" || walletBalance <= 0}
-                        style={{ width: "18px", height: "18px", accentColor: "var(--flow-primary, #dc1e26)" }}
+                        style={{ width: "18px", height: "18px", accentColor: "var(--flow-primary, #ff0000)" }}
                       />
                       <span>
                         Use PickNBook Wallet
@@ -2372,7 +2372,7 @@ export default function BusPassengerDetailsPage() {
                       >{isApplyingCoupon ? "Applying..." : "APPLY"}</button>
                     )}
                   </div>
-                  
+
                   {selectedFeaturedOffer && (
                     <p className="coupon-featured-note">
                       Featured offer applied. Remove it to use a manual coupon.
@@ -2397,20 +2397,19 @@ export default function BusPassengerDetailsPage() {
                           const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
                           const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
                           const discountLabel = offer.isPercentageDiscount
-                              ? `${offer.discountValue}% OFF`
-                              : `₹${offer.discountValue} OFF`;
+                            ? `${offer.discountValue}% OFF`
+                            : `₹${offer.discountValue} OFF`;
                           const appliedTitle = isThisSelected && pricingPreview?.appliedPromotionTitle
-                              ? pricingPreview.appliedPromotionTitle
-                              : offer.title;
+                            ? pricingPreview.appliedPromotionTitle
+                            : offer.title;
 
                           const code = offer.couponCode || "OFFER";
 
                           return (
                             <div
                               key={offer.offerId || offer.id || offer.couponCode}
-                              className={`coupon-voucher-card coupon-featured-offer${isThisSelected ? " is-selected" : ""}${
-                                anotherOfferSelected ? " is-muted" : ""
-                              }`}
+                              className={`coupon-voucher-card coupon-featured-offer${isThisSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""
+                                }`}
                             >
                               <div className="voucher-header">
                                 <span className="voucher-discount">{discountLabel}</span>
@@ -2453,7 +2452,7 @@ export default function BusPassengerDetailsPage() {
                                 </div>
                               </div>
                             </div>
-      );
+                          );
                         })}
                       </div>
                     </div>
@@ -2477,9 +2476,8 @@ export default function BusPassengerDetailsPage() {
                           return (
                             <div
                               key={coupon.id || idx}
-                              className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${
-                                anotherOfferSelected ? " is-muted" : ""
-                              }`}
+                              className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""
+                                }`}
                             >
                               <div className="voucher-header">
                                 <span className="voucher-discount">{discountLabel}</span>
@@ -2522,7 +2520,7 @@ export default function BusPassengerDetailsPage() {
                                 </div>
                               </div>
                             </div>
-      );
+                          );
                         })}
                       </div>
                     </div>
@@ -2535,12 +2533,12 @@ export default function BusPassengerDetailsPage() {
         </section>
 
       </div>
-        {isModalOpen && checkoutPayload && (
-        <BookingConfirmationModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          bookingType="Bus" 
-          flowState={checkoutPayload} 
+      {isModalOpen && checkoutPayload && (
+        <BookingConfirmationModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          bookingType="Bus"
+          flowState={checkoutPayload}
           onSuccess={async (res) => {
             if (res.paymentMethod === "Wallet" || res.paymentMethod === "Agent Wallet") {
               try {
@@ -2552,7 +2550,7 @@ export default function BusPassengerDetailsPage() {
                   gatewayPayableAmount: Number(res.gatewayPayableAmount || 0),
                 };
                 const bookRes = await bookBusProxy(bookPayload);
-                
+
                 // On success, bookRes should have { Reservation, Bus, Passengers, Response (ticket) }
                 navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });
               } catch (err) {
@@ -2564,7 +2562,7 @@ export default function BusPassengerDetailsPage() {
               // Cashfree redirect handles booking externally, but fallback here if needed
               navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
             }
-          }} 
+          }}
         />
       )}
     </main>

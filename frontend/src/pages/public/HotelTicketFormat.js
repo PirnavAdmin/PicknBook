@@ -120,7 +120,7 @@ export default function HotelTicketFormat({
               style={{
                 width: "45px",
                 height: "3px",
-                background: "#dc2626",
+                background: "#ff0000",
                 margin: "6px auto 0",
                 borderRadius: "2px",
               }}
@@ -140,7 +140,7 @@ export default function HotelTicketFormat({
             <strong
               style={{
                 fontSize: "1.1rem",
-                color: "#dc2626",
+                color: "#ff0000",
                 fontWeight: 800,
                 display: "flex",
                 alignItems: "center",
@@ -512,7 +512,7 @@ export default function HotelTicketFormat({
                 margin: "0 0 10px",
                 fontSize: "0.88rem",
                 fontWeight: 800,
-                color: "#dc2626",
+                color: "#ff0000",
               }}
             >
               👤 Guest Details
@@ -589,7 +589,7 @@ export default function HotelTicketFormat({
                 margin: "0 0 10px",
                 fontSize: "0.88rem",
                 fontWeight: 800,
-                color: "#dc2626",
+                color: "#ff0000",
               }}
             >
               🛏 Room Details
@@ -713,7 +713,7 @@ export default function HotelTicketFormat({
                 margin: "0 0 10px",
                 fontSize: "0.88rem",
                 fontWeight: 800,
-                color: "#dc2626",
+                color: "#ff0000",
               }}
             >
               💳 Payment Details
@@ -764,7 +764,7 @@ export default function HotelTicketFormat({
                   paddingTop: "6px",
                   marginTop: "2px",
                   fontSize: "0.85rem",
-                  color: "#dc2626",
+                  color: "#ff0000",
                 }}
               >
                 <span style={{ fontWeight: 800 }}>Total Paid</span>
@@ -839,7 +839,7 @@ export default function HotelTicketFormat({
                 margin: "0 0 10px",
                 fontSize: "0.88rem",
                 fontWeight: 800,
-                color: "#dc2626",
+                color: "#ff0000",
               }}
             >
               🏷️ Offers Applied
@@ -1109,7 +1109,7 @@ export default function HotelTicketFormat({
             <strong
               style={{
                 fontSize: "0.82rem",
-                color: "#dc2626",
+                color: "#ff0000",
                 display: "block",
                 marginTop: "1px",
               }}
@@ -1137,7 +1137,7 @@ export default function HotelTicketFormat({
           style={{
             height: "40px",
             padding: "0 22px",
-            background: "#dc2626",
+            background: "#ff0000",
             color: "#fff",
             border: "none",
             borderRadius: "8px",

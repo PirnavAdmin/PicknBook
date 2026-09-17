@@ -968,7 +968,7 @@ const AllPages = () => {
             </div>
 
             {editError && (
-              <div style={{ background: "#fef2f2", color: "#b91c1c", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", border: "1px solid #fecaca" }}>
+              <div style={{ background: "#fef2f2", color: "#ff0000", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", border: "1px solid #fecaca" }}>
                 {editError}
               </div>
             )}

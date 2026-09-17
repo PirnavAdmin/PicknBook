@@ -463,7 +463,7 @@ export default function BusBookings() {
               <tbody>
                 {filteredBookings.map((booking) => {
                   const displayStatus = getDisplayStatus(booking);
-                  const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
+                  const bookedAt = formatBookedAt(booking.createdAt || booking.createdAtUtc || booking.bookingDate || booking.bookedAt || booking.bookedAtUtc || booking.entryDate || booking.entryDateUtc);
                   const totalFormatted = Number(booking.totalPriceInr || booking.totalAmount || 0).toLocaleString("en-IN");
 
                   return (
@@ -594,8 +594,8 @@ export default function BusBookings() {
               )}
               {selectedBooking.cancellationChargeInr > 0 && (
                 <div>
-                  <span style={{ color: "#dc2626" }}>Cancellation Fee</span>
-                  <strong style={{ color: "#dc2626" }}>{formatCurrency(selectedBooking.cancellationChargeInr)}</strong>
+                  <span style={{ color: "#ff0000" }}>Cancellation Fee</span>
+                  <strong style={{ color: "#ff0000" }}>{formatCurrency(selectedBooking.cancellationChargeInr)}</strong>
                 </div>
               )}
               <div>
@@ -695,7 +695,7 @@ export default function BusBookings() {
                       <button
                         type="button"
                         className="ops-icon-btn primary"
-                        style={{ padding: "6px 12px", background: "#dc1e26", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
+                        style={{ padding: "6px 12px", background: "#ff0000", color: "#ffffff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontSize: 11.5, alignSelf: "flex-end" }}
                         onClick={handleCancelSelectedPassengers}
                         disabled={isCancellingPassengers}
                       >

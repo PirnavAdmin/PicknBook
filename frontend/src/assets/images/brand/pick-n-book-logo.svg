@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 222 82" role="img" aria-labelledby="title desc">
-  <title id="title">Pick N Book</title>
-  <desc id="desc">Pick N Book brand logo</desc>
+  <title id="title">Pick &amp; Book</title>
+  <desc id="desc">Pick &amp; Book brand logo</desc>
   <rect width="222" height="82" fill="none"/>
   <text x="0" y="52" fill="#111827" font-family="Plus Jakarta Sans, Segoe UI, Arial, sans-serif" font-size="35" font-weight="800" letter-spacing="-1.1">Pick</text>
   <path d="M76 68 C80 49 84 29 89 10" fill="none" stroke="#dc1e26" stroke-width="10" stroke-linecap="round"/>

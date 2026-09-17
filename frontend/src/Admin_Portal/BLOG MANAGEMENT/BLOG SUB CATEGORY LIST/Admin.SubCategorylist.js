@@ -495,7 +495,7 @@ function BlogSubCategoryList() {
         },
         statusInactive: {
             background: '#fef2f2',
-            color: '#b91c1c',
+            color: '#ff0000',
             borderColor: '#ef4444',
         },
         actionButtons: {
@@ -788,7 +788,7 @@ function BlogSubCategoryList() {
                                 <div>
                                     <strong style={{ color: 'var(--text-secondary)' }}>Status:</strong>
                                     <div>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedSubCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedSubCategory.status === 'Active' ? '#047857' : '#b91c1c', border: selectedSubCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedSubCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedSubCategory.status === 'Active' ? '#047857' : '#ff0000', border: selectedSubCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
                                             {selectedSubCategory.status}
                                         </div>
                                     </div>

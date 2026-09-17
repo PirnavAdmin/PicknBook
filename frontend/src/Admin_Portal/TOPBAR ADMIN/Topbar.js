@@ -1503,7 +1503,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     borderRadius: '10px',
                     background: toast.type === 'success' ? '#ecfdf5' : '#fef2f2',
                     border: `1px solid ${toast.type === 'success' ? '#10b981' : '#ef4444'}`,
-                    color: toast.type === 'success' ? '#065f46' : '#991b1b',
+                    color: toast.type === 'success' ? '#065f46' : '#ff0000',
                     fontSize: '0.88rem',
                     fontWeight: 'bold',
                     boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',

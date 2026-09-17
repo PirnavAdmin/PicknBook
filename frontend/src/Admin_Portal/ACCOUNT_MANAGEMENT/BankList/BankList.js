@@ -530,9 +530,9 @@ export default function BankList() {
                 <h3 style={{ margin: '4px 0 2px', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
                   {accounts.filter(a => a.status === 'Inactive').length}
                 </h3>
-                <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 500 }}>↓ 50% from last month</span>
+                <span style={{ fontSize: '11px', color: '#ff0000', fontWeight: 500 }}>↓ 50% from last month</span>
               </div>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fee2e2', color: '#ff0000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <XCircle size={18} />
               </div>
             </div>
@@ -754,7 +754,7 @@ export default function BankList() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
                 <thead>
-                  <tr style={{ background: '#fff1f2', borderBottom: '1px solid #fecdd3', color: '#9f1239', fontWeight: 600 }}>
+                  <tr style={{ background: '#fff1f2', borderBottom: '1px solid #fecdd3', color: '#ff0000', fontWeight: 600 }}>
                     <th style={{ padding: '10px 10px' }}>#</th>
                     <th style={{ padding: '10px 10px' }}>Bank ID</th>
                     <th style={{ padding: '10px 10px' }}>Bank Name</th>
@@ -834,7 +834,7 @@ export default function BankList() {
                           fontSize: '10px',
                           fontWeight: 600,
                           background: row.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                          color: row.status === 'Active' ? '#15803d' : '#991b1b'
+                          color: row.status === 'Active' ? '#15803d' : '#ff0000'
                         }}>
                           {row.status}
                         </span>
@@ -980,7 +980,7 @@ export default function BankList() {
                                 border: 'none',
                                 textAlign: 'left',
                                 fontSize: '11px',
-                                color: '#dc2626',
+                                color: '#ff0000',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -988,7 +988,7 @@ export default function BankList() {
                                 borderTop: '1px solid #f1f5f9'
                               }}
                             >
-                              <Trash2 size={12} color="#dc2626" /> Delete
+                              <Trash2 size={12} color="#ff0000" /> Delete
                             </button>
                           </div>
                         )}
@@ -1510,7 +1510,7 @@ export default function BankList() {
                   fontSize: '11px',
                   fontWeight: 600,
                   background: selectedItem.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                  color: selectedItem.status === 'Active' ? '#15803d' : '#991b1b'
+                  color: selectedItem.status === 'Active' ? '#15803d' : '#ff0000'
                 }}>
                   {selectedItem.status}
                 </span>
@@ -1648,7 +1648,7 @@ export default function BankList() {
                 </div>
                 <div>
                   <span style={{ color: '#64748b' }}>Status:</span>
-                  <span style={{ float: 'right', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.status === 'Active' ? '#dcfce7' : '#fee2e2', color: selectedItem.status === 'Active' ? '#15803d' : '#991b1b' }}>
+                  <span style={{ float: 'right', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.status === 'Active' ? '#dcfce7' : '#fee2e2', color: selectedItem.status === 'Active' ? '#15803d' : '#ff0000' }}>
                     {selectedItem.status}
                   </span>
                 </div>

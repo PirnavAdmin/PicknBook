@@ -406,11 +406,11 @@ function SiteSetting() {
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            color: "#9f1239",
+            color: "#ff0000",
             fontSize: "0.8rem",
             fontWeight: 600
           }}>
-            <Info size={16} style={{ color: "#e11d48", flexShrink: 0 }} />
+            <Info size={16} style={{ color: "#ff0000", flexShrink: 0 }} />
             <span>Note: Changes made here will be reflected on the website as per the active status and configurations.</span>
           </div>
 
@@ -501,7 +501,7 @@ function SiteSetting() {
                 fontWeight: 700,
                 alignSelf: "flex-start",
                 background: settings.websiteStatus === "Active" ? "#dcfce7" : "#fee2e2",
-                color: settings.websiteStatus === "Active" ? "#15803d" : "#b91c1c"
+                color: settings.websiteStatus === "Active" ? "#15803d" : "#ff0000"
               }}>
                 {settings.websiteStatus}
               </span>
@@ -521,7 +521,7 @@ function SiteSetting() {
                 fontWeight: 700,
                 alignSelf: "flex-start",
                 background: settings.maintenanceMode === "Enabled" ? "#fee2e2" : "#f1f5f9",
-                color: settings.maintenanceMode === "Enabled" ? "#b91c1c" : "#475569"
+                color: settings.maintenanceMode === "Enabled" ? "#ff0000" : "#475569"
               }}>
                 {settings.maintenanceMode}
               </span>

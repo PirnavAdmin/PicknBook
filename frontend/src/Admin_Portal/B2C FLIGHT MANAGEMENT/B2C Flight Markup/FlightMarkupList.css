@@ -499,7 +499,7 @@
 
 .flight-markup-panel .status-badge.inactive {
   background: rgba(239, 68, 68, 0.14);
-  color: #dc2626;
+  color: #ff0000;
 }
 
 .admin-shell.light-theme .flight-markup-panel .flight-markup-action-btn.primary,

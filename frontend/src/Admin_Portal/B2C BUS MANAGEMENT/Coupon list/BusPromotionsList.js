@@ -1030,7 +1030,7 @@ export default function AdminBusCouponListPage() {
                         <span style={{ color: "#047857", fontWeight: "500" }}>
                           Start: {formatCouponDateTime(coupon.startDate)}
                         </span>
-                        <span style={{ color: "#b91c1c", fontWeight: "500" }}>
+                        <span style={{ color: "#ff0000", fontWeight: "500" }}>
                           Expiry: {formatCouponDateTime(coupon.expiryDate)}
                         </span>
                       </div>
@@ -1552,7 +1552,7 @@ export default function AdminBusCouponListPage() {
 
                 <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
                   <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Expiry Date</span>
-                  <div style={{ fontWeight: 600, marginTop: "4px", color: "#b91c1c", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.expiryDate)}</div>
+                  <div style={{ fontWeight: 600, marginTop: "4px", color: "#ff0000", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.expiryDate)}</div>
                 </div>
 
                 {(viewingCoupon.entryDateUtc || viewingCoupon.entryDate) && (
@@ -1591,7 +1591,7 @@ export default function AdminBusCouponListPage() {
                       fontSize: "11px",
                       fontWeight: "700",
                       background: String(viewingCoupon.status).toLowerCase() === "active" ? "#dcfce7" : "#fee2e2",
-                      color: String(viewingCoupon.status).toLowerCase() === "active" ? "#166534" : "#991b1b"
+                      color: String(viewingCoupon.status).toLowerCase() === "active" ? "#166534" : "#ff0000"
                     }}>
                       {String(viewingCoupon.status).toLowerCase() === "active" ? "Active" : "Inactive"}
                     </span>
@@ -1705,7 +1705,7 @@ export default function AdminBusCouponListPage() {
             </div>
 
             {conditionError && (
-              <div style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca", padding: "10px 14px", borderRadius: "8px", fontSize: "13px", marginBottom: "16px" }}>
+              <div style={{ background: "#fef2f2", color: "#ff0000", border: "1px solid #fecaca", padding: "10px 14px", borderRadius: "8px", fontSize: "13px", marginBottom: "16px" }}>
                 {conditionError}
               </div>
             )}
@@ -1795,7 +1795,7 @@ export default function AdminBusCouponListPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteCondition(cond.id)}
-                      style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                      style={{ background: "#fef2f2", color: "#ff0000", border: "1px solid #fecaca", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
                     >
                       Remove
                     </button>
@@ -2076,7 +2076,7 @@ export default function AdminBusCouponListPage() {
             style={{ width: "90%", maxWidth: "480px", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
           >
             <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#b91c1c", fontWeight: 700 }}>Delete Promotion</h3>
+              <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#ff0000", fontWeight: 700 }}>Delete Promotion</h3>
               <button 
                 type="button" 
                 onClick={() => setDeleteCoupon(null)}

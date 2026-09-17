@@ -67,7 +67,7 @@ import flightSectionNewBanner from "../../assets/images/image.png";
 import flightLandingImage from "../../assets/images/landing.png";
 import flightHeroThemeImg from "../../assets/images/illustrations/flight-hero-theme.png";
 import flightHeroThemeVideo from "../../assets/images/Give_me_a_background_screen_HD_1080p.mp4";
-import busHeroVideo from "../../assets/images/illustrations/Bus.herobanner.mp4";
+import busHeroVideo from "../../assets/images/picknbook bus hero.mp4";
 import hotelHeroVideo from "../../assets/images/illustrations/hotel banner video.mp4";
 import hotelSectionBanner from "../../assets/images/illustrations/hotel-reception-banner.jpg";
 import hotelEntranceBanner from "../../assets/images/illustrations/hotel-entrance-banner.jpg";
@@ -82,6 +82,7 @@ const flightLandingBanner = flightSectionBanner;
 const flightTerminalSunset = flightLandingImage;
 import picknbookLogin from "../../assets/images/picknbook-login.png";
 import picknbookAllTravelBanner from "../../assets/images/illustrations/picknbook-all-travel-banner.jpg";
+import picknbookScenicPanoramaBanner from "../../assets/images/illustrations/picknbook-scenic-panorama-banner.jpg";
 const hikerLandscapeBg = picknbookAllTravelBanner;
 import airIndiaExpress from "../../assets/images/brands/air-india-express.png";
 import airIndia from "../../assets/images/brands/air-india.png";
@@ -96,6 +97,7 @@ import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
 import offerCardBusImg from "../../assets/images/illustrations/bus-coast-banner.jpg";
 import offerCardFlightImg from "../../assets/images/illustrations/flight-section-banner.png";
 import offerCardHotelImg from "../../assets/images/illustrations/hotel-reception-banner.jpg";
+const BUS_OFFER_IMAGES = [busCoastBanner, intercityBusBanner];
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
 import CustomDatePicker from "../../components/CustomDatePicker";
@@ -1062,10 +1064,10 @@ const HOME_GUIDE_NOTES = [
 const HOME_SERVICE_BLOCKS = [
   {
     id: "services",
-    kicker: "Pick N Book Services",
+    kicker: "Pick & Book Services",
     title: "Online Bus Booking Made Simple",
     text:
-      "Search routes, compare departures, check fares, and keep booking details in one clear flow. Pick N Book is built for quick city-to-city planning without jumping between different tools.",
+      "Search routes, compare departures, check fares, and keep booking details in one clear flow. Pick & Book is built for quick city-to-city planning without jumping between different tools.",
     points: [
       "Live route search with practical filters",
       "Boarding, dropping, and timing details in one place",
@@ -1137,25 +1139,25 @@ const HOME_BUS_FAQS = [
     id: "faq-1",
     question: "How do I book bus tickets online?",
     answer:
-      "Choose your source, destination, journey date, and preferred bus. Then select seats, add passenger details, and complete payment to receive your ticket confirmation.",
+      "Booking bus tickets online on Pick & Book is simple, fast, and secure:\n\n1. Search Routes: Enter your origin city, destination, and travel date, then click 'Search Buses'.\n2. Compare & Filter: Choose from government RTCs and top private fleet operators. Filter results by AC/Non-AC, Seater/Sleeper, departure timing, fare, and boarding points.\n3. Select Your Preferred Seat: Open the interactive live seat layout to select window, aisle, or sleeper berths (lower/upper). Female-friendly seats are clearly marked for privacy and safety.\n4. Pick Boarding & Dropping Points: Select the most convenient pickup and drop-off points closest to you with exact landmarks and arrival times.\n5. Secure Payment & Instant Confirmation: Fill in passenger details, apply promotional discount coupons, and complete payment via UPI, Credit/Debit Card, Net Banking, or mobile wallets. You will instantly receive your confirmed m-ticket via WhatsApp, SMS, and email.",
   },
   {
     id: "faq-2",
     question: "Can I book RTC and private bus operators?",
     answer:
-      "Yes. The platform is designed for common routes across RTC operators and private buses, including seater, sleeper, AC, non-AC, and overnight journeys.",
+      "Yes, Pick & Book is an authorized booking platform for all major government RTC corporations as well as over 2,500+ premier private bus operators across India:\n\n• Government State RTCs: Book official tickets for APSRTC, TSRTC, KSRTC (Karnataka), MSRTC, HRTC, GSRTC, UPSRTC, RSRTC, and more with scheduled reliability.\n• Premium Private Operators: Choose from leading private fleets such as IntrCity SmartBus, VRL Travels, SRS Travels, Orange Tours, Zingbus, Kallada, and SRM.\n• Diverse Bus Types: Select from multi-axle Volvo AC Sleeper, Scania Luxury, BharatBenz, Mercedes-Benz, Non-AC Seater, and semi-sleepers equipped with charging sockets, blankets, water bottles, and GPS tracking.",
   },
   {
     id: "faq-3",
     question: "What should I check before payment?",
     answer:
-      "Always check the final fare, boarding point, cancellation rules, passenger details, and operator policy before payment.",
+      "Before finalizing your payment, ensure you review the following important trip details:\n\n• Boarding & Dropping Locations: Verify the exact boarding point address, landmark, and scheduled reporting time. We recommend reaching 15–30 minutes before departure.\n• Journey Date & Midnight Departure Timing: For bus trips departing between 12:00 AM and 3:00 AM, double-check that you have selected the correct calendar date.\n• Passenger Information: Ensure passenger names, age, and gender are entered accurately and match valid government ID proofs. An accurate mobile number is essential for SMS/WhatsApp ticket updates.\n• Cancellation & Refund Policies: Check the operator-specific cancellation slabs and refund timeline to understand deduction charges if your plans change.\n• Seat & Berth Preference: Confirm your chosen seat/berth numbers and whether you selected lower or upper berths based on your convenience.",
   },
   {
     id: "faq-4",
     question: "Where can I check boarding point and ticket details?",
     answer:
-      "After booking, your ticket page shows route, date, boarding point, passenger details, fare summary, and confirmation reference for quick access.",
+      "Your boarding point and confirmed ticket details are accessible anytime across multiple channels:\n\n• Instant SMS & WhatsApp Notification: As soon as your booking succeeds, a confirmation message containing your PNR, bus operator contact, assigned seat numbers, and bus details is sent to your phone.\n• Email E-Ticket: A complete PDF ticket and tax invoice with fare breakdown and terms is delivered to your inbox.\n• 'My Bookings' Dashboard: Log in to your Pick & Book profile and navigate to 'My Bookings' to view, download, print, or cancel tickets with 1-click.\n• GPS Boarding Location: Your ticket includes a direct Google Maps link for the designated pickup stop, making navigation seamless.\n• Live Bus Tracking: A live GPS tracking link is typically sent via SMS 30–60 minutes before scheduled departure so you can monitor your bus in real time.",
   },
 ];
 
@@ -1350,25 +1352,25 @@ const HOME_FLIGHT_FAQS = [
     id: "flight-faq-1",
     question: "How do I search for flights online?",
     answer:
-      "Choose source, destination, departure date, traveller count, and cabin class. For return or multi-city trips, add the extra dates and routes before searching.",
+      "Searching for flights on Pick & Book is fast and intuitive:\n\n1. Enter your origin departure airport and final destination city.\n2. Choose your journey date (and return date if planning a round trip, or add legs for multi-city routes).\n3. Select traveller count (Adults, Children, Infants) and preferred cabin class (Economy, Premium Economy, Business, First Class).\n4. Click 'Search Flights' to compare real-time airline fares, non-stop vs connecting routes, baggage allowances, and departure schedules across IndiGo, Air India, SpiceJet, Akasa Air, and international carriers.",
   },
   {
     id: "flight-faq-2",
     question: "Can I search one-way, round-trip, and multi-city flights?",
     answer:
-      "Yes. The homepage flight form supports one-way, two-way, and multi-city trip planning with traveller and cabin class details.",
+      "Yes, Pick & Book offers full flexibility for all travel itineraries:\n\n• One-Way Trips: Quick point-to-point flight booking with direct price comparison.\n• Round-Trip Bookings: Search outbound and return flights together to take advantage of exclusive round-trip discounts and coordinated flight connections.\n• Multi-City Journeys: Seamlessly plan complex multi-city routes and layovers across different dates in a single unified booking flow.",
   },
   {
     id: "flight-faq-3",
     question: "What should I check before confirming a flight?",
     answer:
-      "Review passenger names, travel dates, departure and arrival timing, fare rules, baggage details, and airline policy before payment.",
+      "Before completing your flight payment, review these key details:\n\n• Government ID Name Match: Passenger first and last names must match the government-issued photo ID or Passport presented at airport security.\n• Baggage Policy: Check included cabin (hand) baggage allowance (usually 7 kg) and check-in baggage limits (15 kg on domestic saver fares) to avoid extra airport baggage charges.\n• Layover & Terminal Information: Check connection duration and ensure you have sufficient time if transferring between different terminals (e.g. T1 to T2/T3).\n• Cancellation & Rescheduling Terms: Check airline date change fees, cancellation deductions, and refund conditions before payment.",
   },
   {
     id: "flight-faq-4",
     question: "Where do I complete web check-in?",
     answer:
-      "Use the Web Check-In page to open the official airline check-in portal and download your boarding pass when the airline window opens.",
+      "You can complete mandatory airline web check-in directly through Pick & Book's Web Check-In page:\n\n• Access direct links to all major domestic and international airline check-in portals.\n• Web check-in usually opens 48 to 24 hours prior to departure.\n• Enter your airline PNR and surname to select your seats, declare baggage, and instantly download or print your boarding passes.",
   },
 ];
 
@@ -1614,25 +1616,25 @@ const HOME_HOTEL_FAQS = [
     id: "hotel-faq-1",
     question: "How do I search for hotels online?",
     answer:
-      "Choose a destination, check-in date, check-out date, rooms, and guests. The hotel results page shows matching stays with price and amenity details.",
+      "Finding and booking your ideal stay on Pick & Book takes just moments:\n\n1. Enter your destination city, tourist landmark, or preferred neighborhood.\n2. Choose check-in and check-out dates along with the number of rooms and guests.\n3. Use smart filters to sort by customer ratings, price range, free cancellation, complimentary breakfast, swimming pool, and proximity to city centers.\n4. Browse verified photos, amenities, room types, and authentic guest reviews before booking.",
   },
   {
     id: "hotel-faq-2",
     question: "Can I search by rooms and guests?",
     answer:
-      "Yes. The hotel form includes a rooms and guests selector for adults, children, and room count.",
+      "Yes, our booking engine lets you customize guest configurations easily:\n\n• Specify the exact number of rooms needed and allocate adults and children per room.\n• Choose between twin bed, king size, executive rooms, or family suites.\n• Review transparent per-night rates and total price inclusive of all taxes before payment.",
   },
   {
     id: "hotel-faq-3",
     question: "What should I check before selecting a hotel?",
     answer:
-      "Review stay dates, guest count, room type, nightly price, amenities, cancellation notes, and check-in timing before confirming.",
+      "Before confirming your hotel reservation, keep these points in mind:\n\n• Check-in & Check-out Timings: Standard hotel check-in is typically 12:00 PM or 2:00 PM, and check-out is 11:00 AM. Inquire about early check-in if you arrive sooner.\n• Package Inclusions: Verify whether complimentary breakfast, Wi-Fi, welcome amenities, or airport transfers are included in your tariff.\n• Cancellation Policy: Look for 'Free Cancellation' tags and note the cancellation cutoff date for a full refund.\n• Hotel Policies: Check couple-friendly rules, local ID acceptance policies, and pet accommodation guidelines.",
   },
   {
     id: "hotel-faq-4",
     question: "Can I compare popular city stays?",
     answer:
-      "Yes. The hotel mode includes popular city stays and a hotel results page for quick comparison.",
+      "Yes, Pick & Book curates handpicked collections of top business hotels, luxury resorts, boutique villas, and budget stays across major destinations including Goa, Jaipur, Mumbai, Bengaluru, Hyderabad, Delhi, and Kerala.\n\nCompare verified guest ratings, room categories, location highlights, and exclusive member discounts side-by-side to book the best stay.",
   },
 ];
 
@@ -1659,7 +1661,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every bus booking feel clear before you pay.",
     insightsText:
-      "Pick N Book helps users compare the full bus journey, not just the price, so the final booking feels easier to trust.",
+      "Pick & Book helps users compare the full bus journey, not just the price, so the final booking feels easier to trust.",
     highlights: HIGHLIGHTS,
     services: HOME_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book buses with clearer choices",
@@ -1687,14 +1689,13 @@ const HOME_MODE_CONTENT = {
       "Save routes, compare fares, and keep tickets ready for city-to-city journeys.",
     appOffer: "",
     appBenefits: HOME_APP_BENEFITS,
-    aboutTitle: "About Pick N Book Bus Booking",
+    aboutTitle: "About Pick & Book Bus Booking",
     aboutParagraphs: [
-      "Pick N Book bus booking mode helps you compare routes, fares, travel duration, and seat availability from top private operators and state transport corporations.",
-      "With direct operator mappings, clear cancellation terms, boarding clarity, and secure payments, we make city-to-city road travel easy and reliable."
+      "Pick & Book makes city-to-city road travel seamless and dependable by letting you easily compare routes, fares, travel durations, and live seat availability across top private operators and state transport corporations. Every booking undergoes real-time verification, direct operator mapping, and instant confirmation, with completely transparent pricing and secure payments. From precise departure dates and live seat selection to boarding point clarity and flexible cancellation policies, every detail of your journey is thoroughly validated before you pay, all backed by 24/7 dedicated customer support for total peace of mind."
     ],
     bannerBadge: "INTERCITY BUS & SEAT GUARANTEE",
     bannerTitle: "Book Bus Tickets Smarter. Travel Farther.",
-    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick N Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes.",
+    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick & Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes.",
     bannerStats: [
       ["99.8%", "On-Time Departure"],
       ["5,000+", "Daily Bus Routes"],
@@ -1708,7 +1709,7 @@ const HOME_MODE_CONTENT = {
     Icon: Plane,
     heroTitleStart: "Pack Your Dreams, ",
     heroTitleEnd: "We'll Handle the Journey.",
-    heroSubtitle: "Book your next flight with ease.",
+    heroSubtitle: "Book your flight with ease.",
     heroTags: ["Domestic Flights", "International Routes", "Instant Booking"],
     valueProps: [
       { icon: Plane, title: "Wide Airline Network", desc: "Top carriers across popular routes" },
@@ -1719,7 +1720,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every flight search feel organized before you book.",
     insightsText:
-      "Pick N Book brings fare comparison, traveller details, cabin choices, and airline actions into a calmer flight booking flow.",
+      "Pick & Book brings fare comparison, traveller details, cabin choices, and airline actions into a calmer flight booking flow.",
     highlights: FLIGHT_HIGHLIGHTS,
     services: FLIGHT_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book flights with clearer choices",
@@ -1747,14 +1748,14 @@ const HOME_MODE_CONTENT = {
       "Save frequent flight routes, compare airline choices, and keep PNR and check-in actions ready.",
     appOffer: "",
     appBenefits: HOME_FLIGHT_APP_BENEFITS,
-    aboutTitle: "About Pick N Book Flight Booking",
+    aboutTitle: "About Pick & Book Flight Booking",
     aboutParagraphs: [
-      "Pick N Book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
+      "Pick & Book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
       "Manage booking passenger details, select your seats, view cabin class conditions, and complete check-in procedures directly from your personalized portal."
     ],
     bannerBadge: "FLIGHT DESK & PASSENGER GUARANTEE",
     bannerTitle: "Book Flights Smarter. Fly Higher.",
-    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick N Book for domestic & international flights with real-time fare comparison and web check-in.",
+    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick & Book for domestic & international flights with real-time fare comparison and web check-in.",
     bannerStats: [
       ["99.9%", "Flight Reliability"],
       ["500+", "Global Airlines"],
@@ -1779,7 +1780,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every hotel search feel clear before you choose.",
     insightsText:
-      "Pick N Book hotel mode brings destination, dates, room count, guest details, and stay choices into the same calm booking flow.",
+      "Pick & Book hotel mode brings destination, dates, room count, guest details, and stay choices into the same calm booking flow.",
     highlights: HOTEL_HIGHLIGHTS,
     services: HOTEL_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book hotels with clearer choices",
@@ -1807,14 +1808,14 @@ const HOME_MODE_CONTENT = {
       "Save favourite cities, compare stay options, and keep room and guest details ready.",
     appOffer: "",
     appBenefits: HOME_HOTEL_APP_BENEFITS,
-    aboutTitle: "About Pick N Book Hotel Booking",
+    aboutTitle: "About Pick & Book Hotel Booking",
     aboutParagraphs: [
-      "Pick N Book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
+      "Pick & Book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
       "Whether it is a business trip, weekend break, family stay, or stopover, hotel mode keeps room choices, stay dates, amenities, and booking details easy to compare.",
     ],
     bannerBadge: "STAY & ROOM CONFIRMATION GUARANTEE",
     bannerTitle: "Book Hotels Smarter. Stay Better.",
-    bannerText: "Join over 10 Lakh+ happy travelers who trust Pick N Book for verified hotel stays, luxury resorts, and instant check-in confirmation.",
+    bannerText: "Join over 10 Lakh+ happy travelers who trust Pick & Book for verified hotel stays, luxury resorts, and instant check-in confirmation.",
     bannerStats: [
       ["100%", "Stay Assurance"],
       ["10,000+", "Verified Stays"],
@@ -2254,7 +2255,7 @@ function normalizeFeaturedOffer(offer, index) {
   };
 }
 
-function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = true }) {
+function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = true, controlsRef }) {
   const marqueeRef = useRef(null);
   const animationFrameRef = useRef(null);
   const draggedClickRef = useRef(false);
@@ -2262,6 +2263,7 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
   const momentumRef = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(false);
+  const resumeTimeoutRef = useRef(null);
   const dragStateRef = useRef({
     active: false,
     dragged: false,
@@ -2348,6 +2350,43 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
       }
     };
   }, [loopItems, duration, pauseOnHover]);
+
+  useEffect(() => {
+    if (!controlsRef) return;
+    controlsRef.current = {
+      scrollLeft: () => {
+        const node = marqueeRef.current;
+        if (!node) return;
+        isPausedRef.current = true;
+        setIsPaused(true);
+        if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = setTimeout(() => {
+          isPausedRef.current = false;
+          setIsPaused(false);
+        }, 3500);
+
+        node.scrollBy({ left: -404, behavior: "smooth" });
+        setTimeout(() => normalizeMarqueeScroll(node), 400);
+      },
+      scrollRight: () => {
+        const node = marqueeRef.current;
+        if (!node) return;
+        isPausedRef.current = true;
+        setIsPaused(true);
+        if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = setTimeout(() => {
+          isPausedRef.current = false;
+          setIsPaused(false);
+        }, 3500);
+
+        node.scrollBy({ left: 404, behavior: "smooth" });
+        setTimeout(() => normalizeMarqueeScroll(node), 400);
+      },
+    };
+    return () => {
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    };
+  }, [controlsRef]);
 
   const handlePointerDown = (event) => {
     if (event.button !== undefined && event.button !== 0) {
@@ -2551,6 +2590,19 @@ const formatFlightDate = (dateStr) => {
   }
 };
 
+const STATIC_TESTIMONIALS = [
+  { comment: "Super convenient seat selection for luxury sleeper buses. Highly recommended for weekend trips!", author: "Sneha Patel", role: "Weekend Explorer", initials: "SP", rating: 5 },
+  { comment: "Great package deals on luxury hotels in Jaipur. Saved over 30% compared to other platforms.", author: "Rohan Gupta", role: "Luxury Traveler", initials: "RG", rating: 5 },
+  { comment: "Seamless mobile booking experience! Received e-tickets instantly via SMS and email.", author: "Meera Nair", role: "Solo Traveler", initials: "MN", rating: 5 },
+  { comment: "Booking our adventure tour with Pick & Book was the best decision! Every moment was filled with excitement and wonder.", author: "Alex Martinez", role: "Travel Blogger", initials: "AM", rating: 5 },
+  { comment: "The hotel booking process was seamless with instant confirmation. Great discounts and zero hidden convenience charges!", author: "Priya Sharma", role: "Corporate Traveler", initials: "PS", rating: 5 },
+  { comment: "Comparing domestic flight timings and fares on Pick & Book is so clear. Best price guarantee really works!", author: "Rahul Verma", role: "Frequent Flyer", initials: "RV", rating: 5 },
+  { comment: "I travel intercity by Volvo buses often. Live bus tracking and seat selection on Pick & Book make every journey smooth.", author: "Sarah Jenkins", role: "Digital Nomad", initials: "SJ", rating: 5 },
+  { comment: "Booked our resort stay in Goa through Pick & Book. Fantastic room options and transparent cancellation terms.", author: "David Chen", role: "Family Traveler", initials: "DC", rating: 5 },
+  { comment: "Fast customer support and instant refund tracking gave me full confidence for all my trip bookings!", author: "Ananya Roy", role: "Backpacker", initials: "AR", rating: 5 },
+  { comment: "The UI is so clean and fast. Found cheap flights to Mumbai in under 2 minutes!", author: "Vikram Malhotra", role: "Tech Lead", initials: "VM", rating: 5 },
+];
+
 export default function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -2566,6 +2618,19 @@ export default function HomePage() {
   const hotelVideoRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [openFaqId, setOpenFaqId] = useState(() => {
+    const currentFaqs = (HOME_MODE_CONTENT[initialTab] || HOME_MODE_CONTENT.buses)?.faqs || [];
+    return currentFaqs[0]?.id || "faq-1";
+  });
+
+  useEffect(() => {
+    const currentFaqs = (HOME_MODE_CONTENT[activeTab] || HOME_MODE_CONTENT.buses)?.faqs || [];
+    if (currentFaqs.length > 0) {
+      setOpenFaqId(currentFaqs[0].id);
+    } else {
+      setOpenFaqId(null);
+    }
+  }, [activeTab]);
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiChatInput, setAiChatInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
@@ -2610,6 +2675,7 @@ export default function HomePage() {
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
   const [featuredOffersError, setFeaturedOffersError] = useState("");
   const [offersFilter, setOffersFilter] = useState("bus");
+  const offersControlsRef = useRef(null);
   const hasUserChangedTabRef = useRef(false);
   const [popularRoutes, setPopularRoutes] = useState([]);
   const [popularRoutesLoading, setPopularRoutesLoading] = useState(false);
@@ -3334,19 +3400,6 @@ export default function HomePage() {
   }, []);
 
   /* ── Testimonials — Dynamic from API, fallback to static ──────── */
-  const STATIC_TESTIMONIALS = [
-    { comment: "Booking our adventure tour with PickNBook was the best decision! Every moment was filled with excitement and wonder.", author: "Alex Martinez", role: "Travel Blogger", initials: "AM" },
-    { comment: "The hotel booking process was seamless with instant confirmation. Great discounts and zero hidden convenience charges!", author: "Priya Sharma", role: "Corporate Traveler", initials: "PS" },
-    { comment: "Comparing domestic flight timings and fares on PickNBook is so clear. Best price guarantee really works!", author: "Rahul Verma", role: "Frequent Flyer", initials: "RV" },
-    { comment: "I travel intercity by Volvo buses often. Live bus tracking and seat selection on PickNBook make every journey smooth.", author: "Sarah Jenkins", role: "Digital Nomad", initials: "SJ" },
-    { comment: "Booked our resort stay in Goa through PickNBook. Fantastic room options and transparent cancellation terms.", author: "David Chen", role: "Family Traveler", initials: "DC" },
-    { comment: "Fast customer support and instant refund tracking gave me full confidence for all my trip bookings!", author: "Ananya Roy", role: "Backpacker", initials: "AR" },
-    { comment: "The UI is so clean and fast. Found cheap flights to Mumbai in under 2 minutes!", author: "Vikram Malhotra", role: "Tech Lead", initials: "VM" },
-    { comment: "Super convenient seat selection for luxury sleeper buses. Highly recommended for weekend trips!", author: "Sneha Patel", role: "Weekend Explorer", initials: "SP" },
-    { comment: "Great package deals on luxury hotels in Jaipur. Saved over 30% compared to other platforms.", author: "Rohan Gupta", role: "Luxury Traveler", initials: "RG" },
-    { comment: "Seamless mobile booking experience! Received e-tickets instantly via SMS and email.", author: "Meera Nair", role: "Solo Traveler", initials: "MN" },
-  ];
-
   useEffect(() => {
     let isMounted = true;
     const loadTestimonials = async () => {
@@ -3384,6 +3437,15 @@ export default function HomePage() {
     loadTestimonials();
     return () => { isMounted = false; };
   }, []);
+
+  const scrollingTestimonialItems = useMemo(() => {
+    const source = testimonials && testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS;
+    let list = [...source];
+    while (list.length < 10) {
+      list = [...list, ...source];
+    }
+    return [...list, ...list];
+  }, [testimonials]);
 
   const handleSwapFlights = () => {
     setFlightFrom(flightTo);
@@ -3866,9 +3928,9 @@ export default function HomePage() {
           className={`traveller-summary ${hasTravellerSelection ? "" : "placeholder"
             }`}
         >
-          <Users size={16} />
+          <Users size={16} color="#ff0000" style={{ color: "#ff0000", flexShrink: 0, position: "static" }} />
           <span>
-            {hasTravellerSelection ? travellerSummary : "Select travellers"}
+            {hasTravellerSelection ? travellerSummary : "Travellers"}
           </span>
         </span>
         <ChevronDown
@@ -3971,9 +4033,9 @@ export default function HomePage() {
           className={`traveller-summary ${cabinClass ? "" : "placeholder"
             }`}
         >
-          <Plane size={16} />
+          <Plane size={16} color="#ff0000" style={{ color: "#ff0000", flexShrink: 0, position: "static" }} />
           <span>
-            {cabinClass || "Select class"}
+            {cabinClass || "Economy"}
           </span>
         </span>
         <ChevronDown
@@ -4006,24 +4068,12 @@ export default function HomePage() {
     </div>
   );
 
-  const filteredOffers = featuredOffers
-    .filter((offer) => {
-      if (offersFilter === "all") return true;
-      const type = (offer.bookingType || "").toLowerCase();
-      if (offersFilter === "flight") return type.includes("flight");
-      if (offersFilter === "bus") return type.includes("bus");
-      if (offersFilter === "hotel") return type.includes("hotel");
-      return false;
-    })
-    .sort((a, b) => {
-      if (offersFilter !== "all") return 0;
-      const currentType = activeTab === "flights" ? "flight" : activeTab === "hotels" ? "hotel" : "bus";
-      const aMatches = (a.bookingType || "").toLowerCase().includes(currentType);
-      const bMatches = (b.bookingType || "").toLowerCase().includes(currentType);
-      if (aMatches && !bMatches) return -1;
-      if (!aMatches && bMatches) return 1;
-      return 0;
-    });
+  const currentOffersCategory = activeTab === "flights" ? "flight" : activeTab === "hotels" ? "hotel" : "bus";
+
+  const filteredOffers = featuredOffers.filter((offer) => {
+    const type = (offer.bookingType || "").toLowerCase();
+    return type.includes(currentOffersCategory);
+  });
 
   const homeContent = HOME_MODE_CONTENT[activeTab] || HOME_MODE_CONTENT.flights;
   const ActiveAiIcon =
@@ -4098,9 +4148,9 @@ export default function HomePage() {
           font-weight: 700 !important;
         }
         .homepage .search-panel .trip-chip.active {
-          background: #dc1e26 !important;
+          background: #ff0000 !important;
           color: #ffffff !important;
-          border-color: #dc1e26 !important;
+          border-color: #ff0000 !important;
         }
 
         /* â”€â”€â”€ Offers Filter Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -4314,7 +4364,7 @@ export default function HomePage() {
         .pop-bus-kicker {
            font-size: 0.72rem !important;
            font-weight: 800 !important;
-           color: #dc2626 !important;
+           color: #ff0000 !important;
            letter-spacing: 0.08em !important;
            text-transform: uppercase !important;
            display: block !important;
@@ -4335,7 +4385,7 @@ export default function HomePage() {
            gap: 6px !important;
            background: none !important;
            border: none !important;
-           color: #dc2626 !important;
+           color: #ff0000 !important;
            font-size: 0.88rem !important;
            font-weight: 700 !important;
            cursor: pointer !important;
@@ -4345,7 +4395,7 @@ export default function HomePage() {
 
         .pop-bus-view-all-btn:hover {
            gap: 10px !important;
-           color: #b91c1c !important;
+           color: #cc0000 !important;
         }
 
         /* ─── TRAVEL DESK SERVICES BANNER (Pixel-Perfect Match) ─── */
@@ -4393,7 +4443,7 @@ export default function HomePage() {
         }
 
         .td-highlight-red {
-           color: #c91c32 !important;
+           color: #ff0000 !important;
            position: relative !important;
            display: inline-block !important;
         }
@@ -4405,7 +4455,7 @@ export default function HomePage() {
            bottom: -3px !important;
            width: 100% !important;
            height: 3px !important;
-           background: linear-gradient(90deg, #c91c32, #ff4b6e) !important;
+           background: linear-gradient(90deg, #ff0000, #ff4b6e) !important;
            border-radius: 2px !important;
         }
 
@@ -4437,11 +4487,11 @@ export default function HomePage() {
            border-radius: 50% !important;
            background: #fff1f2 !important;
            border: 1.5px solid #fecdd3 !important;
-           color: #e11d48 !important;
+           color: #ff0000 !important;
            display: grid !important;
            place-items: center !important;
            flex-shrink: 0 !important;
-           box-shadow: 0 2px 8px rgba(225,29,72,0.12) !important;
+           box-shadow: 0 2px 8px rgba(255,0,0,0.12) !important;
         }
 
         .td-feature-text strong {
@@ -4514,7 +4564,7 @@ export default function HomePage() {
            height: 30px !important;
            border-radius: 50% !important;
            background: #fff1f2 !important;
-           color: #e11d48 !important;
+           color: #ff0000 !important;
            display: grid !important;
            place-items: center !important;
            flex-shrink: 0 !important;
@@ -4588,7 +4638,7 @@ export default function HomePage() {
            flex-shrink: 0 !important;
         }
 
-        .td-stat-icon-circle.red { background: #ffe4e6 !important; color: #e11d48 !important; }
+        .td-stat-icon-circle.red { background: #ffe4e6 !important; color: #ff0000 !important; }
         .td-stat-icon-circle.purple { background: #f3e8ff !important; color: #9333ea !important; }
         .td-stat-icon-circle.crimson { background: #fff1f2 !important; color: #881337 !important; }
         .td-stat-icon-circle.dark { background: #f1f5f9 !important; color: #0f172a !important; }
@@ -4787,7 +4837,7 @@ export default function HomePage() {
         }
 
         .td-field-icon {
-           color: #c91c32 !important;
+           color: #ff0000 !important;
            flex-shrink: 0 !important;
         }
 
@@ -4810,7 +4860,7 @@ export default function HomePage() {
            width: 100% !important;
            padding: 8px 0 !important;
            border-radius: 10px !important;
-           background: linear-gradient(135deg, #c91e24 0%, #9f0f14 100%) !important;
+           background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
            color: #ffffff !important;
            border: none !important;
            font-size: 0.63rem !important;
@@ -4818,12 +4868,12 @@ export default function HomePage() {
            letter-spacing: 0.08em !important;
            text-transform: uppercase !important;
            cursor: pointer !important;
-           box-shadow: 0 4px 14px rgba(201, 30, 36, 0.38) !important;
+           box-shadow: 0 4px 14px rgba(255, 0, 0, 0.38) !important;
            transition: all 0.2s ease !important;
         }
 
         .td-phone-main-submit-btn:hover {
-           background: linear-gradient(135deg, #b0181d 0%, #8a0c11 100%) !important;
+           background: linear-gradient(135deg, #cc0000 0%, #990000 100%) !important;
            transform: translateY(-1px) !important;
         }
 
@@ -5005,7 +5055,7 @@ export default function HomePage() {
         .pop-bus-kicker {
            font-size: 0.72rem !important;
            font-weight: 800 !important;
-           color: #dc2626 !important;
+           color: #ff0000 !important;
            letter-spacing: 0.08em !important;
            text-transform: uppercase !important;
            display: block !important;
@@ -5026,7 +5076,7 @@ export default function HomePage() {
            gap: 6px !important;
            background: none !important;
            border: none !important;
-           color: #dc2626 !important;
+           color: #ff0000 !important;
            font-size: 0.88rem !important;
            font-weight: 700 !important;
            cursor: pointer !important;
@@ -5036,7 +5086,7 @@ export default function HomePage() {
 
         .pop-bus-view-all-btn:hover {
            gap: 10px !important;
-           color: #b91c1c !important;
+           color: #cc0000 !important;
         }
 
         .pop-bus-carousel-wrapper {
@@ -5074,6 +5124,48 @@ export default function HomePage() {
            cursor: pointer !important;
            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
            box-sizing: border-box !important;
+           outline: none !important;
+           -webkit-tap-highlight-color: transparent !important;
+           user-select: none !important;
+        }
+
+        .homepage .pop-bus-card,
+        .homepage .pop-bus-card *,
+        .pop-bus-card,
+        .pop-bus-card *,
+        .pop-route-card,
+        .pop-route-card * {
+           -webkit-tap-highlight-color: transparent !important;
+        }
+
+        .homepage .pop-bus-card:focus,
+        .homepage .pop-bus-card:focus-visible,
+        .homepage .pop-bus-card:active,
+        .pop-bus-card:focus,
+        .pop-bus-card:focus-visible,
+        .pop-bus-card:active,
+        .pop-route-card:focus,
+        .pop-route-card:focus-visible,
+        .pop-route-card:active {
+           outline: none !important;
+           outline-offset: 0 !important;
+           box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05) !important;
+           border-color: #e2e8f0 !important;
+        }
+
+        .pop-bus-card *:focus,
+        .pop-bus-card *:focus-visible,
+        .pop-bus-card *:active,
+        .pop-bus-card *::before,
+        .pop-bus-card *::after,
+        .pop-route-card *:focus,
+        .pop-route-card *:focus-visible,
+        .pop-route-card *:active,
+        .pop-route-card *::before,
+        .pop-route-card *::after {
+           outline: none !important;
+           outline-offset: 0 !important;
+           box-shadow: none !important;
         }
 
         .homepage .pop-bus-card:hover,
@@ -5081,6 +5173,7 @@ export default function HomePage() {
            transform: translateY(-4px) !important;
            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1) !important;
            border-color: #cbd5e1 !important;
+           outline: none !important;
         }
 
         .pop-bus-card .pop-route-img-wrap {
@@ -5088,10 +5181,13 @@ export default function HomePage() {
            width: 100% !important;
            height: 125px !important;
            overflow: hidden !important;
-           background: #f1f5f9 !important;
+           background: #ffffff !important;
            margin: 0 !important;
            padding: 0 !important;
            display: block !important;
+           border: none !important;
+           box-shadow: none !important;
+           outline: none !important;
         }
 
         .pop-bus-card .pop-route-img-wrap img {
@@ -5100,6 +5196,8 @@ export default function HomePage() {
            object-fit: cover !important;
            display: block !important;
            transition: transform 0.4s ease !important;
+           border: none !important;
+           outline: none !important;
         }
 
         .pop-bus-card:hover .pop-route-img-wrap img {
@@ -5149,24 +5247,40 @@ export default function HomePage() {
 
         .pop-bus-wave-wrap {
            position: absolute !important;
-           bottom: -1px !important;
+           bottom: -2px !important;
            left: 0 !important;
            width: 100% !important;
-           height: 28px !important;
+           height: 32px !important;
            z-index: 3 !important;
            pointer-events: none !important;
            line-height: 0 !important;
+           border: none !important;
+           outline: none !important;
+           box-shadow: none !important;
         }
 
         .pop-bus-wave-svg {
            width: 100% !important;
            height: 100% !important;
            display: block !important;
+           border: none !important;
+           outline: none !important;
+        }
+
+        .pop-bus-wave-svg path {
+           stroke: none !important;
+           stroke-width: 0 !important;
         }
 
         .pop-bus-body {
            padding: 14px 14px 10px 14px !important;
            background: #ffffff !important;
+           margin-top: -4px !important;
+           position: relative !important;
+           z-index: 4 !important;
+           border: none !important;
+           box-shadow: none !important;
+           outline: none !important;
         }
 
         .pop-bus-cities-row {
@@ -5222,8 +5336,8 @@ export default function HomePage() {
            display: flex !important;
            align-items: center !important;
            justify-content: center !important;
-           color: #dc2626 !important;
-           box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08) !important;
+           color: #ff0000 !important;
+           box-shadow: 0 2px 6px rgba(255, 0, 0, 0.08) !important;
            flex-shrink: 0 !important;
            margin: 0 2px !important;
         }
@@ -5237,7 +5351,7 @@ export default function HomePage() {
         .pop-bus-book-btn {
            width: 100% !important;
            height: 38px !important;
-           background: #c91e24 !important;
+           background: #ff0000 !important;
            color: #ffffff !important;
            border-radius: 9999px !important;
            border: none !important;
@@ -5249,14 +5363,14 @@ export default function HomePage() {
            font-weight: 800 !important;
            letter-spacing: 0.04em !important;
            cursor: pointer !important;
-           box-shadow: 0 4px 12px rgba(201, 30, 36, 0.28) !important;
+           box-shadow: 0 4px 12px rgba(255, 0, 0, 0.28) !important;
            transition: all 0.2s ease !important;
         }
 
         .pop-bus-book-btn:hover {
-           background: #b3161c !important;
+           background: #cc0000 !important;
            transform: translateY(-1px) !important;
-           box-shadow: 0 6px 16px rgba(201, 30, 36, 0.38) !important;
+           box-shadow: 0 6px 16px rgba(255, 0, 0, 0.38) !important;
         }
 
         .pop-bus-next-circle-btn {
@@ -5273,7 +5387,7 @@ export default function HomePage() {
            display: flex !important;
            align-items: center !important;
            justify-content: center !important;
-           color: #dc2626 !important;
+           color: #ff0000 !important;
            cursor: pointer !important;
            z-index: 5 !important;
            transition: all 0.2s ease !important;
@@ -5319,133 +5433,213 @@ export default function HomePage() {
             padding: 0 12px 0 0 !important;
          }
 
-        /* ─── FEATURED OFFERS SECTION & HEADER (Moved towards upside) ─── */
+        /* ─── FEATURED OFFERS CONTAINER & CARD (Compact Full Single Screen Fit) ─── */
         .bus-offers-section {
-            margin-top: 150px !important;
+           width: 100% !important;
+           max-width: 1280px !important;
+           margin: -12px auto 10px !important;
+           padding: 0 16px !important;
+           box-sizing: border-box !important;
            position: relative !important;
            z-index: 1 !important;
         }
 
+        .bus-offers-content-shell {
+           position: relative !important;
+           z-index: 2 !important;
+           background: #ffffff !important;
+           border-radius: 18px !important;
+           border: 1px solid #e2e8f0 !important;
+           box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.03) !important;
+           padding: 10px 18px 10px 18px !important;
+           box-sizing: border-box !important;
+           overflow: hidden !important;
+        }
+
+        .bus-offers-content-shell::before {
+           content: "" !important;
+           position: absolute !important;
+           top: -50px !important;
+           right: -50px !important;
+           width: 200px !important;
+           height: 200px !important;
+           background: radial-gradient(circle, rgba(220, 30, 38, 0.04) 0%, rgba(255, 255, 255, 0) 70%) !important;
+           border-radius: 50% !important;
+           pointer-events: none !important;
+           z-index: 0 !important;
+        }
 
         .bus-offers-header-block {
            display: flex !important;
            align-items: center !important;
            justify-content: space-between !important;
-           margin-bottom: 4px !important;
+           margin-bottom: 6px !important;
            flex-wrap: wrap !important;
-           gap: 12px !important;
-            position: relative !important;
-            z-index: 40 !important;
+           gap: 8px !important;
+           position: relative !important;
+           z-index: 10 !important;
         }
 
         .bus-offers-title-wrap {
            display: flex !important;
            flex-direction: column !important;
            flex: 0 1 auto !important;
-            position: relative !important;
-            z-index: 41 !important;
-          transform: translateY(-6px) !important;
+           position: relative !important;
+           z-index: 11 !important;
+           transform: none !important;
         }
 
         .bus-offers-title {
-           font-size: 1.35rem !important;
+           font-size: 1.15rem !important;
            font-weight: 800 !important;
-           color: #e11d48 !important;
-           background: linear-gradient(135deg, #e11d48 0%, #be123c 60%, #f43f5e 100%) !important;
+           color: #ff0000 !important;
+           background: linear-gradient(135deg, #ff0000 0%, #cc0000 60%, #ff4444 100%) !important;
            -webkit-background-clip: text !important;
            -webkit-text-fill-color: transparent !important;
            letter-spacing: -0.02em !important;
-           margin: 0 0 4px 0 !important;
-           line-height: 1.25 !important;
+           margin: 0 0 2px 0 !important;
+           line-height: 1.2 !important;
         }
 
         .bus-offers-subtitle {
-           font-size: 0.88rem !important;
-            color: #526b86 !important;
+           font-size: 0.78rem !important;
+           color: #526b86 !important;
            font-weight: 500 !important;
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            margin: 2px 0 0 !important;
-           line-height: 1.4 !important;
-            min-height: 20px !important;
-            white-space: nowrap !important;
+           display: block !important;
+           visibility: visible !important;
+           opacity: 1 !important;
+           margin: 0 !important;
+           line-height: 1.2 !important;
+           min-height: 0 !important;
+           white-space: nowrap !important;
         }
 
-        .bus-offers-tabs-bar {
+        /* Featured Offers Navigation Arrows (Top-Right Header) */
+        .bus-offers-arrows-wrap {
            display: flex !important;
            align-items: center !important;
-           justify-content: flex-end !important;
-           gap: 10px !important;
-           margin: 0 !important;
+           gap: 8px !important;
            margin-left: auto !important;
-           flex-wrap: wrap !important;
+           position: relative !important;
+           z-index: 12 !important;
         }
 
-        .bus-offers-tab-btn {
+        .bus-offers-arrow-btn {
            display: inline-flex !important;
            align-items: center !important;
-           gap: 8px !important;
+           justify-content: center !important;
+           width: 32px !important;
+           height: 32px !important;
+           min-width: 32px !important;
+           border-radius: 50% !important;
            background: #ffffff !important;
-           color: #1e293b !important;
            border: 1.5px solid #e2e8f0 !important;
-           padding: 8px 18px !important;
-           border-radius: 9999px !important;
-           font-size: 0.88rem !important;
-           font-weight: 700 !important;
+           color: #dc2626 !important;
            cursor: pointer !important;
-           transition: all 0.2s ease !important;
-           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+           box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+           padding: 0 !important;
         }
 
-        .bus-offers-tab-btn:hover {
-           border-color: #cbd5e1 !important;
-           background: #f8fafc !important;
-           transform: translateY(-1px) !important;
-        }
-
-        .bus-offers-tab-btn.active {
-           background: #e11d48 !important;
+        .bus-offers-arrow-btn:hover {
+           background: #ff0000 !important;
+           border-color: #ff0000 !important;
            color: #ffffff !important;
-           border-color: #e11d48 !important;
-           box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35) !important;
+           transform: scale(1.1) !important;
+           box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
+        }
+
+        .bus-offers-arrow-btn:active {
+           transform: scale(0.95) !important;
+        }
+
+        /* Carousel Wrapper with Side Floating Arrows */
+        .bus-offers-carousel-wrapper {
+           position: relative !important;
+           width: 100% !important;
+        }
+
+        .bus-offers-side-arrow {
+           position: absolute !important;
+           top: 50% !important;
+           transform: translateY(-50%) !important;
+           width: 34px !important;
+           height: 34px !important;
+           min-width: 34px !important;
+           border-radius: 50% !important;
+           background: rgba(255, 255, 255, 0.95) !important;
+           border: 1.5px solid #e2e8f0 !important;
+           box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16) !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
+           color: #dc2626 !important;
+           cursor: pointer !important;
+           z-index: 25 !important;
+           transition: all 0.2s ease !important;
+           backdrop-filter: blur(6px) !important;
+           padding: 0 !important;
+        }
+
+        .bus-offers-side-arrow-left {
+           left: -4px !important;
+        }
+
+        .bus-offers-side-arrow-right {
+           right: -4px !important;
+        }
+
+        .bus-offers-side-arrow:hover {
+           background: #ff0000 !important;
+           border-color: #ff0000 !important;
+           color: #ffffff !important;
+           transform: translateY(-50%) scale(1.12) !important;
+           box-shadow: 0 6px 16px rgba(255, 0, 0, 0.38) !important;
+        }
+
+        .bus-offers-side-arrow:active {
+           transform: translateY(-50%) scale(0.95) !important;
         }
 
         /* ─── COMPACT CURVED OFFER CARD (Exact Reference Match) ─── */
         .offer-img-marquee.offer-marquee {
-          margin-top: -18px !important;
-            padding: 0 0 2px 0 !important;
+           margin-top: 0 !important;
+           padding: 2px 2px 4px !important;
            display: flex !important;
            align-items: stretch !important;
            width: 100% !important;
            overflow: hidden !important;
         }
 
+        .offer-img-marquee.offer-marquee .marquee-track {
+           padding: 0 !important;
+        }
+
         .offer-img-marquee.offer-marquee .marquee-slide {
-          width: 220px !important;
-          flex: 0 0 220px !important;
-            padding: 0 5px !important;
+           width: 202px !important;
+           flex: 0 0 202px !important;
+           padding: 0 4px !important;
+           box-sizing: border-box !important;
            display: flex !important;
            align-items: stretch !important;
            justify-content: center !important;
            line-height: 0 !important;
         }
 
-
         .img-offer-card {
            position: relative !important;
-          width: 220px !important;
-          height: 88px !important;
-          min-height: 88px !important;
-           border-radius: 16px !important;
+           width: 194px !important;
+           height: 72px !important;
+           min-height: 72px !important;
+           border-radius: 12px !important;
            overflow: hidden !important;
            cursor: pointer !important;
            display: flex !important;
            align-items: stretch !important;
            background: #ffffff !important;
            border: 1.5px solid #fce7f3 !important;
-           box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07) !important;
-           transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease !important;
+           box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06) !important;
+           transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease !important;
            user-select: none !important;
            flex-shrink: 0 !important;
            box-sizing: border-box !important;
@@ -5454,8 +5648,8 @@ export default function HomePage() {
         }
 
         .img-offer-card:hover {
-           transform: translateY(-4px) !important;
-           box-shadow: 0 10px 26px rgba(225, 29, 72, 0.16) !important;
+           transform: translateY(-3px) !important;
+           box-shadow: 0 8px 20px rgba(225, 29, 72, 0.16) !important;
         }
 
         .img-offer-photo-side {
@@ -5483,14 +5677,14 @@ export default function HomePage() {
 
         .img-offer-corner-badge {
            position: absolute !important;
-           top: 7px !important;
-           right: 7px !important;
+           top: 5px !important;
+           right: 5px !important;
            z-index: 4 !important;
            background: #f43f5e !important;
            color: #ffffff !important;
-           font-size: 0.58rem !important;
+           font-size: 0.52rem !important;
            font-weight: 800 !important;
-           padding: 3px 8px !important;
+           padding: 2px 6px !important;
            border-radius: 9999px !important;
            letter-spacing: 0.04em !important;
            text-transform: uppercase !important;
@@ -5498,9 +5692,9 @@ export default function HomePage() {
            line-height: 1 !important;
         }
 
-        .img-offer-corner-badge.badge-bus { background: #f43f5e !important; }
-        .img-offer-corner-badge.badge-flight { background: #0284c7 !important; }
-        .img-offer-corner-badge.badge-hotel { background: #059669 !important; }
+        .img-offer-corner-badge.badge-bus,
+        .img-offer-corner-badge.badge-flight,
+        .img-offer-corner-badge.badge-hotel { background: #dc1e26 !important; }
 
         .img-offer-divider-svg {
            position: absolute !important;
@@ -5516,7 +5710,7 @@ export default function HomePage() {
            z-index: 3 !important;
            width: 55% !important;
            height: 100% !important;
-            padding: 6px 8px 6px 10px !important;
+           padding: 4px 6px 4px 8px !important;
            display: flex !important;
            flex-direction: column !important;
            justify-content: space-between !important;
@@ -5526,50 +5720,50 @@ export default function HomePage() {
         .img-offer-cat-row {
            display: flex !important;
            align-items: center !important;
-           gap: 5px !important;
+           gap: 4px !important;
         }
 
-        .img-offer-cat-circle {
-           width: 19px !important;
-           height: 19px !important;
-           min-width: 19px !important;
+        .img-offer-cat-circle,
+        .img-offer-cat-circle.circle-flight,
+        .img-offer-cat-circle.circle-hotel,
+        .img-offer-cat-circle.circle-bus {
+           width: 16px !important;
+           height: 16px !important;
+           min-width: 16px !important;
            border-radius: 50% !important;
            background: #ffe4e6 !important;
-           color: #e11d48 !important;
+           color: #ff0000 !important;
            display: grid !important;
            place-items: center !important;
         }
 
-        .img-offer-cat-circle.circle-flight { background: #e0f2fe !important; color: #0284c7 !important; }
-        .img-offer-cat-circle.circle-hotel { background: #d1fae5 !important; color: #059669 !important; }
-
-        .img-offer-cat-text {
-           font-size: 0.62rem !important;
+        .img-offer-cat-text,
+        .img-offer-cat-text.text-flight,
+        .img-offer-cat-text.text-hotel,
+        .img-offer-cat-text.text-bus {
+           font-size: 0.55rem !important;
            font-weight: 800 !important;
-           color: #e11d48 !important;
+           color: #ff0000 !important;
            letter-spacing: 0.04em !important;
            text-transform: uppercase !important;
            white-space: nowrap !important;
            line-height: 1 !important;
         }
 
-        .img-offer-cat-text.text-flight { color: #0284c7 !important; }
-        .img-offer-cat-text.text-hotel { color: #059669 !important; }
-
         .img-offer-title {
-           font-size: 1.12rem !important;
+           font-size: 0.98rem !important;
            font-weight: 900 !important;
            color: #0f172a !important;
            letter-spacing: -0.02em !important;
            margin: 0 !important;
-           line-height: 1.15 !important;
+           line-height: 1.1 !important;
            white-space: nowrap !important;
            overflow: hidden !important;
            text-overflow: ellipsis !important;
         }
 
         .img-offer-validity {
-           font-size: 0.62rem !important;
+           font-size: 0.56rem !important;
            color: #64748b !important;
            font-weight: 500 !important;
            margin: 0 !important;
@@ -5577,32 +5771,36 @@ export default function HomePage() {
            white-space: nowrap !important;
         }
 
-        .img-offer-grab-btn {
+        .img-offer-grab-btn,
+        .img-offer-grab-btn.btn-flight,
+        .img-offer-grab-btn.btn-hotel,
+        .img-offer-grab-btn.btn-bus {
            display: inline-flex !important;
            align-items: center !important;
            justify-content: center !important;
-           gap: 5px !important;
-           background: #be185d !important;
+           gap: 4px !important;
+           background: #dc1e26 !important;
            color: #ffffff !important;
            border-radius: 9999px !important;
-           padding: 4px 11px !important;
-           font-size: 0.68rem !important;
+           padding: 2.5px 8px !important;
+           font-size: 0.62rem !important;
            font-weight: 800 !important;
            border: none !important;
            cursor: pointer !important;
-           box-shadow: 0 3px 8px rgba(190, 24, 93, 0.3) !important;
+           box-shadow: 0 3px 8px rgba(220, 30, 38, 0.3) !important;
            width: fit-content !important;
            transition: all 0.2s ease !important;
            line-height: 1 !important;
         }
 
-        .img-offer-grab-btn:hover {
-           background: #9d174d !important;
+        .img-offer-grab-btn:hover,
+        .img-offer-grab-btn.btn-flight:hover,
+        .img-offer-grab-btn.btn-hotel:hover,
+        .img-offer-grab-btn.btn-bus:hover {
+           background: #b8141b !important;
            transform: translateY(-1px) !important;
+           box-shadow: 0 5px 12px rgba(220, 30, 38, 0.45) !important;
         }
-
-        .img-offer-grab-btn.btn-flight { background: #0284c7 !important; box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3) !important; }
-        .img-offer-grab-btn.btn-hotel { background: #059669 !important; box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3) !important; }
 
         /* ─── FEATURED OFFERS - MULTI-SHAPE STYLING ─── */
         .bus-card-unit {
@@ -5897,13 +6095,13 @@ export default function HomePage() {
           }
 
           .coupon-icon {
-            color: #ef4444;
+            color: #ff0000;
           }
 
           .coupon-text {
             font-size: 0.6rem;
             font-weight: 800;
-            color: #ef4444;
+            color: #ff0000;
             letter-spacing: 0.05em;
           }
 
@@ -5934,7 +6132,7 @@ export default function HomePage() {
            justify-content: center;
            font-size: 0.55rem;
            font-weight: 800;
-           color: #ef4444;
+           color: #ff0000;
            background: rgba(255, 255, 255, 0.8);
          }
 
@@ -6424,9 +6622,11 @@ export default function HomePage() {
           .homepage-flights .flight-hero-title-highlight,
           .homepage-buses .hero-title-highlight,
           .homepage-hotels .hero-title-highlight {
-            color: #dc1e26 !important;
+            color: #ff0000 !important;
             font-weight: 900 !important;
-            text-shadow: 0 2px 14px rgba(220, 30, 38, 0.45), 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+            text-shadow: none !important;
+            filter: none !important;
+            display: inline-block !important;
           }
 
           .homepage-flights .flight-hero-subtitle,
@@ -6448,7 +6648,7 @@ export default function HomePage() {
           .homepage-flights .hero-content,
           .homepage-hotels .hero-content {
             width: 100% !important;
-            max-width: 1240px !important;
+            max-width: 1280px !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
             position: static !important;
@@ -6464,24 +6664,47 @@ export default function HomePage() {
           .homepage-hotels .hero-grid,
           .homepage-flights .hero-grid.multicity-active {
             width: 100% !important;
-            max-width: 1220px !important;
+            max-width: 1280px !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
           }
 
-          /* ── Sleek Glassmorphic Search Bar ── */
+          /* ── Sleek Capsule Search Bar (Hotel, Bus, and Flight share identical container) ── */
           .homepage-buses .search-panel,
-          .homepage-flights .search-panel,
-          .homepage-flights .search-panel.is-multicity {
+          .homepage-flights:not(.hero-multicity) .search-panel,
+          .homepage-hotels .search-panel {
             width: 100% !important;
-            max-width: 1240px !important;
+            max-width: 1140px !important;
+            height: auto !important;
+            min-height: 64px !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-radius: 9999px !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+            margin: 0 auto !important;
+            transform: none !important;
+            position: relative !important;
+            z-index: 20 !important;
+            overflow: visible !important;
+          }
+
+          .homepage-flights.hero-multicity .search-panel.is-multicity {
+            width: 100% !important;
+            max-width: 1280px !important;
             height: auto !important;
             min-height: 58px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2)) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.22)) !important;
             backdrop-filter: blur(24px) saturate(160%) !important;
             -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
             border-radius: 20px !important;
-            padding: 6px 16px !important;
+            padding: 8px 14px !important;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
             border: 1px solid rgba(255, 255, 255, 0.65) !important;
             display: flex !important;
@@ -6489,35 +6712,49 @@ export default function HomePage() {
             justify-content: center !important;
             box-sizing: border-box !important;
             margin: 0 auto !important;
-            transform: none !important;
             position: relative !important;
             z-index: 20 !important;
           }
 
-          .homepage-hotels .search-panel {
+          .homepage-hotels .hotel-capsule-searchbar,
+          .homepage-buses .flight-search-bar-row,
+          .homepage-flights:not(.hero-multicity) .flight-search-bar-row {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
             width: 100% !important;
             max-width: 1140px !important;
-            height: auto !important;
             min-height: 64px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(248, 246, 242, 0.45)) !important;
+            height: 64px !important;
+            padding: 0 10px 0 24px !important;
+            border-radius: 9999px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.74)) !important;
             backdrop-filter: blur(28px) saturate(180%) !important;
             -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-            border-radius: 9999px !important;
-            padding: 4px 8px 4px 20px !important;
-            box-shadow: 0 10px 32px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-            border: 1px solid rgba(255, 255, 255, 0.8) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 #ffffff !important;
             box-sizing: border-box !important;
-            margin: 0 auto !important;
-            transform: none !important;
             position: relative !important;
-            z-index: 20 !important;
+            z-index: 30 !important;
+            margin: 0 auto !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow: visible !important;
+          }
+
+          .homepage-hotels .hotel-capsule-searchbar:hover,
+          .homepage-buses .flight-search-bar-row:hover,
+          .homepage-flights:not(.hero-multicity) .flight-search-bar-row:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82)) !important;
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22), inset 0 1px 0 #ffffff !important;
+            border-color: #ffffff !important;
           }
 
           .homepage-hotels .search-panel::before,
-          .homepage-hotels .search-panel::after {
+          .homepage-hotels .search-panel::after,
+          .homepage-buses .search-panel::before,
+          .homepage-buses .search-panel::after,
+          .homepage-flights .search-panel::before,
+          .homepage-flights .search-panel::after {
             display: none !important;
           }
 
@@ -6528,7 +6765,7 @@ export default function HomePage() {
             display: none !important;
           }
 
-          /* Left-aligned Trip Chips */
+          /* Left-aligned Trip Chips floating above the capsule */
           .homepage-flights .search-panel .trip-switch {
             display: flex !important;
             align-items: center !important;
@@ -6537,141 +6774,554 @@ export default function HomePage() {
             margin-top: 0 !important;
             background: transparent !important;
             border: none !important;
-            padding: 0 !important;
+            padding: 0 4px !important;
           }
 
           .homepage-flights .search-panel .trip-chip {
-            background: rgba(255, 255, 255, 0.42) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
-            color: #1e293b !important;
-            border-radius: 18px !important;
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(16px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.9) !important;
+            color: #334155 !important;
+            border-radius: 9999px !important;
             padding: 4px 14px !important;
-            font-weight: 800 !important;
-            font-size: 0.68rem !important;
-            letter-spacing: 0.04em !important;
+            font-weight: 700 !important;
+            font-size: 0.72rem !important;
+            letter-spacing: 0.03em !important;
             text-transform: uppercase !important;
             display: flex !important;
             align-items: center !important;
             gap: 5px !important;
             transition: all 0.2s ease !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+            cursor: pointer !important;
           }
 
           .homepage-flights .search-panel .trip-chip:hover {
-            background: rgba(255, 255, 255, 0.65) !important;
-            border-color: rgba(255, 255, 255, 0.85) !important;
+            background: #ffffff !important;
+            border-color: #ffffff !important;
             transform: translateY(-1px) !important;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12) !important;
           }
 
           .homepage-flights .search-panel .trip-chip.active {
             background: #dc1e26 !important;
             color: #ffffff !important;
-            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            border: 1px solid rgba(220, 30, 38, 0.5) !important;
             box-shadow: 0 3px 10px rgba(220, 30, 38, 0.35) !important;
           }
 
-          /* Single Line Row Layout */
-          .search-panel .flight-search-bar-row,
-          .homepage-flights .search-panel .flight-search-bar-row,
-          .homepage-buses .search-panel .flight-search-bar-row {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            gap: 0 !important;
-            width: 100% !important;
-            height: 56px !important;
-            min-height: 56px !important;
-            max-height: 56px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: transparent !important;
-            box-sizing: border-box !important;
-          }
-
-          .search-panel .flight-search-bar-row > *,
-          .homepage-flights .search-panel .flight-search-bar-row > * {
-            margin: 0 !important;
-            flex-shrink: 1 !important;
-          }
-
-          /* Seamless Flat Fields with Crisp Vertical Line Dividers & Container Spacing */
-          .search-panel .flight-search-bar-row .field,
-          .search-panel .flight-search-bar-row .place-autocomplete,
-          .search-panel .flight-search-bar-row .source-field,
-          .search-panel .flight-search-bar-row .destination-field,
-          .search-panel .flight-search-bar-row .departure-field,
-          .search-panel .flight-search-bar-row .return-field,
-          .search-panel .flight-search-bar-row .traveller-field,
-          .search-panel .flight-search-bar-row .class-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .place-autocomplete,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .source-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .destination-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .departure-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .return-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .class-field {
-            height: 56px !important;
-            min-height: 56px !important;
-            max-height: 56px !important;
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: center !important;
-            align-items: center !important;
+          /* ── Base field styling inside capsule (centered 36px height with hairline dividers) ── */
+          .homepage-buses .search-panel .flight-search-bar-row .field,
+          .homepage-buses .search-panel .flight-search-bar-row .place-autocomplete,
+          .homepage-flights:not(.hero-multicity) .search-panel .flight-search-bar-row .field,
+          .homepage-flights:not(.hero-multicity) .search-panel .flight-search-bar-row .place-autocomplete {
+            height: 36px !important;
+            min-height: 36px !important;
+            max-height: 36px !important;
             align-self: center !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
             box-sizing: border-box !important;
             margin: 0 !important;
             padding: 0 14px !important;
             background: transparent !important;
             position: relative !important;
-            gap: 0 !important;
             border: none !important;
-            border-right: 1px solid #cbd5e1 !important;
+            border-right: 1px solid rgba(148, 163, 184, 0.4) !important;
             border-radius: 0 !important;
+            min-width: 0 !important;
             transition: background 0.18s ease !important;
+            overflow: visible !important;
           }
 
+          /* Hide outside labels inside horizontal search bar */
+          .search-panel .flight-search-bar-row label,
+          .homepage-flights .search-panel .flight-search-bar-row label,
+          .homepage-buses .search-panel .flight-search-bar-row label {
+            display: none !important;
+          }
+
+          /* Remove hover boxes */
           .search-panel .flight-search-bar-row .field:hover,
           .search-panel .flight-search-bar-row .place-autocomplete:hover,
-          .search-panel .flight-search-bar-row .departure-field:hover,
-          .search-panel .flight-search-bar-row .return-field:hover,
-          .search-panel .flight-search-bar-row .traveller-field:hover,
-          .search-panel .flight-search-bar-row .class-field:hover,
           .search-panel .flight-search-bar-row .field:focus-within,
-          .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
-          .search-panel .flight-search-bar-row .departure-field:focus-within,
-          .search-panel .flight-search-bar-row .return-field:focus-within,
-          .search-panel .flight-search-bar-row .traveller-field:focus-within,
-          .search-panel .flight-search-bar-row .class-field:focus-within {
+          .search-panel .flight-search-bar-row .place-autocomplete:focus-within {
             background: transparent !important;
             box-shadow: none !important;
             border-radius: 0 !important;
           }
 
-          .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
-          .search-panel .flight-search-bar-row .place-autocomplete.is-open {
-            z-index: 10000 !important;
+          /* ── Proportional Flex Column Sizing (ONE WAY FLIGHTS) ── */
+          .homepage-flights .search-panel .flight-search-bar-row.one-way .source-field,
+          .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .source-field {
+            flex: 1.3 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 20px 0 6px !important;
           }
 
-          .search-panel .flight-search-bar-row input:focus,
-          .search-panel .flight-search-bar-row input:focus-visible,
-          .search-panel .flight-search-bar-row .field-control:focus,
-          .search-panel .flight-search-bar-row .field-control:focus-visible,
-          .search-panel .flight-search-bar-row .place-input:focus,
-          .search-panel .flight-search-bar-row .place-input:focus-visible,
-          .homepage-flights .search-panel .flight-search-bar-row input:focus,
-          .homepage-buses .search-panel .flight-search-bar-row input:focus {
-            outline: none !important;
+          .homepage-flights .search-panel .flight-search-bar-row.one-way .destination-field,
+          .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .destination-field {
+            flex: 1.3 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 6px 0 20px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.one-way .departure-field,
+          .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .departure-field {
+            flex: 1.1 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 14px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.one-way .traveller-field,
+          .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .traveller-field {
+            flex: 1.15 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 14px !important;
+            z-index: 30 !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.one-way .class-field,
+          .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .class-field {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 14px !important;
+            border-right: none !important;
+            z-index: 25 !important;
+          }
+
+          /* ── Proportional Flex Column Sizing (ROUND TRIP / TWO WAY FLIGHTS) ── */
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way {
+            max-width: 1180px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .date-sub-day,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .date-sub-day {
+            display: none !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .date-main-bold,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .date-main-bold {
+            font-size: 0.84rem !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .source-field,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .source-field,
+          .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .source-field {
+            flex: 1.15 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 16px 0 4px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .destination-field,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .destination-field,
+          .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .destination-field {
+            flex: 1.15 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 4px 0 16px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .departure-field,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .departure-field,
+          .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .departure-field {
+            flex: 0.95 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 8px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .return-field,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .return-field,
+          .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .return-field {
+            flex: 0.95 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 8px !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .traveller-field,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .traveller-field,
+          .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .traveller-field {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 8px !important;
+            z-index: 30 !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .class-field,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .class-field,
+          .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .class-field {
+            flex: 0.9 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 8px !important;
+            border-right: none !important;
+            z-index: 25 !important;
+          }
+
+          .homepage-flights .search-panel .flight-search-bar-row.round-trip .search-btn.flight-grid-search-btn,
+          .homepage-flights .search-panel .flight-search-bar-row.two-way .search-btn.flight-grid-search-btn {
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 40px !important;
+            align-self: center !important;
+            margin: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            margin-left: 8px !important;
+            margin-right: 2px !important;
+            padding: 0 16px !important;
+            font-size: 11.5px !important;
+          }
+
+          /* ── Bus Search Bar Row Sizing ── */
+          .homepage-buses .search-panel .flight-search-bar-row .source-field {
+            flex: 1.35 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 20px 0 6px !important;
+          }
+          .homepage-buses .search-panel .flight-search-bar-row .destination-field {
+            flex: 1.35 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 6px 0 20px !important;
+          }
+          .homepage-buses .search-panel .flight-search-bar-row .departure-field {
+            flex: 1.2 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 16px !important;
+            border-right: none !important;
+          }
+          .homepage-buses .search-panel .flight-search-bar-row .departure-field:has(~ .return-field) {
+            border-right: 1px solid rgba(148, 163, 184, 0.4) !important;
+          }
+          .homepage-buses .search-panel .flight-search-bar-row .return-field {
+            flex: 1.1 1 0 !important;
+            min-width: 0 !important;
+            padding: 0 14px !important;
+            border-right: none !important;
+          }
+
+          /* ── Floating Origin/Destination Swap Button (Takes 0px Width) ── */
+          .search-panel .flight-search-bar-row .swap-field,
+          .homepage-flights .search-panel .flight-search-bar-row .swap-field,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-field {
+            flex: 0 0 0px !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            height: 36px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: relative !important;
+            z-index: 50 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+
+          .search-panel .flight-search-bar-row .swap-btn,
+          .homepage-flights .search-panel .flight-search-bar-row .swap-btn,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-btn {
+            position: absolute !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            min-height: 28px !important;
+            border-radius: 50% !important;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #ff0000 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            z-index: 60 !important;
+            transition: all 0.22s ease !important;
+          }
+
+          .search-panel .flight-search-bar-row .swap-btn:hover,
+          .homepage-flights .search-panel .flight-search-bar-row .swap-btn:hover,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-btn:hover {
+            transform: translate(-50%, -50%) rotate(180deg) scale(1.08) !important;
+            border-color: #ff0000 !important;
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.28) !important;
+          }
+
+          .search-panel .flight-search-bar-row .swap-btn svg,
+          .homepage-flights .search-panel .flight-search-bar-row .swap-btn svg,
+          .homepage-buses .search-panel .flight-search-bar-row .swap-btn svg {
+            width: 14px !important;
+            height: 14px !important;
+            color: #ff0000 !important;
+            stroke: #ff0000 !important;
+            position: static !important;
+            transform: none !important;
+            margin: 0 !important;
+          }
+
+          /* ── Inner Control Wraps & Triggers ── */
+          .search-panel .flight-search-bar-row .control-wrap,
+          .search-panel .flight-search-bar-row .traveller-trigger,
+          .homepage-flights .search-panel .flight-search-bar-row .control-wrap,
+          .homepage-flights .search-panel .flight-search-bar-row .traveller-trigger,
+          .homepage-buses .search-panel .flight-search-bar-row .control-wrap {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 7px !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
             box-shadow: none !important;
             background: transparent !important;
-            border: none !important;
+            outline: none !important;
+            cursor: pointer !important;
+            position: relative !important;
           }
 
-          /* Place Dropdown default DOWNWARD positioning */
+          /* ── Field Icons (Static, Left-aligned, Crisp Red Outline) ── */
+          .search-panel .flight-search-bar-row .control-wrap > svg,
+          .search-panel .flight-search-bar-row .traveller-summary > svg,
+          .search-panel .flight-search-bar-row .control-wrap svg:not(.traveller-caret),
+          .homepage-flights .search-panel .flight-search-bar-row .control-wrap > svg,
+          .homepage-flights .search-panel .flight-search-bar-row .traveller-summary > svg,
+          .homepage-flights .search-panel .flight-search-bar-row .control-wrap svg:not(.traveller-caret),
+          .homepage-buses .search-panel .flight-search-bar-row .control-wrap > svg {
+            position: static !important;
+            transform: none !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            color: #e51a2e !important;
+            stroke: #e51a2e !important;
+            flex-shrink: 0 !important;
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            margin: 0 !important;
+            margin-right: 10px !important;
+            padding: 0 !important;
+            pointer-events: none !important;
+            filter: none !important;
+          }
+
+          /* ── Field Inputs (Refined Typography & Zero Left Padding to Prevent Icon Overlap) ── */
+          .search-panel .flight-search-bar-row input,
+          .search-panel .flight-search-bar-row .field-control,
+          .search-panel .flight-search-bar-row .place-input,
+          .search-panel .flight-search-bar-row .with-leading-icon,
+          .homepage-flights .search-panel .flight-search-bar-row input,
+          .homepage-flights .search-panel .flight-search-bar-row .field-control,
+          .homepage-flights .search-panel .flight-search-bar-row .place-input,
+          .homepage-flights .search-panel .flight-search-bar-row .with-leading-icon,
+          .homepage-buses .search-panel .flight-search-bar-row input,
+          .homepage-buses .search-panel .flight-search-bar-row .field-control,
+          .homepage-buses .search-panel .flight-search-bar-row .place-input {
+            padding: 0 !important;
+            padding-left: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: #0f172a !important;
+            font-weight: 600 !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+            font-size: 0.88rem !important;
+            line-height: normal !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          .search-panel .flight-search-bar-row input::placeholder,
+          .search-panel .flight-search-bar-row .field-control::placeholder,
+          .search-panel .flight-search-bar-row .place-input::placeholder,
+          .homepage-flights .search-panel .flight-search-bar-row input::placeholder,
+          .homepage-buses .search-panel .flight-search-bar-row input::placeholder {
+            color: #334155 !important;
+            font-weight: 600 !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            font-size: 0.86rem !important;
+            opacity: 1 !important;
+          }
+
+          /* ── Date Display Wrapper ── */
+          .search-panel .flight-search-bar-row .date-display-wrapper,
+          .homepage-flights .search-panel .flight-search-bar-row .date-display-wrapper {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 3px !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-display-wrapper span,
+          .homepage-flights .search-panel .flight-search-bar-row .date-display-wrapper span {
+            font-size: 0.88rem !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-placeholder,
+          .homepage-flights .search-panel .flight-search-bar-row .date-placeholder {
+            color: #334155 !important;
+            font-weight: 600 !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-main-bold,
+          .homepage-flights .search-panel .flight-search-bar-row .date-main-bold {
+            color: #0f172a !important;
+            font-weight: 600 !important;
+          }
+
+          .search-panel .flight-search-bar-row .date-sub-day,
+          .homepage-flights .search-panel .flight-search-bar-row .date-sub-day {
+            font-size: 0.76rem !important;
+            color: #475569 !important;
+            font-weight: 500 !important;
+          }
+
+          /* ── Traveller & Class Dropdown Trigger ── */
+          .search-panel .flight-search-bar-row .traveller-summary,
+          .homepage-flights .search-panel .flight-search-bar-row .traveller-summary {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 7px !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+          }
+
+          .search-panel .flight-search-bar-row .traveller-summary span,
+          .homepage-flights .search-panel .flight-search-bar-row .traveller-summary span {
+            font-size: 0.88rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+          }
+
+          .search-panel .flight-search-bar-row .traveller-summary.placeholder span,
+          .homepage-flights .search-panel .flight-search-bar-row .traveller-summary.placeholder span {
+            color: #334155 !important;
+            font-weight: 600 !important;
+          }
+
+          .search-panel .flight-search-bar-row .traveller-caret,
+          .homepage-flights .search-panel .flight-search-bar-row .traveller-caret {
+            flex-shrink: 0 !important;
+            width: 14px !important;
+            height: 14px !important;
+            color: #64748b !important;
+            stroke: #64748b !important;
+            margin-left: auto !important;
+            transition: transform 0.2s ease !important;
+          }
+
+          /* ── Red Search Button (Capsule Shape Pixel-Perfect to Hotel Button) ── */
+          .hotel-capsule-btn,
+          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn,
+          .homepage-flights .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn,
+          .homepage-buses .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
+            border-radius: 9999px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 40px !important;
+            align-self: center !important;
+            margin: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            margin-left: 10px !important;
+            margin-right: 2px !important;
+            padding: 0 20px !important;
+            background: #dc2626 !important;
+            color: #ffffff !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.03em !important;
+            text-transform: uppercase !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 7px !important;
+            box-shadow: 0 3px 12px rgba(220, 30, 38, 0.35) !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            width: auto !important;
+          }
+
+          .hotel-capsule-btn:hover,
+          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn:hover,
+          .homepage-flights .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn:hover,
+          .homepage-buses .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn:hover {
+            background: #b91c1c !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 18px rgba(220, 30, 38, 0.45) !important;
+          }
+
+          .hotel-capsule-btn:active,
+          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn:active,
+          .homepage-flights .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn:active,
+          .homepage-buses .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 3px 10px rgba(220, 30, 38, 0.25) !important;
+          }
+
+          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn svg,
+          .homepage-flights .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn svg,
+          .homepage-buses .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+            width: 15px !important;
+            height: 15px !important;
+            flex-shrink: 0 !important;
+            position: static !important;
+            transform: none !important;
+            margin: 0 !important;
+          }
+
+          /* ── Place Autocomplete Dropdown Positioning ── */
           .search-panel .flight-search-bar-row .destination-field .place-dropdown,
           .search-panel .flight-search-bar-row .destination-field .bus-place-dropdown,
           .search-panel .flight-search-bar-row .destination-field .modern-place-menu {
@@ -6691,356 +7341,21 @@ export default function HomePage() {
             z-index: 999999 !important;
           }
 
-          /* Dropup only if explicitly tagged with .drop-up */
-          .place-dropdown.drop-up,
-          .bus-place-dropdown.drop-up,
-          .modern-place-menu.drop-up {
-            top: auto !important;
-            bottom: calc(100% + 8px) !important;
-            box-shadow: 0 -16px 36px -4px rgba(15, 23, 42, 0.25), 0 -4px 12px -2px rgba(15, 23, 42, 0.1) !important;
-            z-index: 999999 !important;
-            animation: placeDropdownFadeInUp 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          }
-
-          @keyframes placeDropdownFadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(6px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          /* Standardized Control Wraps & Triggers across All Search Fields */
-          .search-panel .flight-search-bar-row .control-wrap,
-          .search-panel .flight-search-bar-row .traveller-trigger,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .control-wrap,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-trigger {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 10px !important;
-            width: 100% !important;
-            height: 38px !important;
-            min-height: 38px !important;
-            max-height: 38px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            outline: none !important;
-            cursor: pointer !important;
-          }
-
-          .homepage-flights .search-panel .multi-city-row .control-wrap,
-          .homepage-flights .search-panel .multi-footer-row .control-wrap,
-          .homepage-flights .search-panel .multi-footer-row .traveller-trigger {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 8px !important;
-            width: 100% !important;
-            height: 24px !important;
-            min-height: 24px !important;
-            max-height: 24px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            outline: none !important;
-            cursor: pointer !important;
-          }
-
-          .search-panel .flight-search-bar-row .control-wrap svg,
-          .search-panel .flight-search-bar-row .traveller-trigger svg,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .control-wrap svg,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-trigger svg,
-          .homepage-flights .search-panel .multi-city-row .control-wrap svg,
-          .homepage-flights .search-panel .multi-footer-row .control-wrap svg,
-          .homepage-flights .search-panel .multi-footer-row .traveller-trigger svg {
-            color: #dc1e26 !important;
-            stroke: #dc1e26 !important;
-            flex-shrink: 0 !important;
-            width: 16px !important;
-            height: 16px !important;
-            position: static !important;
-            transform: none !important;
-            margin: 0 !important;
-          }
-
-          .search-panel .flight-search-bar-row .traveller-caret,
-          .homepage-flights .search-panel .multi-footer-row .traveller-caret {
-            margin-left: auto !important;
-          }
-
-          .search-panel .flight-search-bar-row .field-control,
-          .search-panel .flight-search-bar-row input.field-control,
-          .search-panel .flight-search-bar-row .date-display-wrapper,
-          .search-panel .flight-search-bar-row .traveller-summary,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field-control,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row input.field-control,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-display-wrapper,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary {
-            height: 38px !important;
-            min-height: 38px !important;
-            line-height: 38px !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            color: #0f172a !important;
-            font-size: 0.94rem !important;
-            font-weight: 500 !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 6px !important;
-            width: 100% !important;
-          }
-
-
-          .search-panel .flight-search-bar-row .with-leading-icon,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .with-leading-icon {
-            padding-left: 0 !important;
-          }
-
-          .search-panel .flight-search-bar-row .date-display-wrapper span,
-          .search-panel .flight-search-bar-row .traveller-summary span,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-display-wrapper span,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary span {
-            white-space: nowrap !important;
-            line-height: 24px !important;
-            font-size: 0.88rem !important;
-          }
-
-          .search-panel .flight-search-bar-row .field-control::placeholder,
-          .search-panel .flight-search-bar-row .date-placeholder,
-          .search-panel .flight-search-bar-row .traveller-summary.placeholder span,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field-control::placeholder,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-placeholder,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary.placeholder span,
-          .homepage-flights .search-panel .multi-city-row .field-control::placeholder,
-          .homepage-flights .search-panel .multi-city-row .date-placeholder {
-            color: #64748b !important;
-            font-weight: 500 !important;
-            opacity: 1 !important;
-          }
-
-          .search-panel .flight-search-bar-row .date-main-bold,
-          .search-panel .flight-search-bar-row .traveller-summary:not(.placeholder) span,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-main-bold,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-summary:not(.placeholder) span,
-          .homepage-flights .search-panel .multi-city-row .date-main-bold {
-            color: #0f172a !important;
-            font-weight: 600 !important;
-          }
-
-          .search-panel .flight-search-bar-row .date-sub-day,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .date-sub-day {
-            font-size: 0.75rem !important;
-            color: #64748b !important;
-            font-weight: 500 !important;
-          }
-
-          /* Container-specific Padding & Divider Lines */
-          .search-panel .flight-search-bar-row .source-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .source-field {
-            flex: 1.25 1 auto !important;
-            padding: 0 28px 0 16px !important;
-            border-right: 1px solid #cbd5e1 !important;
-          }
-
-          .search-panel .flight-search-bar-row .destination-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .destination-field {
-            flex: 1.25 1 auto !important;
-            padding: 0 16px 0 28px !important;
-            border-right: 1px solid #cbd5e1 !important;
-          }
-
-          .search-panel .flight-search-bar-row .departure-field,
-          .search-panel .flight-search-bar-row .return-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .departure-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .return-field {
-            flex: 1.05 1 auto !important;
-            padding: 0 16px !important;
-            border-right: 1px solid #cbd5e1 !important;
-          }
-
-          .search-panel .flight-search-bar-row .traveller-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-field {
-            flex: 1.15 1 auto !important;
-            padding: 0 16px !important;
-            border-right: 1px solid #cbd5e1 !important;
-            z-index: 30 !important;
-          }
-
-          .search-panel .flight-search-bar-row .class-field,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .class-field {
-            flex: 1 1 auto !important;
-            padding: 0 16px !important;
-            border-right: none !important;
-            margin-right: 8px !important;
-            z-index: 25 !important;
-          }
-
-          .search-panel .flight-search-bar-row .hotel-destination-field {
-            flex: 1.4 1 auto !important;
-            padding-left: 6px !important;
-            border-right: 1px solid #cbd5e1 !important;
-          }
-
-          .search-panel .flight-search-bar-row .hotel-guests-field {
-            flex: 1.2 1 auto !important;
-            border-right: 1px solid #cbd5e1 !important;
-            padding-left: 12px !important;
-          }
-
-          .search-panel .flight-search-bar-row .hotel-destination-field svg,
-          .search-panel .flight-search-bar-row .checkin-field svg,
-          .search-panel .flight-search-bar-row .checkout-field svg,
-          .search-panel .flight-search-bar-row .hotel-guests-field svg:first-child {
-            color: #dc1e26 !important;
-            stroke: #dc1e26 !important;
-            flex-shrink: 0 !important;
+          /* Class Dropdown right-aligned to stay inside viewport */
+          .search-panel .flight-search-bar-row .class-dropdown,
+          .homepage-flights .search-panel .flight-search-bar-row .class-dropdown {
+            left: auto !important;
+            right: 0 !important;
           }
 
           .search-panel .flight-search-bar-row .traveller-field:focus-within,
-          .search-panel .flight-search-bar-row .class-field:focus-within {
-            z-index: 1200 !important;
+          .search-panel .flight-search-bar-row .class-field:focus-within,
+          .search-panel .flight-search-bar-row .place-autocomplete:focus-within,
+          .search-panel .flight-search-bar-row .place-autocomplete.is-open {
+            z-index: 10000 !important;
           }
 
-          /* Perfectly Centered Floating Switcher Button on Divider Line */
-          .homepage-flights .search-panel .flight-search-bar-row .swap-field,
-          .homepage-buses .search-panel .flight-search-bar-row .swap-field,
-          .search-panel .flight-search-bar-row .swap-field {
-            flex: 0 0 auto !important;
-            width: 0 !important;
-            min-width: 0 !important;
-            height: 56px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            position: relative !important;
-            z-index: 50 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-          }
-
-          .homepage-flights .search-panel .flight-search-bar-row .swap-btn,
-          .homepage-buses .search-panel .flight-search-bar-row .swap-btn,
-          .search-panel .flight-search-bar-row .swap-btn {
-            position: absolute !important;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 28px !important;
-            height: 28px !important;
-            min-width: 28px !important;
-            min-height: 28px !important;
-            border-radius: 50% !important;
-            background: #ffffff !important;
-            border: 1.5px solid #cbd5e1 !important;
-            color: #dc1e26 !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            cursor: pointer !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            z-index: 60 !important;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          }
-
-          .homepage-flights .search-panel .flight-search-bar-row .swap-btn:hover,
-          .homepage-buses .search-panel .flight-search-bar-row .swap-btn:hover,
-          .search-panel .flight-search-bar-row .swap-btn:hover {
-            transform: translate(-50%, -50%) rotate(180deg) scale(1.1) !important;
-            border-color: #dc1e26 !important;
-            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.28) !important;
-          }
-
-          .search-panel .flight-search-bar-row .swap-btn svg {
-            width: 14px !important;
-            height: 14px !important;
-            color: #dc1e26 !important;
-            stroke: #dc1e26 !important;
-            flex-shrink: 0 !important;
-          }
-
-          /* Hide Field Labels in Flight Search (Single-Line & Multi-City) as requested */
-          .search-panel .flight-search-bar-row label,
-          .search-panel .flight-search-bar-row .field label,
-          .search-panel .flight-search-bar-row .place-autocomplete label,
-          .search-panel .flight-search-bar-row .source-field label,
-          .search-panel .flight-search-bar-row .destination-field label,
-          .search-panel .flight-search-bar-row .departure-field label,
-          .search-panel .flight-search-bar-row .return-field label,
-          .search-panel .flight-search-bar-row .traveller-field label,
-          .search-panel .flight-search-bar-row .class-field label,
-          .homepage-flights .search-panel .flight-search-bar-row label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .field label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .place-autocomplete label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .source-field label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .destination-field label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .departure-field label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .return-field label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .traveller-field label,
-          .homepage-flights .hero-grid .search-panel .flight-search-bar-row .class-field label,
-          .homepage-flights .search-panel .multi-city-row label,
-          .homepage-flights .search-panel .multi-footer-row label,
-          .homepage-flights .search-panel .multi-city-list label,
-          .search-panel .multi-city-row label,
-          .search-panel .multi-footer-row label {
-            display: none !important;
-          }
-          
-          .search-panel .flight-search-bar-row .date-display-wrapper span,
-          .homepage-flights .search-panel .multi-city-row .date-display-wrapper span {
-            white-space: nowrap !important;
-          }
-
-          /* Red Search Button */
-          .search-panel .flight-search-bar-row .search-btn.flight-grid-search-btn {
-            flex: 0 0 auto !important;
-            width: auto !important;
-            min-width: 110px !important;
-            height: 42px !important;
-            background: #dc1e26 !important;
-            color: #ffffff !important;
-            border-radius: 10px !important;
-            font-weight: 800 !important;
-            font-size: 0.72rem !important;
-            letter-spacing: 0.05em !important;
-            text-transform: uppercase !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 6px !important;
-            box-shadow: 0 4px 12px rgba(220, 30, 38, 0.3) !important;
-            transition: all 0.2s ease !important;
-            margin-left: 10px !important;
-            padding: 0 16px !important;
-            border: none !important;
-            cursor: pointer !important;
-          }
-
-          .homepage-flights .search-panel .search-btn.flight-grid-search-btn:hover {
-            background: #b8141b !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
-          }
-
-          /* ── Multi-City ONLY: Dynamic Downward Expansion (Banner drags down side only) ── */
+          /* ── Multi-City ONLY: Dynamic Downward Expansion ── */
           .hero-multicity.hero-section {
             height: auto !important;
             min-height: 360px !important;
@@ -7081,107 +7396,156 @@ export default function HomePage() {
             max-width: 1220px !important;
           }
 
-          /* Multi-City Compact Sizing & Layout (Decrease the size) */
+          /* Multi-City Sleek Capsule Sizing & Layout */
           .homepage-flights .search-panel.is-multicity {
-            padding: 6px 14px 10px 14px !important;
-            border-radius: 16px !important;
+            padding: 8px 14px 12px 14px !important;
+            border-radius: 18px !important;
+            max-width: 1280px !important;
           }
 
           .homepage-flights .search-panel .multi-city-list {
             width: 100% !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 6px !important;
-            margin-top: 2px !important;
+            gap: 8px !important;
+            margin-top: 4px !important;
             overflow: visible !important;
           }
 
           .homepage-flights .search-panel .multi-city-row {
             width: 100% !important;
-            display: grid !important;
-            grid-template-columns: minmax(160px, 1.2fr) minmax(160px, 1.2fr) minmax(140px, 1fr) auto !important;
-            gap: 0 !important;
+            display: flex !important;
+            flex-direction: row !important;
             align-items: center !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.18)) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.22)) !important;
             backdrop-filter: blur(20px) saturate(150%) !important;
             -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.65) !important;
             border-radius: 12px !important;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05) !important;
             box-sizing: border-box !important;
             margin-bottom: 0 !important;
             overflow: visible !important;
             transition: all 0.2s ease !important;
+            height: 48px !important;
+            min-height: 48px !important;
+            padding: 0 8px 0 12px !important;
+            gap: 0 !important;
+            position: relative !important;
           }
 
           .homepage-flights .search-panel .multi-city-row:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.24)) !important;
-            border-color: rgba(255, 255, 255, 0.8) !important;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.3)) !important;
+            border-color: rgba(255, 255, 255, 0.85) !important;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08) !important;
           }
 
-          .homepage-flights .search-panel .multi-city-row .field,
-          .homepage-flights .search-panel .multi-city-row .place-autocomplete {
-            height: 44px !important;
-            min-height: 44px !important;
-            background: transparent !important;
+          /* Hide labels inside multi-city horizontal row */
+          .homepage-flights .search-panel .multi-city-row label {
+            display: none !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row .source-field {
+            flex: 1.25 1 0 !important;
+            min-width: 0 !important;
+            height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 20px 0 0 !important;
             border: none !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
+            border-right: 1px solid rgba(203, 213, 225, 0.75) !important;
             border-radius: 0 !important;
-            padding: 0 12px !important;
-            margin: 0 !important;
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: center !important;
-            align-items: center !important;
+            background: transparent !important;
             box-sizing: border-box !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row .multi-swap-field {
+            flex: 0 0 0px !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            height: 48px !important;
+            margin: 0 !important;
+            padding: 0 !important;
             position: relative !important;
-            transition: background 0.18s ease !important;
-          }
-
-          .homepage-flights .search-panel .multi-city-row .field:hover,
-          .homepage-flights .search-panel .multi-city-row .place-autocomplete:hover {
-            background: rgba(255, 255, 255, 0.22) !important;
-            border-radius: 8px !important;
-          }
-
-          .homepage-flights .search-panel .multi-city-row .field-control,
-          .homepage-flights .search-panel .multi-city-row input.field-control {
-            height: 32px !important;
-            min-height: 32px !important;
-            line-height: 32px !important;
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            color: #0f172a !important;
-          }
-
-          .homepage-flights .search-panel .multi-city-row .control-wrap {
-            height: 32px !important;
-            min-height: 32px !important;
-            gap: 8px !important;
-            width: 100% !important;
+            z-index: 25 !important;
             display: flex !important;
             align-items: center !important;
+            justify-content: center !important;
+            border: none !important;
+            background: transparent !important;
           }
 
-          .homepage-flights .search-panel .multi-city-row .control-wrap svg {
-            width: 16px !important;
-            height: 16px !important;
+          .homepage-flights .search-panel .multi-city-row .multi-swap-btn {
+            position: absolute !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 26px !important;
+            height: 26px !important;
+            min-width: 26px !important;
+            min-height: 26px !important;
+            border-radius: 50% !important;
+            background: #ffffff !important;
+            border: 1.5px solid #cbd5e1 !important;
+            color: #ff0000 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            z-index: 30 !important;
+            transition: all 0.22s ease !important;
           }
 
-          .homepage-flights .search-panel .multi-city-row .date-display-wrapper span {
-            font-size: 0.88rem !important;
-            font-weight: 600 !important;
-            color: #0f172a !important;
+          .homepage-flights .search-panel .multi-city-row .multi-swap-btn:hover {
+            transform: translate(-50%, -50%) rotate(180deg) scale(1.08) !important;
+            border-color: #ff0000 !important;
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25) !important;
+            background: #ffffff !important;
+            color: #ff0000 !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row .destination-field {
+            flex: 1.25 1 0 !important;
+            min-width: 0 !important;
+            height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 14px 0 20px !important;
+            border: none !important;
+            border-right: 1px solid rgba(203, 213, 225, 0.75) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-sizing: border-box !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row .departure-field {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 12px !important;
+            border: none !important;
+            border-right: 1px solid rgba(203, 213, 225, 0.75) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-sizing: border-box !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .multi-actions {
+            flex: 0 0 auto !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             gap: 6px !important;
-            height: 44px !important;
-            padding: 0 10px !important;
+            height: 48px !important;
+            padding: 0 4px 0 8px !important;
+            border: none !important;
+            background: transparent !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .action-circle {
@@ -7190,50 +7554,154 @@ export default function HomePage() {
             min-width: 26px !important;
             min-height: 26px !important;
             border-radius: 50% !important;
-            background: rgba(255, 255, 255, 0.55) !important;
+            background: rgba(255, 255, 255, 0.75) !important;
             backdrop-filter: blur(8px) !important;
             -webkit-backdrop-filter: blur(8px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.75) !important;
+            border: 1px solid rgba(255, 255, 255, 0.85) !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06) !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .action-add {
             color: #16a34a !important;
           }
           .homepage-flights .search-panel .multi-city-row .action-add:hover {
-            background: rgba(240, 253, 244, 0.85) !important;
+            background: #ffffff !important;
             border-color: #86efac !important;
             transform: scale(1.1) !important;
-            box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25) !important;
+            box-shadow: 0 3px 8px rgba(220, 30, 38, 0.25) !important;
           }
 
           .homepage-flights .search-panel .multi-city-row .action-delete {
-            color: #dc1e26 !important;
+            color: #ff0000 !important;
           }
           .homepage-flights .search-panel .multi-city-row .action-delete:hover:not(:disabled) {
-            background: rgba(254, 242, 242, 0.85) !important;
+            background: #ffffff !important;
             border-color: #fca5a5 !important;
             transform: scale(1.1) !important;
-            box-shadow: 0 3px 8px rgba(220, 30, 38, 0.25) !important;
+            box-shadow: 0 3px 8px rgba(255, 0, 0, 0.25) !important;
           }
           .homepage-flights .search-panel .multi-city-row .action-delete:disabled {
             opacity: 0.3 !important;
             cursor: not-allowed !important;
           }
 
-          /* Multi-City Footer Row (Travellers + Class + Search in 1 Compact Row) */
+          /* Multi-City SVG Icons strictly static, left-aligned, crisp red */
+          .search-panel .multi-city-row .control-wrap svg,
+          .homepage-flights .search-panel .multi-city-row .control-wrap svg,
+          .search-panel .multi-city-row .field svg:not(.multi-swap-btn svg):not(.action-circle svg) {
+            position: static !important;
+            transform: none !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            color: #ff0000 !important;
+            stroke: #ff0000 !important;
+            flex-shrink: 0 !important;
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            pointer-events: none !important;
+          }
+
+          .search-panel .multi-city-row .control-wrap,
+          .homepage-flights .search-panel .multi-city-row .control-wrap {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+          }
+
+          .search-panel .multi-city-row input,
+          .search-panel .multi-city-row .field-control,
+          .search-panel .multi-city-row .place-input,
+          .search-panel .multi-city-row .with-leading-icon,
+          .homepage-flights .search-panel .multi-city-row input,
+          .homepage-flights .search-panel .multi-city-row .field-control,
+          .homepage-flights .search-panel .multi-city-row .place-input {
+            padding: 0 !important;
+            padding-left: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: #0f172a !important;
+            font-weight: 400 !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+            font-size: 0.88rem !important;
+            line-height: normal !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          .search-panel .multi-city-row input::placeholder,
+          .search-panel .multi-city-row .field-control::placeholder,
+          .search-panel .multi-city-row .place-input::placeholder,
+          .homepage-flights .search-panel .multi-city-row input::placeholder {
+            color: #334155 !important;
+            font-weight: 600 !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            font-size: 0.86rem !important;
+            opacity: 1 !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row .date-display-wrapper span {
+            font-size: 0.88rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+          }
+
+          .homepage-flights .search-panel .multi-city-row .date-display-wrapper .date-placeholder {
+            color: #334155 !important;
+            font-weight: 600 !important;
+          }
+
+          /* Multi-City Trip Switcher Pills (ONE WAY | ROUND TRIP | MULTI CITY) */
+          .homepage-flights .search-panel .trip-switch .trip-chip {
+            font-weight: 500 !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+            letter-spacing: 0.01em !important;
+          }
+
+          .homepage-flights .search-panel .trip-switch .trip-chip.active {
+            font-weight: 600 !important;
+          }
+
+          /* Multi-City Footer Row: 3 sleek inline columns (Travellers, Class, Search Button) */
           .homepage-flights .search-panel .multi-footer-row {
             width: 100% !important;
-            display: grid !important;
-            grid-template-columns: minmax(160px, 1.2fr) minmax(160px, 1.2fr) minmax(140px, 1fr) !important;
-            gap: 8px !important;
+            display: flex !important;
+            flex-direction: row !important;
             align-items: center !important;
-            margin-top: 6px !important;
+            gap: 10px !important;
+            margin-top: 8px !important;
             box-sizing: border-box !important;
             overflow: visible !important;
           }
@@ -7241,31 +7709,33 @@ export default function HomePage() {
           .homepage-flights .search-panel .multi-footer-row .field,
           .homepage-flights .search-panel .multi-footer-row .traveller-field,
           .homepage-flights .search-panel .multi-footer-row .class-field {
+            flex: 1.2 1 0 !important;
+            min-width: 0 !important;
             height: 44px !important;
             min-height: 44px !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.18)) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.22)) !important;
             backdrop-filter: blur(20px) saturate(150%) !important;
             -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.65) !important;
             border-radius: 12px !important;
-            padding: 0 12px !important;
+            padding: 0 14px !important;
             margin: 0 !important;
             display: flex !important;
             flex-direction: row !important;
-            justify-content: center !important;
             align-items: center !important;
             box-sizing: border-box !important;
             position: relative !important;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
-            transition: all 0.2s ease !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
+            grid-column: auto !important;
+            grid-row: auto !important;
+            width: auto !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .field:hover,
           .homepage-flights .search-panel .multi-footer-row .traveller-field:hover,
           .homepage-flights .search-panel .multi-footer-row .class-field:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.24)) !important;
-            border-color: rgba(255, 255, 255, 0.8) !important;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.3)) !important;
+            border-color: rgba(255, 255, 255, 0.85) !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .control-wrap,
@@ -7285,21 +7755,32 @@ export default function HomePage() {
           }
 
           .homepage-flights .search-panel .multi-footer-row .traveller-summary span,
-          .homepage-flights .search-panel .multi-footer-row .class-summary span {
-            font-size: 0.9rem !important;
+          .homepage-flights .search-panel .multi-footer-row .class-summary span,
+          .homepage-flights .search-panel .multi-footer-row .traveller-trigger span {
+            font-size: 0.88rem !important;
             font-weight: 600 !important;
             color: #0f172a !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+          }
+
+          .homepage-flights .search-panel .multi-footer-row .traveller-summary.placeholder span {
+            color: #334155 !important;
+            font-weight: 600 !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .search-btn.flight-grid-search-btn {
+            flex: 1 1 0 !important;
+            min-width: 160px !important;
             height: 44px !important;
             min-height: 44px !important;
             border-radius: 12px !important;
             background: #dc1e26 !important;
             color: #ffffff !important;
-            font-weight: 800 !important;
-            font-size: 0.74rem !important;
-            letter-spacing: 0.05em !important;
+            font-weight: 500 !important;
+            font-size: 0.82rem !important;
+            letter-spacing: 0.02em !important;
             text-transform: uppercase !important;
             display: flex !important;
             flex-direction: row !important;
@@ -7307,11 +7788,17 @@ export default function HomePage() {
             justify-content: center !important;
             gap: 6px !important;
             margin: 0 !important;
-            box-shadow: 0 4px 14px rgba(220, 30, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+            padding: 0 20px !important;
+            box-shadow: 0 4px 14px rgba(220, 30, 38, 0.3) !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
             border: none !important;
-            width: 100% !important;
+            width: auto !important;
+            grid-column: auto !important;
+            grid-row: auto !important;
+            font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
           }
 
           .homepage-flights .search-panel .multi-footer-row .search-btn.flight-grid-search-btn:hover {
@@ -7320,8 +7807,55 @@ export default function HomePage() {
             box-shadow: 0 8px 22px rgba(220, 30, 38, 0.45) !important;
           }
 
-          @media (max-width: 100px) {
-            /* Disabled the flex wrap so it stays on 1 line even on very small preview screens */
+          /* ── Featured Offers Red Theme (All Active Tabs & Offer Badges/Buttons) ── */
+          .bus-offers-tab-btn.active,
+          .bus-offers-tab-btn.tab-bus.active,
+          .bus-offers-tab-btn.tab-flight.active,
+          .bus-offers-tab-btn.tab-hotel.active,
+          .bus-offers-tab-btn.tab-all.active {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%) !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 14px rgba(255, 0, 0, 0.35) !important;
+          }
+
+          .bus-offers-tab-btn.active:hover,
+          .bus-offers-tab-btn.tab-bus.active:hover,
+          .bus-offers-tab-btn.tab-flight.active:hover,
+          .bus-offers-tab-btn.tab-hotel.active:hover,
+          .bus-offers-tab-btn.tab-all.active:hover {
+            background: linear-gradient(135deg, #cc0000 0%, #990000 100%) !important;
+          }
+
+          .img-offer-grab-btn,
+          .img-offer-grab-btn.btn-hotel,
+          .img-offer-grab-btn.btn-flight,
+          .img-offer-grab-btn.btn-bus {
+            background: #ff0000 !important;
+            color: #ffffff !important;
+            box-shadow: 0 3px 8px rgba(255, 0, 0, 0.35) !important;
+          }
+
+          .img-offer-grab-btn:hover,
+          .img-offer-grab-btn.btn-hotel:hover,
+          .img-offer-grab-btn.btn-flight:hover,
+          .img-offer-grab-btn.btn-bus:hover {
+            background: #cc0000 !important;
+          }
+
+          .img-offer-cat-circle,
+          .img-offer-cat-circle.circle-hotel,
+          .img-offer-cat-circle.circle-flight,
+          .img-offer-cat-circle.circle-bus {
+            background: #ffe4e6 !important;
+            color: #ff0000 !important;
+          }
+
+          .img-offer-cat-text,
+          .img-offer-cat-text.text-hotel,
+          .img-offer-cat-text.text-flight,
+          .img-offer-cat-text.text-bus {
+            color: #ff0000 !important;
           }
         `}</style>
       <section className={`hero-section ${activeTab === "flights" ? "homepage-flights" : ""} ${activeTab === "buses" ? "homepage-buses" : ""} ${activeTab === "hotels" ? "homepage-hotels" : ""} ${activeTab === "flights" && flightTripType === "multicity" ? "hero-multicity" : ""}`}>
@@ -7501,15 +8035,15 @@ export default function HomePage() {
                             <label>Departure</label>
                             <div
                               className="control-wrap"
-                              style={{ cursor: "pointer" }}
+                              style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", width: "100%", minWidth: 0 }}
                               onClick={() => {
                                 setShowTravellerDropdown(false);
                                 setShowClassDropdown(false);
                                 setActiveCalendarField((prev) => (prev === `leg-${leg.id}` ? null : `leg-${leg.id}`));
                               }}
                             >
-                              <CalendarDays size={18} style={{ color: "#dc1e26", flexShrink: 0 }} />
-                              <div className="date-display-wrapper">
+                              <CalendarDays size={16} style={{ color: "#ff0000", flexShrink: 0, position: "static" }} />
+                              <div className="date-display-wrapper" style={{ display: "flex", alignItems: "center", gap: "4px", flex: "1 1 auto", minWidth: 0, overflow: "hidden", whiteSpace: "nowrap" }}>
                                 <span className={leg.departureDate ? "date-main-bold" : "date-placeholder"}>
                                   {leg.departureDate ? formatFlightDate(leg.departureDate).date : "DD/MM/YYYY"}
                                 </span>
@@ -7569,14 +8103,14 @@ export default function HomePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flight-search-bar-row">
+                    <div className={`flight-search-bar-row ${isFlightTwoWay ? "two-way round-trip" : "one-way"}`}>
                       <PlaceAutocomplete
                         label="FROM"
                         value={flightFrom}
                         onChange={handleFlightFromChange}
                         tripType="flight"
                         field="from"
-                        placeholder="Select Source"
+                        placeholder="Source"
                         error={flightFromError}
                         className="source-field"
                       />
@@ -7588,7 +8122,7 @@ export default function HomePage() {
                           onClick={handleSwapFlights}
                           aria-label="Swap flight origin and destination"
                         >
-                          <ArrowLeftRight size={16} />
+                          <ArrowLeftRight size={14} />
                         </button>
                       </div>
 
@@ -7598,7 +8132,7 @@ export default function HomePage() {
                         onChange={handleFlightToChange}
                         tripType="flight"
                         field="to"
-                        placeholder="Select Destination"
+                        placeholder="Destination"
                         error={flightToError}
                         className="destination-field"
                       />
@@ -7607,15 +8141,15 @@ export default function HomePage() {
                         <label>Departure</label>
                         <div
                           className="control-wrap"
-                          style={{ cursor: "pointer" }}
+                          style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", width: "100%", minWidth: 0 }}
                           onClick={() => {
                             setShowTravellerDropdown(false);
                             setShowClassDropdown(false);
                             setActiveCalendarField((prev) => (prev === "flight-dep" ? null : "flight-dep"));
                           }}
                         >
-                          <CalendarDays size={18} style={{ color: "#dc1e26", flexShrink: 0 }} />
-                          <div className="date-display-wrapper">
+                          <CalendarDays size={16} style={{ color: "#ff0000", flexShrink: 0, position: "static" }} />
+                          <div className="date-display-wrapper" style={{ display: "flex", alignItems: "center", gap: "4px", flex: "1 1 auto", minWidth: 0, overflow: "hidden", whiteSpace: "nowrap" }}>
                             <span className={flightDepartureDate ? "date-main-bold" : "date-placeholder"}>
                               {flightDepartureDate ? formatFlightDate(flightDepartureDate).date : "DD/MM/YYYY"}
                             </span>
@@ -7645,15 +8179,15 @@ export default function HomePage() {
                           <label>Return</label>
                           <div
                             className="control-wrap"
-                            style={{ cursor: "pointer" }}
+                            style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", width: "100%", minWidth: 0 }}
                             onClick={() => {
                               setShowTravellerDropdown(false);
                               setShowClassDropdown(false);
                               setActiveCalendarField((prev) => (prev === "flight-ret" ? null : "flight-ret"));
                             }}
                           >
-                            <CalendarDays size={18} style={{ color: "#dc1e26", flexShrink: 0 }} />
-                            <div className="date-display-wrapper">
+                            <CalendarDays size={16} style={{ color: "#ff0000", flexShrink: 0, position: "static" }} />
+                            <div className="date-display-wrapper" style={{ display: "flex", alignItems: "center", gap: "4px", flex: "1 1 auto", minWidth: 0, overflow: "hidden", whiteSpace: "nowrap" }}>
                               <span className={flightReturnDate ? "date-main-bold" : "date-placeholder"}>
                                 {flightReturnDate ? formatFlightDate(flightReturnDate).date : "DD/MM/YYYY"}
                               </span>
@@ -7829,168 +8363,151 @@ export default function HomePage() {
             <div className="bus-offers-title-wrap">
               <h2 className="bus-offers-title">Featured Offers</h2>
               <p className="bus-offers-subtitle">
-                {offersFilter === "bus"
+                {activeTab === "buses"
                   ? "Best deals on buses. Grab them before they're gone!"
-                  : offersFilter === "flight"
+                  : activeTab === "flights"
                   ? "Best deals on flights. Grab them before they're gone!"
-                  : offersFilter === "hotel"
-                  ? "Best deals on hotels. Grab them before they're gone!"
-                  : "Top travel deals and exclusive savings across all categories!"}
+                  : "Best deals on hotels. Grab them before they're gone!"}
               </p>
-            </div>
-            <div className="bus-offers-tabs-bar">
-              <button
-                type="button"
-                className={`bus-offers-tab-btn tab-all ${offersFilter === "all" ? "active" : ""}`}
-                onClick={() => setOffersFilter("all")}
-              >
-                <LayoutGrid size={15} />
-                <span>All Offers</span>
-              </button>
-              <button
-                type="button"
-                className={`bus-offers-tab-btn tab-bus ${offersFilter === "bus" ? "active" : ""}`}
-                onClick={() => setOffersFilter("bus")}
-              >
-                <Bus size={15} />
-                <span>Buses</span>
-              </button>
-              <button
-                type="button"
-                className={`bus-offers-tab-btn tab-flight ${offersFilter === "flight" ? "active" : ""}`}
-                onClick={() => setOffersFilter("flight")}
-              >
-                <Plane size={15} />
-                <span>Flights</span>
-              </button>
-              <button
-                type="button"
-                className={`bus-offers-tab-btn tab-hotel ${offersFilter === "hotel" ? "active" : ""}`}
-                onClick={() => setOffersFilter("hotel")}
-              >
-                <Building2 size={15} />
-                <span>Hotels</span>
-              </button>
             </div>
           </div>
 
-              {/* Offer Cards */}
-              {featuredOffersLoading ? (
-                <div className="popular-routes-loading" style={{ padding: "20px 0", textAlign: "center" }}>
-                  Loading offers...
-                </div>
-              ) : filteredOffers.length === 0 ? (
-                <div style={{ padding: "20px 0", textAlign: "center", color: "#64748b", fontSize: "14px" }}>
-                  No {offersFilter === "all" ? "" : `${offersFilter} `}offers available.
-                </div>
-              ) : (
-                <AutoMarquee
-                  key={`offers-marquee-${offersFilter}`}
-                  items={filteredOffers}
-                  className="offer-marquee offer-img-marquee"
-                  duration={32}
-                  pauseOnHover={true}
-                  renderItem={(offer, idx) => {
-                    let code = String(
-                      offer.couponCode ||
-                      offer.offerCode ||
-                      offer.promotionCode ||
-                      offer.title ||
-                      "OFFER"
-                    ).trim();
+          {/* Offer Cards */}
+          {featuredOffersLoading ? (
+            <div className="popular-routes-loading" style={{ padding: "20px 0", textAlign: "center" }}>
+              Loading offers...
+            </div>
+          ) : filteredOffers.length === 0 ? (
+            <div style={{ padding: "20px 0", textAlign: "center", color: "#64748b", fontSize: "14px" }}>
+              No {activeTab === "buses" ? "bus" : activeTab === "flights" ? "flight" : "hotel"} offers available.
+            </div>
+          ) : (
+            <div className="bus-offers-carousel-wrapper">
+              <button
+                type="button"
+                className="bus-offers-side-arrow bus-offers-side-arrow-left"
+                aria-label="Scroll offers left"
+                title="Previous offers"
+                onClick={() => offersControlsRef.current?.scrollLeft()}
+              >
+                <ChevronLeft size={18} strokeWidth={2.6} />
+              </button>
+              <AutoMarquee
+                controlsRef={offersControlsRef}
+                key={`offers-marquee-${activeTab}`}
+                items={filteredOffers}
+                className="offer-marquee offer-img-marquee"
+                duration={32}
+                pauseOnHover={true}
+                renderItem={(offer, idx) => {
+                  let code = String(
+                    offer.couponCode ||
+                    offer.offerCode ||
+                    offer.promotionCode ||
+                    offer.title ||
+                    "OFFER"
+                  ).trim();
 
-                    if (!code || code === "0") {
-                      code = String(offer.title || "OFFER").trim();
-                    }
-                    if (!code || code === "0") {
-                      code = "OFFER";
-                    }
+                  if (!code || code === "0") {
+                    code = String(offer.title || "OFFER").trim();
+                  }
+                  if (!code || code === "0") {
+                    code = "OFFER";
+                  }
 
-                    const typeLower = (offer.bookingType || "bus").toLowerCase();
-                    const isFlight = typeLower.includes("flight");
-                    const isHotel = typeLower.includes("hotel");
-                    const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
-                    const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
-                    const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
+                  const typeLower = (offer.bookingType || "bus").toLowerCase();
+                  const isFlight = typeLower.includes("flight");
+                  const isHotel = typeLower.includes("hotel");
+                  const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
+                  const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
+                  const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
 
-                    const cardImage =
-                      offer.imageUrl ||
-                      offer.image ||
-                      (isFlight ? offerCardFlightImg : isHotel ? offerCardHotelImg : offerCardBusImg);
+                  const cardImage = isFlight
+                    ? (offer.imageUrl || offer.image || offerCardFlightImg)
+                    : isHotel
+                      ? (offer.imageUrl || offer.image || offerCardHotelImg)
+                      : BUS_OFFER_IMAGES[idx % BUS_OFFER_IMAGES.length];
 
-                    const discountLabel = offer.badgeLabel || offer.discountPercent
-                      ? (offer.badgeLabel || `${offer.discountPercent}% OFF`)
-                      : null;
+                  return (
+                    <article
+                      key={offer.id ? `${offer.id}-${idx}` : idx}
+                      className={`img-offer-card theme-${cardTheme}`}
+                      onClick={() => setOfferForDetailPopup(offer)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {/* Right Photo Area */}
+                      <div className="img-offer-photo-side">
+                        <img
+                          src={cardImage}
+                          alt={categoryLabel}
+                          className="img-offer-photo"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = isFlight
+                              ? offerCardFlightImg
+                              : isHotel
+                                ? offerCardHotelImg
+                                : busCoastBanner;
+                          }}
+                        />
+                      </div>
 
-                    return (
-                      <article
-                        key={offer.id ? `${offer.id}-${idx}` : idx}
-                        className={`img-offer-card theme-${cardTheme}`}
-                        onClick={() => setOfferForDetailPopup(offer)}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        {/* Right Photo Area */}
-                        <div className="img-offer-photo-side">
-                          <img
-                            src={cardImage}
-                            alt={categoryLabel}
-                            className="img-offer-photo"
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = isFlight ? offerCardFlightImg : isHotel ? offerCardHotelImg : offerCardBusImg;
-                            }}
-                          />
-                          <span className={`img-offer-corner-badge badge-${cardTheme}`}>
-                            {discountLabel || "LIMITED TIME"}
+                      {/* S-Curve Divider SVG */}
+                      <svg className="img-offer-divider-svg" viewBox="0 0 270 114" preserveAspectRatio="none">
+                        <path
+                          d="M0,0 L150,0 C172,32 135,76 117,114 L0,114 Z"
+                          fill="#fecaca"
+                          opacity="0.9"
+                        />
+                        <path
+                          d="M0,0 L145,0 C167,32 130,76 112,114 L0,114 Z"
+                          fill="#ffffff"
+                        />
+                      </svg>
+
+                      {/* Left Info Area */}
+                      <div className="img-offer-info-side">
+                        <div className="img-offer-cat-row">
+                          <span className={`img-offer-cat-circle circle-${cardTheme}`}>
+                            <OfferIcon size={11} strokeWidth={2.4} />
+                          </span>
+                          <span className={`img-offer-cat-text text-${cardTheme}`}>
+                            {categoryLabel}
                           </span>
                         </div>
 
-                        {/* S-Curve Divider SVG */}
-                        <svg className="img-offer-divider-svg" viewBox="0 0 270 114" preserveAspectRatio="none">
-                          <path
-                            d="M0,0 L150,0 C172,32 135,76 117,114 L0,114 Z"
-                            fill={isFlight ? "#bae6fd" : isHotel ? "#a7f3d0" : "#fbcfe8"}
-                            opacity="0.9"
-                          />
-                          <path
-                            d="M0,0 L145,0 C167,32 130,76 112,114 L0,114 Z"
-                            fill="#ffffff"
-                          />
-                        </svg>
+                        <h3 className="img-offer-title">{code}</h3>
 
-                        {/* Left Info Area */}
-                        <div className="img-offer-info-side">
-                          <div className="img-offer-cat-row">
-                            <span className={`img-offer-cat-circle circle-${cardTheme}`}>
-                              <OfferIcon size={11} strokeWidth={2.4} />
-                            </span>
-                            <span className={`img-offer-cat-text text-${cardTheme}`}>
-                              {categoryLabel}
-                            </span>
-                          </div>
+                        <p className="img-offer-validity">
+                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
+                        </p>
 
-                          <h3 className="img-offer-title">{code}</h3>
-
-                          <p className="img-offer-validity">
-                            {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                          </p>
-
-                          <button
-                            type="button"
-                            className={`img-offer-grab-btn btn-${cardTheme}`}
-                            onClick={(e) => { e.stopPropagation(); handleOfferBooking(offer); }}
-                          >
-                            <span>Grab Offer</span>
-                            <ArrowRight size={11} strokeWidth={2.5} />
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  }}
-                />
-              )}
+                        <button
+                          type="button"
+                          className={`img-offer-grab-btn btn-${cardTheme}`}
+                          onClick={(e) => { e.stopPropagation(); handleOfferBooking(offer); }}
+                        >
+                          <span>Grab Offer</span>
+                          <ArrowRight size={11} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                }}
+              />
+              <button
+                type="button"
+                className="bus-offers-side-arrow bus-offers-side-arrow-right"
+                aria-label="Scroll offers right"
+                title="Next offers"
+                onClick={() => offersControlsRef.current?.scrollRight()}
+              >
+                <ChevronRight size={18} strokeWidth={2.6} />
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -8087,7 +8604,7 @@ export default function HomePage() {
               btnAction: () => openPopularBusRoutes(),
               bgImage: sunsetHighwayBg,
               vehicleImg: busCoastBanner,
-              vehicleAlt: "Pick N Book Luxury Bus",
+              vehicleAlt: "Pick & Book Luxury Bus",
               vehicleTag: "",
               stats: [
                 { color: "red", icon: <MapPin size={13} />, value: "5000+", label: "Routes Covered" },
@@ -8315,6 +8832,7 @@ export default function HomePage() {
                           key={route.id || idx}
                           role="button"
                           tabIndex={0}
+                          style={{ outline: "none" }}
                           onClick={() => handlePopularRouteBooking(route)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
@@ -8443,6 +8961,7 @@ export default function HomePage() {
                       key={flight.id}
                       role="button"
                       tabIndex={0}
+                      style={{ outline: "none" }}
                       onClick={() => handlePopularFlightBooking(flight)}
                     >
                       <div className="pop-route-img-wrap">
@@ -8478,7 +8997,7 @@ export default function HomePage() {
                 {/* Modern Header Inside Background Card */}
                 <div className="flight-master-header">
                   <div className="flight-master-header-left">
-                    <h2 className="flight-master-title">Why Book Flights With Pick N Book</h2>
+                    <h2 className="flight-master-title">Why Book Flights With Pick & Book</h2>
                     <p className="flight-master-subtitle">Enjoy automated travel perks, guaranteed price transparency, and zero cancellation delays.</p>
                   </div>
                 </div>
@@ -8620,6 +9139,7 @@ export default function HomePage() {
                     key={hotel.id || idx}
                     role="button"
                     tabIndex={0}
+                    style={{ outline: "none" }}
                     onClick={() => handlePopularHotelBooking(hotel)}
                   >
                     <div className="pop-route-img-wrap">
@@ -8664,7 +9184,7 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="assurance-paragraph-text">
-            Every booking made through Pick N Book undergoes real-time verification, transparent fare comparison, and instant confirmation. From exact travel dates, passenger counts, and room amenity conditions to live seat selection and flexible cancellation policies, we ensure your trip parameters are completely validated before you pay. Enjoy complete peace of mind with 24/7 dedicated support.
+            Every booking made through Pick & Book undergoes real-time verification, transparent fare comparison, and instant confirmation. From exact travel dates, passenger counts, and room amenity conditions to live seat selection and flexible cancellation policies, we ensure your trip parameters are completely validated before you pay. Enjoy complete peace of mind with 24/7 dedicated support.
           </p>
         </div>
       </section>
@@ -8743,7 +9263,7 @@ export default function HomePage() {
             <div className="world-class-banner-copy">
               <span className="banner-badge">{homeContent.bannerBadge || "INTERCITY BUS & SEAT GUARANTEE"}</span>
               <h2>{homeContent.bannerTitle || "Book Bus Tickets Smarter. Travel Farther."}</h2>
-              <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick N Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
+              <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick & Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
               <div className="banner-stats-row">
                 {(homeContent.bannerStats || [
                   ["99.8%", "On-Time Departure"],
@@ -8764,48 +9284,48 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Testimonials Section - Matching Image 1 Design Mockup */}
-      <section className="client-testimonials-section section-shell">
+      {/* Testimonials Section - Scenic Panorama Banner + Auto-Scrolling Marquee */}
+      <section className="client-testimonials-section section-shell" aria-label="Customer Testimonials">
         <div className="client-testimonials-container">
-          {/* Left Scenic Hiker Image Card with Floating Glass Badge */}
+          {/* Left Scenic Image Card */}
           <div className="client-testimonial-left-visual">
             <img
-              src={picknbookAllTravelBanner}
-              alt="Pick N Book Travel Banner"
+              src={picknbookScenicPanoramaBanner}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/picknbook-scenic-panorama-banner.jpg";
+              }}
+              alt="Pick & book Journeys Made Simple"
               className="client-testimonial-landscape-img"
             />
           </div>
 
-          {/* Right Dark Navy Container */}
+          {/* Right Scrolling Testimonials Scroller */}
           <div className="client-testimonials-right-dark-box">
-            {/* Testimonials Auto-Scrolling Marquee */}
-            <AutoMarquee
-              items={testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS}
-              className="client-testimonials-marquee"
-              duration={12}
-              pauseOnHover={true}
-              renderItem={(review, idx) => (
-                <article
-                  className="client-testimonial-card"
-                  key={idx}
-                  title="Click to pause or resume scrolling"
-                >
-                  <div className="client-card-stars-row">
-                    {[...Array(5)].map((_, sIdx) => (
-                      <Star key={sIdx} size={14} fill="#f59e0b" stroke="#f59e0b" />
-                    ))}
-                  </div>
-                  <p className="client-card-comment">"{review.comment}"</p>
-                  <div className="client-card-author-row">
-                    <div className="client-card-avatar">{review.initials}</div>
-                    <div className="client-card-author-meta">
-                      <strong className="client-card-author-name">{review.author}</strong>
-                      <span className="client-card-author-role">{review.role}</span>
+            <div className="client-testimonials-scroller" tabIndex={0} aria-label="Scrolling customer reviews">
+              <div className="client-testimonials-track">
+                {scrollingTestimonialItems.map((review, idx) => (
+                  <article
+                    className="client-testimonial-card"
+                    key={`testimonial-card-${idx}`}
+                  >
+                    <div className="client-card-stars-row">
+                      {[...Array(review.rating || 5)].map((_, sIdx) => (
+                        <Star key={sIdx} size={14} fill="#f59e0b" stroke="#f59e0b" />
+                      ))}
                     </div>
-                  </div>
-                </article>
-              )}
-            />
+                    <p className="client-card-comment">"{review.comment}"</p>
+                    <div className="client-card-author-row">
+                      <div className="client-card-avatar">{review.initials}</div>
+                      <div className="client-card-author-meta">
+                        <strong className="client-card-author-name">{review.author}</strong>
+                        <span className="client-card-author-role">{review.role}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -8936,12 +9456,43 @@ export default function HomePage() {
           </div>
 
           <div className="india-faq-list">
-            {homeContent.faqs.map((item) => (
-              <details className="india-faq-item" key={item.id}>
-                <summary>{item.question}</summary>
-                <p>{item.answer}</p>
-              </details>
-            ))}
+            {homeContent.faqs.map((item) => {
+              const isOpen = openFaqId === item.id;
+              return (
+                <details
+                  className="india-faq-item"
+                  key={item.id}
+                  open={isOpen}
+                >
+                  <summary
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenFaqId((prev) => (prev === item.id ? null : item.id));
+                    }}
+                  >
+                    <span>{item.question}</span>
+                  </summary>
+                  <div className="india-faq-answer">
+                    {item.answer.split("\n\n").map((block, bIdx) => (
+                      <div key={bIdx} className="india-faq-block-item">
+                        {block.split("\n").map((line, lIdx) => (
+                          <p
+                            key={lIdx}
+                            className={
+                              line.startsWith("•") || /^\d+\./.test(line)
+                                ? "india-faq-step"
+                                : ""
+                            }
+                          >
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
           </div>
         </div>
 
