@@ -329,9 +329,8 @@ export default function HotelBookings() {
               <p>Fetching active stay reservations from the API.</p>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="hotel-bookings-empty">
-              <h3>No stay reservations found</h3>
-              <p>Try clearing filters or search different keywords.</p>
+            <div className="ops-empty">
+              <p>No hotel bookings found for current filters.</p>
             </div>
           ) : (
             <div className="ops-table-scroll">

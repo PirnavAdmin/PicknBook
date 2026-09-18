@@ -1757,18 +1757,40 @@ export default function BusPassengerDetailsPage() {
       })
     };
 
-    let blockKey = null;
-    try {
-      setIsCalculatingPrice(true);
-      const blockResponse = await blockBusProxy(blockPayload);
-      blockKey = blockResponse?.BlockKey || blockResponse?.blockKey || null;
-      if (!blockKey) {
-        throw new Error("Failed to block seats. Provider did not return a BlockKey.");
+    let blockKey = flowState.blockKey || null;
+    
+    if (!blockKey) {
+      try {
+        setIsCalculatingPrice(true);
+        const blockResponse = await blockBusProxy(blockPayload);
+
+        // Read SRDV error code directly from response
+        const srdvErrorCode = blockResponse?.Error?.ErrorCode ?? blockResponse?.error?.errorCode ?? 0;
+        const srdvErrorMsg = blockResponse?.Error?.ErrorMessage || blockResponse?.error?.errorMessage || "";
+
+        if (srdvErrorCode === 7023) {
+          setIsCalculatingPrice(false);
+          setFormError(
+            "This bus trip is already reserved from a previous attempt. Please go back and search again to get fresh availability."
+          );
+          return;
+        }
+
+        if (srdvErrorCode !== 0 && srdvErrorMsg) {
+          setIsCalculatingPrice(false);
+          setFormError("Unable to hold your seats: " + srdvErrorMsg);
+          return;
+        }
+
+        blockKey = blockResponse?.BlockKey || blockResponse?.blockKey || null;
+        if (!blockKey) {
+          throw new Error("Seat hold failed. Provider did not return a confirmation key.");
+        }
+      } catch (err) {
+        setIsCalculatingPrice(false);
+        setFormError("Failed to hold your seats: " + (err.message || "Unknown error"));
+        return;
       }
-    } catch (err) {
-      setIsCalculatingPrice(false);
-      setFormError("Failed to block seats with the provider: " + (err.message || "Unknown error"));
-      return;
     }
 
 

@@ -395,6 +395,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "SendBoardingReminder",
+    "RelativePath": "api/admin/bus/bookings/{id}/send-boarding-reminder",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
     "Method": "GetAllBusBookings",
     "RelativePath": "api/admin/bus/bookings/all",
     "HttpMethod": "GET",
@@ -426,6 +442,27 @@
         "Name": "limit",
         "Type": "System.Int32",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "UpdateCancellation",
+    "RelativePath": "api/admin/bus/cancellations/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusCancellationRequestUpdateDto",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -2667,12 +2704,86 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
+    "Method": "ResendConfirmationSms",
+    "RelativePath": "api/admin/hotel/bookings/{id}/resend-confirmation-sms",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
+    "Method": "SendCheckInReminderSms",
+    "RelativePath": "api/admin/hotel/bookings/{id}/send-checkin-reminder-sms",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
+    "Method": "SendFailureSms",
+    "RelativePath": "api/admin/hotel/bookings/{id}/send-failure-sms",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "reason",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
     "Method": "GetCancellations",
     "RelativePath": "api/admin/hotel/cancellations",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
+    "Method": "UpdateCancellation",
+    "RelativePath": "api/admin/hotel/cancellations/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelCancellationRequestUpdateDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {

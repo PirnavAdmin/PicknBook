@@ -109,7 +109,7 @@
 }
 
 .booking-expiry-card h2 {
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--app-font-family) !important;
   font-size: 1.5rem;
   font-weight: 700;
   color: #1f2a44;

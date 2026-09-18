@@ -611,7 +611,7 @@ export default function SiteFooter() {
 
         {/* ── 4. Bottom Copyright & Legal Line ─────────────────── */}
         <div className="pnb-footer-bottom-line">
-          <span className="pnb-bottom-brand">PickNBook</span>
+          <span className="pnb-bottom-brand">Pick&Book</span>
           <span className="pnb-bottom-sep">|</span>
           <span className="pnb-bottom-item">Explore</span>
           <span className="pnb-bottom-sep">|</span>

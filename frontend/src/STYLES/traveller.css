@@ -15,7 +15,7 @@
   max-width: 1260px;
   margin: 0 auto;
   width: 100%;
-  font-family: var(--trav-body-font);
+  font-family: var(--app-font-family) !important;
   color: var(--trav-text);
 }
 
@@ -87,7 +87,7 @@
   margin: 10px 0 0;
   font-size: 1.305rem;
   color: #1c395f;
-  font-family: var(--trav-heading-font);
+  font-family: var(--app-font-family) !important;
   letter-spacing: -0.01em;
 }
 

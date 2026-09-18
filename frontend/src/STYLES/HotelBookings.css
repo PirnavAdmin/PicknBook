@@ -1,7 +1,7 @@
 @import url("./HotelCheckoutExperience.css");
  
 .hotel-bookings-page {
-  font-family: "Manrope", var(--app-font-family, sans-serif);
+  font-family: var(--app-font-family) !important;
   min-height: calc(100vh - 76px);
   padding: 20px 28px 40px;
   color: #1e293b;

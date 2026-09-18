@@ -264,7 +264,7 @@
 }
 
 .hologram-bus-container .bus-flow-vertical-deck-header span {
-  font-family: var(--flow-body-font, sans-serif) !important;
+  font-family: var(--app-font-family) !important;
   font-size: 0.72rem !important; /* Slightly smaller vertical label text */
   font-weight: 800 !important;
   color: #c2410c !important; /* Dark orange text color */

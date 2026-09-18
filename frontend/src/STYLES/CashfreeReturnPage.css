@@ -3,8 +3,6 @@
    Premium payment page styles — Atlas/dark-mode compatible
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-
 /* ── Variables ─────────────────────────────────────────────── */
 .upay-root {
   --upay-bg: #0a0f1e;
@@ -24,7 +22,7 @@
   --upay-radius-sm: 8px;
   --upay-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
   --upay-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 
 /* ── Page Shell ─────────────────────────────────────────────── */
@@ -583,7 +581,7 @@
   align-items: center;
   justify-content: center;
   background: var(--upay-bg);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 .upay-return-card {
   background: var(--upay-surface);

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { BedDouble, ShieldCheck, Loader2 } from "lucide-react";
 import { categorizeFacilities } from "../../utils/facilityCategories";
+import RoomCategoryAccordion from "../../components/booking/RoomCategoryAccordion";
 
 const getViewSymbol = (name) => {
   const lower = name.toLowerCase();
@@ -693,141 +694,18 @@ export default function HotelDetail({
             
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {hotel.offers && hotel.offers.length > 0 ? (
-                hotel.offers.map((roomOffer, roomIndex) => {
-                  const roomSelectionKey = roomOffer.selectionKey || roomOffer.offerId;
-                  const selectedRoomKey = offer?.selectionKey || offer?.offerId;
-                  const isSelectingThis = selectingOfferId === roomSelectionKey;
-                  const isSelected = Boolean(offer && selectedRoomKey === roomSelectionKey);
-                  const roomImg = hotel.images && hotel.images.length > 0 
-                    ? hotel.images[roomIndex % hotel.images.length] 
-                    : gallery[roomIndex % gallery.length];
-                  
-                  return (
-                    <div 
-                      key={roomSelectionKey}
-                      style={{ 
-                        display: "flex", 
-                        flexDirection: "column",
-                        border: isSelected ? "2px solid #ff0000" : "1px solid rgba(0,0,0,0.06)", 
-                        borderRadius: "16px", 
-                        background: isSelected ? "rgba(220,30,38,0.06)" : "#fff",
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.01)",
-                        transition: "all 0.2s ease",
-                        overflow: "hidden"
-                      }}
-                    >
-                      <div style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: "110px 1fr 160px", 
-                        gap: "16px", 
-                        padding: "12px", 
-                      }}>
-                        <div style={{ width: "100%", height: "85px", borderRadius: "10px", overflow: "hidden" }}>
-                          <img src={roomImg} alt={roomOffer.roomCategory} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                          <div>
-                            <span style={{ 
-                              display: "inline-block", 
-                              background: "rgba(220,30,38,0.05)", 
-                              color: "var(--hotel-rose)", 
-                              fontSize: "0.6rem", 
-                              fontWeight: 600, 
-                              padding: "2px 6px", 
-                              borderRadius: "4px", 
-                              textTransform: "uppercase", 
-                              marginBottom: "4px" 
-                            }}>
-                              ROOM OPTION
-                            </span>
-                            <h4 style={{ margin: "0 0 4px 0", fontSize: "0.92rem", fontWeight: 600, color: "var(--hotel-ink)" }}>
-                              {roomOffer.roomCategory ? roomOffer.roomCategory.replace(/_/g, " ") : "Standard Room"}
-                            </h4>
-                            {roomOffer.roomDescription && (
-                              <p style={{ margin: 0, fontSize: "0.74rem", color: "var(--hotel-muted)", lineHeight: "1.3" }}>
-                                {roomOffer.roomDescription}
-                              </p>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px", alignItems: "center" }}>
-                            <span style={{ fontSize: "0.74rem", color: "var(--hotel-muted)", display: "flex", alignItems: "center", gap: "3px" }}>
-                              <BedDouble size={12} /> {roomOffer.bedType || "Bed type not specified"}
-                            </span>
-                            <span style={{ 
-                              fontSize: "0.68rem", 
-                              fontWeight: 600, 
-                              padding: "1px 6px", 
-                              borderRadius: "4px", 
-                              background: roomOffer.cancellationPolicy?.includes("Charge") ? "#ffebee" : "#e8f5e9", 
-                              color: roomOffer.cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32" 
-                            }}>
-                              {roomOffer.cancellationPolicy?.includes("Charge") ? "Non-Refundable" : "Free Cancellation"}
-                            </span>
-                            {(() => {
-                              const mealPlan = (Array.isArray(roomOffer.servicesStatus) && roomOffer.servicesStatus.find(s => s.name === "Meal Basis")?.value) || roomOffer.hotelSupplements;
-                              if (!mealPlan) return null;
-                              const isIncluded = mealPlan.toLowerCase() !== "room only";
-                              return (
-                                <span style={{ 
-                                  fontSize: "0.68rem", 
-                                  fontWeight: 600, 
-                                  padding: "1px 6px", 
-                                  borderRadius: "4px", 
-                                  background: isIncluded ? "#fff8e1" : "#f1f5f9", 
-                                  color: isIncluded ? "#f57f17" : "#64748b" 
-                                }}>
-                                  🍽️ {mealPlan}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end", borderLeft: "1px solid rgba(0,0,0,0.06)", paddingLeft: "12px" }}>
-                          <div style={{ textAlign: "right", marginBottom: "8px" }}>
-                            <strong style={{ display: "block", fontSize: "1.1rem", color: "var(--hotel-ink)" }}>{formatCurrency(roomOffer.price)}</strong>
-                            <span style={{ fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
-                              {roomsCount > 1 ? `total for ${roomsCount} Rooms` : "total per night"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => { handleSelectOffer(roomOffer); setCurrentStep(2); }}
-                            disabled={selectingOfferId !== ""}
-                            style={{
-                              width: "100%",
-                              height: "36px",
-                              borderRadius: "8px",
-                              fontSize: "0.8rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              background: isSelected ? "var(--hotel-rose)" : "#ff0000",
-                              color: "#fff",
-                              border: "none",
-                              transition: "all 0.15s ease"
-                            }}
-                          >
-                            {isSelectingThis ? (
-                              <>
-                                <Loader2 size={11} className="hotel-spin" />
-                                {" "}Choosing...
-                              </>
-                            ) : isSelected ? (
-                              "Selected ✓"
-                            ) : (
-                              "Reserve Room"
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      {roomOffer.amenities && roomOffer.amenities.length > 0 && (
-                        <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(0,0,0,0.04)", background: "rgba(0,0,0,0.015)", fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
-                           {roomOffer.amenities.slice(0, 4).map(a => typeof a === "object" ? (a.name || a.Name) : a).filter(Boolean).join(" • ")}
-                           {roomOffer.amenities.length > 4 && ` • +${roomOffer.amenities.length - 4} more`}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+              <RoomCategoryAccordion
+                offers={hotel.offers}
+                images={hotel.images}
+                gallery={gallery}
+                selectedOffer={offer}
+                selectingOfferId={selectingOfferId}
+                onSelectOffer={(roomOffer) => {
+                  handleSelectOffer(roomOffer);
+                  setCurrentStep(2);
+                }}
+                roomsCount={roomsCount}
+              />
               ) : (
                 <div style={{ padding: "20px", textAlign: "center", color: "var(--hotel-muted)" }}>
                   <p>No active rooms returned for the selected dates. Please search for different dates.</p>

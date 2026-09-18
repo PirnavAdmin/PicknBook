@@ -20,6 +20,31 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   const [b2cWallet, setB2cWallet] = useState(null);
   const [useWallet, setUseWallet] = useState(false);
 
+  // Pre-payment Block state
+  const hasBlock = Boolean(flowState?.blockKey || flowState?.blockRoomResponse);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockTimeRemaining, setBlockTimeRemaining] = useState(0);
+
+  useEffect(() => {
+    if (isOpen && hasBlock) {
+      setIsBlocked(true);
+      setBlockTimeRemaining(600); // 10 minutes from modal open
+    }
+  }, [isOpen, hasBlock]);
+
+  useEffect(() => {
+    let timer;
+    if (isBlocked && blockTimeRemaining > 0) {
+      timer = setInterval(() => {
+        setBlockTimeRemaining((prev) => prev - 1);
+      }, 1000);
+    } else if (blockTimeRemaining === 0 && isBlocked) {
+      setIsBlocked(false);
+      setLocalError("Your reserved seat block has expired. Please try booking again.");
+    }
+    return () => clearInterval(timer);
+  }, [isBlocked, blockTimeRemaining]);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -191,10 +216,31 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       couponCode: flowState.couponCode || null,
     });
 
+    if (sessionData && sessionData.isWalletFullyPaid) {
+      navigate(`/payment/cashfree/return?order_id=${sessionData.orderId}`);
+      return;
+    }
+
     if (sessionData && sessionData.cashfree) {
       sessionData.cashfree.checkout({
         paymentSessionId: sessionData.paymentSessionId,
-        redirectTarget: "_self"
+        redirectTarget: "_modal"
+      }).then((result) => {
+        if (result.error) {
+          console.log("Checkout closed or errored:", result.error);
+          setLocalError(result.error.message || "Payment cancelled or failed.");
+          setIsProcessing(false);
+        }
+        if (result.paymentDetails) {
+          console.log("Payment attempt finished:", result.paymentDetails);
+          const orderId = sessionStorage.getItem("pending_cashfree_order_id");
+          if (orderId) {
+            navigate(`/payment/cashfree/return?order_id=${orderId}`);
+          } else {
+            // Fallback if sessionStorage is cleared somehow
+            navigate("/payment/cashfree/return");
+          }
+        }
       });
     } else {
       setIsProcessing(false);
@@ -218,6 +264,13 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         </button>
 
         <h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.5rem" }}>Review Booking ({bookingType})</h2>
+
+        {isBlocked && blockTimeRemaining > 0 && (
+          <div style={{ backgroundColor: "#fff3cd", color: "#856404", padding: "12px", borderRadius: "8px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #ffeeba" }}>
+            <strong>Seats Blocked!</strong>
+            <span>Time remaining: {Math.floor(blockTimeRemaining / 60)}:{String(blockTimeRemaining % 60).padStart(2, '0')}</span>
+          </div>
+        )}
 
         {/* Passenger Summary */}
         <div style={{ marginBottom: "20px", padding: "16px", background: "#f8f9fa", borderRadius: "8px" }}>

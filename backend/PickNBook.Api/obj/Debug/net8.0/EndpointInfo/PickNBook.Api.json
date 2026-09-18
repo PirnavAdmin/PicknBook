@@ -1312,6 +1312,48 @@
         }
       }
     },
+    "/api/admin/bus/cancellations/{id}": {
+      "put": {
+        "tags": [
+          "AdminBus"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancellationRequestUpdateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancellationRequestUpdateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancellationRequestUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/admin/bus/searches": {
       "get": {
         "tags": [
@@ -1379,6 +1421,29 @@
       "get": {
         "tags": [
           "AdminBus"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/bus/bookings/{id}/send-boarding-reminder": {
+      "post": {
+        "tags": [
+          "AdminBus"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -3767,6 +3832,48 @@
         }
       }
     },
+    "/api/admin/hotel/cancellations/{id}": {
+      "put": {
+        "tags": [
+          "AdminHotel"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancellationRequestUpdateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancellationRequestUpdateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancellationRequestUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/admin/hotel/bookings/{bookingId}/cancel": {
       "post": {
         "tags": [
@@ -4034,6 +4141,82 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/hotel/bookings/{id}/resend-confirmation-sms": {
+      "post": {
+        "tags": [
+          "AdminHotel"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/hotel/bookings/{id}/send-failure-sms": {
+      "post": {
+        "tags": [
+          "AdminHotel"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/hotel/bookings/{id}/send-checkin-reminder-sms": {
+      "post": {
+        "tags": [
+          "AdminHotel"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -14685,6 +14868,60 @@
         },
         "additionalProperties": false
       },
+      "BusCancellationRequestUpdateDto": {
+        "type": "object",
+        "properties": {
+          "cancellationStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerRefundStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminRefundStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerRefundAmountInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "customerCancellationChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "customerServiceChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "adminRefundAmountInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "adminCancellationChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "adminServiceChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "supplierRemark": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerRemark": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminRemark": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BusConvenienceFeeRequestDto": {
         "type": "object",
         "properties": {
@@ -14779,6 +15016,10 @@
           "minBookingAmount": {
             "type": "number",
             "format": "double"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -15317,6 +15558,9 @@
           "bookingPayloadJson": {
             "type": "string",
             "nullable": true
+          },
+          "useWallet": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -16213,6 +16457,9 @@
           "useLimit": {
             "type": "integer",
             "format": "int32"
+          },
+          "isFirstTimeUserOnly": {
+            "type": "boolean"
           },
           "status": {
             "type": "string",
@@ -17235,6 +17482,60 @@
             "nullable": true
           },
           "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HotelCancellationRequestUpdateDto": {
+        "type": "object",
+        "properties": {
+          "cancellationStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerRefundStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminRefundStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerRefundAmountInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "customerCancellationChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "customerServiceChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "adminRefundAmountInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "adminCancellationChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "adminServiceChargeInr": {
+            "type": "number",
+            "format": "double"
+          },
+          "supplierRemark": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerRemark": {
+            "type": "string",
+            "nullable": true
+          },
+          "adminRemark": {
             "type": "string",
             "nullable": true
           }

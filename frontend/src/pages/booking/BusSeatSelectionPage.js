@@ -684,8 +684,11 @@ export default function BusSeatSelectionPage({
   const [activeCardPanel, setActiveCardPanel] = useState(null);
 
 
+  const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
+
   useEffect(() => {
-    // Clear any previous coupon state when seat selection is loaded/reset
+    // Clear coupon state and blockKey when the bus changes (embedded mode) or on first mount.
+    // This ensures a fresh block is required whenever the user picks a different bus.
     writeBusBookingFlowState({
       couponCode: null,
       couponDiscount: 0,
@@ -694,8 +697,9 @@ export default function BusSeatSelectionPage({
       selectedFeaturedOfferId: null,
       promotionId: null,
       pricingPreview: null,
+      blockKey: null,
     });
-  }, []);
+  }, [busIdentity]); // re-runs whenever the user switches to a different bus
 
   useEffect(() => {
     if (!bus) return;
@@ -1228,6 +1232,8 @@ export default function BusSeatSelectionPage({
       },
       // pricingPreview is intentionally NOT set here.
       // It will be populated on the Payment page after the Block API returns a BlockKey.
+      // blockKey is always cleared when user re-confirms seats to force a fresh block
+      blockKey: null,
     };
 
     writeBusBookingFlowState(flowData);

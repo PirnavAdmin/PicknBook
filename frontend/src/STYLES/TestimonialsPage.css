@@ -2,7 +2,7 @@
   padding: 60px 20px;
   background-color: #f8fafc;
   min-height: calc(100vh - 80px);
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 
 .testimonials-container {
@@ -62,7 +62,7 @@
   font-size: 5rem;
   font-weight: 900;
   color: rgba(29, 78, 216, 0.08);
-  font-family: serif;
+  font-family: var(--app-font-family) !important;
   line-height: 1;
 }
 

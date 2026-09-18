@@ -236,6 +236,7 @@ function buildBookingPayload(flowState) {
     resultIndex: String(flowState.bus?.resultIndex || flowState.bus?.id || ""),
     srdvIndex: Number(flowState.bus?.srdvIndex || 0),
     srdvBlockKey: String(flowState.blockKey || ""),
+    BlockKey: String(flowState.blockKey || ""),
     fromCity: String(flowState.bus?.fromCity || flowState.searchContext?.fromCity?.name || flowState.searchContext?.fromCity || ""),
     toCity: String(flowState.bus?.toCity || flowState.searchContext?.toCity?.name || flowState.searchContext?.toCity || ""),
     departureTime: [flowState.searchContext?.departureDate, flowState.bus?.departureTimeUtc || flowState.bus?.departureTimeIst || flowState.bus?.departureTime || ""].filter(Boolean).join(" "),

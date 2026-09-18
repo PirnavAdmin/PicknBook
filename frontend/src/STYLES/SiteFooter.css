@@ -6,7 +6,7 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cpath d='M20 40h10l3-5h3l-2 5h6l2-3h2l-1 3 1 3h-2l-2-3h-6l2 5h-3l-3-5H20zm70 10a10 10 0 1 1 20 0 10 10 0 0 1-20 0zm40 60c-4 0-7 3-7 7 0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7zm-90 50h6v-2c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h6c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H30c-1.1 0-2-.9-2-2v-10c0-1.1.9-2 2-2zm125 15h30l2-4h-34zm25-115a6 6 0 1 0 0-12 6 6 0 0 0 0 12z' fill='none' stroke='rgba(255,255,255,0.035)' stroke-width='1'/%3E%3Cpath d='M10 200 C 50 180, 70 220, 100 200' fill='none' stroke='rgba(255,255,255,0.025)' stroke-dasharray='3,3' stroke-width='1'/%3E%3C/svg%3E");
   background-repeat: repeat;
   color: #dfdfdf;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--app-font-family) !important;
   font-size: 13.5px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -86,7 +86,7 @@
   background-image: radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.06) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(220, 38, 38, 0.05) 0%, transparent 40%);
   padding: 16px 24px 10px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--app-font-family) !important;
   color: #0f172a;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }

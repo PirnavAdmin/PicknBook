@@ -39,17 +39,18 @@
 
 .legend-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 11.5px;
   font-weight: 600;
   color: #475569;
 }
 
 .legend-color {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
   border: 1px solid #cbd5e1;
 }
 
@@ -73,12 +74,20 @@
   background-color: #fbcfe8;
   /* Soft pink */
   border-color: #f472b6;
+  background-image: url('../assets/images/icons/icon-female.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .legend-color.booked-male {
   background-color: #bfdbfe;
   /* Soft blue */
   border-color: #60a5fa;
+  background-image: url('../assets/images/icons/icon-male.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .legend-color.extra-legroom {
@@ -405,11 +414,16 @@
 /* Booked Female status style - Pink */
 .seat-button-wrapper.status-booked-female .seat-icon {
   pointer-events: none;
+  background-image: url('../assets/images/icons/icon-female.png');
+  background-size: 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #fbcfe8;
+  border-radius: 6px;
 }
 
 .seat-button-wrapper.status-booked-female .seat-icon .seat-body {
-  fill: #fbcfe8;
-  /* pink-200 */
+  fill: transparent;
   stroke: #f472b6;
   /* pink-400 */
 }
@@ -428,11 +442,16 @@
 /* Booked Male status style - Blue */
 .seat-button-wrapper.status-booked-male .seat-icon {
   pointer-events: none;
+  background-image: url('../../assets/images/icons/icon-male.png');
+  background-size: 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #bfdbfe;
+  border-radius: 6px;
 }
 
 .seat-button-wrapper.status-booked-male .seat-icon .seat-body {
-  fill: #bfdbfe;
-  /* blue-200 */
+  fill: transparent;
   stroke: #60a5fa;
   /* blue-400 */
 }

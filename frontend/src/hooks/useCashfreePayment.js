@@ -56,7 +56,12 @@ export function useCashfreePayment() {
       
       setCfStatus("ready");
       setIsSubmitting(false);
-      return { paymentSessionId: orderData.payment_session_id, cashfree };
+      return { 
+        paymentSessionId: orderData.payment_session_id, 
+        cashfree,
+        isWalletFullyPaid: orderData.isWalletFullyPaid,
+        orderId: orderData.order_id
+      };
     } catch (err) {
       console.error("[useCashfreePayment] init error:", err);
       setPaymentError(err?.message || "Payment initiation failed. Please try again.");

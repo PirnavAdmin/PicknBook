@@ -67,7 +67,7 @@
             .homepage-flights .flight-hero-title,
             .homepage-buses .hero-title-left,
             .homepage-hotels .hero-title-left {
-              font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+              font-family: var(--app-font-family) !important;
               font-size: clamp(28px, 3vw, 40px) !important;
               font-weight: 900 !important;
               color: #ffffff !important;
@@ -88,7 +88,7 @@
             .homepage-flights .flight-hero-subtitle,
             .homepage-buses .hero-subtitle-left,
             .homepage-hotels .hero-subtitle-left {
-              font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+              font-family: var(--app-font-family) !important;
               font-size: clamp(13px, 1.35vw, 15px) !important;
               font-weight: 600 !important;
               color: rgba(255, 255, 255, 0.95) !important;

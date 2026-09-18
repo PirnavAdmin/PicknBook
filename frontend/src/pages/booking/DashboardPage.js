@@ -603,9 +603,6 @@ export default function DashboardPage() {
       <header className="dashboard-header">
         <div className="dashboard-header-copy">
           <h1>Travel Booking Dashboard</h1>
-          <p>
-            Track booking health, monitor pending actions, and quickly navigate to operational modules.
-          </p>
         </div>
         <div className="dashboard-time-badge">
           {currentDateTime}
@@ -615,17 +612,17 @@ export default function DashboardPage() {
       {walletSummary && (
         <section className="dashboard-wallet-card" style={{ display: 'flex', justifyContent: 'space-between', padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', marginTop: '14px', border: '1px solid #eee' }}>
           <div>
-            <p style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', marginBottom: '5px' }}>Wallet Balance</p>
-            <h2 style={{ margin: '0 0 5px 0', fontSize: '28px', color: '#1a1a1a' }}>₹ {walletSummary.availableBalance?.toLocaleString('en-IN', {minimumFractionDigits:2})}</h2>
-            <span style={{ fontSize: '12px', background: walletSummary.walletStatus === 'Active' ? '#d4edda' : '#f8d7da', color: walletSummary.walletStatus === 'Active' ? '#155724' : '#721c24', padding: '4px 8px', borderRadius: '4px', fontWeight: '500' }}>Status: {walletSummary.walletStatus}</span>
+            <p style={{ fontSize: '11px', color: '#5b7494', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', margin: '0 0 6px 0' }}>Wallet Balance</p>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '28px', color: '#1c385d', letterSpacing: '-0.02em' }}>₹ {walletSummary.availableBalance?.toLocaleString('en-IN', {minimumFractionDigits:2})}</h2>
+            <span style={{ fontSize: '11px', background: walletSummary.walletStatus === 'Active' ? '#d4edda' : '#f8d7da', color: walletSummary.walletStatus === 'Active' ? '#155724' : '#721c24', padding: '4px 8px', borderRadius: '4px', fontWeight: '600' }}>Status: {walletSummary.walletStatus}</span>
           </div>
           <div>
-            <p style={{ fontSize: '14px', color: '#666', textTransform: 'uppercase', marginBottom: '5px' }}>PickNBook Coins</p>
-            <h2 style={{ margin: '0 0 5px 0', fontSize: '28px', color: '#1a1a1a' }}>{walletSummary.picknbookCoins}</h2>
-            <span style={{ fontSize: '12px', color: '#666' }}>Loyalty Rewards</span>
+            <p style={{ fontSize: '11px', color: '#5b7494', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', margin: '0 0 6px 0' }}>PickNBook Coins</p>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '28px', color: '#1c385d', letterSpacing: '-0.02em' }}>{walletSummary.picknbookCoins}</h2>
+            <span style={{ fontSize: '11px', color: '#5e7695' }}>Loyalty Rewards</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '10px' }}>
-            <Link to="/dashboard/wallet" style={{ color: '#007bff', textDecoration: 'none', fontWeight: '500', textAlign: 'center', fontSize: '14px' }}>View Wallet</Link>
+            <Link to="/dashboard/wallet" style={{ color: '#007bff', textDecoration: 'none', fontWeight: '600', textAlign: 'center', fontSize: '13px' }}>View Wallet</Link>
           </div>
         </section>
       )}
@@ -649,22 +646,18 @@ export default function DashboardPage() {
         <div className="dashboard-panel">
           <header className="panel-head">
             <h2>Booking Status Overview</h2>
-            <span>Operational split from summary API</span>
           </header>
           <div className="dashboard-chart-grid">
             <ChartCard
               title="Bus Bookings"
-              subtitle="Completed vs upcoming vs cancelled"
               data={busBookingStatus}
             />
             <ChartCard
               title="Flight Bookings"
-              subtitle="Completed vs upcoming vs cancelled"
               data={flightBookingStatus}
             />
             <ChartCard
               title="Hotel Bookings"
-              subtitle="Completed vs upcoming vs cancelled"
               data={hotelBookingStatus}
             />
           </div>

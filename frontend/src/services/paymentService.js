@@ -31,10 +31,7 @@ export async function createCashfreeOrder({
   couponCode,
   promotionId,
 }) {
-  const returnUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/payment/cashfree/return?order_id={order_id}`
-      : "/payment/cashfree/return?order_id={order_id}";
+  const returnUrl = ""; // Explicitly empty to prevent Cashfree auto-redirect in _modal checkout. We handle redirect via Promise.then.
 
   const notifyUrl = typeof window !== "undefined"
     ? toApiUrl("/api/cashfree/webhook")
@@ -89,17 +86,19 @@ export async function createCashfreeOrder({
 
   const data = await response.json();
 
-  if (!data || !data.payment_session_id) {
-    throw new Error("Invalid response from payment server: payment_session_id missing.");
+  const sessionId = data.paymentSessionId || data.payment_session_id;
+  if (!data && !sessionId) {
+    throw new Error("Invalid response from payment server: paymentSessionId missing.");
   }
 
   return {
-    order_id: data.order_id || "",
-    payment_session_id: data.payment_session_id || "",
-    cf_order_id: data.cf_order_id || "",
-    order_amount: data.order_amount || orderAmount,
+    order_id: data.cashfreeOrderId || data.order_id || "",
+    payment_session_id: sessionId || "",
+    cf_order_id: data.cfOrderId || data.cf_order_id || "",
+    order_amount: data.gatewayPaidAmount ?? data.totalAmount ?? data.order_amount ?? orderAmount,
     order_currency: data.order_currency || "INR",
-    order_status: data.order_status || "ACTIVE",
+    order_status: data.orderStatus || data.order_status || "ACTIVE",
+    isWalletFullyPaid: data.isWalletFullyPaid || false,
   };
 }
 

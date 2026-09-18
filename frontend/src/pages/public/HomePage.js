@@ -2643,7 +2643,7 @@ export default function HomePage() {
   const [flightTo, setFlightTo] = useState("");
   const [flightFromError, setFlightFromError] = useState("");
   const [flightToError, setFlightToError] = useState("");
-  const [flightDepartureDate, setFlightDepartureDate] = useState("");
+  const [flightDepartureDate, setFlightDepartureDate] = useState(() => getDateInputValue(0));
   const [flightReturnDate, setFlightReturnDate] = useState("");
 
   const [adults, setAdults] = useState(0);
@@ -2665,7 +2665,7 @@ export default function HomePage() {
   const [busTo, setBusTo] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
-  const [busDepartureDate, setBusDepartureDate] = useState("");
+  const [busDepartureDate, setBusDepartureDate] = useState(() => getDateInputValue(0));
   const [busReturnDate, setBusReturnDate] = useState("");
   const [activeCalendarField, setActiveCalendarField] = useState(null);
 
@@ -8047,11 +8047,7 @@ export default function HomePage() {
                                 <span className={leg.departureDate ? "date-main-bold" : "date-placeholder"}>
                                   {leg.departureDate ? formatFlightDate(leg.departureDate).date : "DD/MM/YYYY"}
                                 </span>
-                                {leg.departureDate && (
-                                  <span className="date-sub-day">
-                                    / {formatFlightDate(leg.departureDate).day}
-                                  </span>
-                                )}
+
                               </div>
                             </div>
                             {activeCalendarField === `leg-${leg.id}` && (
@@ -8153,11 +8149,7 @@ export default function HomePage() {
                             <span className={flightDepartureDate ? "date-main-bold" : "date-placeholder"}>
                               {flightDepartureDate ? formatFlightDate(flightDepartureDate).date : "DD/MM/YYYY"}
                             </span>
-                            {flightDepartureDate && (
-                              <span className="date-sub-day">
-                                / {formatFlightDate(flightDepartureDate).day}
-                              </span>
-                            )}
+
                           </div>
                         </div>
                         {activeCalendarField === "flight-dep" && (
@@ -8191,11 +8183,7 @@ export default function HomePage() {
                               <span className={flightReturnDate ? "date-main-bold" : "date-placeholder"}>
                                 {flightReturnDate ? formatFlightDate(flightReturnDate).date : "DD/MM/YYYY"}
                               </span>
-                              {flightReturnDate && (
-                                <span className="date-sub-day">
-                                  / {formatFlightDate(flightReturnDate).day}
-                                </span>
-                              )}
+
                             </div>
                           </div>
                           {activeCalendarField === "flight-ret" && (

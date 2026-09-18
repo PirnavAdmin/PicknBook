@@ -3,8 +3,6 @@
    Theme: Clean White & Brand Red (#d90429 / #ff0000 / #ff0000)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 /* ── Keyframes ─────────────────────────────────────────────── */
 @keyframes card-in {
   from { opacity:0; transform: translateY(24px) scale(0.98); }
@@ -41,7 +39,7 @@
   align-items: stretch;
   position: relative;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--app-font-family) !important;
   background: #f8fafc;
 }
 
@@ -249,7 +247,7 @@
   color: #000000;
   letter-spacing: -0.3px;
   line-height: 1.2;
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-family: var(--app-font-family) !important;
 }
 .auth-card-subtitle {
   margin: 0;
@@ -781,7 +779,7 @@
   line-height: 1.12;
   margin: 0 0 3px 0;
   color: #0f172a;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
   letter-spacing: -0.2px;
   text-shadow: 0 1px 4px rgba(255,255,255,0.5);
 }
@@ -799,7 +797,7 @@
   color: #000;
   margin: 0 0 12px 0;
   line-height: 1.35;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
   text-shadow: 0 1px 3px rgba(255,255,255,0.4);
 }
 
@@ -809,7 +807,7 @@
   font-weight: 800;
   color: #0f172a;
   margin: 0 0 8px 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
   text-shadow: 0 1px 3px rgba(255,255,255,0.4);
 }
 
@@ -863,7 +861,7 @@
   font-weight: 700;
   color: #000;
   margin: 0 0 4px 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 .scenic-service-desc {
   font-size: 0.65rem;
@@ -871,7 +869,7 @@
   font-weight: 500;
   line-height: 1.25;
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 
 /* ── TRUST BADGES (glassmorphic compact pill) ── */
@@ -899,7 +897,7 @@
   font-size: 0.66rem;
   font-weight: 700;
   color: #1e293b;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 .scenic-trust-badge svg {
   width: 12px;

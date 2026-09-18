@@ -2,7 +2,7 @@
    Imported from App.js after route modules so it wins over older page CSS. */
 
 :root {
-  --app-font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+  --app-font-family: var(--app-font-family) !important;
   --theme-page: #F3F4F6;
   --theme-page-soft: #F9FAFB;
   --theme-surface: #ffffff;
@@ -45,7 +45,7 @@ body {
   padding: clamp(20px, 4vw, 54px);
   overflow: hidden;
   isolation: isolate;
-  font-family: var(--app-font-family);
+  font-family: var(--app-font-family) !important;
   background:
     radial-gradient(circle at 14% 18%, rgba(255, 0, 0, 0.22), transparent 24%),
     radial-gradient(circle at 86% 12%, rgba(255, 189, 89, 0.22), transparent 25%),

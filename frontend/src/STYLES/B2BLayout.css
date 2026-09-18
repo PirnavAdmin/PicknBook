@@ -21,7 +21,7 @@
   min-height: 100vh;
   background-color: #0b0f19;
   color: var(--b2b-text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 
 .b2b-layout-wrapper-light {
@@ -30,7 +30,7 @@
   min-height: 100vh;
   background-color: var(--theme-page, #f4f6f8);
   color: inherit;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--app-font-family) !important;
 }
 
 /* ─── B2B Topbar ─────────────────────────────────────────────────────────── */

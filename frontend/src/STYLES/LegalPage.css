@@ -6,7 +6,7 @@
     radial-gradient(circle at 94% 4%, rgba(255, 0, 0, 0.12), transparent 28%),
     var(--theme-page, #F3F4F6);
   color: var(--theme-navy, #17242d);
-  font-family: var(--app-font-family);
+  font-family: var(--app-font-family) !important;
 }
 
 .legal-shell {

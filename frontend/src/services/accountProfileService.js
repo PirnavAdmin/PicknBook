@@ -171,3 +171,22 @@ export async function getAccountProfile() {
 
   return pendingProfilePromise;
 }
+
+export async function updateAccountProfile(formData) {
+  const token = getAuthToken();
+  const headers = withNgrokSkipWarningHeader("/api/Profile/edit", {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  });
+
+  const response = await fetch(toApiUrl("/api/Profile/edit"), {
+    method: "PUT",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Profile update failed: ${response.status}`);
+  }
+
+  return response.json();
+}

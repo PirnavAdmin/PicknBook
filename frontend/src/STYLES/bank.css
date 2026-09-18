@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
-
 .bank-page,
 .bank-container {
   --bank-bg: #f2f6fb;
@@ -17,7 +15,7 @@
   --bank-heading-font: var(--app-font-family);
   --bank-body-font: var(--app-font-family);
 
-  font-family: var(--bank-body-font);
+  font-family: var(--app-font-family) !important;
   color: var(--bank-text);
 }
 
@@ -84,7 +82,7 @@
 .bank-container .page-title {
   margin: 0;
   font-size: 1.305rem;
-  font-family: var(--bank-heading-font);
+  font-family: var(--app-font-family) !important;
   color: #1c395f;
   letter-spacing: -0.01em;
 }

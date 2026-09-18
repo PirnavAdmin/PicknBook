@@ -1190,10 +1190,9 @@ export default function HotelSearchResults() {
                         </div>
                         
                         {/* Rating Overlay top-left */}
-                        <div className="hotel-stay-rating-overlay-topleft" style={{ height: "24px", background: "rgba(0,0,0,0.6)", color: "white", fontSize: "11px", borderRadius: "20px", padding: "4px 8px", display: "flex", alignItems: "center", gap: "2px", position: "absolute", top: "12px", left: "12px" }}>
-                          {Array.from({ length: Math.floor(hotel.rating) || 1 }).map((_, i) => (
-                            <Star key={i} size={11} fill="#ffffff" color="#ffffff" />
-                          ))}
+                        <div className="hotel-stay-rating-overlay-topleft" style={{ height: "24px", background: "rgba(0,0,0,0.6)", color: "white", fontSize: "12px", fontWeight: 600, borderRadius: "20px", padding: "4px 8px", display: "flex", alignItems: "center", gap: "4px", position: "absolute", top: "12px", left: "12px" }}>
+                          <Star size={12} fill="#ffb000" color="#ffb000" />
+                          <span>{Number(hotel.rating || 5).toFixed(1)}</span>
                         </div>
  
                         {/* Save Button top-right */}

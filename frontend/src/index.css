@@ -30,7 +30,7 @@ body,
 
 body {
   margin: 0;
-  font-family: var(--app-font-family);
+  font-family: var(--app-font-family) !important;
   background:
     linear-gradient(135deg, rgba(255, 0, 0, 0.08) 0%, transparent 30%),
     linear-gradient(225deg, rgba(255, 0, 0, 0.1) 0%, transparent 34%),

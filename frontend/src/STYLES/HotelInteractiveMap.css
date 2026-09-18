@@ -112,7 +112,7 @@
   background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--app-font-family) !important;
   box-sizing: border-box;
 }
 

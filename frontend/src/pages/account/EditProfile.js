@@ -2,6 +2,7 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../contexts/UserContext";
+import { updateAccountProfile } from "../../services/accountProfileService";
 import "../../STYLES/editProfile.css";
 
 const EditProfileCard = () => {
@@ -66,16 +67,32 @@ const EditProfileCard = () => {
     if (fileInput) fileInput.value = "";
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validate()) {
-      updateUserData({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        mobile: formData.mobile,
-        profileImage: previewUrl,
-      });
-      navigate("/dashboard/my-account");
+      try {
+        setStatusMessage("Saving...");
+        const payload = new FormData();
+        payload.append("firstName", formData.firstName);
+        payload.append("lastName", formData.lastName);
+        payload.append("phoneNumber", formData.mobile);
+        if (formData.profileImage instanceof File) {
+          payload.append("profileImage", formData.profileImage);
+        }
+
+        const updatedProfile = await updateAccountProfile(payload);
+        
+        updateUserData({
+          firstName: updatedProfile.firstName,
+          lastName: updatedProfile.lastName,
+          email: updatedProfile.email,
+          mobile: updatedProfile.phoneNumber,
+          profileImage: updatedProfile.profileImageUrl,
+        });
+
+        navigate("/dashboard/my-account");
+      } catch (err) {
+        setStatusMessage("Failed to update profile.");
+      }
     } else {
       setStatusMessage("");
     }

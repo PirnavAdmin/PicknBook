@@ -259,11 +259,11 @@ export default function PlaceAutocomplete({
               >
                 <div className="pnb-place-icon-wrap">
                   {tripType === "flight" ? (
-                    <Plane size={15} />
+                    <Plane size={15} color="#ff0000" strokeWidth={2.5} />
                   ) : tripType === "hotel" ? (
-                    <Building2 size={15} />
+                    <Building2 size={15} color="#ff0000" strokeWidth={2.5} />
                   ) : (
-                    <Bus size={15} />
+                    <Bus size={15} color="#ff0000" strokeWidth={2.5} />
                   )}
                 </div>
                 <div className="pnb-place-text">
