@@ -5,7 +5,7 @@
   justify-content: center;
   align-items: center;
   min-height: calc(100vh - 80px);
-  font-family: var(--app-font-family) !important;
+  font-family: 'Outfit', 'Inter', sans-serif;
 }
 
 .contact-outer-card {

@@ -19,8 +19,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import "../../STYLES/FlightBookingFlow.css";
-import { getFlightSeatMap, ticketLCC, ticketGDS } from "../../services/flightBookingService";
-import { buildFlightBookingPayload } from "../../utils/checkoutPayloadBuilders";
+import { getFlightSeatMap, getFlightSSR } from "../../services/flightBookingService";
 import {
   readFlightBookingFlowState,
   writeFlightBookingFlowState,
@@ -46,28 +45,8 @@ function parseTravellerSummary(summary) {
   };
 }
 
-function hashFromText(value) {
-  let hash = 0;
-  const text = String(value || "");
-
-  for (let index = 0; index < text.length; index += 1) {
-    hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
-  }
-
-  return hash || 1;
-}
-
-function createRandom(seedStart) {
-  let seed = seedStart >>> 0;
-
-  return () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-}
-
 function getZoneName(travelClass) {
-  const normalized = String(travelClass || "Economy").toLowerCase();
+  const normalized = String(travelClass || "").toLowerCase();
 
   if (normalized.includes("first")) {
     return "First Suite";
@@ -81,45 +60,7 @@ function getZoneName(travelClass) {
     return "Premium Economy";
   }
 
-  return "Economy Cabin";
-}
-
-function getCabinTemplate(travelClass) {
-  const normalized = String(travelClass || "Economy").toLowerCase();
-
-  if (normalized.includes("first")) {
-    return {
-      rows: [1, 2],
-      seatLetters: ["A", "C", "D", "F"],
-      extraLegroomRows: new Set([1]),
-      zoneName: getZoneName(travelClass),
-    };
-  }
-
-  if (normalized.includes("business")) {
-    return {
-      rows: [3, 4, 5, 6],
-      seatLetters: ["A", "C", "D", "F"],
-      extraLegroomRows: new Set([3]),
-      zoneName: getZoneName(travelClass),
-    };
-  }
-
-  if (normalized.includes("premium economy")) {
-    return {
-      rows: [7, 8, 9, 10],
-      seatLetters: ["A", "B", "C", "D", "E", "F"],
-      extraLegroomRows: new Set([7]),
-      zoneName: getZoneName(travelClass),
-    };
-  }
-
-  return {
-    rows: [11, 12, 13, 14, 15, 16, 17, 18],
-    seatLetters: ["A", "B", "C", "D", "E", "F"],
-    extraLegroomRows: new Set([11, 15]),
-    zoneName: getZoneName(travelClass),
-  };
+  return "";
 }
 
 function parseSeatCode(seatCode) {
@@ -185,25 +126,15 @@ function buildCabinFromSeatMap(seatMap, travelClass) {
         return null;
       }
 
-      const isBooked = Boolean(
-        seat?.IsBooked ??
-        seat?.isBooked ??
-        seat?.AvailablityType === 2 ??
-        seat?.AvailablityType === 3 ??
-        seat?.AvailabilityType === 2 ??
-        seat?.AvailabilityType === 3 ??
-        seat?.IsAvailable === false ??
-        seat?.isAvailable === false ??
-        String(seat?.Status || seat?.status || "").toLowerCase() === "booked"
-      );
+      const isBooked = ["booked", "blocked", "unavailable", "reserved"].includes(seat.status);
 
       return {
         ...parsed,
         isBooked,
-        isLegroom: Boolean(seat?.IsLegroom ?? seat?.isLegroom),
-        isAisleSeat: Boolean(seat?.IsAisle ?? seat?.isAisle),
+        isLegroom: Boolean(seat?.rawSeat?.IsLegroom ?? seat?.rawSeat?.isLegroom),
+        isAisleSeat: Boolean(seat?.rawSeat?.IsAisle ?? seat?.rawSeat?.isAisle),
         amount: Number(seat?.Amount ?? seat?.amount ?? seat?.Price ?? seat?.price ?? 0),
-        rawApiSeat: seat,
+        rawApiSeat: seat.rawSeat,
       };
     })
     .filter(Boolean);
@@ -266,76 +197,8 @@ function buildCabinFromSeatMap(seatMap, travelClass) {
   };
 }
 
-function createCabinSeats(flightId, travelClass, availableSeats) {
-  const template = getCabinTemplate(travelClass);
-  const random = createRandom(hashFromText(`${flightId}-${travelClass}`));
-
-  const seats = template.rows.flatMap((rowNumber) =>
-    template.seatLetters.map((seatLetter) => {
-      const type = getSeatType(seatLetter, template.seatLetters);
-      return {
-        id: `${rowNumber}${seatLetter}`,
-        label: `${rowNumber}${seatLetter}`,
-        rowNumber,
-        seatLetter,
-        status: "available",
-        isExtraLegroom: template.extraLegroomRows.has(rowNumber),
-        isWindow: type === "window",
-        isAisle: type === "aisle",
-        isMiddle: type === "middle",
-      };
-    })
-  );
-
-  const totalSeats = seats.length;
-  const normalizedAvailable = Math.max(1, Math.min(totalSeats, Number(availableSeats) || totalSeats));
-  const bookedTarget = Math.max(0, totalSeats - normalizedAvailable);
-
-  const indexes = Array.from({ length: totalSeats }, (_, index) => index);
-  const bookedSet = new Set();
-
-  while (bookedSet.size < Math.min(bookedTarget, totalSeats - 1)) {
-    const picked = indexes[Math.floor(random() * indexes.length)];
-    bookedSet.add(picked);
-  }
-
-  const normalizedSeats = seats.map((seat, index) => {
-    if (bookedSet.has(index)) {
-      return { ...seat, status: "booked" };
-    }
-
-    if (seat.isExtraLegroom) {
-      return { ...seat, status: "extra" };
-    }
-
-    return seat;
-  });
-
-  return {
-    ...template,
-    seats: normalizedSeats,
-  };
-}
-
 function getSeatSurcharge(seat) {
-  if (!seat || seat.status === "booked") {
-    return 0;
-  }
-
-  let surcharge = 0;
-  if (seat.isExtraLegroom) {
-    surcharge += 999;
-  } else if (seat.rowNumber <= 12) {
-    surcharge += 350; // preferred front rows
-  }
-
-  if (seat.isWindow) {
-    surcharge += 250;
-  } else if (seat.isAisle) {
-    surcharge += 200;
-  }
-
-  return surcharge;
+  return Number(seat?.amount ?? 0);
 }
 
 export default function FlightSeatSelectionPage() {
@@ -350,10 +213,10 @@ export default function FlightSeatSelectionPage() {
   const searchContext = flowState.searchContext || null;
   const travellers = parseTravellerSummary(searchContext?.travellers);
   const travelClass =
-    flight?.className || searchContext?.cabinClass || "Economy";
+    flight?.className || searchContext?.cabinClass || "";
 
   const [selectedSeatsBySegment, setSelectedSeatsBySegment] = useState(
-    flowState.selectedSeatsBySegment || {}
+    {}
   );
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
 
@@ -361,40 +224,20 @@ export default function FlightSeatSelectionPage() {
   const [ssrOptionsByLeg, setSsrOptionsByLeg] = useState({});
 
   const effectiveLegs = useMemo(() => {
-    if (Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0) {
-      return flowState.selectedLegs;
-    }
-    if (flowState.flight) {
-      if (flowState.returnFlight) {
-        return [flowState.flight, flowState.returnFlight];
-      }
-      return [flowState.flight];
-    }
-    return [];
+    const journeys = flowState.selectedLegs?.length ? flowState.selectedLegs : [flowState.flight, flowState.returnFlight].filter(Boolean);
+    return journeys.flatMap(journey => {
+      const rawSegments = journey.segments || journey.Segments || [];
+      const legs = Array.isArray(rawSegments) ? rawSegments.flat(Infinity) : [];
+      return legs.length ? legs.map(segment => ({ ...journey,
+        sourceCode: segment.Origin?.Airport?.AirportCode || segment.Origin?.AirportCode,
+        destinationCode: segment.Destination?.Airport?.AirportCode || segment.Destination?.AirportCode,
+        fromCity: segment.Origin?.Airport?.CityName || segment.Origin?.CityName,
+        toCity: segment.Destination?.Airport?.CityName || segment.Destination?.CityName,
+        airlineCode: segment.Airline?.AirlineCode, flightNumber: segment.Airline?.FlightNumber,
+      })) : [journey];
+    });
   }, [flowState]);
-
-  const segments = useMemo(() => {
-    if (effectiveLegs.length > 1) {
-      return effectiveLegs.map(leg => {
-        const s = leg.sourceCode || leg.fromCity || leg.source || leg.Origin || "DEL";
-        const d = leg.destinationCode || leg.toCity || leg.destination || leg.Destination || "BOM";
-        return `${s}-${d}`;
-      });
-    }
-    const src = flight?.sourceCode || searchContext?.source || "DEL";
-    const dest = flight?.destinationCode || searchContext?.destination || "BOM";
-
-    const flightSegments = flight?.segments || flight?.Segments?.[0] || flight?.Segments;
-    if (Array.isArray(flightSegments) && flightSegments.length > 0) {
-      return flightSegments.map(seg => {
-        const s = seg?.Origin?.Airport?.AirportCode || seg?.Origin?.AirportCode || seg?.Origin || src;
-        const d = seg?.Destination?.Airport?.AirportCode || seg?.Destination?.AirportCode || seg?.Destination || dest;
-        return `${s}-${d}`;
-      });
-    }
-
-    return [`${src}-${dest}`];
-  }, [flight, searchContext, effectiveLegs]);
+  const segments = effectiveLegs.map(leg => (leg.sourceCode || leg.fromAirportCode || "") + "-" + (leg.destinationCode || leg.toAirportCode || ""));
 
   const currentLeg = effectiveLegs[activeSegmentIndex] || flight;
   const displayedLeg = currentLeg || flight || {};
@@ -404,10 +247,11 @@ export default function FlightSeatSelectionPage() {
     return legSeats.map((s) => s.label);
   }, [selectedSeatsBySegment, activeSegmentIndex]);
 
-  const [mealPreference, setMealPreference] = useState(
-    flowState.mealPreference || "standard"
-  );
-  const [baggagePlan, setBaggagePlan] = useState(flowState.baggagePlan || "20kg");
+  const [extrasBySegment, setExtrasBySegment] = useState({});
+  const mealPreference = extrasBySegment[activeSegmentIndex]?.meal || "none";
+  const baggagePlan = extrasBySegment[activeSegmentIndex]?.baggage || "none";
+  const setMealPreference = meal => setExtrasBySegment(previous => ({ ...previous, [activeSegmentIndex]: { ...previous[activeSegmentIndex], meal } }));
+  const setBaggagePlan = baggage => setExtrasBySegment(previous => ({ ...previous, [activeSegmentIndex]: { ...previous[activeSegmentIndex], baggage } }));
   const [selectionError, setSelectionError] = useState("");
   const [seatMapError, setSeatMapError] = useState("");
   const [isSeatMapLoading, setIsSeatMapLoading] = useState(false);
@@ -415,12 +259,8 @@ export default function FlightSeatSelectionPage() {
   const [activeTab, setActiveTab] = useState("seat");
   const [activeSeatFilter, setActiveSeatFilter] = useState(null);
 
-  const [travelAssistanceAdded, setTravelAssistanceAdded] = useState(
-    flowState.travelAssistanceAdded || false
-  );
-  const [zeroCancellationAdded, setZeroCancellationAdded] = useState(
-    flowState.zeroCancellationAdded || false
-  );
+  const travelAssistanceAdded = false;
+  const zeroCancellationAdded = false;
   const [activeInsuranceTerms, setActiveInsuranceTerms] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] = useState(null);
@@ -526,41 +366,32 @@ export default function FlightSeatSelectionPage() {
       };
     }
 
-    const flightId = String(currentLeg.id || currentLeg.resultIndex || "");
-    const isMock = flightId.toLowerCase().includes("fallback-flight") || flightId.toLowerCase().includes("demo");
-
-    if (isMock) {
-      setIsSeatMapLoading(false);
-      return () => {
-        isCurrent = false;
-      };
-    }
-
     setIsSeatMapLoading(true);
     setSeatMapError("");
 
     (async () => {
       try {
-        const seatMap = await getFlightSeatMap(currentLeg, travelClass);
+        const [seatMap, ssr] = await Promise.all([getFlightSeatMap(currentLeg), getFlightSSR(currentLeg)]);
         if (!isCurrent) return;
 
-        const cabin = buildCabinFromSeatMap(seatMap, travelClass);
-        if (cabin) {
-          setSeatMapCabinByLeg((prev) => ({ ...prev, [activeSegmentIndex]: cabin }));
+        const matchesRoute = item => (item.Origin || item.origin) === currentLeg.sourceCode && (item.Destination || item.destination) === currentLeg.destinationCode;
+        const cabin = buildCabinFromSeatMap({ ...seatMap, seats: (seatMap.seats || []).filter(seat => matchesRoute(seat.rawSeat || {})) }, travelClass);
           setSsrOptionsByLeg((prev) => ({
             ...prev,
             [activeSegmentIndex]: {
-              baggage: Array.isArray(seatMap?.Baggage) ? seatMap.Baggage.flat(Infinity) : [],
-              meal: Array.isArray(seatMap?.MealDynamic) ? seatMap.MealDynamic.flat(Infinity) : []
+              baggage: Array.isArray(ssr?.Baggage) ? ssr.Baggage.flat(Infinity).filter(matchesRoute) : [],
+              meal: Array.isArray(ssr?.MealDynamic) ? ssr.MealDynamic.flat(Infinity).filter(matchesRoute) : []
             }
           }));
+        if (cabin) {
+          setSeatMapCabinByLeg((prev) => ({ ...prev, [activeSegmentIndex]: cabin }));
         } else {
-          setSeatMapError("Seat map unavailable. Showing a generated layout instead.");
+          setSeatMapError("The supplier has not provided a seat map. You can continue without selecting seats.");
         }
       } catch (error) {
         if (!isCurrent) return;
         setSeatMapError(
-          error?.message || "Seat map unavailable. Showing a generated layout instead."
+          error?.message || "The supplier has not provided a seat map. You can continue without selecting seats."
         );
       } finally {
         if (isCurrent) {
@@ -577,19 +408,7 @@ export default function FlightSeatSelectionPage() {
   const seatMapCabin = seatMapCabinByLeg[activeSegmentIndex] || null;
   const ssrOptions = ssrOptionsByLeg[activeSegmentIndex] || { baggage: [], meal: [] };
 
-  const cabinData = useMemo(() => {
-    if (seatMapCabin) {
-      return seatMapCabin;
-    }
-
-    const fallbackSeats =
-      currentLeg?.availableSeats ||
-      currentLeg?.totalAvailableSeats ||
-      currentLeg?.totalSeats ||
-      undefined;
-
-    return createCabinSeats(currentLeg?.id || flight?.id || `flight-${activeSegmentIndex}`, travelClass, fallbackSeats);
-  }, [currentLeg, flight, seatMapCabin, travelClass, activeSegmentIndex]);
+  const cabinData = seatMapCabin || { seats: [], rows: [], seatLetters: [], extraLegroomRows: new Set(), zoneName: "" };
 
   const seatsByLabel = useMemo(() => {
     const map = new Map();
@@ -615,7 +434,7 @@ export default function FlightSeatSelectionPage() {
       const currentLegSeats = previous[activeSegmentIndex] || [];
       const updatedLegSeats = currentLegSeats.filter((s) => {
         const mappedSeat = seatLookup.get(s.label);
-        return mappedSeat && mappedSeat.status !== "booked";
+        return mappedSeat && mappedSeat.status !== "booked" && mappedSeat.rawApiSeat?.Code;
       });
       return { ...previous, [activeSegmentIndex]: updatedLegSeats };
     });
@@ -626,37 +445,32 @@ export default function FlightSeatSelectionPage() {
   }, [selectedSeatsBySegment, activeSegmentIndex]);
 
   const previousFareSummary = flowState.fareSummary || {};
-  const baseFareTotal =
-    Number(previousFareSummary.baseFare || 0) ||
-    (Number(flight?.fare) || 0) * travellers.seatRequired;
+  const baseFareTotal = Number(flowState.fareQuote?.baseFare ?? 0);
   const seatSurcharge = Object.values(selectedSeatsBySegment).flat().reduce(
     (sum, seat) => sum + getSeatSurcharge(seat),
     0
   );
   const selectedMeal = ssrOptions.meal.find(m => m.Code === mealPreference || m.code === mealPreference) || null;
-  const mealFee = selectedMeal ? Number(selectedMeal.Price || selectedMeal.price || 0) : 0;
+  const selectedMeals = Object.entries(extrasBySegment).flatMap(([index, selection]) => {
+    const item = ssrOptionsByLeg[index]?.meal.find(m => (m.Code || m.code) === selection.meal);
+    return item ? [item] : [];
+  });
+  const mealFee = selectedMeals.reduce((sum, item) => sum + Number(item.Price ?? item.price), 0);
   const selectedBaggage = ssrOptions.baggage.find(b => b.Code === baggagePlan || b.code === baggagePlan) || null;
-  const baggageFee = selectedBaggage ? Number(selectedBaggage.Price || selectedBaggage.price || 0) : 0;
+  const selectedBaggageItems = Object.entries(extrasBySegment).flatMap(([index, selection]) => {
+    const item = ssrOptionsByLeg[index]?.baggage.find(b => (b.Code || b.code) === selection.baggage);
+    return item ? [item] : [];
+  });
+  const baggageFee = selectedBaggageItems.reduce((sum, item) => sum + Number(item.Price ?? item.price), 0);
   const tax = Number(previousFareSummary.tax || 0);
   const convenienceFee = Number(previousFareSummary.convenienceFee || 0);
   const discount = Number(previousFareSummary.discount || flowState.couponDiscount || 0);
   const assuredFee = Number(previousFareSummary.assuredFee || 0);
   const tripSecureFee = Number(previousFareSummary.tripSecureFee || flowState.tripSecureFee || 0);
   const passengerCount = flowState.passengers?.length || travellers.seatRequired || 1;
-  const travelAssistanceFee = travelAssistanceAdded ? 189 * passengerCount : 0;
-  const zeroCancellationFee = zeroCancellationAdded ? 499 * passengerCount : 0;
-  const totalFare =
-    baseFareTotal +
-    seatSurcharge +
-    mealFee +
-    baggageFee +
-    tax +
-    convenienceFee +
-    assuredFee +
-    travelAssistanceFee +
-    zeroCancellationFee +
-    tripSecureFee -
-    discount;
+  const travelAssistanceFee = 0;
+  const zeroCancellationFee = 0;
+  const totalFare = Number(flowState.fareQuote?.totalFare ?? 0) + seatSurcharge + mealFee + baggageFee;
 
   if (!flight) {
     return (
@@ -700,6 +514,7 @@ export default function FlightSeatSelectionPage() {
   };
 
   const handleContinue = () => {
+    if (!flowState.fareQuote?.success) { setSelectionError("Return to traveller details to refresh the fare quote."); return; }
     // Seat selection is optional — proceed to payment even without seat selection.
     // Selected seats are passed through; if none are selected, Seat: [] is sent to SRDV which is valid.
 
@@ -707,15 +522,15 @@ export default function FlightSeatSelectionPage() {
       ? flowState.passengers.map((passenger, index) => {
         const pSeats = segments.map((_, legIdx) => {
           const legSeats = selectedSeatsBySegment[legIdx] || [];
-          return legSeats[index]?.rawApiSeat || null;
+          return (passenger.passengerType === "Infant" ? null : legSeats[flowState.passengers.slice(0, index).filter(p => p.passengerType !== "Infant").length]?.rawApiSeat) || null;
         }).filter(Boolean);
 
         return {
           ...passenger,
           seatLabel: (selectedSeatsBySegment[0] || [])[index]?.label || "",
           seatDynamic: pSeats.length > 0 ? pSeats : undefined,
-          baggage: (index === 0 && selectedBaggage) ? [selectedBaggage] : undefined,
-          mealDynamic: (index === 0 && selectedMeal) ? [selectedMeal] : undefined,
+          baggage: index === 0 ? selectedBaggageItems : [],
+          mealDynamic: index === 0 ? selectedMeals : [],
         };
       })
       : [];
@@ -892,11 +707,11 @@ export default function FlightSeatSelectionPage() {
                   </div>
                   <div className="legend-badge">
                     <span className="legend-color mid"></span>
-                    <span>₹350 - ₹500</span>
+                    <span>Supplier price</span>
                   </div>
                   <div className="legend-badge">
                     <span className="legend-color high"></span>
-                    <span>₹1200 - ₹1300</span>
+                    <span>Supplier price</span>
                   </div>
                   <div className="legend-badge">
                     <span className="legend-color" style={{ backgroundColor: "#d6dee9" }}></span>
@@ -951,7 +766,7 @@ export default function FlightSeatSelectionPage() {
                       <div className="legend-seat standard window">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Standard Window</span>
-                        <span className="legend-price">+₹250</span>
+                        <span className="legend-price">Supplier price</span>
                       </div>
                     </div>
                     <div
@@ -961,7 +776,7 @@ export default function FlightSeatSelectionPage() {
                       <div className="legend-seat standard aisle">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Standard Aisle</span>
-                        <span className="legend-price">+₹200</span>
+                        <span className="legend-price">Supplier price</span>
                       </div>
                     </div>
                     <div
@@ -971,7 +786,7 @@ export default function FlightSeatSelectionPage() {
                       <div className="legend-seat preferred">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Preferred Rows 2-5</span>
-                        <span className="legend-price">+₹350 - ₹600</span>
+                        <span className="legend-price">Supplier price</span>
                       </div>
                     </div>
                     <div
@@ -981,7 +796,7 @@ export default function FlightSeatSelectionPage() {
                       <div className="legend-seat extra">A</div>
                       <div className="legend-info">
                         <span className="legend-label">Extra Legroom</span>
-                        <span className="legend-price">+₹999 - ₹1249</span>
+                        <span className="legend-price">Supplier price</span>
                       </div>
                     </div>
                     <div
@@ -1288,131 +1103,7 @@ export default function FlightSeatSelectionPage() {
                 )}
               </div>
             ) : (
-              // Insurance Tab Content
-              <div className="insurance-section-container">
-                <div className="insurance-cards-grid">
-                  {/* Card 1: Travel Assistance */}
-                  <div className="insurance-addon-card">
-                    <div className="insurance-addon-card-body">
-                      <h3 className="insurance-card-title">
-                        Travel <span className="highlight-green">Assistance</span>
-                      </h3>
-                      <p className="insurance-card-subtitle">Travel protected with exclusive benefits</p>
-
-                      <div className="insurance-benefits-list">
-                        <div className="insurance-benefit-item">
-                          <span className="benefit-check-circle">
-                            <Check size={12} strokeWidth={3} />
-                          </span>
-                          <span>Flight delay benefit beyond 2 hours</span>
-                        </div>
-                        <div className="insurance-benefit-item">
-                          <span className="benefit-check-circle">
-                            <Check size={12} strokeWidth={3} />
-                          </span>
-                          <span>Emergency Medical expenses</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="insurance-read-more"
-                        onClick={() => setActiveInsuranceTerms("travel")}
-                      >
-                        Read More
-                      </button>
-
-                      <hr className="insurance-divider" />
-
-                      <div className="insurance-price-row">
-                        <div className="insurance-price-info">
-                          <span className="insurance-tax-label">Inclusive of taxes</span>
-                          <span className="insurance-price-val">₹189</span>
-                        </div>
-                        <button
-                          type="button"
-                          className={`insurance-action-btn ${travelAssistanceAdded ? "added" : "add"}`}
-                          onClick={() => setTravelAssistanceAdded(!travelAssistanceAdded)}
-                        >
-                          {travelAssistanceAdded ? (
-                            <>
-                              <Check size={14} strokeWidth={3} /> Added
-                            </>
-                          ) : (
-                            "Add"
-                          )}
-                        </button>
-                      </div>
-
-                      <p className="insurance-terms-text">
-                        By clicking on 'Add' I agree to purchase Travel Assistance and agree to all T&Cs I confirm that I am an Indian citizen upto the age of 90 years.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Zero Cancellation */}
-                  <div className="insurance-addon-card recommended">
-                    <div className="insurance-recommended-badge">Recommended</div>
-                    <div className="insurance-addon-card-body">
-                      <h3 className="insurance-card-title">
-                        Zero <span className="highlight-green">Cancellation</span>
-                      </h3>
-                      <p className="insurance-card-subtitle">
-                        Assistance service including Zero Cancellation. Cancel up to 24 hours before departure, claim your refund, no questions asked!
-                      </p>
-
-                      <div className="insurance-benefits-list">
-                        <div className="insurance-benefit-item">
-                          <span className="benefit-check-circle">
-                            <Check size={12} strokeWidth={3} />
-                          </span>
-                          <span>Trip Cancellation</span>
-                        </div>
-                        <div className="insurance-benefit-item">
-                          <span className="benefit-check-circle">
-                            <Check size={12} strokeWidth={3} />
-                          </span>
-                          <span>Coverage limit ₹5,000 · Cancel ≥24 hrs</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="insurance-read-more"
-                        onClick={() => setActiveInsuranceTerms("cancellation")}
-                      >
-                        Read More
-                      </button>
-
-                      <hr className="insurance-divider" />
-
-                      <div className="insurance-price-row">
-                        <div className="insurance-price-info">
-                          <span className="insurance-tax-label">Now say goodbye to Cancellation Fee</span>
-                          <span className="insurance-price-val">₹499</span>
-                        </div>
-                        <button
-                          type="button"
-                          className={`insurance-action-btn ${zeroCancellationAdded ? "added" : "add"}`}
-                          onClick={() => setZeroCancellationAdded(!zeroCancellationAdded)}
-                        >
-                          {zeroCancellationAdded ? (
-                            <>
-                              <Check size={14} strokeWidth={3} /> Added
-                            </>
-                          ) : (
-                            "Add"
-                          )}
-                        </button>
-                      </div>
-
-                      <p className="insurance-terms-text">
-                        By clicking 'Add' I agreed to purchase assistance services including zero cancellation powered by Asego and accept all applicable T&Cs. I confirm that I am an Indian citizen upto the age of 70 years.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <p>No additional protection products are available.</p>
             )}
           </div>
 
@@ -1430,7 +1121,7 @@ export default function FlightSeatSelectionPage() {
                   value={mealPreference}
                   onChange={(event) => setMealPreference(event.target.value)}
                 >
-                  <option value="standard">Standard Meal (Included)</option>
+                  <option value="none">No additional meal</option>
                   {ssrOptions.meal.map((m, idx) => (
                     <option key={`meal-${idx}`} value={m.Code || m.code}>
                       {m.Description || m.description || "Meal"} (+INR {m.Price || m.price || 0})
@@ -1446,7 +1137,7 @@ export default function FlightSeatSelectionPage() {
                   value={baggagePlan}
                   onChange={(event) => setBaggagePlan(event.target.value)}
                 >
-                  <option value="20kg">20kg (Included)</option>
+                  <option value="none">No additional baggage</option>
                   {ssrOptions.baggage.map((b, idx) => (
                     <option key={`bag-${idx}`} value={b.Code || b.code}>
                       {b.Description || b.description || "Baggage"} (+INR {b.Price || b.price || 0})
@@ -1541,28 +1232,8 @@ export default function FlightSeatSelectionPage() {
           onClose={() => setIsModalOpen(false)} 
           bookingType="Flight" 
           flowState={checkoutPayload} 
-          onSuccess={async (res) => {
-            if (res.paymentMethod === "Wallet" || res.paymentMethod === "Agent Wallet") {
-              try {
-                const bookPayload = buildFlightBookingPayload(checkoutPayload);
-                bookPayload.PaymentMethod = res.paymentMethod;
-                
-                let bookRes;
-                if (checkoutPayload.isLcc) {
-                  bookRes = await ticketLCC(bookPayload);
-                } else {
-                  bookRes = await ticketGDS(bookPayload);
-                }
-                
-                navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });
-              } catch (err) {
-                console.error("Flight Booking failed", err);
-                alert("Flight Booking failed: " + (err.response?.data?.message || err.message));
-                setIsModalOpen(false);
-              }
-            } else {
-              navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
-            }
+          onSuccess={(res) => {
+            if (res.orderId) navigate(`/payment/cashfree/return?order_id=${encodeURIComponent(res.orderId)}`, { replace: true });
           }} 
         />
       )}

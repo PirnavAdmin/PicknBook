@@ -150,9 +150,7 @@ export default function FlightCancelRequest() {
 
     try {
       const result = await cancelFlightBooking(bookingId, reason || undefined);
-      setActionMessage(
-        `✅ Booking ${result.bookingReference || bookingId} cancelled successfully! Database updated & cancellation confirmation email triggered.`
-      );
+      setActionMessage(result.message);
       setSelectedBooking(result);
       await fetchBookings();
     } catch (error) {
@@ -423,7 +421,7 @@ export default function FlightCancelRequest() {
                   <span>✅ Ticket Fully Cancelled &amp; Email Dispatched</span>
                 </div>
                 <p style={{ margin: "6px 0 0", fontSize: "0.85rem", color: "#15803d", lineHeight: "1.5" }}>
-                  Provider cancellation has been verified via the 2-step API flow (<strong>GetCancelStatus</strong>). Your database status is now <strong>Cancelled</strong> and an automated refund confirmation email has been triggered to the passenger.
+                  The booking status comes from the backend. Refund processing is tracked separately.
                 </p>
               </div>
             )}
@@ -475,7 +473,7 @@ export default function FlightCancelRequest() {
                 <div>
                   <span style={{ color: "#16a34a", fontWeight: 700 }}>Refund Amount Processed</span>
                   <strong style={{ color: "#16a34a", fontSize: "1.05rem" }}>
-                    {formatCurrency(selectedBooking.refundAmount ?? selectedBooking.refundAmountInr ?? selectedBooking?.RefundAmount ?? selectedBooking?.RefundDetails?.RefundAmount ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.85))}
+                    {formatCurrency(selectedBooking.refundAmount ?? selectedBooking.refundAmountInr ?? selectedBooking?.RefundAmount ?? selectedBooking?.RefundDetails?.RefundAmount ?? 0)}
                   </strong>
                 </div>
               )}

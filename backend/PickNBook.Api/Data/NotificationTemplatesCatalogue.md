@@ -17,7 +17,7 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 ```html
 <h3>Welcome to PickNBook!</h3>
 <p>Your one-time registration code is: <strong>{OtpCode}</strong></p>
-<p>This code expires in 5 minutes.</p>
+<p>This code expires in 2 minutes.</p>
 ```
 
 **SMS Template**
@@ -105,10 +105,19 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Your e-ticket is attached or can be downloaded from your account.</p>
 ```
 
-**SMS/WhatsApp Template**
-*TemplateKey*: `FLIGHT_BOOKING_CONFIRMED_SMS`
-*Variables*: `{Pnr}`, `{Name}`
-*Body*: `Dear {Name}, your flight booking is confirmed! PNR: {Pnr}. Thank you for booking with PickNBook.`
+**SMS Template**
+*TemplateKey*: `FLIGHT_BOOKING_CONFIRMED` (Alias: `FLIGHT_BOOKING_CONFIRMED_SMS`)
+*EventType*: `FlightBookingSuccess`
+*Channel*: `SMS`
+*DLT Content ID*: `1777178996708609183`
+*DLT Reference Number*: `11-1REDXMUAS6QYZ`
+*Provider Template ID*: `1563322`
+*Provider Label*: `FLIGHT_BOOKING_CONFIRMED`
+*Sender Header*: `PICNBK`
+*Variables*: `${var1}` / `{Pnr}`, `${var2}` / `{Flight}`, `${var3}` / `{Route}`, `${var4}` / `{Date}`
+*Body*: `Pick&Book: Flight booking confirmed. PNR: {Pnr}. Flight: {Flight}. Route: {Route}. Date: {Date}.`
+*(Provider format: `Pick&Book: Flight booking confirmed. PNR: ${var1}. Flight: ${var2}. Route: ${var3}. Date: ${var4}.`)*
+*Sample Content*: `Pick&Book: Flight booking confirmed. PNR: X4K9LM. Flight: 6E-204. Route: DEL-BOM. Date: 25/09/2026 10:30 AM.`
 
 ---
 
@@ -126,8 +135,35 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Any amount deducted (INR {Amount}) will be refunded automatically.</p>
 ```
 
-**SMS/WhatsApp Template**
-*Body*: `Your PickNBook flight booking failed. Any deducted amount will be refunded. Reason: {Reason}.`
+**SMS Template**
+*TemplateKey*: `FLIGHT_BOOKING_FAILED` (Alias: `FLIGHT_BOOKING_FAILED_SMS`)
+*EventType*: `FlightBookingFailed`
+*Channel*: `SMS`
+*DLT Content ID*: `1777178996725418622`
+*DLT Reference Number*: `11-1REDXMUASACOA`
+*Provider Template ID*: `1563303`
+*Provider Label*: `FLIGHT_BOOKING_FAILED`
+*Sender Header*: `PICNBK`
+*Variables*: `${var1}` / `{Reference}`, `${var2}` / `{Reason}`
+*Body*: `Pick&Book: Flight booking could not be completed. Ref: {Reference}. Reason: {Reason}.`
+*(Provider format: `Pick&Book: Flight booking could not be completed. Ref: ${var1}. Reason: ${var2}.`)*
+*Sample Content*: `Pick&Book: Flight booking could not be completed. Ref: PNBF2609210042. Reason: Fare expired.`
+
+---
+
+### 2.3 Flight Booking Cancelled
+**TemplateKey**: `FLIGHT_BOOKING_CANCELLED` (Alias: `FLIGHT_BOOKING_CANCELLED_SMS`)
+**EventType**: `FlightBookingCancelled`
+**Channel**: `SMS`
+**DLT Content ID**: `1777178996735449379`
+**DLT Reference Number**: `11-1RDRLMUASCI2L`
+**Provider Template ID**: `1563321`
+**Provider Label**: `FLIGHT_BOOKING_CANCELLED`
+**Sender Header**: `PICNBK`
+**Variables**: `${var1}` / `{Reference}` / `{Pnr}`, `${var2}` / `{Status}`
+**Body**: `Pick&Book: Flight booking {Reference} has been cancelled. Cancellation status: {Status}.`
+*(Provider format: `Pick&Book: Flight booking ${var1} has been cancelled. Cancellation status: ${var2}.`)*
+*Sample Content*: `Pick&Book: Flight booking X4K9LM has been cancelled. Cancellation status: Confirmed.`
 
 ---
 
@@ -148,16 +184,19 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Please check your account for the hotel voucher.</p>
 ```
 
-**SMS/WhatsApp Template**
+**SMS Template**
 *TemplateKey*: `HOTEL_BOOKING_CONFIRMED` (Alias: `HOTEL_BOOKING_CONFIRMED_SMS`)
 *EventType*: `HotelBookingSuccess`
 *Channel*: `SMS`
-*DLT Content ID*: `1777178962451868362`
-*Provider Template ID*: `1562672`
+*DLT Content ID*: `1777178997026681565`
+*DLT Reference Number*: `11-1REDXMUAU2X8G`
+*Provider Template ID*: `1563318`
+*Provider Label*: `newHOTEL_BOOKING_CONFIRMED`
 *Header (Sender ID)*: `PICNBK`
 *Variables*: `${var1}` / `{Reference}`, `${var2}` / `{Hotel}`, `${var3}` / `{CheckIn}`, `${var4}` / `{CheckOut}`
-*Body*: `PickNBook: Hotel booking confirmed. Ref ${var1}. Hotel: ${var2}. Check-in: ${var3}. Check-out: ${var4}.`
-*Sample Content*: `PickNBook: Hotel booking confirmed. Ref PNB26091000125. Hotel: Grand Hyderabad Hotel. Check-in: 20/09/2026. Check-out: 22/09/2026.`
+*Body*: `Pick&Book: Hotel booking confirmed. Ref {Reference}. Hotel: {Hotel}. Check-in: {CheckIn}. Check-out: {CheckOut}.`
+*(Provider format: `Pick&Book: Hotel booking confirmed. Ref ${var1}. Hotel: ${var2}. Check-in: ${var3}. Check-out: ${var4}.`)*
+*Sample Content*: `Pick&Book: Hotel booking confirmed. Ref PNB26091000125. Hotel: Grand Hyderabad Hotel. Check-in: 20/09/2026. Check-out: 22/09/2026.`
 
 ---
 
@@ -175,16 +214,19 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Any amount deducted (INR {Amount}) will be refunded automatically.</p>
 ```
 
-**SMS/WhatsApp Template**
+**SMS Template**
 *TemplateKey*: `HOTEL_BOOKING_FAILED` (Alias: `HOTEL_BOOKING_FAILED_SMS`)
 *EventType*: `HotelBookingFailed`
 *Channel*: `SMS`
-*DLT Content ID*: `1777178962464726766`
-*Provider Template ID*: `1562673`
+*DLT Content ID*: `1777178997037555745`
+*DLT Reference Number*: `11-1RDRLMUAU5951`
+*Provider Template ID*: `1563294`
+*Provider Label*: `newHOTEL_BOOKING_FAILED`
 *Header (Sender ID)*: `PICNBK`
 *Variables*: `${var1}` / `{Reference}`, `${var2}` / `{Reason}`
-*Body*: `PickNBook: Hotel booking could not be completed. Ref ${var1}. Reason: ${var2}.`
-*Sample Content*: `PickNBook: Hotel booking could not be completed. Ref PNB26091000125. Reason: Room unavailable.`
+*Body*: `Pick&Book: Hotel booking could not be completed. Ref {Reference}. Reason: {Reason}.`
+*(Provider format: `Pick&Book: Hotel booking could not be completed. Ref ${var1}. Reason: ${var2}.`)*
+*Sample Content*: `Pick&Book: Hotel booking could not be completed. Ref PNB26091000125. Reason: Room unavailable.`
 
 ---
 
@@ -192,15 +234,17 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 **TemplateKey**: `HOTEL_BOOKING_CANCELLED` (Alias: `HOTEL_BOOKING_CANCELLED_SMS`)
 **EventType**: `HotelBookingCancelled`
 **Channel**: `SMS`
-**DLT Content ID**: `1777178962472996371`
-**DLT Reference Number**: `11-1REDXMU54CVAK`
-**Provider Template ID**: `1562674`
+**DLT Content ID**: `1777178997046597829`
+**DLT Reference Number**: `11-1REDXMUAU76WQ`
+**Provider Template ID**: `1563302`
+**Provider Label**: `newHOTEL_BOOKING_CANCELLED`
 **Header (Sender ID)**: `PICNBK`
 **Variables**: `${var1}` / `{Reference}`, `${var2}` / `{Status}`
 
 **SMS Template**
-*Body*: `PickNBook: Hotel booking ${var1} has been cancelled. Cancellation status: ${var2}.`
-*Sample Content*: `PickNBook: Hotel booking PNB26091000125 has been cancelled. Cancellation status: Confirmed.`
+*Body*: `Pick&Book: Hotel booking {Reference} has been cancelled. Cancellation status: {Status}.`
+*(Provider format: `Pick&Book: Hotel booking ${var1} has been cancelled. Cancellation status: ${var2}.`)*
+*Sample Content*: `Pick&Book: Hotel booking PNB26091000125 has been cancelled. Cancellation status: Confirmed.`
 
 ---
 
@@ -237,10 +281,16 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Please log in to download your ticket.</p>
 ```
 
-**SMS/WhatsApp Template**
-*TemplateKey*: `BUS_BOOKING_CONFIRMED_SMS`
-*Variables*: `{Pnr}`, `{Name}`
-*Body*: `Dear {Name}, your bus booking is confirmed! PNR: {Pnr}. Thank you for using PickNBook.`
+**SMS Template**
+*TemplateKey*: `BUS_BOOKING_CONFIRMED` (Alias: `BUS_BOOKING_CONFIRMED_SMS`)
+*DLT Template ID*: `1777178997159302603`
+*Provider Label*: `newBUS_BOOKING_CONFIRMED`
+*Provider Template ID*: `1563352`
+*Sender Header*: `PICNBK`
+*Variables*: `{Reference}` / `${var1}`, `{Pnr}` / `${var2}`, `{Boarding}` / `${var3}`, `{Time}` / `${var4}`
+*Body*: `Pick&Book: Bus booking confirmed. Ref {Reference}, Pnr {Pnr}. Boarding: {Boarding} at {Time}.`
+*(Provider format: `Pick&Book: Bus booking confirmed. Ref ${var1}, Pnr ${var2}. Boarding: ${var3} at ${var4}.`)*
+*Sample Content*: `Pick&Book: Bus booking confirmed. Ref PNB26091000125, Pnr PNR-B784192. Boarding: MGBS Hyderabad at 21/09/2026 06:30 AM.`
 
 ---
 
@@ -258,8 +308,12 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Any amount deducted (INR {Amount}) will be refunded automatically.</p>
 ```
 
-**SMS/WhatsApp Template**
-*Body*: `Your PickNBook bus booking failed. Any deducted amount will be refunded. Reason: {Reason}.`
+**SMS Template**
+*DLT Template ID*: `1777178997190921279`
+*Provider Label*: `newBUS_BOOKING_FAILED`
+*Sender Header*: `PICNBK`
+*Body*: `Pick&Book: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.`
+*(Provider format: `Pick&Book: Bus booking could not be completed. Ref ${var1}. Reason: ${var2}.`)*
 
 ---
 
@@ -278,6 +332,23 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 
 ---
 
+### 4.4 Booking Cancelled
+**TemplateKey**: `BOOKING_CANCELLED`
+**EventType**: `BookingCancelled`
+**Channel**: `SMS`
+**DLT Content ID**: `1777178997200725228`
+**Provider Label**: `newBOOKING_CANCELLED`
+**Provider Template ID**: `1563353`
+**Header (Sender ID)**: `PICNBK`
+**Variables**: `{Reference}` / `${var1}`, `{Status}` / `${var2}`
+
+**SMS Template**
+*Body*: `Pick&Book: Booking {Reference} has been cancelled. Cancellation status: {Status}.`
+*(Provider format: `Pick&Book: Booking ${var1} has been cancelled. Cancellation status: ${var2}.`)*
+*Sample Content*: `Pick&Book: Booking PNB26091000125 has been cancelled. Cancellation status: Success.`
+
+---
+
 ## 5. Payments & Refunds
 
 ### 5.1 Payment Success
@@ -293,8 +364,12 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Your booking will be processed shortly.</p>
 ```
 
-**SMS/WhatsApp Template**
-*Body*: `PickNBook received your payment of INR {Amount} for Order {OrderId}. Booking in progress.`
+**SMS Template**
+*DLT Template ID*: `1777178997110621673`
+*Provider Label*: `newPAYMENT_SUCCESS`
+*Sender Header*: `PICNBK`
+*Body*: `Pick&Book: Payment successful. Ref {Reference}. Amount Rs. {Amount}`
+*(Provider format: `Pick&Book: Payment successful. Ref ${var1}. Amount Rs. ${var2}`)*
 
 ---
 
@@ -312,8 +387,12 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Please try again using a different payment method.</p>
 ```
 
-**SMS/WhatsApp Template**
-*Body*: `PickNBook payment of INR {Amount} failed (Order: {OrderId}). Reason: {Reason}.`
+**SMS Template**
+*DLT Template ID*: `1777178997180999327`
+*Provider Label*: `newPAYMENT_FAILED`
+*Sender Header*: `PICNBK`
+*Body*: `Pick&Book: Payment failed for reference {Reference}. Reason: {Reason}.`
+*(Provider format: `Pick&Book: Payment failed for reference ${var1}. Reason: ${var2}.`)*
 
 ---
 
@@ -348,8 +427,16 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Please check your bank statement.</p>
 ```
 
-**SMS/WhatsApp Template**
-*Body*: `Your PickNBook refund of INR {Amount} for booking ({BookingId}) is successfully completed.`
+**SMS Template**
+*TemplateKey*: `REFUND_STATUS`
+*DLT Template ID*: `1777178997089847183`
+*Provider Label*: `newREFUND_STATUS`
+*Provider Template ID*: `1563351`
+*Sender Header*: `PICNBK`
+*Variables*: `{Status}` / `${var1}`, `{Reference}` / `${var2}`, `{RefundRef}` / `${var3}`, `{Amount}` / `${var4}`
+*Body*: `Pick&Book: Refund {Status} for booking {Reference}. Refund Ref {RefundRef}. Amount Rs. {Amount}`
+*(Provider format: `Pick&Book: Refund ${var1} for booking ${var2}. Refund Ref ${var3}. Amount Rs. ${var4}`)*
+*Sample Content*: `Pick&Book: Refund credited for booking PNB26091000125. Refund Ref REF-CAN-PNB26091000125. Amount Rs. 1250.00`
 
 ---
 
@@ -366,5 +453,13 @@ This document defines all the notification templates (Email, SMS, and WhatsApp) 
 <p>Our support team will contact you shortly.</p>
 ```
 
-**SMS/WhatsApp Template**
-*Body*: `PickNBook refund of INR {Amount} for booking {BookingId} failed. Our support team will contact you.`
+**SMS Template**
+*TemplateKey*: `REFUND_FAILED`
+*DLT Template ID*: `1777178997076571137`
+*Provider Label*: `newREFUND_FAILED`
+*Provider Template ID*: `1563327`
+*Sender Header*: `PICNBK`
+*Variables*: `{Status}` / `${var1}`, `{Reference}` / `${var2}`, `{RefundRef}` / `${var3}`, `{SupportUrl}` / `${var4}`
+*Body*: `Pick&Book: Refund {Status} for booking {Reference}. Refund Ref {RefundRef}.Please contact support : {SupportUrl}`
+*(Provider format: `Pick&Book: Refund ${var1} for booking ${var2}. Refund Ref ${var3}.Please contact support : ${var4}`)*
+*Sample Content*: `Pick&Book: Refund Failed for booking PNB26091000125. Refund Ref cf_ref_12345.Please contact support : https://www.picknbook.in/contact`

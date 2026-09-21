@@ -13,7 +13,9 @@ async function request(path, options = {}) {
 const unwrap = (data) => data?.value || data?.data || data?.offers || data || [];
 
 export const getPublicFeaturedOffers = () => request("/api/FeaturedOffers").then(unwrap);
-export const getActiveOffers = (bookingType) => request(`/api/FeaturedOffers${bookingType ? `?bookingType=${encodeURIComponent(bookingType)}` : ""}`).then(unwrap);
+export const getActiveOffers = (bookingType) =>
+  request(`/api/FeaturedOffers${bookingType ? `?bookingType=${encodeURIComponent(bookingType)}` : ""}`).then(unwrap);
+export const getPublicPromotions = getActiveOffers;
 export const getAdminFeaturedOffers = () => request("/api/AdminFeaturedOffers").then(unwrap);
 export const getAdminFeaturedOfferById = (id) => request(`/api/AdminFeaturedOffers/${id}`);
 export const createAdminFeaturedOffer = (payload) => request("/api/AdminFeaturedOffers", { method: "POST", body: JSON.stringify(payload) });

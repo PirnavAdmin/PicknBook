@@ -99,7 +99,7 @@ export default function HotelTicketFormat({
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <img
               src={pickNBookLogo}
-              alt="PickNBook"
+              alt="Pick&Book"
               style={{ height: "34px", objectFit: "contain" }}
             />
           </div>
@@ -237,7 +237,7 @@ export default function HotelTicketFormat({
                 }}
               >
                 Your stay is successfully booked. Thank you for choosing
-                PickNBook.
+                Pick&Book.
               </p>
             </div>
           </div>

@@ -509,6 +509,31 @@ namespace PickNBook.Api.Services.Background
                             {
                                 _logger.LogError(ex, "Failed to send cancellation email for Flight Booking {BookingReference}", res.BookingReference);
                             }
+
+                            // Additive In-App Notifications (Step 4: Flight Cancellation Completed)
+                            try
+                            {
+                                var inAppNotificationService = scope.ServiceProvider.GetService<PickNBook.Api.Services.Interfaces.IInAppNotificationService>();
+                                if (inAppNotificationService != null)
+                                {
+                                    await inAppNotificationService.CreateNotificationAsync(
+                                        type: "Cancellation",
+                                        category: "Customer",
+                                        title: "Flight Booking Cancelled",
+                                        message: $"Your flight booking ({res.BookingReference}) has been cancelled. Refund amount: ₹{cancelRecord.CustomerRefundAmount:N2}.",
+                                        severity: "Info",
+                                        referenceType: "FlightReservation",
+                                        referenceId: res.BookingReference,
+                                        actionUrl: $"/bookings/{res.BookingReference}",
+                                        idempotencyKey: $"CANCEL_FLIGHT_{res.BookingReference}_SUCCESS",
+                                        targetUserId: res.UserId
+                                    );
+                                }
+                            }
+                            catch (Exception inAppEx)
+                            {
+                                _logger.LogWarning(inAppEx, "Failed to create in-app notification for flight cancellation {BookingReference}. Non-fatal.", res.BookingReference);
+                            }
                         }
                     }
 

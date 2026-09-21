@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 
 const mockQrs = [
-  { id: '1', name: 'Main Office QR', bank: 'HDFC Bank', upi: 'admin@picknbook', status: 'Active' },
-  { id: '2', name: 'Collections QR', bank: 'ICICI Bank', upi: 'collect@picknbook', status: 'Active' },
-  { id: '3', name: 'Support QR', bank: 'SBI', upi: 'support@sbi-picknbook', status: 'Inactive' },
+  { id: '1', name: 'Main Office QR', bank: 'HDFC Bank', upi: 'admin@pick&book', status: 'Active' },
+  { id: '2', name: 'Collections QR', bank: 'ICICI Bank', upi: 'collect@pick&book', status: 'Active' },
+  { id: '3', name: 'Support QR', bank: 'SBI', upi: 'support@sbi-pick&book', status: 'Inactive' },
 ];
 
 function PaymentQrCodeList() {
@@ -293,7 +293,7 @@ function PaymentQrCodeList() {
                   <input
                     type="text"
                     required
-                    placeholder="Enter UPI ID (e.g. picknbook@bank)"
+                    placeholder="Enter UPI ID (e.g. pick&book@bank)"
                     value={form.upi}
                     onChange={e => setForm(prev => ({ ...prev, upi: e.target.value }))}
                     style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', boxSizing: 'border-box' }}

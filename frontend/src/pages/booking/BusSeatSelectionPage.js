@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { FaFemale, FaMale } from "react-icons/fa";
 import { Clock3, Info } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -8,6 +8,9 @@ import SeatSelection from "../../components/forms/SeatSelection";
 import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
+  isBlockStillActive,
+  clearBlockKey,
+  getBlockMsRemaining,
 } from "./busBookingFlowStore";
 import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
@@ -686,9 +689,72 @@ export default function BusSeatSelectionPage({
 
   const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
 
+  // ── Resume-hold banner ──────────────────────────────────────────────────────
+  // ms remaining on any active block hold for THIS bus. 0 = no banner shown.
+  const [resumeBannerMs, setResumeBannerMs] = useState(() => {
+    const current = readBusBookingFlowState();
+    if (!current) return 0;
+    // Only show banner if the stale hold belongs to the same bus
+    const storedBusId = current.bus?.tripId || current.bus?.traceId || current.bus?.id || "";
+    const thisBusId   = bus?.tripId || bus?.traceId || bus?.id || "";
+    if (!thisBusId || storedBusId !== thisBusId) return 0;
+    return getBlockMsRemaining(current);
+  });
+  const bannerIntervalRef = useRef(null);
+
   useEffect(() => {
-    // Clear coupon state and blockKey when the bus changes (embedded mode) or on first mount.
-    // This ensures a fresh block is required whenever the user picks a different bus.
+    if (resumeBannerMs <= 0) {
+      clearInterval(bannerIntervalRef.current);
+      return;
+    }
+    bannerIntervalRef.current = setInterval(() => {
+      setResumeBannerMs(prev => {
+        const next = prev - 1000;
+        if (next <= 0) {
+          clearInterval(bannerIntervalRef.current);
+          // Hold expired — clean up the stale key so we don't reuse it
+          clearBlockKey();
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(bannerIntervalRef.current);
+  }, [resumeBannerMs > 0]); // re-subscribe only when banner transitions on/off
+
+  const handleResume = useCallback(() => {
+    const state = readBusBookingFlowState();
+    navigate("/bus/passenger-details", { state: state || {} });
+  }, [navigate]);
+
+  const handleChooseDifferentSeat = useCallback(() => {
+    clearBlockKey();
+    setResumeBannerMs(0);
+    // Since the API provider locks the entire TraceId workflow when a block is initiated,
+    // we cannot fetch the seat layout again on this same TraceId. We MUST generate a new TraceId.
+    // The only way to get a new TraceId is to force a fresh search.
+    navigate("/search/buses", { 
+      state: { 
+        ...searchContext,
+        forceRefresh: true 
+      } 
+    });
+  }, [navigate, searchContext]);
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // Track the previous busIdentity so we only clear the block when the bus
+  // actually CHANGES — not on the initial mount (which would wipe a valid hold).
+  const prevBusIdentityRef = useRef(null);
+
+  useEffect(() => {
+    const prevId = prevBusIdentityRef.current;
+    prevBusIdentityRef.current = busIdentity;
+
+    // Skip the very first mount (prevId === null).
+    // Only clear when the user switches to a genuinely different bus.
+    if (prevId === null || prevId === busIdentity) return;
+
+    // Bus changed — clear coupon state and block so a fresh block is required.
     writeBusBookingFlowState({
       couponCode: null,
       couponDiscount: 0,
@@ -698,7 +764,10 @@ export default function BusSeatSelectionPage({
       promotionId: null,
       pricingPreview: null,
       blockKey: null,
+      blockExpiresAt: null,
     });
+    // Reset the banner for the new bus
+    setResumeBannerMs(0);
   }, [busIdentity]); // re-runs whenever the user switches to a different bus
 
   useEffect(() => {
@@ -728,7 +797,25 @@ export default function BusSeatSelectionPage({
         setBackendSeatMap(seatMap);
       } catch (error) {
         console.error("Failed to fetch seat map:", error);
-        setSeatFetchError("Unable to load seat map. Please try again.");
+        console.log("[DEBUG 7023] UI catch error:", error);
+        console.log("[DEBUG 7023] UI catch error.code:", error?.code);
+
+        if (error?.code === 7023) {
+          // Seat layout is locked because this bus workflow is already blocked.
+          // Activate the resume banner so the user can either resume or pick a different seat.
+          const current = readBusBookingFlowState();
+          const ms = getBlockMsRemaining(current);
+          if (ms > 0) {
+            setResumeBannerMs(ms);
+          } else {
+            // Hold has expired but provider still thinks it's blocked — show a clear message
+            setSeatFetchError(
+              "This bus is temporarily unavailable for new bookings. Your previous seat hold has expired. Please search again to get fresh availability."
+            );
+          }
+        } else {
+          setSeatFetchError("Unable to load seat map. Please try again.");
+        }
       } finally {
         setIsFetchingSeats(false);
         window.setTimeout(() => {
@@ -1234,6 +1321,7 @@ export default function BusSeatSelectionPage({
       // It will be populated on the Payment page after the Block API returns a BlockKey.
       // blockKey is always cleared when user re-confirms seats to force a fresh block
       blockKey: null,
+      blockExpiresAt: null,
     };
 
     writeBusBookingFlowState(flowData);
@@ -1250,7 +1338,23 @@ export default function BusSeatSelectionPage({
       const seatMap = await getBusSeatMap(bus);
       setBackendSeatMap(seatMap);
     } catch (error) {
-      setSeatFetchError("Failed to load seats. Please check your connection and try again.");
+      console.error("Failed to fetch seat map (retry):", error);
+      console.log("[DEBUG 7023] UI catch error (retry):", error);
+      console.log("[DEBUG 7023] UI catch error.code (retry):", error?.code);
+
+      if (error?.code === 7023) {
+        const current = readBusBookingFlowState();
+        const ms = getBlockMsRemaining(current);
+        if (ms > 0) {
+          setResumeBannerMs(ms);
+        } else {
+          setSeatFetchError(
+            "This bus is temporarily unavailable for new bookings. Your previous seat hold has expired. Please search again to get fresh availability."
+          );
+        }
+      } else {
+        setSeatFetchError("Failed to load seats. Please check your connection and try again.");
+      }
     } finally {
       setIsFetchingSeats(false);
     }
@@ -1518,6 +1622,71 @@ export default function BusSeatSelectionPage({
   return (
     <main className={`bus-flow-page${embedded ? " bus-flow-page--embedded" : ""}`}>
       <div className="bus-flow-shell" style={embedded ? { minWidth: 0 } : {}}>
+
+        {/* ── Resume-Booking Banner ───────────────────────────────────────── */}
+        {!embedded && resumeBannerMs > 0 && (() => {
+          const totalSec  = Math.ceil(resumeBannerMs / 1000);
+          const mins      = Math.floor(totalSec / 60);
+          const secs      = totalSec % 60;
+          const timeLabel = `${mins}:${String(secs).padStart(2, "0")}`;
+          const seatLabels = (readBusBookingFlowState()?.selectedSeatLabels || []).join(", ");
+          return (
+            <div style={{
+              position: "sticky", top: 0, zIndex: 120,
+              background: "linear-gradient(90deg, #1a3a5c 0%, #0f2744 100%)",
+              borderBottom: "2px solid #f59e0b",
+              padding: "12px 20px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              flexWrap: "wrap", gap: 10,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 22 }}>⏱</span>
+                <div>
+                  <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: "0.95rem" }}>
+                    Seats{seatLabels ? ` ${seatLabels}` : ""} held — {timeLabel} remaining
+                  </div>
+                  <div style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: 2 }}>
+                    You have an incomplete booking for this bus
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={handleResume}
+                  style={{
+                    background: "#f59e0b", color: "#0f172a",
+                    border: "none", borderRadius: 8,
+                    padding: "8px 18px", fontWeight: 700,
+                    fontSize: "0.88rem", cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Resume Booking
+                </button>
+                <button
+                  type="button"
+                  onClick={handleChooseDifferentSeat}
+                  style={{
+                    background: "transparent",
+                    color: "#cbd5e1",
+                    border: "1px solid #475569",
+                    borderRadius: 8,
+                    padding: "8px 18px",
+                    fontWeight: 600,
+                    fontSize: "0.88rem",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Choose Different Seat
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+
         {!embedded && (
           <section className="bus-flow-summary-card">
             <div className="bus-flow-trip-strip">
@@ -1609,9 +1778,15 @@ export default function BusSeatSelectionPage({
               <Info size={32} />
               <h3>Unable to Load Seats</h3>
               <p>{seatFetchError}</p>
-              <button type="button" onClick={handleRetryFetchSeats}>
-                Try Again
-              </button>
+              {seatFetchError.includes("expired") ? (
+                <button type="button" onClick={handleChooseDifferentSeat}>
+                  Search Again
+                </button>
+              ) : (
+                <button type="button" onClick={handleRetryFetchSeats}>
+                  Try Again
+                </button>
+              )}
             </div>
           </section>
         ) : (
@@ -1661,11 +1836,11 @@ export default function BusSeatSelectionPage({
                   </div>
                   <div className="legend-item">
                     <div className="legend-color booked-female" />
-                    <FaFemale size={18} aria-label="Female" />
+                    <span>Female</span>
                   </div>
                   <div className="legend-item">
                     <div className="legend-color booked-male" />
-                    <FaMale size={18} aria-label="Male" />
+                    <span>Male</span>
                   </div>
                 </div>
               </header>
@@ -1746,7 +1921,6 @@ export default function BusSeatSelectionPage({
                       onClick={() => {
                         if (activePointTab === "boarding") {
                           setSelectedBoardingId(point.id);
-                          setActivePointTab("dropping");
                         } else {
                           setSelectedDroppingId(point.id);
                         }

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import envCompatible from 'vite-plugin-env-compatible';
 import fs from 'node:fs';
@@ -53,14 +53,19 @@ function resolveProxyTarget() {
   return PRODUCTION_API_URL;
 }
 
-const target = resolveProxyTarget();
+export default defineConfig(({ mode }) => {
+  // Load .env file so vite.config.js can read REACT_APP_* variables
+  const env = loadEnv(mode, process.cwd(), '');
+  Object.assign(process.env, env);
 
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-  keepAlive: true,
-});
+  const target = resolveProxyTarget();
 
-export default defineConfig({
+  const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+    keepAlive: true,
+  });
+
+  return {
   envPrefix: 'REACT_APP_',
   define: {
     global: 'globalThis',
@@ -238,4 +243,5 @@ export default defineConfig({
       }
     }
   }
+};
 });

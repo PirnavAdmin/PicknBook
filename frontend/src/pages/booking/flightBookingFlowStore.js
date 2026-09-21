@@ -46,6 +46,7 @@ export function clearFlightBookingFlowState() {
 
   try {
     window.sessionStorage.removeItem(FLIGHT_BOOKING_FLOW_STORAGE_KEY);
+    for (const key of ["TraceId", "flight_trace_id", "SearchResult", "FareQuote", "last_fare_quote", "Passengers"]) window.sessionStorage.removeItem(key);
     window.sessionStorage.removeItem("BookingResponse");
     window.sessionStorage.removeItem("last_completed_booking_ref");
     window.sessionStorage.removeItem("last_booking_trace_id");

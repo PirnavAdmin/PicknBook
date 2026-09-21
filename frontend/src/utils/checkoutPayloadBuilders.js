@@ -1,105 +1,43 @@
-import { mapPassengersForApi } from "../services/flightBookingService";
-
-function resolveCleanTravelClass(travelClass) {
-  if (!travelClass) return "Economy";
-  const tc = travelClass.toString().toLowerCase();
-  if (tc.includes("business")) return "Business";
-  if (tc.includes("first")) return "First";
-  if (tc.includes("premium")) return "PremiumEconomy";
-  return "Economy";
-}
+import { mapPassengersForApi } from "../services/flightBookingService.js";
+import { flightIdentity, supplierBoolean, passengerFare } from "./flightContract.js";
 
 // Extracted payload builders
 function buildFlightBookingPayload(flowState) {
-  const selectedSeats = Array.isArray(flowState.selectedSeats) ? flowState.selectedSeats : [];
-  const selectedMeal = flowState.selectedMeal || null;
-  const selectedBaggage = flowState.selectedBaggage || null;
   const flight = flowState.flight || {};
-
-  // Normalize a seat object to the exact schema SRDV TicketLCC requires.
-  // The C# backend model deserializes FlightNumber, AirlineCode, Origin, Destination.
-  // If any are missing/empty, SRDV throws "Invalid seat ssr data".
-  const selectedLegs = Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0
-    ? flowState.selectedLegs
-    : [flowState.flight, flowState.returnFlight].filter(Boolean);
-
-  const normalizeSeatForPayload = (s, legHint) => {
-    if (!s || typeof s !== 'object') return null;
-    const code = String(s.Code || s.code || s.SeatNumber || s.seatNumber || "").trim();
-    if (!code) return null; // Drop seats with no Code — they are from generated fallback layouts
-    const airlineCode = String(s.AirlineCode || s.airlineCode || legHint?.airlineCode || legHint?.AirlineCode || legHint?.airline || flight.airlineCode || flight.airline || "6E").trim();
-    const flightNum = String(s.AirlineNumber || s.FlightNumber || s.flightNumber || s.airlineNumber || legHint?.flightNumber || legHint?.FlightNumber || flight.flightNumber || "").replace(/\D/g, "") || (flight.flightNumber || "101");
-    const origin = String(s.Origin || s.origin || legHint?.sourceCode || legHint?.fromCity || legHint?.origin || flight.sourceCode || flight.fromCity || "DEL").toUpperCase().trim();
-    const destination = String(s.Destination || s.destination || legHint?.destinationCode || legHint?.toCity || legHint?.destination || flight.destinationCode || flight.toCity || "BOM").toUpperCase().trim();
-    return {
-      ...s,
-      Code: code,
-      SeatNumber: String(s.SeatNumber || s.seatNumber || code).trim(),
-      AirlineCode: airlineCode,
-      FlightNumber: flightNum,
-      AirlineNumber: flightNum,
-      Origin: origin,
-      Destination: destination,
-      Amount: Number(s.Amount ?? s.amount ?? 0),
-      IsBooked: true,
-      IsAisle: Boolean(s.IsAisle ?? s.isAisle ?? false),
-      IsLegroom: Boolean(s.IsLegroom ?? s.isLegroom ?? false),
-    };
-  };
-
-  const passengers = mapPassengersForApi((flowState.passengers || []).map((passenger, index) => {
-    // Normalize seatDynamic — drop any seat without a valid Code (fallback/generated layout seats)
-    const rawSeatDynamic = Array.isArray(passenger.seatDynamic) ? passenger.seatDynamic : [];
-    const normalizedSeatDynamic = rawSeatDynamic
-      .map((s, legIdx) => normalizeSeatForPayload(s, selectedLegs[legIdx]))
-      .filter(Boolean);
-
-    // Also try the legacy selectedSeats[index].code path
-    const legacySeatCode = passenger.seatCode || selectedSeats[index]?.code || "";
-
-    return {
-      ...passenger,
-      seatCode: legacySeatCode,
-      seatDynamic: normalizedSeatDynamic,
-      baggage: passenger.baggageDynamic || passenger.baggage || (selectedBaggage ? [selectedBaggage] : []),
-      mealDynamic: passenger.mealDynamic || (selectedMeal ? [selectedMeal] : []),
-    };
-  }));
-
-  const rawClass =
-    flowState.flight?.selectedTravelClass ||
-    flowState.flight?.className ||
-    flowState.searchContext?.cabinClass ||
-    "Economy";
-
-  const adults = (flowState.passengers || []).filter(p => p.passengerType === "Adult").length;
-  const children = (flowState.passengers || []).filter(p => p.passengerType === "Child").length;
-  const infants = (flowState.passengers || []).filter(p => p.passengerType === "Infant").length;
-
+  const identity = flightIdentity({ flight,
+    traceId: flowState.traceId ?? flight.traceId,
+    resultIndex: flowState.resultIndex ?? flowState.ResultIndex ?? flight.resultIndex });
+  const quote = flowState.fareQuote;
+  if (!quote?.success || quote.identity?.TraceId !== identity.TraceId || quote.identity?.ResultIndex !== identity.ResultIndex) {
+    throw new Error("A matching fare quote is required. Return to traveller details and refresh the fare.");
+  }
+  const isLcc = supplierBoolean(quote.results.IsLCC ?? flight.isLCC ?? flight.isLcc);
+  if (isLcc !== true) throw new Error("This flight supplier supports TicketLCC booking only.");
+  const rawPassengers = flowState.passengers || [];
+  if (!rawPassengers.length) throw new Error("Passenger details are required.");
+  const passengers = mapPassengersForApi(rawPassengers.map(p => {
+    const paxType = p.PaxType ?? (p.passengerType === "Child" ? 2 : p.passengerType === "Infant" ? 3 : 1);
+    return { ...p, PaxType: paxType, Fare: passengerFare(quote, paxType, rawPassengers),
+      dob: String(p.dob || "").replace(/^(\d{2})\/(\d{2})\/(\d{4})$/, "$3-$2-$1"),
+      contactNo: flowState.contact?.mobile, email: flowState.contact?.email,
+      ...Object.fromEntries(Object.entries(flowState.gstInfo || {}).filter(([key]) => key.startsWith("GST"))) };
+  }), null, null, flight);
+  const sum = (key, priceKey) => passengers.reduce((total, p) => total + (p[key] || []).reduce((n, item) => n + Number(item[priceKey] ?? 0) * Number(item.Quantity ?? 1), 0), 0);
   return {
-    flight: {
-      ...(flowState.flight || {}),
-      passengerPhone: String(flowState.contact?.mobile || "").trim(),
-      passengerEmail: String(flowState.contact?.email || "").trim(),
-      contactPhone: String(flowState.contact?.mobile || "").trim(),
-      contactEmail: String(flowState.contact?.email || "").trim(),
-      contact: flowState.contact || {},
-    },
-    passengerName: passengers[0]?.fullName || "Passenger",
-    passengerPhone: String(flowState.contact?.mobile || "").trim(),
-    passengerEmail: String(flowState.contact?.email || "").trim(),
-    travelClass: resolveCleanTravelClass(rawClass),
-    passengers,
-    couponCode: flowState.couponCode ? flowState.couponCode.trim().toUpperCase() : null,
-    selectedFeaturedOfferId: flowState.selectedFeaturedOfferId || null,
-    selectedPromotionId: flowState.selectedFeaturedOfferId || null,
-    adults: adults || 1,
-    children: children || 0,
-    infants: infants || 0,
-    isMultiCity: Boolean(flowState.isMultiCity),
-    selectedLegs: selectedLegs,
-    contact: flowState.contact || {},
+    ...identity, IsLCC: isLcc,
+    ...(flight.RefID || flight.refId ? { RefID: String(flight.RefID || flight.refId) } : {}),
+    ...(flight.Module || flight.module ? { Module: String(flight.Module || flight.module) } : {}),
+    JourneyType: flowState.isMultiCity ? 3 : flowState.isTwoWay ? 2 : 1,
+    Passengers: passengers, Fare: { ...quote.fare,
+      TotalSeatCharges: sum("Seat", "Amount"), TotalMealCharges: sum("MealDynamic", "Price"),
+      TotalBaggageCharges: sum("Baggage", "Price") },
+    Segments: quote.results.Segments,
+    CouponCode: flowState.couponCode || null,
   };
+}
+
+export function prepareFlightBookingPayload(flowState) {
+  return buildFlightBookingPayload(flowState);
 }
 
 

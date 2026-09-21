@@ -311,6 +311,62 @@ namespace PickNBook.Api.Controllers
                     }
                 }
 
+                // ========================================
+                // 3. BACKGROUND SEARCH LOGGING (HOTEL/FLIGHT PATTERN)
+                // ========================================
+                var userOrGuestId = currentUserService.GetUserOrGuestId();
+                var isAuth = currentUserService.IsAuthenticated();
+                var isGuest = currentUserService.IsGuest();
+                var fromCityName = _busCityCacheService.MapCityCodeToName(request.FromCityCode.ToString());
+                var toCityName = _busCityCacheService.MapCityCodeToName(request.ToCityCode.ToString());
+                var scopeFactory = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var scopedDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        var stat = await scopedDb.BusRouteStats
+                            .FirstOrDefaultAsync(x => x.FromCity == fromCityName && x.ToCity == toCityName);
+
+                        if (stat is null)
+                        {
+                            scopedDb.BusRouteStats.Add(new BusRouteStat
+                            {
+                                FromCity = fromCityName,
+                                ToCity = toCityName,
+                                SearchCount = 1,
+                                BookingCount = 0,
+                                LastSearchedAtUtc = DateTime.UtcNow
+                            });
+                        }
+                        else
+                        {
+                            stat.SearchCount += 1;
+                            stat.LastSearchedAtUtc = DateTime.UtcNow;
+                        }
+
+                        scopedDb.BusSearchLogs.Add(new BusSearchLog
+                        {
+                            UserId = isAuth ? userOrGuestId : null,
+                            UserOrGuestId = userOrGuestId,
+                            IsGuest = isGuest,
+                            FromCity = fromCityName,
+                            ToCity = toCityName,
+                            JourneyDate = journeyDate,
+                            SearchedAtUtc = DateTime.UtcNow
+                        });
+
+                        await scopedDb.SaveChangesAsync();
+                    }
+                    catch (Exception logEx)
+                    {
+                        logger.LogWarning(logEx, "Background bus search logging failed.");
+                    }
+                });
+
                 return Ok(jsonNode);
             }
             catch (Exception ex)
@@ -873,6 +929,46 @@ namespace PickNBook.Api.Controllers
                     if (errObj != null && int.TryParse(errObj["ErrorCode"]?.ToString(), out var ec))
                     {
                         errCode = ec;
+                    }
+
+                    if (errCode == 7023)
+                    {
+                        logger.LogWarning(
+                            "SRDV Block returned ErrorCode 7023 (Already Blocked) for TraceId {TraceId}, ResultIndex {ResultIndex}. Seats are held by a prior session.",
+                            request.TraceId, request.ResultIndex);
+
+                        // Invalidate cached seat layout for this bus so subsequent fetches reflect current availability
+                        _cache.Remove($"bus_seats_{request.TraceId}_{request.ResultIndex}");
+                        _cache.Remove($"bus_seats_{request.TraceId}_{compositeResultIndex}");
+
+                        // Clean up any unconfirmed records in BusBlockedSeatPrices for this TraceId
+                        try
+                        {
+                            var scopedDb = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                            var partialBlocked = await scopedDb.BusBlockedSeatPrices
+                                .Where(x => x.TraceId == request.TraceId)
+                                .ToListAsync();
+                            if (partialBlocked.Any())
+                            {
+                                scopedDb.BusBlockedSeatPrices.RemoveRange(partialBlocked);
+                                await scopedDb.SaveChangesAsync();
+                            }
+                        }
+                        catch (Exception dbEx)
+                        {
+                            logger.LogWarning(dbEx, "Failed to clean up partial BusBlockedSeatPrices for TraceId {TraceId}", request.TraceId);
+                        }
+
+                        return Ok(new
+                        {
+                            Error = new
+                            {
+                                ErrorCode = 7023,
+                                ErrorMessage = "The selected seat(s) are currently on hold from a previous booking attempt. Bus operators hold seats for 10–15 minutes. Please choose different seats or try again shortly."
+                            },
+                            IsTemporaryHold = true,
+                            HoldDurationMinutes = 15
+                        });
                     }
 
                     var resultObj = jsonObj["Result"] as System.Text.Json.Nodes.JsonObject;
@@ -4786,6 +4882,33 @@ Refund: ₹{currentRefundAmount}
             dbContext.BookingCancellations.Add(cancellationAudit);
 
             await dbContext.SaveChangesAsync();
+
+            // Additive In-App Notifications (Step 4: Bus Cancellation)
+            try
+            {
+                var inAppNotificationService = HttpContext.RequestServices.GetService<PickNBook.Api.Services.Interfaces.IInAppNotificationService>();
+                if (inAppNotificationService != null)
+                {
+                    await inAppNotificationService.CreateNotificationAsync(
+                        type: "Cancellation",
+                        category: "Customer",
+                        title: cancellationConfirmed ? "Bus Booking Cancelled" : "Bus Cancellation In Process",
+                        message: cancellationConfirmed 
+                            ? $"Your bus booking ({booking.BookingReference}) has been cancelled. Refund amount: ₹{calculatedRefund.FinalCustomerRefundAmount:N2}."
+                            : $"Your cancellation request for bus booking ({booking.BookingReference}) is in process.",
+                        severity: "Info",
+                        referenceType: "BusBooking",
+                        referenceId: booking.BookingReference,
+                        actionUrl: $"/bookings/{booking.BookingReference}",
+                        idempotencyKey: $"CANCEL_BUS_{booking.BookingReference}_{(cancellationConfirmed ? "CONFIRMED" : "IN_PROCESS")}",
+                        targetUserId: booking.UserId
+                    );
+                }
+            }
+            catch
+            {
+                // Non-fatal
+            }
 
             return Ok(new
             {

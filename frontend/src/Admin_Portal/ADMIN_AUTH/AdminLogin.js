@@ -548,11 +548,11 @@ export default function AdminLogin() {
       {/* PAGE TOP-LEFT LOGO */}
       <div className="page-top-left-logo">
         {pickNBookLogo ? (
-          <img src={pickNBookLogo} alt="PickNBook" className="page-logo-img" />
+          <img src={pickNBookLogo} alt="Pick&Book" className="page-logo-img" />
         ) : (
           <div className="page-logo-fallback">
             <Shield className="fallback-icon" />
-            <span>PickNBook</span>
+            <span>Pick&Book</span>
           </div>
         )}
       </div>

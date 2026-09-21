@@ -5,8 +5,8 @@ import "./BusVocherSettings.css";
 
 export default function BusVoucherSettings() {
   const [title, setTitle] = useState("B2C Bus E-Voucher");
-  const [logoUrl, setLogoUrl] = useState("PickNBook");
-  const [email, setEmail] = useState("support@picknbook.com");
+  const [logoUrl, setLogoUrl] = useState("Pick&Book");
+  const [email, setEmail] = useState("support@pick&book.com");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [address, setAddress] = useState("102, Prime Square, Hitech City, Hyderabad, India");
   const [terms, setTerms] = useState("1. Please present this voucher at the boarding point.\n2. Report 15 minutes before the departure time.\n3. Ticket is non-refundable within 4 hours of travel.");

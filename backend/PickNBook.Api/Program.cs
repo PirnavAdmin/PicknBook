@@ -172,6 +172,9 @@ builder.Services.AddHostedService<PickNBook.Api.Services.Background.Notification
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.BusBoardingReminderHostedService>();
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.HotelCheckInReminderHostedService>();
 
+// In-App Bell Notification Service DI
+builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IInAppNotificationService, PickNBook.Api.Services.Implementations.InAppNotificationService>();
+
 builder.Services.AddScoped<IExclusiveOfferSubscriptionService, ExclusiveOfferSubscriptionService>();
 builder.Services.AddScoped<ITicketPdfService, TicketPdfService>();
 builder.Services.AddScoped<ITicketEmailService, TicketEmailService>();

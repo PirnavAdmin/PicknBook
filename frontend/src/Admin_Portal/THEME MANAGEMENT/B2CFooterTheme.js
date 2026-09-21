@@ -21,7 +21,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "left",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&Book. All Rights Reserved.",
       paymentIcons: true,
       textAlignment: "center"
     },
@@ -50,12 +50,12 @@ const INITIAL_FOOTER_TEMPLATES = [
     columns: [
       { id: "col-1", title: "About Us", items: ["Our Story", "Careers", "Press"] },
       { id: "col-2", title: "Quick Links", items: ["Flights", "Hotels", "Buses", "Offers"] },
-      { id: "col-3", title: "Contact", items: ["support@picknbook.com", "+1 (800) 123-4567"] }
+      { id: "col-3", title: "Contact", items: ["support@pick&book.com", "+1 (800) 123-4567"] }
     ],
     columnAlignment: "left",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&Book. All Rights Reserved.",
       paymentIcons: true,
       textAlignment: "left"
     },
@@ -87,7 +87,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "center",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&Book. All Rights Reserved.",
       paymentIcons: false,
       textAlignment: "center"
     },
@@ -118,7 +118,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "left",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&Book. All Rights Reserved.",
       paymentIcons: true,
       textAlignment: "center"
     },
@@ -267,7 +267,7 @@ export default function B2CFooterTheme() {
       columnAlignment: "left",
       bottomBar: {
         enable: true,
-        copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+        copyrightText: "© 2024 Pick&Book. All Rights Reserved.",
         paymentIcons: true,
         textAlignment: "center"
       },

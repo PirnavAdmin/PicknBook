@@ -120,7 +120,17 @@ namespace PickNBook.Api.Services.Notifications.Implementations
                 var result = templateBody;
                 foreach (var kvp in dict)
                 {
-                    result = result.Replace($"{{{kvp.Key}}}", kvp.Value.ToString());
+                    result = result.Replace($"{{{kvp.Key}}}", kvp.Value.ToString(), StringComparison.OrdinalIgnoreCase);
+                }
+
+                // Common interchangeable aliases
+                if (dict.TryGetValue("Pnr", out var pnrVal))
+                {
+                    result = result.Replace("{Reference}", pnrVal.ToString(), StringComparison.OrdinalIgnoreCase);
+                }
+                else if (dict.TryGetValue("Reference", out var refVal))
+                {
+                    result = result.Replace("{Pnr}", refVal.ToString(), StringComparison.OrdinalIgnoreCase);
                 }
 
                 // Also handle DLT provider-style ${varN} placeholders
@@ -131,9 +141,28 @@ namespace PickNBook.Api.Services.Notifications.Implementations
                         int.TryParse(kvp.Key.AsSpan(3), out _))
                     {
                         string placeholder = "${" + kvp.Key.ToLowerInvariant() + "}"; // e.g. ${var1}
-                        result = result.Replace(placeholder, kvp.Value.ToString());
+                        result = result.Replace(placeholder, kvp.Value.ToString(), StringComparison.OrdinalIgnoreCase);
                     }
                 }
+
+                // Fallback: If template still contains ${varN} placeholders, map remaining non-Var payload entries sequentially
+                if (result.Contains("${var", StringComparison.OrdinalIgnoreCase))
+                {
+                    int varIdx = 1;
+                    foreach (var kvp in dict)
+                    {
+                        if (!kvp.Key.StartsWith("Var", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string placeholder = $"${{var{varIdx}}}";
+                            if (result.Contains(placeholder, StringComparison.OrdinalIgnoreCase))
+                            {
+                                result = result.Replace(placeholder, kvp.Value.ToString(), StringComparison.OrdinalIgnoreCase);
+                            }
+                            varIdx++;
+                        }
+                    }
+                }
+
                 return result;
             } 
             catch 

@@ -13,6 +13,7 @@ namespace PickNBook.Api.Services.Implementations
         private readonly ILogger<PaymentService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly PickNBook.Api.Services.Notifications.Interfaces.INotificationService _notificationService;
+        private readonly IInAppNotificationService? _inAppNotificationService;
         private readonly IWalletReservationService _walletReservationService;
         private static readonly ConcurrentDictionary<int, SemaphoreSlim> _paymentLocks = new();
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> _orderLocks = new();
@@ -24,12 +25,25 @@ namespace PickNBook.Api.Services.Implementations
             IServiceScopeFactory scopeFactory,
             PickNBook.Api.Services.Notifications.Interfaces.INotificationService notificationService,
             IWalletReservationService walletReservationService)
+            : this(dbContext, cashfreeService, logger, scopeFactory, notificationService, null, walletReservationService)
+        {
+        }
+
+        public PaymentService(
+            AppDbContext dbContext,
+            ICashfreeService cashfreeService,
+            ILogger<PaymentService> logger,
+            IServiceScopeFactory scopeFactory,
+            PickNBook.Api.Services.Notifications.Interfaces.INotificationService notificationService,
+            IInAppNotificationService? inAppNotificationService,
+            IWalletReservationService walletReservationService)
         {
             _dbContext = dbContext;
             _cashfreeService = cashfreeService;
             _logger = logger;
             _scopeFactory = scopeFactory;
             _notificationService = notificationService;
+            _inAppNotificationService = inAppNotificationService;
             _walletReservationService = walletReservationService;
         }
 
@@ -372,6 +386,63 @@ namespace PickNBook.Api.Services.Implementations
                     else
                     {
                         _logger.LogWarning("Cannot enqueue PaymentFailed Email for Payment {PaymentId}: No valid email recipient available.", payment.Id);
+                    }
+                }
+
+                // Additive In-App Notifications (Step 4)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        if (status == PaymentStatus.Success && payment.Status != PaymentStatus.Success)
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Payment",
+                                category: "Customer",
+                                title: "Payment Successful",
+                                message: $"Your payment of {payment.Currency} {payment.FinalPayableAmount:F2} for {payment.BookingType} booking ({payment.PaymentReference}) was successful.",
+                                severity: "Success",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/bookings/{payment.PaymentReference}",
+                                idempotencyKey: $"PAY_SUCCESS_{payment.Id}",
+                                targetUserId: payment.UserId
+                            );
+                        }
+                        else if (status == PaymentStatus.Failed && payment.Status != PaymentStatus.Failed)
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Payment",
+                                category: "Customer",
+                                title: "Payment Failed",
+                                message: $"Your payment of {payment.Currency} {payment.FinalPayableAmount:F2} for {payment.BookingType} booking ({payment.PaymentReference}) failed: {cleanReason}.",
+                                severity: "Error",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/payments/{payment.PaymentReference}",
+                                idempotencyKey: $"PAY_FAILED_{payment.Id}",
+                                targetUserId: payment.UserId
+                            );
+                        }
+                        else if ((status == PaymentStatus.Expired || status == PaymentStatus.Cancelled) && payment.Status != status)
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Payment",
+                                category: "Customer",
+                                title: status == PaymentStatus.Expired ? "Payment Expired" : "Payment Cancelled",
+                                message: $"Your payment session for {payment.BookingType} booking ({payment.PaymentReference}) has {status.ToLowerInvariant()}.",
+                                severity: "Warning",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/bookings/{payment.PaymentReference}",
+                                idempotencyKey: $"PAY_{status.ToUpperInvariant()}_{payment.Id}",
+                                targetUserId: payment.UserId
+                            );
+                        }
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for Payment {PaymentId}. Non-fatal.", payment.Id);
                     }
                 }
 

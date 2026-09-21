@@ -2643,7 +2643,7 @@ export default function HomePage() {
   const [flightTo, setFlightTo] = useState("");
   const [flightFromError, setFlightFromError] = useState("");
   const [flightToError, setFlightToError] = useState("");
-  const [flightDepartureDate, setFlightDepartureDate] = useState(() => getDateInputValue(0));
+  const [flightDepartureDate, setFlightDepartureDate] = useState("");
   const [flightReturnDate, setFlightReturnDate] = useState("");
 
   const [adults, setAdults] = useState(0);
@@ -2665,13 +2665,13 @@ export default function HomePage() {
   const [busTo, setBusTo] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
-  const [busDepartureDate, setBusDepartureDate] = useState(() => getDateInputValue(0));
+  const [busDepartureDate, setBusDepartureDate] = useState("");
   const [busReturnDate, setBusReturnDate] = useState("");
   const [activeCalendarField, setActiveCalendarField] = useState(null);
 
   const state = location.state || {};
 
-  const [featuredOffers, setFeaturedOffers] = useState(DEFAULT_BUS_FEATURED_OFFERS);
+  const [featuredOffers, setFeaturedOffers] = useState([]);
   const [featuredOffersLoading, setFeaturedOffersLoading] = useState(false);
   const [featuredOffersError, setFeaturedOffersError] = useState("");
   const [offersFilter, setOffersFilter] = useState("bus");
@@ -3277,24 +3277,17 @@ export default function HomePage() {
         }
         const activeOffers = getFeaturedOffersPayload(response)
           .map(normalizeFeaturedOffer)
-          .filter((offer) => offer.isActive);
+          .filter((offer) => 
+            offer.isActive && 
+            (offer.bookingType || "bus").toLowerCase() === activeType.toLowerCase()
+          );
 
         if (isMounted) {
-          if (activeOffers.length > 0) {
-            const dynamicCodes = new Set(
-              activeOffers.map((o) => (o.couponCode || o.title || "").toLowerCase().trim())
-            );
-            const complementaryStatic = DEFAULT_BUS_FEATURED_OFFERS.filter(
-              (s) => !dynamicCodes.has((s.couponCode || s.title || "").toLowerCase().trim())
-            );
-            setFeaturedOffers([...activeOffers, ...complementaryStatic]);
-          } else {
-            setFeaturedOffers(DEFAULT_BUS_FEATURED_OFFERS);
-          }
+          setFeaturedOffers(activeOffers || []);
         }
       } catch (error) {
         if (isMounted) {
-          setFeaturedOffers(DEFAULT_BUS_FEATURED_OFFERS);
+          setFeaturedOffers([]);
           setFeaturedOffersError("");
         }
       } finally {
@@ -7865,7 +7858,13 @@ export default function HomePage() {
               ref={flightVideoRef}
               key="flight-hero-video"
               className="flight-hero-wallpaper-video"
-              style={{ display: activeTab === "flights" ? "block" : "none" }}
+              style={{
+                opacity: 1,
+                zIndex: activeTab === "flights" ? 2 : 1,
+                position: "absolute",
+                top: 0,
+                left: 0
+              }}
               autoPlay
               loop
               muted
@@ -7880,7 +7879,13 @@ export default function HomePage() {
               ref={busVideoRef}
               key="bus-hero-video"
               className="flight-hero-wallpaper-video"
-              style={{ display: activeTab === "buses" ? "block" : "none" }}
+              style={{
+                opacity: 1,
+                zIndex: activeTab === "buses" ? 2 : 1,
+                position: "absolute",
+                top: 0,
+                left: 0
+              }}
               autoPlay
               loop
               muted
@@ -7895,7 +7900,13 @@ export default function HomePage() {
               ref={hotelVideoRef}
               key="hotel-hero-video"
               className="flight-hero-wallpaper-video"
-              style={{ display: activeTab === "hotels" ? "block" : "none" }}
+              style={{
+                opacity: 1,
+                zIndex: activeTab === "hotels" ? 2 : 1,
+                position: "absolute",
+                top: 0,
+                left: 0
+              }}
               autoPlay
               loop
               muted
@@ -7944,7 +7955,6 @@ export default function HomePage() {
                     <Plane size={17} />
                     <span>Flights</span>
                   </button>
-
                   <button
                     type="button"
                     className={`tab ${activeTab === "buses" ? "active" : ""}`}
@@ -8047,7 +8057,11 @@ export default function HomePage() {
                                 <span className={leg.departureDate ? "date-main-bold" : "date-placeholder"}>
                                   {leg.departureDate ? formatFlightDate(leg.departureDate).date : "DD/MM/YYYY"}
                                 </span>
-
+                                {leg.departureDate && (
+                                  <span className="date-sub-day">
+                                    / {formatFlightDate(leg.departureDate).day}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             {activeCalendarField === `leg-${leg.id}` && (
@@ -8149,7 +8163,11 @@ export default function HomePage() {
                             <span className={flightDepartureDate ? "date-main-bold" : "date-placeholder"}>
                               {flightDepartureDate ? formatFlightDate(flightDepartureDate).date : "DD/MM/YYYY"}
                             </span>
-
+                            {flightDepartureDate && (
+                              <span className="date-sub-day">
+                                / {formatFlightDate(flightDepartureDate).day}
+                              </span>
+                            )}
                           </div>
                         </div>
                         {activeCalendarField === "flight-dep" && (
@@ -8183,7 +8201,11 @@ export default function HomePage() {
                               <span className={flightReturnDate ? "date-main-bold" : "date-placeholder"}>
                                 {flightReturnDate ? formatFlightDate(flightReturnDate).date : "DD/MM/YYYY"}
                               </span>
-
+                              {flightReturnDate && (
+                                <span className="date-sub-day">
+                                  / {formatFlightDate(flightReturnDate).day}
+                                </span>
+                              )}
                             </div>
                           </div>
                           {activeCalendarField === "flight-ret" && (
@@ -8414,7 +8436,7 @@ export default function HomePage() {
                     ? (offer.imageUrl || offer.image || offerCardFlightImg)
                     : isHotel
                       ? (offer.imageUrl || offer.image || offerCardHotelImg)
-                      : BUS_OFFER_IMAGES[idx % BUS_OFFER_IMAGES.length];
+                      : (offer.imageUrl || offer.image || BUS_OFFER_IMAGES[idx % BUS_OFFER_IMAGES.length]);
 
                   return (
                     <article

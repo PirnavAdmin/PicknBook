@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
-import { bookFlight, searchFlights, getFareRule, getCalendarFare } from "../../services/flightBookingService";
+import { searchFlights, getFareRule, getCalendarFare } from "../../services/flightBookingService";
 
 import FareCalendarModal from "../../components/FareCalendarModal";
 import FlightLoadingScreen from "../../components/FlightLoadingScreen";
@@ -219,41 +219,8 @@ function formatCurrency(value) {
   }).format(Math.round(Number(value) || 0))}`;
 }
 
-const CITY_TO_IATA = {
-  hyderabad: "HYD",
-  bengaluru: "BLR",
-  bangalore: "BLR",
-  mumbai: "BOM",
-  delhi: "DEL",
-  "new delhi": "DEL",
-  goa: "GOI",
-  jaipur: "JAI",
-  chennai: "MAA",
-  kolkata: "CCU",
-  pune: "PNQ",
-  ahmedabad: "AMD",
-  kochi: "COK",
-  cochin: "COK",
-  tirupati: "TIR",
-  madras: "MAA",
-  calcutta: "CCU",
-  bombay: "BOM",
-  dubai: "DXB",
-  dxb: "DXB",
-  london: "LHR",
-  singapore: "SIN",
-  bangkok: "BKK",
-  "kuala lumpur": "KUL",
-  doha: "DOH",
-  "abu dhabi": "AUH",
-  sharjah: "SHJ",
-  muscat: "MCT",
-  jeddah: "JED",
-  riyadh: "RUH",
-};
-
 function cityCode(name, fallback) {
-  if (!name) return fallback;
+  if (!name) return fallback || "";
   const cleanInput = String(name).trim().toLowerCase();
 
   const bracketMatch = cleanInput.match(/\(([^)]+)\)/);
@@ -265,24 +232,7 @@ function cityCode(name, fallback) {
     return cleanInput.toUpperCase();
   }
 
-  const cityNameOnly = cleanInput.split(",")[0].split("(")[0].trim();
-  if (CITY_TO_IATA[cityNameOnly]) {
-    return CITY_TO_IATA[cityNameOnly];
-  }
-
-  const clean = cityNameOnly.replace(/[^a-zA-Z ]/g, " ").trim();
-  if (!clean) {
-    return fallback;
-  }
-
-  const parts = clean.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}${parts[parts.length - 1][0]}`
-      .slice(0, 3)
-      .toUpperCase();
-  }
-
-  return clean.slice(0, 3).toUpperCase();
+  return fallback || "";
 }
 
 function parseTimeValue(dateString) {
@@ -437,7 +387,7 @@ function resolveAirlineLogo(airlineName) {
     return qatarAirways;
   }
 
-  return indigo;
+  return null;
 }
 
 function hourInWindow(hour, window) {
@@ -466,19 +416,7 @@ function getTimeDisplay(hour) {
 
 function getAirportName(code, city) {
   const c = String(code || "").toUpperCase().trim();
-  const nameMap = {
-    DEL: "Indira Gandhi International Airport",
-    BOM: "Chhatrapati Shivaji Maharaj International Airport",
-    BLR: "Kempegowda International Airport",
-    MAA: "Chennai International Airport",
-    HYD: "Rajiv Gandhi International Airport",
-    CCU: "Netaji Subhas Chandra Bose International Airport",
-    COK: "Cochin International Airport",
-    GOI: "Dabolim Airport",
-    DXB: "Dubai International Airport",
-    JFK: "John F. Kennedy International Airport",
-  };
-  return nameMap[c] || `${city || c} Airport`;
+  return city || c;
 }
 
 function getClassBadgeTone(travelClass) {
@@ -491,37 +429,6 @@ function getClassBadgeTone(travelClass) {
   }
 
   return "economy";
-}
-
-function buildPassengersFromCounts(baseName, adults, children, infants) {
-  const normalizedBaseName = String(baseName || "").trim() || "Passenger";
-  const passengers = [];
-
-  for (let index = 0; index < adults; index += 1) {
-    passengers.push({
-      fullName: adults === 1 ? normalizedBaseName : `${normalizedBaseName} Adult ${index + 1}`,
-      passengerType: "Adult",
-      gender: index % 2 === 0 ? "Male" : "Female",
-    });
-  }
-
-  for (let index = 0; index < children; index += 1) {
-    passengers.push({
-      fullName: `${normalizedBaseName} Child ${index + 1}`,
-      passengerType: "Child",
-      gender: index % 2 === 0 ? "Male" : "Female",
-    });
-  }
-
-  for (let index = 0; index < infants; index += 1) {
-    passengers.push({
-      fullName: `${normalizedBaseName} Infant ${index + 1}`,
-      passengerType: "Infant",
-      gender: index % 2 === 0 ? "Male" : "Female",
-    });
-  }
-
-  return passengers;
 }
 
 function normalizeTripType(value) {
@@ -537,16 +444,6 @@ function normalizeTravellerSummary(value) {
   return text || "1 Adult";
 }
 
-function getSelectedFarePrice(basePrice, type) {
-  if (type === "flexi") {
-    return Math.round(basePrice * 1.066);
-  }
-  if (type === "upfront") {
-    return Math.round(basePrice * 1.203);
-  }
-  return basePrice;
-}
-
 export default function FlightSearchResults() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -555,9 +452,8 @@ export default function FlightSearchResults() {
 
   const [activeDatePicker, setActiveDatePicker] = useState(null);
 
-  const initialSourceName = readValue(params, state, "source") || "Delhi";
-  const initialDestinationName =
-    readValue(params, state, "destination") || "Mumbai";
+  const initialSourceName = readValue(params, state, "source");
+  const initialDestinationName = readValue(params, state, "destination");
   const initialTripType =
     normalizeTripType(readValue(params, state, "tripType")) || "oneway";
   const initialCabinClass =
@@ -704,13 +600,11 @@ export default function FlightSearchResults() {
   }, [sourceName, destinationName, selectedDate, cabinClass, travellerText]);
 
   const getFareMultiplier = (type) => {
-    if (type === "flexi") return 1.066;
-    if (type === "upfront") return 1.203;
     return 1.0;
   };
 
-  const sourceCode = cityCode(sourceName, "DEL");
-  const destinationCode = cityCode(destinationName, "BOM");
+  const sourceCode = cityCode(sourceName, "");
+  const destinationCode = cityCode(destinationName, "");
 
   const parsedMultiCityLegs = useMemo(() => {
     if (tripType !== "multicity") return [];
@@ -747,32 +641,29 @@ export default function FlightSearchResults() {
       const dRaw = activeLegInfo.to || activeLegInfo.toCity || activeLegInfo.destination || destinationName;
       displaySourceName = sRaw;
       displayDestinationName = dRaw;
-      displaySourceCode = cityCode(sRaw, "DEL");
-      displayDestinationCode = cityCode(dRaw, "BOM");
+      displaySourceCode = cityCode(sRaw, "");
+      displayDestinationCode = cityCode(dRaw, "");
     }
     if (apiFlights && apiFlights[multiCityActiveTab] && apiFlights[multiCityActiveTab].length > 0) {
-      const sampleLeg = apiFlights[multiCityActiveTab][0];
-      displaySourceCode = sampleLeg.sourceCode || displaySourceCode;
-      displayDestinationCode = sampleLeg.destinationCode || displayDestinationCode;
-      displaySourceName = sampleLeg.sourceName || sampleLeg.fromCity || displaySourceName;
-      displayDestinationName = sampleLeg.destinationName || sampleLeg.toCity || displayDestinationName;
+      const firstApiLeg = apiFlights[multiCityActiveTab][0];
+      displaySourceCode = firstApiLeg.sourceCode || displaySourceCode;
+      displayDestinationCode = firstApiLeg.destinationCode || displayDestinationCode;
+      displaySourceName = firstApiLeg.sourceName || firstApiLeg.fromCity || displaySourceName;
+      displayDestinationName = firstApiLeg.destinationName || firstApiLeg.toCity || displayDestinationName;
     }
   }
 
   const normalizedOnwardList = useMemo(() => {
     return apiFlights.map((flight) => {
       const classOptions = normalizeClassOptions(flight);
+      if (flight.isLcc !== true || !flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
       const selectedClass =
         selectedClassByFlight[flight.id] ||
         flight.selectedTravelClass ||
         classOptions[0]?.travelClass ||
         cabinClass;
 
-      const fallbackOption = {
-        travelClass: selectedClass,
-        priceInr: Number(flight.selectedTravelClassPriceInr ?? 0),
-      };
-      const resolvedClassOptions = classOptions.length > 0 ? classOptions : [fallbackOption];
+      const resolvedClassOptions = classOptions;
       const selectedClassOption = resolvedClassOptions.find((o) => o.travelClass === selectedClass) || resolvedClassOptions[0];
       const departureIst = parseTimeValue(flight.departureTimeIst);
 
@@ -782,34 +673,31 @@ export default function FlightSearchResults() {
 
       return {
         ...flight,
-        airline: flight.airline || "IndiGo",
-        airlineName: flight.airline || "IndiGo",
-        flightNumber: flight.flightNumber || "6E-101",
+        airline: flight.airline || "",
+        airlineName: flight.airline || "",
+        flightNumber: flight.flightNumber || "",
         sourceCode: cityCode(flight.fromCity || sourceName, sourceCode),
         destinationCode: cityCode(flight.toCity || destinationName, destinationCode),
-        departureTime: formatTime(departureIst) || "06:30",
+        departureTime: formatTime(departureIst) || "",
         fare: finalPrice,
         baseFarePrice,
         fareType,
         className: selectedClass
       };
-    });
+    }).filter(Boolean);
   }, [apiFlights, selectedClassByFlight, selectedFareTypeByFlight, cabinClass, sourceName, destinationName, sourceCode, destinationCode]);
 
   const normalizedReturnList = useMemo(() => {
     return returnFlights.map((flight) => {
       const classOptions = normalizeClassOptions(flight);
+      if (flight.isLcc !== true || !flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
       const selectedClass =
         selectedClassByFlight[flight.id] ||
         flight.selectedTravelClass ||
         classOptions[0]?.travelClass ||
         cabinClass;
 
-      const fallbackOption = {
-        travelClass: selectedClass,
-        priceInr: Number(flight.selectedTravelClassPriceInr ?? 0),
-      };
-      const resolvedClassOptions = classOptions.length > 0 ? classOptions : [fallbackOption];
+      const resolvedClassOptions = classOptions;
       const selectedClassOption = resolvedClassOptions.find((o) => o.travelClass === selectedClass) || resolvedClassOptions[0];
       const departureIst = parseTimeValue(flight.departureTimeIst);
 
@@ -819,18 +707,18 @@ export default function FlightSearchResults() {
 
       return {
         ...flight,
-        airline: flight.airline || "IndiGo",
-        airlineName: flight.airline || "IndiGo",
-        flightNumber: flight.flightNumber || "6E-201",
+        airline: flight.airline || "",
+        airlineName: flight.airline || "",
+        flightNumber: flight.flightNumber || "",
         sourceCode: cityCode(flight.fromCity || destinationName, destinationCode),
         destinationCode: cityCode(flight.toCity || sourceName, sourceCode),
-        departureTime: formatTime(departureIst) || "18:30",
+        departureTime: formatTime(departureIst) || "",
         fare: finalPrice,
         baseFarePrice,
         fareType,
         className: selectedClass
       };
-    });
+    }).filter(Boolean);
   }, [returnFlights, selectedClassByFlight, selectedFareTypeByFlight, cabinClass, sourceName, destinationName, sourceCode, destinationCode]);
 
   const [activeFareRuleModal, setActiveFareRuleModal] = useState({
@@ -853,7 +741,7 @@ export default function FlightSearchResults() {
     try {
       const response = await getFareRule({
         traceId: flightObj.traceId,
-        resultIndex: flightObj.resultIndex || flightObj.id,
+        resultIndex: flightObj.resultIndex,
         srdvType: flightObj.srdvType,
         srdvIndex: flightObj.srdvIndex,
       });
@@ -961,16 +849,12 @@ export default function FlightSearchResults() {
       setIsLoadingFlights(true);
       setSearchError("");
 
-      const normalizeCity = (city) => {
-        if (!city) return "";
-        const clean = city.trim().toLowerCase();
-        if (clean === "bangalore") return "Bengaluru";
-        if (clean === "new delhi") return "Delhi";
-        if (clean === "cochin") return "Kochi";
-        return city.trim();
-      };
-
       try {
+        if (!sourceName.trim() || !destinationName.trim() || !formatDateInput(selectedDate)) {
+          setApiFlights([]);
+          setSearchError("Origin, destination and travel date are required.");
+          return;
+        }
         const travellerCounts = getTravellerCounts(travellerText);
 
         // For multi-city, prefer the already-parsed legs array over re-reading state/sessionStorage
@@ -987,8 +871,8 @@ export default function FlightSearchResults() {
         }
 
         const result = await searchFlights({
-          from: normalizeCity(sourceName),
-          to: normalizeCity(destinationName),
+          from: sourceName.trim(),
+          to: destinationName.trim(),
           fromCode: cityCode(sourceName, ""),
           toCode: cityCode(destinationName, ""),
           date: formatDateInput(selectedDate),
@@ -1041,13 +925,13 @@ export default function FlightSearchResults() {
               (Array.isArray(result) ? result : []);
           allList.forEach((flight) => {
             const classOptions = normalizeClassOptions(flight);
-            const fallbackClass =
+            const resolvedClass =
               previous[flight.id] ||
               flight.selectedTravelClass ||
               cabinClass ||
               classOptions[0]?.travelClass ||
-              "Economy";
-            next[flight.id] = fallbackClass;
+              "";
+            next[flight.id] = resolvedClass;
           });
 
           return next;
@@ -1118,14 +1002,8 @@ export default function FlightSearchResults() {
           classOptions[0]?.travelClass ||
           cabinClass;
 
-        const fallbackOption = {
-          travelClass: selectedClass,
-          priceInr: Number(flight.selectedTravelClassPriceInr ?? 0),
-          availableSeats: Number(flight.selectedTravelClassAvailableSeats ?? 0),
-          totalSeats: Number(flight.selectedTravelClassTotalSeats ?? 0),
-        };
-        const resolvedClassOptions =
-          classOptions.length > 0 ? classOptions : [fallbackOption];
+        if (flight.isLcc !== true || !flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
+        const resolvedClassOptions = classOptions;
 
         const selectedClassOption =
           resolvedClassOptions.find(
@@ -1148,10 +1026,10 @@ export default function FlightSearchResults() {
         return {
           id: flight.id,
           traceId: flight.traceId || "",
-          resultIndex: flight.resultIndex || flight.rawId || flight.id || "",
-          airlineName: flight.airline || "Unknown Airline",
+          resultIndex: flight.resultIndex,
+          airlineName: flight.airline || "",
           logo: resolveAirlineLogo(flight.airline),
-          flightNumber: flight.flightNumber || "--",
+          flightNumber: flight.flightNumber || "",
           sourceCode: cityCode(flight.fromCity || currentSource, currentSourceCode),
           destinationCode: cityCode(
             flight.toCity || currentDestination,
@@ -1182,8 +1060,8 @@ export default function FlightSearchResults() {
             0,
           totalAvailableSeats: Number(flight.totalAvailableSeats ?? 0),
           fareTagTone: getClassBadgeTone(travelClass),
-          srdvType: flight.srdvType || "MixAPI",
-          srdvIndex: flight.srdvIndex || "2",
+          srdvType: flight.srdvType,
+          srdvIndex: flight.srdvIndex,
           isLcc: Boolean(flight.isLcc),
           checkedBagsWeight: flight.checkedBagsWeight,
           checkedBagsUnit: flight.checkedBagsUnit,
@@ -1192,7 +1070,7 @@ export default function FlightSearchResults() {
           fareOptions: Array.isArray(flight.fareOptions) ? flight.fareOptions : [],
           fullMultiSectorSegments: Array.isArray(flight.fullMultiSectorSegments) ? flight.fullMultiSectorSegments : [],
         };
-      }),
+      }).filter(Boolean),
     [
       activeFlightList,
       twoWayActiveTab,
@@ -1333,7 +1211,7 @@ export default function FlightSearchResults() {
       const opt = currentExpandedFlight.fareOptions[optIdx] || currentExpandedFlight.fareOptions[0];
       return Number(opt?.b2cFinalFare || opt?.b2cPublishedFare || opt?.offeredFare || currentExpandedFlight.fare || 0);
     }
-    return getSelectedFarePrice(currentExpandedFlight.fare, selectedFareType);
+    return Number(currentExpandedFlight.fare || 0);
   }, [currentExpandedFlight, selectedFareType, selectedFareOptionIndexByFlight]);
 
   const travellerCounts = getTravellerCounts(travellerText);
@@ -1453,8 +1331,11 @@ export default function FlightSearchResults() {
         return {
           ...baseFlight,
           resultIndex: chosenOpt.resultIndex || baseFlight.resultIndex,
-          ResultIndex: chosenOpt.ResultIndex || baseFlight.ResultIndex || chosenOpt.resultIndex || baseFlight.resultIndex,
+          ResultIndex: chosenOpt.ResultIndex || chosenOpt.resultIndex,
           srdvIndex: chosenOpt.srdvIndex || baseFlight.srdvIndex,
+          Fare: chosenOpt.fare,
+          FareBreakdown: chosenOpt.fareBreakdown,
+          isLCC: chosenOpt.isLcc,
           isLcc: chosenOpt.isLcc !== undefined ? chosenOpt.isLcc : baseFlight.isLcc,
           IsLCC: chosenOpt.isLcc !== undefined ? chosenOpt.isLcc : baseFlight.IsLCC,
           isRefundable: chosenOpt.isRefundable,
@@ -1466,7 +1347,7 @@ export default function FlightSearchResults() {
           taxPrice: chosenOpt.tax || baseFlight.taxPrice || 0,
           b2cMarkupAmount: chosenOpt.b2cMarkupAmount || baseFlight.b2cMarkupAmount || 0,
           source: chosenOpt.source || baseFlight.source,
-          className: chosenOpt.className || baseFlight.className || "Economy",
+          className: chosenOpt.className || baseFlight.className || "",
         };
       }
     }
@@ -1490,7 +1371,7 @@ export default function FlightSearchResults() {
           : (legArray?.id ? legArray : null);
         if (!selectedObj) return null;
         let resolvedObj = resolveFlightFareOption(selectedObj);
-        const rawResultIndex = resolvedObj.legResultIndex || resolvedObj.resultIndex || resolvedObj.id || "";
+        const rawResultIndex = resolvedObj.legResultIndex || resolvedObj.resultIndex || resolvedObj.ResultIndex || "";
         return {
           ...resolvedObj,
           resultIndex: rawResultIndex,
@@ -1504,8 +1385,8 @@ export default function FlightSearchResults() {
       if (onwardFlight) {
         allSelectedLegs.push({
           ...onwardFlight,
-          resultIndex: onwardFlight.resultIndex || onwardFlight.id || "",
-          ResultIndex: onwardFlight.ResultIndex || onwardFlight.resultIndex || onwardFlight.id || "",
+          resultIndex: onwardFlight.resultIndex || onwardFlight.ResultIndex || "",
+          ResultIndex: onwardFlight.ResultIndex || onwardFlight.resultIndex || "",
         });
       }
 
@@ -1515,11 +1396,16 @@ export default function FlightSearchResults() {
           const returnFlightObj = resolveFlightFareOption(rawReturnObj);
           allSelectedLegs.push({
             ...returnFlightObj,
-            resultIndex: returnFlightObj.resultIndex || returnFlightObj.id || "",
-            ResultIndex: returnFlightObj.ResultIndex || returnFlightObj.resultIndex || returnFlightObj.id || "",
+            resultIndex: returnFlightObj.resultIndex || returnFlightObj.ResultIndex || "",
+            ResultIndex: returnFlightObj.ResultIndex || returnFlightObj.resultIndex || "",
           });
         }
       }
+    }
+
+    if (!allSelectedLegs.length || allSelectedLegs.some((leg) => !leg.traceId || !leg.resultIndex || !leg.srdvType || !leg.srdvIndex)) {
+      setBookingError("The selected flight is missing a live supplier reference. Please select another result.");
+      return;
     }
 
     const combinedPrice = allSelectedLegs.reduce((sum, leg) => sum + Number(leg.fare || leg.price || 0), 0);
@@ -1554,17 +1440,17 @@ export default function FlightSearchResults() {
     const flowPayload = {
       flight: onwardFlightObj ? {
         ...onwardFlightObj,
-        className: selectedClass || onwardFlightObj.className || "Economy",
+        className: selectedClass || onwardFlightObj.className || "",
       } : {},
       returnFlight: returnFlightObj ? {
         ...returnFlightObj,
-        className: returnFlightObj.className || "Economy",
+        className: returnFlightObj.className || "",
       } : null,
       isTwoWay: tripType === "twoway" && allSelectedLegs.length > 1,
       isMultiCity: tripType === "multicity",
       selectedLegs: allSelectedLegs,
-      resultIndex: allSelectedLegs.map(l => l.resultIndex || l.id).filter(Boolean).join(","),
-      ResultIndex: allSelectedLegs.map(l => l.resultIndex || l.id).filter(Boolean).join(","),
+      resultIndex: allSelectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(","),
+      ResultIndex: allSelectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(","),
       traceId: sharedMultiCityTraceId || onwardFlightObj?.traceId || onwardFlightObj?.TraceId || "",
       TraceId: sharedMultiCityTraceId || onwardFlightObj?.traceId || onwardFlightObj?.TraceId || "",
       searchContext: {
@@ -1578,8 +1464,8 @@ export default function FlightSearchResults() {
       },
       selectedSeatLabels: [],
       selectedSeats: [],
-      mealPreference: "standard",
-      baggagePlan: "20kg",
+      mealPreference: "none",
+      baggagePlan: "none",
       fareSummary: {
         baseFare,
         seatSurcharge: 0,
@@ -1595,7 +1481,7 @@ export default function FlightSearchResults() {
     };
 
     try {
-      const combinedResultIndex = allSelectedLegs.map(l => l.resultIndex || l.id).filter(Boolean).join(",");
+      const combinedResultIndex = allSelectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(",");
       const resolvedTraceId = sharedMultiCityTraceId || onwardFlightObj?.traceId || onwardFlightObj?.TraceId || sessionStorage.getItem("TraceId") || "";
       sessionStorage.setItem("SelectedFlight", JSON.stringify({
         TraceId: resolvedTraceId,
@@ -1620,7 +1506,7 @@ export default function FlightSearchResults() {
       const selectedId = selectionsMap[index];
       const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
       if (!selectedObj) return null;
-      const rawResultIndex = selectedObj.legResultIndex || selectedObj.resultIndex || selectedObj.id || "";
+      const rawResultIndex = selectedObj.legResultIndex || selectedObj.resultIndex || selectedObj.ResultIndex || "";
       return {
         ...selectedObj,
         resultIndex: rawResultIndex,
@@ -1678,8 +1564,8 @@ export default function FlightSearchResults() {
       },
       selectedSeatLabels: [],
       selectedSeats: [],
-      mealPreference: "standard",
-      baggagePlan: "20kg",
+      mealPreference: "none",
+      baggagePlan: "none",
       fareSummary: {
         baseFare,
         seatSurcharge: 0,
@@ -1695,7 +1581,7 @@ export default function FlightSearchResults() {
     };
 
     try {
-      const combinedResultIndex = allSelectedLegs.map(l => l.resultIndex || l.id).filter(Boolean).join(",");
+      const combinedResultIndex = allSelectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(",");
       const resolvedTraceId = sharedMultiCityTraceId || firstLegFlight?.traceId || "";
       sessionStorage.setItem("SelectedFlight", JSON.stringify({
         TraceId: resolvedTraceId,
@@ -1771,35 +1657,7 @@ export default function FlightSearchResults() {
     setBookingError("");
 
     try {
-      const adults = Number(bookingForm.adults);
-      const children = Number(bookingForm.children);
-      const infants = Number(bookingForm.infants);
-
-      const payload = {
-        passengerName: bookingForm.passengerName.trim(),
-        passengerPhone: bookingForm.passengerPhone.trim(),
-        passengerEmail: bookingForm.passengerEmail.trim(),
-        travelClass: bookingForm.travelClass,
-        passengers: buildPassengersFromCounts(
-          bookingForm.passengerName,
-          adults,
-          children,
-          infants
-        ),
-      };
-
-      const bookingResponse = await bookFlight({
-        flightId: activeBookingFlight.id,
-        payload,
-      });
-
-      const reference = bookingResponse?.bookingReference
-        ? ` (${bookingResponse.bookingReference})`
-        : "";
-
-      setBookingSuccess(`Flight booked successfully${reference}.`);
-      setBookingFlightId(null);
-      setSearchVersion((previous) => previous + 1);
+      handleStartBookingJourney(activeBookingFlight);
     } catch (error) {
       setBookingError(error.message || "Unable to complete booking.");
     } finally {
@@ -2431,8 +2289,8 @@ export default function FlightSearchResults() {
                   const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
                   const isActive = multiCityActiveTab === index;
                   const legInfo = parsedMultiCityLegs[index] || {};
-                  const displaySrc = cityCode(selectedObj?.sourceCode || legInfo.from || legInfo.fromCity || legInfo.source || "SRC");
-                  const displayDest = cityCode(selectedObj?.destinationCode || legInfo.to || legInfo.toCity || legInfo.destination || "DEST");
+                  const displaySrc = cityCode(selectedObj?.sourceCode || legInfo.from || legInfo.fromCity || legInfo.source || "");
+                  const displayDest = cityCode(selectedObj?.destinationCode || legInfo.to || legInfo.toCity || legInfo.destination || "");
                   const displayAirline = selectedObj?.airline || selectedObj?.airlineName || "Select Flight";
                   const displayFare = selectedObj?.fare;
 
@@ -2662,8 +2520,8 @@ export default function FlightSearchResults() {
                               {Array.isArray(flight.fareOptions) && flight.fareOptions.length > 0 ? (
                                 flight.fareOptions.map((opt, optIdx) => {
                                   const isSelectedOpt = (selectedFareOptionIndexByFlight[flight.id] ?? 0) === optIdx;
-                                  const optBaggage = opt.fareSegments?.[0]?.Baggage || (flight.checkedBagsWeight ? `${flight.checkedBagsWeight} ${flight.checkedBagsUnit || "kg"}` : "15 kg");
-                                  const optCabinBaggage = opt.fareSegments?.[0]?.CabinBaggage || (flight.cabinBagsWeight ? `${flight.cabinBagsWeight} ${flight.cabinBagsUnit || "kg"}` : "7 kg");
+                                  const optBaggage = opt.fareSegments?.[0]?.Baggage || (flight.checkedBagsWeight ? `${flight.checkedBagsWeight} ${flight.checkedBagsUnit || "kg"}` : "");
+                                  const optCabinBaggage = opt.fareSegments?.[0]?.CabinBaggage || (flight.cabinBagsWeight ? `${flight.cabinBagsWeight} ${flight.cabinBagsUnit || "kg"}` : "");
 
                                   return (
                                     <div
@@ -2721,11 +2579,11 @@ export default function FlightSearchResults() {
                                       <div className="fare-column-features-group baggage">
                                         <div className="feature-item">
                                           <Lock size={14} className="feature-icon" />
-                                          <span>{optCabinBaggage} Cabin bag allowance</span>
+                                        <span>{optCabinBaggage ? `${optCabinBaggage} Cabin bag allowance` : ""}</span>
                                         </div>
                                         <div className="feature-item">
                                           <Briefcase size={14} className="feature-icon" />
-                                          <span>{optBaggage} Check-in bag allowance</span>
+                                          <span>{optBaggage ? `${optBaggage} Check-in bag allowance` : ""}</span>
                                         </div>
                                       </div>
 
@@ -2754,56 +2612,23 @@ export default function FlightSearchResults() {
                                       <div className="fare-column-features-group addons">
                                         <div className="feature-item">
                                           <Utensils size={14} className="feature-icon" />
-                                          <span>{opt.isLcc ? "LCC Direct Ticket" : "GDS Standard Fare"}</span>
+                                          <span>{opt.isLcc ? "TicketLCC" : "Unsupported supplier ticketing"}</span>
                                         </div>
                                       </div>
                                     </div>
                                   );
-                                })
+      }).filter(Boolean)
                               ) : (
-                                <>
-                                  {/* Fallback Saver Fare */}
-                                  <div
-                                    className={`fare-column-card ${(selectedFareTypeByFlight[flight.id] || 'saver') === 'saver' ? 'active' : ''}`}
-                                    onClick={() => {
-                                      setSelectedFareTypeByFlight(prev => ({ ...prev, [flight.id]: 'saver' }));
-                                      setSelectedFareType('saver');
-                                      if (tripType === "multicity") {
-                                        const totalLegsCount = (apiFlights && apiFlights.length > 0) ? apiFlights.length : parsedMultiCityLegs.length;
-                                        setSelectedMultiCityFlightIds(prev => ({ ...prev, [multiCityActiveTab]: flight.id }));
-                                        if (multiCityActiveTab < totalLegsCount - 1) {
-                                          setMultiCityActiveTab(prev => prev + 1);
-                                          setTimeout(() => {
-                                            window.scrollTo({ top: 0, behavior: "smooth" });
-                                          }, 100);
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    <div className="fare-column-header">
-                                      <span className="fare-badge saver">Saver fare</span>
-                                      <div className="fare-column-price">₹{new Intl.NumberFormat("en-IN").format(flight.baseFarePrice || flight.fare)}</div>
-                                    </div>
-
-                                    <div className="fare-column-features-group baggage">
-                                      <div className="feature-item">
-                                        <Lock size={14} className="feature-icon" />
-                                        <span>{flight.cabinBagsWeight ? `${flight.cabinBagsWeight} ${flight.cabinBagsUnit || "kg"}` : "7 kg"} Cabin bag allowance</span>
-                                      </div>
-                                      <div className="feature-item">
-                                        <Briefcase size={14} className="feature-icon" />
-                                        <span>{flight.checkedBagsWeight ? `${flight.checkedBagsWeight} ${flight.checkedBagsUnit || "kg"}` : "15 kg"} Check-in bag allowance</span>
-                                      </div>
-                                    </div>
-
-                                    <div className="fare-column-features-group changes">
-                                      <div className="feature-item">
-                                        <Undo size={14} className="feature-icon" />
-                                        <span>Cancellation & Changes: <strong>{flight.isRefundable ? "Refundable" : "Non-Refundable"}</strong></span>
-                                      </div>
+                                <div className="fare-column-card" aria-disabled="true">
+                                  <div className="fare-column-header">
+                                    <span className="fare-badge">Live fare unavailable</span>
+                                  </div>
+                                  <div className="fare-column-features-group changes">
+                                    <div className="feature-item">
+                                      <span>The supplier did not return a bookable TicketLCC fare for this result.</span>
                                     </div>
                                   </div>
-                                </>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -2820,10 +2645,11 @@ export default function FlightSearchResults() {
                             <button
                               type="button"
                               className="fare-next-btn"
+                              disabled={!Array.isArray(flight.fareOptions) || flight.fareOptions.length === 0}
                               onClick={() => {
                                 let targetFlight = flight;
                                 let chosenPrice = selectedFarePrice;
-                                let chosenClass = flight.className || "Economy";
+                                let chosenClass = flight.className || "";
 
                                 if (Array.isArray(flight.fareOptions) && flight.fareOptions.length > 0) {
                                   const optIdx = selectedFareOptionIndexByFlight[flight.id] ?? 0;
@@ -2846,9 +2672,7 @@ export default function FlightSearchResults() {
                                     chosenClass = `${flight.airlineName} (${chosenOpt.source})`;
                                   }
                                 } else {
-                                  chosenClass = selectedFareType === "saver" ? "Economy (Saver)" :
-                                    selectedFareType === "flexi" ? "Economy (Flexi Plus)" :
-                                      `${flight.airlineName} UpFront`;
+                                    chosenClass = flight.className || "";
                                 }
                                 if (tripType === "twoway" && returnFlights.length > 0) {
                                   if (twoWayActiveTab === "onward") {
@@ -3005,8 +2829,8 @@ export default function FlightSearchResults() {
 
               const legInfo = parsedMultiCityLegs[index] || {};
               const displayAirline = selectedObj?.airline || "Select Flight";
-              const displaySrc = cityCode(selectedObj?.sourceCode || legInfo.from || legInfo.fromCity || legInfo.source || "SRC");
-              const displayDest = cityCode(selectedObj?.destinationCode || legInfo.to || legInfo.toCity || legInfo.destination || "DEST");
+              const displaySrc = cityCode(selectedObj?.sourceCode || legInfo.from || legInfo.fromCity || legInfo.source || "");
+              const displayDest = cityCode(selectedObj?.destinationCode || legInfo.to || legInfo.toCity || legInfo.destination || "");
               const displayTime = selectedObj?.departureTime || legInfo.date || legInfo.departureDate || "--:--";
               const displayFare = selectedObj?.fare;
 

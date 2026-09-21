@@ -5,13 +5,13 @@ import { Check, Edit3, Settings, ShieldCheck, X, Upload, Trash2, Info, Save } fr
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.svg";
 
 const DEFAULT_SITE_SETTINGS = {
-  siteName: "PickNBook",
+  siteName: "Pick&Book",
   currency: "INR - Indian Rupee",
   siteLogo: "picknbook_logo.png",
   timeZone: "Asia/Kolkata",
   favicon: "favicon.ico",
   websiteStatus: "Active",
-  contactEmail: "support@picknbook.com",
+  contactEmail: "support@pick&book.com",
   maintenanceMode: "Enabled", // Enabled in mockup
   contactPhoneCode: "+91",
   contactPhone: "98765 43210",
@@ -21,7 +21,7 @@ const DEFAULT_SITE_SETTINGS = {
 
 function SiteSetting() {
   const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem("admin-site-settings-picknbook");
+    const saved = localStorage.getItem("admin-site-settings-pick&book");
     return saved ? JSON.parse(saved) : DEFAULT_SITE_SETTINGS;
   });
 
@@ -37,7 +37,7 @@ function SiteSetting() {
   const handleSave = (e) => {
     if (e) e.preventDefault();
     setSettings(editForm);
-    localStorage.setItem("admin-site-settings-picknbook", JSON.stringify(editForm));
+    localStorage.setItem("admin-site-settings-pick&book", JSON.stringify(editForm));
     setIsEditing(false);
     showToast("Site configuration updated successfully!");
   };

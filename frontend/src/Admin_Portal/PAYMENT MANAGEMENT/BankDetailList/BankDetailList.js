@@ -15,9 +15,9 @@ import {
 } from 'lucide-react';
 
 const mockBanks = [
-  { id: '1', name: 'HDFC Bank', number: '50100254988789', ifsc: 'HDFC0001234', holder: 'PickNBook Pvt Ltd', status: 'Active', isPrimary: 'Yes' },
-  { id: '2', name: 'ICICI Bank', number: '123456789012', ifsc: 'ICIC0000123', holder: 'PickNBook Pvt Ltd', status: 'Active', isPrimary: 'No' },
-  { id: '3', name: 'State Bank of India', number: '30987654321', ifsc: 'SBIN0004567', holder: 'PickNBook Pvt Ltd', status: 'Inactive', isPrimary: 'No' },
+  { id: '1', name: 'HDFC Bank', number: '50100254988789', ifsc: 'HDFC0001234', holder: 'Pick&Book Pvt Ltd', status: 'Active', isPrimary: 'Yes' },
+  { id: '2', name: 'ICICI Bank', number: '123456789012', ifsc: 'ICIC0000123', holder: 'Pick&Book Pvt Ltd', status: 'Active', isPrimary: 'No' },
+  { id: '3', name: 'State Bank of India', number: '30987654321', ifsc: 'SBIN0004567', holder: 'Pick&Book Pvt Ltd', status: 'Inactive', isPrimary: 'No' },
 ];
 
 function BankDetailList() {

@@ -16,6 +16,7 @@ namespace PickNBook.Api.Services.Implementations
         private readonly ILogger<BookingOrchestratorService> _logger;
         private readonly IServiceProvider _serviceProvider; // Used to resolve scoped services like _srdvBusService dynamically without circular deps
         private readonly PickNBook.Api.Services.Notifications.Interfaces.INotificationService _notificationService;
+        private readonly IInAppNotificationService? _inAppNotificationService;
         private readonly IMemoryCache _cache;
 
         public BookingOrchestratorService(
@@ -24,11 +25,23 @@ namespace PickNBook.Api.Services.Implementations
             IServiceProvider serviceProvider,
             PickNBook.Api.Services.Notifications.Interfaces.INotificationService notificationService,
             IMemoryCache cache)
+            : this(dbContext, logger, serviceProvider, notificationService, null, cache)
+        {
+        }
+
+        public BookingOrchestratorService(
+            AppDbContext dbContext,
+            ILogger<BookingOrchestratorService> logger,
+            IServiceProvider serviceProvider,
+            PickNBook.Api.Services.Notifications.Interfaces.INotificationService notificationService,
+            IInAppNotificationService? inAppNotificationService,
+            IMemoryCache cache)
         {
             _dbContext = dbContext;
             _logger = logger;
             _serviceProvider = serviceProvider;
             _notificationService = notificationService;
+            _inAppNotificationService = inAppNotificationService;
             _cache = cache;
         }
 
@@ -643,6 +656,44 @@ namespace PickNBook.Api.Services.Implementations
                     }
 
                     await _dbContext.SaveChangesAsync();
+
+                    // Additive In-App Notifications (Step 4: Bus Failed)
+                    if (_inAppNotificationService != null)
+                    {
+                        try
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Booking",
+                                category: "Customer",
+                                title: "Bus Booking Failed",
+                                message: $"Your bus booking ({bookingRef}) could not be confirmed: {cleanReason}. Refund has been initiated.",
+                                severity: "Error",
+                                referenceType: "BusBooking",
+                                referenceId: bookingRef,
+                                actionUrl: $"/bookings/{bookingRef}",
+                                idempotencyKey: $"BOOKING_FAILED_BUS_{payment.PaymentReference}",
+                                targetUserId: payment.UserId
+                            );
+
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Supplier",
+                                category: "Admin",
+                                title: "Bus Supplier Booking Failed",
+                                message: $"Bus booking for payment {payment.PaymentReference} ({bookingRef}) failed: {cleanReason}.",
+                                severity: "Error",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/admin/payments/{payment.Id}",
+                                idempotencyKey: $"ADMIN_BOOKING_FAILED_BUS_{payment.PaymentReference}",
+                                targetRole: "Admin"
+                            );
+                        }
+                        catch (Exception inAppEx)
+                        {
+                            _logger.LogWarning(inAppEx, "Failed to create in-app notification for Bus Booking Failed {PaymentReference}", payment.PaymentReference);
+                        }
+                    }
+
                     return (false, payment.FailureReason);
                 }
 
@@ -725,6 +776,30 @@ namespace PickNBook.Api.Services.Implementations
 
                 // Commit payment and coupon changes
                 await _dbContext.SaveChangesAsync();
+
+                // Additive In-App Notifications (Step 4: Bus Confirmed)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Booking",
+                            category: "Customer",
+                            title: "Bus Booking Confirmed",
+                            message: $"Your bus booking ({reservation.BookingReference}) has been confirmed. PNR: {reservation.Pnr}.",
+                            severity: "Success",
+                            referenceType: "BusBooking",
+                            referenceId: reservation.BookingReference,
+                            actionUrl: $"/bookings/{reservation.BookingReference}",
+                            idempotencyKey: $"BOOKING_SUCCESS_BUS_{payment.PaymentReference}",
+                            targetUserId: payment.UserId
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for Bus Booking Confirmed {PaymentReference}", payment.PaymentReference);
+                    }
+                }
                 
                 // Try to update SupplierFulfillmentExecution with ReservationId
                 try
@@ -1022,6 +1097,44 @@ namespace PickNBook.Api.Services.Implementations
                     );
 
                     await _dbContext.SaveChangesAsync();
+
+                    // Additive In-App Notifications (Step 4: Hotel Failed)
+                    if (_inAppNotificationService != null)
+                    {
+                        try
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Booking",
+                                category: "Customer",
+                                title: "Hotel Booking Failed",
+                                message: $"Your hotel booking ({reservation.BookingReference}) could not be confirmed: {cleanReason}. Refund has been initiated.",
+                                severity: "Error",
+                                referenceType: "HotelBooking",
+                                referenceId: reservation.BookingReference,
+                                actionUrl: $"/bookings/{reservation.BookingReference}",
+                                idempotencyKey: $"BOOKING_FAILED_HOTEL_{payment.PaymentReference}",
+                                targetUserId: payment.UserId
+                            );
+
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Supplier",
+                                category: "Admin",
+                                title: "Hotel Supplier Booking Failed",
+                                message: $"Hotel booking for payment {payment.PaymentReference} ({reservation.BookingReference}) failed: {cleanReason}.",
+                                severity: "Error",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/admin/payments/{payment.Id}",
+                                idempotencyKey: $"ADMIN_BOOKING_FAILED_HOTEL_{payment.PaymentReference}",
+                                targetRole: "Admin"
+                            );
+                        }
+                        catch (Exception inAppEx)
+                        {
+                            _logger.LogWarning(inAppEx, "Failed to create in-app notification for Hotel Booking Failed {PaymentReference}", payment.PaymentReference);
+                        }
+                    }
+
                     return (false, payment.FailureReason);
                 }
 
@@ -1078,6 +1191,30 @@ namespace PickNBook.Api.Services.Implementations
                 }
 
                 await _dbContext.SaveChangesAsync();
+
+                // Additive In-App Notifications (Step 4: Hotel Confirmed)
+                if (!isPending && _inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Booking",
+                            category: "Customer",
+                            title: "Hotel Booking Confirmed",
+                            message: $"Your hotel booking ({reservation.BookingReference}) at {reservation.HotelName} has been confirmed.",
+                            severity: "Success",
+                            referenceType: "HotelBooking",
+                            referenceId: reservation.BookingReference,
+                            actionUrl: $"/bookings/{reservation.BookingReference}",
+                            idempotencyKey: $"BOOKING_SUCCESS_HOTEL_{payment.PaymentReference}",
+                            targetUserId: payment.UserId
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for Hotel Booking Confirmed {PaymentReference}", payment.PaymentReference);
+                    }
+                }
 
                 try
                 {
@@ -1367,7 +1504,57 @@ namespace PickNBook.Api.Services.Implementations
                     payload: new { Reason = payment.FailureReason, Amount = payment.FinalPayableAmount }
                 );
 
+                var failedPhone = requestPassengers?.FirstOrDefault()?.ContactNo ?? "";
+                if (!string.IsNullOrWhiteSpace(failedPhone))
+                {
+                    await _notificationService.EnqueueAsync(
+                        eventType: "FlightBookingFailed",
+                        channel: "SMS",
+                        recipient: failedPhone,
+                        templateKey: "FLIGHT_BOOKING_FAILED",
+                        payload: new { Reference = !string.IsNullOrWhiteSpace(payment.PaymentReference) ? payment.PaymentReference : $"PNBF{DateTime.UtcNow:yyMMddHHmm}", Reason = payment.FailureReason ?? "Booking could not be completed" }
+                    );
+                }
+
                 await _dbContext.SaveChangesAsync();
+
+                // Additive In-App Notifications (Step 4: Flight Failed)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Booking",
+                            category: "Customer",
+                            title: "Flight Booking Failed",
+                            message: $"Your flight booking (Payment: {payment.PaymentReference}) could not be confirmed: {payment.FailureReason}. Refund has been initiated.",
+                            severity: "Error",
+                            referenceType: "FlightBooking",
+                            referenceId: payment.PaymentReference,
+                            actionUrl: $"/bookings/{payment.PaymentReference}",
+                            idempotencyKey: $"BOOKING_FAILED_FLIGHT_{payment.PaymentReference}",
+                            targetUserId: payment.UserId
+                        );
+
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Supplier",
+                            category: "Admin",
+                            title: "Flight Supplier Booking Failed",
+                            message: $"Flight booking for payment {payment.PaymentReference} failed: {payment.FailureReason}.",
+                            severity: "Error",
+                            referenceType: "Payment",
+                            referenceId: payment.Id.ToString(),
+                            actionUrl: $"/admin/payments/{payment.Id}",
+                            idempotencyKey: $"ADMIN_BOOKING_FAILED_FLIGHT_{payment.PaymentReference}",
+                            targetRole: "Admin"
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for Flight Booking Failed {PaymentReference}", payment.PaymentReference);
+                    }
+                }
+
                 return (false, payment.FailureReason);
             }
 
@@ -1561,15 +1748,53 @@ namespace PickNBook.Api.Services.Implementations
                     payload: new { Pnr = reservation.Pnr, Name = reservation.PassengerName, Amount = payment.FinalPayableAmount }
                 );
 
+                var flightNum = !string.IsNullOrWhiteSpace(reservation.FlightNumber) ? reservation.FlightNumber : "Flight";
+                var route = !string.IsNullOrWhiteSpace(reservation.FromCity) && !string.IsNullOrWhiteSpace(reservation.ToCity)
+                    ? $"{reservation.FromCity}-{reservation.ToCity}"
+                    : "Trip";
+                var travelDate = reservation.DepartureTime != default
+                    ? reservation.DepartureTime.ToString("dd/MM/yyyy hh:mm tt")
+                    : DateTime.UtcNow.ToString("dd/MM/yyyy hh:mm tt");
+
                 await _notificationService.EnqueueAsync(
                     eventType: "FlightBookingSuccess",
                     channel: "SMS",
                     recipient: reservation.PassengerPhone ?? "",
                     templateKey: "FLIGHT_BOOKING_CONFIRMED_SMS",
-                    payload: new { Pnr = reservation.Pnr, Name = reservation.PassengerName }
+                    payload: new {
+                        Pnr = reservation.Pnr,
+                        Flight = flightNum,
+                        Route = route,
+                        Date = travelDate,
+                        Name = reservation.PassengerName
+                    }
                 );
 
                 await _dbContext.SaveChangesAsync();
+
+                // Additive In-App Notifications (Step 4: Flight Confirmed)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Booking",
+                            category: "Customer",
+                            title: "Flight Booking Confirmed",
+                            message: $"Your flight booking ({reservation.BookingReference}) with PNR {reservation.Pnr} has been confirmed.",
+                            severity: "Success",
+                            referenceType: "FlightBooking",
+                            referenceId: reservation.BookingReference,
+                            actionUrl: $"/bookings/{reservation.BookingReference}",
+                            idempotencyKey: $"BOOKING_SUCCESS_FLIGHT_{payment.PaymentReference}",
+                            targetUserId: payment.UserId
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for Flight Booking Confirmed {PaymentReference}", payment.PaymentReference);
+                    }
+                }
             }
 
             return (true, null);

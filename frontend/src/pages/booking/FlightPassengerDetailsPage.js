@@ -9,8 +9,8 @@ import {
 } from "./flightBookingFlowStore";
 import { navigateWithAuth } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
-import { getFlightPricingPreview, getFlightPromotions, bookFlight, listFlightCoupons, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
-import { toApiUrl } from "../../services/apiClient";
+import { getFlightPricingPreview, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
+import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
@@ -31,7 +31,7 @@ function ddMmYyyyToYyyyMmDd(val) {
 
 function resolveCleanTravelClass(travelClass) {
   if (!travelClass || typeof travelClass !== "string") {
-    return "Economy";
+    return "";
   }
   const clean = travelClass.toLowerCase();
   if (clean.includes("premium economy")) return "Premium Economy";
@@ -260,9 +260,7 @@ export default function FlightPassengerDetailsPage() {
   const [formError, setFormError] = useState("");
   const [errors, setErrors] = useState({});
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [tripSecureAdded, setTripSecureAdded] = useState(
-    flowState.tripSecureAdded !== undefined ? Boolean(flowState.tripSecureAdded) : true
-  );
+  const tripSecureAdded = false;
 
   const [activeFareRuleModal, setActiveFareRuleModal] = useState({
     isOpen: false,
@@ -286,7 +284,7 @@ export default function FlightPassengerDetailsPage() {
     try {
       const response = await getFareRule({
         traceId: targetFlight.traceId,
-        resultIndex: targetFlight.resultIndex || targetFlight.id,
+        resultIndex: targetFlight.resultIndex,
         srdvType: targetFlight.srdvType,
         srdvIndex: targetFlight.srdvIndex,
         flight: targetFlight,
@@ -360,16 +358,9 @@ export default function FlightPassengerDetailsPage() {
 
   const [fareQuoteData, setFareQuoteData] = useState(null);
 
-  const isInternational = useMemo(() => {
-    const fromStr = String(flight?.fromCity || flight?.sourceCode || searchContext?.source || "").toUpperCase().trim();
-    const toStr = String(flight?.toCity || flight?.destinationCode || searchContext?.destination || "").toUpperCase().trim();
-    // If both are empty (e.g. multi-city before a leg is resolved), default to domestic
-    if (!fromStr && !toStr) return false;
-    const domCodes = new Set(["DEL", "BOM", "BLR", "MAA", "HYD", "CCU", "GOI", "PNQ", "AMD", "COK", "JAI", "TIR", "IXC", "IXB", "PAT", "GAU", "TRV", "VNS", "LKO", "DELHI", "MUMBAI", "BENGALURU", "CHENNAI", "HYDERABAD", "KOLKATA"]);
-    const isDomFrom = !fromStr || domCodes.has(fromStr) || fromStr.includes("DELHI") || fromStr.includes("MUMBAI");
-    const isDomTo = !toStr || domCodes.has(toStr) || toStr.includes("DELHI") || toStr.includes("MUMBAI");
-    return (!isDomFrom || !isDomTo) || Boolean(fareQuoteData?.isPassportRequiredAtBook);
-  }, [flight, searchContext, fareQuoteData]);
+  const isInternational = Boolean(fareQuoteData?.isPassportRequiredAtBook ||
+    fareQuoteData?.results?.IsPassportRequiredAtTicket || flight?.IsInternational);
+  const [fareQuoteError, setFareQuoteError] = useState("");
 
   useEffect(() => {
     let isCurrent = true;
@@ -382,15 +373,18 @@ export default function FlightPassengerDetailsPage() {
           legs: flowState.selectedLegs || flowState.legs,
           selectedLegs: flowState.selectedLegs || flowState.legs,
           traceId: flight.traceId || flowState.traceId || flowState.TraceId,
-          resultIndex: flowState.resultIndex || flowState.ResultIndex || flight.resultIndex || flight.id,
+          resultIndex: flowState.resultIndex || flowState.ResultIndex || flight.resultIndex || flight.ResultIndex,
           srdvType: flight.srdvType,
           srdvIndex: flight.srdvIndex,
           journeyType: flowState.isMultiCity ? 3 : (flowState.isTwoWay ? 2 : 1),
+          adults: travellers.adults, children: travellers.children, infants: travellers.infants,
           isMultiCity: flowState.isMultiCity
         });
         if (isCurrent && quoteRes && quoteRes.success) {
           console.log("FareQuote API validated successfully:", quoteRes);
           setFareQuoteData(quoteRes);
+          setFareQuoteError("");
+          writeFlightBookingFlowState({ fareQuote: quoteRes });
 
           const fqRes = quoteRes.results || quoteRes.rawResponse?.Results || quoteRes.rawResponse?.Response?.Results || {};
           const fqF = fqRes?.Fare || quoteRes.fare || {};
@@ -411,7 +405,7 @@ export default function FlightPassengerDetailsPage() {
           }
         }
       } catch (err) {
-        console.warn("FareQuote fetch error:", err);
+        if (isCurrent) { setFareQuoteData(null); setFareQuoteError(err.message); setFormError(err.message); }
       }
     }
     runFareQuote();
@@ -501,7 +495,7 @@ export default function FlightPassengerDetailsPage() {
       // Dynamic date & usage limit checks
       const todayStr = new Date().toISOString().slice(0, 10);
       let isExpired = false;
-      const expDateStr = c.expiryDate || c.ExpiryDate;
+      const expDateStr = c.expiryDate || c.ExpiryDate || c.endDateUtc || c.EndDateUtc;
       if (expDateStr) {
         const expClean = String(expDateStr).slice(0, 10);
         if (expClean < todayStr) {
@@ -510,7 +504,7 @@ export default function FlightPassengerDetailsPage() {
       }
 
       let isNotStarted = false;
-      const startDateStr = c.startDate || c.StartDate;
+      const startDateStr = c.startDate || c.StartDate || c.startDateUtc || c.StartDateUtc;
       if (startDateStr) {
         const startClean = String(startDateStr).slice(0, 10);
         if (startClean > todayStr) {
@@ -518,16 +512,17 @@ export default function FlightPassengerDetailsPage() {
         }
       }
 
-      const useLimit = Number(c.useLimit ?? c.UseLimit ?? 0);
+      const useLimit = Number(c.useLimit ?? c.UseLimit ?? c.maxUsage ?? c.MaxUsage ?? 0);
       const usedCount = Number(c.usedCount ?? c.UsedCount ?? 0);
       const isLimitReached = useLimit > 0 && usedCount >= useLimit;
 
-      const rawIsActive = c.isActive === true || c.isActive === 1 || String(c.isActive).toLowerCase() === "true" || status === "active" || status === "" || c.isActive === undefined;
+      const activeFlag = c.isActive ?? c.IsActive;
+      const rawIsActive = activeFlag === true || activeFlag === 1 || String(activeFlag).toLowerCase() === "true" || status === "active";
 
       const isActive = rawIsActive && !isExpired && !isNotStarted && !isLimitReached;
 
       return {
-        id: c.id || c.couponId || code,
+        id: c.id || c.Id || c.couponId || c.offerId || c.OfferId || code,
         couponCode: code,
         title,
         value: val,
@@ -543,109 +538,26 @@ export default function FlightPassengerDetailsPage() {
 
     async function loadPromoData() {
       try {
-        let backendPromos = [];
-        let adminCoupons = [];
-
-        // 1. Fetch from public promotions (backend)
-        try {
-          const promos = await getFlightPromotions();
-          backendPromos = (Array.isArray(promos) ? promos : []).map(normalizeCoupon);
-        } catch (err) {
-          console.error("Failed to load flight promotions from backend", err);
-        }
-
-        // 2. Fetch dynamic flight coupons (admin / backend)
-        try {
-          const coupons = await listFlightCoupons();
-          adminCoupons = (Array.isArray(coupons) ? coupons : []).map(normalizeCoupon);
-        } catch (err) {
-          console.error("Failed to load flight coupons from admin", err);
-        }
-
-        // 3. Fetch from local storage fallbacks
-        let localCoupons = [];
-        try {
-          const rawCoupons = localStorage.getItem("admin_portal:flight-coupons");
-          if (rawCoupons) {
-            const parsed = JSON.parse(rawCoupons);
-            if (Array.isArray(parsed)) {
-              localCoupons = parsed.map(c => normalizeCoupon({
-                ...c,
-                title: c.remark || c.couponCode,
-                couponType: c.cpnType || c.couponType || "Fixed",
-                status: c.status || "active"
-              }));
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to load local coupons", e);
-        }
-
-        let localDiscounts = [];
-        try {
-          const rawDiscounts = localStorage.getItem("admin_b2c_flight_discounts");
-          if (rawDiscounts) {
-            const parsed = JSON.parse(rawDiscounts);
-            if (Array.isArray(parsed)) {
-              localDiscounts = parsed.map(d => normalizeCoupon({
-                ...d,
-                couponCode: d.id,
-                title: d.remark || d.id,
-                couponType: d.type || "Fixed",
-                status: d.status || "active"
-              }));
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to load local discounts", e);
-        }
-
-        // Merge dynamic admin coupons/discounts
-        const mergedMap = new Map();
-
-        // 1. Admin coupons take priority for exact codes
-        adminCoupons.forEach(c => {
-          if (c.couponCode) {
-            mergedMap.set(c.couponCode, c);
-          }
-        });
-
-        backendPromos.forEach(c => {
-          if (c.couponCode && !mergedMap.has(c.couponCode)) {
-            mergedMap.set(c.couponCode, c);
-          }
-        });
-
-        localCoupons.forEach(c => {
-          if (c.couponCode && !mergedMap.has(c.couponCode)) {
-            mergedMap.set(c.couponCode, c);
-          }
-        });
-
-        localDiscounts.forEach(c => {
-          if (c.couponCode && !mergedMap.has(c.couponCode)) {
-            mergedMap.set(c.couponCode, c);
-          }
-        });
-
-        const mergedCoupons = Array.from(mergedMap.values()).filter(c => c.isActive);
-        console.log("Final merged dynamic coupons list:", mergedCoupons);
+        const records = await getPublicPromotions("Flight");
+        const flightRecords = (Array.isArray(records) ? records : []).filter(
+          (record) => String(record?.bookingType || record?.BookingType || "").toLowerCase() === "flight",
+        );
+        const mergedCoupons = flightRecords
+          .map(normalizeCoupon)
+          .filter((coupon) => coupon.couponCode && coupon.isActive);
         setAvailableCoupons(mergedCoupons);
 
-        try {
-          const response = await fetch(toApiUrl("/api/FeaturedOffers"), {
-            headers: {
-              Accept: "application/json",
-              "ngrok-skip-browser-warning": "true"
-            }
-          });
-          const offersData = await response.json();
-          if (offersData && Array.isArray(offersData.offers)) {
-            setFeaturedOffers(offersData.offers.filter(o => o.bookingType === "Flight" && o.isActive));
-          }
-        } catch (err) {
-          console.error("Failed to load featured offers", err);
-        }
+        setFeaturedOffers(
+          flightRecords
+            .filter((offer) => offer?.isActive ?? offer?.IsActive ?? false)
+            .map((offer) => ({
+              ...offer,
+              id: offer.id ?? offer.Id ?? offer.offerId ?? offer.OfferId,
+              title: offer.title ?? offer.Title ?? offer.couponCode ?? offer.CouponCode ?? "",
+              subtitle: offer.subtitle ?? offer.Subtitle ?? offer.description ?? offer.Description ?? "",
+            }))
+            .filter((offer) => offer.id && (offer.title || offer.couponCode || offer.CouponCode)),
+        );
       } catch (err) {
         console.error("Failed to load flight coupons and offers", err);
       }
@@ -665,39 +577,27 @@ export default function FlightPassengerDetailsPage() {
         flightId: flight.id,
         flight: flight,
         traceId: searchContext?.traceId || flight.traceId || flight.TraceId,
-        resultIndex: flight.resultIndex || flight.ResultIndex || flight.id,
-        travelClass: flight.className || searchContext?.cabinClass || "Economy",
+        resultIndex: flight.resultIndex || flight.ResultIndex,
+        travelClass: flight.className || searchContext?.cabinClass || "",
         passengers,
         contact,
         gstInfo,
-        fareSummary: finalFareSummary,
-        couponCode: appliedCoupon || null,
-        couponDiscount: couponDiscountAmount,
+        couponCode: code || null,
         selectedFeaturedOfferId: offerId || null
       };
 
-      let pricing;
-      try {
-        pricing = await getFlightPricingPreview(payload);
-      } catch (err) {
-        console.warn("Pricing preview endpoint failed/not found, using local fare summary fallback:", err);
-        pricing = {
-          baseFare: baseFare,
-          tax: tax,
-          convenienceFee: convenienceFee,
-          markup: markup,
-          totalFare: preservedTotal,
-          couponDiscount: 0,
-          promotionDiscount: 0
-        };
-      }
+      const pricing = await getFlightPricingPreview({ ...payload, couponCode: code || null,
+        journeyType: flowState.isMultiCity ? 3 : flowState.isTwoWay ? 2 : 1,
+        adults: travellers.adults, children: travellers.children, infants: travellers.infants });
+      setFareQuoteData(pricing);
+      writeFlightBookingFlowState({ fareQuote: pricing });
 
       if (code) {
         const uppercaseCode = code.trim().toUpperCase();
 
         if (pricing && pricing.success !== false) {
           const discount = pricing.pickNBookDiscount || pricing.PickNBookDiscount || 0;
-          const b2cFinalFare = pricing.fare?.B2CFinalFare || pricing.fare?.b2cFinalFare || (pricing.baseFare + pricing.tax + pricing.convenienceFee - discount);
+          const b2cFinalFare = pricing.totalFare;
 
           if (discount > 0) {
             const localPricing = {
@@ -753,6 +653,7 @@ export default function FlightPassengerDetailsPage() {
     setCouponError("");
     setPricingBreakdown(null);
     setFormError("");
+    loadPricing("", null);
   };
 
   const handleSelectOffer = (offerId) => {
@@ -787,13 +688,7 @@ export default function FlightPassengerDetailsPage() {
   };
 
   const preservedFareSummary = flowState.fareSummary || {};
-  let fqObj = fareQuoteData;
-  if (!fqObj && typeof window !== "undefined") {
-    try {
-      const rawFq = window.sessionStorage.getItem("last_fare_quote") || window.sessionStorage.getItem("FareQuote");
-      if (rawFq) fqObj = JSON.parse(rawFq);
-    } catch (e) { }
-  }
+  const fqObj = fareQuoteData;
   const fqResults = fqObj?.results || fqObj?.Results || fqObj?.rawResponse?.Results || fqObj?.rawResponse?.Response?.Results || {};
   const fqFare = fqResults?.Fare || fqObj?.fare || {};
 
@@ -835,8 +730,8 @@ export default function FlightPassengerDetailsPage() {
     ? Number(pricingBreakdown.promotionDiscount || 0) +
     Number(pricingBreakdown.couponDiscount || 0)
     : Number(preservedFareSummary.discount || flowState.couponDiscount || 0);
-  const tripSecureFee = tripSecureAdded ? 249 * passengers.length : 0;
-  const finalPayable = Math.max(0, preservedTotal - totalDiscount) + tripSecureFee;
+  const tripSecureFee = 0;
+  const finalPayable = fareQuoteData?.totalFare ?? 0;
 
 
   const validateForm = () => {
@@ -859,7 +754,7 @@ export default function FlightPassengerDetailsPage() {
       }
 
       // DOB is only required for international flights or specific LCCs, but format is strict
-      if (isInternational || (p.dob && p.dob.trim())) {
+      if (isInternational || p.passengerType !== "Adult" || (p.dob && p.dob.trim())) {
         if (!p.dob || !p.dob.trim()) {
           newErrors[`passenger_${idx}_dob`] = "Required";
         } else {
@@ -967,6 +862,7 @@ export default function FlightPassengerDetailsPage() {
       fareSummary: finalFareSummary,
       tripSecureAdded,
       tripSecureFee,
+      fareQuote: fareQuoteData,
     };
 
     // Save in-progress state FIRST
@@ -993,7 +889,7 @@ export default function FlightPassengerDetailsPage() {
     handleSelectAssured(false);
   };
 
-  const assuredFeePerTraveller = Number(flight?.assuredFeePerTraveller || flight?.cancellationProtectionFee) || 1649;
+  const assuredFeePerTraveller = 0;
 
   const handleSelectAssured = async (secured) => {
 
@@ -1034,51 +930,16 @@ export default function FlightPassengerDetailsPage() {
     setFormError("");
 
     try {
-      const bookingPayload = {
-        isValidation: true,
-        passengerName: passengers[0]?.firstName ? `${passengers[0].title || "Mr"} ${passengers[0].firstName} ${passengers[0].lastName || ""}`.trim() : "Passenger",
-        passengerPhone: String(contact?.mobile || "").trim(),
-        passengerEmail: "", // Prevent backend from sending email notifications during the pre-validation step before payment is completed
-        travelClass: resolveCleanTravelClass(flight?.selectedTravelClass || flight?.className || searchContext?.cabinClass || "Economy"),
-        passengers: passengers.map((p, idx) => ({
-          title: p.title || "Mr",
-          firstName: `${p.firstName || ""}`.trim() || `Passenger`,
-          lastName: `${p.lastName || ""}`.trim() || `${idx + 1}`,
-          fullName: `${p.title || ""} ${p.firstName || ""} ${p.lastName || ""}`.replace(/\s+/g, " ").trim() || `Passenger ${idx + 1}`,
-          passengerType: p.passengerType || "Adult",
-          gender: p.gender || (p.title === "Mrs" || p.title === "Ms" ? "Female" : "Male"),
-          nationality: p.nationality || "Indian",
-          email: p.email || contact?.email || "",
-          passengerEmail: p.email || contact?.email || "",
-          passportNo: p.passportNo || "",
-          passportExpiry: p.passportExpiry || "",
-          passportExpiryDate: p.passportExpiry || "",
-          passportIssueCountryCode: p.passportIssueCountryCode || "IN",
-          passportIssueDate: p.passportIssueDate || "2023-01-01",
-          ...(p.dob ? { dob: ddMmYyyyToYyyyMmDd(p.dob) } : {}),
-        })),
-        couponCode: couponCode.trim().toUpperCase() || null,
-        selectedFeaturedOfferId: selectedFeaturedOfferId || null,
-        selectedPromotionId: selectedFeaturedOfferId || null,
-        adults: passengers.filter(p => p.passengerType === "Adult").length || 1,
-        children: passengers.filter(p => p.passengerType === "Child").length || 0,
-        infants: passengers.filter(p => p.passengerType === "Infant").length || 0,
-      };
-
-      // FareQuote validation — non-blocking: if it fails we still allow proceeding.
-      // A fresh FareQuote will be fetched at the payment step automatically.
-      if (flight?.id) {
-        try {
-          await bookFlight({
-            flightId: flight.id,
-            payload: bookingPayload,
-          });
-        } catch (validationErr) {
-          console.warn("FareQuote pre-validation warning (non-blocking):", validationErr.message);
-          // Do NOT block the user — continue to seats page regardless
-        }
-      }
-
+      if (!fareQuoteData?.success) throw new Error(fareQuoteError || "Wait for a valid fare quote before continuing.");
+      const currentQuote = await getFareQuote({ flight,
+        ...fareQuoteData.identity, couponCode: couponCode.trim().toUpperCase() || null,
+        journeyType: flowState.isMultiCity ? 3 : flowState.isTwoWay ? 2 : 1,
+        adults: travellers.adults, children: travellers.children, infants: travellers.infants });
+      payload.fareQuote = currentQuote;
+      payload.payableAmount = currentQuote.totalFare;
+      payload.fareSummary = { ...payload.fareSummary, baseFare: currentQuote.baseFare,
+        tax: currentQuote.tax, totalFare: currentQuote.totalFare, markup: 0, convenienceFee: 0,
+        discount: currentQuote.pickNBookDiscount };
       try {
         sessionStorage.setItem("Passengers", JSON.stringify(passengers));
       } catch (e) { }
@@ -1087,13 +948,7 @@ export default function FlightPassengerDetailsPage() {
       navigate("/flight/seats", { state: payload });
     } catch (error) {
       console.error("Booking flow error:", error);
-      // Even on unexpected error, allow navigation to seats to avoid hard blocking
-      try {
-        writeFlightBookingFlowState(payload);
-        navigate("/flight/seats", { state: payload });
-      } catch (navErr) {
-        setFormError(error.message || "Failed to proceed. Please try again.");
-      }
+      setFormError(error.message || "Failed to proceed. Please try again.");
     } finally {
       setIsApplying(false);
     }
@@ -1843,106 +1698,6 @@ export default function FlightPassengerDetailsPage() {
           )}
 
 
-          {/* Trip Secure Benefits */}
-          <div className="trip-secure-card">
-            <h2 className="flight-main-card-title">
-              <Shield size={20} className="header-icon" style={{ color: "var(--secondary-color)" }} />
-              Trip Secure Benefits
-            </h2>
-            <p className="trip-secure-tagline">
-              Secure your journey with comprehensive travel protection services for just ₹249 per traveller
-            </p>
-
-            <div className="trip-secure-benefits-grid">
-              <div className="trip-secure-benefit-item">
-                <span className="trip-secure-benefit-icon">
-                  <Shield size={16} strokeWidth={2.5} />
-                </span>
-                <div className="trip-secure-benefit-text-wrap">
-                  <span className="trip-secure-benefit-title">Delayed/Lost Baggage Assistance</span>
-                  <span className="trip-secure-benefit-desc">Get instant baggage tracking assistance and compensation support.</span>
-                </div>
-              </div>
-
-              <div className="trip-secure-benefit-item">
-                <span className="trip-secure-benefit-icon">
-                  <Shield size={16} strokeWidth={2.5} />
-                </span>
-                <div className="trip-secure-benefit-text-wrap">
-                  <span className="trip-secure-benefit-title">Personal Accident Coverage</span>
-                  <span className="trip-secure-benefit-desc">Accident insurance coverage up to ₹5,00,000 for emergency medical expenses.</span>
-                </div>
-              </div>
-
-              <div className="trip-secure-benefit-item">
-                <span className="trip-secure-benefit-icon">
-                  <Shield size={16} strokeWidth={2.5} />
-                </span>
-                <div className="trip-secure-benefit-text-wrap">
-                  <span className="trip-secure-benefit-title">Loss of Checked-In Baggage</span>
-                  <span className="trip-secure-benefit-desc">Reimbursement for total loss of checked-in baggage up to ₹20,000.</span>
-                </div>
-              </div>
-
-              <div className="trip-secure-benefit-item">
-                <span className="trip-secure-benefit-icon">
-                  <Shield size={16} strokeWidth={2.5} />
-                </span>
-                <div className="trip-secure-benefit-text-wrap">
-                  <span className="trip-secure-benefit-title">Delay of Checked-In Baggage</span>
-                  <span className="trip-secure-benefit-desc">Compensation up to ₹10,000 for checked baggage delay beyond 6 hours.</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="trip-secure-options">
-              <div
-                className={`trip-secure-option ${tripSecureAdded ? "selected recommended" : ""}`}
-                onClick={() => setTripSecureAdded(true)}
-              >
-                <div className="trip-secure-option-input-wrap">
-                  <div className="trip-secure-radio-circle">
-                    <div className="trip-secure-radio-inner"></div>
-                  </div>
-                </div>
-                <div className="trip-secure-option-content">
-                  <span className="trip-secure-option-title">
-                    Yes, secure my trip with Trip Secure Benefits
-                    <span className="trip-secure-badge-rec">Recommended</span>
-                  </span>
-                  <span className="trip-secure-option-subtitle">
-                    I want travel protection covering lost/delayed baggage and personal accidents.
-                  </span>
-                </div>
-                <div className="trip-secure-option-price">
-                  ₹ {(249 * passengers.length).toLocaleString("en-IN")}
-                </div>
-              </div>
-
-              <div
-                className={`trip-secure-option ${!tripSecureAdded ? "selected" : ""}`}
-                onClick={() => setTripSecureAdded(false)}
-              >
-                <div className="trip-secure-option-input-wrap">
-                  <div className="trip-secure-radio-circle">
-                    <div className="trip-secure-radio-inner"></div>
-                  </div>
-                </div>
-                <div className="trip-secure-option-content">
-                  <span className="trip-secure-option-title">
-                    No, I will travel without protection
-                  </span>
-                  <span className="trip-secure-option-subtitle">
-                    I understand the risks and agree to pay for baggage delays, loss, and accident expenses myself.
-                  </span>
-                </div>
-                <div className="trip-secure-option-price">
-                  ₹ 0
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Important Information */}
           <div className="flight-main-card important-info-card">
             <h2 className="flight-main-card-title">
@@ -1963,8 +1718,7 @@ export default function FlightPassengerDetailsPage() {
                 <div className="info-section">
                   <h4 className="info-section-title">Baggage Rules</h4>
                   <ul className="info-list">
-                    <li><strong>Cabin Baggage:</strong> Standard allowance is 1 cabin bag of up to 7 kg per passenger.</li>
-                    <li><strong>Check-in Baggage:</strong> Generally 15 kg per passenger is allowed for domestic flights. Limits may vary by airline and fare class.</li>
+                    <li><strong>Cabin and check-in baggage:</strong> Allowances are supplied by the selected TicketLCC fare and shown with the live fare details.</li>
                     <li>Prohibited items (like power banks, batteries, liquids above 100ml) must not be carried in check-in baggage.</li>
                   </ul>
                 </div>

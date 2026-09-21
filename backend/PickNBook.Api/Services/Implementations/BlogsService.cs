@@ -29,7 +29,7 @@ public class BlogsService : IBlogsService
         ".ico", ".avif"
     };
 
-    public BlogsService(AppDbContext context, IFileStorageService fileStorageService, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
+    public BlogsService(AppDbContext context, IFileStorageService fileStorageService, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null)
     {
         _context = context;
         _fileStorageService = fileStorageService;

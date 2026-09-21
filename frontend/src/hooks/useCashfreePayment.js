@@ -24,7 +24,7 @@ export function useCashfreePayment() {
    */
   const initializePaymentSession = async ({
     orderAmount, customerId, customerName, customerEmail,
-    customerPhone, bookingType, bookingPayloadJson, couponCode = null, promotionId = null
+    customerPhone, bookingType, bookingPayloadJson, couponCode = null, promotionId = null, useWallet = false
   }) => {
     if (isSubmitting || cfStatus === "creating") return null;
 
@@ -35,7 +35,7 @@ export function useCashfreePayment() {
     try {
       const orderData = await createCashfreeOrder({
         orderAmount, customerId, customerName, customerEmail,
-        customerPhone, bookingType, bookingPayloadJson, couponCode, promotionId,
+        customerPhone, bookingType, bookingPayloadJson, couponCode, promotionId, useWallet,
       });
 
       try {
@@ -51,6 +51,10 @@ export function useCashfreePayment() {
         );
       } catch {}
 
+      if (orderData.isWalletFullyPaid) {
+        setCfStatus("ready"); setIsSubmitting(false);
+        return { isWalletFullyPaid: true, orderId: orderData.order_id };
+      }
       const cashfree = await load({ mode: "production" });
       cfInstanceRef.current = cashfree;
       

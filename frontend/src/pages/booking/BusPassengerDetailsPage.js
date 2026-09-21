@@ -8,6 +8,8 @@ import BookingConfirmationModal from "../../components/booking/BookingConfirmati
 import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
+  saveBlockKey,
+  isBlockStillActive,
 } from "./busBookingFlowStore";
 
 import { isTokenExpired } from "../../services/authSession";
@@ -21,7 +23,7 @@ import {
   calculateBusPayableAmount,
   getBusPromotionDiscountAmount,
   blockBusProxy,
-  bookBusProxy,
+  bookBus,
   isBusCategoryOfferOrCoupon,
 } from "../../services/busBookingService";
 import { usePromo } from "../../contexts/PromoContext";
@@ -236,7 +238,7 @@ function formatCouponErrorMessage(rawMessage) {
   if (
     msg.includes("System.Exception:") ||
     msg.includes("Exception:") ||
-    msg.includes("at PickNBook") ||
+    msg.includes("at Pick&Book") ||
     msg.includes("Stack trace") ||
     msg.includes("PromotionEngine")
   ) {
@@ -1757,8 +1759,9 @@ export default function BusPassengerDetailsPage() {
       })
     };
 
-    let blockKey = flowState.blockKey || null;
-    
+    // Reuse an existing, still-active block if present (covers the browser-back scenario).
+    let blockKey = isBlockStillActive(flowState) ? (flowState.blockKey || null) : null;
+
     if (!blockKey) {
       try {
         setIsCalculatingPrice(true);
@@ -1769,22 +1772,39 @@ export default function BusPassengerDetailsPage() {
         const srdvErrorMsg = blockResponse?.Error?.ErrorMessage || blockResponse?.error?.errorMessage || "";
 
         if (srdvErrorCode === 7023) {
+          // 7023 = these seats are already on hold.
+          // If we still have a valid blockKey in session state for this bus, reuse it silently.
+          const cachedKey = flowState.blockKey || null;
+          if (cachedKey) {
+            // Hold is still active from a previous attempt — proceed with cached key.
+            blockKey = cachedKey;
+            saveBlockKey(blockKey); // refresh the expiry stamp
+          } else {
+            // No cached key — seats are held by a prior session that we can't recover.
+            setIsCalculatingPrice(false);
+            setFormError(
+              "These seats are temporarily on hold. Please go back and choose different seats, or try again in 10–15 minutes."
+            );
+            return;
+          }
+        } else if (srdvErrorCode === 7040 || srdvErrorMsg.toLowerCase().includes("passenger gender is not allowed") || srdvErrorMsg.toLowerCase().includes("ladies seat") || srdvErrorMsg.toLowerCase().includes("gender")) {
+          // 7040 = ladies-seat rule violation (or similar string matches)
           setIsCalculatingPrice(false);
           setFormError(
-            "This bus trip is already reserved from a previous attempt. Please go back and search again to get fresh availability."
+            "One or more selected seats are reserved for female passengers only, or vice versa. Please verify passenger genders match the seat restrictions."
           );
           return;
-        }
-
-        if (srdvErrorCode !== 0 && srdvErrorMsg) {
+        } else if (srdvErrorCode !== 0 && srdvErrorMsg) {
           setIsCalculatingPrice(false);
           setFormError("Unable to hold your seats: " + srdvErrorMsg);
           return;
-        }
-
-        blockKey = blockResponse?.BlockKey || blockResponse?.blockKey || null;
-        if (!blockKey) {
-          throw new Error("Seat hold failed. Provider did not return a confirmation key.");
+        } else {
+          blockKey = blockResponse?.BlockKey || blockResponse?.blockKey || null;
+          if (!blockKey) {
+            throw new Error("Seat hold failed. Provider did not return a confirmation key.");
+          }
+          // Persist key + 10-min expiry atomically
+          saveBlockKey(blockKey);
         }
       } catch (err) {
         setIsCalculatingPrice(false);
@@ -1793,6 +1813,33 @@ export default function BusPassengerDetailsPage() {
       }
     }
 
+
+    const parseBoardingTime = (timeStr, baseDateStr) => {
+      if (!timeStr) return null;
+      try {
+        const baseDate = new Date(baseDateStr || Date.now());
+        if (isNaN(baseDate.getTime())) return null;
+
+        const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?/);
+        if (!match) return null;
+
+        let hours = parseInt(match[1], 10);
+        const mins = parseInt(match[2], 10);
+        const modifier = match[3];
+
+        if (modifier) {
+          if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        }
+
+        const newDate = new Date(baseDate);
+        newDate.setHours(hours, mins, 0, 0);
+
+        return newDate.toISOString();
+      } catch (e) {
+        return null;
+      }
+    };
 
     const payload = {
       ...flowState,
@@ -1813,9 +1860,9 @@ export default function BusPassengerDetailsPage() {
       fareSummary,
       blockKey,
       boardingPointName: String(flowState.boardingPoint?.name || ""),
-      boardingPointTime: String(flowState.boardingPoint?.time || ""),
+      boardingPointTime: parseBoardingTime(flowState.boardingPoint?.time, bus?.departureTimeUtc || bus?.departureTime),
       droppingPointName: String(flowState.droppingPoint?.name || ""),
-      droppingPointTime: String(flowState.droppingPoint?.time || ""),
+      droppingPointTime: parseBoardingTime(flowState.droppingPoint?.time, bus?.departureTimeUtc || bus?.departureTime),
       passengerName: String(bookingContact.fullName || ""),
       passengerPhone: String(bookingContact.mobile || bookingContact.phone || ""),
       passengerEmail: String(bookingContact.email || ""),
@@ -2330,7 +2377,7 @@ export default function BusPassengerDetailsPage() {
                         style={{ width: "18px", height: "18px", accentColor: "var(--flow-primary, #ff0000)" }}
                       />
                       <span>
-                        Use PickNBook Wallet
+                        Use Pick&Book Wallet
                         <small style={{ display: "block", color: "#66757b", marginTop: "3px" }}>
                           Available: {formatCurrency(walletBalance)}
                           {walletStatus !== "Active" ? ` (${walletStatus})` : ""}
@@ -2571,7 +2618,7 @@ export default function BusPassengerDetailsPage() {
                   walletAppliedAmount: Number(res.walletAppliedAmount || 0),
                   gatewayPayableAmount: Number(res.gatewayPayableAmount || 0),
                 };
-                const bookRes = await bookBusProxy(bookPayload);
+                const bookRes = await bookBus({ payload: bookPayload });
 
                 // On success, bookRes should have { Reservation, Bus, Passengers, Response (ticket) }
                 navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });

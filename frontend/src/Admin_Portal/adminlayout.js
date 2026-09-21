@@ -54,7 +54,7 @@ function AdminLayout() {
         </svg>
       </div>
 
-      {/* Topbar — full width, PickNBook toggles sidebar */}
+      {/* Topbar — full width, Pick&Book toggles sidebar */}
       <AdminTopbar
         onToggleSidebar={() => setSidebarOpen(prev => !prev)}
         searchQuery={searchQuery}

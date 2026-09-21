@@ -7453,8 +7453,7 @@ select.field-control option {
   box-shadow: 0 10px 26px rgba(12, 46, 51, 0.18) !important;
 }
 
-.homepage-flights .hero-title-left,
-.homepage-buses .hero-title-left {
+.homepage-flights .hero-title-left {
   color: #17242d !important;
   text-shadow: 0 2px 4px rgba(255, 255, 255, 0.6) !important;
 }
@@ -9014,7 +9013,9 @@ button:focus-visible {
 }
 
 /* Ensure Hero Content spacing */
-.homepage-flights .hero-content {
+.homepage-flights .hero-content,
+.homepage-buses .hero-content,
+.homepage-hotels .hero-content {
   width: 100% !important;
   max-width: 1200px !important;
   margin: 0 auto !important;
@@ -9027,7 +9028,9 @@ button:focus-visible {
   box-sizing: border-box !important;
 }
 
-.homepage-flights .hero-header-left {
+.homepage-flights .hero-header-left,
+.homepage-buses .hero-header-left,
+.homepage-hotels .hero-header-left {
   margin-bottom: 0 !important;
   text-align: left !important;
 }
@@ -9062,7 +9065,9 @@ button:focus-visible {
 }
 
 /* 4. Sleek Card Container (Full 1220px / 1240px Width) */
-.homepage-flights .hero-grid {
+.homepage-flights .hero-grid,
+.homepage-buses .hero-grid,
+.homepage-hotels .hero-grid {
   width: 100% !important;
   max-width: 1220px !important;
   margin-top: 36px !important;
@@ -9072,11 +9077,15 @@ button:focus-visible {
   display: block !important;
 }
 
-.homepage-flights .hero-grid.multicity-active {
+.homepage-flights .hero-grid.multicity-active,
+.homepage-buses .hero-grid.multicity-active,
+.homepage-hotels .hero-grid.multicity-active {
   max-width: 1220px !important;
 }
 
-.homepage-flights .search-panel {
+.homepage-flights .search-panel,
+.homepage-buses .search-panel,
+.homepage-hotels .search-panel {
   width: 100% !important;
   max-width: 1240px !important;
   margin: 0 auto !important;
@@ -9090,12 +9099,16 @@ button:focus-visible {
   box-sizing: border-box !important;
 }
 
-.homepage-flights .search-panel.is-multicity {
+.homepage-flights .search-panel.is-multicity,
+.homepage-buses .search-panel.is-multicity,
+.homepage-hotels .search-panel.is-multicity {
   max-width: 1240px !important;
   padding: 6px 14px 10px 14px !important;
 }
 
-.homepage-flights .search-panel .multi-city-row {
+.homepage-flights .search-panel .multi-city-row,
+.homepage-buses .search-panel .multi-city-row,
+.homepage-hotels .search-panel .multi-city-row {
   width: 100% !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1.2fr) 36px minmax(0, 1.2fr) minmax(140px, 1fr) 64px !important;
@@ -12287,7 +12300,6 @@ button:focus-visible {
 }
 
 
-/* Universal uniform input field styling for production look */
 .homepage .search-panel input,
 .homepage .search-panel .field-control,
 .homepage .search-panel .place-input,
@@ -12300,11 +12312,16 @@ button:focus-visible {
 .homepage .search-panel .bus-standard-grid .place-input,
 .homepage .search-panel .hotel-standard-grid input,
 .homepage .search-panel .hotel-standard-grid .field-control,
-.homepage .search-panel .hotel-standard-grid .place-input {
+.homepage .search-panel .hotel-standard-grid .place-input,
+.homepage .search-panel .hotel-capsule-val,
+.homepage .search-panel .hotel-capsule-autocomplete input,
+.homepage .search-panel .hotel-capsule-autocomplete .place-input {
   font-family: var(--app-font-family, inherit) !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
   color: #0f172a !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
 }
 
 .homepage .search-panel .date-main-bold {
@@ -12319,12 +12336,34 @@ button:focus-visible {
 .homepage .search-panel .bus-standard-grid input::placeholder,
 .homepage .search-panel .bus-standard-grid .field-control::placeholder,
 .homepage .search-panel .hotel-standard-grid input::placeholder,
-.homepage .search-panel .hotel-standard-grid .field-control::placeholder {
+.homepage .search-panel .hotel-standard-grid .field-control::placeholder,
+.homepage .search-panel .date-placeholder {
+  font-family: var(--app-font-family, inherit) !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  color: #64748b !important;
+  text-transform: none !important;
+}
+
+/* Force all labels to match the input size and font exactly (high specificity) */
+.homepage .search-panel label,
+.homepage .search-panel .flight-search-bar-row label,
+.homepage .search-panel .flight-search-bar-row .field label,
+.homepage .search-panel .flight-search-bar-row .place-autocomplete label,
+.homepage .search-panel .flight-search-bar-row .departure-field label,
+.homepage .search-panel .flight-search-bar-row .return-field label,
+.homepage .search-panel .flight-search-bar-row .traveller-field label,
+.homepage .search-panel .flight-search-bar-row .class-field label,
+.homepage .search-panel .bus-search-label,
+.homepage .search-panel .attr-label {
   font-family: var(--app-font-family, inherit) !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
-  color: #0f172a !important;
+  font-size: 13.5px !important;
+  color: #64748b !important;
   text-transform: none !important;
+  letter-spacing: normal !important;
+  margin-bottom: 4px !important;
+  line-height: normal !important;
 }
 
 /* ==========================================================================

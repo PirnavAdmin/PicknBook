@@ -6,11 +6,19 @@ import { getPublicPageBySlug } from "../../services/cmsPageService";
 import TravelLoadingScreen from "../../components/layout/TravelLoadingScreen";
 import "../../STYLES/LegalPage.css";
 
-function splitLegalContent(description) {
-  return String(description || "")
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean);
+function replaceBrandName(text) {
+  if (!text || typeof text !== "string") return text;
+  return text
+    .replace(/Pick\s*N\s*Book/gi, "Pick&book")
+    .replace(/Pick&Book/gi, "Pick&book");
+}
+
+function formatLegalContent(text) {
+  if (!text) return [];
+  return replaceBrandName(text)
+    .split("\n")
+    .map((p) => p.trim())
+    .filter((p) => p !== "");
 }
 
 export default function LegalPage() {
@@ -47,14 +55,14 @@ export default function LegalPage() {
   // Set document metadata dynamically
   useEffect(() => {
     if (page) {
-      document.title = page.metaTitle || page.title || "Pick N Book";
+      document.title = replaceBrandName(page.metaTitle || page.title || "Pick&book");
       const metaDescription = document.querySelector('meta[name="description"]');
       if (metaDescription) {
-        metaDescription.setAttribute("content", page.metaDescription || "");
+        metaDescription.setAttribute("content", replaceBrandName(page.metaDescription || ""));
       }
     }
     return () => {
-      document.title = "Pick N Book - Premium Travel Booking";
+      document.title = "Pick&book - Premium Travel Booking";
     };
   }, [page]);
 
@@ -73,10 +81,7 @@ export default function LegalPage() {
     return (
       <main className="legal-page">
         <section className="legal-shell legal-empty">
-          <Link className="legal-back-link" to="/">
-            <ArrowLeft size={18} />
-            Back to home
-          </Link>
+
           <h1>Page not available</h1>
           <p>{error || "The requested policy page is not configured yet."}</p>
         </section>
@@ -84,46 +89,39 @@ export default function LegalPage() {
     );
   }
 
-  const isHtml = /<[a-z][\s\S]*>/i.test(page.description || "");
-  const contentBlocks = isHtml ? [] : splitLegalContent(page.description);
+  const rawDescription = replaceBrandName(page.description || "");
+  const isHtml = /<[a-z][\s\S]*>/i.test(rawDescription);
+  const contentLines = isHtml ? [] : formatLegalContent(rawDescription);
 
   return (
     <main className="legal-page">
       <section className="legal-shell">
-        <Link className="legal-back-link" to="/">
-          <ArrowLeft size={18} />
-          Back to home
-        </Link>
+
 
         <header className="legal-hero">
-          <p>Pick N Book Policy</p>
-          <h1>{page.title}</h1>
-          {page.metaDescription ? <span>{page.metaDescription}</span> : null}
+          <p>Pick&book Policy</p>
+          <h1>{replaceBrandName(page.title)}</h1>
+          {page.metaDescription ? <span>{replaceBrandName(page.metaDescription)}</span> : null}
         </header>
 
         <article className="legal-content-card">
           {isHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: page.description }} />
-          ) : contentBlocks.length > 0 ? (
-            contentBlocks.map((block, index) => {
-              const headingMatch = block.match(/^(\d+\.\s+.+)$/m);
-              const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-              const isSection = headingMatch && lines[0] === headingMatch[1];
+            <div dangerouslySetInnerHTML={{ __html: rawDescription }} />
+          ) : contentLines.length > 0 ? (
+            contentLines.map((line, index) => {
+              const isHeading = /^\d+\.\s+[A-Za-z]/.test(line) || /^[a-z]\.\s+[A-Za-z]/.test(line);
 
-              if (isSection) {
+              if (isHeading) {
                 return (
-                  <section className="legal-section" key={`${lines[0]}-${index}`}>
-                    <h2>{lines[0]}</h2>
-                    {lines.slice(1).map((line) => (
-                      <p key={line}>{line}</p>
-                    ))}
-                  </section>
+                  <h3 className="policy-heading" key={index}>
+                    {line}
+                  </h3>
                 );
               }
 
               return (
-                <p className="legal-intro" key={`${block.slice(0, 24)}-${index}`}>
-                  {block}
+                <p className="policy-paragraph" key={index}>
+                  {line}
                 </p>
               );
             })

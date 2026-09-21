@@ -36,6 +36,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { searchBuses, getBoardingPointsProxy } from "../../services/busBookingService";
+import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import CustomDatePicker from "../../components/CustomDatePicker";
@@ -189,12 +190,12 @@ function readValue(params, state, key, aliases = []) {
   const keysToTry = [key, ...aliases];
   for (const k of keysToTry) {
     const queryValue = params.get(k);
-    if (typeof queryValue === "string" && queryValue.trim()) {
-      return queryValue.trim();
+    if (queryValue !== null && queryValue !== undefined && String(queryValue).trim()) {
+      return String(queryValue).trim();
     }
     const stateValue = state?.[k];
-    if (typeof stateValue === "string" && stateValue.trim()) {
-      return stateValue.trim();
+    if (stateValue !== null && stateValue !== undefined && String(stateValue).trim()) {
+      return String(stateValue).trim();
     }
   }
   return "";
@@ -608,19 +609,28 @@ export default function BusSearchResults() {
   const [activeDatePicker, setActiveDatePicker] = useState(null);
 
   const initialSourceName = readValue(params, state, "source", ["from", "fromCity", "sourceCity", "origin"]) || "";
+  const initialSourceId = readValue(params, state, "sourceId", ["fromCityCode", "sourceCityCode"]) || "";
   const initialDestinationName =
     readValue(params, state, "destination", ["to", "toCity", "destinationCity", "dest"]) || "";
+  const initialDestinationId = readValue(params, state, "destinationId", ["toCityCode", "destinationCityCode"]) || "";
+
+  console.log(`[DEBUG BusSearchResults] initialSourceId=${initialSourceId}, initialDestinationId=${initialDestinationId}`);
+
   const initialDepartureDateInput =
     readValue(params, state, "departureDate", ["date", "departDate", "journeyDate", "depart"]) ||
     new Date().toISOString().slice(0, 10);
   const initialTripType = readValue(params, state, "tripType", ["type"]) || "oneway";
 
   const [sourceName, setSourceName] = useState(initialSourceName);
+  const [sourceId, setSourceId] = useState(initialSourceId);
   const [destinationName, setDestinationName] = useState(initialDestinationName);
+  const [destinationId, setDestinationId] = useState(initialDestinationId);
   const [tripType, setTripType] = useState(initialTripType);
   const [modifyForm, setModifyForm] = useState({
     source: initialSourceName,
+    sourceId: initialSourceId,
     destination: initialDestinationName,
+    destinationId: initialDestinationId,
     departureDate: initialDepartureDateInput,
     tripType: initialTripType,
   });
@@ -703,7 +713,7 @@ export default function BusSearchResults() {
           .finally(() => setLoadingBoardingData(false));
 
         setLoadingOffersData(true);
-        getActiveOffers("Bus")
+        getPublicPromotions("Bus")
           .then((res) => {
             const list = Array.isArray(res) ? res : (res?.data || res?.offers || []);
             setDetailsOffersData(list);
@@ -782,15 +792,19 @@ export default function BusSearchResults() {
 
   useEffect(() => {
     if (initialSourceName && initialSourceName !== sourceName) setSourceName(initialSourceName);
+    if (initialSourceId && initialSourceId !== sourceId) setSourceId(initialSourceId);
     if (initialDestinationName && initialDestinationName !== destinationName) setDestinationName(initialDestinationName);
+    if (initialDestinationId && initialDestinationId !== destinationId) setDestinationId(initialDestinationId);
     if (initialTripType && initialTripType !== tripType) setTripType(initialTripType);
     const parsedDate = parseDateInput(initialDepartureDateInput);
-    if (parsedDate && formatDateInput(parsedDate) !== formatDateInput(selectedDate)) {
+    if (parsedDate && parsedDate.getTime() !== selectedDate.getTime()) {
       setSelectedDate(parsedDate);
     }
   }, [
     initialSourceName,
+    initialSourceId,
     initialDestinationName,
+    initialDestinationId,
     initialTripType,
     initialDepartureDateInput,
   ]);
@@ -850,18 +864,32 @@ export default function BusSearchResults() {
       if (!sourceName.trim() || !destinationName.trim()) {
         setApiBuses([]);
         setIsLoadingBuses(false);
+        setSearchError("Please select a valid source and destination.");
         return;
       }
 
-      const searchKey = `${sourceName.trim()}|${destinationName.trim()}|${formatDateInput(selectedDate)}|${searchVersion}`;
+      const searchKey = `${sourceName.trim()}|${sourceId.trim()}|${destinationName.trim()}|${destinationId.trim()}|${formatDateInput(selectedDate)}|${searchVersion}`;
+      const cacheKey = `bus_search_cache_${btoa(searchKey)}`;
+      console.log(`[DEBUG BusSearchResults] searchKey=${searchKey}, cacheKey=${cacheKey}`);
       if (lastSearchKeyRef.current === searchKey && apiBuses.length > 0) {
         return;
       }
 
       // Check session storage cache
-      const cacheKey = `bus_search_cache_${btoa(searchKey)}`;
+      
+      // If we came from a screen that explicitly requested a fresh search (like abandoning a blocked seat),
+      // we must bypass the cache and remove the existing cache key to force a new TraceId generation.
+      const shouldForceRefresh = location.state?.forceRefresh === true;
+      if (shouldForceRefresh) {
+        try {
+          sessionStorage.removeItem(cacheKey);
+        } catch (e) {
+          // ignore
+        }
+      }
+
       try {
-        const cachedStr = sessionStorage.getItem(cacheKey);
+        const cachedStr = !shouldForceRefresh ? sessionStorage.getItem(cacheKey) : null;
         if (cachedStr) {
           const cachedData = JSON.parse(cachedStr);
           if (cachedData.timestamp && Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
@@ -884,6 +912,8 @@ export default function BusSearchResults() {
         const result = await searchBuses({
           from: normalizeCity(sourceName),
           to: normalizeCity(destinationName),
+          fromCityCode: sourceId,
+          toCityCode: destinationId,
           date: formatDateInput(selectedDate),
         });
 
@@ -916,7 +946,7 @@ export default function BusSearchResults() {
     return () => {
       isCurrent = false;
     };
-  }, [sourceName, destinationName, selectedDate, searchVersion]);
+  }, [sourceName, sourceId, destinationName, destinationId, selectedDate, searchVersion]);
 
   const buses = useMemo(
     () =>
@@ -998,7 +1028,7 @@ export default function BusSearchResults() {
           tags: getBusTags(bus.busType),
         };
       }),
-    [apiBuses, sourceName, destinationName, selectedDate]
+    [apiBuses, sourceName, sourceId, destinationName, destinationId, selectedDate]
   );
 
   const priceFloor = 0;
@@ -1294,13 +1324,17 @@ export default function BusSearchResults() {
     setModifyForm((previous) => ({
       ...previous,
       source: previous.destination,
+      sourceId: previous.destinationId,
       destination: previous.source,
+      destinationId: previous.sourceId,
     }));
   };
 
   const handleApplyModifySearch = () => {
     const nextSource = modifyForm.source.trim();
+    const nextSourceId = modifyForm.sourceId.trim();
     const nextDestination = modifyForm.destination.trim();
+    const nextDestinationId = modifyForm.destinationId.trim();
     const nextDateInput = modifyForm.departureDate || formatDateInput(selectedDate);
     const nextTripType = modifyForm.tripType || "oneway";
 
@@ -1312,14 +1346,18 @@ export default function BusSearchResults() {
     setSearchError("");
     setActionMessage("");
     setSourceName(nextSource);
+    setSourceId(nextSourceId);
     setDestinationName(nextDestination);
+    setDestinationId(nextDestinationId);
     setTripType(nextTripType);
     setSelectedDate(parseDateInput(nextDateInput));
     setSearchVersion((previous) => previous + 1);
 
     const nextParams = new URLSearchParams(location.search);
     nextParams.set("source", nextSource);
+    nextParams.set("sourceId", nextSourceId);
     nextParams.set("destination", nextDestination);
+    nextParams.set("destinationId", nextDestinationId);
     nextParams.set("departureDate", nextDateInput);
     nextParams.set("tripType", nextTripType);
 
@@ -1330,7 +1368,9 @@ export default function BusSearchResults() {
         state: {
           ...state,
           source: nextSource,
+          sourceId: nextSourceId,
           destination: nextDestination,
+          destinationId: nextDestinationId,
           departureDate: nextDateInput,
           tripType: nextTripType,
         },
@@ -1462,7 +1502,7 @@ export default function BusSearchResults() {
     } else if (name.includes("metro")) {
       bgColor = "#faf5ff"; // purple
       textColor = "#9333ea";
-    } else if (name.includes("picknbook")) {
+    } else if (name.includes("pick&book")) {
       bgColor = "#fef2f2"; // red
       textColor = "#ff0000";
     }
@@ -2205,10 +2245,11 @@ export default function BusSearchResults() {
                     label="FROM"
                     sublabel={false}
                     value={modifyForm.source}
-                    onChange={(nextValue) =>
+                    onChange={(nextValue, nextId = "") =>
                       setModifyForm((previous) => ({
                         ...previous,
                         source: nextValue,
+                        sourceId: nextId,
                       }))
                     }
                     tripType="bus"
@@ -2236,10 +2277,11 @@ export default function BusSearchResults() {
                     label="TO"
                     sublabel={false}
                     value={modifyForm.destination}
-                    onChange={(nextValue) =>
+                    onChange={(nextValue, nextId = "") =>
                       setModifyForm((previous) => ({
                         ...previous,
                         destination: nextValue,
+                        destinationId: nextId,
                       }))
                     }
                     tripType="bus"

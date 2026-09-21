@@ -53,7 +53,7 @@ function HotelDetailsPremiumLoader() {
   const statuses = [
     "Contacting properties for real-time rates...",
     "Verifying room availability...",
-    "Securing exclusive PickNBook discounts...",
+    "Securing exclusive Pick&Book discounts...",
     "Initializing checkout workflow...",
     "Polishing layout templates..."
   ];
@@ -1698,7 +1698,7 @@ export default function HotelPassengerDetailsPage() {
                     <span>📱</span> <strong>+91 98765 43210</strong>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
-                    <span>✉️</span> <strong>support@picknbook.com</strong>
+                    <span>✉️</span> <strong>support@pick&book.com</strong>
                   </div>
                 </div>
                 <button 

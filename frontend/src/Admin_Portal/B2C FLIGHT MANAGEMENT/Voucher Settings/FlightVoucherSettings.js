@@ -4,8 +4,8 @@ import "./FlightVoucherSettings.css";
 
 export default function FlightVoucherSettings() {
   const [title, setTitle] = useState("B2C Flight E-Ticket Receipt");
-  const [logoUrl, setLogoUrl] = useState("PickNBook");
-  const [email, setEmail] = useState("flights@picknbook.com");
+  const [logoUrl, setLogoUrl] = useState("Pick&Book");
+  const [email, setEmail] = useState("flights@pick&book.com");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [address, setAddress] = useState("102, Prime Square, Hitech City, Hyderabad, India");
   const [terms, setTerms] = useState("1. Carriage is subject to airline terms & conditions.\n2. Please carry a valid Photo ID for airport entry.\n3. Check-in counters close 60 minutes prior to departure.");

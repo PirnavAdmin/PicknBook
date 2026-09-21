@@ -70,16 +70,17 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
   const seenMap = new Map();
 
   rawSeats.forEach((s, idx) => {
-    const rawCode = String(s.Code || s.SeatNo || s.SeatNumber || s.Number || "");
-    let cleanSeatNo = rawCode.split("SeKey")[0].split("_")[0].trim();
+    const rawCode = String(s.Code || "");
+    if (!rawCode) return;
+    let cleanSeatNo = String(s.SeatNumber || s.SeatNo || rawCode).split("SeKey")[0].split("_")[0].trim();
     
     // Extract standard seat format (e.g. 1A, 12C, 24F)
-    const match = rawCode.match(/^(\d{1,3}[A-Z])/i);
+    const match = cleanSeatNo.match(/^(\d{1,3}[A-Z])$/i);
     if (match) {
       cleanSeatNo = match[1].toUpperCase();
     }
     if (!cleanSeatNo || cleanSeatNo.length > 5) {
-      cleanSeatNo = `S${idx + 1}`;
+      return;
     }
 
     const seatNumber = cleanSeatNo;
@@ -93,8 +94,9 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
       seatLetter = seatLetter[0];
     }
 
-    const price = Number(s.Price || s.Amount || s.Fee || 0);
-    const isBooked = Boolean(s.AvailablityType === 0 || s.IsBooked || s.Status === "Booked" || s.Status === 0);
+    const price = Number(s.Price ?? s.Amount ?? s.Fee);
+    if (!Number.isFinite(price) || price < 0) return;
+    const isBooked = Boolean(s.AvailablityType === 0 || s.IsBooked === true || s.IsAvailable === false || s.Status === "Booked" || s.Status === 0);
     const isBlocked = Boolean(s.Status === "Blocked" || s.Status === 2);
 
     let status = SEAT_STATUS.AVAILABLE;
@@ -115,7 +117,7 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
       id: uniqueKey,
       seatNumber,
       label: seatNumber,
-      code: seatNumber,
+      code: rawCode,
       rawCode,
       rawSeat: s,
       row,

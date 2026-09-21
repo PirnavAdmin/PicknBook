@@ -1770,6 +1770,31 @@ namespace PickNBook.Api.Controllers
                         }
                     }
 
+                    // Additive In-App Notifications (Step 4: Hotel Cancellation)
+                    try
+                    {
+                        var inAppNotificationService = HttpContext.RequestServices.GetService<PickNBook.Api.Services.Interfaces.IInAppNotificationService>();
+                        if (inAppNotificationService != null)
+                        {
+                            await inAppNotificationService.CreateNotificationAsync(
+                                type: "Cancellation",
+                                category: "Customer",
+                                title: "Hotel Booking Cancelled",
+                                message: $"Your hotel booking ({booking.BookingReference}) at {booking.HotelName} has been cancelled.",
+                                severity: "Info",
+                                referenceType: "HotelReservation",
+                                referenceId: booking.BookingReference,
+                                actionUrl: $"/bookings/{booking.BookingReference}",
+                                idempotencyKey: $"CANCEL_HOTEL_{booking.BookingReference}_SUCCESS",
+                                targetUserId: booking.UserId
+                            );
+                        }
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for hotel cancellation {BookingReference}. Non-fatal.", booking.BookingReference);
+                    }
+
                     return Ok(new HotelCancellationDto
                     {
                         BookingId = "bk-" + booking.Id,

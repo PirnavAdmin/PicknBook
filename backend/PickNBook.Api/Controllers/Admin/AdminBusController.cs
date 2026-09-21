@@ -1644,8 +1644,8 @@ namespace PickNBook.Api.Controllers
                 x.UserId,
                 x.UserOrGuestId,
                 x.IsGuest,
-                x.FromCity,
-                x.ToCity,
+                FromCity = srdvBusService.MapCityCodeToName(x.FromCity),
+                ToCity = srdvBusService.MapCityCodeToName(x.ToCity),
                 x.JourneyDate,
                 SearchedAtUtc = ToIst(x.SearchedAtUtc)
             });

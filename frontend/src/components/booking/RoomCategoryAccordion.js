@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BedDouble, ChevronDown, Loader2 } from 'lucide-react';
+import { BedDouble, ChevronDown, Loader2, Info } from 'lucide-react';
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-IN', {
@@ -22,6 +22,7 @@ export default function RoomCategoryAccordion({
   const [mealPlanFilter, setMealPlanFilter] = useState("Any");
   const [refundableOnly, setRefundableOnly] = useState(false);
   const [sortBy, setSortBy] = useState("Recommended");
+  const [openPolicyIndex, setOpenPolicyIndex] = useState(null);
 
   // Group and filter logic
   const processedCategories = useMemo(() => {
@@ -223,7 +224,8 @@ export default function RoomCategoryAccordion({
                     paddingLeft: "14px",
                     borderLeft: "3px solid var(--hotel-rose, #ff0000)"
                   }}>
-                    {cat.options.map(({ offer: roomOffer }, index) => {
+                    {cat.options.map((option, index) => {
+                      const roomOffer = option.offer;
                       const roomSelectionKey = roomOffer.selectionKey || roomOffer.offerId;
                       const isSelectingThis = selectingOfferId === roomSelectionKey;
                       const isSelected = Boolean(selectedOffer && selectedRoomKey === roomSelectionKey);
@@ -248,15 +250,30 @@ export default function RoomCategoryAccordion({
                               <BedDouble size={14} /> {roomOffer.bedType || "Bed type not specified"}
                             </span>
                             
-                            <span style={{ 
-                              fontSize: "0.68rem", 
-                              fontWeight: 600, 
-                              padding: "2px 6px", 
-                              borderRadius: "4px", 
-                              background: roomOffer.cancellationPolicy?.includes("Charge") ? "#ffebee" : "#e8f5e9", 
-                              color: roomOffer.cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32" 
-                            }}>
+                            <span 
+                              style={{ 
+                                fontSize: "0.68rem", 
+                                fontWeight: 600, 
+                                padding: "2px 6px", 
+                                borderRadius: "4px", 
+                                background: roomOffer.cancellationPolicy?.includes("Charge") ? "#ffebee" : "#e8f5e9", 
+                                color: roomOffer.cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32",
+                                cursor: roomOffer.cancellationPolicy?.includes("Charge") ? "default" : "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                border: roomOffer.cancellationPolicy?.includes("Charge") ? "1px solid #ffcdd2" : "1px solid #c8e6c9"
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!roomOffer.cancellationPolicy?.includes("Charge")) {
+                                  setOpenPolicyIndex(openPolicyIndex === option.originalIndex ? null : option.originalIndex);
+                                }
+                              }}
+                              title={roomOffer.cancellationPolicy?.includes("Charge") ? "This room is strictly non-refundable." : "View cancellation policy details"}
+                            >
                               {roomOffer.cancellationPolicy?.includes("Charge") ? "Non-Refundable" : "Free Cancellation"}
+                              {!roomOffer.cancellationPolicy?.includes("Charge") && <Info size={13} style={{ opacity: 0.9 }} />}
                             </span>
                             
                             {mealPlan && (
@@ -315,6 +332,23 @@ export default function RoomCategoryAccordion({
                               )}
                             </button>
                           </div>
+
+                          {openPolicyIndex === option.originalIndex && !roomOffer.cancellationPolicy?.includes("Charge") && (roomOffer.cancellationPolicies?.length > 0 || roomOffer.CancellationPolicies?.length > 0) && (
+                            <div style={{ marginTop: "12px", padding: "10px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", width: "100%" }}>
+                              <h5 style={{ margin: "0 0 6px 0", fontSize: "0.75rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Cancellation Policies</h5>
+                              <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
+                                {(roomOffer.cancellationPolicies || roomOffer.CancellationPolicies).map((policy, pIdx) => {
+                                  const isPercent = policy.ChargeType === 2 || policy.chargeType === 2 || String(policy.ChargeType).toLowerCase() === "percentage";
+                                  const chargeValue = policy.Charge || policy.charge;
+                                  return (
+                                    <li key={pIdx} style={{ marginBottom: "4px", lineHeight: "1.3" }}>
+                                      Charge of <strong>{!isPercent ? "₹" : ""}{chargeValue}{isPercent ? "%" : ""}</strong> from <strong>{new Date(policy.FromDate || policy.fromDate).toLocaleDateString()}</strong> to <strong>{new Date(policy.ToDate || policy.toDate).toLocaleDateString()}</strong>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

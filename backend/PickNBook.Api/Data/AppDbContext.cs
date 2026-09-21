@@ -144,6 +144,10 @@ namespace PickNBook.Api.Data
         public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
         public DbSet<UserPasskey> UserPasskeys => Set<UserPasskey>();
 
+        // In-App Bell Notification System DbSets
+        public DbSet<InAppNotification> InAppNotifications => Set<InAppNotification>();
+        public DbSet<NotificationRecipient> NotificationRecipients => Set<NotificationRecipient>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1476,6 +1480,48 @@ namespace PickNBook.Api.Data
                     .WithMany()
                     .HasForeignKey(x => x.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // =============================
+            // IN-APP NOTIFICATION CONFIG
+            // =============================
+            modelBuilder.Entity<InAppNotification>(entity =>
+            {
+                entity.ToTable("in_app_notifications");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Type).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Category).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Title).HasMaxLength(255).IsRequired();
+                entity.Property(x => x.Message).HasColumnType("text").IsRequired();
+                entity.Property(x => x.Severity).HasMaxLength(20).IsRequired().HasDefaultValue("Info");
+                entity.Property(x => x.ReferenceType).HasMaxLength(100);
+                entity.Property(x => x.ReferenceId).HasMaxLength(100);
+                entity.Property(x => x.ActionUrl).HasMaxLength(500);
+                entity.Property(x => x.IdempotencyKey).HasMaxLength(150);
+
+                entity.HasIndex(x => x.CreatedAtUtc);
+                entity.HasIndex(x => x.IdempotencyKey).IsUnique();
+
+                entity.HasMany(x => x.Recipients)
+                    .WithOne(x => x.Notification)
+                    .HasForeignKey(x => x.NotificationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<NotificationRecipient>(entity =>
+            {
+                entity.ToTable("notification_recipients");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.RecipientRole).HasMaxLength(50);
+                entity.Property(x => x.IsRead).HasDefaultValue(false);
+
+                entity.HasIndex(x => new { x.UserId, x.IsRead });
+                entity.HasIndex(x => new { x.RecipientRole, x.IsRead });
+
+                entity.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

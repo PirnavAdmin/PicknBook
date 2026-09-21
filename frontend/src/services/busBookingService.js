@@ -1223,11 +1223,13 @@ async function requestJson(urlOrPath, options = {}) {
     if (normalizedMessage) {
       const error = new Error(normalizedMessage);
       error.status = response.status;
+      error.payload = payload; // Expose payload for ErrorCode checks
       throw error;
     }
 
     const error = new Error("Request failed. Please try again.");
     error.status = response.status;
+    error.payload = payload; // Expose payload for ErrorCode checks
     throw error;
   }
 
@@ -1290,10 +1292,44 @@ async function resolveCityCode(cityStrOrCode) {
   if (/^\d+$/.test(trimmed)) return trimmed;
   
   try {
-    const cities = await searchBusCities(trimmed);
-    const match = cities.find(c => (c.cityName || c.name || "").toLowerCase() === trimmed.toLowerCase()) || cities[0];
+    // Extract base name before parenthesis (e.g. "Chittoor (Andhra Pradesh)" -> "Chittoor")
+    // This prevents the external API from choking on parentheses in the search query.
+    const baseNameMatch = trimmed.match(/^([^(]+)/);
+    const searchQuery = baseNameMatch ? baseNameMatch[1].trim() : trimmed;
+
+    const cities = await searchBusCities(searchQuery);
+    const normalize = (str) => String(str || "").replace(/\s+/g, " ").trim().toLowerCase();
+    const searchLower = normalize(trimmed);
+    
+    console.log(`[DEBUG resolveCityCode] Querying API with: "${searchQuery}", Looking for exact match: "${searchLower}"`);
+    console.log(`[DEBUG resolveCityCode] API returned ${cities?.length || 0} cities`);
+    if (cities?.length > 0) {
+      console.log(`[DEBUG resolveCityCode] City 0: "${normalize(cities[0].cityName || cities[0].name)}" (ID: ${cities[0].cityId})`);
+    }
+
+    // 1. Exact match
+    let match = cities.find(c => {
+      const cName = normalize(c.cityName || c.name);
+      if (cName === searchLower) console.log(`[DEBUG resolveCityCode] EXACT MATCH FOUND: ${cName} (ID: ${c.cityId})`);
+      return cName === searchLower;
+    });
+    
+    // 2. Contains match
+    if (!match) {
+      match = cities.find(c => normalize(c.cityName || c.name).includes(searchLower));
+      if (match) console.log(`[DEBUG resolveCityCode] CONTAINS MATCH FOUND: ${normalize(match.cityName || match.name)} (ID: ${match.cityId})`);
+    }
+    
+    // 3. Fallback to first
+    if (!match) {
+      console.log(`[DEBUG resolveCityCode] NO MATCH FOUND, falling back to first city`);
+    }
+    match = match || cities[0];
+
     if (match) {
-      return String(match.cityId || match.code || match.id || "").trim();
+      const resolvedId = String(match.cityId || match.code || match.id || "").trim();
+      console.log(`[DEBUG resolveCityCode] Resolved ID: ${resolvedId}`);
+      return resolvedId;
     }
   } catch(e) {
     console.error("resolveCityCode error:", e);
@@ -1302,13 +1338,22 @@ async function resolveCityCode(cityStrOrCode) {
 }
 
 export async function searchBuses({ from, to, date, fromCityCode, toCityCode, sourceCode, destinationCode }) {
+  console.log(`[DEBUG searchBuses] START. from=${from}, to=${to}, fromCityCode=${fromCityCode}, toCityCode=${toCityCode}, sourceCode=${sourceCode}, destinationCode=${destinationCode}`);
   const formattedDate = toYyyyMmDdDate(date);
   
-  const rawFromCode = fromCityCode || sourceCode || from;
-  const rawToCode = toCityCode || destinationCode || to;
+  let finalFromCode = fromCityCode || sourceCode;
+  if (!finalFromCode && from) {
+    console.log(`[DEBUG searchBuses] fromCityCode missing! Falling back to resolveCityCode for "${from}"`);
+    finalFromCode = await resolveCityCode(from);
+  }
 
-  const finalFromCode = await resolveCityCode(rawFromCode);
-  const finalToCode = await resolveCityCode(rawToCode);
+  let finalToCode = toCityCode || destinationCode;
+  if (!finalToCode && to) {
+    console.log(`[DEBUG searchBuses] toCityCode missing! Falling back to resolveCityCode for "${to}"`);
+    finalToCode = await resolveCityCode(to);
+  }
+
+  console.log(`[DEBUG searchBuses] FINAL CODES -> finalFromCode: ${finalFromCode}, finalToCode: ${finalToCode}`);
 
   if (!finalFromCode || !finalToCode) {
     throw new Error("A valid source and destination city must be selected from the suggestions.");
@@ -1580,8 +1625,33 @@ export async function getBusSeatLayoutProxy({ traceId, srdvIndex, resultIndex })
         resultIndex: String(resultIndex),
       }),
     });
+
+    console.log("[DEBUG 7023] getBusSeatLayoutProxy data:", data);
+
+    // Provider returns 7023 when this bus workflow is already in blocked state (200 OK case).
+    const errorCode = data?.Error?.ErrorCode ?? data?.error?.errorCode ?? 0;
+    if (Number(errorCode) === 7023) {
+      console.log("[DEBUG 7023] Found 7023 in 200 OK data!");
+      const err = new Error(data?.Error?.ErrorMessage || "Bus workflow already blocked.");
+      err.code = 7023;
+      throw err;
+    }
+
     return data;
   } catch (error) {
+    console.log("[DEBUG 7023] getBusSeatLayoutProxy caught error:", error);
+    console.log("[DEBUG 7023] error.payload:", error?.payload);
+    
+    // If the API returned a 400 Bad Request, requestJson threw an error.
+    // Check if the payload contains 7023.
+    const errorCode = error?.payload?.Error?.ErrorCode ?? error?.payload?.error?.errorCode ?? 0;
+    if (Number(errorCode) === 7023 || (error?.message || "").toLowerCase().includes("already blocked")) {
+      console.log("[DEBUG 7023] Found 7023 in error payload/message!");
+      const err = new Error(error?.payload?.Error?.ErrorMessage || "Bus workflow already blocked.");
+      err.code = 7023;
+      throw err;
+    }
+
     console.error("[busBookingService] getBusSeatLayoutProxy Error:", error);
     throw error;
   }
@@ -2006,7 +2076,7 @@ export function buildBusPayload(payload) {
 
   const isIdProofRequired = Boolean(payload.isIdProofRequired);
 
-  const passengersPayload = (payload.passengers || []).map((p) => {
+  const passengersPayload = (payload.passengers || []).map((p, index) => {
     const rawGen = String(p.gender || p.Gender || "").trim().toLowerCase();
     const gender =
       rawGen === "female" || rawGen === "f" || rawGen === "2" || rawGen === "ms" || rawGen === "mrs"
@@ -2027,6 +2097,7 @@ export function buildBusPayload(payload) {
       fullName: String(p.fullName || p.FullName || `${p.firstName || ""} ${p.lastName || ""}`).trim(),
       gender,
       age: Number(p.age || p.Age) || 25,
+      leadPassenger: p.leadPassenger !== undefined ? Boolean(p.leadPassenger) : index === 0,
       seatCode: p.seatNumber || p.seatName || p.SeatNumber || p.seatCode,
       seatNumber: p.seatNumber || p.seatName || p.SeatNumber || p.seatCode,
       isLadiesSeat: Boolean(p.isLadiesSeat),
@@ -2053,10 +2124,10 @@ export function buildBusPayload(payload) {
     totalFare: Number(payload.totalFare || payload.bus?.priceInr || payload.bus?.displayFare || payload.bus?.fare || 0),
     boardingPointId: String(payload.boardingPointId || payload.BoardingPointId || payload.boardingPoint?.id || payload.boardingPoint?.pointId || ""),
     boardingPointName: String(payload.boardingPointName || payload.BoardingPointName || payload.boardingPoint?.name || ""),
-    boardingPointTime: null, // Always null as per Backend Option 1 to avoid C# parsing errors
+    boardingPointTime: payload.boardingPointTime || null,
     droppingPointId: String(payload.droppingPointId || payload.DroppingPointId || payload.droppingPoint?.id || payload.droppingPoint?.pointId || ""),
     droppingPointName: String(payload.droppingPointName || payload.DroppingPointName || payload.droppingPoint?.name || ""),
-    droppingPointTime: null,
+    droppingPointTime: payload.droppingPointTime || null,
     passengerName: String(payload.passengerName || payload.PassengerName || ""),
     passengerPhone: String(payload.passengerPhone || payload.PassengerPhone || ""),
     passengerEmail: String(payload.passengerEmail || payload.PassengerEmail || ""),
@@ -2349,7 +2420,7 @@ function normalizeFeaturedOffer(record) {
 
 export async function getFeaturedBusOffers() {
   try {
-    const data = await requestJson("/api/FeaturedOffers", {
+    const data = await requestJson("/api/FeaturedOffers?bookingType=Bus", {
       method: "GET",
       skipAuth: true,
     });

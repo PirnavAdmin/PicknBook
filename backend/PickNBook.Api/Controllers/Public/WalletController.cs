@@ -18,11 +18,18 @@ namespace PickNBook.Api.Controllers.Public
     {
         private readonly IWalletService _walletService;
         private readonly AppDbContext _context;
+        private readonly IInAppNotificationService? _inAppNotificationService;
 
         public WalletController(IWalletService walletService, AppDbContext context)
+            : this(walletService, context, null)
+        {
+        }
+
+        public WalletController(IWalletService walletService, AppDbContext context, IInAppNotificationService? inAppNotificationService)
         {
             _walletService = walletService;
             _context = context;
+            _inAppNotificationService = inAppNotificationService;
         }
 
         private int? GetCurrentUserId()
@@ -134,6 +141,43 @@ namespace PickNBook.Api.Controllers.Public
 
             _context.DepositRequests.Add(deposit);
             await _context.SaveChangesAsync();
+
+            // Additive In-App Notifications (Step 4: Deposit Submitted)
+            if (_inAppNotificationService != null)
+            {
+                try
+                {
+                    await _inAppNotificationService.CreateNotificationAsync(
+                        type: "Deposit",
+                        category: "Customer",
+                        title: "Deposit Request Submitted",
+                        message: $"Your manual deposit request #{deposit.Id} of ₹{deposit.Amount:N2} has been submitted and is pending Admin verification.",
+                        severity: "Info",
+                        referenceType: "DepositRequest",
+                        referenceId: deposit.Id.ToString(),
+                        actionUrl: "/wallet/deposits",
+                        idempotencyKey: $"DEPOSIT_SUBMIT_USER_{deposit.Id}",
+                        targetUserId: deposit.UserId.ToString()
+                    );
+
+                    await _inAppNotificationService.CreateNotificationAsync(
+                        type: "Deposit",
+                        category: "Admin",
+                        title: "New Deposit Request",
+                        message: $"New manual deposit request #{deposit.Id} of ₹{deposit.Amount:N2} submitted by User #{deposit.UserId}.",
+                        severity: "Info",
+                        referenceType: "DepositRequest",
+                        referenceId: deposit.Id.ToString(),
+                        actionUrl: $"/admin/deposits/{deposit.Id}",
+                        idempotencyKey: $"DEPOSIT_SUBMIT_ADMIN_{deposit.Id}",
+                        targetRole: "Admin"
+                    );
+                }
+                catch
+                {
+                    // Non-fatal
+                }
+            }
 
             return Ok(new
             {

@@ -18,6 +18,7 @@ import {
   Star,
   Filter,
   Heart,
+  X,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
@@ -364,7 +365,7 @@ export default function HotelSearchResults() {
   const [selectedRatings, setSelectedRatings] = useState([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [selectedPropertyType, setSelectedPropertyType] = useState("hotels");
+  const [selectedPropertyType, setSelectedPropertyType] = useState("");
   const [activeQueryPill, setActiveQueryPill] = useState(null);
   const [selectedHotelId, setSelectedHotelId] = useState(null);
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -864,7 +865,9 @@ export default function HotelSearchResults() {
               <aside className="hotel-sidebar-filters-inline">
                 <div className="hotel-sidebar-filters-header">
                   <h3>Filters</h3>
-                  <button type="button" className="hotel-sort-close" onClick={() => setIsFilterOpen(false)}>&times;</button>
+                  <button type="button" className="hotel-sort-close" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }} onClick={() => setIsFilterOpen(false)}>
+                    <X size={16} strokeWidth={2.5} />
+                  </button>
                 </div>
                 <div className="hotel-sidebar-filters-body">
                   <div className="hotel-sidebar-filter-group">

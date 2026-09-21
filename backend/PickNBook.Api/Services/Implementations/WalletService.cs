@@ -15,13 +15,20 @@ namespace PickNBook.Api.Services.Implementations
     {
         private readonly AppDbContext _context;
         private readonly ILogger<WalletService> _logger;
+        private readonly IInAppNotificationService? _inAppNotificationService;
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<int, System.Threading.SemaphoreSlim> _userLocks = new();
         private static readonly object _inMemoryLock = new object();
 
         public WalletService(AppDbContext context, ILogger<WalletService> logger)
+            : this(context, logger, null)
+        {
+        }
+
+        public WalletService(AppDbContext context, ILogger<WalletService> logger, IInAppNotificationService? inAppNotificationService)
         {
             _context = context;
             _logger = logger;
+            _inAppNotificationService = inAppNotificationService;
         }
 
         public async Task<WalletTransaction> DebitAsync(int userId, decimal amount, string referenceType, string refCode, string description)
@@ -123,6 +130,30 @@ namespace PickNBook.Api.Services.Implementations
                 _logger.LogInformation("Successfully debited {Amount:N2} from User {UserId}. New Balance: {Balance:N2}. RefCode: {RefCode}",
                     amount, userId, user.WalletBalance, refCode);
 
+                // Additive In-App Notification (Step 4: Debit)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Wallet",
+                            category: "Customer",
+                            title: "Wallet Debited",
+                            message: $"₹{amount:N2} was debited from your wallet for {description}. Current balance: ₹{user.WalletBalance:N2}.",
+                            severity: "Info",
+                            referenceType: "WalletTransaction",
+                            referenceId: transaction.Id.ToString(),
+                            actionUrl: "/wallet/transactions",
+                            idempotencyKey: $"WALLET_DEBIT_{transaction.Id}",
+                            targetUserId: userId.ToString()
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for wallet debit {TransactionId}. Non-fatal.", transaction.Id);
+                    }
+                }
+
                 return transaction;
             }
             finally
@@ -204,6 +235,30 @@ namespace PickNBook.Api.Services.Implementations
                 _logger.LogInformation("Successfully credited {Amount:N2} to User {UserId}. New Balance: {Balance:N2}. RefCode: {RefCode}",
                     amount, userId, user.WalletBalance, refCode);
 
+                // Additive In-App Notification (Step 4: Credit)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Wallet",
+                            category: "Customer",
+                            title: "Wallet Credited",
+                            message: $"₹{amount:N2} was credited to your wallet: {description}. Current balance: ₹{user.WalletBalance:N2}.",
+                            severity: "Success",
+                            referenceType: "WalletTransaction",
+                            referenceId: transaction.Id.ToString(),
+                            actionUrl: "/wallet/transactions",
+                            idempotencyKey: $"WALLET_CREDIT_{transaction.Id}",
+                            targetUserId: userId.ToString()
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for wallet credit {TransactionId}. Non-fatal.", transaction.Id);
+                    }
+                }
+
                 return transaction;
             }
             finally
@@ -284,6 +339,30 @@ namespace PickNBook.Api.Services.Implementations
 
                 _logger.LogInformation("Successfully refunded {Amount:N2} to User {UserId}. New Balance: {Balance:N2}. RefCode: {RefCode}",
                     amount, userId, user.WalletBalance, refCode);
+
+                // Additive In-App Notification (Step 4: Refund)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        await _inAppNotificationService.CreateNotificationAsync(
+                            type: "Wallet",
+                            category: "Customer",
+                            title: "Wallet Refund Processed",
+                            message: $"₹{amount:N2} has been refunded to your wallet: {description}. Current balance: ₹{user.WalletBalance:N2}.",
+                            severity: "Success",
+                            referenceType: "WalletTransaction",
+                            referenceId: transaction.Id.ToString(),
+                            actionUrl: "/wallet/transactions",
+                            idempotencyKey: $"WALLET_REFUND_{transaction.Id}",
+                            targetUserId: userId.ToString()
+                        );
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for wallet refund {TransactionId}. Non-fatal.", transaction.Id);
+                    }
+                }
 
                 return transaction;
             }

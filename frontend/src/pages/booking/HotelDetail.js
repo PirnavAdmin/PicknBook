@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useState } from "react";
-import { BedDouble, ShieldCheck, Loader2 } from "lucide-react";
+import { BedDouble, ShieldCheck, Loader2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { categorizeFacilities } from "../../utils/facilityCategories";
 import RoomCategoryAccordion from "../../components/booking/RoomCategoryAccordion";
 
@@ -136,9 +136,30 @@ export default function HotelDetail({
   const general = [...(categorized.amenities || []), ...(categorized.safety || [])];
   
   // Only use real attractions array from API
-  const attractions = Array.isArray(hotel.attractions) 
+  let rawAttractions = Array.isArray(hotel.attractions) 
     ? hotel.attractions.map(a => typeof a === "object" ? (a.name || a.Name || "") : String(a)).filter(Boolean)
     : [];
+
+  let parsedAttractions = [];
+  rawAttractions.forEach(item => {
+    let cleaned = item.replace("Distances are displayed to the nearest 0.1 mile and kilometer.", "").trim();
+    if (cleaned.includes(" km") && cleaned.includes(" - ")) {
+      const regex = /(.*?)\s+-\s+(\d+(?:\.\d+)?\s*km(?:\s*\/\s*\d+(?:\.\d+)?\s*mi)?)/g;
+      let match;
+      let foundAny = false;
+      while ((match = regex.exec(cleaned)) !== null) {
+        foundAny = true;
+        parsedAttractions.push({ name: match[1].trim(), distance: match[2].trim() });
+      }
+      if (!foundAny) {
+        parsedAttractions.push({ name: item, distance: "" });
+      }
+    } else {
+      parsedAttractions.push({ name: item, distance: "" });
+    }
+  });
+
+  const attractions = parsedAttractions;
 
   // Dynamically filter tab buttons based on available categories
   const tabsList = ["All"];
@@ -479,10 +500,16 @@ export default function HotelDetail({
           onClick={() => setLightboxIndex(null)}
           style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "rgba(15, 23, 42, 0.88)" }}
         >
-          <button type="button" onClick={() => setLightboxIndex(null)} aria-label="Close gallery" style={{ position: "absolute", top: "18px", right: "22px", border: 0, background: "transparent", color: "#fff", fontSize: "2rem", cursor: "pointer" }}>×</button>
-          <button type="button" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + displayedImages.length) % displayedImages.length); }} aria-label="Previous image" style={{ position: "absolute", left: "20px", border: 0, background: "rgba(255,255,255,0.18)", color: "#fff", borderRadius: "50%", width: "44px", height: "44px", fontSize: "1.8rem", cursor: "pointer" }}>‹</button>
+          <button type="button" onClick={() => setLightboxIndex(null)} aria-label="Close gallery" style={{ position: "absolute", top: "24px", right: "32px", border: 0, background: "rgba(255,255,255,0.1)", color: "#fff", borderRadius: "50%", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+            <X size={24} strokeWidth={2.5} />
+          </button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + displayedImages.length) % displayedImages.length); }} aria-label="Previous image" style={{ position: "absolute", left: "4vw", border: 0, background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: "50%", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+            <ChevronLeft size={30} strokeWidth={2.5} />
+          </button>
           <img src={displayedImages[lightboxIndex]} alt={`${hotel.name} - ${lightboxIndex + 1}`} onClick={(event) => event.stopPropagation()} style={{ maxWidth: "min(100%, 1100px)", maxHeight: "82vh", objectFit: "contain", borderRadius: "12px", boxShadow: "0 24px 60px rgba(0,0,0,0.35)" }} />
-          <button type="button" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % displayedImages.length); }} aria-label="Next image" style={{ position: "absolute", right: "20px", border: 0, background: "rgba(255,255,255,0.18)", color: "#fff", borderRadius: "50%", width: "44px", height: "44px", fontSize: "1.8rem", cursor: "pointer" }}>›</button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % displayedImages.length); }} aria-label="Next image" style={{ position: "absolute", right: "4vw", border: 0, background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: "50%", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+            <ChevronRight size={30} strokeWidth={2.5} />
+          </button>
           <span style={{ position: "absolute", bottom: "20px", color: "#fff", fontSize: "0.9rem" }}>{lightboxIndex + 1} / {displayedImages.length}</span>
         </div>
       )}
@@ -594,13 +621,42 @@ export default function HotelDetail({
           {attractions.length > 0 && (
             <section id="section-nearby-attractions" style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "12px", marginBottom: "12px" }}>
               <h3 style={{ margin: "0 0 12px 0", fontSize: "1.05rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Nearby Attractions</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-                {attractions.map((item, idx) => (
-                  <div key={idx} style={{ fontSize: "0.82rem", color: "var(--hotel-ink)", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "0.95rem" }}>{getAttractionSymbol(item)}</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px" }}>
+                {attractions.map((item, idx) => {
+                  const isObj = typeof item === 'object';
+                  const name = isObj ? item.name : item;
+                  const distance = isObj ? item.distance : "";
+
+                  return (
+                    <div key={idx} style={{ 
+                      display: "flex", 
+                      alignItems: "flex-start", 
+                      gap: "10px",
+                      padding: "10px",
+                      background: "#f8fafc",
+                      borderRadius: "8px",
+                      border: "1px solid #f1f5f9"
+                    }}>
+                      <div style={{
+                        width: "32px", height: "32px", borderRadius: "50%",
+                        background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "1rem", flexShrink: 0
+                      }}>
+                        {getAttractionSymbol(name)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "32px" }}>
+                        <h4 style={{ margin: "0 0 2px 0", fontSize: "0.85rem", fontWeight: 600, color: "var(--hotel-ink)", lineHeight: 1.2 }}>
+                          {name}
+                        </h4>
+                        {distance && (
+                          <span style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 500 }}>
+                            {distance}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}

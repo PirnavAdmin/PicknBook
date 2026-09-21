@@ -254,7 +254,7 @@ export default function HotelSearchWidget({
         >
           <CalendarDays size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
           <div className="hotel-capsule-field">
-            <span className="hotel-capsule-label">CHECK-IN</span>
+            <span className="hotel-capsule-label">Check-In</span>
             <span className="hotel-capsule-val">
               {toDisplayDate(checkInDate) || "DD-MM-YYYY"}
             </span>
@@ -290,7 +290,7 @@ export default function HotelSearchWidget({
         >
           <CalendarDays size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
           <div className="hotel-capsule-field">
-            <span className="hotel-capsule-label">CHECK-OUT</span>
+            <span className="hotel-capsule-label">Check-Out</span>
             <span className="hotel-capsule-val">
               {toDisplayDate(checkOutDate) || "DD-MM-YYYY"}
             </span>
@@ -319,7 +319,7 @@ export default function HotelSearchWidget({
         >
           <Users size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
           <div className="hotel-capsule-field">
-            <span className="hotel-capsule-label">ROOMS &amp; GUESTS</span>
+            <span className="hotel-capsule-label">Rooms &amp; Guests</span>
             <span className="hotel-capsule-val">{guestSummary}</span>
           </div>
           <ChevronDown size={16} className={`hotel-capsule-chevron ${showGuestsDropdown ? "open" : ""}`} />

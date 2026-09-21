@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCashfreePayment } from "../../hooks/useCashfreePayment";
-import { buildFlightBookingPayload, buildBookingPayload as buildBusBookingPayload } from "../../utils/checkoutPayloadBuilders";
+import { prepareFlightBookingPayload, buildBookingPayload as buildBusBookingPayload } from "../../utils/checkoutPayloadBuilders";
 import { getWalletSummary } from "../../services/walletService";
 import "../../STYLES/FlightBookingFlow.css";
 
@@ -123,29 +123,39 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   // --- B2C Wallet Logic ---
   // --- Cashfree B2C Logic ---
   const handleCashfreePay = async () => {
-    if (cfIsSubmitting || cfStatus === "creating") return;
+    if (isProcessing || cfIsSubmitting || cfStatus === "creating") return;
     clearError();
     setLocalError("");
     setIsProcessing(true);
 
+    try {
     // Derive customer details dynamically from flowState
-    const rawEmail = contact?.email || flowState?.guestEmail || "guest@gopickandbook.in";
-    const rawPhone = contact?.mobile || flowState?.guestPhone || "9876543210";
+    const rawEmail = contact?.email || flowState?.guestEmail || (bookingType === "Flight" ? "" : "guest@gopickandbook.in");
+    const rawPhone = contact?.mobile || flowState?.guestPhone || (bookingType === "Flight" ? "" : "9876543210");
     let rawName = contact?.name || flowState?.guestName || "";
     if (!rawName && passengers.length > 0) {
       rawName = `${passengers[0].firstName || passengers[0].FirstName || ""} ${passengers[0].lastName || passengers[0].LastName || ""}`.trim();
     }
-    if (!rawName) rawName = "Customer";
+    if (!rawName && bookingType !== "Flight") rawName = "Customer";
 
-    const customerId = `CUST_${Date.now()}`;
+    if (bookingType === "Flight" && (!rawEmail || !rawPhone || !rawName)) throw new Error("Traveller contact details are required before payment.");
+    const customerId = String(
+      flowState?.customerId ||
+      flowState?.userId ||
+      localStorage.getItem("userId") ||
+      sessionStorage.getItem("userId") ||
+      ""
+    ).trim();
+    if (bookingType === "Flight" && !customerId) throw new Error("Authenticated customer details are required before payment.");
     const customerName = rawName;
     const customerEmail = String(rawEmail).trim();
-    const customerPhone = String(rawPhone).replace(/\D/g, "").slice(-10) || "9876543210";
+    const customerPhone = String(rawPhone).replace(/\D/g, "").slice(-10);
+    if (bookingType === "Flight" && customerPhone.length !== 10) throw new Error("A valid traveller mobile number is required.");
 
     let bookingPayloadJson = "";
 
     if (bookingType === "Flight") {
-      bookingPayloadJson = JSON.stringify(buildFlightBookingPayload(flowState));
+      bookingPayloadJson = JSON.stringify(await prepareFlightBookingPayload(flowState));
     } else if (bookingType === "Bus") {
       bookingPayloadJson = JSON.stringify(buildBusBookingPayload(flowState));
     } else if (bookingType === "Hotel") {
@@ -190,7 +200,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       return;
     }
 
-    if (gatewayPayableAmount <= 0) {
+    if (bookingType !== "Flight" && gatewayPayableAmount <= 0) {
       onSuccess({
         paymentMethod: "Wallet",
         walletAppliedAmount,
@@ -202,11 +212,12 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     }
 
     const sessionData = await initializePaymentSession({
-      orderAmount: gatewayPayableAmount,
+      orderAmount: bookingType === "Flight" ? totalPayable : gatewayPayableAmount,
+      useWallet: bookingType === "Flight" && useWallet,
       customerId,
       customerName,
-      customerEmail: contact?.email || "guest@gopickandbook.in",
-      customerPhone: contact?.mobile || "9876543210",
+      customerEmail,
+      customerPhone,
       bookingType,
       bookingPayloadJson: JSON.stringify({
         ...JSON.parse(bookingPayloadJson),
@@ -245,9 +256,13 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     } else {
       setIsProcessing(false);
     }
+    } catch (error) {
+      setLocalError(error.message || "Unable to start payment.");
+      setIsProcessing(false);
+    }
   };
 
-  const handlePayNow = isAgent ? handleAgentPay : handleCashfreePay;
+  const handlePayNow = isAgent && bookingType !== "Flight" ? handleAgentPay : handleCashfreePay;
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{
@@ -346,4 +361,3 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     </div>
   );
 }
-

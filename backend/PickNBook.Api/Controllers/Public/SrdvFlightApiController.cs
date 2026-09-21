@@ -2526,6 +2526,31 @@ namespace PickNBook.Api.Controllers.Public
                         _dbContext.BookingCancellations.Add(bookingCancellation);
                         
                         await _dbContext.SaveChangesAsync();
+
+                        // Additive In-App Notifications (Step 4: Flight Cancellation Requested)
+                        try
+                        {
+                            var inAppNotificationService = HttpContext.RequestServices.GetService<PickNBook.Api.Services.Interfaces.IInAppNotificationService>();
+                            if (inAppNotificationService != null)
+                            {
+                                await inAppNotificationService.CreateNotificationAsync(
+                                    type: "Cancellation",
+                                    category: "Customer",
+                                    title: "Flight Cancellation Requested",
+                                    message: $"Your cancellation request for flight booking ({reservation.BookingReference}) has been submitted and is processing.",
+                                    severity: "Info",
+                                    referenceType: "FlightReservation",
+                                    referenceId: reservation.BookingReference,
+                                    actionUrl: $"/bookings/{reservation.BookingReference}",
+                                    idempotencyKey: $"CANCEL_REQ_FLIGHT_{reservation.BookingReference}_{changeRequestId}",
+                                    targetUserId: reservation.UserId
+                                );
+                            }
+                        }
+                        catch (Exception inAppEx)
+                        {
+                            _logger.LogWarning(inAppEx, "Failed to create in-app notification for flight cancellation request {BookingReference}. Non-fatal.", reservation.BookingReference);
+                        }
                     }
                 }
 

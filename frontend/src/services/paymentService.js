@@ -30,6 +30,7 @@ export async function createCashfreeOrder({
   bookingPayloadJson,
   couponCode,
   promotionId,
+  useWallet = false,
 }) {
   const returnUrl = ""; // Explicitly empty to prevent Cashfree auto-redirect in _modal checkout. We handle redirect via Promise.then.
 
@@ -40,13 +41,14 @@ export async function createCashfreeOrder({
   const payload = {
     orderAmount: Number(orderAmount) || 0,
     orderCurrency: "INR",
-    customerId: String(customerId || "GUEST_001"),
+    customerId: String(customerId || "").trim(),
     customerName: String(customerName || "Customer").trim(),
     customerEmail: String(customerEmail || "").trim(),
     customerPhone: String(customerPhone || "").replace(/\D/g, "").slice(-10),
     returnUrl,
     notifyUrl,
     bookingType,
+    useWallet,
     bookingPayloadJson,
     couponCode: couponCode || null,
     promotionId: promotionId || null,
@@ -86,8 +88,8 @@ export async function createCashfreeOrder({
 
   const data = await response.json();
 
-  const sessionId = data.paymentSessionId || data.payment_session_id;
-  if (!data && !sessionId) {
+  const sessionId = data?.paymentSessionId || data?.payment_session_id;
+  if (!data || (!sessionId && !data.isWalletFullyPaid)) {
     throw new Error("Invalid response from payment server: paymentSessionId missing.");
   }
 

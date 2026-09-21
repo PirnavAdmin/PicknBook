@@ -453,7 +453,7 @@ export default function UserWalletDashboard() {
           </div>
         </div>
 
-        {/* Card 2: PickNBook Coins */}
+        {/* Card 2: Pick&Book Coins */}
         <div
           className="deposit-card"
           style={{
@@ -464,7 +464,7 @@ export default function UserWalletDashboard() {
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <span style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", fontWeight: 600 }}>
-              PickNBook Coins
+              Pick&Book Coins
             </span>
             <div style={{ padding: "8px", background: "#fef3c7", borderRadius: "8px", color: "#d97706" }}>
               <Coins size={20} />

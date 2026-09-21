@@ -20,10 +20,10 @@ public class BlogsController : BaseApiController
     private readonly IBlogsService _blogsService;
     private readonly ILogger<BlogsController> _logger;
 
-    public BlogsController(IBlogsService blogsService, ILogger<BlogsController> logger)
+    public BlogsController(IBlogsService blogsService, ILogger<BlogsController>? logger = null)
     {
         _blogsService = blogsService;
-        _logger = logger;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<BlogsController>.Instance;
     }
 
     /// <summary>

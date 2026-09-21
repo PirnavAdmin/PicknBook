@@ -33,7 +33,7 @@ const DEFAULT_LAYOUT = {
     isActive: true,
     enableTopBar: false,
     phone: "+91 9876543210",
-    email: "info@picknbook.com",
+    email: "info@pick&book.com",
     address: "123, Travel Street, New York, USA",
     showSocialIcons: true,
     showSeparator: true,
@@ -60,7 +60,7 @@ const DEFAULT_LAYOUT = {
     enableTopFooter: true,
     aboutUsText: "We make travel planning easier, and booking smarter.",
     phone: "+91 9876543210",
-    email: "info@picknbook.com",
+    email: "info@pick&book.com",
     address: "123, Travel Street, New York, USA",
     socialLinks: [
       { id: "fb", platform: "Facebook", url: "https://facebook.com" },

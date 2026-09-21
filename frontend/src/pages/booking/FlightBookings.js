@@ -269,7 +269,7 @@ export default function FlightBookings() {
       setSelectedLegIndexes([]);
       setSelectedPassengerIds([]);
       setCancelReason("");
-      setActionMessage("✅ Partial cancellation processed successfully! Provider verified and database status updated.");
+      setActionMessage(updatedBooking.message);
       await fetchBookings();
     } catch (error) {
       setErrorMessage(error.message || "Failed to cancel selected flight legs / passengers.");
@@ -314,9 +314,7 @@ export default function FlightBookings() {
 
     try {
       const result = await cancelFlightBooking(targetBooking || bookingId, reason || undefined, { refundPreference });
-      setActionMessage(
-        `✅ Booking ${result.bookingReference || bookingId} cancelled successfully! Database updated & cancellation confirmation email triggered.`
-      );
+      setActionMessage(result.message);
       setSelectedBooking(result);
       await fetchBookings();
     } catch (error) {
@@ -657,7 +655,7 @@ export default function FlightBookings() {
                   <span>✅ Ticket Fully Cancelled &amp; Email Dispatched</span>
                 </div>
                 <p style={{ margin: "6px 0 0", fontSize: "0.85rem", color: "#15803d", lineHeight: "1.5" }}>
-                  Provider cancellation has been verified via the 2-step API flow (<strong>GetCancelStatus</strong>). Your database status is now <strong>Cancelled</strong> and an automated refund confirmation email has been triggered to the passenger.
+                  The booking status comes from the backend. Refund processing is tracked separately.
                 </p>
               </div>
             )}
@@ -721,7 +719,7 @@ export default function FlightBookings() {
                 <div>
                   <span style={{ color: "#16a34a", fontWeight: 700 }}>Refund Processed</span>
                   <strong style={{ color: "#16a34a", fontSize: "1.05rem" }}>
-                    {formatCurrency(selectedBooking.refundAmountInr ?? selectedBooking.refundAmount ?? selectedBooking?.RefundAmount ?? selectedBooking?.RefundDetails?.RefundAmount ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.85))}
+                    {formatCurrency(selectedBooking.refundAmountInr ?? selectedBooking.refundAmount ?? selectedBooking?.RefundAmount ?? selectedBooking?.RefundDetails?.RefundAmount ?? 0)}
                   </strong>
                 </div>
               )}
@@ -918,7 +916,7 @@ export default function FlightBookings() {
                           style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
                         >
                           <option value="Original">Original Payment Method</option>
-                          <option value="Wallet">PickNBook Wallet</option>
+                          <option value="Wallet">Pick&Book Wallet</option>
                         </select>
                       </label>
                       <button

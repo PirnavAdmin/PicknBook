@@ -28,6 +28,7 @@ namespace PickNBook.Api.Services.Implementations
         private readonly IHybridRefundSplitStrategy _splitStrategy;
         private readonly AppDbContext _dbContext;
         private readonly ILogger<RefundRouterService> _logger;
+        private readonly IInAppNotificationService? _inAppNotificationService;
 
         public RefundRouterService(
             IWalletService walletService,
@@ -35,12 +36,24 @@ namespace PickNBook.Api.Services.Implementations
             IHybridRefundSplitStrategy splitStrategy,
             AppDbContext dbContext,
             ILogger<RefundRouterService> logger)
+            : this(walletService, cashfreeService, splitStrategy, dbContext, logger, null)
+        {
+        }
+
+        public RefundRouterService(
+            IWalletService walletService,
+            ICashfreeService cashfreeService,
+            IHybridRefundSplitStrategy splitStrategy,
+            AppDbContext dbContext,
+            ILogger<RefundRouterService> logger,
+            IInAppNotificationService? inAppNotificationService)
         {
             _walletService = walletService;
             _cashfreeService = cashfreeService;
             _splitStrategy = splitStrategy;
             _dbContext = dbContext;
             _logger = logger;
+            _inAppNotificationService = inAppNotificationService;
         }
 
         public async Task<CancellationRefundResultDto> RouteAsync(RefundRouteContext context)
@@ -378,6 +391,89 @@ namespace PickNBook.Api.Services.Implementations
                 cancellation.FailureReason = JsonSerializer.Serialize(compAudit);
 
                 await _dbContext.SaveChangesAsync();
+
+                // Additive In-App Notifications (Step 4: Refund Events)
+                if (_inAppNotificationService != null)
+                {
+                    try
+                    {
+                        if (overallRefundStatus == "COMPLETED")
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Refund",
+                                category: "Customer",
+                                title: "Refund Completed",
+                                message: BuildResultMessage(overallRefundStatus, walletStatus, gatewayStatus, actualWalletRefunded, actualGatewayRefunded, null),
+                                severity: "Success",
+                                referenceType: "BookingCancellation",
+                                referenceId: cancellation.Id.ToString(),
+                                actionUrl: $"/bookings/{cancellation.BookingReference}",
+                                idempotencyKey: $"REFUND_DONE_{cancellation.Id}",
+                                targetUserId: cancellation.UserId
+                            );
+                        }
+                        else if (overallRefundStatus == "PartiallyRefunded")
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Refund",
+                                category: "Customer",
+                                title: "Partial Refund Processed",
+                                message: $"Your refund for {cancellation.BookingReference} was partially completed. Remaining amount is being processed.",
+                                severity: "Warning",
+                                referenceType: "BookingCancellation",
+                                referenceId: cancellation.Id.ToString(),
+                                actionUrl: $"/bookings/{cancellation.BookingReference}",
+                                idempotencyKey: $"REFUND_PARTIAL_{cancellation.Id}",
+                                targetUserId: cancellation.UserId
+                            );
+
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Refund",
+                                category: "Admin",
+                                title: "Partial Refund Needs Attention",
+                                message: $"Partial refund for {cancellation.BookingReference} (Wallet: ₹{actualWalletRefunded:N2}, Gateway: ₹{actualGatewayRefunded:N2}).",
+                                severity: "Warning",
+                                referenceType: "BookingCancellation",
+                                referenceId: cancellation.Id.ToString(),
+                                actionUrl: $"/admin/refunds/{cancellation.Id}",
+                                idempotencyKey: $"ADMIN_REFUND_PARTIAL_{cancellation.Id}",
+                                targetRole: "Admin"
+                            );
+                        }
+                        else if (overallRefundStatus == "Failed")
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Refund",
+                                category: "Customer",
+                                title: "Refund Processing Issue",
+                                message: $"We encountered an issue processing your refund for {cancellation.BookingReference}. Our support team has been notified.",
+                                severity: "Error",
+                                referenceType: "BookingCancellation",
+                                referenceId: cancellation.Id.ToString(),
+                                actionUrl: $"/bookings/{cancellation.BookingReference}",
+                                idempotencyKey: $"REFUND_FAIL_{cancellation.Id}",
+                                targetUserId: cancellation.UserId
+                            );
+
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Refund",
+                                category: "Admin",
+                                title: "Refund Failed",
+                                message: $"Refund for booking {cancellation.BookingReference} failed: {walletError ?? gatewayError ?? "Unknown error"}",
+                                severity: "Error",
+                                referenceType: "BookingCancellation",
+                                referenceId: cancellation.Id.ToString(),
+                                actionUrl: $"/admin/refunds/{cancellation.Id}",
+                                idempotencyKey: $"ADMIN_REFUND_FAIL_{cancellation.Id}",
+                                targetRole: "Admin"
+                            );
+                        }
+                    }
+                    catch (Exception inAppEx)
+                    {
+                        _logger.LogWarning(inAppEx, "Failed to create in-app notification for refund cancellation {CancellationId}. Non-fatal.", cancellation.Id);
+                    }
+                }
             }
 
             return new CancellationRefundResultDto

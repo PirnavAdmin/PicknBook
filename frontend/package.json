@@ -29,7 +29,6 @@
     "vite-plugin-env-compatible": "^2.0.1"
   },
   "scripts": {
-    "start": "vite",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

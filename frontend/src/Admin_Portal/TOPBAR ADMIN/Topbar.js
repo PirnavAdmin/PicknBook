@@ -1056,7 +1056,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.75'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
-                        <img src={pickNBookLogo} alt="PickNBook Logo" style={{ height: '46px', width: 'auto' }} />
+                        <img src={pickNBookLogo} alt="Pick&Book Logo" style={{ height: '46px', width: 'auto' }} />
                     </div>
  
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '440px' }}>
@@ -1304,7 +1304,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'left', pointerEvents: 'none' }}>
-                            <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--admin-text)', lineHeight: '1.3' }}>{adminData.adminEmail || 'admin@picknbook.in'}</span>
+                            <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--admin-text)', lineHeight: '1.3' }}>{adminData.adminEmail || 'admin@pick&book.in'}</span>
                         </div>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--admin-muted)', pointerEvents: 'none' }}>
                             <polyline points="6 9 12 15 18 9"></polyline>
@@ -1342,7 +1342,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                         )}
                                     </div>
                                     <div style={styles.dsaInfo}>
-                                        <div style={styles.dsaName}>{adminData.adminEmail || 'admin@picknbook.in'}</div>
+                                        <div style={styles.dsaName}>{adminData.adminEmail || 'admin@pick&book.in'}</div>
                                         <div style={styles.dsaId}>Admin ID: {adminData.adminId}</div>
                                     </div>
                                 </div>

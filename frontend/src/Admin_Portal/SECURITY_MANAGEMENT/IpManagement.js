@@ -416,7 +416,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
         addedOn: currentFormatted,
         expiresInSeconds: expiresSec,
         status: formAction === 'Whitelisted' ? 'Whitelisted' : 'Active',
-        createdBy: 'admin@picknbook.in',
+        createdBy: 'admin@pick&book.in',
         description: formDescription.trim() || `Access rule configured by admin.`,
         priority: formPriority,
         sendNotification: formSendNotification,

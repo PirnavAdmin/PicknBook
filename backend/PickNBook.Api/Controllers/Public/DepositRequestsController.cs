@@ -14,10 +14,17 @@ namespace PickNBook.Api.Controllers;
 public class DepositRequestsController : AdminApiController
 {
     private readonly AppDbContext _context;
+    private readonly PickNBook.Api.Services.Interfaces.IInAppNotificationService? _inAppNotificationService;
 
     public DepositRequestsController(AppDbContext context)
+        : this(context, null)
+    {
+    }
+
+    public DepositRequestsController(AppDbContext context, PickNBook.Api.Services.Interfaces.IInAppNotificationService? inAppNotificationService)
     {
         _context = context;
+        _inAppNotificationService = inAppNotificationService;
     }
 
     [HttpGet]
@@ -187,6 +194,48 @@ public class DepositRequestsController : AdminApiController
         }
 
         await _context.SaveChangesAsync();
+
+        // Additive In-App Notifications (Step 4: Deposit Status Cycled)
+        if (_inAppNotificationService != null)
+        {
+            try
+            {
+                if (string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _inAppNotificationService.CreateNotificationAsync(
+                        type: "Deposit",
+                        category: "Customer",
+                        title: "Deposit Approved",
+                        message: $"Your manual deposit request #{deposit.Id} of ₹{deposit.Amount:N2} has been approved.",
+                        severity: "Success",
+                        referenceType: "DepositRequest",
+                        referenceId: deposit.Id.ToString(),
+                        actionUrl: "/wallet/deposits",
+                        idempotencyKey: $"DEPOSIT_APPROVE_{deposit.Id}",
+                        targetUserId: deposit.UserId.ToString()
+                    );
+                }
+                else if (string.Equals(newStatus, "Rejected", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _inAppNotificationService.CreateNotificationAsync(
+                        type: "Deposit",
+                        category: "Customer",
+                        title: "Deposit Rejected",
+                        message: $"Your manual deposit request #{deposit.Id} of ₹{deposit.Amount:N2} has been rejected.",
+                        severity: "Error",
+                        referenceType: "DepositRequest",
+                        referenceId: deposit.Id.ToString(),
+                        actionUrl: "/wallet/deposits",
+                        idempotencyKey: $"DEPOSIT_REJECT_{deposit.Id}",
+                        targetUserId: deposit.UserId.ToString()
+                    );
+                }
+            }
+            catch
+            {
+                // Non-fatal
+            }
+        }
 
         return Ok(new { message = $"Status set to {newStatus}.", status = deposit.Status });
     }

@@ -390,7 +390,7 @@
   box-shadow: 6px 0 32px rgba(15, 23, 42, 0.18);
 }
 
-/* ── PickNBook cursor hint ── */
+/* ── Pick&Book cursor hint ── */
 .picknbook-toggle {
   cursor: pointer;
   user-select: none;
