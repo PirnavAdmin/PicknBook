@@ -20,12 +20,7 @@ namespace PickNBook.Api.Controllers.Public
         private readonly AppDbContext _context;
         private readonly IInAppNotificationService? _inAppNotificationService;
 
-        public WalletController(IWalletService walletService, AppDbContext context)
-            : this(walletService, context, null)
-        {
-        }
-
-        public WalletController(IWalletService walletService, AppDbContext context, IInAppNotificationService? inAppNotificationService)
+        public WalletController(IWalletService walletService, AppDbContext context, IInAppNotificationService? inAppNotificationService = null)
         {
             _walletService = walletService;
             _context = context;

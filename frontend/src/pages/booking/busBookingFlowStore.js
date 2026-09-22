@@ -90,6 +90,7 @@ export function clearBlockKey() {
   writeBusBookingFlowState({
     blockKey: null,
     blockExpiresAt: null,
+    blockedPassengerPayload: null,
   });
 }
 

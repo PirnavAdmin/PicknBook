@@ -50,8 +50,6 @@ async function requestHotelJson(urlOrPath, options = {}, fallbackMessage = "Hote
 // NEW HOTEL API ENDPOINTS
 // ==========================================
 
-
-
 export async function searchHotels(options) {
   const { cityId, countryCode, city, destination, checkInDate, checkOutDate, roomsConfig } = options;
 

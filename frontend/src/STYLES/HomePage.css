@@ -12817,6 +12817,17 @@ button:focus-visible {
   ) !important;
 }
 
+.client-testimonials-status {
+  width: 100% !important;
+  min-height: 180px !important;
+  margin: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  color: #64748b !important;
+  font-size: 0.95rem !important;
+  text-align: center !important;
+}
+
 @keyframes client-testimonials-infinite-scroll {
   0% {
     transform: translate3d(0, 0, 0);
@@ -14349,9 +14360,10 @@ button:focus-visible {
     transform-origin: center center !important;
   }
 
-  .homepage-buses .flight-hero-wallpaper-video {
-    transform: scale(1.05) !important;
-    object-position: center 44% !important;
+  .homepage-buses .flight-hero-wallpaper-video,
+  .homepage-hotels .flight-hero-wallpaper-video {
+    transform: scale(1) !important;
+    object-position: center !important;
   }
 
   /* ==========================================================================

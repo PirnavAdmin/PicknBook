@@ -651,133 +651,30 @@ const DEFAULT_BUS_FEATURED_OFFERS = [
 ];
 
 
+/* â”€â”€â”€ City photo lookup â€” full names + IATA codes + aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const POPULAR_FLIGHTS = [
-  {
-    id: "flight-1",
-    route: "Delhi to Mumbai",
-    fromCity: "Delhi",
-    toCity: "Mumbai",
-    summary: "Multiple daily departures and flexible timings.",
-    searches: 1520,
-  },
-  {
-    id: "flight-2",
-    route: "Delhi to New York",
-    fromCity: "Delhi",
-    toCity: "New York",
-    summary: "Premium long-haul options with one-stop routes.",
-    searches: 1480,
-  },
-  {
-    id: "flight-3",
-    route: "Delhi to Dubai",
-    fromCity: "Delhi",
-    toCity: "Dubai",
-    summary: "Fast visa-friendly routes with top carriers.",
-    searches: 1390,
-  },
-  {
-    id: "flight-4",
-    route: "Kolkata to Patna",
-    fromCity: "Kolkata",
-    toCity: "Patna",
-    summary: "Affordable direct routes for frequent travelers.",
-    searches: 1210,
-  },
-  {
-    id: "flight-5",
-    route: "Pune to Chennai",
-    fromCity: "Pune",
-    toCity: "Chennai",
-    summary: "Quick connections with excellent morning slots.",
-    searches: 980,
-  },
-  {
-    id: "flight-6",
-    route: "Bangalore to Jaipur",
-    fromCity: "Bangalore",
-    toCity: "Jaipur",
-    summary: "Business and economy seats available every day.",
-    searches: 940,
-  },
-  {
-    id: "flight-7",
-    route: "Hyderabad to Kolkata",
-    fromCity: "Hyderabad",
-    toCity: "Kolkata",
-    summary: "Convenient schedules for weekend travel plans.",
-    searches: 870,
-  },
-  {
-    id: "flight-8",
-    route: "Mumbai to Doha",
-    fromCity: "Mumbai",
-    toCity: "Doha",
-    summary: "Competitive fares on popular Gulf routes.",
-    searches: 820,
-  },
-  {
-    id: "flight-9",
-    route: "Hyderabad to Proddatur",
-    fromCity: "Hyderabad",
-    toCity: "Proddatur",
-    summary: "Competitive fares on most Gulf routes.",
-    searches: 760,
-  },
+  { id: "flight-1", route: "Delhi to Mumbai", fromCity: "Delhi", toCity: "Mumbai", summary: "Multiple daily departures and flexible timings.", searches: 1520 },
+  { id: "flight-2", route: "Delhi to New York", fromCity: "Delhi", toCity: "New York", summary: "Premium long-haul options with one-stop routes.", searches: 1480 },
+  { id: "flight-3", route: "Delhi to Dubai", fromCity: "Delhi", toCity: "Dubai", summary: "Fast visa-friendly routes with top carriers.", searches: 1390 },
+  { id: "flight-4", route: "Kolkata to Patna", fromCity: "Kolkata", toCity: "Patna", summary: "Affordable direct routes for frequent travelers.", searches: 1210 },
+  { id: "flight-5", route: "Pune to Chennai", fromCity: "Pune", toCity: "Chennai", summary: "Quick connections with excellent morning slots.", searches: 980 },
+  { id: "flight-6", route: "Bangalore to Jaipur", fromCity: "Bangalore", toCity: "Jaipur", summary: "Business and economy seats available every day.", searches: 940 },
+  { id: "flight-7", route: "Hyderabad to Kolkata", fromCity: "Hyderabad", toCity: "Kolkata", summary: "Convenient schedules for weekend travel plans.", searches: 870 },
+  { id: "flight-8", route: "Mumbai to Doha", fromCity: "Mumbai", toCity: "Doha", summary: "Competitive fares on popular Gulf routes.", searches: 820 },
+  { id: "flight-9", route: "Hyderabad to Proddatur", fromCity: "Hyderabad", toCity: "Proddatur", summary: "Competitive fares on most Gulf routes.", searches: 760 },
 ];
 
 const FALLBACK_BUS_ROUTES = [
-  {
-    id: "bus-fallback-1",
-    fromCity: "Mumbai",
-    toCity: "Pune",
-    searches: 1842,
-  },
-  {
-    id: "bus-fallback-2",
-    fromCity: "Bengaluru",
-    toCity: "Chennai",
-    searches: 1520,
-  },
-  {
-    id: "bus-fallback-3",
-    fromCity: "Delhi",
-    toCity: "Jaipur",
-    searches: 1480,
-  },
-  {
-    id: "bus-fallback-4",
-    fromCity: "Hyderabad",
-    toCity: "Bengaluru",
-    searches: 1390,
-  },
-  {
-    id: "bus-fallback-5",
-    fromCity: "Chennai",
-    toCity: "Bengaluru",
-    searches: 1210,
-  },
-  {
-    id: "bus-fallback-6",
-    fromCity: "Pune",
-    toCity: "Goa",
-    searches: 980,
-  },
-  {
-    id: "bus-fallback-7",
-    fromCity: "Hyderabad",
-    toCity: "Vijayawada",
-    searches: 870,
-  },
-  {
-    id: "bus-fallback-8",
-    fromCity: "Delhi",
-    toCity: "Agra",
-    searches: 750,
-  },
+  { id: "bus-fallback-1", fromCity: "Mumbai", toCity: "Pune", searches: 1842 },
+  { id: "bus-fallback-2", fromCity: "Bengaluru", toCity: "Chennai", searches: 1520 },
+  { id: "bus-fallback-3", fromCity: "Delhi", toCity: "Jaipur", searches: 1480 },
+  { id: "bus-fallback-4", fromCity: "Hyderabad", toCity: "Bengaluru", searches: 1390 },
+  { id: "bus-fallback-5", fromCity: "Chennai", toCity: "Bengaluru", searches: 1210 },
+  { id: "bus-fallback-6", fromCity: "Pune", toCity: "Goa", searches: 980 },
+  { id: "bus-fallback-7", fromCity: "Hyderabad", toCity: "Vijayawada", searches: 870 },
+  { id: "bus-fallback-8", fromCity: "Delhi", toCity: "Agra", searches: 750 },
 ];
 
-/* â”€â”€â”€ City photo lookup â€” full names + IATA codes + aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const CITY_IMAGES = {
   /* â”€â”€ Hyderabad â”€â”€ */
   hyderabad: "https://images.unsplash.com/photo-1598001836732-e6e7f4e16df2?w=560&q=75&fit=crop&auto=format",
@@ -1381,54 +1278,12 @@ const HOME_FLIGHT_APP_BENEFITS = [
 ];
 
 const POPULAR_HOTELS = [
-  {
-    id: "hotel-1",
-    city: "Hyderabad",
-    name: "Atlas Pearl Suites",
-    summary: "Business-friendly stays near HITEC City with breakfast options.",
-    searches: 1420,
-    price: "3,499",
-  },
-  {
-    id: "hotel-2",
-    city: "Bengaluru",
-    name: "Cobalt Garden Hotel",
-    summary: "Calm rooms, workspace corners, and quick airport access.",
-    searches: 1310,
-    price: "4,199",
-  },
-  {
-    id: "hotel-3",
-    city: "Mumbai",
-    name: "Harbour View Residency",
-    summary: "Premium city stays with flexible check-in and sea-facing rooms.",
-    searches: 1260,
-    price: "5,299",
-  },
-  {
-    id: "hotel-4",
-    city: "Goa",
-    name: "Coral Bay Retreat",
-    summary: "Resort-style rooms close to beaches, cafes, and weekend routes.",
-    searches: 1188,
-    price: "4,899",
-  },
-  {
-    id: "hotel-5",
-    city: "Delhi",
-    name: "Metro Nest Hotel",
-    summary: "Clean city-center rooms for short stays and family travel.",
-    searches: 1040,
-    price: "2,999",
-  },
-  {
-    id: "hotel-6",
-    city: "Jaipur",
-    name: "Heritage Courtyard Stay",
-    summary: "Boutique comfort with local breakfast and sightseeing access.",
-    searches: 920,
-    price: "3,199",
-  },
+  { id: "hotel-1", city: "Hyderabad", name: "Atlas Pearl Suites", summary: "Business-friendly stays near HITEC City with breakfast options.", searches: 1420, price: "3,499" },
+  { id: "hotel-2", city: "Bengaluru", name: "Cobalt Garden Hotel", summary: "Calm rooms, workspace corners, and quick airport access.", searches: 1310, price: "4,199" },
+  { id: "hotel-3", city: "Mumbai", name: "Harbour View Residency", summary: "Premium city stays with flexible check-in and sea-facing rooms.", searches: 1260, price: "5,299" },
+  { id: "hotel-4", city: "Goa", name: "Coral Bay Retreat", summary: "Resort-style rooms close to beaches, cafes, and weekend routes.", searches: 1188, price: "4,899" },
+  { id: "hotel-5", city: "Delhi", name: "Metro Nest Hotel", summary: "Clean city-center rooms for short stays and family travel.", searches: 1040, price: "2,999" },
+  { id: "hotel-6", city: "Jaipur", name: "Heritage Courtyard Stay", summary: "Boutique comfort with local breakfast and sightseeing access.", searches: 920, price: "3,199" },
 ];
 
 const HOTEL_HIGHLIGHTS = [
@@ -2649,19 +2504,6 @@ const formatFlightDate = (dateStr) => {
   }
 };
 
-const STATIC_TESTIMONIALS = [
-  { comment: "Super convenient seat selection for luxury sleeper buses. Highly recommended for weekend trips!", author: "Sneha Patel", role: "Weekend Explorer", initials: "SP", rating: 5 },
-  { comment: "Great package deals on luxury hotels in Jaipur. Saved over 30% compared to other platforms.", author: "Rohan Gupta", role: "Luxury Traveler", initials: "RG", rating: 5 },
-  { comment: "Seamless mobile booking experience! Received e-tickets instantly via SMS and email.", author: "Meera Nair", role: "Solo Traveler", initials: "MN", rating: 5 },
-  { comment: "Booking our adventure tour with Pick & Book was the best decision! Every moment was filled with excitement and wonder.", author: "Alex Martinez", role: "Travel Blogger", initials: "AM", rating: 5 },
-  { comment: "The hotel booking process was seamless with instant confirmation. Great discounts and zero hidden convenience charges!", author: "Priya Sharma", role: "Corporate Traveler", initials: "PS", rating: 5 },
-  { comment: "Comparing domestic flight timings and fares on Pick & Book is so clear. Best price guarantee really works!", author: "Rahul Verma", role: "Frequent Flyer", initials: "RV", rating: 5 },
-  { comment: "I travel intercity by Volvo buses often. Live bus tracking and seat selection on Pick & Book make every journey smooth.", author: "Sarah Jenkins", role: "Digital Nomad", initials: "SJ", rating: 5 },
-  { comment: "Booked our resort stay in Goa through Pick & Book. Fantastic room options and transparent cancellation terms.", author: "David Chen", role: "Family Traveler", initials: "DC", rating: 5 },
-  { comment: "Fast customer support and instant refund tracking gave me full confidence for all my trip bookings!", author: "Ananya Roy", role: "Backpacker", initials: "AR", rating: 5 },
-  { comment: "The UI is so clean and fast. Found cheap flights to Mumbai in under 2 minutes!", author: "Vikram Malhotra", role: "Tech Lead", initials: "VM", rating: 5 },
-];
-
 export default function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -2680,6 +2522,7 @@ export default function HomePage() {
   const [openFaqId, setOpenFaqId] = useState(null);
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [faqModalSectionId, setFaqModalSectionId] = useState(null);
+  const [faqModalOpenQuestionId, setFaqModalOpenQuestionId] = useState(null);
 
   useEffect(() => {
     setOpenFaqId(null);
@@ -2772,6 +2615,8 @@ export default function HomePage() {
   const [popularHotelsLoading, setPopularHotelsLoading] = useState(false);
   const [popularHotelsError, setPopularHotelsError] = useState("");
   const [testimonials, setTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [testimonialsError, setTestimonialsError] = useState("");
   const [isDealsDialogOpen, setIsDealsDialogOpen] = useState(false);
   const [offerForDetailPopup, setOfferForDetailPopup] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -3397,19 +3242,16 @@ export default function HomePage() {
   useEffect(() => {
     let isMounted = true;
     const DEFAULT_POPULAR_BUS_ROUTES = [
-      // Page 1 (The exact 5 reference routes)
       { id: "bus-hot-1", fromCity: "Delhi", toCity: "Jaipur", searches: 2450, fare: 450, arrowType: "single", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-2", fromCity: "Hyderabad", toCity: "Vijayawada", searches: 2180, fare: 620, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-3", fromCity: "Bengaluru", toCity: "Goa", searches: 1890, fare: 850, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-4", fromCity: "Hyderabad", toCity: "Bengaluru", searches: 1420, fare: 700, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-5", fromCity: "Chennai", toCity: "Coimbatore", searches: 1280, fare: 680, arrowType: "swap", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format" },
-      // Page 2
       { id: "bus-hot-6", fromCity: "Mumbai", toCity: "Pune", searches: 1950, fare: 420, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-7", fromCity: "Delhi", toCity: "Agra", searches: 1820, fare: 380, arrowType: "swap", img: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-8", fromCity: "Bengaluru", toCity: "Chennai", searches: 1640, fare: 550, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-9", fromCity: "Ahmedabad", toCity: "Mumbai", searches: 1510, fare: 750, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-10", fromCity: "Pune", toCity: "Goa", searches: 1390, fare: 800, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
-      // Page 3
       { id: "bus-hot-11", fromCity: "Jaipur", toCity: "Udaipur", searches: 1220, fare: 490, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-12", fromCity: "Hyderabad", toCity: "Tirupati", searches: 1140, fare: 650, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
       { id: "bus-hot-13", fromCity: "Chandigarh", toCity: "Manali", searches: 1080, fare: 920, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
@@ -3426,7 +3268,7 @@ export default function HomePage() {
     };
   }, []);
 
-  /* Popular Flight Routes â€” Static Curated Data (No API Hit) */
+  /* Popular Flight Routes — Static Curated Data */
   useEffect(() => {
     setPopularFlightsLoading(false);
     setPopularFlightsError("");
@@ -3438,7 +3280,7 @@ export default function HomePage() {
     ]);
   }, []);
 
-  /* Popular Hotels â€” Static Curated Data (No API Hit) */
+  /* Popular Hotels — Static Curated Data */
   useEffect(() => {
     setPopularHotelsLoading(false);
     setPopularHotelsError("");
@@ -3482,39 +3324,49 @@ export default function HomePage() {
     ]);
   }, []);
 
-  /* ── Testimonials — Dynamic from API, fallback to static ──────── */
+  /* ── Testimonials — loaded only from the public API ──────── */
   useEffect(() => {
     let isMounted = true;
     const loadTestimonials = async () => {
       try {
         const raw = await getPublicTestimonials();
         if (!isMounted) return;
-        if (Array.isArray(raw) && raw.length > 0) {
-          const normalized = raw
-            .filter((t) => {
-              const status = (t.status || t.Status || "Active").toString().toLowerCase();
-              return status === "active" || status === "";
-            })
-            .map((t) => {
-              const name = t.name || t.Name || t.author || t.Author || "Guest";
-              const initials = name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-              return {
-                comment: t.comment || t.Comment || t.preview || t.message || t.testimonial || "",
-                author: name,
-                role: t.role || t.Role || t.designation || t.Designation || "Traveler",
-                initials,
-                rating: Number(t.rating || t.Rating || 5),
-              };
-            })
-            .filter((t) => t.comment);
-          if (normalized.length > 0) {
-            setTestimonials(normalized);
-            return;
-          }
-        }
-        if (isMounted) setTestimonials(STATIC_TESTIMONIALS);
+        const items = Array.isArray(raw) ? raw : raw?.data ?? [];
+        const normalized = items
+          .filter((t) => {
+            const status = (t.status || t.Status || "").toString().toLowerCase();
+            return ["active", "approved", "published"].includes(status);
+          })
+          .map((t) => {
+            const name = t.name || t.Name || "Guest";
+            const initials = name
+              .split(" ")
+              .filter(Boolean)
+              .map((word) => word[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2);
+            const rating = Number(t.rating ?? t.Rating ?? 5);
+            return {
+              id: t.id ?? t.Id,
+              comment: t.comment || t.Comment || "",
+              author: name,
+              role: t.role || t.Role || "Traveler",
+              initials: initials || "G",
+              rating: Math.min(5, Math.max(1, Number.isFinite(rating) ? rating : 5)),
+            };
+          })
+          .filter((t) => t.comment);
+
+        setTestimonials(normalized);
+        setTestimonialsError("");
       } catch {
-        if (isMounted) setTestimonials(STATIC_TESTIMONIALS);
+        if (isMounted) {
+          setTestimonials([]);
+          setTestimonialsError("Customer reviews are unavailable right now.");
+        }
+      } finally {
+        if (isMounted) setTestimonialsLoading(false);
       }
     };
     loadTestimonials();
@@ -3522,7 +3374,9 @@ export default function HomePage() {
   }, []);
 
   const scrollingTestimonialItems = useMemo(() => {
-    const source = testimonials && testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS;
+    if (!testimonials.length) return [];
+
+    const source = testimonials;
     let list = [...source];
     while (list.length < 10) {
       list = [...list, ...source];
@@ -4226,25 +4080,39 @@ export default function HomePage() {
                       </summary>
 
                       <div className="faq-modal-category-body">
-                        {section.items.map((item) => (
-                          <details className="india-faq-item faq-modal-question" key={item.id}>
-                            <summary><span>{item.question}</span></summary>
-                            <div className="india-faq-answer">
-                              {item.answer.split("\n\n").map((block, blockIndex) => (
-                                <div key={blockIndex} className="india-faq-block-item">
-                                  {block.split("\n").map((line, lineIndex) => (
-                                    <p
-                                      key={lineIndex}
-                                      className={/^(?:\u2022|\d+\.)/.test(line) ? "india-faq-step" : ""}
-                                    >
-                                      {line}
-                                    </p>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-                        ))}
+                        {section.items.map((item) => {
+                          const isOpen = faqModalOpenQuestionId === item.id;
+                          return (
+                            <details 
+                              className="india-faq-item faq-modal-question" 
+                              key={item.id}
+                              open={isOpen}
+                            >
+                              <summary
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setFaqModalOpenQuestionId((prev) => prev === item.id ? null : item.id);
+                                }}
+                              >
+                                <span>{item.question}</span>
+                              </summary>
+                              <div className="india-faq-answer">
+                                {item.answer.split("\n\n").map((block, blockIndex) => (
+                                  <div key={blockIndex} className="india-faq-block-item">
+                                    {block.split("\n").map((line, lineIndex) => (
+                                      <p
+                                        key={lineIndex}
+                                        className={/^(?:\u2022|\d+\.)/.test(line) ? "india-faq-step" : ""}
+                                      >
+                                        {line}
+                                      </p>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          );
+                        })}
                       </div>
                     </details>
                   );
@@ -9482,28 +9350,36 @@ export default function HomePage() {
           {/* Right Scrolling Testimonials Scroller */}
           <div className="client-testimonials-right-dark-box">
             <div className="client-testimonials-scroller" tabIndex={0} aria-label="Scrolling customer reviews">
-              <div className="client-testimonials-track">
-                {scrollingTestimonialItems.map((review, idx) => (
-                  <article
-                    className="client-testimonial-card"
-                    key={`testimonial-card-${idx}`}
-                  >
-                    <div className="client-card-stars-row">
-                      {[...Array(review.rating || 5)].map((_, sIdx) => (
-                        <Star key={sIdx} size={14} fill="#f59e0b" stroke="#f59e0b" />
-                      ))}
-                    </div>
-                    <p className="client-card-comment">"{review.comment}"</p>
-                    <div className="client-card-author-row">
-                      <div className="client-card-avatar">{review.initials}</div>
-                      <div className="client-card-author-meta">
-                        <strong className="client-card-author-name">{review.author}</strong>
-                        <span className="client-card-author-role">{review.role}</span>
+              {testimonialsLoading ? (
+                <p className="client-testimonials-status" role="status">Loading customer reviews…</p>
+              ) : scrollingTestimonialItems.length > 0 ? (
+                <div className="client-testimonials-track">
+                  {scrollingTestimonialItems.map((review, idx) => (
+                    <article
+                      className="client-testimonial-card"
+                      key={`testimonial-card-${review.id ?? review.author}-${idx}`}
+                    >
+                      <div className="client-card-stars-row">
+                        {[...Array(review.rating)].map((_, sIdx) => (
+                          <Star key={sIdx} size={14} fill="#f59e0b" stroke="#f59e0b" />
+                        ))}
                       </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                      <p className="client-card-comment">"{review.comment}"</p>
+                      <div className="client-card-author-row">
+                        <div className="client-card-avatar">{review.initials}</div>
+                        <div className="client-card-author-meta">
+                          <strong className="client-card-author-name">{review.author}</strong>
+                          <span className="client-card-author-role">{review.role}</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="client-testimonials-status" role="status">
+                  {testimonialsError || "No customer reviews have been published yet."}
+                </p>
+              )}
             </div>
           </div>
         </div>

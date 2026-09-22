@@ -16,12 +16,7 @@ public class DepositRequestsController : AdminApiController
     private readonly AppDbContext _context;
     private readonly PickNBook.Api.Services.Interfaces.IInAppNotificationService? _inAppNotificationService;
 
-    public DepositRequestsController(AppDbContext context)
-        : this(context, null)
-    {
-    }
-
-    public DepositRequestsController(AppDbContext context, PickNBook.Api.Services.Interfaces.IInAppNotificationService? inAppNotificationService)
+    public DepositRequestsController(AppDbContext context, PickNBook.Api.Services.Interfaces.IInAppNotificationService? inAppNotificationService = null)
     {
         _context = context;
         _inAppNotificationService = inAppNotificationService;

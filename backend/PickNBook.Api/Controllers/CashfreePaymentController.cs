@@ -564,20 +564,61 @@ namespace PickNBook.Api.Controllers
                             }
                         }
 
+                        if (TryGetProp(root, "AirlineCode", out var rAcode)) airline = rAcode.GetString() ?? "";
+                        else if (TryGetProp(root, "Airline", out var rAir)) airline = rAir.GetString() ?? "";
+
+                        if (TryGetProp(root, "FromCity", out var rFrom)) fromCity = rFrom.GetString() ?? "";
+                        else if (TryGetProp(root, "Origin", out var rOrig) && rOrig.ValueKind == JsonValueKind.String) fromCity = rOrig.GetString() ?? "";
+
+                        if (TryGetProp(root, "ToCity", out var rTo)) toCity = rTo.GetString() ?? "";
+                        else if (TryGetProp(root, "Destination", out var rDest) && rDest.ValueKind == JsonValueKind.String) toCity = rDest.GetString() ?? "";
+
                         if (TryGetProp(root, "DepartureDate", out var depDateProp) && DateTime.TryParse(depDateProp.GetString(), out var parsedDep))
                         {
                             depTime = parsedDep;
                         }
-                        else if (TryGetProp(root, "Segments", out var segArray) && segArray.ValueKind == JsonValueKind.Array && segArray.GetArrayLength() > 0)
+
+                        if (TryGetProp(root, "Segments", out var segArray) && segArray.ValueKind == JsonValueKind.Array && segArray.GetArrayLength() > 0)
                         {
                             var firstSeg = segArray[0];
-                            if (TryGetProp(firstSeg, "DepartureTime", out var segDep) && DateTime.TryParse(segDep.GetString(), out var parsedSegDep))
+                            if (string.IsNullOrEmpty(airline))
                             {
-                                depTime = parsedSegDep;
+                                if (TryGetProp(firstSeg, "AirlineCode", out var sAcode)) airline = sAcode.GetString() ?? "";
+                                else if (TryGetProp(firstSeg, "Airline", out var sAir) && sAir.ValueKind == JsonValueKind.String) airline = sAir.GetString() ?? "";
+                                else if (TryGetProp(firstSeg, "AirlineDetails", out var aDetails) && TryGetProp(aDetails, "AirlineCode", out var adCode)) airline = adCode.GetString() ?? "";
                             }
-                            else if (TryGetProp(firstSeg, "Origin", out var segOrigNode) && TryGetProp(segOrigNode, "DepTime", out var origDep) && DateTime.TryParse(origDep.GetString(), out var parsedOrigDep))
+                            if (string.IsNullOrEmpty(fromCity))
                             {
-                                depTime = parsedOrigDep;
+                                if (TryGetProp(firstSeg, "FromCity", out var sFrom)) fromCity = sFrom.GetString() ?? "";
+                                else if (TryGetProp(firstSeg, "Origin", out var sOrig))
+                                {
+                                    if (sOrig.ValueKind == JsonValueKind.String) fromCity = sOrig.GetString() ?? "";
+                                    else if (sOrig.ValueKind == JsonValueKind.Object && TryGetProp(sOrig, "CityCode", out var sCc)) fromCity = sCc.GetString() ?? "";
+                                    else if (sOrig.ValueKind == JsonValueKind.Object && TryGetProp(sOrig, "AirportCode", out var sAc)) fromCity = sAc.GetString() ?? "";
+                                }
+                            }
+                            if (string.IsNullOrEmpty(toCity))
+                            {
+                                var lastSeg = segArray[segArray.GetArrayLength() - 1];
+                                if (TryGetProp(lastSeg, "ToCity", out var sTo)) toCity = sTo.GetString() ?? "";
+                                else if (TryGetProp(lastSeg, "Destination", out var sDest))
+                                {
+                                    if (sDest.ValueKind == JsonValueKind.String) toCity = sDest.GetString() ?? "";
+                                    else if (sDest.ValueKind == JsonValueKind.Object && TryGetProp(sDest, "CityCode", out var dCc)) toCity = dCc.GetString() ?? "";
+                                    else if (sDest.ValueKind == JsonValueKind.Object && TryGetProp(sDest, "AirportCode", out var dAc)) toCity = dAc.GetString() ?? "";
+                                }
+                            }
+
+                            if (depTime == default || depTime <= DateTime.UtcNow)
+                            {
+                                if (TryGetProp(firstSeg, "DepartureTime", out var segDep) && DateTime.TryParse(segDep.GetString(), out var parsedSegDep))
+                                {
+                                    depTime = parsedSegDep;
+                                }
+                                else if (TryGetProp(firstSeg, "Origin", out var segOrigNode) && TryGetProp(segOrigNode, "DepTime", out var origDep) && DateTime.TryParse(origDep.GetString(), out var parsedOrigDep))
+                                {
+                                    depTime = parsedOrigDep;
+                                }
                             }
                         }
 

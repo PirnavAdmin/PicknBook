@@ -201,6 +201,22 @@ namespace PickNBook.Api.Services
                 }
             }
 
+            if (coupon.MinBookingAmount > 0 && fareAfterMarkupAndPromo < coupon.MinBookingAmount)
+            {
+                return (0m, null, null);
+            }
+
+            if (coupon.MaxUsagePerUser > 0 && !string.IsNullOrWhiteSpace(userId))
+            {
+                var userUsageCount = await _dbContext.FlightCouponUsages
+                    .CountAsync(u => u.CouponCode == cleanCode && u.BookingStatus == "Booked" &&
+                                     _dbContext.FlightReservations.Any(r => r.Id == u.FlightReservationId && r.UserId == userId));
+                if (userUsageCount >= coupon.MaxUsagePerUser)
+                {
+                    return (0m, null, null);
+                }
+            }
+
             // DayOfWeek condition check
             if (coupon.Conditions != null && coupon.Conditions.Any())
             {
@@ -215,6 +231,10 @@ namespace PickNBook.Api.Services
             if (coupon.CouponType.Equals("Percentage", StringComparison.OrdinalIgnoreCase))
             {
                 discount = fareAfterMarkupAndPromo * (coupon.Value / 100m);
+                if (coupon.MaxDiscountAmount.HasValue && coupon.MaxDiscountAmount.Value > 0 && discount > coupon.MaxDiscountAmount.Value)
+                {
+                    discount = coupon.MaxDiscountAmount.Value;
+                }
             }
             else
             {

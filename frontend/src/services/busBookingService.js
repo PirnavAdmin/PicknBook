@@ -1614,47 +1614,137 @@ export async function searchBusCities(query) {
   }
 }
 
-export async function getBusSeatLayoutProxy({ traceId, srdvIndex, resultIndex }) {
+// SRDV's GetSeatLayOut endpoint changes supplier workflow state.  It must be
+// treated as an idempotent operation on the client: React remounts, reopening
+// the modal, or a double click must never issue a second request for the same
+// TraceId/ResultIndex pair.  A new bus search receives a new TraceId, so it
+// naturally has a separate cache entry.
+const SEAT_LAYOUT_CACHE_TTL_MS = 15 * 60 * 1000;
+const SEAT_LAYOUT_CACHE_PREFIX = "picknbook.bus-seat-layout.v1:";
+const seatLayoutInFlightRequests = new Map();
+const seatLayoutResponseCache = new Map();
+
+function getSeatLayoutWorkflowKey({ traceId, srdvIndex, resultIndex }) {
+  return [traceId, srdvIndex, resultIndex]
+    .map((value) => String(value ?? "").trim())
+    .join("|");
+}
+
+function cloneSeatLayoutData(data) {
+  // Responses are JSON payloads. Returning a copy prevents one view from
+  // accidentally mutating the cached layout used by another remount.
+  return JSON.parse(JSON.stringify(data));
+}
+
+function readCachedSeatLayout(workflowKey) {
+  const memoryEntry = seatLayoutResponseCache.get(workflowKey);
+  if (memoryEntry && Date.now() - memoryEntry.savedAt < SEAT_LAYOUT_CACHE_TTL_MS) {
+    return cloneSeatLayoutData(memoryEntry.data);
+  }
+  seatLayoutResponseCache.delete(workflowKey);
+
+  if (typeof window === "undefined") return null;
+
   try {
-    const data = await requestJson(`${BUS_BOOKINGS_ROOT}/seat-layout`, {
+    const raw = window.sessionStorage.getItem(
+      `${SEAT_LAYOUT_CACHE_PREFIX}${encodeURIComponent(workflowKey)}`
+    );
+    if (!raw) return null;
+
+    const entry = JSON.parse(raw);
+    if (!entry?.data || Date.now() - Number(entry.savedAt) >= SEAT_LAYOUT_CACHE_TTL_MS) {
+      window.sessionStorage.removeItem(
+        `${SEAT_LAYOUT_CACHE_PREFIX}${encodeURIComponent(workflowKey)}`
+      );
+      return null;
+    }
+
+    seatLayoutResponseCache.set(workflowKey, entry);
+    return cloneSeatLayoutData(entry.data);
+  } catch {
+    return null;
+  }
+}
+
+function cacheSeatLayout(workflowKey, data) {
+  const entry = { savedAt: Date.now(), data };
+  seatLayoutResponseCache.set(workflowKey, entry);
+
+  if (typeof window === "undefined") return;
+
+  try {
+    const serialized = JSON.stringify(entry);
+    // Avoid exhausting sessionStorage for unusually large supplier payloads.
+    if (serialized.length <= 500_000) {
+      window.sessionStorage.setItem(
+        `${SEAT_LAYOUT_CACHE_PREFIX}${encodeURIComponent(workflowKey)}`,
+        serialized
+      );
+    }
+  } catch {
+    // Memory caching still prevents duplicate calls while this tab is open.
+  }
+}
+
+function toBlockedWorkflowError(error) {
+  const errorCode =
+    error?.payload?.Error?.ErrorCode ??
+    error?.payload?.error?.errorCode ??
+    error?.Error?.ErrorCode ??
+    error?.error?.errorCode ??
+    error?.code ??
+    0;
+
+  if (Number(errorCode) !== 7023 && !String(error?.message || "").toLowerCase().includes("already blocked")) {
+    return null;
+  }
+
+  const blockedError = new Error(
+    error?.payload?.Error?.ErrorMessage ||
+      error?.Error?.ErrorMessage ||
+      error?.message ||
+      "This bus workflow is already blocked."
+  );
+  blockedError.code = 7023;
+  return blockedError;
+}
+
+export async function getBusSeatLayoutProxy({ traceId, srdvIndex, resultIndex }) {
+  const payload = {
+    traceId: String(traceId ?? "").trim(),
+    srdvIndex: String(srdvIndex ?? "").trim(),
+    resultIndex: String(resultIndex ?? "").trim(),
+  };
+  const workflowKey = getSeatLayoutWorkflowKey(payload);
+  const cachedLayout = readCachedSeatLayout(workflowKey);
+  if (cachedLayout) return cachedLayout;
+
+  let request = seatLayoutInFlightRequests.get(workflowKey);
+  if (!request) {
+    request = requestJson(`${BUS_BOOKINGS_ROOT}/seat-layout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        traceId: String(traceId),
-        srdvIndex: String(srdvIndex),
-        resultIndex: String(resultIndex),
-      }),
-    });
+      body: JSON.stringify(payload),
+    })
+      .then((data) => {
+        const blockedError = toBlockedWorkflowError(data);
+        if (blockedError) throw blockedError;
 
-    console.log("[DEBUG 7023] getBusSeatLayoutProxy data:", data);
+        cacheSeatLayout(workflowKey, data);
+        return data;
+      })
+      .catch((error) => {
+        throw toBlockedWorkflowError(error) || error;
+      })
+      .finally(() => {
+        seatLayoutInFlightRequests.delete(workflowKey);
+      });
 
-    // Provider returns 7023 when this bus workflow is already in blocked state (200 OK case).
-    const errorCode = data?.Error?.ErrorCode ?? data?.error?.errorCode ?? 0;
-    if (Number(errorCode) === 7023) {
-      console.log("[DEBUG 7023] Found 7023 in 200 OK data!");
-      const err = new Error(data?.Error?.ErrorMessage || "Bus workflow already blocked.");
-      err.code = 7023;
-      throw err;
-    }
-
-    return data;
-  } catch (error) {
-    console.log("[DEBUG 7023] getBusSeatLayoutProxy caught error:", error);
-    console.log("[DEBUG 7023] error.payload:", error?.payload);
-    
-    // If the API returned a 400 Bad Request, requestJson threw an error.
-    // Check if the payload contains 7023.
-    const errorCode = error?.payload?.Error?.ErrorCode ?? error?.payload?.error?.errorCode ?? 0;
-    if (Number(errorCode) === 7023 || (error?.message || "").toLowerCase().includes("already blocked")) {
-      console.log("[DEBUG 7023] Found 7023 in error payload/message!");
-      const err = new Error(error?.payload?.Error?.ErrorMessage || "Bus workflow already blocked.");
-      err.code = 7023;
-      throw err;
-    }
-
-    console.error("[busBookingService] getBusSeatLayoutProxy Error:", error);
-    throw error;
+    seatLayoutInFlightRequests.set(workflowKey, request);
   }
+
+  const data = await request;
+  return cloneSeatLayoutData(data);
 }
 
 export async function getBoardingPointsProxy({ traceId, srdvIndex, resultIndex }) {
@@ -1830,7 +1920,7 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
     }));
 
     return {
-      tripId: data?.TraceId || params.traceId,
+      tripId: data?.TraceId || traceId,
       tripType: "Bus",
       travelClass: null,
       layoutType: seats.some((st) => st.seatType.toLowerCase().includes("sleeper")) ? "Sleeper" : "Seater",

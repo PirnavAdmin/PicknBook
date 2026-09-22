@@ -35,7 +35,11 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { searchBuses, getBoardingPointsProxy } from "../../services/busBookingService";
+import {
+  searchBuses,
+  getBoardingPointsProxy,
+  getBusSeatMap,
+} from "../../services/busBookingService";
 import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
@@ -757,7 +761,10 @@ export default function BusSearchResults() {
       boardingSearchText,
       droppingSearchText,
       travelSearchText,
-      expandedCard,
+      // A supplier seat layout is a one-time workflow result, not filter state.
+      // Persisting an open seat modal can re-trigger the supplier request after a
+      // refresh, so only restore non-seat detail panels.
+      expandedCard: expandedCard?.panel === "seats" ? null : expandedCard,
       expandedOperatorGroups,
     };
     try {
@@ -786,7 +793,7 @@ export default function BusSearchResults() {
     expandedCard,
     expandedOperatorGroups,
   ]);
-  const seatLoadingTimerRef = useRef(null);
+  const seatLayoutLoadRef = useRef(null);
 
   const lastSearchKeyRef = useRef("");
 
@@ -808,15 +815,6 @@ export default function BusSearchResults() {
     initialTripType,
     initialDepartureDateInput,
   ]);
-
-  useEffect(
-    () => () => {
-      if (seatLoadingTimerRef.current) {
-        window.clearTimeout(seatLoadingTimerRef.current);
-      }
-    },
-    []
-  );
 
   useEffect(() => {
     if (!observerTarget) return;
@@ -1427,8 +1425,8 @@ export default function BusSearchResults() {
     }));
   };
 
-  const openBooking = (bus) => {
-    if (seatLoadingBusId || bus.availableSeats <= 0) {
+  const openBooking = async (bus) => {
+    if (seatLayoutLoadRef.current || bus.availableSeats <= 0) {
       return;
     }
 
@@ -1437,13 +1435,9 @@ export default function BusSearchResults() {
       return;
     }
 
-    if (seatLoadingTimerRef.current) {
-      window.clearTimeout(seatLoadingTimerRef.current);
-      seatLoadingTimerRef.current = null;
-    }
-
     setActionMessage("");
     setSeatLoadingBusId(bus.id);
+    seatLayoutLoadRef.current = bus.id;
 
     const searchContext = {
       source: sourceName,
@@ -1452,15 +1446,30 @@ export default function BusSearchResults() {
       tripType,
     };
 
-    seatLoadingTimerRef.current = window.setTimeout(() => {
+    try {
+      // Match the native app flow: obtain the supplier layout once before
+      // entering seat selection, then pass that completed layout forward.
+      const seatLayout = await getBusSeatMap(bus);
+
       setExpandedCard({
         busId: bus.id,
         panel: "seats",
         searchContext,
+        seatLayout,
       });
-      setSeatLoadingBusId(null);
-      seatLoadingTimerRef.current = null;
-    }, 1100);
+    } catch (error) {
+      const isSupplierWorkflowLocked = Number(error?.code) === 7023;
+      setSearchError(
+        isSupplierWorkflowLocked
+          ? "This bus availability session has already been used. Search again to load fresh seats."
+          : error?.message || "Unable to load live seat availability. Please try again."
+      );
+    } finally {
+      if (seatLayoutLoadRef.current === bus.id) {
+        seatLayoutLoadRef.current = null;
+        setSeatLoadingBusId(null);
+      }
+    }
   };
 
   const subtractMinutes = (timeStr, mins) => {
@@ -2202,6 +2211,7 @@ export default function BusSearchResults() {
                     embeddedState={{
                       bus,
                       searchContext: expandedCard.searchContext,
+                      seatLayout: expandedCard.seatLayout,
                     }}
                     onClose={() => setExpandedCard(null)}
                   />

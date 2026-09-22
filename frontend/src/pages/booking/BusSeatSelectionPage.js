@@ -1229,6 +1229,11 @@ export default function BusSeatSelectionPage({
       return;
     }
 
+    if (readBusBookingFlowState()?.blockKey) {
+      handleChooseDifferentSeat();
+      return;
+    }
+
     setSelectionError("");
     setSelectedSeatLabels((previous) => {
       if (previous.includes(seat.label)) {
@@ -1919,6 +1924,10 @@ export default function BusSeatSelectionPage({
                       key={point.id}
                       className={`point-item ${checked ? "selected" : ""}`}
                       onClick={() => {
+                        if (readBusBookingFlowState()?.blockKey) {
+                          handleChooseDifferentSeat();
+                          return;
+                        }
                         if (activePointTab === "boarding") {
                           setSelectedBoardingId(point.id);
                         } else {

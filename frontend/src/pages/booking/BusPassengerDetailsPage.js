@@ -1769,6 +1769,17 @@ export default function BusPassengerDetailsPage() {
     // Reuse an existing, still-active block if present (covers the browser-back scenario).
     let blockKey = isBlockStillActive(flowState) ? (flowState.blockKey || null) : null;
 
+    if (blockKey && flowState.blockedPassengerPayload && flowState.blockedPassengerPayload !== JSON.stringify(blockPayload)) {
+      writeBusBookingFlowState({ blockKey: null, blockExpiresAt: null, blockedPassengerPayload: null });
+      navigate("/search/buses", { 
+        state: { 
+          ...flowState.searchContext,
+          forceRefresh: true 
+        } 
+      });
+      return;
+    }
+
     if (!blockKey) {
       try {
         setIsCalculatingPrice(true);
@@ -1812,6 +1823,7 @@ export default function BusPassengerDetailsPage() {
           }
           // Persist key + 10-min expiry atomically
           saveBlockKey(blockKey);
+          writeBusBookingFlowState({ blockedPassengerPayload: JSON.stringify(blockPayload) });
         }
       } catch (err) {
         setIsCalculatingPrice(false);

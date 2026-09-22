@@ -437,6 +437,21 @@ namespace PickNBook.Api.Services.Background
                             foreach (var pax in passengers) pax.Status = "Cancelled";
                         }
 
+                        // Release flight coupon usage if full cancellation
+                        if (!cancelReq.IsPartialCancellation)
+                        {
+                            var couponUsage = await dbContext.FlightCouponUsages
+                                .FirstOrDefaultAsync(u => u.FlightReservationId == res.Id && u.BookingStatus == "Booked", stoppingToken);
+                            if (couponUsage != null)
+                            {
+                                couponUsage.BookingStatus = "Cancelled";
+                                var normCode = couponUsage.CouponCode.Trim().ToUpperInvariant();
+                                await dbContext.FlightCoupons
+                                    .Where(x => x.CouponCode == normCode)
+                                    .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount > 0 ? p.UsedCount - 1 : 0), stoppingToken);
+                            }
+                        }
+
                         // PERSIST FIRST
                         await dbContext.SaveChangesAsync(stoppingToken);
 
@@ -508,6 +523,26 @@ namespace PickNBook.Api.Services.Background
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Failed to send cancellation email for Flight Booking {BookingReference}", res.BookingReference);
+                            }
+
+                            // Send SMS Notification
+                            try
+                            {
+                                var notificationService = scope.ServiceProvider.GetService<PickNBook.Api.Services.Notifications.Interfaces.INotificationService>();
+                                if (notificationService != null && !string.IsNullOrWhiteSpace(res.PassengerPhone))
+                                {
+                                    await notificationService.EnqueueAsync(
+                                        eventType: "FlightBookingCancelled",
+                                        channel: "SMS",
+                                        recipient: res.PassengerPhone,
+                                        templateKey: "FLIGHT_BOOKING_CANCELLED",
+                                        payload: new { Reference = res.BookingReference, Status = "Cancelled" }
+                                    );
+                                }
+                            }
+                            catch (Exception smsEx)
+                            {
+                                _logger.LogWarning(smsEx, "Failed to enqueue cancellation SMS for Flight Booking {BookingReference}", res.BookingReference);
                             }
 
                             // Additive In-App Notifications (Step 4: Flight Cancellation Completed)

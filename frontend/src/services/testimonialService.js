@@ -196,7 +196,9 @@ export async function getAdminTestimonials(params = {}) {
 }
 
 export async function getPublicTestimonials() {
-  return getAdminTestimonials({ status: "Active" });
+  // The homepage must not depend on an authenticated admin endpoint. This
+  // endpoint only returns testimonials that are approved for public display.
+  return requestJson("/api/testimonials/active", { method: "GET" });
 }
 
 export async function createAdminTestimonial(formDataOrObj) {
@@ -344,4 +346,3 @@ export async function submitPublicTestimonial(formDataOrObj) {
     (path) => { resolvedPublicSubmitRoot = path; }
   );
 }
-

@@ -2505,6 +2505,46 @@ namespace PickNBook.Api.Controllers.Public
 
             try
             {
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? User.FindFirst("sub")?.Value
+                    ?? User.FindFirst("id")?.Value;
+                bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+
+                var bookingIdStr = proxyRequest.BookingId.ToString();
+                var reservation = await _dbContext.FlightReservations.Include(x => x.Segments).FirstOrDefaultAsync(r => r.SrdvBookingId == bookingIdStr);
+                if (reservation == null && !string.IsNullOrEmpty(proxyRequest.PNR))
+                {
+                    reservation = await _dbContext.FlightReservations.Include(x => x.Segments).FirstOrDefaultAsync(r => r.Pnr == proxyRequest.PNR.Trim());
+                }
+
+                if (reservation == null)
+                {
+                    return NotFound(new { ErrorCode = 1, ErrorMessage = "Flight reservation not found for the provided BookingId or PNR." });
+                }
+
+                // Strict Tenant Isolation / IDOR Protection
+                if (!isAdmin && !string.Equals(reservation.UserId, currentUserId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, new { ErrorCode = 1, ErrorMessage = "Unauthorized: You do not have permission to modify or cancel this booking." });
+                }
+
+                // Status Guards
+                if (string.Equals(reservation.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { ErrorCode = 1, ErrorMessage = "This flight booking is already cancelled." });
+                }
+
+                if (string.Equals(reservation.Status, "Cancellation Requested", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(reservation.Status, "Partial Cancellation Requested", StringComparison.OrdinalIgnoreCase))
+                {
+                    var hasActiveCancel = await _dbContext.FlightCancellationRequests
+                        .AnyAsync(c => c.FlightReservationId == reservation.Id && (c.CancellationStatus == "Pending" || c.CancellationStatus == "IN_PROCESS"));
+                    if (hasActiveCancel)
+                    {
+                        return BadRequest(new { ErrorCode = 1, ErrorMessage = "A cancellation request is already pending for this booking." });
+                    }
+                }
+
                 var request = new SendChangeRequestDto
                 {
                     BookingId = proxyRequest.BookingId,
@@ -2520,13 +2560,6 @@ namespace PickNBook.Api.Controllers.Public
                 var responseRaw = await _srdvFlightService.SendChangeRequestRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
                 var root = doc.RootElement;
-                
-                var bookingIdStr = proxyRequest.BookingId.ToString();
-                var reservation = await _dbContext.FlightReservations.Include(x => x.Segments).FirstOrDefaultAsync(r => r.SrdvBookingId == bookingIdStr);
-                if (reservation == null && !string.IsNullOrEmpty(request.PNR))
-                {
-                    reservation = await _dbContext.FlightReservations.Include(x => x.Segments).FirstOrDefaultAsync(r => r.Pnr == request.PNR);
-                }
                 
                 if (reservation != null)
                 {
