@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Download,
   Pencil,
@@ -9,7 +9,8 @@ import {
   Trash2,
   ChevronDown,
   Eye,
-  Settings
+  Settings,
+  Search
 } from "lucide-react";
 import "./BusPromotionsList.css";
 import { csvCell, formatCouponDateTime } from "../../../utils/adminPortalUtils";
@@ -22,6 +23,14 @@ import {
   getBusCouponConditions,
   createBusCouponCondition,
   deleteBusCouponCondition,
+  uploadCouponImage,
+  getImagePreviewSrc,
+  saveCouponImageLocally,
+  saveCouponCategoryLocally,
+  saveCouponServiceLocally,
+  validateImageUrlForPayload,
+  isValidImageUrl,
+  APPROVED_IMAGE_EXTENSIONS,
 } from "../../../services/busPromotionsService";
 
 const DEFAULT_COUPON_SORT_BY = "entryDate";
@@ -76,15 +85,37 @@ function toInputDate(value) {
   if (Number.isNaN(parsed.getTime())) {
     return "";
   }
-
   return parsed.toISOString().slice(0, 10);
 }
 
-function createEmptyCouponForm(category = "Offer") {
+function sanitizeImageUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") return "";
+  let url = rawUrl.trim().replace(/^["']+|["']+$|["'\\]/g, "");
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("blob:")) {
+    return url;
+  }
+  if (/^http:\/\//i.test(url)) {
+    return url.replace(/^http:\/\//i, "https://");
+  }
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+  if (!/^https:\/\//i.test(url) && !url.startsWith("/")) {
+    return `https://${url}`;
+  }
+  return url;
+}
+
+function createEmptyCouponForm(category = "Offer", type = "bus") {
   return {
+    type: type || "bus",
+    bookingType: type || "bus",
+    serviceType: type || "bus",
     promotionCategory: category,
     title: "",
     description: "",
+    imageUrl: "",
     value: "",
     cpnType: "Fixed",
     maxDiscountAmount: "",
@@ -103,8 +134,26 @@ function createEmptyCouponForm(category = "Offer") {
   };
 }
 
+
 export default function AdminBusCouponListPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const initialServiceFilter = useMemo(() => {
+    const path = String(location?.pathname || "").toLowerCase();
+    if (path.includes("flight")) return "Flight";
+    if (path.includes("hotel")) return "Hotel";
+    if (path.includes("bus")) return "Bus";
+    return "all";
+  }, [location?.pathname]);
+
+  const initialCategoryFilter = useMemo(() => {
+    const path = String(location?.pathname || "").toLowerCase();
+    if (path.includes("offer")) return "Offer";
+    if (path.includes("coupon")) return "Coupon";
+    return "all";
+  }, [location?.pathname]);
+
   const [coupons, setCoupons] = useState([]);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [couponLoadError, setCouponLoadError] = useState("");
@@ -120,36 +169,38 @@ export default function AdminBusCouponListPage() {
   };
 
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [serviceFilter, setServiceFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState(initialServiceFilter);
+  const [categoryFilter, setCategoryFilter] = useState(initialCategoryFilter);
+
+  useEffect(() => {
+    setServiceFilter(initialServiceFilter);
+  }, [initialServiceFilter]);
+
+  useEffect(() => {
+    setCategoryFilter(initialCategoryFilter);
+  }, [initialCategoryFilter]);
+
   const [sortBy, setSortBy] = useState(DEFAULT_COUPON_SORT_BY);
   const [sortOrder, setSortOrder] = useState(DEFAULT_COUPON_SORT_ORDER);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
-  const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [cpnTypeFilter, setCpnTypeFilter] = useState("all");
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [generateForm, setGenerateForm] = useState(() => createEmptyCouponForm("Offer"));
   const [generateError, setGenerateError] = useState("");
+  const [isCreateImageUploading, setIsCreateImageUploading] = useState(false);
+  const [createImageUploadError, setCreateImageUploadError] = useState("");
   const [editCoupon, setEditCoupon] = useState(null);
   const [editError, setEditError] = useState("");
+  const [isEditImageUploading, setIsEditImageUploading] = useState(false);
+  const [editImageUploadError, setEditImageUploadError] = useState("");
   const [deleteCoupon, setDeleteCoupon] = useState(null);
   const [activeActionDropdownId, setActiveActionDropdownId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewingCoupon, setViewingCoupon] = useState(null);
 
-  useEffect(() => {
-    const handleOutsideClick = () => {
-      setActiveActionDropdownId(null);
-    };
-    window.addEventListener("click", handleOutsideClick);
-    return () => {
-      window.removeEventListener("click", handleOutsideClick);
-    };
-  }, []);
-
-  // Conditions Modal state
   const [conditionsCoupon, setConditionsCoupon] = useState(null);
   const [conditionsList, setConditionsList] = useState([]);
   const [isLoadingConditions, setIsLoadingConditions] = useState(false);
@@ -161,20 +212,42 @@ export default function AdminBusCouponListPage() {
     value2: "",
   });
 
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setActiveActionDropdownId(null);
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => {
+      window.removeEventListener("click", handleOutsideClick);
+    };
+  }, []);
+
   const getServiceLabel = (coupon) => {
+    if (!coupon || typeof coupon !== "object") return "Bus";
+
     const val = String(
+      coupon._targetService ||
       coupon.type ||
       coupon.serviceType ||
-      coupon.service ||
       coupon.bookingType ||
+      coupon.service ||
       coupon.applicableService ||
       coupon.module ||
       ""
-    ).toLowerCase();
+    ).trim().toLowerCase();
 
-    if (val.includes("flight")) return "Flight";
-    if (val.includes("hotel")) return "Hotel";
-    if (val.includes("bus")) return "Bus";
+    if (val === "flight" || val.includes("flight") || val === "flights") return "Flight";
+    if (val === "hotel" || val.includes("hotel") || val === "hotels") return "Hotel";
+    if (val === "bus" || val.includes("bus") || val === "buses") return "Bus";
+
+    const title = String(coupon.title || "").toLowerCase();
+    const desc = String(coupon.description || "").toLowerCase();
+    const code = String(coupon.couponCode || "").toLowerCase();
+
+    if (title.includes("flight") || desc.includes("flight") || code.includes("flight") || code.includes("fly")) return "Flight";
+    if (title.includes("hotel") || desc.includes("hotel") || code.includes("hotel") || code.includes("stay")) return "Hotel";
+    if (title.includes("bus") || desc.includes("bus")) return "Bus";
+
     return "Bus";
   };
 
@@ -186,9 +259,44 @@ export default function AdminBusCouponListPage() {
       setCouponLoadError("");
 
       try {
-        const backendCoupons = await listBusCoupons();
+        let list = [];
+        const sType = String(serviceFilter || "all").toLowerCase();
+        const catFilter = categoryFilter !== "all" ? categoryFilter : undefined;
+
+        if (sType === "all") {
+          const [busRes, flightRes, hotelRes] = await Promise.all([
+            listBusCoupons({ type: "bus", category: catFilter }),
+            listBusCoupons({ type: "flight", category: catFilter }),
+            listBusCoupons({ type: "hotel", category: catFilter })
+          ]);
+          const bList = Array.isArray(busRes) ? busRes.map(item => ({ ...item, _targetService: "bus", type: item.type || "bus", serviceType: item.serviceType || "bus" })) : [];
+          const fList = Array.isArray(flightRes) ? flightRes.map(item => ({ ...item, _targetService: "flight", type: item.type || "flight", serviceType: item.serviceType || "flight" })) : [];
+          const hList = Array.isArray(hotelRes) ? hotelRes.map(item => ({ ...item, _targetService: "hotel", type: item.type || "hotel", serviceType: item.serviceType || "hotel" })) : [];
+          list = [...bList, ...fList, ...hList];
+        } else {
+          const rawData = await listBusCoupons({ type: sType, category: catFilter });
+          list = Array.isArray(rawData) ? rawData.map(item => ({ ...item, _targetService: sType, type: item.type || sType, serviceType: item.serviceType || sType })) : [];
+        }
+
+        const seen = new Set();
+        const uniqueCoupons = list.filter((item) => {
+          const resolved = getServiceLabel(item).toLowerCase();
+          const key = `${item.id || item.couponCode}-${resolved}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).map(c => {
+          const resolvedType = (c.type || c.serviceType || getServiceLabel(c)).toLowerCase();
+          return {
+            ...c,
+            type: resolvedType,
+            serviceType: resolvedType,
+            bookingType: resolvedType,
+          };
+        });
+
         if (isMounted) {
-          setCoupons(backendCoupons);
+          setCoupons(uniqueCoupons);
         }
       } catch (error) {
         if (isMounted) {
@@ -207,7 +315,7 @@ export default function AdminBusCouponListPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [serviceFilter, categoryFilter]);
 
   const availableStatuses = useMemo(() => {
     const uniqueStatus = new Set(
@@ -228,10 +336,14 @@ export default function AdminBusCouponListPage() {
   const visibleCoupons = useMemo(() => {
     const filteredCoupons = coupons.filter((coupon) => {
       const serviceLbl = getServiceLabel(coupon).toLowerCase();
+      const selectedService = String(serviceFilter || "all").toLowerCase();
       const matchesService =
-        serviceFilter === "all" || serviceLbl === serviceFilter.toLowerCase();
+        selectedService === "all" || serviceLbl === selectedService;
 
-      const itemCategory = String(coupon.promotionCategory || "Offer").toLowerCase();
+      const rawCategory = coupon.promotionCategory || coupon.PromotionCategory || coupon.category || coupon.Category;
+      const itemCategory = rawCategory
+        ? String(rawCategory).trim().toLowerCase()
+        : (coupon.couponCode ? "coupon" : "offer");
 
       const matchesCategoryTab =
         categoryFilter === "all" || itemCategory === categoryFilter.toLowerCase();
@@ -250,9 +362,18 @@ export default function AdminBusCouponListPage() {
       const searchQuery = filters.search.trim().toLowerCase();
       const matchesSearch =
         !searchQuery ||
+        String(coupon.id || "").toLowerCase().includes(searchQuery) ||
         String(coupon.couponCode || "").toLowerCase().includes(searchQuery) ||
         String(coupon.title || "").toLowerCase().includes(searchQuery) ||
-        String(coupon.description || "").toLowerCase().includes(searchQuery);
+        String(coupon.description || "").toLowerCase().includes(searchQuery) ||
+        String(coupon.remark || "").toLowerCase().includes(searchQuery) ||
+        String(coupon.promotionCategory || "").toLowerCase().includes(searchQuery) ||
+        getServiceLabel(coupon).toLowerCase().includes(searchQuery) ||
+        String(coupon.value || "").toLowerCase().includes(searchQuery) ||
+        String(coupon.cpnType || "").toLowerCase().includes(searchQuery) ||
+        String(coupon.status || "").toLowerCase().includes(searchQuery) ||
+        formatCouponDateTime(coupon.startDate).toLowerCase().includes(searchQuery) ||
+        formatCouponDateTime(coupon.expiryDate).toLowerCase().includes(searchQuery);
 
       return matchesService && matchesCategory && matchesStatus && matchesType && matchesSearch;
     });
@@ -272,6 +393,13 @@ export default function AdminBusCouponListPage() {
   }, [coupons, filters, categoryFilter, serviceFilter, sortBy, sortOrder]);
 
   const totalItems = visibleCoupons.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const paginatedCoupons = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -280,11 +408,13 @@ export default function AdminBusCouponListPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [categoryFilter, statusFilter, cpnTypeFilter, sortBy, sortOrder]);
+  }, [categoryFilter, serviceFilter, statusFilter, cpnTypeFilter, sortBy, sortOrder, filters]);
 
   const openAddPromotionModal = () => {
     setGenerateError("");
-    setGenerateForm(createEmptyCouponForm("Offer"));
+    setCreateImageUploadError("");
+    const defaultType = serviceFilter !== "all" ? serviceFilter.toLowerCase() : "bus";
+    setGenerateForm(createEmptyCouponForm(categoryFilter === "Coupon" ? "Coupon" : "Offer", defaultType));
     setIsGenerateModalOpen(true);
   };
 
@@ -296,9 +426,10 @@ export default function AdminBusCouponListPage() {
     const couponCode = generateForm.couponCode.trim().toUpperCase();
     const startTimestamp = new Date(generateForm.startDate).getTime();
     const expiryTimestamp = new Date(generateForm.expiryDate).getTime();
+    const targetType = (generateForm.type || "bus").toLowerCase();
 
     if (!couponCode) {
-      setGenerateError("Coupon Code is required.");
+      setGenerateError(`${generateForm.promotionCategory === "Offer" ? "Offer Code" : "Coupon Code"} is required.`);
       return;
     }
 
@@ -332,10 +463,33 @@ export default function AdminBusCouponListPage() {
       return;
     }
 
+    const category = generateForm.promotionCategory || "Offer";
+
+    let finalImageUrl = generateForm.imageUrl ? generateForm.imageUrl.trim() : null;
+    if (finalImageUrl && !/^https?:\/\//i.test(finalImageUrl) && !finalImageUrl.startsWith("data:") && !finalImageUrl.startsWith("blob:")) {
+      if (finalImageUrl.startsWith("//")) {
+        finalImageUrl = `https:${finalImageUrl}`;
+      } else if (!finalImageUrl.startsWith("/")) {
+        finalImageUrl = `https://${finalImageUrl}`;
+      }
+    }
+
     const newCoupon = {
-      promotionCategory: generateForm.promotionCategory || "Offer",
+      type: targetType,
+      Type: targetType,
+      bookingType: targetType,
+      serviceType: targetType,
+      ServiceType: targetType,
+      promotionCategory: category,
+      PromotionCategory: category,
+      category: category,
+      Category: category,
       title: generateForm.title.trim(),
       description: generateForm.description.trim(),
+      imageUrl: finalImageUrl,
+      ImageUrl: finalImageUrl,
+      imageURL: finalImageUrl,
+      ImageURL: finalImageUrl,
       value: amount,
       couponType: generateForm.cpnType,
       cpnType: generateForm.cpnType,
@@ -354,9 +508,30 @@ export default function AdminBusCouponListPage() {
       remark: generateForm.remark ? generateForm.remark.trim() : null,
     };
 
+    if (newCoupon.imageUrl) {
+      const imgErr = validateImageUrlForPayload(newCoupon.imageUrl);
+      if (imgErr) {
+        setGenerateError(imgErr);
+        return;
+      }
+    }
+
     try {
       const savedCoupon = await createBusCoupon(newCoupon);
-      setCoupons((previous) => [savedCoupon, ...previous]);
+      const couponToStore = {
+        ...(savedCoupon && typeof savedCoupon === "object" ? savedCoupon : {}),
+        ...newCoupon,
+        type: targetType,
+        bookingType: targetType,
+        serviceType: targetType,
+        promotionCategory: category,
+      };
+      saveCouponCategoryLocally(couponCode, couponToStore.id, category);
+      saveCouponServiceLocally(couponCode, couponToStore.id, targetType);
+      if (generateForm.imageUrl) {
+        saveCouponImageLocally(couponCode, couponToStore.id, generateForm.imageUrl);
+      }
+      setCoupons((previous) => [couponToStore, ...previous]);
       setIsGenerateModalOpen(false);
       setGenerateError("");
     } catch (error) {
@@ -366,11 +541,35 @@ export default function AdminBusCouponListPage() {
 
   const openEditModal = (coupon) => {
     setEditError("");
+    setEditImageUploadError("");
+
+    const rawType = String(
+      coupon.type ||
+      coupon.serviceType ||
+      coupon.service ||
+      coupon.bookingType ||
+      coupon.applicableService ||
+      "bus"
+    ).toLowerCase();
+
+    const normalizedType = rawType.includes("flight")
+      ? "flight"
+      : rawType.includes("hotel")
+        ? "hotel"
+        : "bus";
+
     setEditCoupon({
       ...coupon,
+      id: coupon.id,
+      type: normalizedType,
+      bookingType: normalizedType,
+      serviceType: normalizedType,
       promotionCategory: coupon.promotionCategory || "Offer",
+      couponCode: coupon.couponCode || coupon.code || "",
       title: coupon.title || "",
       description: coupon.description || "",
+      imageUrl: coupon.imageUrl || "",
+      cpnType: coupon.cpnType || coupon.couponType || "Fixed",
       value: String(coupon.value ?? ""),
       maxDiscountAmount: coupon.maxDiscountAmount !== null && coupon.maxDiscountAmount !== undefined ? String(coupon.maxDiscountAmount) : "",
       useLimit: String(coupon.useLimit ?? ""),
@@ -396,6 +595,12 @@ export default function AdminBusCouponListPage() {
     const useLimit = Number(editCoupon.useLimit);
     const startTimestamp = new Date(editCoupon.startDate).getTime();
     const expiryTimestamp = new Date(editCoupon.expiryDate).getTime();
+    const targetType = (editCoupon.type || "bus").toLowerCase();
+
+    if (!editCoupon.couponCode?.trim()) {
+      setEditError(`${editCoupon.promotionCategory === "Offer" ? "Offer Code" : "Coupon Code"} is required.`);
+      return;
+    }
 
     if (!Number.isFinite(amount) || amount <= 0) {
       setEditError("Enter a valid coupon value.");
@@ -417,11 +622,33 @@ export default function AdminBusCouponListPage() {
       return;
     }
 
+    let finalImageUrl = editCoupon.imageUrl ? editCoupon.imageUrl.trim() : null;
+    if (finalImageUrl && !/^https?:\/\//i.test(finalImageUrl) && !finalImageUrl.startsWith("data:") && !finalImageUrl.startsWith("blob:")) {
+      if (finalImageUrl.startsWith("//")) {
+        finalImageUrl = `https:${finalImageUrl}`;
+      } else if (!finalImageUrl.startsWith("/")) {
+        finalImageUrl = `https://${finalImageUrl}`;
+      }
+    }
+
     const nextCoupon = {
       ...editCoupon,
+      type: targetType,
+      Type: targetType,
+      bookingType: targetType,
+      serviceType: targetType,
+      ServiceType: targetType,
       promotionCategory: editCoupon.promotionCategory || "Offer",
+      PromotionCategory: editCoupon.promotionCategory || "Offer",
+      category: editCoupon.promotionCategory || "Offer",
+      Category: editCoupon.promotionCategory || "Offer",
+      couponCode: editCoupon.couponCode?.trim().toUpperCase() || "",
       title: editCoupon.title?.trim() || "",
       description: editCoupon.description?.trim() || "",
+      imageUrl: finalImageUrl,
+      ImageUrl: finalImageUrl,
+      imageURL: finalImageUrl,
+      ImageURL: finalImageUrl,
       value: amount,
       couponType: editCoupon.cpnType,
       cpnType: editCoupon.cpnType,
@@ -439,10 +666,31 @@ export default function AdminBusCouponListPage() {
       remark: editCoupon.remark ? editCoupon.remark.trim() : null,
     };
 
+    if (nextCoupon.imageUrl) {
+      const imgErr = validateImageUrlForPayload(nextCoupon.imageUrl);
+      if (imgErr) {
+        setEditError(imgErr);
+        return;
+      }
+    }
+
     try {
       const savedCoupon = await updateBusCoupon(editCoupon.id, nextCoupon);
+      const updatedCoupon = {
+        ...(savedCoupon && typeof savedCoupon === "object" ? savedCoupon : {}),
+        ...nextCoupon,
+        type: targetType,
+        bookingType: targetType,
+        serviceType: targetType,
+        promotionCategory: editCoupon.promotionCategory,
+      };
+      saveCouponCategoryLocally(editCoupon.couponCode, updatedCoupon.id, editCoupon.promotionCategory);
+      saveCouponServiceLocally(editCoupon.couponCode, updatedCoupon.id, targetType);
+      if (editCoupon.imageUrl) {
+        saveCouponImageLocally(editCoupon.couponCode, updatedCoupon.id, editCoupon.imageUrl);
+      }
       setCoupons((previous) =>
-        previous.map((coupon) => (coupon.id === editCoupon.id ? savedCoupon : coupon))
+        previous.map((coupon) => (coupon.id === editCoupon.id ? updatedCoupon : coupon))
       );
       setEditCoupon(null);
       setEditError("");
@@ -457,8 +705,25 @@ export default function AdminBusCouponListPage() {
     }
 
     try {
-      await deleteBusCoupon(deleteCoupon.id);
-      setCoupons((previous) => previous.filter((coupon) => coupon.id !== deleteCoupon.id));
+      const sType = (
+        deleteCoupon._targetService ||
+        deleteCoupon.type ||
+        deleteCoupon.serviceType ||
+        getServiceLabel(deleteCoupon) ||
+        "bus"
+      ).toLowerCase();
+
+      await deleteBusCoupon(deleteCoupon.id, sType);
+
+      setCoupons((previous) =>
+        previous.filter(
+          (coupon) =>
+            !(
+              String(coupon.id) === String(deleteCoupon.id) &&
+              getServiceLabel(coupon).toLowerCase() === getServiceLabel(deleteCoupon).toLowerCase()
+            )
+        )
+      );
       setDeleteCoupon(null);
     } catch (error) {
       setCouponLoadError(error.message || "Unable to delete coupon from backend.");
@@ -616,162 +881,215 @@ export default function AdminBusCouponListPage() {
 
   return (
     <section className="admin-b2c-page admin-markup-coupon-container">
-      <header className="admin-markup-coupon-header">
-        <div className="admin-markup-coupon-title-wrap">
-          <h1>
+      <header className="admin-markup-coupon-header" style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+        {/* ROW 1: Heading preserved on top left */}
+        <div className="admin-markup-coupon-title-wrap" style={{ width: "100%", justifyContent: "flex-start" }}>
+          <h1 style={{ margin: 0, fontSize: "1.35rem", fontWeight: "600" }}>
             <span style={{ color: '#A51C49' }}>
               {categoryFilter === "Coupon" ? "Coupon " : categoryFilter === "Offer" ? "Offer " : "Promotions "}
             </span>
-            <span style={{ color: '#000000' }}>List</span>
+            <span style={{ color: '#1e293b' }}>List</span>
           </h1>
         </div>
 
-        <div className="admin-markup-coupon-actions">
-          <select
-            value={serviceFilter}
-            onChange={(e) => {
-              setServiceFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              width: "130px",
-              minWidth: "130px",
-              maxWidth: "130px",
-              height: "35px",
-              padding: "0 8px",
-              borderRadius: "10px",
-              border: "1px solid #cbd5e1",
-              fontSize: "12px",
-              fontWeight: "600",
-              color: "#1e293b",
-              background: "#ffffff",
-              cursor: "pointer",
-              outline: "none",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-              boxSizing: "border-box"
-            }}
-          >
-            <option value="all">All Services</option>
-            <option value="Bus">Bus</option>
-            <option value="Flight">Flight</option>
-            <option value="Hotel">Hotel</option>
-          </select>
-
-          {categoryFilter === "all" && (
-            <button
-              type="button"
-              className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
-              onClick={() => setIsFilterPanelOpen((previous) => !previous)}
-              aria-expanded={isFilterPanelOpen}
-              aria-controls="admin-markup-coupon-filter"
-            >
-              <SlidersHorizontal size={15} />
-              <span>Filter</span>
-            </button>
-          )}
-
+        {/* ROW 2: Search Bar and Action Buttons on the line BELOW heading */}
+        <div className="admin-markup-coupon-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap", width: "100%" }}>
           <div
-            className="category-view-btn-group"
+            className="admin-search-bar-wrap"
             style={{
+              position: "relative",
               display: "inline-flex",
-              gap: "4px",
-              background: "#f1f5f9",
-              padding: "3px",
-              borderRadius: "10px",
-              border: "1px solid #e2e8f0",
-              alignItems: "center"
+              alignItems: "center",
+              flex: "0 1 350px"
             }}
           >
-            <button
-              type="button"
-              className={`cat-view-btn ${categoryFilter === "all" ? "active" : ""}`}
-              onClick={() => {
-                setCategoryFilter("all");
+            <Search
+              size={15}
+              style={{
+                position: "absolute",
+                left: "10px",
+                color: "#64748b",
+                pointerEvents: "none"
+              }}
+            />
+            <input
+              type="text"
+              placeholder={categoryFilter === "Offer" ? "Search offers..." : categoryFilter === "Coupon" ? "Search coupons..." : "Search promotions..."}
+              value={filters.search}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFilters((prev) => ({ ...prev, search: val }));
+                setDraftFilters((prev) => ({ ...prev, search: val }));
                 setCurrentPage(1);
               }}
               style={{
-                padding: "5px 12px",
-                borderRadius: "7px",
+                padding: "0 12px 0 32px",
+                height: "35px",
+                borderRadius: "10px",
+                border: "1px solid #cbd5e1",
                 fontSize: "12px",
-                fontWeight: "600",
-                border: "none",
-                cursor: "pointer",
-                background: categoryFilter === "all" ? "#A51C49" : "transparent",
-                color: categoryFilter === "all" ? "#ffffff" : "#475569",
-                transition: "all 0.2s"
+                fontWeight: "500",
+                outline: "none",
+                width: "350px",
+                background: "#ffffff",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                boxSizing: "border-box"
               }}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              className={`cat-view-btn ${categoryFilter === "Coupon" ? "active" : ""}`}
-              onClick={() => {
-                setCategoryFilter("Coupon");
-                setIsFilterPanelOpen(false);
-                setCurrentPage(1);
-              }}
-              style={{
-                padding: "5px 12px",
-                borderRadius: "7px",
-                fontSize: "12px",
-                fontWeight: "600",
-                border: "none",
-                cursor: "pointer",
-                background: categoryFilter === "Coupon" ? "#A51C49" : "transparent",
-                color: categoryFilter === "Coupon" ? "#ffffff" : "#475569",
-                transition: "all 0.2s"
-              }}
-            >
-              Coupon List
-            </button>
-            <button
-              type="button"
-              className={`cat-view-btn ${categoryFilter === "Offer" ? "active" : ""}`}
-              onClick={() => {
-                setCategoryFilter("Offer");
-                setIsFilterPanelOpen(false);
-                setCurrentPage(1);
-              }}
-              style={{
-                padding: "5px 12px",
-                borderRadius: "7px",
-                fontSize: "12px",
-                fontWeight: "600",
-                border: "none",
-                cursor: "pointer",
-                background: categoryFilter === "Offer" ? "#A51C49" : "transparent",
-                color: categoryFilter === "Offer" ? "#ffffff" : "#475569",
-                transition: "all 0.2s"
-              }}
-            >
-              Offer List
-            </button>
+            />
           </div>
 
-          {categoryFilter === "all" && (
-            <>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <select
+              value={serviceFilter}
+              onChange={(e) => {
+                setServiceFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                width: "125px",
+                minWidth: "125px",
+                maxWidth: "125px",
+                height: "35px",
+                padding: "0 8px",
+                borderRadius: "10px",
+                border: "1px solid #cbd5e1",
+                fontSize: "12px",
+                fontWeight: "600",
+                color: "#1e293b",
+                background: "#ffffff",
+                cursor: "pointer",
+                outline: "none",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                boxSizing: "border-box"
+              }}
+            >
+              <option value="all">All Services</option>
+              <option value="Bus">Bus</option>
+              <option value="Flight">Flight</option>
+              <option value="Hotel">Hotel</option>
+            </select>
+
+            <div
+              className="category-view-btn-group"
+              style={{
+                display: "inline-flex",
+                gap: "4px",
+                background: "#f1f5f9",
+                padding: "3px",
+                borderRadius: "10px",
+                border: "1px solid #e2e8f0",
+                alignItems: "center"
+              }}
+            >
+              <button
+                type="button"
+                className={`cat-view-btn ${categoryFilter === "all" ? "active" : ""}`}
+                onClick={() => {
+                  setCategoryFilter("all");
+                  setFilters((prev) => ({ ...prev, search: "" }));
+                  setDraftFilters((prev) => ({ ...prev, search: "" }));
+                  setIsFilterPanelOpen(false);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "7px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  border: "none",
+                  cursor: "pointer",
+                  background: categoryFilter === "all" ? "#A51C49" : "transparent",
+                  color: categoryFilter === "all" ? "#ffffff" : "#475569",
+                  transition: "all 0.2s"
+                }}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                className={`cat-view-btn ${categoryFilter === "Coupon" ? "active" : ""}`}
+                onClick={() => {
+                  setCategoryFilter("Coupon");
+                  setIsFilterPanelOpen(false);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "7px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  border: "none",
+                  cursor: "pointer",
+                  background: categoryFilter === "Coupon" ? "#A51C49" : "transparent",
+                  color: categoryFilter === "Coupon" ? "#ffffff" : "#475569",
+                  transition: "all 0.2s"
+                }}
+              >
+                Coupon List
+              </button>
+              <button
+                type="button"
+                className={`cat-view-btn ${categoryFilter === "Offer" ? "active" : ""}`}
+                onClick={() => {
+                  setCategoryFilter("Offer");
+                  setIsFilterPanelOpen(false);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "7px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  border: "none",
+                  cursor: "pointer",
+                  background: categoryFilter === "Offer" ? "#A51C49" : "transparent",
+                  color: categoryFilter === "Offer" ? "#ffffff" : "#475569",
+                  transition: "all 0.2s"
+                }}
+              >
+                Offer List
+              </button>
+            </div>
+
+            {categoryFilter === "all" && (
+              <button
+                type="button"
+                className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
+                onClick={() => setIsFilterPanelOpen((previous) => !previous)}
+                aria-expanded={isFilterPanelOpen}
+                aria-controls="admin-markup-coupon-filter"
+                style={isFilterPanelOpen ? { background: "#A51C49", color: "#ffffff", borderColor: "#A51C49" } : {}}
+              >
+                <SlidersHorizontal size={15} />
+                <span>Filter</span>
+              </button>
+            )}
+
+            {categoryFilter === "all" && (
               <button
                 type="button"
                 className="admin-markup-coupon-btn generate"
                 onClick={openAddPromotionModal}
-                style={{ background: "#A51C49", borderColor: "#A51C49" }}
+                style={{ background: "#A51C49", borderColor: "#A51C49", color: "#ffffff" }}
               >
                 <Plus size={15} />
                 <span>Add Promotion</span>
               </button>
+            )}
 
+            {categoryFilter === "all" && (
               <button
                 type="button"
                 className="admin-markup-coupon-btn export"
                 onClick={handleExport}
                 disabled={visibleCoupons.length === 0}
+                style={{ background: "#16a34a", borderColor: "#16a34a", color: "#ffffff" }}
               >
                 <Download size={15} />
                 <span>Export CSV</span>
               </button>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
@@ -912,6 +1230,7 @@ export default function AdminBusCouponListPage() {
               <col />
               <col />
               <col />
+              <col style={{ width: "60px" }} />
               <col />
               <col className="col-value" />
               <col className="col-type" />
@@ -926,6 +1245,7 @@ export default function AdminBusCouponListPage() {
                 <th>Service</th>
                 <th>Category</th>
                 <th>Code</th>
+                <th>Image</th>
                 <th>Title</th>
                 <th>Value</th>
                 <th>Type</th>
@@ -938,63 +1258,67 @@ export default function AdminBusCouponListPage() {
             <tbody>
               {isLoadingCoupons ? (
                 <tr>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <p className="admin-markup-coupon-empty">Loading promotions from backend...</p>
                   </td>
                 </tr>
               ) : couponLoadError ? (
                 <tr>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <p className="admin-markup-coupon-empty" style={{ color: "#94a3b8", fontSize: "0.85rem", padding: "30px 20px" }}>Data not found</p>
                   </td>
                 </tr>
               ) : visibleCoupons.length === 0 ? (
                 <tr>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <p className="admin-markup-coupon-empty" style={{ color: "#94a3b8", fontSize: "0.85rem", padding: "30px 20px" }}>No promotions found</p>
                   </td>
                 </tr>
               ) : (
-                paginatedCoupons.map((coupon, index) => (
-                  <tr key={coupon.id} className={activeActionDropdownId === coupon.id ? "active-dropdown-row" : ""}>
-                    <td>{coupon.id}</td>
+                paginatedCoupons.map((coupon, index) => {
+                  const rowKey = `${coupon.id}-${index}`;
+                  return (
+                    <tr key={rowKey} className={activeActionDropdownId === rowKey ? "active-dropdown-row" : ""}>
+                      <td>{coupon.id}</td>
                     <td>
                       <span style={{
-                        padding: "3px 10px",
+                        padding: "4px 10px",
                         borderRadius: "12px",
                         fontSize: "11px",
-                        fontWeight: "600",
+                        fontWeight: "700",
+                        display: "inline-block",
                         background:
                           getServiceLabel(coupon) === "Bus"
-                            ? "#f0fdf4"
+                            ? "#dcfce7"
                             : getServiceLabel(coupon) === "Flight"
-                            ? "#eff6ff"
-                            : "#fef3c7",
+                              ? "#dbeafe"
+                              : "#fef3c7",
                         color:
                           getServiceLabel(coupon) === "Bus"
-                            ? "#166534"
+                            ? "#15803d"
                             : getServiceLabel(coupon) === "Flight"
-                            ? "#1e40af"
-                            : "#92400e",
+                              ? "#1d4ed8"
+                              : "#b45309",
                         border:
                           getServiceLabel(coupon) === "Bus"
-                            ? "1px solid #bbf7d0"
+                            ? "1px solid #86efac"
                             : getServiceLabel(coupon) === "Flight"
-                            ? "1px solid #bfdbfe"
-                            : "1px solid #fde68a"
+                              ? "1px solid #93c5fd"
+                              : "1px solid #fde047"
                       }}>
                         {getServiceLabel(coupon)}
                       </span>
                     </td>
                     <td>
                       <span style={{
-                        padding: "2px 8px",
+                        padding: "4px 10px",
                         borderRadius: "12px",
                         fontSize: "11px",
-                        fontWeight: "500",
-                        background: coupon.promotionCategory === "Offer" ? "#eff6ff" : "#fdf2f8",
-                        color: coupon.promotionCategory === "Offer" ? "#2563eb" : "#A51C49",
-                        border: coupon.promotionCategory === "Offer" ? "1px solid #bfdbfe" : "1px solid #fbcfe8"
+                        fontWeight: "700",
+                        display: "inline-block",
+                        background: coupon.promotionCategory === "Offer" ? "#f3e8ff" : "#ffe4e6",
+                        color: coupon.promotionCategory === "Offer" ? "#6b21a8" : "#9f1239",
+                        border: coupon.promotionCategory === "Offer" ? "1px solid #d8b4fe" : "1px solid #fecdd3"
                       }}>
                         {coupon.promotionCategory || "Offer"}
                       </span>
@@ -1003,34 +1327,60 @@ export default function AdminBusCouponListPage() {
                       <span className="admin-markup-coupon-code-highlight" style={{
                         display: "inline-flex",
                         padding: "4px 10px",
-                        borderRadius: "14px",
-                        background: "#fce7f3",
-                        color: "#A51C49",
-                        border: "1px solid #fbcfe8",
+                        borderRadius: "6px",
+                        background: "#f1f5f9",
+                        color: "#0f766e",
+                        border: "1px dashed #0d9488",
                         fontWeight: "700",
-                        fontSize: "11px",
-                        letterSpacing: "0.5px"
+                        fontSize: "11.5px",
+                        letterSpacing: "0.8px",
+                        fontFamily: "monospace, sans-serif"
                       }}>
                         {coupon.couponCode}
                       </span>
                     </td>
+                    <td style={{ textAlign: "center" }}>
+                      {(coupon.promotionCategory === "Offer" || (categoryFilter === "Offer" && coupon.promotionCategory !== "Coupon")) && getImagePreviewSrc(coupon.imageUrl, coupon) ? (
+                        <>
+                          <img
+                            src={getImagePreviewSrc(coupon.imageUrl, coupon)}
+                            alt={coupon.title || "Promotion Image"}
+                            style={{
+                              width: "44px",
+                              height: "30px",
+                              objectFit: "cover",
+                              borderRadius: "5px",
+                              border: "1px solid #cbd5e1",
+                              display: "inline-block",
+                              verticalAlign: "middle"
+                            }}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = "none";
+                              if (e.target.nextSibling) {
+                                e.target.nextSibling.style.display = "inline";
+                              }
+                            }}
+                          />
+                          <span style={{ fontSize: "11px", color: "#94a3b8", display: "none" }}>--</span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "#94a3b8" }}>--</span>
+                      )}
+                    </td>
                     <td>
                       <span style={{ fontSize: "11px", color: "#334155", fontWeight: "600" }}>
-                        {coupon.title || coupon.description || coupon.remark || "--"}
+                        {coupon.title || coupon.description || coupon.remark || (coupon.couponCode ? `${coupon.promotionCategory || "Offer"} ${coupon.couponCode}` : "--")}
                       </span>
                     </td>
-                    <td>
-                      {coupon.cpnType === "Percentage"
-                        ? `${coupon.value}%${coupon.maxDiscountAmount ? ` (Max ₹${coupon.maxDiscountAmount})` : ""}`
-                        : `₹${coupon.value}`}
-                    </td>
+                    <td>{coupon.cpnType === "Percentage" || String(coupon.cpnType).toLowerCase() === "percentage" ? `${coupon.value}%` : `${coupon.value}`}</td>
                     <td>{coupon.cpnType}</td>
                     <td>
                       <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "10.5px", textAlign: "center", padding: "2px 0", fontWeight: "400" }}>
                         <span style={{ color: "#047857", fontWeight: "500" }}>
                           Start: {formatCouponDateTime(coupon.startDate)}
                         </span>
-                        <span style={{ color: "#ff0000", fontWeight: "500" }}>
+                        <span style={{ color: "#b91c1c", fontWeight: "500" }}>
                           Expiry: {formatCouponDateTime(coupon.expiryDate)}
                         </span>
                       </div>
@@ -1041,9 +1391,8 @@ export default function AdminBusCouponListPage() {
                         type="button"
                         className={`admin-markup-coupon-status ${coupon.status}`}
                         onClick={() => handleCouponStatusToggle(coupon.id)}
-                        aria-label={`Set coupon ${coupon.couponCode} to ${
-                          coupon.status === "active" ? "inactive" : "active"
-                        }`}
+                        aria-label={`Set coupon ${coupon.couponCode} to ${coupon.status === "active" ? "inactive" : "active"
+                          }`}
                       >
                         <span>{coupon.status === "active" ? "Active" : "Inactive"}</span>
                       </button>
@@ -1052,19 +1401,19 @@ export default function AdminBusCouponListPage() {
                       <div className="actions-dropdown-container">
                         <button
                           type="button"
-                          className={`actions-trigger-btn ${activeActionDropdownId === coupon.id ? "active" : ""}`}
+                          className={`actions-trigger-btn ${activeActionDropdownId === rowKey ? "active" : ""}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveActionDropdownId((prev) => (prev === coupon.id ? null : coupon.id));
+                            setActiveActionDropdownId((prev) => (prev === rowKey ? null : rowKey));
                           }}
                         >
                           <span>Actions</span>
                           <ChevronDown className="chevron-icon" size={12} />
                         </button>
 
-                        {activeActionDropdownId === coupon.id && (
-                          <div 
-                            className={`actions-dropdown-menu ${index >= Math.max(1, paginatedCoupons.length - 2) ? "drop-up" : ""}`}
+                        {activeActionDropdownId === rowKey && (
+                          <div
+                            className={`actions-dropdown-menu ${(index >= Math.max(1, paginatedCoupons.length - 2) && paginatedCoupons.length > 4) ? "drop-up" : ""}`}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <button
@@ -1119,8 +1468,9 @@ export default function AdminBusCouponListPage() {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
+                );
+              })
+            )}
             </tbody>
           </table>
         </div>
@@ -1140,8 +1490,8 @@ export default function AdminBusCouponListPage() {
 
       {/* CREATE MODAL */}
       {isGenerateModalOpen && (
-        <div 
-          className="admin-markup-coupon-backdrop" 
+        <div
+          className="admin-markup-coupon-backdrop"
           onClick={() => setIsGenerateModalOpen(false)}
           style={{
             position: "fixed",
@@ -1157,16 +1507,16 @@ export default function AdminBusCouponListPage() {
             zIndex: 10000
           }}
         >
-          <div 
+          <div
             className="discount-modal-container edit-modal"
             onClick={(e) => e.stopPropagation()}
             style={{ width: "90%", maxWidth: "760px", maxHeight: "90vh", overflowY: "auto" }}
           >
             <div className="modal-header">
               <h3>Create Promo / Offer</h3>
-              <button 
-                type="button" 
-                className="close-x" 
+              <button
+                type="button"
+                className="close-x"
                 onClick={() => setIsGenerateModalOpen(false)}
               >
                 &times;
@@ -1177,6 +1527,18 @@ export default function AdminBusCouponListPage() {
 
             <form onSubmit={(e) => { e.preventDefault(); handleGenerateCoupon(); }}>
               <div className="discount-form-grid">
+                <div className="modal-field">
+                  <span>Target Service Type *</span>
+                  <select
+                    value={generateForm.type || "bus"}
+                    onChange={(e) => setGenerateForm({ ...generateForm, type: e.target.value })}
+                  >
+                    <option value="bus">Bus Service</option>
+                    <option value="hotel">Hotel Service</option>
+                    <option value="flight">Flight Service</option>
+                  </select>
+                </div>
+
                 <div className="modal-field">
                   <span>Promotion Category *</span>
                   <select
@@ -1189,12 +1551,12 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Coupon Code *</span>
+                  <span>{generateForm.promotionCategory === "Offer" ? "Offer Code *" : "Coupon Code *"}</span>
                   <input
                     type="text"
                     value={generateForm.couponCode}
                     onChange={(e) => setGenerateForm({ ...generateForm, couponCode: e.target.value.toUpperCase() })}
-                    placeholder="e.g. 2W275DVH"
+                    placeholder={generateForm.promotionCategory === "Offer" ? "e.g. SUMMER50" : "e.g. FESTIVE100"}
                     required
                   />
                 </div>
@@ -1216,7 +1578,7 @@ export default function AdminBusCouponListPage() {
                     value={generateForm.cpnType}
                     onChange={(e) => setGenerateForm({ ...generateForm, cpnType: e.target.value })}
                   >
-                    <option value="Fixed">Fixed Amount (₹)</option>
+                    <option value="Fixed">Fixed Amount</option>
                     <option value="Percentage">Percentage (%)</option>
                   </select>
                 </div>
@@ -1234,7 +1596,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Max Discount Cap (₹)</span>
+                  <span>Max Discount Cap</span>
                   <input
                     type="number"
                     step="0.01"
@@ -1266,7 +1628,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Min Booking Amount (₹)</span>
+                  <span>Min Booking Amount</span>
                   <input
                     type="number"
                     step="0.01"
@@ -1345,6 +1707,95 @@ export default function AdminBusCouponListPage() {
                     <span>Is Exclusive</span>
                   </label>
                 </div>
+                {generateForm.promotionCategory === "Offer" && (
+                  <div className="modal-field wide">
+                    <span>Offer Image URL (Optional) or Choose File</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
+                      <input
+                        type="text"
+                        value={generateForm.imageUrl || ""}
+                        onChange={(e) => {
+                          setCreateImageUploadError("");
+                          const rawVal = e.target.value;
+                          const formattedUrl = sanitizeImageUrl(rawVal);
+                          setGenerateForm({ ...generateForm, imageUrl: formattedUrl });
+                        }}
+                        placeholder="https://your-domain.com/uploads/offers/summer-offer.jpg"
+                        style={{ flex: 1 }}
+                        disabled={isCreateImageUploading}
+                      />
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 14px",
+                          background: isCreateImageUploading ? "#94a3b8" : "#A51C49",
+                          color: "#ffffff",
+                          borderRadius: "8px",
+                          cursor: isCreateImageUploading ? "not-allowed" : "pointer",
+                          fontSize: "0.80rem",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                          boxShadow: "0 2px 4px rgba(165, 28, 73, 0.2)",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        {isCreateImageUploading ? "Uploading..." : "Choose File"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/avif,.jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.ico,.avif"
+                          style={{ display: "none" }}
+                          disabled={isCreateImageUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
+                            setCreateImageUploadError("");
+                            setIsCreateImageUploading(true);
+                            try {
+                              const rawUrl = await uploadCouponImage(file);
+                              const formattedUrl = sanitizeImageUrl(rawUrl);
+                              setGenerateForm((prev) => ({ ...prev, imageUrl: formattedUrl }));
+                            } catch (err) {
+                              setCreateImageUploadError(err.message || "Image upload failed.");
+                            } finally {
+                              setIsCreateImageUploading(false);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {createImageUploadError && (
+                      <div style={{ marginTop: "6px", color: "#b91c1c", fontSize: "12px", fontWeight: 600 }}>
+                        {createImageUploadError}
+                      </div>
+                    )}
+                    {generateForm.imageUrl && (
+                      <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "6px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
+                        <img
+                          src={getImagePreviewSrc(generateForm.imageUrl)}
+                          alt="Promotion Banner Preview"
+                          style={{ maxHeight: "45px", maxWidth: "120px", objectFit: "cover", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Image Preview</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGenerateForm((prev) => ({ ...prev, imageUrl: "" }));
+                              setCreateImageUploadError("");
+                            }}
+                            style={{ background: "none", border: "none", padding: 0, color: "#ef4444", fontSize: "11px", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="modal-field wide">
                   <span>Description / Terms</span>
@@ -1388,8 +1839,8 @@ export default function AdminBusCouponListPage() {
 
       {/* VIEW DETAILS MODAL */}
       {viewingCoupon && (
-        <div 
-          className="admin-markup-coupon-backdrop" 
+        <div
+          className="admin-markup-coupon-backdrop"
           onClick={() => setViewingCoupon(null)}
           style={{
             position: "fixed",
@@ -1405,7 +1856,7 @@ export default function AdminBusCouponListPage() {
             zIndex: 10000
           }}
         >
-          <div 
+          <div
             className="discount-modal-container edit-modal"
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -1420,7 +1871,7 @@ export default function AdminBusCouponListPage() {
             }}
           >
             {/* Header */}
-            <div 
+            <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -1434,7 +1885,7 @@ export default function AdminBusCouponListPage() {
                 <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "#ffffff" }}>
                   Promotion Details
                 </h3>
-                <span 
+                <span
                   style={{
                     background: "rgba(255, 255, 255, 0.2)",
                     color: "#ffffff",
@@ -1449,8 +1900,8 @@ export default function AdminBusCouponListPage() {
                   {viewingCoupon.couponCode}
                 </span>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setViewingCoupon(null)}
                 style={{
                   background: "rgba(255, 255, 255, 0.15)",
@@ -1486,20 +1937,20 @@ export default function AdminBusCouponListPage() {
                         getServiceLabel(viewingCoupon) === "Bus"
                           ? "#f0fdf4"
                           : getServiceLabel(viewingCoupon) === "Flight"
-                          ? "#eff6ff"
-                          : "#fef3c7",
+                            ? "#eff6ff"
+                            : "#fef3c7",
                       color:
                         getServiceLabel(viewingCoupon) === "Bus"
                           ? "#166534"
                           : getServiceLabel(viewingCoupon) === "Flight"
-                          ? "#1e40af"
-                          : "#92400e",
+                            ? "#1e40af"
+                            : "#92400e",
                       border:
                         getServiceLabel(viewingCoupon) === "Bus"
                           ? "1px solid #bbf7d0"
                           : getServiceLabel(viewingCoupon) === "Flight"
-                          ? "1px solid #bfdbfe"
-                          : "1px solid #fde68a"
+                            ? "1px solid #bfdbfe"
+                            : "1px solid #fde68a"
                     }}>
                       {getServiceLabel(viewingCoupon)}
                     </span>
@@ -1533,9 +1984,7 @@ export default function AdminBusCouponListPage() {
                 <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
                   <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Discount Value</span>
                   <div style={{ fontWeight: 700, marginTop: "4px", color: "#047857", fontSize: "13px" }}>
-                    {(viewingCoupon.couponType === "Percentage" || viewingCoupon.cpnType === "Percentage")
-                      ? `${viewingCoupon.value}%`
-                      : `₹${viewingCoupon.value}`}
+                    {(viewingCoupon.couponType === "Percentage" || viewingCoupon.cpnType === "Percentage") ? `${viewingCoupon.value}%` : `${viewingCoupon.value}`}
                     {viewingCoupon.maxDiscountAmount ? ` (Cap: ₹${viewingCoupon.maxDiscountAmount})` : ""}
                   </div>
                 </div>
@@ -1552,7 +2001,7 @@ export default function AdminBusCouponListPage() {
 
                 <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
                   <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Expiry Date</span>
-                  <div style={{ fontWeight: 600, marginTop: "4px", color: "#ff0000", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.expiryDate)}</div>
+                  <div style={{ fontWeight: 600, marginTop: "4px", color: "#b91c1c", fontSize: "12.5px" }}>{formatCouponDateTime(viewingCoupon.expiryDate)}</div>
                 </div>
 
                 {(viewingCoupon.entryDateUtc || viewingCoupon.entryDate) && (
@@ -1591,7 +2040,7 @@ export default function AdminBusCouponListPage() {
                       fontSize: "11px",
                       fontWeight: "700",
                       background: String(viewingCoupon.status).toLowerCase() === "active" ? "#dcfce7" : "#fee2e2",
-                      color: String(viewingCoupon.status).toLowerCase() === "active" ? "#166534" : "#ff0000"
+                      color: String(viewingCoupon.status).toLowerCase() === "active" ? "#166534" : "#991b1b"
                     }}>
                       {String(viewingCoupon.status).toLowerCase() === "active" ? "Active" : "Inactive"}
                     </span>
@@ -1612,6 +2061,18 @@ export default function AdminBusCouponListPage() {
                     </span>
                   </div>
                 </div>
+                {viewingCoupon.imageUrl && (
+                  <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Offer Image Banner</span>
+                    <div style={{ marginTop: "8px" }}>
+                      <img
+                        src={viewingCoupon.imageUrl}
+                        alt={viewingCoupon.title || "Offer Banner"}
+                        style={{ maxWidth: "100%", maxHeight: "160px", borderRadius: "8px", objectFit: "cover", border: "1px solid #cbd5e1" }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {viewingCoupon.description && (
                   <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
@@ -1669,8 +2130,8 @@ export default function AdminBusCouponListPage() {
 
       {/* MANAGE CONDITIONS MODAL */}
       {conditionsCoupon && (
-        <div 
-          className="admin-markup-coupon-backdrop" 
+        <div
+          className="admin-markup-coupon-backdrop"
           onClick={() => setConditionsCoupon(null)}
           style={{
             position: "fixed",
@@ -1686,7 +2147,7 @@ export default function AdminBusCouponListPage() {
             zIndex: 10000
           }}
         >
-          <div 
+          <div
             className="discount-modal-container edit-modal"
             onClick={(e) => e.stopPropagation()}
             style={{ width: "90%", maxWidth: "720px", maxHeight: "90vh", overflowY: "auto", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
@@ -1695,8 +2156,8 @@ export default function AdminBusCouponListPage() {
               <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b", fontWeight: 700 }}>
                 Manage Conditions — <span style={{ color: "#A51C49" }}>{conditionsCoupon.couponCode}</span>
               </h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setConditionsCoupon(null)}
                 style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#64748b" }}
               >
@@ -1705,7 +2166,7 @@ export default function AdminBusCouponListPage() {
             </div>
 
             {conditionError && (
-              <div style={{ background: "#fef2f2", color: "#ff0000", border: "1px solid #fecaca", padding: "10px 14px", borderRadius: "8px", fontSize: "13px", marginBottom: "16px" }}>
+              <div style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca", padding: "10px 14px", borderRadius: "8px", fontSize: "13px", marginBottom: "16px" }}>
                 {conditionError}
               </div>
             )}
@@ -1795,7 +2256,7 @@ export default function AdminBusCouponListPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteCondition(cond.id)}
-                      style={{ background: "#fef2f2", color: "#ff0000", border: "1px solid #fecaca", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                      style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
                     >
                       Remove
                     </button>
@@ -1819,8 +2280,8 @@ export default function AdminBusCouponListPage() {
 
       {/* EDIT MODAL */}
       {editCoupon && (
-        <div 
-          className="admin-markup-coupon-backdrop" 
+        <div
+          className="admin-markup-coupon-backdrop"
           onClick={() => setEditCoupon(null)}
           style={{
             position: "fixed",
@@ -1836,7 +2297,7 @@ export default function AdminBusCouponListPage() {
             zIndex: 10000
           }}
         >
-          <div 
+          <div
             className="discount-modal-container edit-modal"
             onClick={(e) => e.stopPropagation()}
             style={{ width: "90%", maxWidth: "760px", maxHeight: "90vh", overflowY: "auto" }}
@@ -1853,6 +2314,18 @@ export default function AdminBusCouponListPage() {
             <form onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}>
               <div className="discount-form-grid">
                 <div className="modal-field">
+                  <span>Target Service Type *</span>
+                  <select
+                    value={editCoupon.type || "bus"}
+                    onChange={(e) => setEditCoupon({ ...editCoupon, type: e.target.value })}
+                  >
+                    <option value="bus">Bus Service</option>
+                    <option value="hotel">Hotel Service</option>
+                    <option value="flight">Flight Service</option>
+                  </select>
+                </div>
+
+                <div className="modal-field">
                   <span>Promotion Category *</span>
                   <select
                     value={editCoupon.promotionCategory || "Offer"}
@@ -1864,11 +2337,12 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Coupon Code *</span>
+                  <span>{editCoupon.promotionCategory === "Offer" ? "Offer Code *" : "Coupon Code *"}</span>
                   <input
                     type="text"
                     value={editCoupon.couponCode || ""}
                     onChange={(e) => setEditCoupon({ ...editCoupon, couponCode: e.target.value.toUpperCase() })}
+                    placeholder={editCoupon.promotionCategory === "Offer" ? "e.g. SUMMER50" : "e.g. FESTIVE100"}
                     required
                   />
                 </div>
@@ -1889,7 +2363,7 @@ export default function AdminBusCouponListPage() {
                     value={editCoupon.cpnType || "Fixed"}
                     onChange={(e) => setEditCoupon({ ...editCoupon, cpnType: e.target.value })}
                   >
-                    <option value="Fixed">Fixed Amount (₹)</option>
+                    <option value="Fixed">Fixed Amount</option>
                     <option value="Percentage">Percentage (%)</option>
                   </select>
                 </div>
@@ -1906,7 +2380,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Max Discount Cap (₹)</span>
+                  <span>Max Discount Cap</span>
                   <input
                     type="number"
                     step="0.01"
@@ -1935,7 +2409,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Min Booking Amount (₹)</span>
+                  <span>Min Booking Amount</span>
                   <input
                     type="number"
                     step="0.01"
@@ -2012,6 +2486,95 @@ export default function AdminBusCouponListPage() {
                     <span>Is Exclusive</span>
                   </label>
                 </div>
+                {editCoupon.promotionCategory === "Offer" && (
+                  <div className="modal-field wide">
+                    <span>Offer Image URL (Optional) or Choose File</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
+                      <input
+                        type="text"
+                        value={editCoupon.imageUrl || ""}
+                        onChange={(e) => {
+                          setEditImageUploadError("");
+                          const rawVal = e.target.value;
+                          const formattedUrl = sanitizeImageUrl(rawVal);
+                          setEditCoupon({ ...editCoupon, imageUrl: formattedUrl });
+                        }}
+                        placeholder="https://your-domain.com/uploads/offers/summer-offer.jpg"
+                        style={{ flex: 1 }}
+                        disabled={isEditImageUploading}
+                      />
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 14px",
+                          background: isEditImageUploading ? "#94a3b8" : "#A51C49",
+                          color: "#ffffff",
+                          borderRadius: "8px",
+                          cursor: isEditImageUploading ? "not-allowed" : "pointer",
+                          fontSize: "0.80rem",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                          boxShadow: "0 2px 4px rgba(165, 28, 73, 0.2)",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        {isEditImageUploading ? "Uploading..." : "Choose File"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/avif,.jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.ico,.avif"
+                          style={{ display: "none" }}
+                          disabled={isEditImageUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
+                            setEditImageUploadError("");
+                            setIsEditImageUploading(true);
+                            try {
+                              const rawUrl = await uploadCouponImage(file);
+                              const formattedUrl = sanitizeImageUrl(rawUrl);
+                              setEditCoupon((prev) => ({ ...prev, imageUrl: formattedUrl }));
+                            } catch (err) {
+                              setEditImageUploadError(err.message || "Image upload failed.");
+                            } finally {
+                              setIsEditImageUploading(false);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {editImageUploadError && (
+                      <div style={{ marginTop: "6px", color: "#b91c1c", fontSize: "12px", fontWeight: 600 }}>
+                        {editImageUploadError}
+                      </div>
+                    )}
+                    {editCoupon.imageUrl && (
+                      <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "6px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
+                        <img
+                          src={getImagePreviewSrc(editCoupon.imageUrl)}
+                          alt="Promotion Banner Preview"
+                          style={{ maxHeight: "45px", maxWidth: "120px", objectFit: "cover", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Image Preview</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditCoupon((prev) => ({ ...prev, imageUrl: "" }));
+                              setEditImageUploadError("");
+                            }}
+                            style={{ background: "none", border: "none", padding: 0, color: "#ef4444", fontSize: "11px", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="modal-field wide">
                   <span>Description / Terms</span>
@@ -2053,8 +2616,8 @@ export default function AdminBusCouponListPage() {
 
       {/* DELETE MODAL */}
       {deleteCoupon && (
-        <div 
-          className="admin-markup-coupon-backdrop" 
+        <div
+          className="admin-markup-coupon-backdrop"
           onClick={() => setDeleteCoupon(null)}
           style={{
             position: "fixed",
@@ -2070,15 +2633,15 @@ export default function AdminBusCouponListPage() {
             zIndex: 10000
           }}
         >
-          <div 
+          <div
             className="discount-modal-container edit-modal"
             onClick={(e) => e.stopPropagation()}
             style={{ width: "90%", maxWidth: "480px", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}
           >
             <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#ff0000", fontWeight: 700 }}>Delete Promotion</h3>
-              <button 
-                type="button" 
+              <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#b91c1c", fontWeight: 700 }}>Delete Promotion</h3>
+              <button
+                type="button"
                 onClick={() => setDeleteCoupon(null)}
                 style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#64748b" }}
               >
@@ -2112,3 +2675,10 @@ export default function AdminBusCouponListPage() {
     </section>
   );
 }
+
+
+
+
+
+
+

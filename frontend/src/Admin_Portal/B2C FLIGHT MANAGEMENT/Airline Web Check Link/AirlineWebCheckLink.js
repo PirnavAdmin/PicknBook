@@ -47,7 +47,7 @@ function AirlineWebCheckLink() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   const totalItems = airlines.length;
   const paginatedAirlines = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -179,35 +179,35 @@ function AirlineWebCheckLink() {
                 {paginatedAirlines.map((item, index) => {
                   const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
-                  <tr key={item.id}>
-                    <td>{globalIndex}</td>
-                    <td>{item.name}</td>
-                    <td>{item.code}</td>
-                    <td>{item.url}</td>
-                    <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                      <button
-                        className="icon-btn view"
-                        title="View"
-                        onClick={() => setSelectedAirline(item)}
-                      >
-                        👁
-                      </button>
-                      <button
-                        className="icon-btn edit"
-                        title="Edit"
-                        onClick={() => handleEdit(item)}
-                      >
-                        ✏
-                      </button>
-                      <button
-                        className="icon-btn delete"
-                        title="Delete"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        🗑
-                      </button>
-                    </td>
-                  </tr>
+                    <tr key={item.id}>
+                      <td>{globalIndex}</td>
+                      <td>{item.name}</td>
+                      <td>{item.code}</td>
+                      <td>{item.url}</td>
+                      <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                        <button
+                          className="icon-btn view"
+                          title="View"
+                          onClick={() => setSelectedAirline(item)}
+                        >
+                          👁
+                        </button>
+                        <button
+                          className="icon-btn edit"
+                          title="Edit"
+                          onClick={() => handleEdit(item)}
+                        >
+                          ✏
+                        </button>
+                        <button
+                          className="icon-btn delete"
+                          title="Delete"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          🗑
+                        </button>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>

@@ -101,7 +101,7 @@ const BUS_OFFER_IMAGES = [busCoastBanner, intercityBusBanner];
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
 import CustomDatePicker from "../../components/CustomDatePicker";
-import { getActiveOffers, getPublicFeaturedOffers } from "../../services/adminFeaturedOffersService";
+import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
 import { getPopularBusRoutesFromSearchHistory } from "../../services/busSearchHistoryService";
 import { listHotFlightRoutes } from "../../services/flightBookingService";
@@ -1838,6 +1838,65 @@ function normalizeHomeTab(value) {
   return ["flights", "buses", "hotels"].includes(value) ? value : "buses";
 }
 
+function buildFaqModalSections(activeTab, faqs = []) {
+  const serviceName = activeTab === "flights" ? "flight" : activeTab === "hotels" ? "hotel" : "bus";
+  const titleCaseService = `${serviceName.charAt(0).toUpperCase()}${serviceName.slice(1)}`;
+  const bookingFaqs = faqs.slice(0, 2);
+  const confirmationFaq = faqs[2];
+  const helpFaq = faqs[3];
+
+  return [
+    {
+      id: "bookings",
+      title: "Bookings",
+      description: `Searching, selecting and confirming your ${serviceName} booking`,
+      Icon: Ticket,
+      items: bookingFaqs,
+    },
+    {
+      id: "cancellations",
+      title: "Cancellations",
+      description: "Changes, cancellations and refund timelines",
+      Icon: RefreshCw,
+      items: [
+        {
+          id: `${serviceName}-cancellation-faq`,
+          question: `How do I cancel or change my ${serviceName} booking?`,
+          answer: `Open My Bookings, choose the ${titleCaseService} booking you want to update, and select the available cancellation or change option. The applicable cancellation charge, fare difference, and estimated refund timeline are shown before you confirm the request. Availability and charges can vary by operator, airline, or hotel policy.`,
+        },
+      ],
+    },
+    {
+      id: "payments",
+      title: "Payments",
+      description: "Payment methods, coupons and booking confirmation",
+      Icon: IndianRupee,
+      items: [
+        ...(confirmationFaq ? [confirmationFaq] : []),
+        {
+          id: `${serviceName}-payment-faq`,
+          question: "Which payment methods can I use?",
+          answer: "You can complete your booking using the payment options shown at checkout, such as UPI, cards, net banking, or supported wallets. Apply an eligible coupon before payment, then wait for the confirmation screen and ticket or booking reference before closing the page.",
+        },
+      ],
+    },
+    {
+      id: "others",
+      title: "Others",
+      description: "Tickets, check-in, support and other travel questions",
+      Icon: MessageSquareText,
+      items: [
+        ...(helpFaq ? [helpFaq] : []),
+        {
+          id: `${serviceName}-support-faq`,
+          question: "Where can I find help after booking?",
+          answer: "Your booking reference and travel details are available in My Bookings. Use the support option there if you need help with your ticket, booking status, cancellation request, or travel information.",
+        },
+      ],
+    },
+  ];
+}
+
 function createMultiCityLeg(from, to, offsetDays) {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -2618,18 +2677,12 @@ export default function HomePage() {
   const hotelVideoRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [openFaqId, setOpenFaqId] = useState(() => {
-    const currentFaqs = (HOME_MODE_CONTENT[initialTab] || HOME_MODE_CONTENT.buses)?.faqs || [];
-    return currentFaqs[0]?.id || "faq-1";
-  });
+  const [openFaqId, setOpenFaqId] = useState(null);
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
+  const [faqModalSectionId, setFaqModalSectionId] = useState(null);
 
   useEffect(() => {
-    const currentFaqs = (HOME_MODE_CONTENT[activeTab] || HOME_MODE_CONTENT.buses)?.faqs || [];
-    if (currentFaqs.length > 0) {
-      setOpenFaqId(currentFaqs[0].id);
-    } else {
-      setOpenFaqId(null);
-    }
+    setOpenFaqId(null);
   }, [activeTab]);
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiChatInput, setAiChatInput] = useState("");
@@ -2986,7 +3039,10 @@ export default function HomePage() {
   }, [isAiChatOpen]);
 
   useEffect(() => {
-    if (!isDealsDialogOpen && !offerForDetailPopup || typeof document === "undefined") {
+    if (
+      (!isDealsDialogOpen && !offerForDetailPopup && !isFaqModalOpen) ||
+      typeof document === "undefined"
+    ) {
       return undefined;
     }
 
@@ -2996,7 +3052,22 @@ export default function HomePage() {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isDealsDialogOpen, offerForDetailPopup]);
+  }, [isDealsDialogOpen, offerForDetailPopup, isFaqModalOpen]);
+
+  useEffect(() => {
+    if (!isFaqModalOpen || typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsFaqModalOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isFaqModalOpen]);
 
   const dealsDialog =
     isDealsDialogOpen && typeof document !== "undefined"
@@ -3270,20 +3341,39 @@ export default function HomePage() {
       setFeaturedOffersError("");
 
       try {
-        const activeType = activeTab === "flights" ? "Flight" : activeTab === "hotels" ? "Hotel" : "Bus";
-        let response = await getActiveOffers(activeType).catch(() => null);
-        if (!response || (Array.isArray(response) && response.length === 0)) {
-          response = await getPublicFeaturedOffers().catch(() => null);
-        }
-        const activeOffers = getFeaturedOffersPayload(response)
-          .map(normalizeFeaturedOffer)
-          .filter((offer) => 
-            offer.isActive && 
-            (offer.bookingType || "bus").toLowerCase() === activeType.toLowerCase()
+        const serviceType = activeTab === "flights" ? "flight" : activeTab === "hotels" ? "hotel" : "bus";
+        let offers = await fetchCouponsAndOffers({ serviceType, category: "Offer" }).catch(() => []);
+
+        // Ensure offers array
+        offers = Array.isArray(offers) ? offers : [];
+
+        // Map backend API schema to the expected frontend schema
+        let activeOffers = offers.map(offer => ({
+          id: offer.id,
+          title: offer.title,
+          description: offer.description,
+          couponCode: offer.couponCode,
+          bookingType: offer.serviceType === "flight" ? "Flight" : offer.serviceType === "hotel" ? "Hotel" : "Bus",
+          isActive: true,
+          discountType: offer.couponType === "Percentage" ? "Percent" : "Flat",
+          discountValue: offer.value,
+          maxDiscountAmount: offer.maxDiscountAmount,
+          minBookingAmount: offer.minBookingAmount,
+          couponExpiresAtUtc: offer.expiryDate,
+          imageUrl: offer.imageUrl,
+          isAutoApply: offer.isAutoApply,
+          isExclusive: offer.isExclusive
+        }));
+
+        // FALLBACK: If backend returns empty (e.g. 404 because API is not yet deployed), use mock data
+        if (activeOffers.length === 0) {
+          activeOffers = DEFAULT_BUS_FEATURED_OFFERS.filter(
+            (offer) => (offer.bookingType || "bus").toLowerCase() === serviceType.toLowerCase()
           );
+        }
 
         if (isMounted) {
-          setFeaturedOffers(activeOffers || []);
+          setFeaturedOffers(activeOffers);
         }
       } catch (error) {
         if (isMounted) {
@@ -4072,6 +4162,100 @@ export default function HomePage() {
   const ActiveAiIcon =
     activeTab === "buses" ? Bus : activeTab === "hotels" ? BedDouble : Plane;
   const HomeModeIcon = homeContent.Icon;
+  const faqModalSections = buildFaqModalSections(activeTab, homeContent.faqs);
+
+  const faqDialog =
+    isFaqModalOpen && typeof document !== "undefined"
+      ? createPortal(
+        <div
+          className="faq-modal-backdrop"
+          role="presentation"
+          onClick={() => setIsFaqModalOpen(false)}
+        >
+          <section
+            className="faq-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="faq-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="faq-modal-header">
+              <div>
+                <span className="faq-modal-kicker">Help Center</span>
+                <h2 id="faq-modal-title">{homeContent.faqHeading}</h2>
+              </div>
+              <button
+                type="button"
+                className="faq-modal-close"
+                onClick={() => setIsFaqModalOpen(false)}
+                aria-label="Close FAQs"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="faq-modal-body">
+              <p className="faq-modal-subtitle">
+                Choose a topic to view the relevant answers.
+              </p>
+              <div className="faq-modal-category-list">
+                {faqModalSections.map((section) => {
+                  const CategoryIcon = section.Icon;
+                  const isOpen = faqModalSectionId === section.id;
+
+                  return (
+                    <details className="faq-modal-category" key={section.id} open={isOpen}>
+                      <summary
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setFaqModalSectionId((current) =>
+                            current === section.id ? null : section.id,
+                          );
+                        }}
+                      >
+                        <span className="faq-modal-category-icon" aria-hidden="true">
+                          <CategoryIcon size={19} strokeWidth={2} />
+                        </span>
+                        <span className="faq-modal-category-copy">
+                          <strong>{section.title}</strong>
+                          <small>{section.description}</small>
+                        </span>
+                        <span className="faq-modal-category-count">
+                          {section.items.length} {section.items.length === 1 ? "FAQ" : "FAQs"}
+                        </span>
+                      </summary>
+
+                      <div className="faq-modal-category-body">
+                        {section.items.map((item) => (
+                          <details className="india-faq-item faq-modal-question" key={item.id}>
+                            <summary><span>{item.question}</span></summary>
+                            <div className="india-faq-answer">
+                              {item.answer.split("\n\n").map((block, blockIndex) => (
+                                <div key={blockIndex} className="india-faq-block-item">
+                                  {block.split("\n").map((line, lineIndex) => (
+                                    <p
+                                      key={lineIndex}
+                                      className={/^(?:\u2022|\d+\.)/.test(line) ? "india-faq-step" : ""}
+                                    >
+                                      {line}
+                                    </p>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </div>,
+        document.body,
+      )
+      : null;
 
   return (
     <div className={`homepage homepage-${homeContent.mode}`}>
@@ -6644,7 +6828,8 @@ export default function HomePage() {
             max-width: 1280px !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
-            position: static !important;
+            position: relative !important;
+            z-index: 3 !important;
             height: 100% !important;
             align-self: stretch !important;
             display: flex !important;
@@ -7852,19 +8037,12 @@ export default function HomePage() {
           }
         `}</style>
       <section className={`hero-section ${activeTab === "flights" ? "homepage-flights" : ""} ${activeTab === "buses" ? "homepage-buses" : ""} ${activeTab === "hotels" ? "homepage-hotels" : ""} ${activeTab === "flights" && flightTripType === "multicity" ? "hero-multicity" : ""}`}>
-        {(activeTab === "flights" || activeTab === "buses" || activeTab === "hotels") && (
-          <div className="flight-hero-wallpaper">
+        <div className="flight-hero-wallpaper" aria-hidden="true">
+          {activeTab === "flights" && (
             <video
               ref={flightVideoRef}
               key="flight-hero-video"
               className="flight-hero-wallpaper-video"
-              style={{
-                opacity: 1,
-                zIndex: activeTab === "flights" ? 2 : 1,
-                position: "absolute",
-                top: 0,
-                left: 0
-              }}
               autoPlay
               loop
               muted
@@ -7875,17 +8053,12 @@ export default function HomePage() {
               <source src="/flight-hero-theme.mp4" type="video/mp4" />
               <source src="/home_flight.mp4" type="video/mp4" />
             </video>
+          )}
+          {activeTab === "buses" && (
             <video
               ref={busVideoRef}
               key="bus-hero-video"
               className="flight-hero-wallpaper-video"
-              style={{
-                opacity: 1,
-                zIndex: activeTab === "buses" ? 2 : 1,
-                position: "absolute",
-                top: 0,
-                left: 0
-              }}
               autoPlay
               loop
               muted
@@ -7896,17 +8069,12 @@ export default function HomePage() {
               <source src="/bus.herobanner.mp4" type="video/mp4" />
               <source src="/Bus.herobanner.mp4" type="video/mp4" />
             </video>
+          )}
+          {activeTab === "hotels" && (
             <video
               ref={hotelVideoRef}
               key="hotel-hero-video"
               className="flight-hero-wallpaper-video"
-              style={{
-                opacity: 1,
-                zIndex: activeTab === "hotels" ? 2 : 1,
-                position: "absolute",
-                top: 0,
-                left: 0
-              }}
               autoPlay
               loop
               muted
@@ -7916,8 +8084,8 @@ export default function HomePage() {
               <source src={hotelHeroVideo} type="video/mp4" />
               <source src="/hotel-herobanner.mp4" type="video/mp4" />
             </video>
-          </div>
-        )}
+          )}
+        </div>
         <div className="hero-content">
           {/* Left-aligned Heading and Subtitle */}
           {activeTab === "flights" ? (
@@ -9180,6 +9348,7 @@ export default function HomePage() {
 
       {dealsDialog}
       {offerDetailDialog}
+      {faqDialog}
 
       {/* Assurance Paragraph Card Section */}
       <section className="assurance-section section-shell">
@@ -9460,7 +9629,14 @@ export default function HomePage() {
               <span className="section-kicker">Help Center</span>
               <h2>{homeContent.faqHeading}</h2>
             </div>
-            <button type="button" className="india-faq-link">
+            <button
+              type="button"
+              className="india-faq-link"
+              onClick={() => {
+                setFaqModalSectionId(null);
+                setIsFaqModalOpen(true);
+              }}
+            >
               View all FAQs
             </button>
           </div>

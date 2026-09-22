@@ -7,6 +7,39 @@ import { NgrokSafeImage } from "../../../services/apiClient";
 import AdminPagination from "../../../components/AdminPagination";
 import { Eye, Edit2, Trash2, X, ChevronDown, FileText, AlertTriangle, Upload, Check, Image as ImageIcon } from 'lucide-react';
 
+const CalendarIcon = ({ size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ flexShrink: 0, verticalAlign: "middle", display: "inline-block" }}
+  >
+    <rect x="2.5" y="4.5" width="19" height="17" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
+    <path d="M2.5 7.5C2.5 5.84315 3.84315 4.5 5.5 4.5H18.5C20.1569 4.5 21.5 5.84315 21.5 7.5V9.5H2.5V7.5Z" fill="url(#calHeaderGradAllPages)" />
+    <defs>
+      <linearGradient id="calHeaderGradAllPages" x1="2.5" y1="4.5" x2="21.5" y2="9.5" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#4f46e5" />
+        <stop offset="100%" stopColor="#2563eb" />
+      </linearGradient>
+    </defs>
+    <rect x="5.5" y="2.5" width="1.8" height="3.5" rx="0.9" fill="#94a3b8" />
+    <rect x="9.5" y="2.5" width="1.8" height="3.5" rx="0.9" fill="#94a3b8" />
+    <rect x="13.5" y="2.5" width="1.8" height="3.5" rx="0.9" fill="#94a3b8" />
+    <rect x="17.5" y="2.5" width="1.8" height="3.5" rx="0.9" fill="#94a3b8" />
+    
+    <rect x="5.5" y="11.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+    <rect x="9.5" y="11.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+    <rect x="13.5" y="11.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+    <rect x="17.5" y="11.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+    
+    <rect x="5.5" y="15.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+    <rect x="9.5" y="15.5" width="2.2" height="2.2" rx="0.5" fill="#2563eb" />
+    <rect x="13.5" y="15.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+    <rect x="17.5" y="15.5" width="2.2" height="2.2" rx="0.5" fill="#cbd5e1" />
+  </svg>
+);
 
 const AllPages = () => {
   const navigate = useNavigate();
@@ -427,14 +460,20 @@ const AllPages = () => {
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour12: true,
-      }).replace(",", "");
+
+      const day = String(d.getDate()).padStart(2, "0");
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "pm" : "am";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const strHours = String(hours).padStart(2, "0");
+
+      return `${day} ${month} ${year} ${strHours}:${minutes} ${ampm}`;
     } catch (e) {
       return dateStr;
     }
@@ -443,13 +482,14 @@ const AllPages = () => {
   return (
     <div className="page-container">
       <div className="header">
-        <h2 style={{ fontWeight: 500 }}>All Page List</h2>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 500, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>Page</h1>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 500, color: '#000000', margin: 0 }}>Management</h2>
+        </div>
         <button className="add-btn" onClick={() => navigate(pageCreatePath)}>
           + Add New Page
         </button>
       </div>
-
-
 
       <div className="admin-markup-table-wrap">
         <table className="page-table">
@@ -496,9 +536,10 @@ const AllPages = () => {
                           <NgrokSafeImage
                             src={resolveCmsImageUrl(getPageImageVal(page), "image")}
                             alt={page.title}
+                            fallbackSrc="https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&q=80&w=400"
                             style={{
-                              width: "44px",
-                              height: "44px",
+                              width: "40px",
+                              height: "40px",
                               borderRadius: "8px",
                               objectFit: "cover",
                               border: "1px solid #cbd5e1",
@@ -512,19 +553,29 @@ const AllPages = () => {
                       )}
                     </td>
                     <td>{page.module}</td>
-                    <td>{formatDateTime(page.updatedAtUtc || page.updateDate)}</td>
-                    <td>{formatDateTime(page.createdAtUtc || page.entryDate)}</td>
+                    <td>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
+                        <CalendarIcon size={18} />
+                        <span>{formatDateTime(page.updatedAtUtc || page.updateDate)}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
+                        <CalendarIcon size={18} />
+                        <span>{formatDateTime(page.createdAtUtc || page.entryDate)}</span>
+                      </div>
+                    </td>
                     <td>
                       <button
                         type="button"
                         onClick={() => handleToggleStatus(page)}
                         style={{
-                          background: (page.status || "Active").toLowerCase() === "inactive" ? "#ffebee" : "#e8f5e9",
-                          color: (page.status || "Active").toLowerCase() === "inactive" ? "#d93025" : "#00bfa5",
-                          border: (page.status || "Active").toLowerCase() === "inactive" ? "1px solid #ffcdd2" : "1px solid #a5d6a7",
+                          background: (page.status || "Active").toLowerCase() === "inactive" ? "#fde8e8" : "#eaf7ed",
+                          color: (page.status || "Active").toLowerCase() === "inactive" ? "#e53e3e" : "#0fa968",
+                          border: (page.status || "Active").toLowerCase() === "inactive" ? "1px solid #f8b4b4" : "1px solid #b7ebc6",
                           borderRadius: "8px",
-                          padding: "5px 14px",
-                          fontSize: "12px",
+                          padding: "4px 14px",
+                          fontSize: "12.5px",
                           fontWeight: "600",
                           cursor: "pointer",
                           transition: "all 0.2s ease"
@@ -968,7 +1019,7 @@ const AllPages = () => {
             </div>
 
             {editError && (
-              <div style={{ background: "#fef2f2", color: "#ff0000", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", border: "1px solid #fecaca" }}>
+              <div style={{ background: "#fef2f2", color: "#b91c1c", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", border: "1px solid #fecaca" }}>
                 {editError}
               </div>
             )}

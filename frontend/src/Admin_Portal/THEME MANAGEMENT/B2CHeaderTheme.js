@@ -24,7 +24,7 @@ export default function B2CHeaderTheme() {
         isActive: true,
         enableTopBar: false,
         phone: "+91 9876543210",
-        email: "info@pick&book.com",
+        email: "info@picknbook.com",
         address: "123, Travel Street, New York, USA",
         showSocialIcons: true,
         showSeparator: true,
@@ -88,7 +88,7 @@ export default function B2CHeaderTheme() {
         isActive: false,
         enableTopBar: false,
         phone: "+91 9876543210",
-        email: "info@pick&book.com",
+        email: "info@picknbook.com",
         address: "",
         showSocialIcons: true,
         showSeparator: true,
@@ -235,7 +235,7 @@ export default function B2CHeaderTheme() {
         isActive: false,
         enableTopBar: false,
         phone: "+91 9876543210",
-        email: "info@pick&book.com",
+        email: "info@picknbook.com",
         address: "",
         showSocialIcons: true,
         showSeparator: true,
@@ -793,7 +793,7 @@ export default function B2CHeaderTheme() {
         }
         .btn-delete-card:hover {
           background: #fca5a5;
-          color: #ff0000;
+          color: #b91c1c;
           transform: scale(1.1);
         }
         .theme-card-item h3 {

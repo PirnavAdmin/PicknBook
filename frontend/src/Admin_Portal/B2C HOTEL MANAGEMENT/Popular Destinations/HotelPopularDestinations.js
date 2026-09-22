@@ -363,7 +363,7 @@ export default function HotelPopularDestinations() {
             ) : error ? (
               <tr>
                 <td colSpan="5">
-                  <div className="hpd-page-state error" style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#ff0000' }}>
+                  <div className="hpd-page-state error" style={{ padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#b91c1c' }}>
                     <AlertCircle size={24} />
                     <p style={{ margin: '8px 0 0', fontSize: '13px', fontWeight: '500' }}>{error}</p>
                   </div>

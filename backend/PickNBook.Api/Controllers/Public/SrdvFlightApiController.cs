@@ -168,17 +168,105 @@ namespace PickNBook.Api.Controllers.Public
                     {
                         var traceId = responseObj?["TraceId"]?.ToString();
                         
+                        // Collect all unique airport codes in the search segments
+                        var airportCodes = (request.Segments ?? new List<AirSearchSegmentDto>())
+                            .SelectMany(s => new[] { s.Origin, s.Destination })
+                            .Where(c => !string.IsNullOrWhiteSpace(c))
+                            .Select(c => c.Trim().ToUpperInvariant())
+                            .Distinct()
+                            .ToList();
+
+                        var airportList = await _dbContext.FlightAirports
+                            .AsNoTracking()
+                            .Where(a => airportCodes.Contains(a.AirportCode))
+                            .ToListAsync();
+
+                        var airportDict = airportList
+                            .GroupBy(a => a.AirportCode.ToUpperInvariant())
+                            .ToDictionary(
+                                g => g.Key,
+                                g => string.IsNullOrWhiteSpace(g.First().CityName) ? g.First().AirportName : g.First().CityName
+                            );
+
+                        string fromCity = "";
+                        string toCity = "";
+                        DateOnly? departDate = null;
+                        DateOnly? returnDate = null;
+                        string routeSummary = "";
+
+                        var firstSeg = request.Segments?.FirstOrDefault();
+                        var lastSeg = request.Segments?.LastOrDefault();
+
+                        if (requestTripType == TripType.RoundTrip)
+                        {
+                            fromCity = firstSeg?.Origin ?? "";
+                            toCity = firstSeg?.Destination ?? "";
+                            departDate = firstSeg != null ? DateOnly.FromDateTime(firstSeg.PreferredDepartureTime) : null;
+                            var returnSeg = request.Segments != null && request.Segments.Count > 1 ? request.Segments[1] : null;
+                            returnDate = returnSeg != null ? DateOnly.FromDateTime(returnSeg.PreferredDepartureTime) : null;
+                            routeSummary = $"{fromCity} ⇄ {toCity}";
+                        }
+                        else if (requestTripType == TripType.MultiCity)
+                        {
+                            fromCity = firstSeg?.Origin ?? "";
+                            toCity = lastSeg?.Destination ?? "";
+                            departDate = firstSeg != null ? DateOnly.FromDateTime(firstSeg.PreferredDepartureTime) : null;
+                            returnDate = null;
+                            var routePoints = new List<string>();
+                            if (request.Segments != null)
+                            {
+                                foreach (var seg in request.Segments)
+                                {
+                                    if (routePoints.Count == 0 || routePoints.Last() != seg.Origin)
+                                    {
+                                        routePoints.Add(seg.Origin);
+                                    }
+                                    routePoints.Add(seg.Destination);
+                                }
+                            }
+                            routeSummary = string.Join(" ➔ ", routePoints);
+                        }
+                        else // OneWay
+                        {
+                            fromCity = firstSeg?.Origin ?? "";
+                            toCity = firstSeg?.Destination ?? "";
+                            departDate = firstSeg != null ? DateOnly.FromDateTime(firstSeg.PreferredDepartureTime) : null;
+                            returnDate = null;
+                            routeSummary = $"{fromCity} ➔ {toCity}";
+                        }
+
+                        var fromCityName = airportDict.TryGetValue(fromCity, out var fcn) ? fcn : fromCity;
+                        var toCityName = airportDict.TryGetValue(toCity, out var tcn) ? tcn : toCity;
+
+                        var segmentSnapshots = (request.Segments ?? new List<AirSearchSegmentDto>())
+                            .Select((s, index) => new
+                            {
+                                SegmentIndex = index + 1,
+                                Origin = s.Origin,
+                                OriginCity = airportDict.TryGetValue(s.Origin, out var oc) ? oc : s.Origin,
+                                Destination = s.Destination,
+                                DestinationCity = airportDict.TryGetValue(s.Destination, out var dc) ? dc : s.Destination,
+                                DepartureDate = s.PreferredDepartureTime.ToString("yyyy-MM-dd"),
+                                FlightCabinClass = s.FlightCabinClass
+                            }).ToList();
+
+                        var segmentsJson = JsonSerializer.Serialize(segmentSnapshots);
+
                         var searchLog = new FlightSearchLog
                         {
                             SearchedAtUtc = DateTime.UtcNow,
-                            FromCity = request.Segments.FirstOrDefault()?.Origin ?? "",
-                            ToCity = request.Segments.LastOrDefault()?.Destination ?? "",
-                            DepartDate = request.Segments.FirstOrDefault() != null ? DateOnly.FromDateTime(request.Segments.First().PreferredDepartureTime) : null,
-                            ReturnDate = request.Segments.Count > 1 ? DateOnly.FromDateTime(request.Segments.Last().PreferredDepartureTime) : null,
+                            FromCity = fromCity,
+                            FromCityName = fromCityName,
+                            ToCity = toCity,
+                            ToCityName = toCityName,
+                            DepartDate = departDate,
+                            ReturnDate = returnDate,
                             Adults = request.AdultCount,
                             Children = request.ChildCount,
                             Infants = request.InfantCount,
                             TripType = jType,
+                            RouteSummary = routeSummary,
+                            SegmentsJson = segmentsJson,
                             UserId = string.IsNullOrEmpty(userId) ? null : userId,
                             IsGuest = string.IsNullOrEmpty(userId),
                             UserOrGuestId = userId,
@@ -188,7 +276,7 @@ namespace PickNBook.Api.Controllers.Public
                         
                         _dbContext.FlightSearchLogs.Add(searchLog);
                         await _dbContext.SaveChangesAsync();
-                        _logger.LogInformation("Successfully inserted flight search log to Database. TraceId: {TraceId}", traceId);
+                        _logger.LogInformation("Successfully inserted flight search log to Database. TraceId: {TraceId}, Route: {RouteSummary}", traceId, routeSummary);
                     }
                     catch (Exception dbEx)
                     {

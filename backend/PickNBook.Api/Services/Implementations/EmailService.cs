@@ -18,7 +18,7 @@ namespace PickNBook.Api.Services
         {
             try
             {
-                await SendEmailAsync(recipient, subject ?? "PickNBook Notification", content);
+                await SendEmailAsync(recipient, subject ?? "Pick&book Notification", content);
                 return (true, System.Guid.NewGuid().ToString(), null);
             }
             catch (Exception ex)

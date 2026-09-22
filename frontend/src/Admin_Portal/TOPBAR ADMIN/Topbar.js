@@ -228,7 +228,7 @@ function getAdminProfile() {
 }
 
 const SEARCHABLE_PAGES = [
-    { label: 'Dashboard', category: 'General', path: '/admin' },
+    { label: 'Dashboard', category: 'General', path: '/admin/dashbord' },
     { label: 'Customer List', category: 'Customer Management', path: '/admin/customer-management/customer-list' },
     { label: 'Deposit Request List', category: 'Customer Management', path: '/admin/customer-management/deposit-request-list' },
     { label: 'Contact Queries List', category: 'Query Management', path: '/admin/query-management/query-list' },
@@ -1045,18 +1045,18 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            marginRight: '8px',
+                            marginRight: '12px',
                             userSelect: 'none',
                             transition: 'opacity 0.2s ease',
                         }}
                         onClick={() => {
-                            navigate('/admin');
+                            navigate('/admin/dashbord');
                         }}
                         title="Go to Dashboard"
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.75'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
-                        <img src={pickNBookLogo} alt="Pick&Book Logo" style={{ height: '46px', width: 'auto' }} />
+                        <img src={pickNBookLogo} alt="PickNBook Logo" style={{ height: '24px', width: 'auto', maxWidth: '125px', objectFit: 'contain', display: 'block' }} />
                     </div>
  
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '440px' }}>
@@ -1304,7 +1304,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'left', pointerEvents: 'none' }}>
-                            <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--admin-text)', lineHeight: '1.3' }}>{adminData.adminEmail || 'admin@pick&book.in'}</span>
+                            <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--admin-text)', lineHeight: '1.3' }}>{adminData.adminEmail || 'admin@picknbook.in'}</span>
                         </div>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--admin-muted)', pointerEvents: 'none' }}>
                             <polyline points="6 9 12 15 18 9"></polyline>
@@ -1342,7 +1342,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                         )}
                                     </div>
                                     <div style={styles.dsaInfo}>
-                                        <div style={styles.dsaName}>{adminData.adminEmail || 'admin@pick&book.in'}</div>
+                                        <div style={styles.dsaName}>{adminData.adminEmail || 'admin@picknbook.in'}</div>
                                         <div style={styles.dsaId}>Admin ID: {adminData.adminId}</div>
                                     </div>
                                 </div>
@@ -1503,7 +1503,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     borderRadius: '10px',
                     background: toast.type === 'success' ? '#ecfdf5' : '#fef2f2',
                     border: `1px solid ${toast.type === 'success' ? '#10b981' : '#ef4444'}`,
-                    color: toast.type === 'success' ? '#065f46' : '#ff0000',
+                    color: toast.type === 'success' ? '#065f46' : '#991b1b',
                     fontSize: '0.88rem',
                     fontWeight: 'bold',
                     boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',

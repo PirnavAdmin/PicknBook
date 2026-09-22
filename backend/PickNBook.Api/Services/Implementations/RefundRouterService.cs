@@ -511,11 +511,11 @@ namespace PickNBook.Api.Services.Implementations
             {
                 if (walletAmt > 0 && gatewayAmt > 0)
                 {
-                    return $"Refund completed: ₹{walletAmt:N2} credited to PickNBook Wallet and ₹{gatewayAmt:N2} settled to original payment method.";
+                    return $"Refund completed: ₹{walletAmt:N2} credited to Pick&book Wallet and ₹{gatewayAmt:N2} settled to original payment method.";
                 }
                 if (walletAmt > 0)
                 {
-                    return $"Refund of ₹{walletAmt:N2} credited directly to your PickNBook wallet.";
+                    return $"Refund of ₹{walletAmt:N2} credited directly to your Pick&book wallet.";
                 }
                 return $"Refund of ₹{gatewayAmt:N2} completed to original payment method.";
             }
@@ -529,7 +529,7 @@ namespace PickNBook.Api.Services.Implementations
             {
                 if (walletAmt > 0 && gatewayAmt > 0)
                 {
-                    return $"₹{walletAmt:N2} credited to PickNBook Wallet. ₹{gatewayAmt:N2} initiated to original payment method (takes 3-5 business days).";
+                    return $"₹{walletAmt:N2} credited to Pick&book Wallet. ₹{gatewayAmt:N2} initiated to original payment method (takes 3-5 business days).";
                 }
                 if (gatewayAmt > 0)
                 {

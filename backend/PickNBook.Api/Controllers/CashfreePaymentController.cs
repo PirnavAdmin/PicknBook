@@ -99,6 +99,12 @@ namespace PickNBook.Api.Controllers
                 string? pricingSnapshotJson = null;
                 string? actualCouponCode = !string.IsNullOrWhiteSpace(request.CouponCode) ? request.CouponCode.Trim() : null;
 
+                string? extractedCustomerName = !string.IsNullOrWhiteSpace(request.CustomerName) ? request.CustomerName.Trim() : null;
+                string? extractedCustomerEmail = !string.IsNullOrWhiteSpace(request.CustomerEmail) ? request.CustomerEmail.Trim() : null;
+                string? extractedCustomerPhone = !string.IsNullOrWhiteSpace(request.CustomerPhone) ? request.CustomerPhone.Trim() : null;
+                int extractedPassengerCount = 1;
+                string? extractedPassengerDetailsJson = null;
+
                 if (!string.IsNullOrEmpty(request.BookingPayloadJson) && !string.IsNullOrEmpty(request.BookingType))
                 {
                     if (request.BookingType == BookingType.Bus)
@@ -241,12 +247,113 @@ namespace PickNBook.Api.Controllers
                         markupAmount = pricing.Seats.Sum(s => s.MarkupAmount);
                         discountAmount = pricing.TotalDiscount;
                         convenienceFee = pricing.ConvenienceFee;
+
+                        if (payload.Passengers != null && payload.Passengers.Any())
+                        {
+                            extractedPassengerCount = payload.Passengers.Count;
+                            var leadPax = payload.Passengers.FirstOrDefault(p => p.LeadPassenger == true) ?? payload.Passengers.FirstOrDefault();
+                            if (leadPax != null)
+                            {
+                                var leadName = !string.IsNullOrWhiteSpace(leadPax.FullName)
+                                    ? leadPax.FullName
+                                    : $"{leadPax.Title} {leadPax.FirstName} {leadPax.LastName}".Trim();
+                                if (!string.IsNullOrWhiteSpace(leadName))
+                                {
+                                    extractedCustomerName = leadName;
+                                }
+                            }
+                            extractedPassengerDetailsJson = JsonSerializer.Serialize(payload.Passengers.Select(p => new
+                            {
+                                Name = !string.IsNullOrWhiteSpace(p.FullName) ? p.FullName : $"{p.Title} {p.FirstName} {p.LastName}".Trim(),
+                                p.Gender,
+                                p.Age,
+                                p.SeatNumber,
+                                LeadPassenger = p.LeadPassenger == true
+                            }));
+                        }
+                        if (string.IsNullOrWhiteSpace(extractedCustomerName) && !string.IsNullOrWhiteSpace(payload.PassengerName))
+                        {
+                            extractedCustomerName = payload.PassengerName.Trim();
+                        }
+                        if (string.IsNullOrWhiteSpace(extractedCustomerPhone) && !string.IsNullOrWhiteSpace(payload.PassengerPhone))
+                        {
+                            extractedCustomerPhone = payload.PassengerPhone.Trim();
+                        }
+                        if (string.IsNullOrWhiteSpace(extractedCustomerEmail) && !string.IsNullOrWhiteSpace(payload.PassengerEmail))
+                        {
+                            extractedCustomerEmail = payload.PassengerEmail.Trim();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(extractedPassengerDetailsJson) && !string.IsNullOrWhiteSpace(extractedCustomerName))
+                        {
+                            var seatList = payload.Passengers?
+                                .Where(p => !string.IsNullOrWhiteSpace(p.SeatNumber))
+                                .Select(p => p.SeatNumber!.Trim())
+                                .ToList() ?? new List<string>();
+
+                            extractedPassengerDetailsJson = JsonSerializer.Serialize(new[]
+                            {
+                                new
+                                {
+                                    Name = extractedCustomerName,
+                                    Email = extractedCustomerEmail ?? string.Empty,
+                                    Phone = extractedCustomerPhone ?? string.Empty,
+                                    SeatNumber = string.Join(", ", seatList),
+                                    LeadPassenger = true
+                                }
+                            });
+                        }
                     }
                     else if (request.BookingType == BookingType.Hotel)
                     {
                         var payload = JsonSerializer.Deserialize<HotelBookRequestDto>(request.BookingPayloadJson,
                             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (payload == null) return BadRequest(new { message = "Invalid Hotel Payload" });
+
+                        var allHotelPax = payload.HotelRoomsDetails?.SelectMany(r => r.HotelPassenger ?? new List<HotelPassengerDto>()).ToList() ?? new List<HotelPassengerDto>();
+                        if (allHotelPax.Any())
+                        {
+                            extractedPassengerCount = allHotelPax.Count;
+                            var leadPax = allHotelPax.FirstOrDefault(p => p.LeadPassenger) ?? allHotelPax.FirstOrDefault();
+                            if (leadPax != null)
+                            {
+                                var leadName = $"{leadPax.Title} {leadPax.FirstName} {leadPax.LastName}".Trim();
+                                if (!string.IsNullOrWhiteSpace(leadName)) extractedCustomerName = leadName;
+                                if (!string.IsNullOrWhiteSpace(leadPax.Phoneno)) extractedCustomerPhone = leadPax.Phoneno.Trim();
+                                if (!string.IsNullOrWhiteSpace(leadPax.Email)) extractedCustomerEmail = leadPax.Email.Trim();
+                            }
+                            extractedPassengerDetailsJson = JsonSerializer.Serialize(allHotelPax.Select(p => new
+                            {
+                                Name = $"{p.Title} {p.FirstName} {p.LastName}".Trim(),
+                                p.Email,
+                                Phone = p.Phoneno,
+                                p.PaxType,
+                                p.Age,
+                                p.LeadPassenger
+                            }));
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(payload.GuestName)) extractedCustomerName = payload.GuestName.Trim();
+                            if (!string.IsNullOrWhiteSpace(payload.GuestEmail)) extractedCustomerEmail = payload.GuestEmail.Trim();
+                            if (!string.IsNullOrWhiteSpace(payload.GuestPhone)) extractedCustomerPhone = payload.GuestPhone.Trim();
+                            if (payload.NoOfRooms > 0) extractedPassengerCount = payload.NoOfRooms;
+
+                            if (!string.IsNullOrWhiteSpace(extractedCustomerName))
+                            {
+                                extractedPassengerDetailsJson = JsonSerializer.Serialize(new[]
+                                {
+                                    new
+                                    {
+                                        Name = extractedCustomerName,
+                                        Email = extractedCustomerEmail ?? string.Empty,
+                                        Phone = extractedCustomerPhone ?? string.Empty,
+                                        PaxType = "Guest",
+                                        LeadPassenger = true
+                                    }
+                                });
+                            }
+                        }
 
                         var traceIdStr = payload.TraceId.ToString();
                         var blockedHotel = await _dbContext.HotelBlockedPrices
@@ -401,9 +508,60 @@ namespace PickNBook.Api.Controllers
 
                         if (TryGetProp(root, "Passengers", out var paxArray) && paxArray.ValueKind == JsonValueKind.Array)
                         {
-                            adults = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 1);
-                            children = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 2);
-                            infants = paxArray.EnumerateArray().Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 3);
+                            var paxList = paxArray.EnumerateArray().ToList();
+                            adults = paxList.Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 1);
+                            children = paxList.Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 2);
+                            infants = paxList.Count(p => TryGetProp(p, "PaxType", out var pt) && pt.GetInt32() == 3);
+
+                            if (paxList.Any())
+                            {
+                                extractedPassengerCount = paxList.Count;
+                                var firstPax = paxList.FirstOrDefault();
+                                if (firstPax.ValueKind == JsonValueKind.Object)
+                                {
+                                    string title = TryGetProp(firstPax, "Title", out var tProp) ? tProp.GetString() ?? "" : "";
+                                    string fn = TryGetProp(firstPax, "FirstName", out var fnProp) ? fnProp.GetString() ?? "" : "";
+                                    string ln = TryGetProp(firstPax, "LastName", out var lnProp) ? lnProp.GetString() ?? "" : "";
+                                    var name = $"{title} {fn} {ln}".Trim();
+                                    if (!string.IsNullOrWhiteSpace(name))
+                                    {
+                                        extractedCustomerName = name;
+                                    }
+
+                                    if (string.IsNullOrWhiteSpace(extractedCustomerPhone))
+                                    {
+                                        string phone = TryGetProp(firstPax, "ContactNo", out var pProp) ? pProp.GetString() ?? "" : "";
+                                        if (string.IsNullOrWhiteSpace(phone) && TryGetProp(firstPax, "Phone", out var phProp)) phone = phProp.GetString() ?? "";
+                                        if (!string.IsNullOrWhiteSpace(phone)) extractedCustomerPhone = phone.Trim();
+                                    }
+                                    if (string.IsNullOrWhiteSpace(extractedCustomerEmail))
+                                    {
+                                        string email = TryGetProp(firstPax, "Email", out var eProp) ? eProp.GetString() ?? "" : "";
+                                        if (!string.IsNullOrWhiteSpace(email)) extractedCustomerEmail = email.Trim();
+                                    }
+                                }
+
+                                if (string.IsNullOrWhiteSpace(extractedCustomerPhone))
+                                {
+                                    string phone = TryGetProp(root, "ContactNo", out var rPhone) ? rPhone.GetString() ?? "" : (TryGetProp(root, "Phone", out var rPh) ? rPh.GetString() ?? "" : "");
+                                    if (!string.IsNullOrWhiteSpace(phone)) extractedCustomerPhone = phone.Trim();
+                                }
+                                if (string.IsNullOrWhiteSpace(extractedCustomerEmail))
+                                {
+                                    string email = TryGetProp(root, "Email", out var rEmail) ? rEmail.GetString() ?? "" : "";
+                                    if (!string.IsNullOrWhiteSpace(email)) extractedCustomerEmail = email.Trim();
+                                }
+
+                                extractedPassengerDetailsJson = JsonSerializer.Serialize(paxList.Select(p => new
+                                {
+                                    Name = $"{(TryGetProp(p, "Title", out var t) ? t.GetString() : "")} {(TryGetProp(p, "FirstName", out var f) ? f.GetString() : "")} {(TryGetProp(p, "LastName", out var l) ? l.GetString() : "")}".Trim(),
+                                    Gender = TryGetProp(p, "Gender", out var g) ? g.ToString() : "",
+                                    PaxType = TryGetProp(p, "PaxType", out var pt) ? pt.ToString() : "1",
+                                    Phone = TryGetProp(p, "ContactNo", out var cp) ? cp.GetString() : (TryGetProp(p, "Phone", out var ph) ? ph.GetString() : null),
+                                    Email = TryGetProp(p, "Email", out var em) ? em.GetString() : null,
+                                    LeadPassenger = TryGetProp(p, "IsLeadPax", out var lp) ? lp.GetBoolean() : false
+                                }));
+                            }
                         }
 
                         if (TryGetProp(root, "DepartureDate", out var depDateProp) && DateTime.TryParse(depDateProp.GetString(), out var parsedDep))
@@ -507,6 +665,22 @@ namespace PickNBook.Api.Controllers
                 else
                 {
                     return BadRequest(new { message = "BookingPayloadJson and BookingType are strictly required for Cashfree orders." });
+                }
+
+                // Universal safety fallback: ensure PassengerDetailsJson is populated if CustomerName is known
+                if (string.IsNullOrWhiteSpace(extractedPassengerDetailsJson) && !string.IsNullOrWhiteSpace(extractedCustomerName))
+                {
+                    extractedPassengerDetailsJson = JsonSerializer.Serialize(new[]
+                    {
+                        new
+                        {
+                            Name = extractedCustomerName,
+                            Email = extractedCustomerEmail ?? string.Empty,
+                            Phone = extractedCustomerPhone ?? string.Empty,
+                            PaxType = "Adult",
+                            LeadPassenger = true
+                        }
+                    });
                 }
 
                 // ==========================================
@@ -623,7 +797,12 @@ namespace PickNBook.Api.Controllers
                             walletReservationStatus: "None",
                             walletTransactionId: walletTx.Id,
                             gatewayPaymentMethod: null,
-                            paymentReference: paymentRef);
+                            paymentReference: paymentRef,
+                            customerName: extractedCustomerName,
+                            customerEmail: extractedCustomerEmail,
+                            customerPhone: extractedCustomerPhone,
+                            passengerCount: extractedPassengerCount,
+                            passengerDetailsJson: extractedPassengerDetailsJson);
 
                         payment.Status = PaymentStatus.Success;
                         payment.PaidAt = DateTime.UtcNow;
@@ -733,7 +912,12 @@ namespace PickNBook.Api.Controllers
                             walletReservationStatus: "Reserved",
                             walletTransactionId: reservationTx.Id,
                             gatewayPaymentMethod: null,
-                            paymentReference: paymentRef);
+                            paymentReference: paymentRef,
+                            customerName: extractedCustomerName,
+                            customerEmail: extractedCustomerEmail,
+                            customerPhone: extractedCustomerPhone,
+                            passengerCount: extractedPassengerCount,
+                            passengerDetailsJson: extractedPassengerDetailsJson);
                     }
                     catch (Exception ex)
                     {
@@ -815,7 +999,12 @@ namespace PickNBook.Api.Controllers
                     walletReservationStatus: "None",
                     walletTransactionId: null,
                     gatewayPaymentMethod: null,
-                    paymentReference: paymentRefCashfree);
+                    paymentReference: paymentRefCashfree,
+                    customerName: extractedCustomerName,
+                    customerEmail: extractedCustomerEmail,
+                    customerPhone: extractedCustomerPhone,
+                    passengerCount: extractedPassengerCount,
+                    passengerDetailsJson: extractedPassengerDetailsJson);
 
                 await _paymentService.CreatePendingBookingAsync(
                     paymentCashfree.Id, request.BookingType, userIdStr, calculatedTotalFare, request.OrderCurrency,

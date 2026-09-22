@@ -25,6 +25,7 @@ import {
   adminLoginRequestOtp,
   adminLoginVerifyOtp,
   adminForgotPassword,
+  adminVerifyOtpOnly,
   adminResetPassword,
 } from "../../services/autn_admin";
 
@@ -171,7 +172,7 @@ export default function AdminLogin() {
 
       ctx.translate(x, y);
       ctx.rotate(angle);
-      ctx.fillStyle = "#ff0000";
+      ctx.fillStyle = "#b91c1c";
       ctx.shadowColor = "rgba(185, 28, 28, 0.2)";
       ctx.shadowBlur = 2;
       ctx.fillText(char, -4, 0);
@@ -280,20 +281,26 @@ export default function AdminLogin() {
       const rawName  = data?.name  || data?.fullName || data?.email || data?.data?.name || "Admin";
 
       if (rawToken) {
+        const adminUserObj = { email: email.trim(), name: rawName, role: rawRole, userId: "admin-" + Date.now() };
         localStorage.setItem("adminToken", rawToken);
         localStorage.setItem("adminRole", rawRole);
         localStorage.setItem("adminName", rawName);
         localStorage.setItem("adminEmail", email.trim());
-        localStorage.setItem("role", "Admin");
+        localStorage.setItem("role", rawRole);
+        localStorage.setItem("token", rawToken);
+        localStorage.setItem("user", JSON.stringify(adminUserObj));
+
         sessionStorage.setItem("adminToken", rawToken);
         sessionStorage.setItem("adminRole", rawRole);
         sessionStorage.setItem("adminName", rawName);
         sessionStorage.setItem("adminEmail", email.trim());
-        sessionStorage.setItem("role", "Admin");
+        sessionStorage.setItem("role", rawRole);
+        sessionStorage.setItem("token", rawToken);
+        sessionStorage.setItem("user", JSON.stringify(adminUserObj));
 
         setSuccessMessage("Admin login successful. Redirecting...");
         setTimeout(() => {
-          navigate("/admin/dashboard", { replace: true });
+          navigate("/admin/dashbord", { replace: true });
         }, 500);
         return;
       }
@@ -378,7 +385,7 @@ export default function AdminLogin() {
 
       setSuccessMessage("Verification successful! Redirecting...");
       setTimeout(() => {
-        navigate("/admin", { replace: true });
+        navigate("/admin/dashbord", { replace: true });
       }, 800);
     } catch (err) {
       setOtpError(true);
@@ -410,6 +417,7 @@ export default function AdminLogin() {
 
       setSuccessMessage(msg);
       startOtpTimer();
+      setMode("RESET_PASSWORD");
     } catch (err) {
       setErrorMessage(err?.message || "Failed to send OTP. Please check your email.");
       refreshCaptcha();
@@ -424,11 +432,6 @@ export default function AdminLogin() {
     setSuccessMessage("");
     setOtpError(false);
 
-    if (isOtpExpired || timerSeconds === 0) {
-      setErrorMessage("OTP has expired. Please click Resend OTP to receive a new code.");
-      return;
-    }
-
     const enteredOtp = otpDigits.join("");
     if (enteredOtp.length < OTP_LENGTH) {
       setOtpError(true);
@@ -436,22 +439,22 @@ export default function AdminLogin() {
       return;
     }
 
-    setLoading(true);
-    try {
-      setSuccessMessage("OTP Verified! Set your new password.");
-      setMode("RESET_PASSWORD");
-    } catch (err) {
-      setOtpError(true);
-      setErrorMessage(err?.message || "Invalid OTP. Please check the code and try again.");
-    } finally {
-      setLoading(false);
-    }
+    setSuccessMessage("OTP Verified! Set your new password.");
+    setMode("RESET_PASSWORD");
   };
 
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setOtpError(false);
+
+    const otp = otpDigits.join("");
+    if (otp.length < OTP_LENGTH) {
+      setOtpError(true);
+      setErrorMessage("Please enter the complete 6-digit OTP.");
+      return;
+    }
 
     const reqs = checkPasswordRequirements(newPassword);
     if (!Object.values(reqs).every(Boolean)) {
@@ -466,11 +469,14 @@ export default function AdminLogin() {
 
     setLoading(true);
     try {
-      const otp = otpDigits.join("");
       const res = await adminResetPassword({ email: email.trim(), otp, newPassword });
 
       if (res && res.success === false) {
-        setErrorMessage(res.message || "Invalid or expired OTP.");
+        const msg = res.message || "Invalid or expired OTP.";
+        setErrorMessage(msg);
+        if (msg.toLowerCase().includes("otp")) {
+          setOtpError(true);
+        }
         return;
       }
 
@@ -490,7 +496,11 @@ export default function AdminLogin() {
         setMode("LOGIN");
       }, 2000);
     } catch (err) {
-      setErrorMessage(err?.message || "Invalid or expired OTP.");
+      const errMsg = err?.message || "Invalid or expired OTP.";
+      setErrorMessage(errMsg);
+      if (errMsg.toLowerCase().includes("otp")) {
+        setOtpError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -533,10 +543,30 @@ export default function AdminLogin() {
     }
   };
 
-  const switchMode = (newMode) => {
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setOtpDigits(Array(OTP_LENGTH).fill(""));
+    setOtpError(false);
     setErrorMessage("");
     setSuccessMessage("");
+  }, []);
+
+  const switchMode = (newMode) => {
+    setEmail("");
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setOtpDigits(Array(OTP_LENGTH).fill(""));
     setOtpError(false);
+    setCaptchaInput("");
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsOtpExpired(false);
+    setIsTimerActive(false);
+    setTimerSeconds(59);
     setMode(newMode);
   };
 
@@ -548,11 +578,11 @@ export default function AdminLogin() {
       {/* PAGE TOP-LEFT LOGO */}
       <div className="page-top-left-logo">
         {pickNBookLogo ? (
-          <img src={pickNBookLogo} alt="Pick&Book" className="page-logo-img" />
+          <img src={pickNBookLogo} alt="PickNBook" className="page-logo-img" />
         ) : (
           <div className="page-logo-fallback">
             <Shield className="fallback-icon" />
-            <span>Pick&Book</span>
+            <span>PickNBook</span>
           </div>
         )}
       </div>
@@ -869,7 +899,7 @@ export default function AdminLogin() {
         {/* MODE 3: FORGOT PASSWORD FORM */}
         {/* ============================================================== */}
         {mode === "FORGOT_PASSWORD" && (
-          <div className="admin-form-body">
+          <form onSubmit={handleForgotPasswordSendOtp} className="admin-form-body">
             <div className="form-header-group">
               <div className="icon-header-badge">
                 <Mail size={18} className="badge-icon" />
@@ -909,83 +939,20 @@ export default function AdminLogin() {
               <span>We will send a 6-digit OTP to your registered email address.</span>
             </div>
 
-            {!isTimerActive && !isOtpExpired && timerSeconds === 59 ? (
-              <button
-                type="button"
-                className="btn-admin-submit mt-2"
-                disabled={loading}
-                onClick={handleForgotPasswordSendOtp}
-              >
-                <Send size={15} />
-                <span>{loading ? "SENDING OTP..." : "SEND OTP"}</span>
-              </button>
-            ) : (
-              <>
-                <div className="form-divider-text">
-                  <span>OR</span>
-                </div>
-
-                <div className="input-field-wrapper">
-                  <label className="field-label">Verify OTP</label>
-                  <div className="otp-digit-row" onPaste={handleOtpPaste}>
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => (otpInputRefs.current[idx] = el)}
-                        type="text"
-                        maxLength={1}
-                        className={`otp-digit-box ${otpError || isOtpExpired ? "error-box" : ""}`}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="otp-timer-row">
-                    <div className="timer-indicator">
-                      <Clock size={13} />
-                      {timerSeconds > 0 ? (
-                        <span>
-                          OTP expires in{" "}
-                          <strong>
-                            00:{timerSeconds < 10 ? `0${timerSeconds}` : timerSeconds}
-                          </strong>
-                        </span>
-                      ) : (
-                        <span className="text-red-highlight">
-                          <strong>OTP Expired</strong>
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      className="resend-otp-btn"
-                      disabled={isTimerActive && timerSeconds > 0}
-                      onClick={handleResendOtp}
-                    >
-                      Resend OTP
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn-admin-submit mt-2"
-                  disabled={loading || isOtpExpired || timerSeconds === 0}
-                  onClick={handleForgotPasswordVerifyOtp}
-                >
-                  <ShieldCheck size={15} />
-                  <span>{loading ? "VERIFYING..." : "VERIFY OTP"}</span>
-                </button>
-              </>
-            )}
+            <button
+              type="submit"
+              className="btn-admin-submit mt-2"
+              disabled={loading}
+            >
+              <Send size={15} />
+              <span>{loading ? "SENDING OTP..." : "SEND OTP"}</span>
+            </button>
 
             <div className="form-footer-security">
               <ShieldCheck size={13} />
               <span>Your information is secure and encrypted.</span>
             </div>
-          </div>
+          </form>
         )}
 
         {/* ============================================================== */}
@@ -1008,8 +975,53 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {/* New Password */}
+            {/* OTP Input Field */}
             <div className="input-field-wrapper">
+              <label className="field-label">Verify OTP (Sent to {email || "email"})</label>
+              <div className="otp-digit-row" onPaste={handleOtpPaste}>
+                {otpDigits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => (otpInputRefs.current[idx] = el)}
+                    type="text"
+                    maxLength={1}
+                    className={`otp-digit-box ${otpError || isOtpExpired ? "error-box" : ""}`}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                  />
+                ))}
+              </div>
+
+              <div className="otp-timer-row">
+                <div className="timer-indicator">
+                  <Clock size={13} />
+                  {timerSeconds > 0 ? (
+                    <span>
+                      OTP expires in{" "}
+                      <strong>
+                        00:{timerSeconds < 10 ? `0${timerSeconds}` : timerSeconds}
+                      </strong>
+                    </span>
+                  ) : (
+                    <span className="text-red-highlight">
+                      <strong>OTP Expired</strong>
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="resend-otp-btn"
+                  disabled={isTimerActive && timerSeconds > 0}
+                  onClick={handleResendOtp}
+                >
+                  Resend OTP
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div className="input-field-wrapper mt-2">
               <label className="field-label">New Password</label>
               <div className="input-group-box">
                 <div className="input-prefix-icon">

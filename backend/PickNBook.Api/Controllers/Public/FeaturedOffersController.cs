@@ -20,16 +20,7 @@ public class FeaturedOffersController : BaseApiController
     [HttpGet]
     public async Task<IActionResult> GetFeaturedOffers([FromQuery] string? bookingType = null)
     {
-        if (string.Equals(bookingType, "flight", StringComparison.OrdinalIgnoreCase))
-        {
-            return Ok(new
-            {
-                count = 0,
-                offers = Array.Empty<FeaturedOfferDto>()
-            });
-        }
-
-        var offers = await _featuredOffersService.GetFeaturedOffersAsync();
+        var offers = await _featuredOffersService.GetFeaturedOffersAsync(bookingType);
 
         return Ok(new
         {

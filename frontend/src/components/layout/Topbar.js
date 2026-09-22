@@ -312,21 +312,21 @@ export default function Topbar() {
                 <div className="dropdown" role="menu">
                   {!isDashboardOrB2B && (
                     <Link to={dashboardLink} className="dropdown-item" onClick={() => setOpen(false)}>
-                      <LayoutDashboard size={15} />
                       Dashboard
+                      <LayoutDashboard size={15} />
                     </Link>
                   )}
 
                   {isDashboardOrB2B && (
                     <Link to="/dashboard/my-account" className="dropdown-item" onClick={() => setOpen(false)}>
-                      <User size={15} />
                       My Account
+                      <User size={15} />
                     </Link>
                   )}
 
                   <button type="button" className="dropdown-item logout" onClick={handleLogout}>
-                    <LogOut size={15} />
                     Logout
+                    <LogOut size={15} />
                   </button>
                 </div>
               )}

@@ -70,4 +70,5 @@ export async function adminResetPassword(payload) {
 }
 
 export const adminVerifyOtpAndResetPassword = adminResetPassword;
+export const adminVerifyOtpOnly = adminLoginVerifyOtp;
 

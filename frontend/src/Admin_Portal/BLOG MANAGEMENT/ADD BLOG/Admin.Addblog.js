@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
-import { toApiAssetUrl, NgrokSafeImage } from '../../../services/apiClient';
+import { toApiAssetUrl, NgrokSafeImage, normalizeResponseMessage } from '../../../services/apiClient';
 
 const DEFAULT_FORM_STATE = {
     title: '',
@@ -24,24 +24,28 @@ const DEFAULT_FORM_STATE = {
     longDescription: '',
 };
 
-const createFormState = (blog) => ({
-    ...DEFAULT_FORM_STATE,
-    title: blog?.title || '',
-    slug: blog?.slug || '',
-    imageName: blog?.imageUrl || blog?.image || '',
-    category: blog?.category || '',
-    subCategory: blog?.subCategory || '',
-    addedBy: blog?.addedByName || blog?.author || blog?.addedBy || '',
-    subTitle: blog?.subTitle || '',
-    featured: blog?.isFeatured ? 'Yes' : 'No',
-    isPublished: blog ? (blog.isPublished ? 'Yes' : 'No') : 'Yes',
-    metaTitle: blog?.metaTitle || '',
-    metaKeyword: blog?.metaKeyword || '',
-    metaDescription: blog?.metaDescription || '',
-    ogImageName: blog?.ogImageUrl || blog?.ogImage || '',
-    shortDescription: blog?.shortDescription || '',
-    longDescription: blog?.longDescription || '',
-});
+const createFormState = (blog) => {
+    const mainImg = blog?.imageUrl || blog?.image || blog?.imagePath || blog?.filePath || blog?.photo || blog?.photoUrl || blog?.picture || blog?.url || '';
+    const ogImg = blog?.ogImageUrl || blog?.ogImage || blog?.ogImagePath || '';
+    return {
+        ...DEFAULT_FORM_STATE,
+        title: blog?.title || '',
+        slug: blog?.slug || '',
+        imageName: mainImg,
+        category: blog?.category || '',
+        subCategory: blog?.subCategory || '',
+        addedBy: blog?.addedByName || blog?.author || blog?.addedBy || '',
+        subTitle: blog?.subTitle || '',
+        featured: blog?.isFeatured ? 'Yes' : 'No',
+        isPublished: blog ? (blog.isPublished ? 'Yes' : 'No') : 'Yes',
+        metaTitle: blog?.metaTitle || '',
+        metaKeyword: blog?.metaKeyword || '',
+        metaDescription: blog?.metaDescription || '',
+        ogImageName: ogImg,
+        shortDescription: blog?.shortDescription || '',
+        longDescription: blog?.longDescription || '',
+    };
+};
 
 const AddBlogForm = () => {
     const navigate = useNavigate();
@@ -74,8 +78,12 @@ const AddBlogForm = () => {
     }, [location.state]);
 
     const [formData, setFormData] = useState(() => createFormState(editingBlog));
-    const [imagePreview, setImagePreview] = useState(() => editingBlog ? (editingBlog.imageUrl || editingBlog.image || '') : '');
-    const [ogImagePreview, setOgImagePreview] = useState(() => editingBlog ? (editingBlog.ogImageUrl || editingBlog.ogImage || '') : '');
+    const [imagePreview, setImagePreview] = useState(() => {
+        return editingBlog ? (editingBlog.imageUrl || editingBlog.image || editingBlog.imagePath || editingBlog.filePath || editingBlog.photo || editingBlog.url || '') : '';
+    });
+    const [ogImagePreview, setOgImagePreview] = useState(() => {
+        return editingBlog ? (editingBlog.ogImageUrl || editingBlog.ogImage || editingBlog.ogImagePath || '') : '';
+    });
     const [toast, setToast] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,8 +100,10 @@ const AddBlogForm = () => {
     useEffect(() => {
         if (editingBlog) {
             setFormData(createFormState(editingBlog));
-            setImagePreview(editingBlog.imageUrl || editingBlog.image || '');
-            setOgImagePreview(editingBlog.ogImageUrl || editingBlog.ogImage || '');
+            const mainImg = editingBlog.imageUrl || editingBlog.image || editingBlog.imagePath || editingBlog.filePath || editingBlog.photo || editingBlog.url || '';
+            const ogImg = editingBlog.ogImageUrl || editingBlog.ogImage || editingBlog.ogImagePath || '';
+            setImagePreview(mainImg);
+            setOgImagePreview(ogImg);
         }
     }, [editingBlog]);
 
@@ -105,12 +115,22 @@ const AddBlogForm = () => {
         }));
     };
 
+    const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.bmp', '.tif', '.tiff', '.ico', '.avif'];
+
     const handleFileChange = (name, labelField) => (e) => {
         const file = e.target.files?.[0] || null;
-        if (file && file.size > 1024 * 1024) {
-            showToast("File size must be within 1MB limit.", "error");
-            e.target.value = ""; // Clear file input
-            return;
+        if (file) {
+            if (file.size > 1024 * 1024) {
+                showToast("File size must be within 1MB limit.", "error");
+                e.target.value = ""; // Clear file input
+                return;
+            }
+            const ext = file.name ? file.name.substring(file.name.lastIndexOf(".")).toLowerCase() : "";
+            if (ext && !ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+                showToast("Invalid image format. Allowed formats: JPG, PNG, WEBP, GIF, SVG, BMP, TIFF, ICO, AVIF.", "error");
+                e.target.value = "";
+                return;
+            }
         }
         setFormData((prev) => ({
             ...prev,
@@ -183,8 +203,8 @@ const AddBlogForm = () => {
             if (formData.subTitle?.trim()) {
                 dataToSend.append("SubTitle", formData.subTitle.trim());
             }
-            dataToSend.append("IsFeatured", formData.featured === 'Yes');
-            dataToSend.append("IsPublished", formData.isPublished === 'Yes');
+            dataToSend.append("IsFeatured", formData.featured === 'Yes' ? 'true' : 'false');
+            dataToSend.append("IsPublished", formData.isPublished === 'Yes' ? 'true' : 'false');
 
             if (formData.metaTitle?.trim()) {
                 dataToSend.append("MetaTitle", formData.metaTitle.trim());
@@ -196,17 +216,16 @@ const AddBlogForm = () => {
                 dataToSend.append("MetaDescription", formData.metaDescription.trim());
             }
 
-            if (formData.image) {
+            if (formData.image && typeof formData.image !== "string") {
                 dataToSend.append("Image", formData.image);
             }
-            if (formData.ogImage) {
+            if (formData.ogImage && typeof formData.ogImage !== "string") {
                 dataToSend.append("OgImage", formData.ogImage);
             }
 
             const targetId = blogId || editingBlog?.id;
 
             if (isEditing && targetId) {
-                dataToSend.append("Id", targetId);
                 await updateAdminBlog(targetId, dataToSend);
                 showToast('Blog updated successfully.', 'success');
             } else {
@@ -219,8 +238,10 @@ const AddBlogForm = () => {
             }, 1000);
         } catch (error) {
             console.error("Error saving blog:", error);
-            const serverMsg = error.response?.data?.message || error.response?.data?.title || (typeof error.response?.data === 'string' ? error.response.data : '') || error.message || "";
-            showToast(`Failed to save blog post. ${serverMsg}`.trim(), "error");
+            const errData = error.response?.data;
+            const rawMsg = errData?.message || errData?.title || (typeof errData === 'string' ? errData : '') || error.message || "";
+            const serverMsg = normalizeResponseMessage(errData, rawMsg || "Failed to save blog post.");
+            showToast(serverMsg || "Failed to save blog post.", "error");
         } finally {
             setIsSubmitting(false);
         }
@@ -588,7 +609,7 @@ const AddBlogForm = () => {
                                                     Choose File
                                                     <input
                                                         type="file"
-                                                        accept="image/*"
+                                                        accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                         onChange={handleFileChange('image', 'imageName')}
                                                         style={styles.fileInputHidden}
                                                     />
@@ -776,7 +797,7 @@ const AddBlogForm = () => {
                                                     Choose File
                                                     <input
                                                         type="file"
-                                                        accept="image/*"
+                                                        accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                         onChange={handleFileChange('ogImage', 'ogImageName')}
                                                         style={styles.fileInputHidden}
                                                     />

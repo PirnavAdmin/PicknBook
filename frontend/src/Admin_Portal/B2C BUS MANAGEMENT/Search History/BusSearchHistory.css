@@ -3,7 +3,7 @@
 }
 
 .admin-search-history-header h1 {
-  font-size: 1.88rem;
+  font-size: 1.35rem !important;
 }
 
 .admin-search-history-chip {
@@ -35,22 +35,25 @@
 
 .admin-search-history-table-head {
   display: grid;
-  grid-template-columns: 0.42fr 0.88fr 0.78fr 1.8fr 0.9fr;
+  grid-template-columns: 0.38fr 0.82fr 0.75fr 1.6fr 0.9fr 0.65fr;
   gap: 8px;
-  padding: 8px;
+  padding: 10px 14px !important;
   background: #A51C49 !important;
+  border-radius: 12px 12px 0 0 !important;
 }
 
 .admin-search-history-table-head span {
   min-height: 32px;
   background: transparent !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-align: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #ffffff !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
 }
 
 .admin-search-history-table-body {
@@ -59,7 +62,7 @@
 
 .admin-search-history-row {
   display: grid;
-  grid-template-columns: 0.42fr 0.88fr 0.78fr 1.8fr 0.9fr;
+  grid-template-columns: 0.38fr 0.82fr 0.75fr 1.6fr 0.9fr 0.65fr;
   gap: 8px;
   padding: 8px;
   border-top: 1px solid var(--admin-border);
@@ -83,7 +86,7 @@
 .admin-search-history-cell strong {
   color: var(--admin-text);
   font-size: 0.81rem;
-  font-weight: normal;
+  font-weight: 700 !important;
 }
 
 .admin-search-history-empty {
@@ -222,3 +225,22 @@
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(165, 28, 73, 0.2) !important;
 }
+
+.admin-search-history-view-btn {
+  background: #fff0f3 !important;
+  color: #A51C49 !important;
+  border: 1.5px solid #A51C49 !important;
+  border-radius: 8px !important;
+  padding: 5px 14px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-search-history-view-btn:hover {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(165, 28, 73, 0.25) !important;
+}
+

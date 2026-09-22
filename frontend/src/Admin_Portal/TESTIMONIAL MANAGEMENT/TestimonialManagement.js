@@ -1107,7 +1107,7 @@ export default function TestimonialManagement() {
 
       {/* Top Breadcrumb */}
       <div className="tm-breadcrumb">
-        <Link to="/admin">Home</Link>
+        <Link to="/admin/dashbord">Home</Link>
         <span>&gt;</span>
         <span className="link" onClick={() => changeView('dashboard')}>Testimonial Management</span>
         <span>&gt;</span>

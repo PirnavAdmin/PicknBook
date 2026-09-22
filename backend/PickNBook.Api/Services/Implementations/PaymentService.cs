@@ -59,7 +59,12 @@ namespace PickNBook.Api.Services.Implementations
             string? walletReservationStatus = null,
             long? walletTransactionId = null,
             string? gatewayPaymentMethod = null,
-            string? paymentReference = null)
+            string? paymentReference = null,
+            string? customerName = null,
+            string? customerEmail = null,
+            string? customerPhone = null,
+            int? passengerCount = null,
+            string? passengerDetailsJson = null)
         {
             var paymentRef = !string.IsNullOrWhiteSpace(paymentReference)
                 ? paymentReference
@@ -71,6 +76,11 @@ namespace PickNBook.Api.Services.Implementations
                 CashfreeOrderId = $"TEMP-{Guid.NewGuid()}",
                 UserId = userId,
                 BookingType = bookingType,
+                CustomerName = customerName,
+                CustomerEmail = customerEmail,
+                CustomerPhone = customerPhone,
+                PassengerCount = passengerCount.HasValue && passengerCount.Value > 0 ? passengerCount.Value : 1,
+                PassengerDetailsJson = passengerDetailsJson,
                 OriginalAmount = originalAmount,
                 MarkupAmount = markupAmount,
                 ConvenienceFee = convenienceFee,

@@ -5,13 +5,13 @@ import { Check, Edit3, Settings, ShieldCheck, X, Upload, Trash2, Info, Save } fr
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.svg";
 
 const DEFAULT_SITE_SETTINGS = {
-  siteName: "Pick&Book",
+  siteName: "PickNBook",
   currency: "INR - Indian Rupee",
   siteLogo: "picknbook_logo.png",
   timeZone: "Asia/Kolkata",
   favicon: "favicon.ico",
   websiteStatus: "Active",
-  contactEmail: "support@pick&book.com",
+  contactEmail: "support@picknbook.com",
   maintenanceMode: "Enabled", // Enabled in mockup
   contactPhoneCode: "+91",
   contactPhone: "98765 43210",
@@ -21,7 +21,7 @@ const DEFAULT_SITE_SETTINGS = {
 
 function SiteSetting() {
   const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem("admin-site-settings-pick&book");
+    const saved = localStorage.getItem("admin-site-settings-picknbook");
     return saved ? JSON.parse(saved) : DEFAULT_SITE_SETTINGS;
   });
 
@@ -37,7 +37,7 @@ function SiteSetting() {
   const handleSave = (e) => {
     if (e) e.preventDefault();
     setSettings(editForm);
-    localStorage.setItem("admin-site-settings-pick&book", JSON.stringify(editForm));
+    localStorage.setItem("admin-site-settings-picknbook", JSON.stringify(editForm));
     setIsEditing(false);
     showToast("Site configuration updated successfully!");
   };
@@ -71,7 +71,7 @@ function SiteSetting() {
 
       {/* Breadcrumb */}
       <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: 600, display: "flex", gap: "6px", alignItems: "center" }}>
-        <Link to="/admin" style={{ color: "#64748b", textDecoration: "none" }}>Home</Link>
+        <Link to="/admin/dashbord" style={{ color: "#64748b", textDecoration: "none" }}>Home</Link>
         <span>&gt;</span>
         <Link to="/admin/site-management" style={{ color: "#64748b", textDecoration: "none" }}>Site Management</Link>
         <span>&gt;</span>
@@ -406,11 +406,11 @@ function SiteSetting() {
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            color: "#ff0000",
+            color: "#9f1239",
             fontSize: "0.8rem",
             fontWeight: 600
           }}>
-            <Info size={16} style={{ color: "#ff0000", flexShrink: 0 }} />
+            <Info size={16} style={{ color: "#e11d48", flexShrink: 0 }} />
             <span>Note: Changes made here will be reflected on the website as per the active status and configurations.</span>
           </div>
 
@@ -501,7 +501,7 @@ function SiteSetting() {
                 fontWeight: 700,
                 alignSelf: "flex-start",
                 background: settings.websiteStatus === "Active" ? "#dcfce7" : "#fee2e2",
-                color: settings.websiteStatus === "Active" ? "#15803d" : "#ff0000"
+                color: settings.websiteStatus === "Active" ? "#15803d" : "#b91c1c"
               }}>
                 {settings.websiteStatus}
               </span>
@@ -521,7 +521,7 @@ function SiteSetting() {
                 fontWeight: 700,
                 alignSelf: "flex-start",
                 background: settings.maintenanceMode === "Enabled" ? "#fee2e2" : "#f1f5f9",
-                color: settings.maintenanceMode === "Enabled" ? "#ff0000" : "#475569"
+                color: settings.maintenanceMode === "Enabled" ? "#b91c1c" : "#475569"
               }}>
                 {settings.maintenanceMode}
               </span>

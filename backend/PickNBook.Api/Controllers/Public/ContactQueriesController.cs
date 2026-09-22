@@ -117,12 +117,12 @@ namespace PickNBook.Api.Controllers
                 var encodedReply = System.Net.WebUtility.HtmlEncode(query.ReplyMessage);
                 
                 var body = $@"<div style=""font-family: Arial, sans-serif; line-height: 1.5; color: #333;"">
-    <h1 style=""color: #0056b3;"">PickNBook</h1>
+    <h1 style=""color: #0056b3;"">Pick&amp;book</h1>
     <p style=""font-weight: bold; color: #555;"">SUPPORT &amp; RESOLUTIONS</p>
 
     <p>Hello {encodedName},</p>
 
-    <p>Thank you for contacting PickNBook.</p>
+    <p>Thank you for contacting Pick&amp;book.</p>
 
     <p>Your support ticket has been reviewed and the latest update is available below.</p>
 
@@ -158,14 +158,14 @@ namespace PickNBook.Api.Controllers
 
     <p style=""margin-top: 30px;"">
         Regards,<br>
-        <strong>PickNBook Support Team</strong><br>
+        <strong>Pick&amp;book Support Team</strong><br>
         Support &amp; Resolutions
     </p>
 
     <hr style=""border: 0; border-top: 1px solid #eee; margin: 20px 0;"">
 
     <p style=""font-size: 12px; color: #999; text-align: center;"">
-        This is an automated support notification from PickNBook.
+        This is an automated support notification from Pick&amp;book.
     </p>
 </div>";
 

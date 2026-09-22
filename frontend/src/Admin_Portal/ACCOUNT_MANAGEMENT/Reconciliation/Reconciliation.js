@@ -371,7 +371,7 @@ function ReconciliationDetailView({ item, onBack }) {
                   <span style={{
                     padding: '4px 12px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700,
                     background: t.st === 'Matched' ? '#dcfce7' : '#fee2e2',
-                    color: t.st === 'Matched' ? '#15803d' : '#ff0000',
+                    color: t.st === 'Matched' ? '#15803d' : '#b91c1c',
                   }}>{t.st}</span>
                 </td>
               </tr>

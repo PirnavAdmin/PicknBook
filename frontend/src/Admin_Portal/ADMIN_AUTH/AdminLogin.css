@@ -30,7 +30,7 @@
 }
 
 .admin-login-wrapper .page-logo-img {
-  max-height: 42px;
+  max-height: 30px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
@@ -42,13 +42,13 @@
   gap: 8px;
   font-size: 19px;
   font-weight: 800;
-  color: #ff0000;
+  color: #dc2626;
 }
 
 .admin-login-wrapper .page-logo-fallback .fallback-icon {
   width: 24px;
   height: 24px;
-  color: #ff0000;
+  color: #dc2626;
 }
 
 /* FLOATING TOAST POPUP - RENDERED AT TOP-RIGHT */
@@ -85,7 +85,7 @@
 .admin-login-wrapper .top-right-toast.error-toast {
   background: rgba(254, 242, 242, 0.96);
   border: 1px solid #fca5a5;
-  color: #ff0000;
+  color: #991b1b;
 }
 
 .admin-login-wrapper .top-right-toast.success-toast {
@@ -154,7 +154,7 @@
   gap: 4px;
   background: none;
   border: none;
-  color: #ff0000;
+  color: #b91c1c;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -165,7 +165,7 @@
 
 .admin-login-wrapper .back-login-btn:hover {
   background: #fef2f2;
-  color: #ff0000;
+  color: #dc2626;
 }
 
 .admin-login-wrapper .form-header-group {
@@ -187,7 +187,7 @@
 }
 
 .admin-login-wrapper .badge-icon {
-  color: #ff0000;
+  color: #dc2626;
 }
 
 .admin-login-wrapper .form-main-title {
@@ -206,7 +206,7 @@
 }
 
 .admin-login-wrapper .text-red-highlight {
-  color: #ff0000;
+  color: #dc2626;
   font-weight: 700;
 }
 
@@ -219,7 +219,7 @@
   border-radius: 6px;
   padding: 5px 7px;
   font-size: 10.5px;
-  color: #ff0000;
+  color: #991b1b;
   font-weight: 500;
   margin-bottom: 6px;
 }
@@ -233,7 +233,7 @@
   border-radius: 6px;
   padding: 6px 8px;
   font-size: 11px;
-  color: #ff0000;
+  color: #b91c1c;
   font-weight: 600;
   margin-bottom: 8px;
 }
@@ -241,7 +241,7 @@
 .admin-login-wrapper .info-banner-box .info-icon,
 .admin-login-wrapper .error-banner-box .info-icon {
   flex-shrink: 0;
-  color: #ff0000;
+  color: #dc2626;
 }
 
 .admin-login-wrapper .admin-form-body {
@@ -276,13 +276,13 @@
 }
 
 .admin-login-wrapper .input-group-box:focus-within {
-  border-color: #ff0000;
+  border-color: #dc2626;
   box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
 }
 
 .admin-login-wrapper .input-prefix-icon {
   width: 30px;
-  background: #ff0000;
+  background: #b91c1c;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -338,7 +338,7 @@
 .admin-login-wrapper .forgot-password-link {
   background: none;
   border: none;
-  color: #ff0000;
+  color: #dc2626;
   font-size: 10.5px;
   font-weight: 600;
   cursor: pointer;
@@ -347,7 +347,7 @@
 }
 
 .admin-login-wrapper .forgot-password-link:hover {
-  color: #ff0000;
+  color: #991b1b;
   text-decoration: underline;
 }
 
@@ -382,7 +382,7 @@
   border-radius: 6px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
-  color: #ff0000;
+  color: #dc2626;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -424,14 +424,14 @@
 }
 
 .admin-login-wrapper .otp-digit-box:focus {
-  border-color: #ff0000;
+  border-color: #dc2626;
   box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
 }
 
 .admin-login-wrapper .otp-digit-box.error-box {
-  border-color: #ff0000 !important;
+  border-color: #dc2626 !important;
   background: #fef2f2 !important;
-  color: #ff0000 !important;
+  color: #991b1b !important;
   box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
 }
 
@@ -451,13 +451,13 @@
 }
 
 .admin-login-wrapper .timer-indicator span strong {
-  color: #ff0000;
+  color: #dc2626;
 }
 
 .admin-login-wrapper .resend-otp-btn {
   background: none;
   border: none;
-  color: #ff0000;
+  color: #dc2626;
   font-weight: 700;
   font-size: 10.5px;
   cursor: pointer;
@@ -495,7 +495,7 @@
 .admin-login-wrapper .btn-admin-submit {
   width: 100%;
   height: 38px;
-  background: linear-gradient(135deg, #ff0000 0%, #ef4444 100%);
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -513,7 +513,7 @@
 }
 
 .admin-login-wrapper .btn-admin-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ff0000 0%, #ff0000 100%);
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
   box-shadow: 0 6px 16px rgba(220, 38, 38, 0.45);
   transform: translateY(-1px);
 }
@@ -554,7 +554,7 @@
   margin-bottom: 2px;
 }
 
-.admin-login-wrapper .strength-text.weak { color: #ff0000; }
+.admin-login-wrapper .strength-text.weak { color: #dc2626; }
 .admin-login-wrapper .strength-text.medium { color: #d97706; }
 .admin-login-wrapper .strength-text.strong { color: #16a34a; }
 
@@ -572,7 +572,7 @@
   transition: background 0.3s ease;
 }
 
-.admin-login-wrapper .strength-bars .bar.weak { background: #ff0000; }
+.admin-login-wrapper .strength-bars .bar.weak { background: #dc2626; }
 .admin-login-wrapper .strength-bars .bar.medium { background: #d97706; }
 .admin-login-wrapper .strength-bars .bar.strong { background: #16a34a; }
 

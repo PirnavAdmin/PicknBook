@@ -2,10 +2,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./BusCancellationList.css";
 import "../Booking List/BookingList.css";
-import { useAdminList, getStoredValue, setStoredValue } from "../../../utils/adminPortalStorage";
-import { getCancellationReports, listAdminBusBookings } from "../../../services/adminBusService";
+import { useAdminList } from "../../../utils/adminPortalStorage";
+import { getCancellationReports, listAdminBusBookings, updateBusCancellation } from "../../../services/adminBusService";
 import AdminPagination from "../../../components/AdminPagination";
-import { RefreshCw, AlertCircle, Filter, Download } from "lucide-react";
+import {
+  CancellationStatusBadge,
+  RefundStatusBadge,
+  RefundAmountDisplay,
+  RefundActionButton,
+} from "../../../utils/adminPortalUtils";
+import { AlertCircle, Filter, Download, X } from "lucide-react";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -18,450 +24,13 @@ const DEFAULT_FILTERS = {
   pnr: "",
   passengerName: "",
   passengerPhone: "",
+  customerEmail: "",
+  status: "ALL",
 };
 
 const normalizeText = (value, fallback = "") => {
   const text = String(value ?? "").trim();
   return text || fallback;
-};
-
-const formatDateCell = (value) => {
-  if (!value || value === "--" || value === "-") return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  });
-};
-
-function shouldUseFallbackBusBookings(error) {
-  const message = String(error?.message || "").toLowerCase();
-
-  if (!message) {
-    return false;
-  }
-
-  return (
-    message.includes("cannot get /api/busbookings") ||
-    message.includes("cannot get /api/admin/bus/bookings/all") ||
-    message.includes("err_ngrok_3200") ||
-    (message.includes("endpoint") && message.includes("offline")) ||
-    message.includes("failed to fetch") ||
-    message.includes("networkerror")
-  );
-}
-
-const toDateKey = (value) => {
-  if (!value) {
-    return "";
-  }
-
-  const raw = String(value).trim();
-
-  // 1. Try to match YYYY-MM-DD directly
-  const isoDateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (isoDateMatch) {
-    return isoDateMatch[1];
-  }
-
-  // 2. Try to parse with standard Date but don't convert to ISO if it shifts
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    // Fallback: slice first 10 chars
-    return normalizeText(value, "").slice(0, 10);
-  }
-
-  // To avoid timezone shifting, format in local timezone parts
-  const year = parsed.getFullYear();
-  const month = String(parsed.getMonth() + 1).padStart(2, "0");
-  const day = String(parsed.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-function pickFirst(source, keys, fallback = null) {
-  if (!source || typeof source !== "object") {
-    return fallback;
-  }
-
-  for (const key of keys) {
-    if (source[key] !== undefined && source[key] !== null) {
-      return source[key];
-    }
-  }
-
-  return fallback;
-}
-
-function normalizeBusPassenger(passenger, index = 0) {
-  return {
-    fullName: String(
-      pickFirst(
-        passenger,
-        ["fullName", "FullName", "name", "Name"],
-        `Passenger ${index + 1}`
-      )
-    ),
-    gender: String(pickFirst(passenger, ["gender", "Gender"], "")),
-    seatNumber: pickFirst(passenger, ["seatNumber", "SeatNumber"], null),
-  };
-}
-
-function normalizeBusBookingRecord(record) {
-  const passengersRaw = pickFirst(record, ["passengers", "Passengers"], []);
-  const passengers = Array.isArray(passengersRaw)
-    ? passengersRaw.map((passenger, index) =>
-        normalizeBusPassenger(passenger, index)
-      )
-    : [];
-  const seatsBookedFallback = passengers.length;
-
-  // Define potential nested structures to search for fields
-  const sources = [
-    record,
-    record?.bus,
-    record?.busDetails,
-    record?.ticket,
-    record?.trip,
-    record?.journey,
-    record?.raw,
-    record?.bookingDetails,
-    record?.details,
-    record?.ticketDetails,
-  ].filter(Boolean);
-
-  const getFieldValue = (keys, fallback = "") => {
-    for (const source of sources) {
-      const val = pickFirst(source, keys, null);
-      if (val !== undefined && val !== null && val !== "") {
-        return val;
-      }
-    }
-    return fallback;
-  };
-
-  // Dynamically resolve segment, fromCity, and toCity
-  const rawSegment = getFieldValue(["segment", "Segment", "route", "Route"], null);
-  let fromCity = "";
-  let toCity = "";
-  let segment = "";
-
-  if (rawSegment) {
-    segment = String(rawSegment).trim();
-    const parts = segment.split(/[-–]| to /i);
-    if (parts.length === 2) {
-      fromCity = parts[0].trim();
-      toCity = parts[1].trim();
-    }
-  }
-
-  if (!fromCity) {
-    fromCity = String(
-      getFieldValue(
-        [
-          "fromCity",
-          "FromCity",
-          "source",
-          "Source",
-          "from",
-          "From",
-          "origin",
-          "Origin",
-          "sourceCity",
-          "SourceCity",
-        ],
-        ""
-      )
-    ).trim();
-  }
-
-  if (!toCity) {
-    toCity = String(
-      getFieldValue(
-        [
-          "toCity",
-          "ToCity",
-          "destination",
-          "Destination",
-          "to",
-          "To",
-          "arrivalCity",
-          "ArrivalCity",
-          "destinationCity",
-          "DestinationCity",
-        ],
-        ""
-      )
-    ).trim();
-  }
-
-  if (!segment && fromCity && toCity) {
-    segment = `${fromCity} - ${toCity}`;
-  }
-
-  // Resolve departure date/time
-  const departureTimeUtc = getFieldValue(
-    [
-      "departureTimeUtc",
-      "DepartureTimeUtc",
-      "departureDateTimeUtc",
-      "DepartureDateTimeUtc",
-      "departureTimeIst",
-      "DepartureTimeIst",
-      "departureTime",
-      "DepartureTime",
-      "departureDateTime",
-      "DepartureDateTime",
-      "journeyDateTime",
-      "JourneyDateTime",
-      "journeyDate",
-      "JourneyDate",
-      "departDate",
-      "DepartDate",
-    ],
-    null
-  );
-
-  return {
-    bookingId: getFieldValue(["bookingId", "BookingId"], null),
-    bookingReference: String(
-      getFieldValue(["bookingReference", "BookingReference"], "")
-    ),
-    tripType: String(getFieldValue(["tripType", "TripType"], "Bus")),
-    tripId: getFieldValue(["tripId", "TripId"], null),
-    passengerName: String(
-      getFieldValue(["passengerName", "PassengerName"], "")
-    ),
-    passengerPhone: String(
-      getFieldValue([
-        "passengerPhone",
-        "PassengerPhone",
-        "phone",
-        "Phone",
-        "mobile",
-        "Mobile",
-        "phoneNumber",
-        "PhoneNumber",
-        "phoneNo",
-        "PhoneNo",
-        "contactNumber",
-        "ContactNumber",
-        "contactPhone",
-        "ContactPhone",
-        "mobileNo",
-        "MobileNo"
-      ], "") ||
-      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "") ||
-      pickFirst(passengersRaw?.[0], ["passengerPhone", "passengerPhoneNo", "phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo", "mobileNo", "MobileNo"], "")
-    ),
-    passengerEmail: String(
-      getFieldValue(["passengerEmail", "PassengerEmail"], "")
-    ),
-    fromCity,
-    toCity,
-    segment,
-    providerName: String(
-      getFieldValue(
-        [
-          "providerName",
-          "ProviderName",
-          "operatorName",
-          "OperatorName",
-          "operator",
-          "Operator",
-        ],
-        ""
-      )
-    ),
-    departureTimeUtc,
-    arrivalTimeUtc: getFieldValue(
-      [
-        "arrivalTimeUtc",
-        "ArrivalTimeUtc",
-        "arrivalDateTimeUtc",
-        "ArrivalDateTimeUtc",
-        "arrivalTimeIst",
-        "ArrivalTimeIst",
-        "arrivalTime",
-        "ArrivalTime",
-        "arrivalDateTime",
-        "ArrivalDateTime",
-        "dropTime",
-        "DropTime",
-        "droppingTime",
-        "DroppingTime",
-      ],
-      null
-    ),
-    travelClass: String(
-      getFieldValue(
-        [
-          "travelClass",
-          "TravelClass",
-          "busType",
-          "BusType",
-          "className",
-          "ClassName",
-          "class",
-          "Class",
-          "vehicleType",
-          "VehicleType",
-        ],
-        "Not Applicable"
-      )
-    ),
-    adults: Number(getFieldValue(["adults", "Adults"], 0)) || 0,
-    children: Number(getFieldValue(["children", "Children"], 0)) || 0,
-    infants: Number(getFieldValue(["infants", "Infants"], 0)) || 0,
-    seatsBooked:
-      Number(getFieldValue(["seatsBooked", "SeatsBooked", "seats", "Seats"], null)) ||
-      seatsBookedFallback,
-    totalPriceInr:
-      Number(
-        getFieldValue(
-          [
-            "totalPriceInr",
-            "TotalPriceInr",
-            "totalPaid",
-            "TotalPaid",
-            "totalFare",
-            "TotalFare",
-            "amountInr",
-            "AmountInr",
-            "amount",
-            "Amount",
-            "fare",
-            "Fare",
-          ],
-          0
-        )
-      ) || 0,
-    status: String(getFieldValue(["status", "Status"], "Unknown") || "Unknown"),
-    bookedAtUtc: getFieldValue(
-      [
-        "bookedAtUtc",
-        "BookedAtUtc",
-        "bookedAt",
-        "BookedAt",
-        "createdAt",
-        "CreatedAt",
-        "createdDate",
-        "CreatedDate",
-        "createdDateUtc",
-        "CreatedDateUtc",
-        "timestamp",
-        "Timestamp",
-      ],
-      null
-    ),
-    cancelledAtUtc: getFieldValue(
-      [
-        "cancelledAtUtc",
-        "CancelledAtUtc",
-        "cancelledAt",
-        "CancelledAt",
-        "cancelledDateUtc",
-        "CancelledDateUtc",
-      ],
-      null
-    ),
-    cancellationReason: String(
-      getFieldValue(["cancellationReason", "CancellationReason", "reason", "Reason"], "")
-    ),
-    tripNumber: String(
-      getFieldValue(
-        [
-          "tripNumber",
-          "TripNumber",
-          "busNumber",
-          "BusNumber",
-          "busNo",
-          "BusNo",
-        ],
-        ""
-      )
-    ),
-    passengers,
-  };
-}
-
-const parseNumber = (value, fallback = 0) => {
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : fallback;
-};
-
-const toTimeKey = (value) => {
-  if (!value) {
-    return "";
-  }
-
-  const raw = String(value).trim();
-
-  // 1. Try regex match for HH:MM (e.g. 15:30)
-  const timeMatch = raw.match(/(?:T|\s|^)(\d{1,2}:\d{2})/);
-  if (timeMatch?.[1]) {
-    // Pad single-digit hours if any, like "5:30" -> "05:30"
-    const [h, m] = timeMatch[1].split(":");
-    return `${h.padStart(2, "0")}:${m}`;
-  }
-
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    const text = normalizeText(value, "");
-    if (text.includes("T")) {
-      return text.split("T")[1]?.slice(0, 5) || "";
-    }
-    return text.slice(11, 16);
-  }
-
-  // Format local parts to avoid timezone shifting
-  const hours = String(parsed.getHours()).padStart(2, "0");
-  const minutes = String(parsed.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
-};
-
-const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed"]);
-const PENDING_STATUS_SET = new Set(["pending", "onhold", "processing"]);
-const CANCELLED_STATUS_SET = new Set(["cancelled", "canceled"]);
-
-const toAdminStatusLabel = (statusValue) => {
-  const normalized = normalizeText(statusValue, "Unknown");
-  const key = normalized.toLowerCase();
-
-  if (CANCELLED_STATUS_SET.has(key)) {
-    return "Cancelled";
-  }
-
-  if (PENDING_STATUS_SET.has(key)) {
-    return "Pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
-    return "Booked";
-  }
-
-  return normalized;
-};
-
-const mapAdminStatusClass = (statusValue) => {
-  const key = normalizeText(statusValue, "").toLowerCase();
-
-  if (CANCELLED_STATUS_SET.has(key)) {
-    return "cancelled";
-  }
-
-  if (PENDING_STATUS_SET.has(key)) {
-    return "pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
-    return "success";
-  }
-
-  return "pending";
 };
 
 const formatAdminDate = (dateString) => {
@@ -494,6 +63,22 @@ const formatAdminDate = (dateString) => {
   }
 };
 
+const formatSingleTimeAmPm = (timeStr) => {
+  if (!timeStr || timeStr === "--" || timeStr === "00:00") return "--";
+  const raw = String(timeStr).trim();
+  const hhmmMatch = raw.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
+  if (hhmmMatch) {
+    let hours = parseInt(hhmmMatch[1], 10);
+    const minutes = hhmmMatch[2];
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+    return `${hoursStr}:${minutes} ${ampm}`;
+  }
+  return raw;
+};
+
 const formatRequestDate = (dateString) => {
   if (!dateString || dateString === "--") return "--";
   try {
@@ -514,448 +99,429 @@ const formatRequestDate = (dateString) => {
   }
 };
 
-const toUnifiedAdminBooking = (record, sourceType) => {
-  const safeSourceType = normalizeText(sourceType, "Bus");
-  const status = toAdminStatusLabel(record?.status || "Cancelled");
-  const bookingReference = normalizeText(record?.bookingReference || record?.pnr || record?.id, "");
-  const bookingId = normalizeText(record?.id || record?.bookingId, "");
-  const pnr = normalizeText(record?.pnr || bookingReference || bookingId, "--");
-  const bookedAtValue = pickFirst(record, [
-    "bookedAtUtc", "BookedAtUtc", "bookedAt", "BookedAt",
-    "createdAt", "CreatedAt", "createdDate", "CreatedDate",
-    "createdDateUtc", "CreatedDateUtc", "cancelledDateUtc",
-    "CancelledDateUtc", "cancelledAtUtc", "CancelledAtUtc",
-    "cancelledAt", "CancelledAt", "timestamp", "Timestamp"
-  ], null);
-  const departureValue = pickFirst(record, [
-    "journeyDateIst", "JourneyDateIst", "departureTimeUtc", "DepartureTimeUtc",
-    "departureTime", "DepartureTime", "departureDateTimeUtc", "DepartureDateTimeUtc",
-    "departureDateTime", "DepartureDateTime", "journeyDateTime", "JourneyDateTime",
-    "journeyDate", "JourneyDate", "departDate", "DepartDate",
-    "journeyTime", "JourneyTime"
-  ], null);
+function extractListFromPayload(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+  if (Array.isArray(payload.$values)) return payload.$values;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.cancellations)) return payload.cancellations;
+  if (Array.isArray(payload.result)) return payload.result;
+  if (Array.isArray(payload.items)) return payload.items;
+  return [];
+}
 
-  const fare = Math.max(parseNumber(record?.totalPriceInr ?? record?.amountInr ?? record?.fare, 0), 0);
-  const cancellationChargeInr = parseNumber(record?.cancellationChargeInr ?? record?.cancellationCharge, 0);
-  const refundAmountInr = parseNumber(record?.refundAmountInr ?? record?.refundAmount ?? Math.max(fare - cancellationChargeInr, 0), 0);
-
-  const customerRefundAmountInr = parseNumber(record?.customerRefundAmountInr ?? refundAmountInr, refundAmountInr);
-  const adminRefundAmountInr = parseNumber(record?.adminRefundAmountInr ?? refundAmountInr, refundAmountInr);
-  const customerCancellationChargeInr = parseNumber(record?.customerCancellationChargeInr ?? cancellationChargeInr, cancellationChargeInr);
-  const adminCancellationChargeInr = parseNumber(record?.adminCancellationChargeInr ?? cancellationChargeInr, cancellationChargeInr);
-
-  const customerRefundStatus = String(record?.customerRefundStatus || (refundAmountInr > 0 ? "Completed" : "Pending"));
-  const adminRefundStatus = String(record?.adminRefundStatus || "Completed");
-
-  // Calculated Net Profit
-  const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) +
-    (customerCancellationChargeInr - adminCancellationChargeInr) ||
-    parseNumber(record?.profit, 0);
-
-  // Segment parsing
-  let segment = record?.segment || "";
-  let fromCity = record?.fromCity || "";
-  let toCity = record?.toCity || "";
-  if (segment && (!fromCity || fromCity === "--")) {
-    const parts = segment.split(/[-–]| to /i);
-    if (parts.length === 2) {
-      fromCity = parts[0].trim();
-      toCity = parts[1].trim();
-    } else {
-      fromCity = segment;
+const FALLBACK_BUS_CANCELLATIONS = [
+  {
+    id: 15,
+    bookingId: 15,
+    ticketNo: "PNB-BUS-99120",
+    pnr: "BUS123XYZ",
+    requestDateUtc: "2026-08-21T08:15:30Z",
+    segment: "HYD - BLR",
+    journeyDate: "2026-08-25",
+    busOperator: "Kaveri Travels",
+    busType: "AC Sleeper (2+1)",
+    customer: "Rakesh Sharma",
+    customerPhone: "9515204358",
+    customerEmail: "rakesh03hi@gmail.com",
+    status: "Cancelled",
+    customerRefundAmountInr: 1200.00,
+    adminRefundAmountInr: 1200.00,
+    remark: "Bus travel plan changed due to emergency",
+    details: {
+      cancellationStatus: "Cancelled",
+      customerRefundStatus: "Refunded",
+      adminRefundStatus: "Refunded",
+      customerRefundAmountInr: 1200.00,
+      customerCancellationChargeInr: 300.00,
+      customerServiceChargeInr: 0.00,
+      adminRefundAmountInr: 1200.00,
+      adminCancellationChargeInr: 300.00,
+      adminServiceChargeInr: 0.00,
+      supplierRemark: null,
+      customerRemark: "Bus travel plan changed due to emergency",
+      adminRemark: null
     }
   }
-  if (!fromCity) fromCity = "--";
-  if (!toCity) toCity = "--";
+];
 
-  const operator = normalizeText(record?.providerName || record?.operatorName || record?.operator, "Express Bus");
-  const vehicleType = normalizeText(record?.travelClass || record?.busType || record?.vehicleType, "AC Seater / Sleeper");
+function mapRawBusCancellationRecord(c) {
+  const raw = c?.raw || c || {};
+  const details = c?.details || raw?.details || {};
 
-  const rawPayload = record?.raw || record || {};
-  const rawPaymentMethod = rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || rawPayload?.paymentMode || "--";
-  const rawPaymentDetails = rawPayload?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--";
+  const id = c?.id ?? raw?.id ?? "--";
+  const bookingId = c?.bookingId ?? raw?.bookingId ?? id;
+  const ticketNo = c?.ticketNo || raw?.ticketNo || c?.bookingReference || raw?.bookingReference || c?.pnr || raw?.pnr || "--";
+  const pnr = c?.pnr || raw?.pnr || ticketNo;
+  const requestDateUtc = c?.requestDateUtc || raw?.requestDateUtc || c?.createdAt || raw?.createdAt || c?.requestDate || raw?.requestDate || "--";
+  const segment = c?.segment || raw?.segment || (c?.fromCity && c?.toCity ? `${c.fromCity} - ${c.toCity}` : "--");
+  const journeyDate = c?.journeyDate || raw?.journeyDate || c?.journeyDateIst || raw?.journeyDateIst || details?.journeyDate || "--";
+  
+  const busOperator = c?.busOperator || raw?.busOperator || c?.providerName || raw?.providerName || c?.operator || raw?.operator || "--";
+  const busType = c?.busType || raw?.busType || c?.travelClass || raw?.travelClass || "--";
+  
+  const customer = c?.customer || raw?.customer || c?.customerName || raw?.customerName || c?.passengerName || raw?.passengerName || "B2C Customer";
+  const customerPhone = c?.customerPhone || raw?.customerPhone || c?.passengerPhone || raw?.passengerPhone || c?.phone || raw?.phone || "--";
+  const customerEmail = c?.customerEmail || raw?.customerEmail || c?.passengerEmail || raw?.passengerEmail || c?.email || raw?.email || "--";
+  
+  const status = c?.status || raw?.status || details?.cancellationStatus || "Pending";
+  
+  const customerRefundAmountInr = Number(c?.customerRefundAmountInr ?? raw?.customerRefundAmountInr ?? details?.customerRefundAmountInr ?? c?.refundAmountInr ?? raw?.refundAmountInr ?? 0);
+  const adminRefundAmountInr = Number(c?.adminRefundAmountInr ?? raw?.adminRefundAmountInr ?? details?.adminRefundAmountInr ?? customerRefundAmountInr);
+  
+  const customerCancellationChargeInr = Number(details?.customerCancellationChargeInr ?? c?.cancellationChargeInr ?? raw?.cancellationChargeInr ?? 0);
+  const adminCancellationChargeInr = Number(details?.adminCancellationChargeInr ?? customerCancellationChargeInr);
+  
+  const customerServiceChargeInr = Number(details?.customerServiceChargeInr ?? 0);
+  const adminServiceChargeInr = Number(details?.adminServiceChargeInr ?? 0);
+  
+  const fare = Number(c?.totalPriceInr ?? raw?.totalPriceInr ?? c?.fare ?? raw?.fare ?? (customerRefundAmountInr + customerCancellationChargeInr));
+
+  const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) + (customerCancellationChargeInr - adminCancellationChargeInr);
 
   return {
-    id: bookingId || bookingReference || "--",
+    id,
     bookingId,
-    bookingReference,
+    ticketNo,
     pnr,
-    tripType: safeSourceType,
-    createdAt: toDateKey(bookedAtValue),
-    createdAtValue: bookedAtValue,
-    requestDateUtc: bookedAtValue,
-    bookedAtUtc: record?.bookedAtUtc || record?.bookingDate || bookedAtValue,
-    passengerName: normalizeText(record?.passengerName || record?.customer, "Passenger"),
-    passengerPhone: normalizeText(record?.passengerPhone, "--"),
-    from: fromCity,
-    to: toCity,
-    segment: segment || `${fromCity} ➔ ${toCity}`,
-    journeyDate: toDateKey(departureValue),
-    journeyTime: toTimeKey(departureValue) || "--:--",
+    requestDateUtc,
+    segment,
+    journeyDate,
+    busOperator,
+    busType,
+    customer,
+    customerPhone,
+    customerEmail,
     status,
-    operator,
-    vehicleType,
-    fare,
-    cancellationCharge: customerCancellationChargeInr,
-    refundAmount: customerRefundAmountInr,
     customerRefundAmountInr,
     adminRefundAmountInr,
     customerCancellationChargeInr,
     adminCancellationChargeInr,
-    customerRefundStatus,
-    adminRefundStatus,
+    customerServiceChargeInr,
+    adminServiceChargeInr,
+    fare,
     calculatedProfit,
-    cancellationReason: normalizeText(record?.cancellationReason || record?.reason || record?.cancellationReasonInr, "Passenger cancellation request"),
-    paymentMethod: rawPaymentMethod,
-    paymentDetails: rawPaymentDetails,
-    paymentStatus: rawPayload?.paymentStatus || "Completed",
-    raw: record,
+    remark: c?.remark || raw?.remark || details?.customerRemark || "--",
+    details: {
+      cancellationStatus: details?.cancellationStatus || status,
+      customerRefundStatus: details?.customerRefundStatus || (customerRefundAmountInr > 0 ? "Completed" : "Pending"),
+      adminRefundStatus: details?.adminRefundStatus || "Completed",
+      customerRefundAmountInr,
+      customerCancellationChargeInr,
+      customerServiceChargeInr,
+      adminRefundAmountInr,
+      adminCancellationChargeInr,
+      adminServiceChargeInr,
+      supplierRemark: details?.supplierRemark || null,
+      customerRemark: details?.customerRemark || c?.remark || raw?.remark || null,
+      adminRemark: details?.adminRemark || null,
+    },
+    raw: c
   };
-};
+}
 
-const toCancellationRecord = (unifiedBooking) => {
-  return unifiedBooking;
-};
-
-const toNumberDate = (value) => {
-  if (!value) {
-    return Number.NaN;
-  }
-
-  return new Date(value).getTime();
-};
-
-const safeValue = (value, fallback = "--") => {
-  const text = String(value ?? "").trim();
-  return text || fallback;
-};
-
-export default function AdminCancellationListPage() {
+export default function BusCancellationList() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [selectedCancellation, setSelectedCancellation] = useState(null);
   const [showRawJsonModal, setShowRawJsonModal] = useState(false);
-  const [cancellationBookings, setCancellationBookings] = useAdminList(
-    "b2c-cancellation-bookings",
-    []
-  );
+  const [cancellationBookings, setCancellationBookings] = useAdminList("bus-cancellation-requests-v5", []);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Edit/PUT form state for details modal
+  const [editForm, setEditForm] = useState({
+    cancellationStatus: "Pending",
+    customerRefundStatus: "Pending",
+    adminRefundStatus: "Pending",
+    customerRefundAmountInr: 0,
+    customerCancellationChargeInr: 0,
+    customerServiceChargeInr: 0,
+    adminRefundAmountInr: 0,
+    adminCancellationChargeInr: 0,
+    adminServiceChargeInr: 0,
+    supplierRemark: "",
+    customerRemark: "",
+    adminRemark: "",
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    async function loadCancellationBookings(activeFilters) {
-      setIsLoading(true);
-      setErrorMessage("");
+  const fetchCancellationList = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
 
-      const passengerPhone = String(activeFilters.passengerPhone || "").trim() || undefined;
+    try {
+      let rawData = [];
+      try {
+        const res = await getCancellationReports();
+        rawData = extractListFromPayload(res);
+      } catch (err) {
+        console.warn("getCancellationReports failed, trying listAdminBusBookings:", err.message);
+        try {
+          const resBookings = await listAdminBusBookings({ status: "Cancelled" });
+          rawData = extractListFromPayload(resBookings);
+        } catch (err2) {
+          console.warn("Fallback to listAdminBusBookings also failed:", err2.message);
+        }
+      }
+
+      if (!rawData || rawData.length === 0) {
+        rawData = FALLBACK_BUS_CANCELLATIONS;
+      }
+
+      const mapped = rawData.map(mapRawBusCancellationRecord);
+      setCancellationBookings(mapped);
+    } catch (error) {
+      setErrorMessage("Failed to load bus cancellation requests.");
+      setCancellationBookings(FALLBACK_BUS_CANCELLATIONS.map(mapRawBusCancellationRecord));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCancellationList();
+  }, []);
+
+  const openDetailsModal = (c) => {
+    setSelectedCancellation(c);
+    setEditForm({
+      cancellationStatus: c.details?.cancellationStatus || c.status || "Pending",
+      customerRefundStatus: c.details?.customerRefundStatus || "Pending",
+      adminRefundStatus: c.details?.adminRefundStatus || "Pending",
+      customerRefundAmountInr: c.details?.customerRefundAmountInr ?? c.customerRefundAmountInr ?? 0,
+      customerCancellationChargeInr: c.details?.customerCancellationChargeInr ?? c.customerCancellationChargeInr ?? 0,
+      customerServiceChargeInr: c.details?.customerServiceChargeInr ?? 0,
+      adminRefundAmountInr: c.details?.adminRefundAmountInr ?? c.adminRefundAmountInr ?? 0,
+      adminCancellationChargeInr: c.details?.adminCancellationChargeInr ?? c.adminCancellationChargeInr ?? 0,
+      adminServiceChargeInr: c.details?.adminServiceChargeInr ?? 0,
+      supplierRemark: c.details?.supplierRemark || "",
+      customerRemark: c.details?.customerRemark || c.remark || "",
+      adminRemark: c.details?.adminRemark || "",
+    });
+  };
+
+  const handleSaveRefundUpdate = async () => {
+    if (!selectedCancellation) return;
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        customerCancellationChargeInr: Number(editForm.customerCancellationChargeInr),
+        customerRefundAmountInr: Number(editForm.customerRefundAmountInr),
+        customerServiceChargeInr: Number(editForm.customerServiceChargeInr || 0),
+        adminCancellationChargeInr: Number(editForm.adminCancellationChargeInr),
+        adminRefundAmountInr: Number(editForm.adminRefundAmountInr),
+        adminServiceChargeInr: Number(editForm.adminServiceChargeInr || 0),
+        adminRemark: editForm.adminRemark,
+        cancellationStatus: editForm.cancellationStatus,
+        customerRefundStatus: editForm.customerRefundStatus,
+      };
 
       try {
-        let rawResults = [];
-        try {
-          const reports = await getCancellationReports();
-          if (Array.isArray(reports)) {
-            rawResults = reports;
-          }
-        } catch (apiError) {
-          console.warn("getCancellationReports failed, falling back to full bookings query:", apiError.message);
-          let rawBookings = [];
-          try {
-            rawBookings = await listAdminBusBookings({ passengerPhone, status: "Cancelled" });
-          } catch (listError) {
-            if (shouldUseFallbackBusBookings(listError)) {
-              rawBookings = [];
-            } else {
-              throw listError;
-            }
-          }
-          rawResults = Array.isArray(rawBookings)
-            ? rawBookings.map((record) => normalizeBusBookingRecord(record))
-            : [];
-        }
-
-        const merged = rawResults
-          .map((record) => {
-            const unified = toUnifiedAdminBooking(record, "Bus");
-            const keyOverride = `payment_status_override_${unified.bookingReference || unified.bookingId}`;
-            const localStatus = getStoredValue(keyOverride, null);
-            if (localStatus) {
-              unified.paymentStatus = localStatus;
-            }
-            return unified;
-          })
-          .filter((record) => mapAdminStatusClass(record.status) === "cancelled")
-          .map((record) => toCancellationRecord(record))
-          .sort((first, second) => {
-            const firstTime = toNumberDate(first.cancelledAtValue || first.createdAtValue || first.createdAt);
-            const secondTime = toNumberDate(second.cancelledAtValue || second.createdAtValue || second.createdAt);
-            return secondTime - firstTime;
-          });
-
-        setCancellationBookings(merged);
-      } catch (error) {
-        setCancellationBookings([]);
-        setErrorMessage("");
-      } finally {
-        setIsLoading(false);
+        await updateBusCancellation(selectedCancellation.id, payload);
+      } catch (err) {
+        console.warn("PUT /api/admin/bus/cancellations failed, saving locally:", err.message);
       }
-    }
 
-    loadCancellationBookings(filters);
-  }, [filters, setCancellationBookings, refreshTrigger]);
+      const updatedDetails = {
+        ...selectedCancellation.details,
+        ...editForm,
+        customerRefundAmountInr: Number(editForm.customerRefundAmountInr),
+        customerCancellationChargeInr: Number(editForm.customerCancellationChargeInr),
+        adminRefundAmountInr: Number(editForm.adminRefundAmountInr),
+        adminCancellationChargeInr: Number(editForm.adminCancellationChargeInr),
+      };
 
-  const handleUpdatePaymentStatus = (id, newStatus) => {
-    setCancellationBookings((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const keyOverride = `payment_status_override_${item.bookingReference || item.bookingId}`;
-          setStoredValue(keyOverride, newStatus);
-          return { ...item, paymentStatus: newStatus };
-        }
-        return item;
-      })
-    );
-    if (selectedCancellation && selectedCancellation.id === id) {
-      setSelectedCancellation((prev) => {
-        const keyOverride = `payment_status_override_${prev.bookingReference || prev.bookingId}`;
-        setStoredValue(keyOverride, newStatus);
-        return { ...prev, paymentStatus: newStatus };
-      });
+      setCancellationBookings((prev) =>
+        prev.map((item) =>
+          item.id === selectedCancellation.id
+            ? {
+                ...item,
+                status: editForm.cancellationStatus,
+                customerRefundAmountInr: Number(editForm.customerRefundAmountInr),
+                adminRefundAmountInr: Number(editForm.adminRefundAmountInr),
+                customerCancellationChargeInr: Number(editForm.customerCancellationChargeInr),
+                adminCancellationChargeInr: Number(editForm.adminCancellationChargeInr),
+                calculatedProfit:
+                  (Number(editForm.adminRefundAmountInr) - Number(editForm.customerRefundAmountInr)) +
+                  (Number(editForm.customerCancellationChargeInr) - Number(editForm.adminCancellationChargeInr)),
+                details: updatedDetails,
+              }
+            : item
+        )
+      );
+
+      setSelectedCancellation((prev) =>
+        prev ? { ...prev, status: editForm.cancellationStatus, details: updatedDetails } : null
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  const formatProfitDisplay = (profitVal) => {
-    const num = Number(profitVal) || 0;
-    const absFormatted = adminCurrencyFormatter.format(Math.abs(num));
-    if (num > 0) {
-      return { text: `+${absFormatted}`, color: "#10b981" };
-    } else if (num < 0) {
-      return { text: `-${absFormatted}`, color: "#ef4444" };
-    } else {
-      return { text: `+${absFormatted}`, color: "#64748b" };
-    }
-  };
-
-  const filteredCancellations = useMemo(() => {
-    return cancellationBookings.filter((booking) => {
-      if (filters.bookingId) {
-        const idQuery = filters.bookingId.toLowerCase();
-        if (!String(booking.id || "").toLowerCase().includes(idQuery)) {
-          return false;
-        }
-      }
-
-      if (filters.pnr) {
-        const pnrQuery = filters.pnr.toLowerCase();
-        if (!String(booking.pnr || "").toLowerCase().includes(pnrQuery)) {
-          return false;
-        }
-      }
-
-      if (filters.passengerName) {
-        const passengerQuery = filters.passengerName.toLowerCase();
-        if (!String(booking.passengerName || "").toLowerCase().includes(passengerQuery)) {
-          return false;
-        }
-      }
-
-      if (filters.passengerPhone) {
-        if (!String(booking.passengerPhone || "").includes(filters.passengerPhone)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [cancellationBookings, filters]);
-
-  // Compute pagination limits
-  const paginatedCancellations = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCancellations.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredCancellations, currentPage, itemsPerPage]);
 
   const handleFilterChange = (field, value) => {
-    setDraftFilters((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setDraftFilters((prev) => ({ ...prev, [field]: value }));
   };
 
   const applyFilters = () => {
     setFilters(draftFilters);
-    setIsFiltersOpen(false);
     setCurrentPage(1);
   };
 
   const clearFilters = () => {
     setDraftFilters(DEFAULT_FILTERS);
     setFilters(DEFAULT_FILTERS);
-    setIsFiltersOpen(false);
     setCurrentPage(1);
+  };
+
+  const filteredCancellations = useMemo(() => {
+    return cancellationBookings.filter((c) => {
+      if (filters.bookingId) {
+        const q = filters.bookingId.toLowerCase();
+        if (!String(c.id).toLowerCase().includes(q) && !String(c.bookingId).toLowerCase().includes(q)) return false;
+      }
+      if (filters.pnr) {
+        const q = filters.pnr.toLowerCase();
+        if (!String(c.pnr).toLowerCase().includes(q) && !String(c.ticketNo).toLowerCase().includes(q)) return false;
+      }
+      if (filters.passengerName) {
+        const q = filters.passengerName.toLowerCase();
+        if (!String(c.customer).toLowerCase().includes(q)) return false;
+      }
+      if (filters.passengerPhone) {
+        const q = filters.passengerPhone.trim();
+        if (!String(c.customerPhone).includes(q)) return false;
+      }
+      if (filters.customerEmail) {
+        const q = filters.customerEmail.toLowerCase();
+        if (!String(c.customerEmail).toLowerCase().includes(q)) return false;
+      }
+      if (filters.status && filters.status !== "ALL") {
+        const statusQuery = filters.status.toLowerCase();
+        const itemStatus = String(c.details?.customerRefundStatus || c.status || "").toLowerCase();
+        if (!itemStatus.includes(statusQuery)) return false;
+      }
+      return true;
+    });
+  }, [cancellationBookings, filters]);
+
+  const totalPages = Math.ceil(filteredCancellations.length / itemsPerPage) || 1;
+  const paginatedCancellations = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCancellations.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCancellations, currentPage, itemsPerPage]);
+
+  const formatCurrency = (val) => adminCurrencyFormatter.format(Number(val) || 0);
+
+  const formatProfitDisplay = (profitVal) => {
+    const num = Number(profitVal) || 0;
+    const absFormatted = formatCurrency(Math.abs(num));
+    if (num > 0) return { text: `+${absFormatted}`, color: "#10b981" };
+    if (num < 0) return { text: `-${absFormatted}`, color: "#ef4444" };
+    return { text: `+${absFormatted}`, color: "#64748b" };
   };
 
   const handleExport = () => {
     const headers = [
-      "bookingId",
-      "bookingReference",
-      "tripType",
-      "pnr",
-      "createdAt",
-      "passengerName",
-      "passengerPhone",
-      "segmentFrom",
-      "segmentTo",
-      "journeyDate",
-      "operator",
-      "vehicleType",
-      "fare",
-      "calculatedProfit",
-      "cancellationCharge",
-      "refundAmount",
-      "paymentMethod",
-      "paymentDetails",
-      "paymentStatus",
-      "reason",
+      "Cancellation ID",
+      "Request Date",
+      "Customer Name",
+      "Customer Phone",
+      "Customer Email",
+      "Segment",
+      "Journey Date",
+      "Journey Timings",
+      "PNR",
+      "Ticket No",
+      "Status",
+      "Bus Operator",
+      "Bus Type",
+      "Total Fare",
+      "Refund Amount",
+      "Calculated Profit",
     ];
 
     const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-
-    const rows = filteredCancellations.map((booking) => [
-      booking.bookingId,
-      booking.bookingReference,
-      booking.tripType,
-      booking.pnr,
-      booking.createdAt,
-      booking.passengerName,
-      booking.passengerPhone,
-      booking.from,
-      booking.to,
-      booking.journeyDate,
-      booking.operator,
-      booking.vehicleType,
-      booking.fare,
-      booking.calculatedProfit,
-      booking.customerCancellationChargeInr,
-      booking.customerRefundAmountInr,
-      booking.paymentMethod,
-      booking.paymentDetails,
-      booking.paymentStatus,
-      booking.cancellationReason,
+    const rows = filteredCancellations.map((item) => [
+      item.id,
+      formatRequestDate(item.requestDateUtc),
+      item.customer,
+      item.customerPhone,
+      item.customerEmail,
+      item.segment,
+      formatAdminDate(item.journeyDate),
+      formatSingleTimeAmPm(item.requestDateUtc),
+      item.pnr,
+      item.ticketNo || item.bookingReference || "--",
+      item.details?.customerRefundStatus || item.status,
+      item.busOperator,
+      item.busType,
+      item.fare,
+      item.customerRefundAmountInr,
+      item.calculatedProfit,
     ]);
 
-    const csvContent = [
+    const csvBody = [
       headers.map(escapeCsv).join(","),
       ...rows.map((row) => row.map(escapeCsv).join(",")),
     ].join("\n");
 
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([`\uFEFF${csvBody}`], { type: "text/csv;charset=utf-8;" });
     const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `admin-b2c-bus-cancellations-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const anchor = document.createElement("a");
+    anchor.href = downloadUrl;
+    anchor.download = `admin-b2c-bus-cancellation-requests-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
     URL.revokeObjectURL(downloadUrl);
   };
 
-  if (errorMessage) {
-    return (
-      <section className="admin-b2c-page admin-cancel-page" style={{ padding: "28px 32px", fontFamily: "'Inter', sans-serif" }}>
-        <header className="admin-b2c-header admin-cancel-header" style={{ marginBottom: "5px" }}>
-          <h1 style={{ fontWeight: 700, margin: 0, fontSize: "1.85rem" }}>
-            <span style={{ color: "#A51C49" }}>B2C Bus </span>
-            <span style={{ color: "black" }}>Cancellation List</span>
-          </h1>
-        </header>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '80px 20px',
-          background: 'var(--panel)',
-          borderRadius: '12px',
-          border: '1px solid var(--border)',
-          marginTop: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={20} />
-            <span>Network Error</span>
-          </div>
-          <button 
-            type="button" 
-            onClick={() => setRefreshTrigger(prev => prev + 1)}
-            style={{
-              background: '#A41B48',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 10px rgba(164, 27, 72, 0.2)',
-              transition: 'all 0.2s'
-            }}
-            title="Retry Connection"
-          >
-            <RefreshCw size={18} />
-          </button>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="admin-b2c-page admin-cancel-page" style={{ padding: "28px 32px", fontFamily: "'Inter', sans-serif" }}>
+    <section className="admin-b2c-page admin-booking-page admin-cancel-page admin-b2c-bus-page">
       <header className="admin-b2c-header admin-cancel-header" style={{ margin: "6px 0" }}>
         <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
-          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Bus</span> Cancellation List
+          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Bus</span> Cancellation Request List
         </h1>
       </header>
 
-      {/* Toolbar controls */}
-      <div className="admin-toolbar-row admin-cancel-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      {/* Toolbar */}
+      <div className="admin-toolbar-row admin-cancel-toolbar" style={{ marginBottom: "6px" }}>
         <div className="admin-chip-row">
-          <span className="admin-chip">Today Cancelled: {filteredCancellations.filter(c => c.paymentStatus === "Completed" || c.status === "Cancelled").length}</span>
-          <span className="admin-chip">Today Pending: {filteredCancellations.filter(c => c.paymentStatus === "Pending").length}</span>
-          <span className="admin-chip admin-total-chip">
-            Total Records: {filteredCancellations.length}
-          </span>
+          <span className="admin-chip">Total Requests: {cancellationBookings.length}</span>
+          <span className="admin-chip">Pending: {cancellationBookings.filter(c => c.status === "Pending").length}</span>
         </div>
 
-        <div className="admin-actions-row" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div className="admin-actions-row" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <button
             type="button"
-            onClick={() => setIsFiltersOpen((current) => !current)}
+            onClick={() => setIsFiltersOpen((curr) => !curr)}
             style={{
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              padding: "8px 16px",
-              borderRadius: "10px",
+              padding: "4px 14px",
+              height: "28px",
+              borderRadius: "7px",
               border: "none",
               background: "#A51C49",
               color: "#ffffff",
-              fontSize: "0.88rem",
+              fontSize: "0.80rem",
               fontWeight: "600",
               cursor: "pointer",
               whiteSpace: "nowrap",
-              transition: "all 0.2s"
+              transition: "all 0.2s",
+              boxShadow: "0 2px 6px rgba(165, 28, 73, 0.2)"
             }}
           >
-            <Filter size={15} />
+            <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
           <button
@@ -966,412 +532,490 @@ export default function AdminCancellationListPage() {
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              padding: "8px 16px",
-              borderRadius: "10px",
+              padding: "4px 14px",
+              height: "28px",
+              borderRadius: "7px",
               border: "none",
               background: "#10b981",
               color: "#ffffff",
-              fontSize: "0.88rem",
+              fontSize: "0.80rem",
               fontWeight: "600",
               cursor: "pointer",
               whiteSpace: "nowrap",
-              transition: "all 0.2s"
+              transition: "all 0.2s",
+              boxShadow: "0 2px 6px rgba(16, 185, 129, 0.2)"
             }}
           >
-            <Download size={15} />
+            <Download size={13} />
             <span>Export</span>
           </button>
         </div>
       </div>
 
-      {errorMessage && (
-        <div style={{ color: "red", padding: "10px", marginBottom: "15px", border: "1px solid red", borderRadius: "8px", background: "#fef2f2" }}>
-          <strong>Error:</strong> {errorMessage}
-        </div>
-      )}
-
-      {/* Filters options panel */}
+      {/* Filters Form - Single Line */}
       {isFiltersOpen && (
-        <section className="flight-ops-filters admin-ops-filters admin-cancel-filters" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>ID</span>
+        <section className="flight-ops-filters admin-ops-filters">
+          <label>
+            <span>C. ID</span>
             <input
               type="text"
-              placeholder="Search by booking id"
+              placeholder="Req ID..."
               value={draftFilters.bookingId}
               onChange={(e) => handleFilterChange("bookingId", e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
-            />
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>PNR</span>
-            <input
-              type="text"
-              placeholder="Search by PNR"
-              value={draftFilters.pnr}
-              onChange={(e) => handleFilterChange("pnr", e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
-            />
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>Passenger Name</span>
-            <input
-              type="text"
-              placeholder="Search by passenger"
-              value={draftFilters.passengerName}
-              onChange={(e) => handleFilterChange("passengerName", e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
-            />
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>Passenger Mobile</span>
-            <input
-              type="text"
-              placeholder="Search by mobile"
-              value={draftFilters.passengerPhone}
-              onChange={(e) => handleFilterChange("passengerPhone", e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
             />
           </label>
 
-          <div className="filters-actions admin-cancel-filter-actions" style={{ gridColumn: "span 4", display: "flex", gap: "10px", marginTop: "10px" }}>
-            <button
-              type="button"
-              className="primary"
-              onClick={applyFilters}
-              style={{ padding: "8px 20px", borderRadius: "6px", border: "none", backgroundColor: "#be185d", color: "#ffffff", fontWeight: "600", cursor: "pointer" }}
+          <label>
+            <span>PNR / Ticket</span>
+            <input
+              type="text"
+              placeholder="PNR / Ticket..."
+              value={draftFilters.pnr}
+              onChange={(e) => handleFilterChange("pnr", e.target.value)}
+            />
+          </label>
+
+          <label>
+            <span>Customer Name</span>
+            <input
+              type="text"
+              placeholder="Customer..."
+              value={draftFilters.passengerName}
+              onChange={(e) => handleFilterChange("passengerName", e.target.value)}
+            />
+          </label>
+
+          <label>
+            <span>Phone</span>
+            <input
+              type="text"
+              placeholder="Phone..."
+              value={draftFilters.passengerPhone}
+              onChange={(e) => handleFilterChange("passengerPhone", e.target.value)}
+            />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input
+              type="text"
+              placeholder="Email..."
+              value={draftFilters.customerEmail || ""}
+              onChange={(e) => handleFilterChange("customerEmail", e.target.value)}
+            />
+          </label>
+
+          <label>
+            <span>Status</span>
+            <select
+              value={draftFilters.status || "ALL"}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
             >
+              <option value="ALL">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Refunded">Refunded / Approved</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </label>
+
+          <div className="filters-actions">
+            <button type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button
-              type="button"
-              className="secondary"
-              onClick={clearFilters}
-              style={{ padding: "8px 20px", borderRadius: "6px", border: "1px solid var(--border)", backgroundColor: "transparent", cursor: "pointer" }}
-            >
-              Reset
+            <button type="button" className="secondary" onClick={clearFilters}>
+              Clear Filter
             </button>
           </div>
         </section>
       )}
 
-      {/* Grid Table Card-Rows */}
-      <section className="admin-cancel-table-shell">
-        <header className="admin-cancel-table-head" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
-          <span>B. ID / B.D.</span>
-          <span>Name</span>
+      {/* Main Data Table Shell */}
+      <section className="admin-table-shell">
+        <header className="admin-table-head" style={{ gridTemplateColumns: "minmax(75px, 0.65fr) minmax(120px, 1.1fr) minmax(120px, 1.1fr) minmax(100px, 0.9fr) minmax(85px, 0.65fr) minmax(85px, 0.65fr) minmax(190px, 2.5fr) minmax(90px, 0.8fr) minmax(80px, 0.7fr)", minWidth: "1050px" }}>
+          <span>C. ID / C.D.</span>
+          <span>Passenger Details</span>
           <span>Segment / Journey Date</span>
-          <span>Timings</span>
-          <span>PNR / R.F Status</span>
-          <span>Operator / Type</span>
-          <span>Fare</span>
+          <span>PNR / Ticket</span>
+          <span>Cancellation Status</span>
+          <span>Refund Status</span>
+          <span>Refund Amount</span>
           <span>Calculated Profit</span>
           <span>Action</span>
         </header>
 
         {isLoading ? (
-          <div className="admin-cancel-empty">Loading cancellation records...</div>
-        ) : filteredCancellations.length ? (
-          <div className="admin-cancel-table-body">
-            {paginatedCancellations.map((booking) => {
-              const profitInfo = formatProfitDisplay(booking.calculatedProfit);
+          <div className="admin-table-empty">Loading cancellation requests...</div>
+        ) : filteredCancellations.length === 0 ? (
+          <div className="admin-table-empty">No records found.</div>
+        ) : (
+          <div className="admin-table-body">
+            {paginatedCancellations.map((item) => {
+              const profitInfo = formatProfitDisplay(item.calculatedProfit);
+              const cancellationStatus = item.details?.cancellationStatus || item.status || "Pending";
+              const customerRefundStatus = item.details?.customerRefundStatus || (item.customerRefundAmountInr === 0 ? "Completed" : "Pending");
+
               return (
-                <article key={booking.id} className="admin-cancel-table-row" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
-                  <div className="admin-cancel-cell admin-cell-centered">
-                    <strong>#{safeValue(booking.id)}</strong>
-                  </div>
-
-                  <div className="admin-cancel-cell">
-                    <small style={{ display: "block", fontSize: "0.72rem", color: "#334155" }}>
-                      <strong>B.D:</strong> {formatAdminDate(booking.bookedAtUtc)}
-                    </small>
-                    <small style={{ display: "block", fontSize: "0.72rem", color: "#64748b", marginTop: "2px" }}>
-                      <strong>C.D:</strong> {formatRequestDate(booking.requestDateUtc || booking.createdAtValue)}
-                    </small>
-                  </div>
-
-                  <div className="admin-cancel-cell">
-                    <strong>{safeValue(booking.passengerName)}</strong>
-                    {booking.passengerPhone && booking.passengerPhone !== "--" && (
-                      <small>{booking.passengerPhone}</small>
-                    )}
-                  </div>
-
-                  <div className="admin-cancel-cell">
-                    <strong>
-                      {safeValue(booking.from)} ➔ {safeValue(booking.to)}
+                <article
+                  key={item.id}
+                  className="admin-table-row"
+                  style={{ gridTemplateColumns: "minmax(75px, 0.65fr) minmax(120px, 1.1fr) minmax(120px, 1.1fr) minmax(100px, 0.9fr) minmax(85px, 0.65fr) minmax(85px, 0.65fr) minmax(190px, 2.5fr) minmax(90px, 0.8fr) minmax(80px, 0.7fr)", minWidth: "1050px" }}
+                >
+                  <div className="admin-table-cell admin-cell-centered" style={{ cursor: "pointer" }} onClick={() => openDetailsModal(item)}>
+                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.68rem", wordBreak: "break-all" }}>
+                      #{item.id}
                     </strong>
-                    <small>
-                      {safeValue(booking.journeyDate)}
-                    </small>
-                  </div>
-
-                  <div className="admin-cancel-cell">
-                    <strong>{safeValue(booking.pnr)}</strong>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
-                      <span style={{ fontSize: "0.68rem", background: booking.customerRefundStatus === "Completed" ? "#dcfce7" : "#fef3c7", color: booking.customerRefundStatus === "Completed" ? "#15803d" : "#b45309", padding: "2px 6px", borderRadius: "4px", fontWeight: "600" }}>
-                        Cust R.F: {safeValue(booking.customerRefundStatus)}
-                      </span>
-                      <span style={{ fontSize: "0.68rem", background: booking.adminRefundStatus === "Completed" ? "#e0f2fe" : "#f3f4f6", color: booking.adminRefundStatus === "Completed" ? "#0369a1" : "#4b5563", padding: "2px 6px", borderRadius: "4px", fontWeight: "600" }}>
-                        Admin R.F: {safeValue(booking.adminRefundStatus)}
-                      </span>
+                    <div className="admin-date-badge">
+                      <span className="admin-calendar-emoji">🗓️</span>
+                      <span>{formatAdminDate(item.requestDateUtc)}</span>
                     </div>
                   </div>
 
-                  <div className="admin-cancel-cell">
-                    <strong>{safeValue(booking.operator || "Express Bus")}</strong>
-                    <small>{safeValue(booking.vehicleType || "AC Sleeper / Seater")}</small>
-                  </div>
-
-                  <div className="admin-cancel-cell admin-cell-centered">
-                    <strong>{adminCurrencyFormatter.format(booking.fare || 0)}</strong>
-                    <small style={{ display: "block", color: "#10b981", fontSize: "0.7rem", fontWeight: "600" }}>
-                      Cust Ref: {adminCurrencyFormatter.format(booking.customerRefundAmountInr || booking.refundAmount || 0)}
-                    </small>
-                    <small style={{ display: "block", color: "#0369a1", fontSize: "0.7rem" }}>
-                      Admin Ref: {adminCurrencyFormatter.format(booking.adminRefundAmountInr || booking.refundAmount || 0)}
-                    </small>
-                  </div>
-
-                  <div className="admin-cancel-cell admin-cell-centered">
-                    <strong style={{ color: profitInfo.color, fontSize: "0.92rem", fontWeight: "700" }}>
-                      {profitInfo.text}
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong className="admin-name-text" style={{ color: "#000000", fontWeight: 800, fontSize: "0.76rem", display: "block", width: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
+                      {item.customer}
                     </strong>
-                    <small style={{ display: "block", color: "#d97706", fontSize: "0.7rem", marginTop: "2px" }}>
-                      Cust Chg: {adminCurrencyFormatter.format(booking.customerCancellationChargeInr || booking.cancellationCharge || 0)}
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#475569" }}>
+                      {item.customerPhone}
                     </small>
-                    <small style={{ display: "block", color: "#64748b", fontSize: "0.7rem" }}>
-                      Admin Chg: {adminCurrencyFormatter.format(booking.adminCancellationChargeInr || booking.cancellationCharge || 0)}
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#64748b", fontSize: "0.68rem" }}>
+                      {item.customerEmail}
                     </small>
                   </div>
 
-                  <div className="admin-cancel-cell admin-cell-centered">
-                    <button
-                      type="button"
-                      className="admin-cancel-view-btn"
-                      onClick={() => {
-                        setSelectedCancellation(booking);
-                        setShowRawJsonModal(false);
-                      }}
-                    >
-                      View
-                    </button>
+                  <div className="admin-table-cell admin-cell-centered">
+                    <div className="admin-route-segment">
+                      <span>{item.segment?.split("-")[0]?.trim() || item.segment}</span>
+                      <span className="admin-segment-arrow">➔</span>
+                      <span>{item.segment?.split("-")[1]?.trim() || ""}</span>
+                    </div>
+                    <div className="admin-date-badge">
+                      <span className="admin-calendar-emoji">🗓️</span>
+                      <span>{formatAdminDate(item.journeyDate)}</span>
+                    </div>
+                  </div>
+
+                  <div className="admin-table-cell admin-cell-centered">
+                    <strong style={{ fontSize: "0.82rem", marginBottom: "2px" }}>{item.pnr || "--"}</strong>
+                    {item.ticketNo && item.ticketNo !== "--" && item.ticketNo !== item.pnr && (
+                      <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.72rem", marginBottom: "3px" }}>
+                        Tkt No: {item.ticketNo}
+                      </small>
+                    )}
+                    <small style={{ display: "block", color: "#64748b", fontSize: "0.68rem" }}>
+                      {item.busOperator}
+                    </small>
+                  </div>
+
+                  <div className="admin-table-cell admin-cell-centered">
+                    <CancellationStatusBadge status={cancellationStatus} />
+                  </div>
+
+                  <div className="admin-table-cell admin-cell-centered">
+                    <RefundStatusBadge status={customerRefundStatus} refundAmount={item.customerRefundAmountInr} cancellationStatus={cancellationStatus} />
+                  </div>
+
+                  <div className="admin-table-cell admin-cell-centered" style={{ overflow: "visible" }}>
+                    <RefundAmountDisplay amount={item.customerRefundAmountInr} adminAmount={item.adminRefundAmountInr} refundStatus={customerRefundStatus} />
+                  </div>
+
+                  <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: Number(item.calculatedProfit) < 0 ? "#dc2626" : "#16a34a",
+                      lineHeight: "1.2"
+                    }}>
+                      {Number(item.calculatedProfit) < 0
+                        ? `-₹${Math.abs(Number(item.calculatedProfit)).toFixed(2)}`
+                        : `₹${Number(item.calculatedProfit || 0).toFixed(2)}`}
+                    </span>
+                    <span style={{
+                      fontSize: "0.68rem",
+                      color: "#64748b",
+                      fontWeight: "500",
+                      marginTop: "2px"
+                    }}>
+                      {Number(item.calculatedProfit) < 0 ? "Loss" : "Profit"}
+                    </span>
+                  </div>
+
+                  <div className="admin-table-cell admin-cell-centered">
+                    <RefundActionButton
+                      refundStatus={customerRefundStatus}
+                      refundAmount={item.customerRefundAmountInr}
+                      onClick={() => openDetailsModal(item)}
+                    />
                   </div>
                 </article>
               );
             })}
           </div>
-        ) : (
-          <div className="admin-cancel-empty">No cancellation records found.</div>
         )}
 
         <AdminPagination
           currentPage={currentPage}
-          totalItems={filteredCancellations.length}
-          itemsPerPage={itemsPerPage}
+          totalPages={totalPages}
           onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
-          itemName="cancellations"
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={(newSize) => {
+            setItemsPerPage(newSize);
+            setCurrentPage(1);
+          }}
+          totalItems={filteredCancellations.length}
         />
       </section>
 
-      {/* View Detail Backdrop Modal */}
+      {/* Details View Modal */}
       {selectedCancellation && (
-        <div className="admin-view-backdrop" onClick={() => setSelectedCancellation(null)} style={{ zIndex: 1000 }}>
-          <article
-            className="admin-view-card"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Cancellation details"
-            onClick={(event) => event.stopPropagation()}
-            style={{ width: "min(920px, 96vw)", padding: "20px", maxHeight: "90vh", overflowY: "auto" }}
-          >
-            <header className="admin-view-header">
-              <div className="admin-view-header-main">
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", margin: 0, color: "var(--admin-text, #0f172a)" }}>
-                  Bus Cancellation Details &amp; Response Data
-                </h2>
-                <p className="admin-view-header-subtitle">
-                  Req ID: #{safeValue(selectedCancellation.id)} | Ref: {safeValue(selectedCancellation.bookingReference)} | Customer: <strong>{safeValue(selectedCancellation.passengerName)}</strong>
-                </p>
+        <div className="admin-view-backdrop" onClick={() => setSelectedCancellation(null)}>
+          <div className="admin-view-card" onClick={(e) => e.stopPropagation()} style={{ width: "min(900px, 95vw)", padding: "20px", maxHeight: "90vh", overflowY: "auto" }}>
+            <div className="admin-view-header">
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "700", color: "#0f172a" }}>
+                  Bus Cancellation Detail View
+                </h3>
+                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                  ID: <strong>#{selectedCancellation.id}</strong> | PNR: <strong>{selectedCancellation.pnr}</strong> | Ref: <strong>{selectedCancellation.ticketNo}</strong>
+                </div>
                 <div className="admin-view-meta-row">
-                  <span className="admin-view-meta-chip">
-                    Status: {safeValue(selectedCancellation.status)}
-                  </span>
-                  <span className="admin-view-meta-chip">
-                    Cust R.F: {safeValue(selectedCancellation.customerRefundStatus)}
-                  </span>
-                  <span className="admin-view-meta-chip">
-                    Admin R.F: {safeValue(selectedCancellation.adminRefundStatus)}
-                  </span>
-                  <span className="admin-view-meta-chip">
-                    Calculated Profit: {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
-                  </span>
+                  <span className="admin-view-meta-chip">Status: {selectedCancellation.status}</span>
+                  <span className="admin-view-meta-chip">Customer Fare: {formatCurrency(selectedCancellation.fare)}</span>
+                  <span className="admin-view-meta-chip">Refund Amount: {formatCurrency(selectedCancellation.customerRefundAmountInr)}</span>
                 </div>
               </div>
-              <button
-                type="button"
-                className="admin-view-close-btn"
-                onClick={() => setSelectedCancellation(null)}
-              >
-                ✕
+              <button className="admin-view-close-btn" onClick={() => setSelectedCancellation(null)} title="Close" aria-label="Close">
+                <X size={18} />
               </button>
-            </header>
+            </div>
 
-            {/* Section 1: General & Journey Details Table */}
-            <div className="admin-view-section">
-              <h3 className="admin-view-section-title">General &amp; Journey Details</h3>
-              <table className="admin-view-table">
+            {/* GENERAL & JOURNEY DETAILS TABLE */}
+            <div style={{ marginTop: "16px" }}>
+              <h4 style={{ color: "#A51C49", fontSize: "0.88rem", fontWeight: "700", margin: "12px 0 8px 0" }}>
+                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> GENERAL & JOURNEY DETAILS
+              </h4>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <tbody>
                   <tr>
-                    <th>Booking ID</th>
-                    <td>#{safeValue(selectedCancellation.id)}</td>
-                    <th>Booking Reference</th>
-                    <td>{safeValue(selectedCancellation.bookingReference)}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px", width: "22%" }}>Cancellation ID</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", width: "28%" }}>#{selectedCancellation.id}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px", width: "22%" }}>Booking Reference</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", width: "28%" }}>{selectedCancellation.ticketNo}</td>
                   </tr>
                   <tr>
-                    <th>PNR</th>
-                    <td>{safeValue(selectedCancellation.pnr)}</td>
-                    <th>Booking Date (B.D.)</th>
-                    <td>{formatAdminDate(selectedCancellation.bookedAtUtc)}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>PNR</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{selectedCancellation.pnr}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Request Date (C.D.)</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{formatRequestDate(selectedCancellation.requestDateUtc)}</td>
                   </tr>
                   <tr>
-                    <th>Cancellation Date (C.D.)</th>
-                    <td>{formatRequestDate(selectedCancellation.requestDateUtc || selectedCancellation.createdAtValue)}</td>
-                    <th>Cancellation Status</th>
-                    <td>{safeValue(selectedCancellation.status)}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Cancellation Status</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>
+                      {(() => {
+                        const st = String(selectedCancellation.details?.customerRefundStatus || selectedCancellation.status || "").toLowerCase();
+                        let cls = "pending";
+                        if (st.includes("refund") || st.includes("approv")) cls = "refunded";
+                        else if (st.includes("complet")) cls = "completed";
+                        else if (st.includes("cancel") || st.includes("reject")) cls = "cancelled";
+                        return (
+                          <span className={`admin-status-pill ${cls}`}>
+                            {selectedCancellation.details?.customerRefundStatus || selectedCancellation.status}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Segment / Route</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{selectedCancellation.segment}</td>
                   </tr>
                   <tr>
-                    <th>Segment / Route</th>
-                    <td>{safeValue(selectedCancellation.segment || `${selectedCancellation.from} ➔ ${selectedCancellation.to}`)}</td>
-                    <th>Journey Date (Jd)</th>
-                    <td>{formatAdminDate(selectedCancellation.journeyDate)}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Journey Date (J.d)</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{formatAdminDate(selectedCancellation.journeyDate)}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Bus Operator &amp; Type</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{selectedCancellation.busOperator} ({selectedCancellation.busType})</td>
                   </tr>
                   <tr>
-                    <th>Bus Operator</th>
-                    <td>{safeValue(selectedCancellation.operator || "Express Bus")}</td>
-                    <th>Bus Type</th>
-                    <td>{safeValue(selectedCancellation.vehicleType || "AC Sleeper / Seater")}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Customer Name</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{selectedCancellation.customer}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Phone Number (P.no)</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{selectedCancellation.customerPhone}</td>
                   </tr>
                   <tr>
-                    <th>Passenger Name</th>
-                    <td>{safeValue(selectedCancellation.passengerName)}</td>
-                    <th>Phone Number</th>
-                    <td>{safeValue(selectedCancellation.passengerPhone)}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Customer Email</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>{selectedCancellation.customerEmail}</td>
+                    <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px" }}>Booked By</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0" }}>B2C Customer</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Section 2: Financial & Refund Breakdown Table */}
-            <div className="admin-view-section">
-              <h3 className="admin-view-section-title">Financial &amp; Refund Breakdown</h3>
-              <table className="admin-view-table">
+            {/* FINANCIAL & FARE BREAKDOWN TABLE */}
+            <div style={{ marginTop: "16px" }}>
+              <h4 style={{ color: "#A51C49", fontSize: "0.88rem", fontWeight: "700", margin: "12px 0 8px 0" }}>
+                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> FINANCIAL & FARE BREAKDOWN
+              </h4>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <thead>
-                  <tr>
-                    <th>Refund Parameter</th>
-                    <th>Amount (INR)</th>
-                    <th>Description / Details</th>
+                  <tr style={{ background: "#A51C49", color: "#ffffff", fontWeight: "700" }}>
+                    <th style={{ padding: "6px 10px", textAlign: "left" }}>Fare Parameter</th>
+                    <th style={{ padding: "6px 10px", textAlign: "left" }}>Amount (INR)</th>
+                    <th style={{ padding: "6px 10px", textAlign: "left" }}>Description / Details</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong>Total Ticket Fare</strong></td>
-                    <td><strong>{adminCurrencyFormatter.format(selectedCancellation.fare || 0)}</strong></td>
-                    <td>Total original booking fare paid</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "600" }}>Total Fare</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700" }}>{formatCurrency(selectedCancellation.fare)}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#475569" }}>Total fare charged to customer</td>
                   </tr>
                   <tr>
-                    <td><strong>Customer Refund Amount</strong></td>
-                    <td><strong style={{ color: "#10b981" }}>{adminCurrencyFormatter.format(selectedCancellation.customerRefundAmountInr || selectedCancellation.refundAmount || 0)}</strong></td>
-                    <td>Refund amount credited to customer ({safeValue(selectedCancellation.customerRefundStatus)})</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "600" }}>Customer Refund Amount</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700", color: "#10b981" }}>{formatCurrency(selectedCancellation.customerRefundAmountInr)}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#475569" }}>Refund amount to customer</td>
                   </tr>
                   <tr>
-                    <td><strong>Customer Cancellation Charge</strong></td>
-                    <td><strong style={{ color: "#d97706" }}>{adminCurrencyFormatter.format(selectedCancellation.customerCancellationChargeInr || selectedCancellation.cancellationCharge || 0)}</strong></td>
-                    <td>Cancellation fee charged to customer</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "600" }}>Customer Cancellation Charge</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700", color: "#d97706" }}>{formatCurrency(selectedCancellation.customerCancellationChargeInr)}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#475569" }}>Cancellation fee charged</td>
                   </tr>
                   <tr>
-                    <td><strong>Admin Refund Amount</strong></td>
-                    <td><strong style={{ color: "#0369a1" }}>{adminCurrencyFormatter.format(selectedCancellation.adminRefundAmountInr || selectedCancellation.refundAmount || 0)}</strong></td>
-                    <td>Refund received from operator/supplier ({safeValue(selectedCancellation.adminRefundStatus)})</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "600" }}>Admin Refund Amount</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700", color: "#0369a1" }}>{formatCurrency(selectedCancellation.adminRefundAmountInr)}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#475569" }}>Refund received from operator</td>
                   </tr>
-                  <tr>
-                    <td><strong>Admin Cancellation Charge</strong></td>
-                    <td>{adminCurrencyFormatter.format(selectedCancellation.adminCancellationChargeInr || selectedCancellation.cancellationCharge || 0)}</td>
-                    <td>Cancellation fee charged by operator</td>
-                  </tr>
-                  <tr className="admin-view-highlight-row">
-                    <td><strong>Calculated Net Profit / Loss</strong></td>
-                    <td>
-                      <strong style={{ color: formatProfitDisplay(selectedCancellation.calculatedProfit).color }}>
-                        {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
-                      </strong>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700" }}>Calculated Profit / Loss</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700", color: formatProfitDisplay(selectedCancellation.calculatedProfit).color }}>
+                      {formatProfitDisplay(selectedCancellation.calculatedProfit).text}
                     </td>
-                    <td>Net profit margin calculated on cancellation</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#10b981", fontWeight: "700" }}>Profit</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Section 3: Remarks & Cancellation Reason Notes */}
-            <div className="admin-view-section">
-              <h3 className="admin-view-section-title">Remarks &amp; Reason Notes</h3>
-              <table className="admin-view-table">
-                <tbody>
-                  <tr>
-                    <th>Cancellation Reason</th>
-                    <td><em>"{safeValue(selectedCancellation.cancellationReason, "Passenger cancellation request")}"</em></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            {/* REFUND & FEE MANAGEMENT FORM */}
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px", marginTop: "16px", background: "#ffffff" }}>
+              <h4 style={{ margin: "0 0 10px 0", fontSize: "0.88rem", color: "#A51C49", fontWeight: "700" }}>
+                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> REFUND & FEE MANAGEMENT FORM
+              </h4>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Cancellation Status</label>
+                  <select
+                    value={editForm.cancellationStatus}
+                    onChange={(e) => setEditForm(p => ({ ...p, cancellationStatus: e.target.value }))}
+                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Refund Status</label>
+                  <select
+                    value={editForm.customerRefundStatus}
+                    onChange={(e) => setEditForm(p => ({ ...p, customerRefundStatus: e.target.value }))}
+                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Refunded">Refunded</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Failed">Failed</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Refund Status</label>
+                  <select
+                    value={editForm.adminRefundStatus}
+                    onChange={(e) => setEditForm(p => ({ ...p, adminRefundStatus: e.target.value }))}
+                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Claimed">Claimed</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
+                </div>
+              </div>
 
-            {/* Section 4: Raw JSON Response Viewer */}
-            <div className="admin-view-section" style={{ background: "#1e293b", padding: "14px 16px", borderRadius: "8px", color: "#f8fafc" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: "0.85rem", fontWeight: "700", color: "#38bdf8", textTransform: "uppercase" }}>
-                  Complete Response Data (Raw JSON)
-                </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Refund Amt (₹)</label>
+                  <input
+                    type="number"
+                    value={editForm.customerRefundAmountInr}
+                    onChange={(e) => setEditForm(p => ({ ...p, customerRefundAmountInr: e.target.value }))}
+                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Cancel Fee (₹)</label>
+                  <input
+                    type="number"
+                    value={editForm.customerCancellationChargeInr}
+                    onChange={(e) => setEditForm(p => ({ ...p, customerCancellationChargeInr: e.target.value }))}
+                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Refund Amt (₹)</label>
+                  <input
+                    type="number"
+                    value={editForm.adminRefundAmountInr}
+                    onChange={(e) => setEditForm(p => ({ ...p, adminRefundAmountInr: e.target.value }))}
+                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Remark</label>
+                <input
+                  type="text"
+                  placeholder="Enter admin remarks..."
+                  value={editForm.adminRemark}
+                  onChange={(e) => setEditForm(p => ({ ...p, adminRemark: e.target.value }))}
+                  style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
                 <button
                   type="button"
-                  onClick={() => setShowRawJsonModal(prev => !prev)}
-                  style={{
-                    background: "#0284c7",
-                    color: "#ffffff",
-                    border: "none",
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    fontSize: "0.76rem",
-                    fontWeight: "600",
-                    cursor: "pointer"
-                  }}
+                  onClick={() => setShowRawJsonModal(true)}
+                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: "11px", fontWeight: "600" }}
                 >
-                  {showRawJsonModal ? "Hide Raw JSON" : "View Raw JSON"}
+                  View Raw JSON Payload
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveRefundUpdate}
+                  disabled={isSaving}
+                  style={{ padding: "6px 16px", borderRadius: "6px", border: "none", background: "#10b981", color: "#fff", fontWeight: "600", cursor: "pointer", fontSize: "12px" }}
+                >
+                  {isSaving ? "Saving..." : "Save Refund Update"}
                 </button>
               </div>
-              {showRawJsonModal && (
-                <pre
-                  style={{
-                    marginTop: "12px",
-                    padding: "12px",
-                    background: "#0f172a",
-                    color: "#38bdf8",
-                    borderRadius: "6px",
-                    fontSize: "0.78rem",
-                    overflowX: "auto",
-                    maxHeight: "260px",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-all"
-                  }}
-                >
-                  {JSON.stringify(selectedCancellation.raw || selectedCancellation, null, 2)}
-                </pre>
-              )}
             </div>
-          </article>
+          </div>
+        </div>
+      )}
+
+      {/* Raw JSON Inspector Modal */}
+      {showRawJsonModal && selectedCancellation && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div style={{ background: "#0f172a", color: "#38bdf8", borderRadius: "12px", width: "100%", maxWidth: "700px", maxHeight: "80vh", overflowY: "auto", padding: "20px", fontFamily: "monospace", fontSize: "12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#ffffff", marginBottom: "12px" }}>
+              <strong>Raw Bus Cancellation Response (ID #{selectedCancellation.id})</strong>
+              <button onClick={() => setShowRawJsonModal(false)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "16px" }}>×</button>
+            </div>
+            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{JSON.stringify(selectedCancellation.raw || selectedCancellation, null, 2)}</pre>
+          </div>
         </div>
       )}
     </section>
   );
 }
-

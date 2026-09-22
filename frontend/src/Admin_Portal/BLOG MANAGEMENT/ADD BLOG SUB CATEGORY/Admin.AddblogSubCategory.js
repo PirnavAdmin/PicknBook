@@ -415,7 +415,7 @@ function AddBlogSubCategory() {
                                                 Choose File
                                                 <input
                                                     type="file"
-                                                    accept="image/*"
+                                                    accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                     onChange={handleFileChange}
                                                     style={styles.fileInputHidden}
                                                 />
@@ -535,8 +535,8 @@ function AddBlogSubCategory() {
                                 type="submit"
                                 style={styles.submitBtn}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = '#ff0000';
-                                    e.target.style.borderColor = '#ff0000';
+                                    e.target.style.background = '#b91c1c';
+                                    e.target.style.borderColor = '#b91c1c';
                                     e.target.style.transform = 'translateY(-2px)';
                                     e.target.style.boxShadow = '0 4px 12px rgba(220, 30, 38, 0.2)';
                                 }}

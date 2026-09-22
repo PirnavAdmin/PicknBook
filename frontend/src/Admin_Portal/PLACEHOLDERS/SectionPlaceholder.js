@@ -431,7 +431,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
                     borderRadius: "8px",
                     border: "1px solid #fca5a5",
                     background: "#fef2f2",
-                    color: "#ff0000",
+                    color: "#b91c1c",
                     fontSize: "0.85rem",
                     fontWeight: 700,
                     cursor: "pointer",
@@ -613,7 +613,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
                     fontSize: "0.72rem",
                     fontWeight: 700,
                     background: rule.type === "Blacklist" ? "#fee2e2" : "#e0f2fe",
-                    color: rule.type === "Blacklist" ? "#ff0000" : "#0369a1"
+                    color: rule.type === "Blacklist" ? "#991b1b" : "#0369a1"
                   }}>
                     {rule.type}
                   </span>
@@ -648,7 +648,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
                   <button
                     type="button"
                     onClick={() => handleDeleteIpRule(rule.id, rule.ip)}
-                    style={{ background: "#fef2f2", border: "1px solid #fee2e2", padding: "4px 8px", borderRadius: "6px", color: "#ff0000", cursor: "pointer" }}
+                    style={{ background: "#fef2f2", border: "1px solid #fee2e2", padding: "4px 8px", borderRadius: "6px", color: "#b91c1c", cursor: "pointer" }}
                     title="Delete Rule"
                   >
                     <Trash2 size={13} />
@@ -669,7 +669,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               </div>
 
               {ipError && (
-                <div style={{ padding: "8px 12px", background: "#fef2f2", color: "#ff0000", border: "1px solid #fde2e2", borderRadius: "8px", fontSize: "0.78rem", marginBottom: "14px", fontWeight: 600 }}>
+                <div style={{ padding: "8px 12px", background: "#fef2f2", color: "#991b1b", border: "1px solid #fde2e2", borderRadius: "8px", fontSize: "0.78rem", marginBottom: "14px", fontWeight: 600 }}>
                   ⚠️ {ipError}
                 </div>
               )}
@@ -880,7 +880,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
                     fontSize: "0.72rem",
                     fontWeight: 700,
                     background: txn.type === "Credit" ? "#d1fae5" : "#fee2e2",
-                    color: txn.type === "Credit" ? "#065f46" : "#ff0000"
+                    color: txn.type === "Credit" ? "#065f46" : "#b91c1c"
                   }}>
                     {txn.type}
                   </span>
@@ -904,7 +904,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
                   <button
                     type="button"
                     onClick={() => handleDeleteTransaction(txn.id, txn.ref)}
-                    style={{ background: "#fef2f2", border: "1px solid #fee2e2", padding: "4px 8px", borderRadius: "6px", color: "#ff0000", cursor: "pointer" }}
+                    style={{ background: "#fef2f2", border: "1px solid #fee2e2", padding: "4px 8px", borderRadius: "6px", color: "#b91c1c", cursor: "pointer" }}
                     title="Remove Record"
                   >
                     <Trash2 size={13} />
@@ -925,7 +925,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               </div>
 
               {txnError && (
-                <div style={{ padding: "8px 12px", background: "#fef2f2", color: "#ff0000", border: "1px solid #fde2e2", borderRadius: "8px", fontSize: "0.78rem", marginBottom: "14px", fontWeight: 600 }}>
+                <div style={{ padding: "8px 12px", background: "#fef2f2", color: "#991b1b", border: "1px solid #fde2e2", borderRadius: "8px", fontSize: "0.78rem", marginBottom: "14px", fontWeight: 600 }}>
                   ⚠️ {txnError}
                 </div>
               )}
@@ -1155,7 +1155,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
           borderRadius: "10px",
           background: toast.type === "success" ? "#ecfdf5" : "#fef2f2",
           border: `1px solid ${toast.type === "success" ? "#10b981" : "#ef4444"}`,
-          color: toast.type === "success" ? "#065f46" : "#ff0000",
+          color: toast.type === "success" ? "#065f46" : "#991b1b",
           fontSize: "0.88rem",
           fontWeight: "bold",
           boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08)",

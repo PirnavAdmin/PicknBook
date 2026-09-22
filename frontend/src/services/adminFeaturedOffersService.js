@@ -16,6 +16,36 @@ export const getPublicFeaturedOffers = () => request("/api/FeaturedOffers").then
 export const getActiveOffers = (bookingType) =>
   request(`/api/FeaturedOffers${bookingType ? `?bookingType=${encodeURIComponent(bookingType)}` : ""}`).then(unwrap);
 export const getPublicPromotions = getActiveOffers;
+
+/**
+ * Fetches available bus coupons/offers for the current user.
+ * Endpoint: GET /api/BusBookings/user/available
+ * Maps the response shape to the normalized featured-offer structure used by the UI.
+ */
+export const getUserAvailableBusOffers = () =>
+  request("/api/BusBookings/user/available").then((data) => {
+    const raw = Array.isArray(data) ? data : [];
+    return raw.map((item) => ({
+      id: item.id,
+      title: item.title || "Bus Offer",
+      description: item.description || null,
+      couponCode: item.couponCode || null,
+      bookingType: "Bus",
+      isActive: item.isEligible !== false,
+      discountType: item.couponType || null,
+      discountValue: item.value ?? null,
+      maxDiscountAmount: item.maxDiscountAmount ?? null,
+      minBookingAmount: item.minBookingAmount ?? null,
+      maxUsagePerUser: item.maxUsagePerUser ?? null,
+      couponExpiresAtUtc: item.expiryDate || null,
+      promotionCategory: item.promotionCategory || null,
+      isAutoApply: item.isAutoApply ?? false,
+      isExclusive: item.isExclusive ?? false,
+      isEligible: item.isEligible ?? true,
+      imageUrl: null,
+      conditions: [],
+    }));
+  });
 export const getAdminFeaturedOffers = () => request("/api/AdminFeaturedOffers").then(unwrap);
 export const getAdminFeaturedOfferById = (id) => request(`/api/AdminFeaturedOffers/${id}`);
 export const createAdminFeaturedOffer = (payload) => request("/api/AdminFeaturedOffers", { method: "POST", body: JSON.stringify(payload) });

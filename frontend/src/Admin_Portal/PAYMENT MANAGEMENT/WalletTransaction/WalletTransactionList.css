@@ -1,7 +1,7 @@
 /* Admin Wallet Transaction List Styling */
 
 .wt-container {
-  padding: 24px;
+  padding: 10px 14px;
   background-color: #f8fafc;
   min-height: 100vh;
   font-family: inherit;
@@ -12,27 +12,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 8px;
 }
 
 .wt-header-title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .wt-header-sub {
-  margin: 4px 0 0 0;
-  font-size: 0.88rem;
+  margin: 2px 0 0 0;
+  font-size: 0.76rem;
   color: #64748b;
 }
 
 .wt-header-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -40,15 +40,15 @@
   background: #A51C49;
   color: #ffffff;
   border: none;
-  border-radius: 8px;
-  padding: 10px 18px;
+  border-radius: 6px;
+  padding: 5px 12px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.2);
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(165, 28, 73, 0.2);
   transition: all 0.2s ease;
 }
 
@@ -61,14 +61,14 @@
   background: #ffffff;
   color: #334155;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 6px;
+  padding: 5px 12px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.2s ease;
 }
 
@@ -80,41 +80,41 @@
 /* Metric Cards */
 .wt-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .wt-metric-card {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
-  padding: 18px 20px;
+  padding: 10px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .wt-metric-val {
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #0f172a;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .wt-metric-label {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .wt-metric-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,40 +123,45 @@
 /* Filter Bar */
 .wt-filter-card {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
-  padding: 16px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
 
 .wt-search-box {
   position: relative;
   flex: 1;
-  min-width: 260px;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
 }
 
 .wt-search-icon {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
+  pointer-events: none;
 }
 
 .wt-search-input {
   width: 100%;
-  padding: 9px 12px 9px 38px;
-  border-radius: 8px;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  border-radius: 6px;
   border: 1px solid #cbd5e1;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   outline: none;
+  box-sizing: border-box;
   transition: border-color 0.2s;
+  background: #ffffff;
+  color: #1e293b;
 }
 
 .wt-search-input:focus {
@@ -165,28 +170,34 @@
 
 .wt-filter-group {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  flex-wrap: wrap;
 }
 
 .wt-select {
-  padding: 9px 12px;
-  border-radius: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
   border: 1px solid #cbd5e1;
-  background: #fff;
-  font-size: 0.84rem;
+  background: #ffffff;
+  font-size: 0.78rem;
   color: #334155;
   outline: none;
   cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.wt-select:focus {
+  border-color: #A51C49;
 }
 
 /* Table */
 .wt-table-card {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
@@ -197,20 +208,19 @@
 }
 
 .wt-table th {
-  background: #fff1f2;
-  color: #A51C49;
-  font-size: 0.76rem;
+  background: linear-gradient(135deg, #A51C49, #851237);
+  color: #ffffff;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 13px 16px;
-  border-bottom: 2px solid #fecdd3;
+  padding: 8px 12px;
   white-space: nowrap;
 }
 
 .wt-table td {
-  padding: 13px 16px;
-  font-size: 0.83rem;
+  padding: 8px 12px;
+  font-size: 0.78rem;
   color: #334155;
   border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;
@@ -224,10 +234,10 @@
 .wt-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
+  gap: 4px;
+  padding: 2px 8px;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.70rem;
   font-weight: 600;
 }
 
@@ -238,7 +248,7 @@
 
 .wt-badge-debit {
   background: #fee2e2;
-  color: #ff0000;
+  color: #b91c1c;
 }
 
 .wt-badge-refund {
@@ -263,7 +273,7 @@
 
 .wt-badge-failed {
   background: #fef2f2;
-  color: #ff0000;
+  color: #dc2626;
 }
 
 /* Action Icon Button */

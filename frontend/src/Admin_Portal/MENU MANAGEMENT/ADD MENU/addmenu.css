@@ -129,23 +129,23 @@
 
 /* ── Error Styles ── */
 .compulsory-star {
-  color: #ff0000;
+  color: #dc2626;
   font-weight: bold;
   margin-left: 2px;
 }
 
 .input-error {
-  border-color: #ff0000 !important;
+  border-color: #dc2626 !important;
   background-color: #fef2f2 !important;
 }
 
 .input-error:focus {
-  border-color: #ff0000 !important;
+  border-color: #dc2626 !important;
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
 }
 
 .admin-markup-form-error {
-  color: #ff0000;
+  color: #dc2626;
   background: #fef2f2;
   border: 1px solid #fee2e2;
   padding: 10px 14px;

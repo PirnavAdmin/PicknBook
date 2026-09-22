@@ -31,6 +31,28 @@ namespace PickNBook.Api.Models.Payments
         public int? BookingId { get; set; }
 
         // =============================
+        // Passenger & Contact Details
+        // =============================
+
+        /// <summary>Lead passenger or primary contact name.</summary>
+        public string? CustomerName { get; set; }
+
+        /// <summary>Contact email address.</summary>
+        public string? CustomerEmail { get; set; }
+
+        /// <summary>Contact phone number.</summary>
+        public string? CustomerPhone { get; set; }
+
+        /// <summary>Total count of passengers or guests in this booking.</summary>
+        public int PassengerCount { get; set; } = 1;
+
+        /// <summary>
+        /// JSON snapshot of all passengers (names, seats, age, gender, ticket numbers)
+        /// for detailed view without joining booking tables.
+        /// </summary>
+        public string? PassengerDetailsJson { get; set; }
+
+        // =============================
         // Pricing Breakdown
         // =============================
 

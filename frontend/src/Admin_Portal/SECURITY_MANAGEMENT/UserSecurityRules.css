@@ -12,7 +12,7 @@
 }
 
 .usr-btn-user-block {
-  background: linear-gradient(135deg, #ef4444 0%, #ff0000 100%) !important;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   color: #ffffff !important;
   border: none !important;
   font-weight: 600;
@@ -21,7 +21,7 @@
 }
 
 .usr-btn-user-block:hover {
-  background: linear-gradient(135deg, #ff0000 0%, #ff0000 100%) !important;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
 }
@@ -267,7 +267,7 @@
 
 .usr-badge-rule-type.type-user {
   background: #fee2e2;
-  color: #ff0000;
+  color: #991b1b;
   border: 1px solid #fca5a5;
 }
 
@@ -307,7 +307,7 @@
 
 .usr-badge-scope.scope-perm {
   background: #fef2f2;
-  color: #ff0000;
+  color: #b91c1c;
 }
 
 .usr-badge-scope.scope-temp {
@@ -346,7 +346,7 @@
 }
 
 .usr-perm-text {
-  color: #ff0000;
+  color: #b91c1c;
   font-weight: 600;
   font-size: 0.85rem;
 }
@@ -406,7 +406,7 @@
 
 .usr-action-btn.btn-delete {
   background: #fef2f2;
-  color: #ff0000;
+  color: #dc2626;
   border-color: #fecaca;
 }
 
@@ -415,7 +415,7 @@
 }
 
 .usr-btn-danger {
-  background: #ff0000;
+  background: #dc2626;
   color: #ffffff;
   border: none;
   padding: 10px 18px;
@@ -425,7 +425,7 @@
 }
 
 .usr-btn-danger:hover {
-  background: #ff0000;
+  background: #b91c1c;
 }
 
 /* Modals */
@@ -682,7 +682,7 @@
 .usr-error-banner {
   background: #fef2f2;
   border: 1px solid #fecaca;
-  color: #ff0000;
+  color: #991b1b;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 0.88rem;

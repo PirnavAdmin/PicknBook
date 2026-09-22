@@ -243,8 +243,8 @@ public class CustomersController : AdminApiController
 
         string subject = customer.Status == "Active" ? "Account Activated" : "Account Suspended";
         string body = customer.Status == "Active" 
-            ? $"Hello {customer.FirstName},<br><br>Welcome back! Your PickNBook account has been activated."
-            : $"Hello {customer.FirstName},<br><br>Notice: Your PickNBook account has been temporarily suspended. Please contact support for more information.";
+            ? $"Hello {customer.FirstName},<br><br>Welcome back! Your Pick&amp;book account has been activated."
+            : $"Hello {customer.FirstName},<br><br>Notice: Your Pick&amp;book account has been temporarily suspended. Please contact support for more information.";
         
         await _emailService.SendEmailAsync(customer.Email, subject, body);
 
@@ -265,8 +265,8 @@ public class CustomersController : AdminApiController
 
         string subject = customer.WalletStatus == "Active" ? "Wallet Activated" : "Wallet Suspended";
         string body = customer.WalletStatus == "Active" 
-            ? $"Hello {customer.FirstName},<br><br>Your PickNBook wallet has been activated."
-            : $"Hello {customer.FirstName},<br><br>Notice: Your PickNBook wallet has been temporarily suspended.";
+            ? $"Hello {customer.FirstName},<br><br>Your Pick&amp;book wallet has been activated."
+            : $"Hello {customer.FirstName},<br><br>Notice: Your Pick&amp;book wallet has been temporarily suspended.";
         
         await _emailService.SendEmailAsync(customer.Email, subject, body);
 
@@ -292,7 +292,7 @@ public class CustomersController : AdminApiController
         await _context.SaveChangesAsync();
 
         string subject = "Wallet Balance Added";
-        string body = $"Hello {customer.FirstName},<br><br>An amount of ₹{request.Amount} has been added to your PickNBook wallet.<br>Your updated wallet balance is ₹{customer.WalletBalance}.";
+        string body = $"Hello {customer.FirstName},<br><br>An amount of ₹{request.Amount} has been added to your Pick&amp;book wallet.<br>Your updated wallet balance is ₹{customer.WalletBalance}.";
         
         await _emailService.SendEmailAsync(customer.Email, subject, body);
 

@@ -79,7 +79,12 @@ function getStoredUser() {
 }
 
 function getCurrentAuthToken() {
-  return normalizeText(session.token || getStoredValue("token") || getStoredValue("b2b_token"));
+  return normalizeText(
+    session.token ||
+    getStoredValue("token") ||
+    getStoredValue("authToken") ||
+    getStoredValue("accessToken")
+  );
 }
 
 function getCurrentAuthUser() {

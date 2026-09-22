@@ -302,14 +302,14 @@ export default function AdminFlightConvenienceFeePage() {
         </header>
 
         <div className="admin-flight-fee-head-right">
-            <button
-              type="button"
-              className="admin-flight-fee-add-btn"
-              onClick={() => navigate("/admin/b2c-flight/add-convenience-fee")}
-            >
-              <PlusCircle size={14} />
-              Add Convenience Fee
-            </button>
+          <button
+            type="button"
+            className="admin-flight-fee-add-btn"
+            onClick={() => navigate("/admin/b2c-flight/add-convenience-fee")}
+          >
+            <PlusCircle size={14} />
+            Add Convenience Fee
+          </button>
         </div>
       </div>
 
@@ -461,7 +461,7 @@ export default function AdminFlightConvenienceFeePage() {
               <button onClick={() => !isSaving && setEditRecord(null)}><X size={20} /></button>
             </header>
             <div className="admin-convenience-modal-body form-body">
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0 }}>
                 <label className="admin-convenience-edit-label" style={{ margin: '0 0 4px 0', padding: 0, lineHeight: 1.2 }}>Amount Type</label>
                 <select
@@ -477,39 +477,39 @@ export default function AdminFlightConvenienceFeePage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', margin: 0, padding: 0 }}>
                 <label className="admin-convenience-edit-label" style={{ margin: '0 0 4px 0', padding: 0, lineHeight: 1.2 }}>Fee Value</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   className="admin-convenience-input"
                   style={{ height: '44px', margin: 0 }}
-                  value={editFeeValue} 
+                  value={editFeeValue}
                   onChange={(e) => setEditFeeValue(e.target.value)}
                   placeholder="0.00"
                   min="0"
                   step="0.01"
                 />
               </div>
-              
+
               <div style={{ marginTop: '10px' }}>
                 <label className="admin-convenience-toggle-label">
-                  <input 
-                    type="checkbox" 
-                    checked={editIsActive} 
-                    onChange={(e) => setEditIsActive(e.target.checked)} 
+                  <input
+                    type="checkbox"
+                    checked={editIsActive}
+                    onChange={(e) => setEditIsActive(e.target.checked)}
                   />
                   <span>Is Active</span>
                 </label>
               </div>
 
               <div className="admin-convenience-modal-actions">
-                <button 
-                  className="secondary" 
+                <button
+                  className="secondary"
                   onClick={() => setEditRecord(null)}
                   disabled={isSaving}
                 >
                   Cancel
                 </button>
-                <button 
-                  className="primary" 
+                <button
+                  className="primary"
                   onClick={handleSaveEdit}
                   disabled={isSaving}
                 >

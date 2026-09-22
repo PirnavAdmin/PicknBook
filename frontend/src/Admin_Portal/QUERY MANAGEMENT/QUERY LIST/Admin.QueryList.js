@@ -80,7 +80,7 @@ export default function AdminQueryList() {
     setEmailSubject(`Re: ${query.subject || "Support Inquiry"}`);
     setEmailMessage(
       query.replyMessage ||
-        `Hello ${query.name || "Customer"},\n\nThank you for reaching out to Pick&Book Support regarding "${query.subject || "your inquiry"}".\n\nWe have reviewed your request. If you have any further questions, please let us know.\n\nWarm regards,\nPickNBook Support Team`
+        `Hello ${query.name || "Customer"},\n\nThank you for reaching out to PickNBook Support regarding "${query.subject || "your inquiry"}".\n\nWe have reviewed your request. If you have any further questions, please let us know.\n\nWarm regards,\nPickNBook Support Team`
     );
   };
 

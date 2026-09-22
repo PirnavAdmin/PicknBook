@@ -15,15 +15,28 @@ export default function HotelBookingList() {
   const [error, setError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
-  
-  const getAdminStatusClass = (status) => {
-    const s = String(status || "").toLowerCase();
-    if (s.includes("hold")) return "hold";
-    if (s.includes("cancel")) return "cancelled";
-    if (s.includes("fail")) return "failed";
-    if (s.includes("confirm")) return "confirmed";
-    if (s.includes("book")) return "success";
-    return "pending";
+
+  const resolveGuestName = (b) => {
+    const val = b?.guestName || b?.GuestName || b?.passengerName || b?.PassengerName || b?.customerName || b?.CustomerName || b?.userName || b?.UserName || b?.name || b?.Name || b?.leadGuestName || b?.leadPassengerName;
+    return val && String(val).trim() ? String(val).trim() : "--";
+  };
+
+  const resolveGuestPhone = (b) => {
+    const val = b?.guestPhone || b?.GuestPhone || b?.passengerPhone || b?.PassengerPhone || b?.phone || b?.Phone || b?.mobile || b?.Mobile || b?.phoneNumber || b?.PhoneNumber || b?.phoneNo || b?.contactNumber;
+    return val && String(val).trim() ? String(val).trim() : "--";
+  };
+
+  const resolveGuestEmail = (b) => {
+    const val = b?.guestEmail || b?.GuestEmail || b?.passengerEmail || b?.PassengerEmail || b?.email || b?.Email || b?.customerEmail || b?.CustomerEmail || b?.userEmail || b?.UserEmail || b?.contactEmail;
+    return val && String(val).trim() ? String(val).trim() : "--";
+  };
+
+  const resolveCheckInDate = (b) => {
+    return b?.checkInDate || b?.CheckInDate || b?.checkInDateIst || b?.CheckInDateIst || b?.checkIn || b?.CheckIn || b?.fromDate || b?.FromDate || b?.arrivalDate || b?.ArrivalDate || "";
+  };
+
+  const resolveCheckOutDate = (b) => {
+    return b?.checkOutDate || b?.CheckOutDate || b?.checkOutDateIst || b?.CheckOutDateIst || b?.checkOut || b?.CheckOut || b?.toDate || b?.ToDate || b?.departureDate || b?.DepartureDate || "";
   };
 
   const safeValue = (val, fallback = "--") =>
@@ -120,6 +133,15 @@ export default function HotelBookingList() {
     return single || journeyTime || "--:--";
   };
 
+  const getAdminStatusClass = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s.includes("complet")) return "completed";
+    if (s.includes("cancel")) return "cancelled";
+    if (s.includes("expir") || s.includes("fail")) return "expired";
+    if (s.includes("book") || s.includes("confirm") || s.includes("success")) return "success";
+    return "pending";
+  };
+
   const getStatusStyle = (status) => {
     const s = String(status || "").toLowerCase();
     const baseStyle = {
@@ -131,37 +153,40 @@ export default function HotelBookingList() {
       textAlign: "center"
     };
 
-    if (s.includes("confirm")) {
-      // Confirmed -> Blue
+    if (s.includes("complet")) {
       return {
         ...baseStyle,
-        backgroundColor: "#eff6ff",
-        color: "#2563eb",
-        border: "1px solid #dbeafe"
+        backgroundColor: "#e0f2fe",
+        color: "#0284c7",
+        border: "1px solid #0284c7"
       };
-    } else if (s.includes("book")) {
-      // Booked -> Green
+    } else if (s.includes("book") || s.includes("confirm") || s.includes("success")) {
       return {
         ...baseStyle,
-        backgroundColor: "#ecfdf5",
-        color: "#10b981",
-        border: "1px solid #a7f3d0"
+        backgroundColor: "#e6f4ea",
+        color: "#137333",
+        border: "1px solid #137333"
       };
-    } else if (s.includes("cancel") || s.includes("fail")) {
-      // Cancelled or Failed -> Red
+    } else if (s.includes("cancel")) {
       return {
         ...baseStyle,
-        backgroundColor: "#fef2f2",
-        color: "#ef4444",
-        border: "1px solid #fee2e2"
+        backgroundColor: "#fce8e6",
+        color: "#c5221f",
+        border: "1px solid #c5221f"
+      };
+    } else if (s.includes("expir") || s.includes("fail")) {
+      return {
+        ...baseStyle,
+        backgroundColor: "#fef3c7",
+        color: "#d97706",
+        border: "1px solid #d97706"
       };
     } else {
-      // Pending / Other -> Yellow
       return {
         ...baseStyle,
-        backgroundColor: "#fffbeb",
-        color: "#d97706",
-        border: "1px solid #fef3c7"
+        backgroundColor: "#f1f5f9",
+        color: "#475569",
+        border: "1px solid #cbd5e1"
       };
     }
   };
@@ -305,7 +330,12 @@ export default function HotelBookingList() {
   // Client-side search filtering
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
-      // 1. Search term (Search bookings)
+      const s = String(b.status || "").toLowerCase();
+      if (s.includes("expir") || s.includes("fail") || s.includes("hold") || s.includes("pend")) {
+        return false;
+      }
+
+      // 1. Search Term (ref, hotel, guest, email)
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const matchesSearch = (
@@ -588,7 +618,6 @@ export default function HotelBookingList() {
               >
                 <option value="all">All Statuses</option>
                 <option value="Booked">Booked</option>
-                <option value="Confirmed">Confirmed</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
@@ -627,10 +656,10 @@ export default function HotelBookingList() {
       <section className="admin-table-shell">
         <header className="admin-table-head" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr" }}>
           <span>B. ID / B.D.</span>
-          <span>Name</span>
+          <span>Passenger Details</span>
           <span>Check-in / Check-out</span>
           <span>Rooms / Guests</span>
-          <span>PNR / R.F Status</span>
+          <span>PNR / Status</span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -640,7 +669,7 @@ export default function HotelBookingList() {
         {loading ? (
           <div className="admin-table-empty">Loading reservations...</div>
         ) : paginatedBookings.length === 0 ? (
-          <div className="admin-table-empty">No reservations found.</div>
+          <div className="admin-table-empty">No records found.</div>
         ) : (
           <div className="admin-table-body">
             {paginatedBookings.map((b) => {
@@ -654,38 +683,47 @@ export default function HotelBookingList() {
               return (
                 <article key={b.bookingId || b.id} className="admin-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr" }}>
                   <div className="admin-table-cell">
-                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.68rem", wordBreak: "break-all" }}>{safeValue(b.bookingReference)}</strong>
+                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.80rem", wordBreak: "break-all" }}>{safeValue(b.bookingId || b.id || b.bookingReference)}</strong>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
-                      <span>{formatDateCell(b.createdAt)}</span>
+                      <span>{formatDateCell(b.createdAt || b.bookedAt)}</span>
                     </div>
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
                     <strong className="admin-name-text" style={{ color: "#000000", fontWeight: 800, fontSize: "0.76rem", display: "block", width: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
-                      {safeValue(b.guestName)}
+                      {resolveGuestName(b)}
                     </strong>
-                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center" }}>
-                      {safeValue(b.guestPhone)}
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#475569" }}>
+                      {resolveGuestPhone(b)}
+                    </small>
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#64748b", fontSize: "0.68rem" }}>
+                      {resolveGuestEmail(b)}
                     </small>
                   </div>
 
                   <div className="admin-table-cell">
                     <div className="admin-route-segment">
-                      <span>{formatDateCell(b.checkInDate)}</span>
+                      <span>{formatDateCell(resolveCheckInDate(b))}</span>
                       <span className="admin-segment-arrow">➔</span>
-                      <span>{formatDateCell(b.checkOutDate)}</span>
+                      <span>{formatDateCell(resolveCheckOutDate(b))}</span>
                     </div>
                     <small>Stay Dates</small>
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong>{b.rooms} Room{b.rooms > 1 ? "s" : ""}</strong>
-                    <small>{b.adults} Guest{b.adults > 1 ? "s" : ""}</small>
+                    <strong>{b.rooms || 1} Room{Number(b.rooms) > 1 ? "s" : ""}</strong>
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+                      {Number(b.children || 0) > 0
+                        ? `${b.adults || 0} Adult${Number(b.adults) !== 1 ? "s" : ""}, ${b.children} Child${Number(b.children) !== 1 ? "ren" : ""}`
+                        : `${b.adults || b.totalGuests || 1} Guest${Number(b.adults || b.totalGuests || 1) !== 1 ? "s" : ""}`}
+                    </small>
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(b.bookingId)}</strong>
+                    <strong style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, marginBottom: "3px", wordBreak: "break-all" }}>
+                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId || b.bookingId)}
+                    </strong>
                     <span className={`admin-status-pill ${statusClass}`}>
                       {safeValue(b.paymentStatus || b.status)}
                     </span>
@@ -700,13 +738,23 @@ export default function HotelBookingList() {
                     <strong>{formatCurrency(b.totalPrice)}</strong>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ color: isLossOrZero ? "#ef4444" : "#10b981" }}>
-                      {isLossOrZero && profitVal < 0 ? `- ₹${Math.abs(profitVal).toLocaleString("en-IN")}` : formatCurrency(profitVal)}
-                    </strong>
-                    <small style={{ color: isLossOrZero ? "#ef4444" : "#10b981", fontWeight: "600" }}>
-                      {profitVal < 0 ? "Loss" : profitVal === 0 ? "Zero Profit" : "Profit"}
-                    </small>
+                  <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: profitVal < 0 ? "#dc2626" : "#16a34a",
+                      lineHeight: "1.2"
+                    }}>
+                      {profitVal < 0 ? `-₹${Math.abs(profitVal).toFixed(2)}` : `₹${profitVal.toFixed(2)}`}
+                    </span>
+                    <span style={{
+                      fontSize: "0.68rem",
+                      color: "#64748b",
+                      fontWeight: "500",
+                      marginTop: "2px"
+                    }}>
+                      {profitVal < 0 ? "Loss" : "Profit"}
+                    </span>
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
@@ -815,7 +863,11 @@ export default function HotelBookingList() {
                       </span>
                     </td>
                     <th>Pax / Guests</th>
-                    <td>{selectedBooking.rooms || 1} Room(s) / {selectedBooking.adults || 1} Guest(s)</td>
+                    <td>
+                      {selectedBooking.rooms || 1} Room(s) / {Number(selectedBooking.children || 0) > 0
+                        ? `${selectedBooking.adults || 0} Adult(s), ${selectedBooking.children} Child(ren)`
+                        : `${selectedBooking.adults || selectedBooking.totalGuests || 1} Guest(s)`}
+                    </td>
                   </tr>
                   <tr>
                     <th>Hotel Property</th>
@@ -987,6 +1039,32 @@ export default function HotelBookingList() {
                   )}
                 </tbody>
               </table>
+
+              {/* SECTION 5: HOTEL CANCELLATION & REFUND BREAKDOWN */}
+              {(selectedBooking.status === "Cancelled" || selectedBooking.cancelledAtUtc || selectedBooking.cancellationReason) && (
+                <>
+                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#ef4444", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#ef4444", borderRadius: "2px" }}></span>
+                    HOTEL CANCELLATION & REFUND BREAKDOWN
+                  </div>
+                  <table className="admin-view-table">
+                    <tbody>
+                      <tr>
+                        <th>Cancelled Date (UTC)</th>
+                        <td>{formatAdminDate(selectedBooking.cancelledAtUtc || selectedBooking.cancelledAt)}</td>
+                        <th>Cancellation Reason</th>
+                        <td>{safeValue(selectedBooking.cancellationReason || selectedBooking.reason)}</td>
+                      </tr>
+                      <tr>
+                        <th>Cancellation Penalty Fee</th>
+                        <td>{formatCurrency(Number(selectedBooking.cancellationChargeInr || selectedBooking.cancellationCharge || selectedBooking.cancellationPenalty) || 0)}</td>
+                        <th>Refund Amount</th>
+                        <td>{formatCurrency(Number(selectedBooking.refundAmountInr || selectedBooking.refundAmount) || 0)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </>
+              )}
             </div>
           </article>
         </div>

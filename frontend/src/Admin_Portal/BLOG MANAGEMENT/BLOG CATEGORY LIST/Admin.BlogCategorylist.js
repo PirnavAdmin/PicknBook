@@ -90,7 +90,7 @@ function BlogCategoryList() {
         .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
         .filter(item => (statusFilter === 'All' ? true : item.status === statusFilter))
         .filter(item => {
-            const hasImage = item.imageUrl || item.image;
+            const hasImage = item.imageUrl || item.image || item.imagePath || item.filePath || item.icon || item.iconUrl || item.photo;
             if (imageFilter === 'All') {
                 return true;
             }
@@ -478,7 +478,7 @@ function BlogCategoryList() {
         },
         statusInactive: {
             background: '#fef2f2',
-            color: '#ff0000',
+            color: '#b91c1c',
             borderColor: '#ef4444',
         },
         actionButtons: {
@@ -771,7 +771,7 @@ function BlogCategoryList() {
                                 <div>
                                     <strong style={{ color: 'var(--text-secondary)' }}>Status:</strong>
                                     <div>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedCategory.status === 'Active' ? '#047857' : '#ff0000', border: selectedCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedCategory.status === 'Active' ? '#047857' : '#b91c1c', border: selectedCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
                                             {selectedCategory.status}
                                         </div>
                                     </div>
@@ -821,17 +821,22 @@ function BlogCategoryList() {
                                             </span>
                                         </td>
                                         <td style={styles.td}>
-                                            {(category.imageUrl || category.image) && (category.imageUrl || category.image) !== '-' ? (
-                                                <NgrokSafeImage 
-                                                    src={`${toApiAssetUrl(category.imageUrl || category.image)}?t=${category.updatedAtUtc || category.updatedAt || ''}`} 
-                                                    alt={category.name} 
-                                                    title={category.name}
-                                                    style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
-                                                    onClick={() => setActivePopupImage(`${toApiAssetUrl(category.imageUrl || category.image)}?t=${category.updatedAtUtc || category.updatedAt || ''}`)}
-                                                />
-                                            ) : (
-                                                '-'
-                                            )}
+                                            {(() => {
+                                                const catImg = category.imageUrl || category.image || category.imagePath || category.filePath || category.icon || category.iconUrl || category.photo;
+                                                return catImg && catImg !== '-' ? (
+                                                    <NgrokSafeImage 
+                                                        src={`${toApiAssetUrl(catImg)}?t=${category.updatedAtUtc || category.updatedAt || ''}`} 
+                                                        fallbackSrc={null}
+                                                        alt={category.name} 
+                                                        title={category.name}
+                                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
+                                                        onClick={() => setActivePopupImage(`${toApiAssetUrl(catImg)}?t=${category.updatedAtUtc || category.updatedAt || ''}`)}
+                                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                                    />
+                                                ) : (
+                                                    '-'
+                                                );
+                                            })()}
                                         </td>
                                         <td style={styles.td}>{category.name}</td>
                                         <td style={styles.td}>
@@ -984,7 +989,7 @@ function BlogCategoryList() {
                                         <input 
                                             id="edit-category-image"
                                             type="file" 
-                                            accept="image/*"
+                                            accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                             onChange={(e) => setEditFormData(prev => ({ ...prev, image: e.target.files[0] }))}
                                             style={{ display: 'none' }}
                                         />

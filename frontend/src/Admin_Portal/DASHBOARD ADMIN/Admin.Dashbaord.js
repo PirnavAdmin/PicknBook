@@ -590,18 +590,12 @@ const AdminDashboard = () => {
 
   const fetchB2bDashboardData = async () => {
     try {
-      // 1. Call Backend B2B Stats API
-      const stats = await b2bAdminService.getB2bStats();
-
-      // 2. Call Backend B2B Activities API
-      const activities = await b2bAdminService.getB2bActivities();
-
       setB2bMetrics({
-        revenue: stats.totalRevenue || 0,
-        bookings: stats.totalBookings || 0,
-        agentsCount: stats.totalAgents || 0,
-        activeAgents: stats.activeAgents || 0,
-        deposits: stats.totalDepositsApproved || 0,
+        revenue: 0,
+        bookings: 0,
+        agentsCount: 0,
+        activeAgents: 0,
+        deposits: 0,
         refunds: 0,
         trends: {
           revenue: 0.0,
@@ -613,13 +607,7 @@ const AdminDashboard = () => {
         }
       });
 
-      const feed = Array.isArray(activities) ? activities.map(act => ({
-        type: act.activityType === 'Deposit' ? 'payment' : act.activityType === 'Signup' ? 'user' : 'booking',
-        message: act.description,
-        timeAgo: act.date ? new Date(act.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'
-      })) : [];
-
-      setB2bRecentActivities(feed);
+      setB2bRecentActivities([]);
 
       const translateCityCode = (code) => {
         if (!code) return '';
@@ -818,7 +806,7 @@ const AdminDashboard = () => {
     getAdminDashboardRevenueOverview({ year: targetYear, timeframe: revenueTimeframe })
       .then((res) => {
         if (isMounted) {
-          if (res && Array.isArray(res.chartData)) {
+          if (res && (Array.isArray(res.chartData) || res.hasRecords === false)) {
             setApiRevenueOverview(res);
           } else {
             setApiRevenueOverview(null);
@@ -861,51 +849,92 @@ const AdminDashboard = () => {
   }, [revenueDate, apiRevenueOverview, effectiveSystemStartDate]);
 
   const currentRevData = useMemo(() => {
+    const fullMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const fullQuarters = ["Q1", "Q2", "Q3", "Q4"];
+
     if (isRevenueOutOfRange) {
       if (revenueTimeframe === 'monthly') {
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        return months.map((m) => ({ week: m, value: 0, label: "₹0", isHighlighted: false }));
+        return fullMonths.map((m) => ({ week: m, value: 0, label: "₹0", isHighlighted: false }));
       }
       if (revenueTimeframe === 'quarterly') {
-        const quarters = ["Q1", "Q2", "Q3", "Q4"];
-        return quarters.map((q) => ({ week: q, value: 0, label: "₹0", isHighlighted: false }));
+        return fullQuarters.map((q) => ({ week: q, value: 0, label: "₹0", isHighlighted: false }));
       }
       if (revenueTimeframe === 'yearly') {
         const currYr = new Date().getFullYear();
         const years = [currYr - 3, currYr - 2, currYr - 1, currYr];
         return years.map((yr) => ({ week: String(yr), value: 0, label: "₹0", isHighlighted: false }));
       }
-      const weeks = ["W1", "W2", "W3", "W4", "W5"];
+      const weeks = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
       return weeks.map((w) => ({ week: w, value: 0, label: "₹0", isHighlighted: false }));
     }
 
-    if (apiRevenueOverview && Array.isArray(apiRevenueOverview.chartData) && apiRevenueOverview.chartData.length > 0) {
-      return apiRevenueOverview.chartData.map((item, i) => {
-        const revVal = Number(item.revenue) || 0;
+    if (revenueTimeframe === 'weekly') {
+      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const dateObj = revenueDate ? new Date(revenueDate) : new Date();
+      const jsDay = dateObj.getDay();
+      const activeDayIdx = jsDay === 0 ? 6 : jsDay - 1;
+
+      if (apiWeeklyChart && Array.isArray(apiWeeklyChart.revenueInr) && apiWeeklyChart.revenueInr.length > 0) {
+        const revArray = apiWeeklyChart.revenueInr;
+        return days.map((day, i) => {
+          const val = Number(revArray[i]) || 0;
+          return {
+            week: day,
+            value: val,
+            label: formatRevCompact(val),
+            isHighlighted: i === activeDayIdx
+          };
+        });
+      }
+
+      if (apiRevenueOverview && Array.isArray(apiRevenueOverview.chartData)) {
+        if (apiRevenueOverview.chartData.length === 7) {
+          return apiRevenueOverview.chartData.map((item, i) => {
+            const val = Number(item.revenue ?? item.value ?? 0);
+            return {
+              week: item.label || days[i] || `D${i + 1}`,
+              value: val,
+              label: formatRevCompact(val),
+              isHighlighted: i === activeDayIdx
+            };
+          });
+        }
+        
+        const targetWeekItem = apiRevenueOverview.chartData[selectedWeekIndex] || apiRevenueOverview.chartData.find(p => p.week === `W${selectedWeekIndex + 1}`);
+        const weekRevVal = Number(targetWeekItem?.revenue ?? targetWeekItem?.value ?? baseTotalRev ?? 0);
+
+        return days.map((day, i) => {
+          const val = i === activeDayIdx ? weekRevVal : (weekRevVal > 0 ? Math.floor(weekRevVal * 0.15) : 0);
+          return {
+            week: day,
+            value: val,
+            label: formatRevCompact(val),
+            isHighlighted: i === activeDayIdx
+          };
+        });
+      }
+
+      return days.map((day, i) => {
+        const val = baseTotalRev > 0 ? (i === activeDayIdx ? Math.floor(baseTotalRev * 0.6) : Math.floor(baseTotalRev * 0.08)) : 0;
         return {
-          week: item.label || `P${i + 1}`,
-          value: revVal,
-          label: formatRevCompact(revVal),
-          isHighlighted: i === apiRevenueOverview.chartData.length - 1
+          week: day,
+          value: val,
+          label: formatRevCompact(val),
+          isHighlighted: i === activeDayIdx
         };
       });
     }
 
-    if (revenueTimeframe === 'weekly' && viewMode === 'b2c' && apiWeeklyChart && Array.isArray(apiWeeklyChart.revenueInr) && apiWeeklyChart.revenueInr.length > 0) {
-      const labels = apiWeeklyChart.labels || ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      const revArray = apiWeeklyChart.revenueInr;
-      return revArray.map((rev, i) => ({
-        week: labels[i] || `D${i + 1}`,
-        value: Number(rev) || 0,
-        label: formatRevCompact(Number(rev) || 0),
-        isHighlighted: i === revArray.length - 1
-      }));
-    }
-
     if (revenueTimeframe === 'monthly') {
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      return months.map((m, i) => {
-        const val = baseTotalRev > 0 ? Math.floor((baseTotalRev / 12) * (0.6 + (i % 5) * 0.2)) : 0;
+      const monthData = apiRevenueOverview && Array.isArray(apiRevenueOverview.chartData) ? apiRevenueOverview.chartData : null;
+      return fullMonths.map((m, i) => {
+        let val = 0;
+        if (monthData) {
+          const found = monthData.find(p => (p.label || p.week || "").toLowerCase().startsWith(m.toLowerCase()));
+          val = Number(found?.revenue ?? found?.value ?? 0);
+        } else {
+          val = baseTotalRev > 0 ? Math.floor((baseTotalRev / 12) * (0.6 + (i % 5) * 0.2)) : 0;
+        }
         return {
           week: m,
           value: val,
@@ -916,9 +945,15 @@ const AdminDashboard = () => {
     }
 
     if (revenueTimeframe === 'quarterly') {
-      const quarters = ["Q1", "Q2", "Q3", "Q4"];
-      return quarters.map((q, i) => {
-        const val = baseTotalRev > 0 ? Math.floor((baseTotalRev / 4) * (0.8 + (i % 3) * 0.2)) : 0;
+      const qtrData = apiRevenueOverview && Array.isArray(apiRevenueOverview.chartData) ? apiRevenueOverview.chartData : null;
+      return fullQuarters.map((q, i) => {
+        let val = 0;
+        if (qtrData) {
+          const found = qtrData.find(p => (p.label || p.week || "").toUpperCase() === q);
+          val = Number(found?.revenue ?? found?.value ?? 0);
+        } else {
+          val = baseTotalRev > 0 ? Math.floor((baseTotalRev / 4) * (0.8 + (i % 3) * 0.2)) : 0;
+        }
         return {
           week: q,
           value: val,
@@ -931,8 +966,15 @@ const AdminDashboard = () => {
     if (revenueTimeframe === 'yearly') {
       const currYr = new Date().getFullYear();
       const years = [currYr - 3, currYr - 2, currYr - 1, currYr];
+      const yrData = apiRevenueOverview && Array.isArray(apiRevenueOverview.chartData) ? apiRevenueOverview.chartData : null;
       return years.map((yr, i) => {
-        const val = baseTotalRev > 0 ? Math.floor(baseTotalRev * (0.5 + i * 0.2)) : 0;
+        let val = 0;
+        if (yrData) {
+          const found = yrData.find(p => String(p.label || p.week || "") === String(yr));
+          val = Number(found?.revenue ?? found?.value ?? 0);
+        } else {
+          val = baseTotalRev > 0 ? Math.floor(baseTotalRev * (0.5 + i * 0.2)) : 0;
+        }
         return {
           week: String(yr),
           value: val,
@@ -942,18 +984,17 @@ const AdminDashboard = () => {
       });
     }
 
-    // Default Weekly View (W1, W2, W3, W4, W5)
-    const weeks = ["W1", "W2", "W3", "W4", "W5"];
+    const weeks = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     return weeks.map((w, i) => {
-      const weekRev = baseTotalRev > 0 ? Math.floor(baseTotalRev / 5) : 0;
+      const weekRev = baseTotalRev > 0 ? Math.floor(baseTotalRev / 7) : 0;
       return {
         week: w,
         value: weekRev,
         label: formatRevCompact(weekRev),
-        isHighlighted: i === selectedWeekIndex
+        isHighlighted: i === 0
       };
     });
-  }, [revenueTimeframe, viewMode, apiWeeklyChart, apiRevenueOverview, baseTotalRev, selectedWeekIndex, isRevenueOutOfRange]);
+  }, [revenueTimeframe, viewMode, apiWeeklyChart, apiRevenueOverview, baseTotalRev, selectedWeekIndex, isRevenueOutOfRange, revenueDate]);
 
   const [hoveredRevPoint, setHoveredRevPoint] = useState(null);
 
@@ -965,7 +1006,7 @@ const AdminDashboard = () => {
     return { ...d, x, y, originalIndex: i };
   });
 
-  const revPoints = revPointsAll.filter(p => p.originalIndex <= selectedWeekIndex || apiWeeklyChart || apiRevenueOverview || revenueTimeframe !== 'weekly');
+  const revPoints = revPointsAll;
   const getSmoothPath = (points) => {
     if (points.length === 0) return '';
     if (points.length === 1) return `M${points[0].x},${points[0].y}`;
@@ -1019,7 +1060,6 @@ const AdminDashboard = () => {
         {/* Top Admin Operations Header Banner */}
         <div className="admin-operations-header-banner">
           <div className="header-banner-left">
-            <div className="in-badge">IN</div>
             <div className="header-title-group">
               <span className="header-title-text" style={{ color: '#0f172a', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0, display: 'block' }}>
                 Admin Operations Dashboard
@@ -1199,7 +1239,7 @@ const AdminDashboard = () => {
                 {isRevenueOutOfRange ? (
                   <span style={{
                     fontSize: '0.74rem',
-                    color: '#ff0000',
+                    color: '#b91c1c',
                     background: '#fef2f2',
                     border: '1px solid #fca5a5',
                     padding: '2px 10px',
@@ -1212,7 +1252,7 @@ const AdminDashboard = () => {
                   }}>
                     <span>⚠️ No records found for {noRecordsYear || revenueDate}</span>
                     {dynamicSystemStartDate && (
-                      <span style={{ color: '#ff0000', fontWeight: '500' }}>(Records Available From: {dynamicSystemStartDate})</span>
+                      <span style={{ color: '#991b1b', fontWeight: '500' }}>(Records Available From: {dynamicSystemStartDate})</span>
                     )}
                   </span>
                 ) : (
@@ -1298,11 +1338,6 @@ const AdminDashboard = () => {
 
                 {revPointsAll.map((p, i) => {
                   const isHovered = hoveredRevPoint?.week === p.week;
-                  if (i > selectedWeekIndex) {
-                    return (
-                      <text key={i} x={p.x} y="190" fontSize="10" fill="var(--admin-muted)" textAnchor="middle">{p.week}</text>
-                    );
-                  }
                   const textAnchorVal = i === 0 ? "start" : i === revPointsAll.length - 1 ? "end" : "middle";
                   return (
                     <g
@@ -1314,11 +1349,11 @@ const AdminDashboard = () => {
                     >
                       {/* Larger hit target circle */}
                       <circle cx={p.x} cy={p.y} r="14" fill="transparent" />
-                      <circle cx={p.x} cy={p.y} r={isHovered ? "8" : (p.isHighlighted ? "7" : "5")} fill={isHovered ? "#10b981" : (p.isHighlighted ? "#f97316" : "#1e75ff")} stroke="#ffffff" strokeWidth="2" />
+                      <circle cx={p.x} cy={p.y} r={isHovered ? "7.5" : (p.isHighlighted ? "6.5" : "5")} fill={isHovered ? "#10b981" : (p.isHighlighted ? "#2563eb" : "#1e75ff")} stroke="#ffffff" strokeWidth="2.5" />
                       {!isHovered && (
-                        <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#f97316" : "var(--admin-text)"} fontWeight="bold" textAnchor={textAnchorVal}>{p.label}</text>
+                        <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#2563eb" : "var(--admin-text)"} fontWeight="bold" textAnchor={textAnchorVal}>{p.label}</text>
                       )}
-                      <text x={p.x} y="190" fontSize="10" fill={isHovered ? "#10b981" : "var(--admin-muted)"} fontWeight={isHovered ? "bold" : "normal"} textAnchor="middle">{p.week}</text>
+                      <text x={p.x} y="190" fontSize="10" fill={isHovered ? "#10b981" : "var(--admin-muted)"} fontWeight={isHovered || p.isHighlighted ? "bold" : "600"} textAnchor="middle">{p.week}</text>
                     </g>
                   );
                 })}
@@ -1470,10 +1505,10 @@ const AdminDashboard = () => {
 
                   {/* Failed */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#ff0000', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.66rem', color: '#b91c1c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span>❌</span> Failed
                     </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#ff0000' }}>{todayStatusData.paymentBreakdown.failed}</strong>
+                    <strong style={{ fontSize: '0.82rem', color: '#991b1b' }}>{todayStatusData.paymentBreakdown.failed}</strong>
                   </div>
 
                   {/* Pending */}
@@ -1526,7 +1561,7 @@ const AdminDashboard = () => {
                       ✓ Integrity Verified ({todayStatusData.breakdownSum} = {todayStatusData.totalPayments})
                     </span>
                   ) : (
-                    <span style={{ fontSize: '0.62rem', color: '#ff0000', background: '#fef2f2', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block' }}>
+                    <span style={{ fontSize: '0.62rem', color: '#b91c1c', background: '#fef2f2', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block' }}>
                       ⚠️ Mismatch: Sum ({todayStatusData.breakdownSum}) ≠ Attempts ({todayStatusData.totalPayments})
                     </span>
                   )}

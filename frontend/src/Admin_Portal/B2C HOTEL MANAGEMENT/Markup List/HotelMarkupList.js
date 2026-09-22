@@ -216,7 +216,7 @@ export default function HotelMarkupList() {
         .status-pill-btn.inactive {
           border: 1px solid #ef4444 !important;
           background-color: #fef2f2 !important;
-          color: #ff0000 !important;
+          color: #b91c1c !important;
         }
         .status-pill-btn:hover {
           transform: scale(1.02) !important;

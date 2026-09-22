@@ -613,9 +613,9 @@
 /* Compact Table Header & Typography */
 .admin-b2c-hotel-page .admin-table-head {
   display: grid !important;
-  min-height: 34px !important;
+  min-height: 44px !important;
   height: auto !important;
-  padding: 8px !important;
+  padding: 10px 8px !important;
   gap: 8px !important;
   align-items: center !important;
   border-top-left-radius: 8px !important;
@@ -641,7 +641,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 2px 4px !important;
+  padding: 6px 4px !important;
+  margin: 0 !important;
   text-align: center !important;
   color: #ffffff !important;
   white-space: nowrap !important;

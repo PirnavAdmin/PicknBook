@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Wallet,
-  Scale,
-  FileText,
   CreditCard,
   Settings,
   Save,
@@ -18,8 +16,6 @@ import {
 } from 'lucide-react';
 import './paymentSettings.css';
 
-import Reconciliation from '../../ACCOUNT_MANAGEMENT/Reconciliation/Reconciliation';
-import TransactionLog from '../../ACCOUNT_MANAGEMENT/TransactionLog/TransactionLog';
 import WalletTransactionList from '../WalletTransaction/WalletTransactionList';
 import AdminPaymentsList from '../../PAYMENTS ADMIN/AdminPaymentsList';
 
@@ -69,7 +65,7 @@ function PaymentSettings() {
       <div className="ps-header">
         <p className="ps-kicker">Payment & Wallet Management</p>
         <h1 className="ps-title">Wallet & Payment Settings</h1>
-        <p className="ps-subtitle">Configure system wallet parameters, reconciliation, transaction audit logs, and gateway integrations.</p>
+        <p className="ps-subtitle">Configure system wallet parameters and gateway integrations.</p>
       </div>
 
       {/* Tabs Bar */}
@@ -86,20 +82,6 @@ function PaymentSettings() {
           onClick={() => handleTabChange('wallet-transactions')}
         >
           <Wallet size={16} /> Wallet Transactions
-        </button>
-
-        <button
-          className={`ps-tab-btn ${activeTab === 'reconciliation' ? 'active' : ''}`}
-          onClick={() => handleTabChange('reconciliation')}
-        >
-          <Scale size={16} /> Reconciliation
-        </button>
-
-        <button
-          className={`ps-tab-btn ${activeTab === 'transaction-log' ? 'active' : ''}`}
-          onClick={() => handleTabChange('transaction-log')}
-        >
-          <FileText size={16} /> Transaction Log
         </button>
 
         <button
@@ -239,19 +221,6 @@ function PaymentSettings() {
         </form>
       )}
 
-      {/* TAB CONTENT 2: RECONCILIATION */}
-      {activeTab === 'reconciliation' && (
-        <div style={{ marginTop: '10px' }}>
-          <Reconciliation />
-        </div>
-      )}
-
-      {/* TAB CONTENT 3: TRANSACTION LOG */}
-      {activeTab === 'transaction-log' && (
-        <div style={{ marginTop: '10px' }}>
-          <TransactionLog />
-        </div>
-      )}
 
       {/* TAB CONTENT 4: WALLET TRANSACTIONS */}
       {activeTab === 'wallet-transactions' && (

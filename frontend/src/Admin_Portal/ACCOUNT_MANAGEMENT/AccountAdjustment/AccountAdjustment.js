@@ -563,9 +563,9 @@ export default function AccountAdjustment() {
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Total Debit</span>
                 <h3 style={{ margin: '4px 0 2px', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>₹ 5,26,800</h3>
-                <span style={{ fontSize: '11px', color: '#ff0000', fontWeight: 500 }}>↓ 5% from last month</span>
+                <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 500 }}>↓ 5% from last month</span>
               </div>
-              <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fee2e2', color: '#ff0000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ArrowDownRight size={20} />
               </div>
             </div>
@@ -583,7 +583,7 @@ export default function AccountAdjustment() {
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Pending Approval</span>
                 <h3 style={{ margin: '4px 0 2px', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>12</h3>
-                <span style={{ fontSize: '11px', color: '#ff0000', fontWeight: 500 }}>↓ 20% from last month</span>
+                <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 500 }}>↓ 20% from last month</span>
               </div>
               <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#f3e8ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Clock size={18} />
@@ -856,7 +856,7 @@ export default function AccountAdjustment() {
                           fontSize: '10px',
                           fontWeight: 600,
                           background: row.type === 'Credit' ? '#dcfce7' : '#fee2e2',
-                          color: row.type === 'Credit' ? '#15803d' : '#ff0000'
+                          color: row.type === 'Credit' ? '#15803d' : '#991b1b'
                         }}>
                           {row.type}
                         </span>
@@ -884,7 +884,7 @@ export default function AccountAdjustment() {
                               ? '#15803d'
                               : row.status === 'Pending'
                               ? '#854d0e'
-                              : '#ff0000'
+                              : '#991b1b'
                         }}>
                           {row.status}
                         </span>
@@ -993,14 +993,14 @@ export default function AccountAdjustment() {
                                     border: 'none',
                                     textAlign: 'left',
                                     fontSize: '11px',
-                                    color: '#ff0000',
+                                    color: '#dc2626',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px'
                                   }}
                                 >
-                                  <XCircle size={12} color="#ff0000" /> Reject
+                                  <XCircle size={12} color="#dc2626" /> Reject
                                 </button>
                               </>
                             )}
@@ -1055,7 +1055,7 @@ export default function AccountAdjustment() {
                                 border: 'none',
                                 textAlign: 'left',
                                 fontSize: '11px',
-                                color: '#ff0000',
+                                color: '#dc2626',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -1063,7 +1063,7 @@ export default function AccountAdjustment() {
                                 borderTop: '1px solid #f1f5f9'
                               }}
                             >
-                              <Trash2 size={12} color="#ff0000" /> Delete
+                              <Trash2 size={12} color="#dc2626" /> Delete
                             </button>
                           </div>
                         )}
@@ -1203,7 +1203,7 @@ export default function AccountAdjustment() {
                         checked={formData.type === 'Debit'}
                         onChange={() => setFormData(prev => ({ ...prev, type: 'Debit' }))}
                       />
-                      <span style={{ fontWeight: 600, color: '#ff0000' }}>Debit</span>
+                      <span style={{ fontWeight: 600, color: '#dc2626' }}>Debit</span>
                     </label>
                   </div>
                 </div>
@@ -1582,7 +1582,7 @@ export default function AccountAdjustment() {
 
                   <div>
                     <span style={{ color: '#64748b' }}>Type:</span>
-                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.type === 'Credit' ? '#dcfce7' : '#fee2e2', color: selectedItem.type === 'Credit' ? '#15803d' : '#ff0000' }}>
+                    <span style={{ marginLeft: '8px', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.type === 'Credit' ? '#dcfce7' : '#fee2e2', color: selectedItem.type === 'Credit' ? '#15803d' : '#991b1b' }}>
                       {selectedItem.type}
                     </span>
                   </div>
@@ -1787,7 +1787,7 @@ export default function AccountAdjustment() {
               )}
 
               {modal.action === 'delete' && (
-                <p style={{ margin: 0, color: '#ff0000' }}>
+                <p style={{ margin: 0, color: '#dc2626' }}>
                   Warning: Are you sure you want to delete adjustment <strong>{modal.item?.id}</strong>? This action cannot be undone.
                 </p>
               )}
@@ -1825,7 +1825,7 @@ export default function AccountAdjustment() {
                   padding: '6px 16px',
                   background:
                     modal.action === 'delete' || modal.action === 'reject'
-                      ? '#ff0000'
+                      ? '#dc2626'
                       : '#A51C49',
                   border: 'none',
                   borderRadius: '6px',

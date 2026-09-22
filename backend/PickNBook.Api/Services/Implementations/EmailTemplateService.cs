@@ -38,7 +38,7 @@ namespace PickNBook.Api.Services.Implementations
                 Reason = reason,
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd"),
                 Time = DateTime.UtcNow.ToString("HH:mm:ss"),
-                ApplicationName = "PickNBook"
+                ApplicationName = "Pick&book"
             };
 
             await SendTemplatedEmailAsync(user.Email, templateKey, data);
@@ -65,7 +65,7 @@ namespace PickNBook.Api.Services.Implementations
                 return;
             }
 
-            await SendEmailInternalAsync(toEmail, template, new { ApplicationName = "PickNBook" }, customSubject, customMessage, includeLoginLink);
+            await SendEmailInternalAsync(toEmail, template, new { ApplicationName = "Pick&book" }, customSubject, customMessage, includeLoginLink);
         }
 
         private async Task SendEmailInternalAsync(string toEmail, EmailTemplate template, object placeholderData, string? customSubject, string? customMessage, bool includeLoginLink)

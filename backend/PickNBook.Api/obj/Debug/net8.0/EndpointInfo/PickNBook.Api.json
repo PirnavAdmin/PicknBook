@@ -4557,6 +4557,157 @@
         }
       }
     },
+    "/api/admin/notifications": {
+      "get": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "parameters": [
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "UnreadOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Severity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TargetRole",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/notifications/mark-all-read": {
+      "put": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/notifications/broadcast": {
+      "post": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BroadcastNotificationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BroadcastNotificationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BroadcastNotificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/admin/payments/metrics": {
       "get": {
         "tags": [
@@ -7094,48 +7245,6 @@
         }
       }
     },
-    "/api/BusBookings/user/available": {
-      "get": {
-        "tags": [
-          "BusBookings"
-        ],
-        "parameters": [
-          {
-            "name": "category",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "traceId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "resultIndex",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "seatCodes",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
     "/api/BusBookings/search-cities": {
       "get": {
         "tags": [
@@ -8264,6 +8373,66 @@
         }
       }
     },
+    "/api/Coupons": {
+      "get": {
+        "tags": [
+          "Coupons"
+        ],
+        "parameters": [
+          {
+            "name": "serviceType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Coupons/validate": {
+      "post": {
+        "tags": [
+          "Coupons"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateUnifiedCouponRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateUnifiedCouponRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateUnifiedCouponRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Customers": {
       "get": {
         "tags": [
@@ -9063,18 +9232,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/FlightPromotions": {
-      "get": {
-        "tags": [
-          "FlightPromotions"
-        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -10297,18 +10454,6 @@
         }
       }
     },
-    "/api/Hotels/coupons/active": {
-      "get": {
-        "tags": [
-          "Hotels"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
     "/api/Hotels/coupons/validate": {
       "post": {
         "tags": [
@@ -10466,6 +10611,126 @@
               "format": "int64"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "UnreadOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Severity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TargetRole",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/notifications/mark-all-read": {
+      "put": {
+        "tags": [
+          "Notifications"
         ],
         "responses": {
           "200": {
@@ -10812,6 +11077,9 @@
                   "PhoneNumber": {
                     "type": "string"
                   },
+                  "Location": {
+                    "type": "string"
+                  },
                   "ProfileImage": {
                     "type": "string",
                     "format": "binary"
@@ -10826,6 +11094,9 @@
                   "style": "form"
                 },
                 "PhoneNumber": {
+                  "style": "form"
+                },
+                "Location": {
                   "style": "form"
                 },
                 "ProfileImage": {
@@ -10846,6 +11117,9 @@
                   "PhoneNumber": {
                     "type": "string"
                   },
+                  "Location": {
+                    "type": "string"
+                  },
                   "ProfileImage": {
                     "type": "string",
                     "format": "binary"
@@ -10862,7 +11136,42 @@
                 "PhoneNumber": {
                   "style": "form"
                 },
+                "Location": {
+                  "style": "form"
+                },
                 "ProfileImage": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Profile/upload-image": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
                   "style": "form"
                 }
               }
@@ -14741,6 +15050,67 @@
           "b2CTotalPrice": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BroadcastNotificationRequest": {
+        "required": [
+          "category",
+          "message",
+          "title",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "category": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "message": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "maxLength": 20,
+            "type": "string",
+            "nullable": true
+          },
+          "referenceType": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "referenceId": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "actionUrl": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          },
+          "targetRole": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "idempotencyKey": {
+            "maxLength": 150,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -19942,6 +20312,33 @@
             "format": "date",
             "nullable": true,
             "example": "2026-08-01"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidateUnifiedCouponRequestDto": {
+        "type": "object",
+        "properties": {
+          "serviceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "couponCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "travelDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false

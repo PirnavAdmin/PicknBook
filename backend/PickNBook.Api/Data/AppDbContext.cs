@@ -181,6 +181,11 @@ namespace PickNBook.Api.Data
                 entity.Property(x => x.WalletReservationStatus).HasMaxLength(50).HasDefaultValue("None");
                 entity.Property(x => x.GatewayPaymentMethod).HasMaxLength(50);
 
+                entity.Property(x => x.CustomerName).HasMaxLength(150);
+                entity.Property(x => x.CustomerEmail).HasMaxLength(150);
+                entity.Property(x => x.CustomerPhone).HasMaxLength(25);
+                entity.Property(x => x.PassengerCount).HasDefaultValue(1);
+
                 entity.HasIndex(x => x.CashfreeOrderId).IsUnique();
                 entity.HasIndex(x => x.CashfreeCfOrderId);
                 entity.HasIndex(x => x.PaymentReference);
@@ -189,6 +194,8 @@ namespace PickNBook.Api.Data
                 entity.HasIndex(x => x.FulfillmentStatus);
                 entity.HasIndex(x => x.RefundStatus);
                 entity.HasIndex(x => x.WalletReservationStatus);
+                entity.HasIndex(x => x.CustomerName);
+                entity.HasIndex(x => x.CustomerPhone);
             });
 
             modelBuilder.Entity<PendingPaymentBooking>(entity =>

@@ -512,7 +512,7 @@ export async function getAdminDashboardBookingStats() {
 
 export async function getAdminDashboardRevenueOverview(params = {}) {
   return requestJson(
-    buildUrl(`${DASHBOARD_ROOT}/revenue-overview`, params),
+    buildUrl(`/api/admin/dashboard/revenue-overview`, params),
     { headers: getAdminAuthHeaders() }
   );
 }

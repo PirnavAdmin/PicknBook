@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using PickNBook.Api.Helpers;
+using PickNBook.Api.Models.Entities;
 
 namespace PickNBook.Api.Controllers;
 
@@ -159,11 +160,35 @@ public class AdminHotelController : AdminApiController
             .OrderByDescending(b => b.CancelledAt)
             .ToListAsync();
 
+        var bookingReferences = cancellationsDb
+            .Select(b => b.BookingReference)
+            .Where(r => !string.IsNullOrEmpty(r))
+            .Distinct()
+            .ToList();
+
+        var bookingCancellations = bookingReferences.Count > 0
+            ? await _context.BookingCancellations
+                .AsNoTracking()
+                .Where(c => c.BookingType == "Hotel" && bookingReferences.Contains(c.BookingReference))
+                .OrderByDescending(c => c.CreatedAtUtc)
+                .ToListAsync()
+            : new List<BookingCancellation>();
+
+        var cancellationLookup = bookingCancellations
+            .GroupBy(c => c.BookingReference)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
         var cancellations = cancellationsDb.Select(b =>
         {
             var cancellationCharge = b.CancellationCharges;
             var refundAmount = b.RefundAmount > 0 ? b.RefundAmount : Math.Max(0m, b.TotalPrice - cancellationCharge);
             var roomType = !string.IsNullOrWhiteSpace(b.RoomTypeName) ? b.RoomTypeName : "Standard Room";
+
+            cancellationLookup.TryGetValue(b.BookingReference, out var cancellation);
+            var resolvedRefundStatus = CancellationStatusMapper.ResolveRefundStatus(
+                cancellation?.RefundStatus,
+                cancellation?.Status,
+                refundAmount);
 
             return new AdminHotelCancellationRequestDto
             {
@@ -185,8 +210,8 @@ public class AdminHotelController : AdminApiController
                 Details = new AdminHotelCancellationDetailsDto
                 {
                     CancellationStatus = b.Status,
-                    CustomerRefundStatus = refundAmount > 0 ? "Refunded" : "Completed",
-                    AdminRefundStatus = refundAmount > 0 ? "Refunded" : "Completed",
+                    CustomerRefundStatus = resolvedRefundStatus,
+                    AdminRefundStatus = resolvedRefundStatus,
                     CustomerRefundAmountInr = refundAmount,
                     CustomerCancellationChargeInr = cancellationCharge,
                     CustomerServiceChargeInr = 0m,

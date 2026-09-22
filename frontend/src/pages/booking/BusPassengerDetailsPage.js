@@ -715,7 +715,6 @@ export default function BusPassengerDetailsPage() {
   const couponScrollerRef = useRef(null);
 
   useEffect(() => {
-    if (isAgent) return undefined;
     let isMounted = true;
     getWalletSummary()
       .then((summary) => {
@@ -727,7 +726,7 @@ export default function BusPassengerDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [isAgent]);
+  }, []);
 
 
 
@@ -797,8 +796,16 @@ export default function BusPassengerDetailsPage() {
   }, []);
 
   const totalAfterDiscount = Number(fareSummary.grandTotal) || 0;
-  const walletBalance = Number(walletSummary?.balance ?? walletSummary?.availableBalance ?? 0) || 0;
-  const walletStatus = walletSummary?.walletStatus || walletSummary?.status || "Inactive";
+  const walletBalance = Number(
+    walletSummary?.availableBalance ??
+    walletSummary?.AvailableBalance ??
+    walletSummary?.walletBalance ??
+    walletSummary?.WalletBalance ??
+    walletSummary?.balance ??
+    walletSummary?.Balance ??
+    0,
+  ) || 0;
+  const walletStatus = walletSummary?.walletStatus || walletSummary?.WalletStatus || walletSummary?.status || walletSummary?.Status || "Inactive";
   const walletAppliedAmount = useWallet && walletStatus === "Active"
     ? Math.min(walletBalance, totalAfterDiscount)
     : 0;

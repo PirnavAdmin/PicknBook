@@ -6,11 +6,14 @@ function getAuthToken() {
   if (typeof window === "undefined") {
     return "";
   }
+
   return (
     localStorage.getItem("token") ||
     sessionStorage.getItem("token") ||
-    localStorage.getItem("b2b_token") ||
-    sessionStorage.getItem("b2b_token") ||
+    localStorage.getItem("authToken") ||
+    sessionStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    sessionStorage.getItem("accessToken") ||
     ""
   );
 }

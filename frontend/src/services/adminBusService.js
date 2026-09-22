@@ -275,3 +275,12 @@ export async function listAdminBusBookings({ passengerPhone, status } = {}) {
   });
   return handleResponse(response);
 }
+
+export async function updateBusCancellation(id, data) {
+  const response = await fetch(toApiUrl(`/api/admin/bus/cancellations/${id}`), {
+    method: "PATCH",
+    headers: getAdminAuthHeaders(true),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+}

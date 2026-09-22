@@ -681,7 +681,7 @@ export default function AuthPage() {
                         Forgot Password?
                       </button>
                     </div>
-                    <button type="submit" className="auth-primary-btn" disabled={loading}>
+                    <button type="submit" className="auth-primary-btn auth-white-primary-btn" disabled={loading}>
                       {loading ? <><Spinner />Please wait…</> : adminChallengeId ? "Verify & Login" : "Login with Email"}
                     </button>
                   </form>
@@ -716,7 +716,7 @@ export default function AuthPage() {
                       <span className="auth-checkbox-custom" />
                       <span>Keep me signed in</span>
                     </label>
-                    <button type="submit" className="auth-primary-btn" disabled={loading || (otpSent && timeLeft === 0)}>
+                    <button type="submit" className="auth-primary-btn auth-continue-btn" disabled={loading || (otpSent && timeLeft === 0)}>
                       {loading ? <><Spinner />Please wait…</> : otpSent ? "Verify & Continue" : "Continue"}
                     </button>
                     {otpSent && (
@@ -789,7 +789,7 @@ export default function AuthPage() {
                   </div>
                   <PasswordRequirements password={password} />
                 </div>
-                <button type="submit" className="auth-primary-btn" disabled={loading}>
+                <button type="submit" className="auth-primary-btn auth-white-primary-btn" disabled={loading}>
                   {loading ? <><Spinner />Please wait…</> : "Send OTP"}
                 </button>
                 <p className="auth-terms">By continuing you agree to our <a href="/online/terms">Terms &amp; Privacy Policy</a></p>
@@ -870,7 +870,7 @@ export default function AuthPage() {
                         {fpErrors.contact && <span className="auth-field-error">{fpErrors.contact}</span>}
                       </div>
                     )}
-                    <button type="submit" className="auth-primary-btn" disabled={fpLoading}>
+                    <button type="submit" className="auth-primary-btn auth-white-primary-btn" disabled={fpLoading}>
                       {fpLoading ? <><Spinner />Sending OTP…</> : "Send Reset OTP"}
                     </button>
                     <button

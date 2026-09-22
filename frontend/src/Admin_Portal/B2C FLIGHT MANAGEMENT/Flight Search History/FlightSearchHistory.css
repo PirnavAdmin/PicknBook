@@ -1,6 +1,24 @@
 .admin-flight-search-history-page .admin-search-history-table-head,
 .admin-flight-search-history-page .admin-search-history-row {
-  grid-template-columns: 0.9fr 1.8fr 0.9fr 1.2fr 0.6fr !important;
+  grid-template-columns: 0.38fr 0.82fr 0.75fr 1.6fr 0.9fr 0.65fr !important;
+}
+
+.admin-flight-search-history-page .admin-search-history-table-head {
+  padding: 10px 14px !important;
+  background: #A51C49 !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.admin-flight-search-history-page .admin-search-history-table-head span {
+  color: #ffffff !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
 }
 
 .admin-search-history-delete {
@@ -182,8 +200,32 @@
   color: #ffffff !important;
 }
 
+.admin-flight-search-history-page .admin-search-history-header h1 {
+  font-size: 1.35rem !important;
+}
+
 .admin-flight-search-history-page .admin-search-history-cell strong {
   font-size: 0.81rem !important;
-  font-weight: normal !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
 }
+
+.admin-search-history-view-btn {
+  background: #fff0f3 !important;
+  color: #A51C49 !important;
+  border: 1.5px solid #A51C49 !important;
+  border-radius: 8px !important;
+  padding: 5px 14px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-search-history-view-btn:hover {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(165, 28, 73, 0.25) !important;
+}
+
 

@@ -435,3 +435,53 @@ export async function getPopularHotelDestinationsFromSearchHistory({ limit = 10 
   return aggregated.slice(0, limit);
 }
 
+
+export async function updateHotelCancellation(cancellationId, payload) {
+  const response = await fetch(toApiUrl(`/api/admin/hotel/cancellations/${cancellationId}`), {
+    method: "PATCH",
+    headers: getAdminAuthHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+export function normalizeHotelSearchHistoryItem(item) {
+  if (!item) return null;
+  return {
+    ...item,
+    searchId: item.searchId || item.id || item.SearchId || "",
+    cityName: item.cityName || item.CityName || item.city || item.City || item.searchQuery || "",
+    cityId: item.cityId || item.CityId || "",
+    searchQuery: item.searchQuery || item.SearchQuery || item.query || item.cityName || "",
+    checkInDate: item.checkInDate || item.CheckInDate || item.checkIn || item.CheckIn || "",
+    checkOutDate: item.checkOutDate || item.CheckOutDate || item.checkOut || item.CheckOut || "",
+    adults: item.adults || item.Adults || 0,
+    childs: item.childs || item.children || item.Childs || item.Children || 0,
+    rooms: item.rooms || item.Rooms || 0,
+    userId: item.userId || item.UserId || "",
+    createdAt: item.createdAt || item.CreatedAt || item.timestamp || item.Timestamp || "",
+    searchDate: item.searchDate || item.SearchDate || "",
+    customerName: item.customerName || item.CustomerName || item.userName || item.UserName || "",
+    mobile: item.mobile || item.Mobile || item.phone || item.Phone || "",
+    email: item.email || item.Email || ""
+  };
+}
+
+export function formatStayInfo(log) {
+  if (!log) return { dates: "--", guests: "--" };
+  const dIn = log.checkInDate ? new Date(log.checkInDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" }) : "";
+  const dOut = log.checkOutDate ? new Date(log.checkOutDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" }) : "";
+  const dates = dIn && dOut ? `${dIn} - ${dOut}` : dIn || dOut || "--";
+
+  const a = log.adults || 0;
+  const c = log.childs || log.children || 0;
+  const r = log.rooms || 0;
+  let guests = [];
+  if (a) guests.push(`${a} Adult${a > 1 ? "s" : ""}`);
+  if (c) guests.push(`${c} Child${c > 1 ? "ren" : ""}`);
+  
+  return {
+    dates,
+    guests: `${guests.join(", ")} in ${r} Room${r > 1 ? "s" : ""}`
+  };
+}

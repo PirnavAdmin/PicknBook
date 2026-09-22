@@ -9,6 +9,8 @@ using Microsoft.Extensions.Caching.Memory;
 using PickNBook.Api.Extensions;
 
 using PickNBook.Api.Helpers;
+using PickNBook.Api.Services;
+using PickNBook.Api.Models.Entities;
 
 namespace PickNBook.Api.Controllers
 {
@@ -597,8 +599,13 @@ namespace PickNBook.Api.Controllers
 
             if (serviceType == "flight")
             {
-                var flightCoupons = await dbContext.FlightCoupons.AsNoTracking()
-                    .Include(x => x.Conditions)
+                var flightQuery = dbContext.FlightCoupons.AsNoTracking().Include(x => x.Conditions).AsQueryable();
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    flightQuery = flightQuery.Where(x => x.PromotionCategory == category);
+                }
+
+                var flightCoupons = await flightQuery
                     .OrderByDescending(x => x.EntryDateUtc)
                     .ToListAsync();
 
@@ -859,6 +866,9 @@ namespace PickNBook.Api.Controllers
 
                 var hotelCoupon = new HotelCoupon
                 {
+                    PromotionCategory = string.IsNullOrWhiteSpace(request.PromotionCategory) ? "Coupon" : request.PromotionCategory.Trim(),
+                    Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim(),
+                    Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
                     CouponCode = normalizedCode,
                     CouponType = NormalizeDiscountType(request.CouponType),
                     Value = request.Value,
@@ -870,6 +880,10 @@ namespace PickNBook.Api.Controllers
                     UsedCount = 0,
                     MaxUsagePerUser = request.MaxUsagePerUser,
                     Status = NormalizeStatus(request.Status),
+                    IsAutoApply = request.IsAutoApply,
+                    IsExclusive = request.IsExclusive,
+                    Priority = request.Priority,
+                    ImageUrl = request.ImageUrl,
                     IsFirstTimeUserOnly = request.IsFirstTimeUserOnly,
                     EntryDateUtc = DateTime.UtcNow,
                     Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim()
@@ -890,6 +904,9 @@ namespace PickNBook.Api.Controllers
 
                 var flightCoupon = new FlightCoupon
                 {
+                    PromotionCategory = string.IsNullOrWhiteSpace(request.PromotionCategory) ? "Coupon" : request.PromotionCategory.Trim(),
+                    Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim(),
+                    Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
                     CouponCode = normalizedCode,
                     CouponType = NormalizeDiscountType(request.CouponType),
                     Value = request.Value,
@@ -987,6 +1004,9 @@ namespace PickNBook.Api.Controllers
                 var existsHotel = await dbContext.HotelCoupons.AnyAsync(x => x.CouponCode == normalizedCode && x.Id != id);
                 if (existsHotel) return BadRequest($"Hotel coupon code '{normalizedCode}' already exists.");
 
+                hotelCoupon.PromotionCategory = string.IsNullOrWhiteSpace(request.PromotionCategory) ? hotelCoupon.PromotionCategory : request.PromotionCategory.Trim();
+                if (request.Title != null) hotelCoupon.Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim();
+                if (request.Description != null) hotelCoupon.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
                 hotelCoupon.CouponCode = normalizedCode;
                 hotelCoupon.CouponType = NormalizeDiscountType(request.CouponType);
                 hotelCoupon.Value = request.Value;
@@ -997,6 +1017,10 @@ namespace PickNBook.Api.Controllers
                 hotelCoupon.UseLimit = request.UseLimit;
                 hotelCoupon.MaxUsagePerUser = request.MaxUsagePerUser;
                 hotelCoupon.Status = NormalizeStatus(request.Status);
+                hotelCoupon.IsAutoApply = request.IsAutoApply;
+                hotelCoupon.IsExclusive = request.IsExclusive;
+                hotelCoupon.Priority = request.Priority;
+                if (request.ImageUrl != null) hotelCoupon.ImageUrl = request.ImageUrl;
                 hotelCoupon.IsFirstTimeUserOnly = request.IsFirstTimeUserOnly;
                 hotelCoupon.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
 
@@ -1012,6 +1036,9 @@ namespace PickNBook.Api.Controllers
                 var existsFlight = await dbContext.FlightCoupons.AnyAsync(x => x.CouponCode == normalizedCode && x.Id != id);
                 if (existsFlight) return BadRequest($"Flight coupon code '{normalizedCode}' already exists.");
 
+                flightCoupon.PromotionCategory = string.IsNullOrWhiteSpace(request.PromotionCategory) ? flightCoupon.PromotionCategory : request.PromotionCategory.Trim();
+                if (request.Title != null) flightCoupon.Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim();
+                if (request.Description != null) flightCoupon.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
                 flightCoupon.CouponCode = normalizedCode;
                 flightCoupon.CouponType = NormalizeDiscountType(request.CouponType);
                 flightCoupon.Value = request.Value;
@@ -1027,7 +1054,7 @@ namespace PickNBook.Api.Controllers
                 flightCoupon.Status = NormalizeStatus(request.Status);
                 flightCoupon.IsFirstTimeUserOnly = request.IsFirstTimeUserOnly;
                 flightCoupon.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
-                flightCoupon.ImageUrl = request.ImageUrl;
+                if (request.ImageUrl != null) flightCoupon.ImageUrl = request.ImageUrl;
 
                 await dbContext.SaveChangesAsync();
                 return Ok(flightCoupon);
@@ -1537,6 +1564,24 @@ namespace PickNBook.Api.Controllers
                 .Take(limit)
                 .ToListAsync();
 
+            var bookingReferences = rows
+                .Select(x => x.BookingReference)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .ToList();
+
+            var bookingCancellations = bookingReferences.Count > 0
+                ? await dbContext.BookingCancellations
+                    .AsNoTracking()
+                    .Where(c => c.BookingType == "Bus" && bookingReferences.Contains(c.BookingReference))
+                    .OrderByDescending(c => c.CreatedAtUtc)
+                    .ToListAsync()
+                : new List<BookingCancellation>();
+
+            var cancellationLookup = bookingCancellations
+                .GroupBy(c => c.BookingReference)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
             var response = rows
                 .Where(x => x.BusBooking != null)
                 .Select(x =>
@@ -1547,6 +1592,12 @@ namespace PickNBook.Api.Controllers
                     var cancellationCharge = x.CancellationChargeInr ?? 0m;
                     var refundAmount = x.RefundAmountInr ?? Math.Max(0m, x.TotalPriceInr - cancellationCharge);
                     var segment = $"{bus.FromCity} - {bus.ToCity}";
+
+                    cancellationLookup.TryGetValue(x.BookingReference, out var cancellation);
+                    var resolvedRefundStatus = CancellationStatusMapper.ResolveRefundStatus(
+                        cancellation?.RefundStatus,
+                        cancellation?.Status,
+                        refundAmount);
 
                     return new AdminBusCancellationRequestDto
                     {
@@ -1569,8 +1620,8 @@ namespace PickNBook.Api.Controllers
                         Details = new AdminBusCancellationDetailsDto
                         {
                             CancellationStatus = x.Status,
-                            CustomerRefundStatus = refundAmount > 0 ? "Refunded" : "Completed",
-                            AdminRefundStatus = refundAmount > 0 ? "Refunded" : "Completed",
+                            CustomerRefundStatus = resolvedRefundStatus,
+                            AdminRefundStatus = resolvedRefundStatus,
                             CustomerRefundAmountInr = refundAmount,
                             CustomerCancellationChargeInr = cancellationCharge,
                             CustomerServiceChargeInr = 0m,

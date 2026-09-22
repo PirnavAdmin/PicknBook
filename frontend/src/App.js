@@ -51,23 +51,17 @@ import AdminLayout from "./Admin_Portal/adminlayout";
 import AdminLogin from "./Admin_Portal/ADMIN_AUTH/AdminLogin";
 import AdminSectionPlaceholder from "./Admin_Portal/PLACEHOLDERS/SectionPlaceholder";
 import AdminDashboard from "./Admin_Portal/DASHBOARD ADMIN/Admin.Dashbaord";
-import DiscountList from "./Admin_Portal/B2C BUS MANAGEMENT/Discount List/DiscountList";
-import AddB2CBusDiscount from "./Admin_Portal/B2C BUS MANAGEMENT/Discount List/AddB2CBusDiscount";
-import DiscountMapping from "./Admin_Portal/B2C BUS MANAGEMENT/Discount Mapping/DiscountMapping";
 import BusBookingList from "./Admin_Portal/B2C BUS MANAGEMENT/Booking List/bookingList";
 import BusCancellationList from "./Admin_Portal/B2C BUS MANAGEMENT/Cancellation List/BusCancellationList";
 import BusConvenienceFee from "./Admin_Portal/B2C BUS MANAGEMENT/convenience fee/BusConvenienceFee";
 import BusEditConvenienceFee from "./Admin_Portal/B2C BUS MANAGEMENT/convenience fee/BusAddConvenienceFee";
 import BusSearchHistory from "./Admin_Portal/B2C BUS MANAGEMENT/Search History/BusSearchHistory";
+import BusPromotionsList from "./Admin_Portal/B2C BUS MANAGEMENT/Coupon list/BusPromotionsList";
 import BusVoucherSettings from "./Admin_Portal/B2C BUS MANAGEMENT/Vocher settings/BusVocherSettings";
 import BusMarkupList from "./Admin_Portal/B2C BUS MANAGEMENT/MarkupList/BusMarkupList";
 import BusGstSettings from "./Admin_Portal/B2C BUS MANAGEMENT/GstSettings/BusGstSettings";
-import BusCouponList from "./Admin_Portal/B2C BUS MANAGEMENT/Coupon list/BusCouponList";
-import BusUsedCouponsList from "./Admin_Portal/B2C BUS MANAGEMENT/Used coupon list/BusUsedCouponsList";
 import BusAddConvenienceFee from "./Admin_Portal/B2C BUS MANAGEMENT/convenience fee/BusAddConvenienceFee";
 import BusPopularRoutes from "./Admin_Portal/B2C BUS MANAGEMENT/Popular Bus Routes/PopularBusRoutes";
-import FlightDiscountList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Discount List/DiscountList";
-import AddB2CFlightDiscount from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Discount List/AddB2CFlightDiscount";
 import HotelEditConvenienceFee from "./Admin_Portal/B2C HOTEL MANAGEMENT/convenience fee/HotelEditConvenienceFee";
 import HotelVoucherSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/Voucher Settings/HotelVoucherSettings";
 import HotelPopularDestinations from "./Admin_Portal/B2C HOTEL MANAGEMENT/Popular Destinations/HotelPopularDestinations";
@@ -90,17 +84,22 @@ import FlightAllowedFareType from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Allowed 
 import AirlineWebCheckLink from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Airline Web Check Link/AirlineWebCheckLink";
 import AirlineBrandList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/AIRLINE BRANDS/AirlineBrandList";
 import FlightMarkupList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/B2C Flight Markup/FlightMarkupList";
-import FlightCouponList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Coupon List/FlightCoupon";
-import FlightUsedCouponList from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Used Coupon List/FlightUsedCoupon";
 import FlightPopularRoutes from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Flight Popular Routes/FlightPopularRoutes";
 import FlightPopularDestination from "./Admin_Portal/B2C FLIGHT MANAGEMENT/Popular Destinantion/FlightPopularDestination";
-import HotelDiscountList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Discount List/HotelDiscountList";
-import HotelCouponList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Coupon List/HotelCouponList";
 import HotelConvenienceFee from "./Admin_Portal/B2C HOTEL MANAGEMENT/convenience fee/HotelConvenienceFee";
 import HotelGstSettings from "./Admin_Portal/B2C HOTEL MANAGEMENT/GstSettings/HotelGstSettings";
 import HotelBookingList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Booking List/HotelBookingList";
 import HotelCancellationList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Cancellation List/HotelCancellationList";
 import HotelSearchHistory from "./Admin_Portal/B2C HOTEL MANAGEMENT/Search History/HotelSearchHistory";
+import HotelMarkupList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Markup List/HotelMarkupList";
+import WalletTransactionList from "./Admin_Portal/PAYMENT MANAGEMENT/WalletTransaction/WalletTransactionList";
+import AdminPaymentsList from "./Admin_Portal/PAYMENTS ADMIN/AdminPaymentsList";
+import IpManagement from "./Admin_Portal/SECURITY_MANAGEMENT/IpManagement";
+import UserSecurityRules from "./Admin_Portal/SECURITY_MANAGEMENT/UserSecurityRules";
+import AccountSecurity from "./Admin_Portal/SECURITY_MANAGEMENT/AccountSecurity";
+import AuthSecurity from "./Admin_Portal/SECURITY_MANAGEMENT/AuthSecurity";
+import EmailLogs from "./Admin_Portal/SECURITY_MANAGEMENT/EMAIL_MANAGEMENT/EmailLogs";
+import EmailTemplates from "./Admin_Portal/SECURITY_MANAGEMENT/EMAIL_MANAGEMENT/EmailTemplates";
 import TaxManagement from "./Admin_Portal/PAYMENT MANAGEMENT/Tax Management/TaxManagement";
 import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
@@ -495,11 +494,7 @@ function AppContent() {
             index
             element={<AdminDashboard />}
           />
-          <Route path="b2c-bus/discounts" element={<DiscountList />} />
-          <Route path="b2c-bus/discounts/new" element={<AddB2CBusDiscount />} />
-          <Route path="b2c-bus/discount-list" element={<DiscountList />} />
-          <Route path="b2c-bus/add-discount" element={<AddB2CBusDiscount />} />
-          <Route path="b2c-bus/discount-mapping" element={<DiscountMapping />} />
+          <Route path="promotions" element={<BusPromotionsList />} />
           <Route path="b2c-bus/booking-list" element={<BusBookingList />} />
           <Route path="b2c-bus/cancellation-list" element={<BusCancellationList />} />
           <Route path="b2c-bus/convenience-fee" element={<BusConvenienceFee />} />
@@ -509,15 +504,9 @@ function AppContent() {
           <Route path="b2c-bus/voucher-settings" element={<BusVoucherSettings />} />
           <Route path="b2c-bus/markup-list" element={<BusMarkupList />} />
           <Route path="b2c-bus/gst-settings" element={<BusGstSettings />} />
-          <Route path="b2c-bus/coupon-list" element={<BusCouponList />} />
-          <Route path="b2c-bus/used-coupon-list" element={<BusUsedCouponsList />} />
           <Route path="b2c-bus/popular-routes" element={<BusPopularRoutes />} />
 
           {/* B2C Flight Management */}
-          <Route path="b2c-flight/discounts" element={<FlightDiscountList />} />
-          <Route path="b2c-flight/discounts/new" element={<AddB2CFlightDiscount />} />
-          <Route path="b2c-flight/discount-list" element={<FlightDiscountList />} />
-          <Route path="b2c-flight/add-discount" element={<AddB2CFlightDiscount />} />
           <Route path="b2c-flight/booking-list" element={<FlightBookingList />} />
           <Route path="b2c-flight/cancellation-requests" element={<FlightCancelRequestList />} />
           <Route path="b2c-flight/cancellation-request-list" element={<FlightCancelRequestList />} />
@@ -543,16 +532,12 @@ function AppContent() {
           <Route path="b2c-flight/airline-brands" element={<AirlineBrandList />} />
           <Route path="b2c-flight/markup" element={<FlightMarkupList />} />
           <Route path="b2c-flight/markup-list" element={<FlightMarkupList />} />
-          <Route path="b2c-flight/coupon-list" element={<FlightCouponList />} />
-          <Route path="b2c-flight/used-coupon-list" element={<FlightUsedCouponList />} />
           <Route path="b2c-flight/popular-routes" element={<FlightPopularRoutes />} />
           <Route path="b2c-flight/popular-destinations" element={<FlightPopularDestination />} />
           <Route path="b2c-flight/popular-destination" element={<FlightPopularDestination />} />
           <Route path="b2c-flight/voucher-settings" element={<FlightVoucherSettings />} />
 
           {/* B2C Hotel Management */}
-          <Route path="b2c-hotel/discount-list" element={<HotelDiscountList />} />
-          <Route path="b2c-hotel/coupon-list" element={<HotelCouponList />} />
           <Route path="b2c-hotel/convenience-fee" element={<HotelConvenienceFee />} />
           <Route path="b2c-hotel/add-convenience-fee" element={<HotelEditConvenienceFee />} />
           <Route path="b2c-hotel/gst-settings" element={<HotelGstSettings />} />
@@ -562,8 +547,7 @@ function AppContent() {
           <Route path="hotel-management/booking-list" element={<HotelBookingList />} />
           <Route path="hotel-management/cancellation-list" element={<HotelCancellationList />} />
           <Route path="hotel-management/search-history" element={<HotelSearchHistory />} />
-          <Route path="hotel-management/discounts" element={<HotelDiscountList />} />
-          <Route path="hotel-management/coupon-list" element={<HotelCouponList />} />
+          <Route path="hotel-management/markup-list" element={<HotelMarkupList />} />
           <Route path="hotel-management/convenience-fee" element={<HotelConvenienceFee />} />
           <Route path="hotel-management/gst-settings" element={<HotelGstSettings />} />
           <Route path="hotel-management/popular-destinations" element={<HotelPopularDestinations />} />
@@ -583,6 +567,8 @@ function AppContent() {
           <Route path="payment-management/tax-management" element={<TaxManagement />} />
           <Route path="payment-management/payment-setting" element={<PaymentSettings />} />
           <Route path="payment-management/payment-settings" element={<PaymentSettings />} />
+          <Route path="payment-management/wallet-transactions" element={<WalletTransactionList />} />
+          <Route path="payments" element={<AdminPaymentsList />} />
           {/* Account Management */}
           <Route path="account-management/transaction-log" element={adminPlaceholder("Transaction Log")} />
           <Route path="account-management/bank-list" element={adminPlaceholder("Bank List")} />
@@ -605,8 +591,14 @@ function AppContent() {
           {/* Query Management */}
           <Route path="query-management/query-list" element={<AdminQueryList />} />
           {/* Security Management */}
+          <Route path="security-management/ip-management" element={<IpManagement />} />
+          <Route path="security-management/user-security-rules" element={<UserSecurityRules />} />
+          <Route path="security-management/account-security" element={<AccountSecurity />} />
+          <Route path="security-management/auth-security" element={<AuthSecurity />} />
           <Route path="security-management/black-list-ip" element={adminPlaceholder("Black List IP")} />
           <Route path="security-management/white-list-ip" element={adminPlaceholder("White List IP")} />
+          <Route path="email-management/email-logs" element={<EmailLogs />} />
+          <Route path="email-management/email-templates" element={<EmailTemplates />} />
           {/* Site Management */}
           <Route path="site-management/site-setting" element={adminPlaceholder("Site Setting")} />
           <Route path="site-management/social-links" element={adminPlaceholder("Social Links")} />

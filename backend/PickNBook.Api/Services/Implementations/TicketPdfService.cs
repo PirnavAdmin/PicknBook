@@ -35,7 +35,7 @@ public class TicketPdfService : ITicketPdfService
             double y = 48;
 
             string titleText = string.IsNullOrEmpty(request.AgentCompanyName) 
-                ? "PickNBook Flight Ticket" 
+                ? "Pick&book Flight Ticket" 
                 : $"{request.AgentCompanyName} Flight Ticket";
 
             gfx.DrawString(

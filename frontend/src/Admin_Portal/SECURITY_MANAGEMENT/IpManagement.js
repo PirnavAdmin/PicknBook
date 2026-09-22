@@ -416,7 +416,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
         addedOn: currentFormatted,
         expiresInSeconds: expiresSec,
         status: formAction === 'Whitelisted' ? 'Whitelisted' : 'Active',
-        createdBy: 'admin@pick&book.in',
+        createdBy: 'admin@picknbook.in',
         description: formDescription.trim() || `Access rule configured by admin.`,
         priority: formPriority,
         sendNotification: formSendNotification,
@@ -525,7 +525,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
 
       {/* Breadcrumb Row */}
       <div className="sec-breadcrumb">
-        <span className="crumb-link" onClick={() => navigate('/admin')}>Dashboard</span>
+        <span className="crumb-link" onClick={() => navigate('/admin/dashbord')}>Dashboard</span>
         <span>›</span>
         <span className="crumb-link" onClick={() => navigate('/admin/security-management')}>Security Management</span>
         <span>›</span>

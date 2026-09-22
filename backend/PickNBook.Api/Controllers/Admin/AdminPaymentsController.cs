@@ -95,6 +95,9 @@ namespace PickNBook.Api.Controllers.Admin
                 query = query.Where(p => p.PaymentReference.ToLower().Contains(s) ||
                                          p.CashfreeOrderId.ToLower().Contains(s) ||
                                          p.UserId.ToLower().Contains(s) ||
+                                         (p.CustomerName != null && p.CustomerName.ToLower().Contains(s)) ||
+                                         (p.CustomerPhone != null && p.CustomerPhone.Contains(s)) ||
+                                         (p.CustomerEmail != null && p.CustomerEmail.ToLower().Contains(s)) ||
                                          (p.CashfreePaymentId != null && p.CashfreePaymentId.ToLower().Contains(s)));
             }
 
@@ -123,6 +126,10 @@ namespace PickNBook.Api.Controllers.Admin
                     p.CashfreeOrderId,
                     p.CashfreePaymentId,
                     p.UserId,
+                    p.CustomerName,
+                    p.CustomerEmail,
+                    p.CustomerPhone,
+                    p.PassengerCount,
                     p.BookingType,
                     p.BookingId,
                     p.OriginalAmount,

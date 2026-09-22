@@ -610,7 +610,7 @@ export default function AccountSecurity() {
                           <td>{acc.lockedAt ? new Date(acc.lockedAt).toLocaleString() : 'N/A'}</td>
                           <td style={{ color: '#ef4444', fontWeight: 500 }}>{acc.reason || 'Exceeded failed login attempts'}</td>
                           <td>
-                            <span className="badge-custom badge-status-inactive" style={{ background: '#fee2e2', color: '#ff0000' }}>
+                            <span className="badge-custom badge-status-inactive" style={{ background: '#fee2e2', color: '#dc2626' }}>
                               ● LOCKED
                             </span>
                           </td>

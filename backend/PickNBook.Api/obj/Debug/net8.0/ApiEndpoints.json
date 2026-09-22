@@ -2952,6 +2952,109 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminNotificationsController",
+    "Method": "GetNotifications",
+    "RelativePath": "api/admin/notifications",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageNumber",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "UnreadOnly",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Category",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Type",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Severity",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "TargetRole",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminNotificationsController",
+    "Method": "MarkAsRead",
+    "RelativePath": "api/admin/notifications/{id}/read",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminNotificationsController",
+    "Method": "Broadcast",
+    "RelativePath": "api/admin/notifications/broadcast",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BroadcastNotificationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminNotificationsController",
+    "Method": "MarkAllAsRead",
+    "RelativePath": "api/admin/notifications/mark-all-read",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Admin.AdminNotificationsController",
+    "Method": "GetUnreadCount",
+    "RelativePath": "api/admin/notifications/unread-count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.Admin.AdminPaymentsController",
     "Method": "GetPayments",
     "RelativePath": "api/admin/payments",
@@ -5002,37 +5105,6 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
-    "Method": "GetAvailableCoupons",
-    "RelativePath": "api/BusBookings/user/available",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "category",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "traceId",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "resultIndex",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "seatCodes",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
     "Method": "BlockBusProxy",
     "RelativePath": "api/BusBookings/v9/Block",
     "HttpMethod": "POST",
@@ -5425,6 +5497,43 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.CouponsController",
+    "Method": "GetCoupons",
+    "RelativePath": "api/Coupons",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serviceType",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "category",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.CouponsController",
+    "Method": "ValidateCoupon",
+    "RelativePath": "api/Coupons/validate",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.ValidateUnifiedCouponRequestDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -6095,16 +6204,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "PickNBook.Api.Controllers.FlightPromotionsController",
-    "Method": "GetActivePromotions",
-    "RelativePath": "api/FlightPromotions",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "FlightsController",
     "Method": "GetFeatured",
     "RelativePath": "api/Flights/featured",
@@ -6561,16 +6660,6 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
-    "Method": "GetActiveCoupons",
-    "RelativePath": "api/Hotels/coupons/active",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "ValidateCoupon",
     "RelativePath": "api/Hotels/coupons/validate",
     "HttpMethod": "POST",
@@ -6978,6 +7067,93 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.NotificationsController",
+    "Method": "GetNotifications",
+    "RelativePath": "api/notifications",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageNumber",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "PageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "UnreadOnly",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Category",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Type",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Severity",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "TargetRole",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.NotificationsController",
+    "Method": "MarkAsRead",
+    "RelativePath": "api/notifications/{id}/read",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.NotificationsController",
+    "Method": "MarkAllAsRead",
+    "RelativePath": "api/notifications/mark-all-read",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.NotificationsController",
+    "Method": "GetUnreadCount",
+    "RelativePath": "api/notifications/unread-count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.PlacesController",
     "Method": "GetPlaces",
     "RelativePath": "api/Places",
@@ -7079,7 +7255,28 @@
         "IsRequired": false
       },
       {
+        "Name": "Location",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
         "Name": "ProfileImage",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.ProfileController",
+    "Method": "UploadProfileImage",
+    "RelativePath": "api/Profile/upload-image",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
         "IsRequired": false
       }

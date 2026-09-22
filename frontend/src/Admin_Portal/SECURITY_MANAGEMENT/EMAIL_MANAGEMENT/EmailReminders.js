@@ -141,7 +141,7 @@ export default function EmailReminders() {
     <div className="security-mgmt-container">
       {/* Breadcrumbs */}
       <div className="sec-breadcrumb">
-        <span className="crumb-link" onClick={() => navigate('/admin')}>Dashboard</span>
+        <span className="crumb-link" onClick={() => navigate('/admin/dashbord')}>Dashboard</span>
         <span>›</span>
         <span className="crumb-link" onClick={() => navigate('/admin/security-management')}>Security Management</span>
         <span>›</span>

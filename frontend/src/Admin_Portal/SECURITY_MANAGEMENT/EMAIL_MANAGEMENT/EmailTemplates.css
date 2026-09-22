@@ -1,5 +1,5 @@
 /* ═════════════════════════════════════════════════════════════════════
-   EMAIL TEMPLATES STYLES — Pick&Book Admin Portal (Maroon Accent #901335)
+   EMAIL TEMPLATES STYLES — PickNBook Admin Portal (Maroon Accent #901335)
    ═════════════════════════════════════════════════════════════════════ */
 
 .email-templates-page {
@@ -327,7 +327,7 @@
 
 .badge-status.inactive {
   background: #fee2e2;
-  color: #ff0000;
+  color: #b91c1c;
 }
 
 .badge-status.draft {
@@ -658,7 +658,7 @@
   height: 48px;
   border-radius: 50%;
   background: #fee2e2;
-  color: #ff0000;
+  color: #dc2626;
   font-size: 24px;
   display: flex;
   align-items: center;
@@ -681,9 +681,9 @@
 }
 
 .btn-card-delete {
-  background: #ff0000;
+  background: #dc2626;
   color: #ffffff;
-  border: 1px solid #ff0000;
+  border: 1px solid #dc2626;
   border-radius: 6px;
   padding: 6px 14px;
   font-size: 11.5px;
@@ -692,7 +692,7 @@
 }
 
 .btn-card-delete:hover {
-  background: #ff0000;
+  background: #b91c1c;
 }
 
 /* Toast Message */
@@ -872,8 +872,8 @@
 }
 
 .admin-shell .btn-card-delete:hover {
-  background: #ff0000 !important;
-  border-color: #ff0000 !important;
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
   color: #ffffff !important;
 }
 

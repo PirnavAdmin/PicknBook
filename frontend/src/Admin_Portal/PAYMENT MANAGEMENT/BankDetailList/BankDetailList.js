@@ -15,9 +15,9 @@ import {
 } from 'lucide-react';
 
 const mockBanks = [
-  { id: '1', name: 'HDFC Bank', number: '50100254988789', ifsc: 'HDFC0001234', holder: 'Pick&Book Pvt Ltd', status: 'Active', isPrimary: 'Yes' },
-  { id: '2', name: 'ICICI Bank', number: '123456789012', ifsc: 'ICIC0000123', holder: 'Pick&Book Pvt Ltd', status: 'Active', isPrimary: 'No' },
-  { id: '3', name: 'State Bank of India', number: '30987654321', ifsc: 'SBIN0004567', holder: 'Pick&Book Pvt Ltd', status: 'Inactive', isPrimary: 'No' },
+  { id: '1', name: 'HDFC Bank', number: '50100254988789', ifsc: 'HDFC0001234', holder: 'PickNBook Pvt Ltd', status: 'Active', isPrimary: 'Yes' },
+  { id: '2', name: 'ICICI Bank', number: '123456789012', ifsc: 'ICIC0000123', holder: 'PickNBook Pvt Ltd', status: 'Active', isPrimary: 'No' },
+  { id: '3', name: 'State Bank of India', number: '30987654321', ifsc: 'SBIN0004567', holder: 'PickNBook Pvt Ltd', status: 'Inactive', isPrimary: 'No' },
 ];
 
 function BankDetailList() {
@@ -164,7 +164,7 @@ function BankDetailList() {
             </div>
 
             <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#ff0000' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#b91c1c' }}>
                 <X size={20} />
               </div>
               <div>
@@ -265,7 +265,7 @@ function BankDetailList() {
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         background: b.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                        color: b.status === 'Active' ? '#15803d' : '#ff0000'
+                        color: b.status === 'Active' ? '#15803d' : '#b91c1c'
                       }}>
                         {b.status}
                       </span>
@@ -319,7 +319,7 @@ function BankDetailList() {
             
             <form onSubmit={handleCreate}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px 32px', marginBottom: '28px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   BANK NAME *
                   <select
                     value={form.name}
@@ -334,7 +334,7 @@ function BankDetailList() {
                   </select>
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   ACCOUNT NUMBER *
                   <input
                     type="text"
@@ -346,7 +346,7 @@ function BankDetailList() {
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   IFSC CODE *
                   <input
                     type="text"
@@ -358,7 +358,7 @@ function BankDetailList() {
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   ACCOUNT HOLDER NAME *
                   <input
                     type="text"
@@ -370,7 +370,7 @@ function BankDetailList() {
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   ACCOUNT PURPOSE *
                   <select
                     value={form.purpose}
@@ -383,7 +383,7 @@ function BankDetailList() {
                   </select>
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   STATUS *
                   <select
                     value={form.status}

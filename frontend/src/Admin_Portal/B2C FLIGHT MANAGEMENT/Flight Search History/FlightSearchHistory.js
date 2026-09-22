@@ -103,7 +103,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
 const DEFAULT_API_USER_ID =
@@ -267,12 +267,63 @@ function pickFirst(source, keys, fallback = null) {
   return fallback;
 }
 
-function formatTripType(typeVal) {
+export function parseSegments(segmentsJson) {
+  if (!segmentsJson) return [];
+  try {
+    const raw = typeof segmentsJson === "string" ? JSON.parse(segmentsJson) : segmentsJson;
+    if (!Array.isArray(raw)) return [];
+    return raw.map((item, idx) => ({
+      segmentIndex: item.SegmentIndex ?? item.segmentIndex ?? (idx + 1),
+      origin: item.Origin ?? item.origin ?? "",
+      originCity: item.OriginCity ?? item.originCity ?? item.Origin ?? item.origin ?? "",
+      destination: item.Destination ?? item.destination ?? "",
+      destinationCity: item.DestinationCity ?? item.destinationCity ?? item.Destination ?? item.destination ?? "",
+      departureDate: item.DepartureDate ?? item.departureDate ?? "",
+      flightCabinClass: item.FlightCabinClass ?? item.flightCabinClass ?? "1",
+    }));
+  } catch (err) {
+    console.error("Failed to parse segmentsJson:", err);
+    return [];
+  }
+}
+
+function formatTripType(typeVal, typeNameVal) {
+  const nameStr = String(typeNameVal ?? "").trim();
+  if (nameStr) {
+    if (nameStr.toLowerCase().includes("round")) return "RoundTrip";
+    if (nameStr.toLowerCase().includes("multi")) return "MultiCity";
+    if (nameStr.toLowerCase().includes("one")) return "OneWay";
+    return nameStr;
+  }
+
   const str = String(typeVal ?? "").trim();
-  if (str === "1") return "OneWay";
-  if (str === "2") return "RoundTrip";
-  if (str === "3") return "MultiCity";
-  return str || "OneWay";
+  if (str === "1" || str.toLowerCase() === "oneway") return "OneWay";
+  if (str === "2" || str.toLowerCase() === "roundtrip") return "RoundTrip";
+  if (str === "3" || str.toLowerCase() === "multicity") return "MultiCity";
+  return "OneWay";
+}
+
+function getTripTypeBadge(tripTypeName, tripType) {
+  const formatted = formatTripType(tripType, tripTypeName);
+  switch (formatted) {
+    case "RoundTrip":
+      return { label: "Round Trip", color: "#0369a1", bg: "#e0f2fe", border: "#bae6fd", icon: "⇄" };
+    case "MultiCity":
+      return { label: "Multi-City", color: "#6b21a8", bg: "#f3e8ff", border: "#e9d5ff", icon: "➔➔" };
+    default:
+      return { label: "One Way", color: "#15803d", bg: "#dcfce7", border: "#bbf7d0", icon: "➔" };
+  }
+}
+
+function getCabinClassName(classCode) {
+  const code = String(classCode ?? "1").trim();
+  switch (code) {
+    case "1": return "Economy";
+    case "2": return "Premium Economy";
+    case "3": return "Business";
+    case "4": return "First Class";
+    default: return `Class ${code}`;
+  }
 }
 
 function normalizeFlightSearchHistoryRecord(record, index = 0) {
@@ -298,8 +349,67 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
   const rawTripType = pickFirst(
     record,
     ["tripType", "TripType", "travelType", "TravelType", "journeyType", "JourneyType", "type", "Type"],
+    "1"
+  );
+
+  const rawTripTypeName = pickFirst(
+    record,
+    ["tripTypeName", "TripTypeName", "travelTypeName", "TravelTypeName"],
     ""
   );
+
+  const tripTypeName = formatTripType(rawTripType, rawTripTypeName);
+
+  const fromCity = String(
+    pickFirst(
+      record,
+      ["fromCity", "FromCity", "from", "From", "origin", "Origin", "fromAirport", "FromAirport"],
+      ""
+    ) || ""
+  );
+
+  const toCity = String(
+    pickFirst(
+      record,
+      ["toCity", "ToCity", "to", "To", "destination", "Destination", "toAirport", "ToAirport"],
+      ""
+    ) || ""
+  );
+
+  const fromCityName = String(
+    pickFirst(
+      record,
+      ["fromCityName", "FromCityName", "originCity", "OriginCity"],
+      ""
+    ) || ""
+  );
+
+  const toCityName = String(
+    pickFirst(
+      record,
+      ["toCityName", "ToCityName", "destinationCity", "DestinationCity"],
+      ""
+    ) || ""
+  );
+
+  const fromCityCode = String(
+    pickFirst(
+      record,
+      ["fromCityCode", "FromCityCode", "fromCode", "FromCode", "originCode", "OriginCode"],
+      fromCity
+    ) || fromCity
+  );
+
+  const toCityCode = String(
+    pickFirst(
+      record,
+      ["toCityCode", "ToCityCode", "toCode", "ToCode", "destinationCode", "DestinationCode"],
+      toCity
+    ) || toCity
+  );
+
+  const routeSummary = pickFirst(record, ["routeSummary", "RouteSummary"], null);
+  const segmentsJson = pickFirst(record, ["segmentsJson", "SegmentsJson", "segments", "Segments"], null);
 
   const searchDateUtc = pickFirst(
     record,
@@ -322,6 +432,25 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
     null
   );
 
+  const departDate = pickFirst(
+    record,
+    [
+      "departDate",
+      "DepartDate",
+      "departureDate",
+      "DepartureDate",
+      "journeyDate",
+      "JourneyDate",
+      "travelDate",
+      "TravelDate",
+      "date",
+      "Date",
+    ],
+    null
+  );
+
+  const returnDate = pickFirst(record, ["returnDate", "ReturnDate"], null);
+
   return {
     id:
       pickFirst(
@@ -336,103 +465,18 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
     traceId,
     searchDateUtc,
     searchedAtIst: pickFirst(record, ["searchedAtIst", "SearchedAtIst"], null),
-    departDate:
-      pickFirst(
-        record,
-        [
-          "departDate",
-          "DepartDate",
-          "departureDate",
-          "DepartureDate",
-          "journeyDate",
-          "JourneyDate",
-          "travelDate",
-          "TravelDate",
-          "date",
-          "Date",
-        ],
-        null
-      ) || null,
-    returnDate:
-      pickFirst(
-        record,
-        ["returnDate", "ReturnDate"],
-        null
-      ) || null,
-    fromCity: String(
-      pickFirst(
-        record,
-        [
-          "fromCity",
-          "FromCity",
-          "from",
-          "From",
-          "sourceCity",
-          "SourceCity",
-          "originCity",
-          "OriginCity",
-          "origin",
-          "Origin",
-          "fromAirport",
-          "FromAirport",
-          "fromAirportName",
-          "FromAirportName",
-        ],
-        ""
-      ) || ""
-    ),
-    toCity: String(
-      pickFirst(
-        record,
-        [
-          "toCity",
-          "ToCity",
-          "to",
-          "To",
-          "destinationCity",
-          "DestinationCity",
-          "destination",
-          "Destination",
-          "toAirport",
-          "ToAirport",
-          "toAirportName",
-          "ToAirportName",
-        ],
-        ""
-      ) || ""
-    ),
-    fromCityCode: String(
-      pickFirst(
-        record,
-        [
-          "fromCityCode",
-          "FromCityCode",
-          "fromCode",
-          "FromCode",
-          "originCode",
-          "OriginCode",
-          "fromAirportCode",
-          "FromAirportCode",
-        ],
-        ""
-      ) || ""
-    ),
-    toCityCode: String(
-      pickFirst(
-        record,
-        [
-          "toCityCode",
-          "ToCityCode",
-          "toCode",
-          "ToCode",
-          "destinationCode",
-          "DestinationCode",
-          "toAirportCode",
-          "ToAirportCode",
-        ],
-        ""
-      ) || ""
-    ),
+    departDate,
+    returnDate,
+    fromCity: fromCityCode || fromCity,
+    toCity: toCityCode || toCity,
+    fromCityName: fromCityName || fromCityCode || fromCity,
+    toCityName: toCityName || toCityCode || toCity,
+    fromCityCode,
+    toCityCode,
+    routeSummary,
+    segmentsJson: typeof segmentsJson === "object" ? JSON.stringify(segmentsJson) : segmentsJson,
+    tripType: String(rawTripType || "1"),
+    tripTypeName,
     customerName: String(
       pickFirst(
         record,
@@ -448,8 +492,7 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
       ) || userOrGuestId
     ),
     customerId: rawUserId ? String(rawUserId) : (isGuest ? "Guest" : "0"),
-    travelType: formatTripType(rawTripType),
-    rawTripType: String(rawTripType || ""),
+    travelType: tripTypeName,
     adultCount:
       Number(
         pickFirst(record, ["adults", "Adults", "adultCount", "AdultCount"], 0)
@@ -631,7 +674,7 @@ const CANDIDATE_BASE_URLS = [
   "",
   "http://localhost:7179",
   "https://localhost:7179",
-  "https://paycheck-baton-overfull.ngrok-free.dev"
+  "https://satin-eastcoast-musky.ngrok-free.dev"
 ];
 
 const CANDIDATE_ENDPOINTS = [
@@ -790,15 +833,32 @@ function mergeSearchHistory(apiRecords, localRecords) {
 }
 
 function buildSegmentLabel(record) {
-  const fromPart = normalizeText(record.fromCity, "--");
-  const toPart = normalizeText(record.toCity, "--");
-  const fromCode = normalizeText(record.fromCityCode, "");
-  const toCode = normalizeText(record.toCityCode, "");
+  if (record?.routeSummary && String(record.routeSummary).trim()) {
+    return String(record.routeSummary).trim();
+  }
 
-  const sourceLabel = fromCode ? `${fromPart}, ${fromCode}` : fromPart;
-  const destinationLabel = toCode ? `${toPart}, ${toCode}` : toPart;
+  const fromCode = normalizeText(record?.fromCityCode || record?.fromCity, "--");
+  const toCode = normalizeText(record?.toCityCode || record?.toCity, "--");
 
-  return `${sourceLabel} \u27A4 ${destinationLabel}`;
+  if (record?.tripTypeName === "RoundTrip" || record?.tripType === "2") {
+    return `${fromCode} \u21C4 ${toCode}`;
+  }
+
+  return `${fromCode} \u27A4 ${toCode}`;
+}
+
+function buildCityNamesLabel(record) {
+  const fromName = normalizeText(record?.fromCityName, "");
+  const toName = normalizeText(record?.toCityName, "");
+
+  if (!fromName && !toName) return "";
+  if (fromName === record?.fromCityCode && toName === record?.toCityCode) return "";
+
+  if (record?.tripTypeName === "RoundTrip" || record?.tripType === "2") {
+    return `${fromName} \u21C4 ${toName}`;
+  }
+
+  return `${fromName} \u27A4 ${toName}`;
 }
 
 function formatPassengerCounts(record) {
@@ -1032,8 +1092,8 @@ export default function AdminFlightSearchHistoryPage() {
   return (
     <section className="admin-b2c-page admin-search-history-page admin-flight-search-history-page">
       <header className="admin-b2c-header admin-search-history-header">
-        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
-          <span style={{ color: "#be185d" }}>B2C Flight </span>
+        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.25rem" }}>
+          <span style={{ color: "#A51C49" }}>B2C Flight </span>
           <span style={{ color: "black" }}>Search List</span>
         </h1>
       </header>
@@ -1046,13 +1106,10 @@ export default function AdminFlightSearchHistoryPage() {
         </div>
 
         <div className="admin-actions-row">
-          <button type="button" onClick={() => setIsFiltersOpen((current) => !current)}>
+          <button type="button" className="admin-search-history-filter-btn" onClick={() => setIsFiltersOpen((current) => !current)}>
             {isFiltersOpen ? "Close Filter" : "Filter"}
           </button>
-          <button type="button" className="admin-cancel-clear-btn" onClick={clearFilters}>
-            Clear Filter
-          </button>
-          <button type="button" onClick={handleExport}>
+          <button type="button" className="admin-search-history-export-btn" onClick={handleExport}>
             Export
           </button>
           <button
@@ -1164,10 +1221,11 @@ export default function AdminFlightSearchHistoryPage() {
 
       <section className="admin-search-history-table-shell">
         <header className="admin-search-history-table-head">
-          <span>ID / User</span>
-          <span>Segment</span>
+          <span>S.No</span>
+          <span>Search Date (IST)</span>
           <span>Depart Date</span>
-          <span>Type / Search Date</span>
+          <span>Segment</span>
+          <span>Customer / User</span>
           <span>Action</span>
         </header>
 
@@ -1177,63 +1235,98 @@ export default function AdminFlightSearchHistoryPage() {
           <div className="admin-search-history-table-body">
             {pagedRows.map((row, index) => {
               const departParts = formatDepartDateParts(row.departDate);
+              const badge = getTripTypeBadge(row.tripTypeName, row.tripType);
+              const cityNames = buildCityNamesLabel(row);
 
               return (
                 <article
                   key={`${row.id}-${row.searchDateUtc}-${index}`}
                   className="admin-search-history-row"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setSelectedRecord(row)}
                 >
-                  <div className="admin-search-history-cell">
-                    <strong>Search #{normalizeText(row.id, "--")}</strong>
-                    <small style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center", marginTop: "2px" }}>
-                      <span
-                        style={{
-                          padding: "1px 6px",
-                          borderRadius: "4px",
-                          fontSize: "0.72rem",
-                          fontWeight: 600,
-                          backgroundColor: row.isGuest ? "#fef3c7" : "#e0f2fe",
-                          color: row.isGuest ? "#92400e" : "#075985",
-                        }}
-                      >
-                        {row.isGuest ? "Guest" : "User"}
-                      </span>
-                      <span>{row.userOrGuestId || (row.userId ? `User #${row.userId}` : "Guest")}</span>
-                    </small>
-                  </div>
-
-                  <div className="admin-search-history-cell">
-                    <strong>{buildSegmentLabel(row)}</strong>
-                    <small>{formatPassengerCounts(row)}</small>
-                  </div>
-
                   <div className="admin-search-history-cell admin-cell-centered">
-                    <strong>{departParts.dayMonth}</strong>
+                    <strong style={{ fontWeight: 500, color: "#475569" }}>{startIndex + index + 1}</strong>
+                  </div>
+
+                  <div className="admin-search-history-cell">
+                    <strong style={{ fontWeight: 500, color: "#1e293b" }}>{formatSearchDate(row.searchDateUtc)}</strong>
+                    {row.searchDateUtc ? (
+                      <small style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 400 }}>
+                        {formatSearchTime(row.searchDateUtc)}
+                      </small>
+                    ) : null}
+                  </div>
+
+                  <div className="admin-search-history-cell">
+                    <strong style={{ fontWeight: 500, color: "#1e293b" }}>{departParts.dayMonth || formatSearchDate(row.departDate)}</strong>
                     {row.returnDate ? (
-                      <small style={{ color: "#be185d", fontWeight: 500 }}>
+                      <small style={{ color: "#0284c7", fontWeight: 500, fontSize: "0.72rem" }}>
                         Return: {formatSearchDate(row.returnDate)}
                       </small>
                     ) : null}
                   </div>
 
                   <div className="admin-search-history-cell">
-                    <strong style={{ color: row.travelType === "RoundTrip" ? "#be185d" : "#0f172a" }}>
-                      {normalizeText(row.travelType, "--")}
-                    </strong>
-                    <small>
-                      {formatSearchTime(row.searchDateUtc)}, {formatSearchDate(row.searchDateUtc)}
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", justifyContent: "center" }}>
+                      <span
+                        style={{
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.68rem",
+                          fontWeight: 500,
+                          backgroundColor: badge.bg,
+                          color: badge.color,
+                          border: `1px solid ${badge.border}`,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "3px",
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                      <strong style={{ fontWeight: 500, color: "#0f172a" }}>{buildSegmentLabel(row)}</strong>
+                    </div>
+                    {cityNames ? (
+                      <small style={{ color: "#64748b", fontSize: "0.72rem", marginTop: "1px", fontWeight: 400 }}>
+                        {cityNames}
+                      </small>
+                    ) : null}
+                    <small style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 400 }}>
+                      {formatPassengerCounts(row)}
                     </small>
+                  </div>
+
+                  <div className="admin-search-history-cell">
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
+                      <span
+                        style={{
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.72rem",
+                          fontWeight: 500,
+                          backgroundColor: row.isGuest ? "#fef3c7" : "#e0f2fe",
+                          color: row.isGuest ? "#92400e" : "#075985",
+                        }}
+                      >
+                        {row.isGuest ? "Guest" : "User"}
+                      </span>
+                      <strong style={{ fontWeight: 500, color: "#334155" }}>
+                        {row.userOrGuestId || (row.userId ? `User #${row.userId}` : "Guest")}
+                      </strong>
+                    </div>
                   </div>
 
                   <div className="admin-search-history-cell admin-cell-centered">
                     <button
                       type="button"
-                      className="admin-action-btn admin-flight-search-view-btn"
-                      onClick={() => setSelectedRecord(row)}
-                      aria-label="View flight search"
-                      title="View"
+                      className="admin-search-history-view-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRecord(row);
+                      }}
                     >
-                      <Eye size={16} />
+                      View
                     </button>
                   </div>
                 </article>
@@ -1286,7 +1379,7 @@ export default function AdminFlightSearchHistoryPage() {
                       padding: "2px 8px",
                       borderRadius: "6px",
                       fontSize: "0.78rem",
-                      fontWeight: 600,
+                      fontWeight: 500,
                       backgroundColor: selectedRecord.isGuest ? "#fef3c7" : "#e0f2fe",
                       color: selectedRecord.isGuest ? "#92400e" : "#075985",
                     }}
@@ -1304,8 +1397,36 @@ export default function AdminFlightSearchHistoryPage() {
                 <strong>{normalizeText(selectedRecord.endUserIp, "N/A")}</strong>
               </div>
               <div>
-                <span>Segment</span>
+                <span>Trip Type</span>
+                {(() => {
+                  const badge = getTripTypeBadge(selectedRecord.tripTypeName, selectedRecord.tripType);
+                  return (
+                    <strong style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <span
+                        style={{
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          fontSize: "0.78rem",
+                          fontWeight: 500,
+                          backgroundColor: badge.bg,
+                          color: badge.color,
+                          border: `1px solid ${badge.border}`,
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                    </strong>
+                  );
+                })()}
+              </div>
+              <div>
+                <span>Route / Segment</span>
                 <strong>{buildSegmentLabel(selectedRecord)}</strong>
+                {buildCityNamesLabel(selectedRecord) ? (
+                  <small style={{ color: "#64748b", fontSize: "0.78rem" }}>
+                    {buildCityNamesLabel(selectedRecord)}
+                  </small>
+                ) : null}
               </div>
               <div>
                 <span>Depart Date</span>
@@ -1323,10 +1444,6 @@ export default function AdminFlightSearchHistoryPage() {
                 </strong>
               </div>
               <div>
-                <span>Trip Type</span>
-                <strong>{normalizeText(selectedRecord.travelType, "--")}</strong>
-              </div>
-              <div>
                 <span>Passengers</span>
                 <strong>{formatPassengerCounts(selectedRecord)}</strong>
               </div>
@@ -1342,7 +1459,89 @@ export default function AdminFlightSearchHistoryPage() {
                 <span>Data Source</span>
                 <strong>{selectedRecord.isLocalFallback ? "Local Backup" : "Live Backend API"}</strong>
               </div>
+
+              {(() => {
+                const segments = parseSegments(selectedRecord.segmentsJson);
+                if (!segments.length) return null;
+                return (
+                  <div style={{ gridColumn: "1 / -1", marginTop: "8px", borderTop: "1px solid #e2e8f0", paddingTop: "12px" }}>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: "8px" }}>
+                      Journey Legs ({segments.length} {segments.length === 1 ? "Sector" : "Sectors"})
+                    </span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {segments.map((seg, idx) => (
+                        <div
+                          key={seg.segmentIndex || idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "10px 14px",
+                            background: "#f8fafc",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "8px",
+                            fontSize: "0.82rem",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span
+                              style={{
+                                background: "#e2e8f0",
+                                color: "#334155",
+                                fontWeight: 600,
+                                fontSize: "0.72rem",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              Leg {seg.segmentIndex || idx + 1}
+                            </span>
+                            <strong style={{ fontWeight: 500, color: "#0f172a" }}>
+                              {seg.originCity || seg.origin} ({seg.origin})
+                            </strong>
+                            <span style={{ color: "#94a3b8" }}>➔</span>
+                            <strong style={{ fontWeight: 500, color: "#0f172a" }}>
+                              {seg.destinationCity || seg.destination} ({seg.destination})
+                            </strong>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.78rem", color: "#64748b" }}>
+                            {seg.departureDate ? <span>{seg.departureDate}</span> : null}
+                            {seg.flightCabinClass ? (
+                              <span style={{ background: "#eff6ff", color: "#1d4ed8", padding: "1px 6px", borderRadius: "4px", fontWeight: 500 }}>
+                                {getCabinClassName(seg.flightCabinClass)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </section>
+
+            <details style={{ borderTop: "1px solid #e2e8f0", paddingTop: "12px", marginTop: "8px", width: "100%" }}>
+              <summary style={{ cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, color: "#64748b" }}>
+                View Raw API Response JSON
+              </summary>
+              <pre
+                style={{
+                  margin: "10px 0 0",
+                  padding: "12px",
+                  background: "#0f172a",
+                  color: "#38bdf8",
+                  borderRadius: "8px",
+                  fontSize: "0.76rem",
+                  overflowX: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all",
+                }}
+              >
+                {JSON.stringify(selectedRecord.raw?.raw ? selectedRecord.raw.raw : (selectedRecord.raw || selectedRecord), null, 2)}
+              </pre>
+            </details>
           </article>
         </div>
       ) : null}

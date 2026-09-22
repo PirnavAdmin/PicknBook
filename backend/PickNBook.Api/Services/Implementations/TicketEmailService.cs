@@ -48,7 +48,7 @@ public class TicketEmailService : ITicketEmailService
         }).ToList();
 
         var subject =
-            $"Your PickNBook Ticket - {request.BookingReference}";
+            $"Your Pick&book Ticket - {request.BookingReference}";
 
         // Fetch flight reservation, booking details, and passengers from the database
         var reservation = await _context.FlightReservations
@@ -467,7 +467,7 @@ public class TicketEmailService : ITicketEmailService
     </div>
 
     <div style=""text-align: center; margin-top: 25px; font-size: 11px; color: #94a3b8;"">
-        &copy; 2026 PickNBook Travel Services. All rights reserved.
+        &copy; 2026 Pick&amp;book Travel Services. All rights reserved.
     </div>
 
 </div>";
@@ -601,7 +601,7 @@ public class TicketEmailService : ITicketEmailService
             Have a safe journey!
         </p>
 
-        <p>Team PickNBook</p>";
+        <p>Team Pick&amp;book</p>";
 
         await _emailService.SendEmailWithAttachmentsAsync(
             request.ToEmail,
@@ -725,7 +725,7 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             Regards,<br/>
-            Team PickNBook
+            Team Pick&amp;book
         </p>";
 
         // =========================================
@@ -821,7 +821,7 @@ public class TicketEmailService : ITicketEmailService
 
         <p>
             Regards,<br/>
-            Team PickNBook
+            Team Pick&amp;book
         </p>";
 
         await _emailService.SendEmailAsync(

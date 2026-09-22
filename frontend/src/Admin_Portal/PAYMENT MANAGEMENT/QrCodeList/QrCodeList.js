@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 
 const mockQrs = [
-  { id: '1', name: 'Main Office QR', bank: 'HDFC Bank', upi: 'admin@pick&book', status: 'Active' },
-  { id: '2', name: 'Collections QR', bank: 'ICICI Bank', upi: 'collect@pick&book', status: 'Active' },
-  { id: '3', name: 'Support QR', bank: 'SBI', upi: 'support@sbi-pick&book', status: 'Inactive' },
+  { id: '1', name: 'Main Office QR', bank: 'HDFC Bank', upi: 'admin@picknbook', status: 'Active' },
+  { id: '2', name: 'Collections QR', bank: 'ICICI Bank', upi: 'collect@picknbook', status: 'Active' },
+  { id: '3', name: 'Support QR', bank: 'SBI', upi: 'support@sbi-picknbook', status: 'Inactive' },
 ];
 
 function PaymentQrCodeList() {
@@ -140,7 +140,7 @@ function PaymentQrCodeList() {
             </div>
 
             <div style={{ background: '#ffffff', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#ff0000' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#b91c1c' }}>
                 <X size={20} />
               </div>
               <div>
@@ -217,7 +217,7 @@ function PaymentQrCodeList() {
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         background: q.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                        color: q.status === 'Active' ? '#15803d' : '#ff0000'
+                        color: q.status === 'Active' ? '#15803d' : '#b91c1c'
                       }}>
                         {q.status}
                       </span>
@@ -263,7 +263,7 @@ function PaymentQrCodeList() {
             
             <form onSubmit={handleCreate}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px 32px', marginBottom: '28px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   QR NAME *
                   <input
                     type="text"
@@ -275,7 +275,7 @@ function PaymentQrCodeList() {
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   BANK / ACCOUNT *
                   <select
                     value={form.bank}
@@ -288,19 +288,19 @@ function PaymentQrCodeList() {
                   </select>
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   UPI ID / WEB *
                   <input
                     type="text"
                     required
-                    placeholder="Enter UPI ID (e.g. pick&book@bank)"
+                    placeholder="Enter UPI ID (e.g. picknbook@bank)"
                     value={form.upi}
                     onChange={e => setForm(prev => ({ ...prev, upi: e.target.value }))}
                     style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', height: '38px', boxSizing: 'border-box' }}
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#ff0000' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.76rem', fontWeight: 700, color: '#9f1239' }}>
                   STATUS *
                   <select
                     value={form.status}

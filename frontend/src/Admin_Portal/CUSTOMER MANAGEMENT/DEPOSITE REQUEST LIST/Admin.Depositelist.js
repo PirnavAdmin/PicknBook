@@ -193,7 +193,7 @@ function DepositRequestList() {
                 return { background: '#fefce8', color: '#b45309', border: '1px solid #fde047' }; // Yellow
             case 'failed':
             case 'rejected':
-                return { background: '#fef2f2', color: '#ff0000', border: '1px solid #fca5a5' }; // Red
+                return { background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5' }; // Red
             case 'completed':
                 return { background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac' }; // Green
             case 'approved':
@@ -1092,7 +1092,7 @@ function DepositRequestList() {
                             {/* Edit Status Dropdown */}
                             <div style={{ marginBottom: '22px' }}>
                                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700, color: '#0f172a', fontSize: '0.85rem' }}>
-                                    Status <span style={{ color: '#ff0000' }}>*</span>
+                                    Status <span style={{ color: '#dc2626' }}>*</span>
                                 </label>
                                 <select 
                                     value={newStatus} 

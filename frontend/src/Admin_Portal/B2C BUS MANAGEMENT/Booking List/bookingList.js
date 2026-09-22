@@ -77,16 +77,26 @@ function pickFinancialNumber(record, keys, fallback = 0) {
     record?.payment,
   ].filter(Boolean);
 
-  for (const source of sources) {
-    const value = pickFirst(source, keys, null);
-    const numberValue = Number(value);
+  let firstValidZero = null;
 
-    if (Number.isFinite(numberValue)) {
-      return numberValue;
+  for (const source of sources) {
+    for (const key of keys) {
+      if (source?.[key] !== null && source?.[key] !== undefined && source?.[key] !== "") {
+        const numberValue = Number(source[key]);
+
+        if (Number.isFinite(numberValue)) {
+          if (numberValue !== 0) {
+            return numberValue;
+          }
+          if (firstValidZero === null) {
+            firstValidZero = numberValue;
+          }
+        }
+      }
     }
   }
 
-  return fallback;
+  return firstValidZero !== null ? firstValidZero : fallback;
 }
 
 function sumFinancialCollection(record, collectionKeys, valueKeys) {
@@ -166,6 +176,16 @@ const getBaseFareInr = (record) => {
 };
 
 function calculateBookingProfit(record) {
+  const directProfit = pickFinancialNumber(
+    record,
+    ["profitInr", "ProfitInr", "profit", "Profit", "calculatedProfit", "CalculatedProfit"],
+    null
+  );
+
+  if (directProfit !== null && directProfit !== undefined && Number.isFinite(Number(directProfit))) {
+    return Number(directProfit);
+  }
+
   const netFareInr = getNetFareInr(record);
   const discountAmountInr = getDiscountAmountInr(record);
   const baseFareInr = getBaseFareInr(record);
@@ -191,6 +211,173 @@ function normalizeBusPassenger(passenger, index = 0) {
     gender: String(pickFirst(passenger, ["gender", "Gender"], "")),
     seatNumber: pickFirst(passenger, ["seatNumber", "SeatNumber"], null),
   };
+}
+
+function resolvePassengerName(record) {
+  if (!record || typeof record !== "object") return "B2C Customer";
+
+  const sources = [
+    record,
+    record?.raw,
+    record?.bus,
+    record?.busDetails,
+    record?.ticket,
+    record?.trip,
+    record?.journey,
+    record?.bookingDetails,
+    record?.details,
+    record?.ticketDetails,
+    record?.contact,
+    record?.user,
+    record?.bookingContact,
+    record?.contactDetails,
+    record?.passengerDetails,
+    record?.leadPassenger,
+    record?.primaryPassenger,
+  ].filter(Boolean);
+
+  for (const src of sources) {
+    const val = pickFirst(
+      src,
+      [
+        "passengerName", "PassengerName", "passenger_name", "Passenger_Name",
+        "customerName", "CustomerName", "customer_name", "Customer_Name",
+        "userName", "UserName", "user_name", "User_Name",
+        "leadPassengerName", "LeadPassengerName", "leadPassenger", "LeadPassenger",
+        "contactName", "ContactName", "contact_name",
+        "bookedBy", "BookedBy", "booked_by",
+        "primaryPassenger", "PrimaryPassenger",
+        "fullName", "FullName", "full_name", "Full_Name",
+        "name", "Name", "passenger", "Passenger"
+      ],
+      null
+    );
+    if (val && typeof val === "string" && val.trim() && val.trim() !== "--" && !val.toLowerCase().includes("unknown")) {
+      return val.trim();
+    }
+  }
+
+  const passengersRaw = pickFirst(
+    record,
+    ["passengers", "Passengers", "travelers", "Travelers", "paxList", "PaxList", "passengerList"],
+    record?.raw?.passengers || record?.raw?.Passengers || []
+  );
+
+  if (Array.isArray(passengersRaw) && passengersRaw.length > 0) {
+    for (const pax of passengersRaw) {
+      if (!pax) continue;
+      const firstName = pickFirst(pax, ["firstName", "first_name", "FirstName", "fname", "givenName"], "");
+      const lastName = pickFirst(pax, ["lastName", "last_name", "LastName", "lname", "surname"], "");
+      const combined = `${firstName} ${lastName}`.trim();
+      const pName = pickFirst(pax, ["fullName", "FullName", "name", "Name", "passengerName", "PassengerName"], combined);
+      if (pName && typeof pName === "string" && pName.trim() && !pName.trim().startsWith("Passenger ") && pName.trim() !== "--") {
+        return pName.trim();
+      }
+    }
+  }
+
+  const seatsRaw = pickFirst(record, ["seats", "Seats"], record?.raw?.seats || []);
+  if (Array.isArray(seatsRaw) && seatsRaw.length > 0) {
+    for (const seat of seatsRaw) {
+      const sName = pickFirst(seat, ["passengerName", "PassengerName", "name", "Name", "fullName"], null);
+      if (sName && typeof sName === "string" && sName.trim() && sName.trim() !== "--") {
+        return sName.trim();
+      }
+    }
+  }
+
+  const email = pickFirst(
+    record,
+    ["passengerEmail", "PassengerEmail", "email", "Email", "userEmail", "UserEmail", "customerEmail", "CustomerEmail"],
+    record?.contact?.email || record?.user?.email || record?.raw?.passengerEmail || ""
+  );
+
+  if (email && typeof email === "string" && email.includes("@")) {
+    const handle = email.split("@")[0].replace(/[._-]/g, " ").trim();
+    if (handle) {
+      return handle.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    }
+  }
+
+  return "--";
+}
+
+function resolvePassengerPhone(record) {
+  if (!record || typeof record !== "object") return "--";
+
+  const sources = [
+    record,
+    record?.raw,
+    record?.bus,
+    record?.busDetails,
+    record?.ticket,
+    record?.trip,
+    record?.journey,
+    record?.bookingDetails,
+    record?.details,
+    record?.ticketDetails,
+    record?.contact,
+    record?.user,
+    record?.bookingContact,
+    record?.contactDetails,
+    record?.passengerDetails,
+    record?.leadPassenger,
+    record?.primaryPassenger,
+  ].filter(Boolean);
+
+  for (const src of sources) {
+    const val = pickFirst(
+      src,
+      [
+        "passengerPhone", "PassengerPhone", "passenger_phone", "Passenger_Phone",
+        "passengerMobile", "PassengerMobile", "passenger_mobile", "Passenger_Mobile",
+        "phone", "Phone", "mobile", "Mobile",
+        "phoneNumber", "PhoneNumber", "phone_number", "Phone_Number",
+        "phoneNo", "PhoneNo", "phone_no", "Phone_No",
+        "mobileNo", "MobileNo", "mobile_no", "Mobile_No",
+        "contactNumber", "ContactNumber", "contact_number",
+        "contactPhone", "ContactPhone", "contact_phone",
+        "contactNo", "ContactNo", "contact_no",
+        "userPhone", "UserPhone", "userMobile", "UserMobile",
+        "customerPhone", "CustomerPhone", "customerMobile", "CustomerMobile"
+      ],
+      null
+    );
+    if (val && String(val).trim() && String(val).trim() !== "--") {
+      const clean = String(val).trim();
+      return clean.startsWith("+") ? clean : `+91 ${clean}`;
+    }
+  }
+
+  const passengersRaw = pickFirst(
+    record,
+    ["passengers", "Passengers", "travelers", "Travelers", "paxList", "PaxList", "passengerList"],
+    record?.raw?.passengers || record?.raw?.Passengers || []
+  );
+
+  if (Array.isArray(passengersRaw) && passengersRaw.length > 0) {
+    for (const pax of passengersRaw) {
+      if (!pax) continue;
+      const pPhone = pickFirst(pax, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "phoneNo", "mobileNo", "contactNo"], null);
+      if (pPhone && String(pPhone).trim() && String(pPhone).trim() !== "--") {
+        const clean = String(pPhone).trim();
+        return clean.startsWith("+") ? clean : `+91 ${clean}`;
+      }
+    }
+  }
+
+  const seatsRaw = pickFirst(record, ["seats", "Seats"], record?.raw?.seats || []);
+  if (Array.isArray(seatsRaw) && seatsRaw.length > 0) {
+    for (const seat of seatsRaw) {
+      const sPhone = pickFirst(seat, ["phone", "Phone", "mobile", "Mobile", "phoneNo"], null);
+      if (sPhone && String(sPhone).trim() && String(sPhone).trim() !== "--") {
+        const clean = String(sPhone).trim();
+        return clean.startsWith("+") ? clean : `+91 ${clean}`;
+      }
+    }
+  }
+
+  return "--";
 }
 
 function normalizeBusBookingRecord(record) {
@@ -352,24 +539,8 @@ function normalizeBusBookingRecord(record) {
     ),
     tripType: String(getFieldValue(["tripType", "TripType"], "Bus")),
     tripId: getFieldValue(["tripId", "TripId"], null),
-    passengerName,
-    passengerPhone: String(
-      getFieldValue([
-        "passengerPhone",
-        "PassengerPhone",
-        "phone",
-        "Phone",
-        "mobile",
-        "Mobile",
-        "phoneNumber",
-        "PhoneNumber",
-        "phoneNo",
-        "PhoneNo",
-        "contactNumber",
-        "ContactNumber"
-      ], "") ||
-      pickFirst(record?.contact, ["phone", "Phone", "mobile", "Mobile", "phoneNumber", "PhoneNumber", "phoneNo", "PhoneNo"], "")
-    ),
+    passengerName: resolvePassengerName(record),
+    passengerPhone: resolvePassengerPhone(record),
     passengerEmail: String(
       getFieldValue(["passengerEmail", "PassengerEmail", "email", "Email"], "")
     ),
@@ -708,49 +879,29 @@ const toTimeKey = (value) => {
   return `${hours}:${minutes}`;
 };
 
-const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed"]);
-const PENDING_STATUS_SET = new Set(["pending", "onhold", "processing"]);
-const CANCELLED_STATUS_SET = new Set(["cancelled", "canceled"]);
+const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed", "completed", "finished"]);
+const CANCELLED_STATUS_SET = new Set(["cancelled", "canceled", "cancel"]);
 
 const toAdminStatusLabel = (statusValue) => {
-  const normalized = normalizeText(statusValue, "Unknown");
+  const normalized = normalizeText(statusValue, "Booked");
   const key = normalized.toLowerCase();
 
-  if (CANCELLED_STATUS_SET.has(key)) {
+  if (CANCELLED_STATUS_SET.has(key) || key.includes("cancel")) {
     return "Cancelled";
   }
 
-  if (PENDING_STATUS_SET.has(key)) {
-    return "Pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
+  if (BOOKED_STATUS_SET.has(key) || key.includes("book") || key.includes("success") || key.includes("confirm") || key.includes("complet")) {
     return "Booked";
   }
 
-  return normalized;
+  return "Expired";
 };
 
 const mapAdminStatusClass = (statusValue) => {
-  const key = normalizeText(statusValue, "").toLowerCase();
-
-  if (key.includes("hold")) {
-    return "hold";
-  }
-
-  if (CANCELLED_STATUS_SET.has(key)) {
-    return "cancelled";
-  }
-
-  if (PENDING_STATUS_SET.has(key)) {
-    return "pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
-    return "success";
-  }
-
-  return "pending";
+  const label = toAdminStatusLabel(statusValue);
+  if (label === "Cancelled") return "cancelled";
+  if (label === "Booked") return "success";
+  return "expired";
 };
 
 // --- Payment Status Helpers ---
@@ -799,14 +950,24 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const bookingId = normalizeText(record?.bookingId || record?.id, "");
   const tripNumber = normalizeText(record?.tripNumber, "");
   const bookedAtValue = record?.bookedAtUtc || null;
-  const departureValue = record?.departureTimeUtc || record?.departureTime || record?.departureDateTime || null;
+  const rawDepartureValue = record?.departureTimeUtc || record?.departureTime || record?.departureDateTime || record?.journeyDateIst || null;
+  const isInvalidDeparture = !rawDepartureValue || rawDepartureValue === "0001-01-01" || String(rawDepartureValue).startsWith("0001");
+  const departureValue = isInvalidDeparture ? (record?.bookingDateIst || record?.bookedAtUtc || record?.bookingDateUtc || null) : rawDepartureValue;
   const arrivalValue = record?.arrivalTimeUtc || record?.arrivalTime || record?.arrivalDateTime || record?.droppingTime || record?.dropTime || null;
 
   const depTime = toTimeKey(departureValue);
   const arrTime = toTimeKey(arrivalValue);
   const journeyTime = depTime && arrTime ? `${depTime} - ${arrTime}` : (depTime || arrTime || "--");
 
-  const fare = Math.max(parseNumber(record?.totalPriceInr || record?.customerFareInr || record?.netFareInr, 0), 0);
+  const fare = Math.max(
+    parseNumber(record?.customerFareInr, 0) ||
+    parseNumber(record?.totalPriceInr, 0) ||
+    parseNumber(record?.customerFare, 0) ||
+    parseNumber(record?.totalFare, 0) ||
+    parseNumber(record?.netFareInr, 0) ||
+    parseNumber(record?.baseFareInr, 0),
+    0
+  );
   const calculatedProfit = parseNumber(record?.calculatedProfit, calculateBookingProfit(record));
   const profit = calculatedProfit;
 
@@ -822,16 +983,29 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     }
   }
 
+  const ticketNo = normalizeText(
+    record?.ticketNo ||
+    record?.ticketNumber ||
+    record?.ticket_no ||
+    record?.ticket_number ||
+    record?.tin ||
+    record?.TIN ||
+    record?.passengers?.[0]?.ticketNumber ||
+    record?.bookingReference,
+    ""
+  );
+
   return {
     id: bookingId || bookingReference || pnrValue || "--",
     bookingId,
     bookingReference,
     pnr: pnrValue || bookingReference || tripNumber || bookingId || "--",
+    ticketNo: ticketNo || bookingReference || "--",
     tripType: safeSourceType,
     createdAt: toDateKey(bookedAtValue),
     createdAtValue: bookedAtValue,
-    passengerName: normalizeText(record?.passengerName, "--"),
-    passengerPhone: normalizeText(record?.passengerPhone, "--"),
+    passengerName: resolvePassengerName(record),
+    passengerPhone: resolvePassengerPhone(record),
     passengerEmail: normalizeText(record?.passengerEmail, "--"),
     pax: record?.pax || record?.seatsBooked || 1,
     from: normalizeText(fromCity, "--"),
@@ -923,16 +1097,24 @@ export default function AdminB2CBookingListPage() {
           limit: 200,
         });
       } catch (apiError) {
-        if (shouldUseFallbackBusBookings(apiError)) {
-          busResultsRaw = [];
-        } else {
-          throw apiError;
-        }
+        throw apiError;
       }
 
-      const busResults = Array.isArray(busResultsRaw)
-        ? busResultsRaw.map((record) => normalizeBusBookingRecord(record))
+      const rawRecords = Array.isArray(busResultsRaw) && busResultsRaw.length > 0
+        ? busResultsRaw
+        : Array.isArray(busResultsRaw?.data)
+        ? busResultsRaw.data
+        : Array.isArray(busResultsRaw?.result)
+        ? busResultsRaw.result
+        : Array.isArray(busResultsRaw?.items)
+        ? busResultsRaw.items
+        : Array.isArray(busResultsRaw?.bookings)
+        ? busResultsRaw.bookings
+        : Array.isArray(busResultsRaw?.content)
+        ? busResultsRaw.content
         : [];
+
+      const busResults = rawRecords.map((record) => normalizeBusBookingRecord(record));
 
       const unifiedBookings = [
         ...busResults.map((record) => toUnifiedAdminBooking(record, "Bus")),
@@ -956,6 +1138,11 @@ export default function AdminB2CBookingListPage() {
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
+      const resolvedStatus = toAdminStatusLabel(booking.status);
+      if (resolvedStatus === "Expired") {
+        return false;
+      }
+
       const statusFromFilter = mapBookingFilterStatusToApi(filters.status);
       if (statusFromFilter && safeValue(booking.status, "").toLowerCase() !== statusFromFilter.toLowerCase()) {
         return false;
@@ -1087,6 +1274,7 @@ export default function AdminB2CBookingListPage() {
       "Created Date",
       "Passenger Name",
       "Passenger Phone",
+      "Passenger Email",
       "From",
       "To",
       "Journey Date",
@@ -1109,6 +1297,7 @@ export default function AdminB2CBookingListPage() {
       booking.createdAt,
       booking.passengerName,
       booking.passengerPhone,
+      booking.passengerEmail,
       booking.from,
       booking.to,
       booking.journeyDate,
@@ -1309,7 +1498,6 @@ export default function AdminB2CBookingListPage() {
             >
               <option value="all">All Status</option>
               <option value="booked">Booked</option>
-              <option value="pending">Pending</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </label>
@@ -1326,11 +1514,11 @@ export default function AdminB2CBookingListPage() {
       ) : null}
 
       <section className="admin-table-shell">
-        <header className="admin-table-head" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
+        <header className="admin-table-head" style={{ gridTemplateColumns: "0.8fr 1.3fr 1.3fr 1.2fr 1.3fr 1.1fr 1fr 1fr 0.7fr" }}>
           <span>B. ID / B.D.</span>
-          <span>Name</span>
+          <span>Passenger Details</span>
           <span>Segment / Journey Date</span>
-          <span>Timings</span>
+          <span>Journey Timings</span>
           <span>PNR / Status</span>
           <span>Operator / Type</span>
           <span>Fare</span>
@@ -1341,11 +1529,11 @@ export default function AdminB2CBookingListPage() {
         {isLoading ? (
           <div className="admin-table-empty">Loading bookings...</div>
         ) : errorMessage ? (
-          <div className="admin-table-empty">Data not found</div>
+          <div className="admin-table-empty">No records found.</div>
         ) : filteredBookings.length ? (
           <div className="admin-table-body">
             {paginatedBookings.map((booking) => (
-              <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-table-row" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
+              <article key={`${booking.tripType}-${booking.id}-${booking.createdAt}`} className="admin-table-row" style={{ gridTemplateColumns: "0.8fr 1.3fr 1.3fr 1.2fr 1.3fr 1.1fr 1fr 1fr 0.7fr" }}>
                 <div className="admin-table-cell">
                   <strong>{safeValue(booking.id)}</strong>
                   <small>🗓️ {formatAdminDate(booking.createdAt)}</small>
@@ -1357,6 +1545,9 @@ export default function AdminB2CBookingListPage() {
                   </strong>
                   <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center" }}>
                     {safeValue(booking.passengerPhone)}
+                  </small>
+                  <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#6b7280", fontSize: "0.70rem" }}>
+                    {safeValue(booking.passengerEmail)}
                   </small>
                 </div>
 
@@ -1375,8 +1566,13 @@ export default function AdminB2CBookingListPage() {
 
                 <div className="admin-table-cell">
                   <strong>{safeValue(booking.pnr)}</strong>
-                  <span className={`admin-status-pill ${mapAdminStatusClass(booking.paymentStatus || booking.status)}`}>
-                    {safeValue(booking.paymentStatus || booking.status)}
+                  {booking.ticketNo && booking.ticketNo !== "--" && booking.ticketNo !== booking.pnr && (
+                    <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.72rem", marginTop: "1px" }}>
+                      Tkt No: {safeValue(booking.ticketNo)}
+                    </small>
+                  )}
+                  <span className={`admin-status-pill ${mapAdminStatusClass(booking.status)}`}>
+                    {safeValue(booking.status)}
                   </span>
                 </div>
 
@@ -1391,11 +1587,25 @@ export default function AdminB2CBookingListPage() {
                   <strong>{adminCurrencyFormatter.format(Number(booking.fare) || 0)}</strong>
                 </div>
 
-                <div className="admin-table-cell admin-cell-centered">
-                  <strong className={getProfitClassName(booking.calculatedProfit)}>
-                    {adminProfitFormatter.format(Number(booking.calculatedProfit) || 0)}
-                  </strong>
-                  <small>{getProfitLabel(booking.calculatedProfit)}</small>
+                <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{
+                    fontSize: "0.82rem",
+                    fontWeight: "600",
+                    color: Number(booking.calculatedProfit) < 0 ? "#dc2626" : "#16a34a",
+                    lineHeight: "1.2"
+                  }}>
+                    {Number(booking.calculatedProfit) < 0
+                      ? `-₹${Math.abs(Number(booking.calculatedProfit)).toFixed(2)}`
+                      : `₹${Number(booking.calculatedProfit || 0).toFixed(2)}`}
+                  </span>
+                  <span style={{
+                    fontSize: "0.68rem",
+                    color: "#64748b",
+                    fontWeight: "500",
+                    marginTop: "2px"
+                  }}>
+                    {Number(booking.calculatedProfit) < 0 ? "Loss" : "Profit"}
+                  </span>
                 </div>
 
                 <div className="admin-table-cell admin-cell-centered">
@@ -1411,7 +1621,7 @@ export default function AdminB2CBookingListPage() {
             ))}
           </div>
         ) : (
-          <div className="admin-table-empty">No bus bookings available.</div>
+          <div className="admin-table-empty">No records found.</div>
         )}
 
         <AdminPagination
@@ -1511,6 +1721,10 @@ export default function AdminB2CBookingListPage() {
                     <td>{safeValue(selectedBooking.passengerName)}</td>
                     <th>Phone Number (P.no)</th>
                     <td>{safeValue(selectedBooking.passengerPhone)}</td>
+                  </tr>
+                  <tr>
+                    <th>Passenger Email</th>
+                    <td colSpan="3">{safeValue(selectedBooking.passengerEmail)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1638,6 +1852,29 @@ export default function AdminB2CBookingListPage() {
                         <td>{safeValue(p.seatNumber)}</td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            {/* Section 5: Cancellation & Refund Breakdown */}
+            {selectedBooking.status === "Cancelled" || selectedBooking.cancelledAtUtc ? (
+              <div className="admin-view-section">
+                <h3 className="admin-view-section-title" style={{ color: "#ef4444" }}>Cancellation & Refund Breakdown</h3>
+                <table className="admin-view-table">
+                  <tbody>
+                    <tr>
+                      <th>Cancelled Date (UTC)</th>
+                      <td>{formatAdminDate(selectedBooking.cancelledAtUtc || selectedBooking.cancelledAt)}</td>
+                      <th>Cancellation Reason</th>
+                      <td>{safeValue(selectedBooking.cancellationReason)}</td>
+                    </tr>
+                    <tr>
+                      <th>Cancellation Fee</th>
+                      <td>{adminProfitFormatter.format(Number(selectedBooking.cancellationChargeInr || selectedBooking.cancellationCharge) || 0)}</td>
+                      <th>Refund Amount</th>
+                      <td>{adminProfitFormatter.format(Number(selectedBooking.refundAmountInr || selectedBooking.refundAmount) || 0)}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>

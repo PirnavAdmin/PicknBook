@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import AdminPagination from '../../../components/AdminPagination';
 import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
-import { toApiAssetUrl, NgrokSafeImage } from '../../../services/apiClient';
+import { toApiAssetUrl, NgrokSafeImage, normalizeResponseMessage } from '../../../services/apiClient';
 
 const formatDate = (dateString) => {
     if (!dateString || dateString === '-') return '-';
@@ -110,9 +110,9 @@ function BlogList() {
             const mapped = (data.blogs || []).map(blog => ({
                 ...blog,
                 entryDate: blog.createdAtUtc ? formatDate(blog.createdAtUtc) : 'Draft',
-                image: blog.imageUrl || blog.image || '',
+                image: blog.imageUrl || blog.ImageUrl || blog.image || blog.Image || blog.imagePath || blog.ImagePath || blog.filePath || blog.photo || blog.photoUrl || blog.picture || blog.url || '',
                 status: blog.isPublished ? 'Active' : 'Inactive',
-                author: blog.addedByName || 'Admin'
+                author: blog.addedByName || blog.author || blog.addedBy || 'Admin'
             }));
             setBlogs(mapped);
             setTotalBlogs(data.total || 0);
@@ -245,6 +245,8 @@ function BlogList() {
     };
 
     const handleEditBlog = (blog) => {
+        const blogImage = blog.imageUrl || blog.image || blog.imagePath || blog.filePath || blog.photo || blog.photoUrl || blog.picture || blog.url || '';
+        const blogOgImage = blog.ogImageUrl || blog.ogImage || blog.ogImagePath || '';
         setEditingBlog(blog);
         setEditFormData({
             title: blog.title || '',
@@ -262,11 +264,11 @@ function BlogList() {
             longDescription: blog.longDescription || '',
             image: null,
             ogImage: null,
-            imageName: blog.imageUrl || blog.image || '',
-            ogImageName: blog.ogImageUrl || blog.ogImage || '',
+            imageName: blogImage,
+            ogImageName: blogOgImage,
         });
-        setEditImagePreview(blog.imageUrl || blog.image || '');
-        setEditOgImagePreview(blog.ogImageUrl || blog.ogImage || '');
+        setEditImagePreview(blogImage);
+        setEditOgImagePreview(blogOgImage);
         setEditModalOpen(true);
         setActiveDropdownId(null);
     };
@@ -279,12 +281,22 @@ function BlogList() {
         }));
     };
 
+    const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.bmp', '.tif', '.tiff', '.ico', '.avif'];
+
     const handleEditFileChange = (name, labelField) => (e) => {
         const file = e.target.files?.[0] || null;
-        if (file && file.size > 1024 * 1024) {
-            showToast("File size must be within 1MB limit.", "error");
-            e.target.value = "";
-            return;
+        if (file) {
+            if (file.size > 1024 * 1024) {
+                showToast("File size must be within 1MB limit.", "error");
+                e.target.value = "";
+                return;
+            }
+            const ext = file.name ? file.name.substring(file.name.lastIndexOf(".")).toLowerCase() : "";
+            if (ext && !ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+                showToast("Invalid image format. Allowed formats: JPG, PNG, WEBP, GIF, SVG, BMP, TIFF, ICO, AVIF.", "error");
+                e.target.value = "";
+                return;
+            }
         }
         setEditFormData(prev => ({
             ...prev,
@@ -358,8 +370,8 @@ function BlogList() {
             if (editFormData.subTitle?.trim()) {
                 dataToSend.append("SubTitle", editFormData.subTitle.trim());
             }
-            dataToSend.append("IsFeatured", editFormData.featured === 'Yes');
-            dataToSend.append("IsPublished", editFormData.isPublished === 'Yes');
+            dataToSend.append("IsFeatured", editFormData.featured === 'Yes' ? 'true' : 'false');
+            dataToSend.append("IsPublished", editFormData.isPublished === 'Yes' ? 'true' : 'false');
 
             if (editFormData.metaTitle?.trim()) {
                 dataToSend.append("MetaTitle", editFormData.metaTitle.trim());
@@ -371,21 +383,24 @@ function BlogList() {
                 dataToSend.append("MetaDescription", editFormData.metaDescription.trim());
             }
 
-            if (editFormData.image) {
+            if (editFormData.image && typeof editFormData.image !== "string") {
                 dataToSend.append("Image", editFormData.image);
             }
-            if (editFormData.ogImage) {
+            if (editFormData.ogImage && typeof editFormData.ogImage !== "string") {
                 dataToSend.append("OgImage", editFormData.ogImage);
             }
 
             await updateAdminBlog(editingBlog.id, dataToSend);
             setEditModalOpen(false);
             setEditingBlog(null);
+            showToast('Blog updated successfully.', 'success');
             fetchBlogs();
         } catch (error) {
             console.error("Error saving blog:", error);
-            const serverMsg = error.response?.data?.message || error.response?.data?.title || (typeof error.response?.data === 'string' ? error.response.data : '') || error.message || "";
-            showToast(`Failed to save blog post. ${serverMsg}`.trim(), "error");
+            const errData = error.response?.data;
+            const rawMsg = errData?.message || errData?.title || (typeof errData === 'string' ? errData : '') || error.message || "";
+            const serverMsg = normalizeResponseMessage(errData, rawMsg || "Failed to save blog post.");
+            showToast(serverMsg || "Failed to save blog post.", "error");
         } finally {
             setEditIsSubmitting(false);
         }
@@ -600,10 +615,12 @@ function BlogList() {
             gap: '6px',
         },
         tableWrapper: {
-            background: 'var(--panel)',
+            background: 'rgba(255, 255, 255, 0.55)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             borderRadius: '16px',
-            border: '1.5px solid var(--border)',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.7)',
+            boxShadow: '0 8px 32px rgba(165, 28, 73, 0.05)',
             overflow: 'visible',
         },
         table: {
@@ -708,7 +725,7 @@ function BlogList() {
         },
         statusInactive: {
             background: '#fef2f2',
-            color: '#ff0000',
+            color: '#b91c1c',
             borderColor: '#ef4444',
         },
         actionButtons: {
@@ -1028,15 +1045,27 @@ function BlogList() {
                                 <button
                                     type="button"
                                     onClick={() => setSelectedBlog(null)}
+                                    className="navy-close-btn"
                                     style={{
-                                        border: 'none',
-                                        background: '#A51C49',
-                                        color: '#ffffff',
-                                        borderRadius: '20px',
-                                        padding: '6px 16px',
+                                        border: '1px solid #cbd5e1',
+                                        background: '#ffffff',
+                                        color: '#334155',
+                                        borderRadius: '16px',
+                                        padding: '3px 12px',
                                         fontWeight: '600',
                                         cursor: 'pointer',
-                                        fontSize: '12px'
+                                        fontSize: '11px',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#A51C49';
+                                        e.currentTarget.style.borderColor = '#A51C49';
+                                        e.currentTarget.style.color = '#ffffff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#ffffff';
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                        e.currentTarget.style.color = '#334155';
                                     }}
                                 >
                                     Close
@@ -1067,7 +1096,7 @@ function BlogList() {
                                 <div>
                                     <strong style={{ color: 'var(--text-secondary)' }}>Status:</strong>
                                     <div>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedBlog.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedBlog.status === 'Active' ? '#047857' : '#ff0000', border: selectedBlog.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedBlog.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedBlog.status === 'Active' ? '#047857' : '#b91c1c', border: selectedBlog.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
                                             {selectedBlog.status}
                                         </div>
                                     </div>
@@ -1119,6 +1148,7 @@ function BlogList() {
                                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                                     <NgrokSafeImage
                                                         src={toApiAssetUrl(blog.image)}
+                                                        fallbackSrc={null}
                                                         alt={blog.title}
                                                         title={blog.title}
                                                         style={{
@@ -1131,8 +1161,12 @@ function BlogList() {
                                                             border: '1.5px solid rgba(0, 0, 0, 0.08)'
                                                         }}
                                                         onClick={() => setActivePopupImage(toApiAssetUrl(blog.image))}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            if (e.target.nextSibling) e.target.nextSibling.style.display = 'inline-block';
+                                                        }}
                                                     />
-                                                    <span style={{ display: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px' }}>Invalid Image</span>
+                                                    <span style={{ display: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px' }}>No Image</span>
                                                 </div>
                                             ) : (
                                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>-</span>
@@ -1140,17 +1174,22 @@ function BlogList() {
                                         </td>
                                         <td style={styles.td}>
                                             {(() => {
-                                                const catObj = categories.find(c => c.name === blog.category);
-                                                const catImg = catObj?.imageUrl || catObj?.image;
+                                                const catObj = categories.find(c => 
+                                                    (c.name || '').trim().toLowerCase() === (blog.category || '').trim().toLowerCase() ||
+                                                    (c.id && blog.categoryId && c.id === blog.categoryId)
+                                                );
+                                                const catImg = catObj?.imageUrl || catObj?.image || catObj?.imagePath || catObj?.filePath || catObj?.icon || catObj?.iconUrl || catObj?.photo;
                                                 return (
                                                     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'center', padding: '4px 0' }}>
                                                         {catImg && catImg !== '-' && (
                                                             <NgrokSafeImage
                                                                 src={`${toApiAssetUrl(catImg)}?t=${catObj?.updatedAtUtc || catObj?.updatedAt || ''}`}
+                                                                fallbackSrc={null}
                                                                 alt={blog.category}
                                                                 title={blog.category}
                                                                 style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
                                                                 onClick={() => setActivePopupImage(`${toApiAssetUrl(catImg)}?t=${catObj?.updatedAtUtc || catObj?.updatedAt || ''}`)}
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
                                                             />
                                                         )}
                                                         <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>
@@ -1162,17 +1201,22 @@ function BlogList() {
                                         </td>
                                         <td style={styles.td}>
                                             {(() => {
-                                                const subObj = subCategories.find(s => s.name === blog.subCategory);
-                                                const subImg = subObj?.imageUrl || subObj?.image;
+                                                const subObj = subCategories.find(s => 
+                                                    (s.name || '').trim().toLowerCase() === (blog.subCategory || '').trim().toLowerCase() ||
+                                                    (s.id && blog.subCategoryId && s.id === blog.subCategoryId)
+                                                );
+                                                const subImg = subObj?.imageUrl || subObj?.image || subObj?.imagePath || subObj?.filePath || subObj?.icon || subObj?.iconUrl || subObj?.photo;
                                                 return (
                                                     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'center', padding: '4px 0' }}>
                                                         {subImg && subImg !== '-' && (
                                                             <NgrokSafeImage
                                                                 src={`${toApiAssetUrl(subImg)}?t=${subObj?.updatedAtUtc || subObj?.updatedAt || ''}`}
+                                                                fallbackSrc={null}
                                                                 alt={blog.subCategory}
                                                                 title={blog.subCategory}
                                                                 style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
                                                                 onClick={() => setActivePopupImage(`${toApiAssetUrl(subImg)}?t=${subObj?.updatedAtUtc || subObj?.updatedAt || ''}`)}
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
                                                             />
                                                         )}
                                                         <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>
@@ -1207,7 +1251,7 @@ function BlogList() {
                                                 {activeDropdownId === blog.id && (
                                                     <div style={{
                                                         position: 'absolute',
-                                                        ...(index >= currentBlogs.length - 2 || currentBlogs.length <= 3
+                                                        ...(index >= filteredBlogs.length - 2 || filteredBlogs.length <= 3
                                                             ? { bottom: '100%', marginBottom: '6px' }
                                                             : { top: '100%', marginTop: '6px' }),
                                                         right: 0,
@@ -1216,9 +1260,18 @@ function BlogList() {
                                                         minWidth: '160px', overflow: 'hidden'
                                                     }}>
                                                         <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(blog); setActiveDropdownId(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'background 0.15s ease' }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.background='none'}
+                                                            className="admin-view-action-btn"
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'all 0.15s ease' }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = '#2563eb';
+                                                                e.currentTarget.style.color = '#ffffff';
+                                                                e.currentTarget.style.border = 'none';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'none';
+                                                                e.currentTarget.style.color = '#334155';
+                                                                e.currentTarget.style.border = 'none';
+                                                            }}
                                                         >
                                                             <Eye size={14} /> <span>View Details</span>
                                                         </button>
@@ -1461,7 +1514,7 @@ function BlogList() {
                                             <input
                                                 id="edit-blog-image"
                                                 type="file"
-                                                accept="image/*"
+                                                accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                 onChange={handleEditFileChange('image', 'imageName')}
                                                 style={{ display: 'none' }}
                                             />
@@ -1517,7 +1570,7 @@ function BlogList() {
                                                 Choose File
                                                 <input
                                                     type="file"
-                                                    accept="image/*"
+                                                    accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                     onChange={handleEditFileChange('ogImage', 'ogImageName')}
                                                     style={{ display: 'none' }}
                                                 />
@@ -1578,7 +1631,18 @@ function BlogList() {
                                 <button
                                     type="button"
                                     onClick={() => setEditModalOpen(false)}
-                                    style={{ padding: '8px 24px', background: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
+                                    className="btn-cancel"
+                                    style={{ padding: '5px 14px', background: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 600, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#A51C49';
+                                        e.currentTarget.style.borderColor = '#A51C49';
+                                        e.currentTarget.style.color = '#ffffff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#ffffff';
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                        e.currentTarget.style.color = '#334155';
+                                    }}
                                 >
                                     Cancel
                                 </button>
@@ -1615,7 +1679,19 @@ function BlogList() {
                         </div>
                         <div style={{ padding: '12px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                             <button type="button" onClick={() => setDeleteBlog(null)}
-                                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#f97316', color: '#ffffff', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+                                className="btn-cancel"
+                                style={{ padding: '5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#A51C49';
+                                    e.currentTarget.style.borderColor = '#A51C49';
+                                    e.currentTarget.style.color = '#ffffff';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#ffffff';
+                                    e.currentTarget.style.borderColor = '#cbd5e1';
+                                    e.currentTarget.style.color = '#334155';
+                                }}
+                            >Cancel</button>
                             <button type="button" onClick={handleDeleteBlog}
                                 style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#A51C49', color: '#ffffff', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>Delete</button>
                         </div>

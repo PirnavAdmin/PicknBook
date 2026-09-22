@@ -16,7 +16,12 @@ namespace PickNBook.Api.Services.Interfaces
             string? walletReservationStatus = null,
             long? walletTransactionId = null,
             string? gatewayPaymentMethod = null,
-            string? paymentReference = null);
+            string? paymentReference = null,
+            string? customerName = null,
+            string? customerEmail = null,
+            string? customerPhone = null,
+            int? passengerCount = null,
+            string? passengerDetailsJson = null);
             
         Task<PendingPaymentBooking> CreatePendingBookingAsync(
             int paymentId, string bookingType, string userId,

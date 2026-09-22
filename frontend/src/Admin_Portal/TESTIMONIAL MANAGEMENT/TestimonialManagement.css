@@ -243,8 +243,8 @@
 }
 
 .tm-btn-danger:hover {
-  background: #ff0000;
-  border-color: #ff0000;
+  background: #dc2626;
+  border-color: #dc2626;
   box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
 }
 
@@ -512,7 +512,7 @@
 
 .tm-cat-package {
   background: #ffe4e6;
-  color: #ff0000;
+  color: #be123c;
 }
 
 /* Stars Rating Component */
@@ -559,14 +559,14 @@
 
 .tm-icon-btn.delete {
   background: #fef2f2 !important;
-  color: #ff0000 !important;
+  color: #dc2626 !important;
   border: 1px solid #fca5a5 !important;
 }
 
 .tm-icon-btn.delete:hover {
   background: #ef4444 !important;
   color: #ffffff !important;
-  border-color: #ff0000 !important;
+  border-color: #dc2626 !important;
   transform: translateY(-1px) scale(1.05) !important;
   box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25) !important;
 }

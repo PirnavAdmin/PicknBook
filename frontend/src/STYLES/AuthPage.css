@@ -931,3 +931,21 @@
   .scenic-trust-row { flex-wrap: wrap; justify-content: center; gap: 8px; }
   .auth-card-wrap { width: 100% !important; max-width: 400px !important; padding: 0 20px !important; margin: 0 auto !important; }
 }
+
+/* Mobile-login Continue button. */
+.auth-continue-btn {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: #ffffff;
+}
+
+.auth-white-primary-btn {
+  color: #ffffff;
+}
+
+.auth-continue-btn:hover:not(:disabled) {
+  background: #d90000;
+  border-color: #d90000;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(255, 0, 0, 0.36);
+}

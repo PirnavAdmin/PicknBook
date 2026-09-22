@@ -7,7 +7,7 @@ body .admin-shell {
   --admin-text: #0f172a;
   --admin-muted: #64748b;
   --admin-surface: rgba(255, 255, 255, 0.88);
-  --admin-soft: rgba(248, 250, 255, 0.9);
+  --admin-soft: rgba(253, 238, 243, 0.95);
   --admin-success: #10b981 !important;
   --admin-success-soft: #ecfdf5;
   --admin-danger: #ef4444;
@@ -54,11 +54,16 @@ body .admin-shell {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: linear-gradient(180deg,
-      #f9e2ea 0%,
-      #fbeaf0 25%,
-      #fdf5f7 55%,
-      #fef9fb 100%);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 178, 202, 0.55) 0%, transparent 45%),
+    radial-gradient(circle at 88% 78%, rgba(255, 192, 212, 0.5) 0%, transparent 45%),
+    radial-gradient(circle at 50% 35%, rgba(253, 210, 226, 0.45) 0%, transparent 55%),
+    linear-gradient(165deg,
+      #fce4ec 0%,
+      #f8cadb 25%,
+      #fae1ec 55%,
+      #fdebf2 80%,
+      #fef3f7 100%);
 }
 
 /* The actual SVG skyline canvas */
@@ -824,9 +829,9 @@ body .admin-shell {
 .admin-table-head {
   background: linear-gradient(135deg, #A51C49, #851237) !important;
   display: grid !important;
-  min-height: 34px !important;
+  min-height: 44px !important;
   height: auto !important;
-  padding: 8px !important;
+  padding: 10px 8px !important;
   gap: 8px !important;
   align-items: center !important;
   border-top-left-radius: 8px !important;
@@ -841,7 +846,8 @@ body .admin-shell {
   font-size: 0.76rem !important;
   font-weight: 700 !important;
   min-height: 24px !important;
-  padding: 2px 4px !important;
+  padding: 6px 4px !important;
+  margin: 0 !important;
   text-align: center !important;
   display: flex !important;
   align-items: center !important;
@@ -856,6 +862,23 @@ body .admin-shell {
 
 .admin-table-head > span:last-child {
   border-right: none !important;
+}
+
+.admin-table-empty {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 120px !important;
+  padding: 30px 20px !important;
+  text-align: center !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-bottom-left-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
 }
 
 .admin-hdr-tooltip {
@@ -1167,30 +1190,31 @@ body .menu-list-add-btn:hover {
   align-items: center !important;
   justify-content: center !important;
   gap: 6px !important;
-  padding: 6px 14px !important;
-  border-radius: 20px !important;
-  border: 1px solid transparent !important;
-  /* State 1: Before mouse enter (no visible border) */
+  padding: 4px 16px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #A51C49 !important;
+  /* State 1: Before mouse enter (white bg, red text & red border) */
   background: #ffffff !important;
-  color: #334155 !important;
+  color: #A51C49 !important;
   font-size: 12px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.2s ease-in-out !important;
   vertical-align: middle !important;
   line-height: 1 !important;
   white-space: nowrap !important;
 }
 
-/* State 2: Mouse enter -> Black border */
+/* State 2: Mouse enter -> Red background, white text */
 .actions-trigger-btn:hover,
 .offer-action-btn-trigger:hover,
 .admin-action-btn:hover,
 .table-action-btn:hover {
-  border: 1px solid #0f172a !important;
-  color: #0f172a !important;
-  background: #ffffff !important;
+  border: 1.5px solid #A51C49 !important;
+  color: #ffffff !important;
+  background: #A51C49 !important;
+  box-shadow: 0 2px 8px rgba(165, 28, 73, 0.25) !important;
 }
 
 /* State 3: Active / Clicked (Dropdown Open -> #A51C49 Color Border) */
@@ -1208,17 +1232,23 @@ body .menu-list-add-btn:hover {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   NAVY BLUE BORDER POPUP CLOSE / CANCEL BUTTON STYLING
+   CLOSE / CANCEL / WRONG OPTION BUTTON STYLING (Decreased Text Size & #A51C49 Hover)
    ══════════════════════════════════════════════════════════════════════════ */
 .navy-close-btn,
+.admin-view-close-btn,
+.close-btn,
+.close-x,
+.admin-modal-close,
+.btn-cancel,
+button.btn-cancel,
 body .navy-close-btn {
   background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #0f172a !important;
-  padding: 4px 14px !important;
-  border-radius: 20px !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 3px 12px !important;
+  border-radius: 16px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
   transition: all 0.2s ease !important;
@@ -1228,8 +1258,78 @@ body .navy-close-btn {
 }
 
 .navy-close-btn:hover,
+.admin-view-close-btn:hover,
+.close-btn:hover,
+.close-x:hover,
+.admin-modal-close:hover,
+.btn-cancel:hover,
+button.btn-cancel:hover,
+.modal-cancel-btn:hover,
 body .navy-close-btn:hover {
-  background: #f8fafc !important;
-  border-color: #0f172a !important;
-  color: #0f172a !important;
+  background: #A51C49 !important;
+  border-color: #A51C49 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.3) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VIEW BUTTON STYLING (Remove border, Change to Blue on Hover/Enter)
+   ══════════════════════════════════════════════════════════════════════════ */
+.admin-view-action-btn,
+.btn-view,
+.view-btn,
+.admin-btn-view,
+.admin-view-btn,
+button.btn-view,
+button.view-btn {
+  border: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-view-action-btn:hover,
+.btn-view:hover,
+.view-btn:hover,
+.admin-btn-view:hover,
+.admin-view-btn:hover,
+button.btn-view:hover,
+button.view-btn:hover {
+  border: none !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TRANSPARENT TABLE BACKGROUND STYLING
+   ══════════════════════════════════════════════════════════════════════════ */
+.admin-table-shell,
+.hbl-table-wrap,
+.hcnl-table-wrap,
+.hml-table-wrap,
+.admin-placeholder-table,
+.table-wrapper,
+[class*="tableWrapper"],
+[class*="table-wrap"] {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 8px 32px 0 rgba(165, 28, 73, 0.05) !important;
+}
+
+.admin-table-shell table tbody,
+.admin-table-shell table tr,
+.admin-table-shell table td,
+.hbl-table-wrap table tbody,
+.hbl-table-wrap table tr,
+.hbl-table-wrap table td,
+[class*="tableWrapper"] table tbody,
+[class*="tableWrapper"] table tr,
+[class*="tableWrapper"] table td {
+  background: transparent !important;
+}
+
+.admin-table-shell table tbody tr:hover,
+[class*="tableWrapper"] table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
 }

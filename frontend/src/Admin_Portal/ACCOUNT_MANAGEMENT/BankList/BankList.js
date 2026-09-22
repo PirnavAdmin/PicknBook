@@ -25,7 +25,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-001',
     bankName: 'HDFC Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '123456784582',
     ifscCode: 'HDFC0001234',
     branch: 'Banjara Hills, Hyderabad',
@@ -45,7 +45,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-002',
     bankName: 'ICICI Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '987654327021',
     ifscCode: 'ICIC0004567',
     branch: 'MG Road, Bangalore',
@@ -65,7 +65,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-003',
     bankName: 'State Bank of India',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '112233442345',
     ifscCode: 'SBIN0005678',
     branch: 'Connaught Place, New Delhi',
@@ -85,7 +85,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-004',
     bankName: 'Axis Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '556677886055',
     ifscCode: 'UTIB0001111',
     branch: 'BKC, Mumbai',
@@ -105,7 +105,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-005',
     bankName: 'Kotak Mahindra Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '998877663987',
     ifscCode: 'KKBK0002222',
     branch: 'Park Street, Kolkata',
@@ -125,7 +125,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-006',
     bankName: 'Canara Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '443322118878',
     ifscCode: 'CNRB0003333',
     branch: 'T Nagar, Chennai',
@@ -145,7 +145,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-007',
     bankName: 'IndusInd Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '667788994455',
     ifscCode: 'INDB0004444',
     branch: 'Gachibowli, Hyderabad',
@@ -165,7 +165,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-008',
     bankName: 'YES Bank',
-    accountHolder: 'Pick&Book Pvt Ltd',
+    accountHolder: 'PickNBook Pvt Ltd',
     accountNumber: '334455667766',
     ifscCode: 'YESB0005555',
     branch: 'Viman Nagar, Pune',
@@ -187,7 +187,7 @@ const INITIAL_BANK_ACCOUNTS = [
 const DEFAULT_FORM = {
   id: '',
   bankName: 'HDFC Bank',
-  accountHolder: 'Pick&Book Pvt Ltd',
+  accountHolder: 'PickNBook Pvt Ltd',
   accountNumber: '',
   confirmAccountNumber: '',
   ifscCode: '',
@@ -530,9 +530,9 @@ export default function BankList() {
                 <h3 style={{ margin: '4px 0 2px', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
                   {accounts.filter(a => a.status === 'Inactive').length}
                 </h3>
-                <span style={{ fontSize: '11px', color: '#ff0000', fontWeight: 500 }}>↓ 50% from last month</span>
+                <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 500 }}>↓ 50% from last month</span>
               </div>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fee2e2', color: '#ff0000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <XCircle size={18} />
               </div>
             </div>
@@ -754,7 +754,7 @@ export default function BankList() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
                 <thead>
-                  <tr style={{ background: '#fff1f2', borderBottom: '1px solid #fecdd3', color: '#ff0000', fontWeight: 600 }}>
+                  <tr style={{ background: '#fff1f2', borderBottom: '1px solid #fecdd3', color: '#9f1239', fontWeight: 600 }}>
                     <th style={{ padding: '10px 10px' }}>#</th>
                     <th style={{ padding: '10px 10px' }}>Bank ID</th>
                     <th style={{ padding: '10px 10px' }}>Bank Name</th>
@@ -834,7 +834,7 @@ export default function BankList() {
                           fontSize: '10px',
                           fontWeight: 600,
                           background: row.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                          color: row.status === 'Active' ? '#15803d' : '#ff0000'
+                          color: row.status === 'Active' ? '#15803d' : '#991b1b'
                         }}>
                           {row.status}
                         </span>
@@ -980,7 +980,7 @@ export default function BankList() {
                                 border: 'none',
                                 textAlign: 'left',
                                 fontSize: '11px',
-                                color: '#ff0000',
+                                color: '#dc2626',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -988,7 +988,7 @@ export default function BankList() {
                                 borderTop: '1px solid #f1f5f9'
                               }}
                             >
-                              <Trash2 size={12} color="#ff0000" /> Delete
+                              <Trash2 size={12} color="#dc2626" /> Delete
                             </button>
                           </div>
                         )}
@@ -1510,7 +1510,7 @@ export default function BankList() {
                   fontSize: '11px',
                   fontWeight: 600,
                   background: selectedItem.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                  color: selectedItem.status === 'Active' ? '#15803d' : '#ff0000'
+                  color: selectedItem.status === 'Active' ? '#15803d' : '#991b1b'
                 }}>
                   {selectedItem.status}
                 </span>
@@ -1648,7 +1648,7 @@ export default function BankList() {
                 </div>
                 <div>
                   <span style={{ color: '#64748b' }}>Status:</span>
-                  <span style={{ float: 'right', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.status === 'Active' ? '#dcfce7' : '#fee2e2', color: selectedItem.status === 'Active' ? '#15803d' : '#ff0000' }}>
+                  <span style={{ float: 'right', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 600, background: selectedItem.status === 'Active' ? '#dcfce7' : '#fee2e2', color: selectedItem.status === 'Active' ? '#15803d' : '#991b1b' }}>
                     {selectedItem.status}
                   </span>
                 </div>

@@ -1408,11 +1408,11 @@ function CustomerList() {
                             </div>
                             <div>
                                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Account Status</div>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: selectedCustomer.status === 'Active' ? '#16a34a' : '#ff0000' }}>{selectedCustomer.status}</div>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: selectedCustomer.status === 'Active' ? '#16a34a' : '#dc2626' }}>{selectedCustomer.status}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Wallet Status</div>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: selectedCustomer.walletStatus === 'Active' ? '#16a34a' : '#ff0000' }}>{selectedCustomer.walletStatus}</div>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: selectedCustomer.walletStatus === 'Active' ? '#16a34a' : '#dc2626' }}>{selectedCustomer.walletStatus}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Wallet Balance</div>
@@ -1617,7 +1617,7 @@ function CustomerList() {
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div style={{ padding: '18px 24px', background: '#ff0000', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '18px 24px', background: '#dc2626', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <ShieldAlert size={20} />
                                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Delete Customer Account</h3>
@@ -1638,7 +1638,7 @@ function CustomerList() {
                         <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                             <button
                                 type="button"
-                                style={{ padding: '8px 16px', background: '#ff0000', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                style={{ padding: '8px 16px', background: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                                 onClick={handleConfirmDeleteCustomer}
                             >
                                 Delete Account

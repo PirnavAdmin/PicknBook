@@ -495,7 +495,7 @@ function BlogSubCategoryList() {
         },
         statusInactive: {
             background: '#fef2f2',
-            color: '#ff0000',
+            color: '#b91c1c',
             borderColor: '#ef4444',
         },
         actionButtons: {
@@ -788,7 +788,7 @@ function BlogSubCategoryList() {
                                 <div>
                                     <strong style={{ color: 'var(--text-secondary)' }}>Status:</strong>
                                     <div>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedSubCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedSubCategory.status === 'Active' ? '#047857' : '#ff0000', border: selectedSubCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedSubCategory.status === 'Active' ? '#ecfdf5' : '#fef2f2', color: selectedSubCategory.status === 'Active' ? '#047857' : '#b91c1c', border: selectedSubCategory.status === 'Active' ? '1px solid #10b981' : '1px solid #ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', fontWeight: 500 }}>
                                             {selectedSubCategory.status}
                                         </div>
                                     </div>
@@ -911,16 +911,21 @@ function BlogSubCategoryList() {
                                             </span>
                                         </td>
                                         <td style={styles.td}>
-                                            {(item.imageUrl || item.image) && (item.imageUrl || item.image) !== '-' ? (
-                                                <NgrokSafeImage 
-                                                    src={`${toApiAssetUrl(item.imageUrl || item.image)}?t=${item.updatedAtUtc || item.updatedAt || ''}`} 
-                                                    alt={item.name} 
-                                                    style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
-                                                    onClick={() => setActivePopupImage(`${toApiAssetUrl(item.imageUrl || item.image)}?t=${item.updatedAtUtc || item.updatedAt || ''}`)}
-                                                />
-                                            ) : (
-                                                '-'
-                                            )}
+                                            {(() => {
+                                                const subImg = item.imageUrl || item.image || item.imagePath || item.filePath || item.icon || item.iconUrl || item.photo;
+                                                return subImg && subImg !== '-' ? (
+                                                    <NgrokSafeImage 
+                                                        src={`${toApiAssetUrl(subImg)}?t=${item.updatedAtUtc || item.updatedAt || ''}`} 
+                                                        fallbackSrc={null}
+                                                        alt={item.name} 
+                                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
+                                                        onClick={() => setActivePopupImage(`${toApiAssetUrl(subImg)}?t=${item.updatedAtUtc || item.updatedAt || ''}`)}
+                                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                                    />
+                                                ) : (
+                                                    '-'
+                                                );
+                                            })()}
                                         </td>
                                         <td style={styles.td}>{item.name}</td>
                                         <td style={styles.td}>
@@ -1096,7 +1101,7 @@ function BlogSubCategoryList() {
                                         <input 
                                             id="edit-subcategory-image"
                                             type="file" 
-                                            accept="image/*"
+                                            accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                             onChange={(e) => setEditFormData(prev => ({ ...prev, image: e.target.files[0] }))}
                                             style={{ display: 'none' }}
                                         />

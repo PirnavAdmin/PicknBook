@@ -66,6 +66,7 @@
 }
 
 @media (max-width: 820px) {
+
   .admin-flight-cancel-page .admin-flight-cancel-table-head,
   .admin-flight-cancel-page .admin-flight-cancel-table-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -73,6 +74,7 @@
 }
 
 @media (max-width: 620px) {
+
   .admin-flight-cancel-page .admin-flight-cancel-table-head,
   .admin-flight-cancel-page .admin-flight-cancel-table-row {
     grid-template-columns: 1fr;
@@ -316,3 +318,103 @@
   font-weight: 700;
 }
 
+.admin-flight-cancel-table-row .admin-cancel-cell a,
+.admin-cancel-table-row .admin-cancel-cell a {
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+}
+
+/* Custom View Button style (red outline before hover, red filled after hover) */
+.admin-flight-cancel-page .admin-action-btn.admin-view-btn-custom,
+.admin-action-btn.admin-view-btn-custom {
+  background: #ffffff !important;
+  color: #A51C49 !important;
+  border: 1.5px solid #A51C49 !important;
+  border-radius: 12px !important;
+  padding: 4px 18px !important;
+  font-size: 0.80rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 28px !important;
+}
+
+.admin-flight-cancel-page .admin-action-btn.admin-view-btn-custom:hover,
+.admin-action-btn.admin-view-btn-custom:hover {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #A51C49 !important;
+  box-shadow: 0 2px 8px rgba(165, 28, 73, 0.25) !important;
+}
+
+/* === Cancellation Status Pills (One Status One Color) === */
+.admin-status-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  font-size: 0.70rem !important;
+  font-weight: 700 !important;
+  text-transform: capitalize !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 1. PENDING: Soft Amber / Gold */
+.admin-status-pill.pending {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #f59e0b !important;
+}
+.admin-status-pill.pending:hover {
+  background-color: #b45309 !important;
+  color: #ffffff !important;
+}
+
+/* 2. REFUNDED: Soft Emerald / Green */
+.admin-status-pill.refunded,
+.admin-status-pill.status-approved {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #22c55e !important;
+}
+.admin-status-pill.refunded:hover,
+.admin-status-pill.status-approved:hover {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+
+/* 3. COMPLETED: Soft Royal / Sky Blue */
+.admin-status-pill.completed {
+  background-color: #dbeafe !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #3b82f6 !important;
+}
+.admin-status-pill.completed:hover {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+/* 4. CANCELLED / REJECTED / FAILED: Soft Crimson Red */
+.admin-status-pill.cancelled,
+.admin-status-pill.rejected,
+.admin-status-pill.failed,
+.admin-status-pill.status-rejected {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #ef4444 !important;
+}
+.admin-status-pill.cancelled:hover,
+.admin-status-pill.rejected:hover,
+.admin-status-pill.failed:hover,
+.admin-status-pill.status-rejected:hover {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+}

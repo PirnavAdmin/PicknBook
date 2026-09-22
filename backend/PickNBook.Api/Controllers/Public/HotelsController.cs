@@ -1856,32 +1856,6 @@ namespace PickNBook.Api.Controllers
             return Ok(response);
         }
 
-        [HttpGet("coupons/active")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetActiveCoupons()
-        {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var coupons = await _dbContext.HotelCoupons
-                .AsNoTracking()
-                .Where(c => c.Status == "Active" 
-                         && today >= c.StartDate 
-                         && today <= c.ExpiryDate
-                         && (c.UseLimit == 0 || c.UsedCount < c.UseLimit))
-                .Select(c => new 
-                {
-                    c.CouponCode,
-                    c.CouponType,
-                    c.Value,
-                    c.MinBookingAmount,
-                    c.MaxDiscountAmount,
-                    c.Remark,
-                    c.IsFirstTimeUserOnly
-                })
-                .ToListAsync();
-
-            return Ok(coupons);
-        }
-
         [HttpPost("coupons/validate")]
         [Authorize]
         public async Task<IActionResult> ValidateCoupon([FromBody] ValidateHotelCouponRequestDto request)

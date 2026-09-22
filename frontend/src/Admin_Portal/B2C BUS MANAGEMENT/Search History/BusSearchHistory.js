@@ -103,7 +103,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const BUS_BOOKINGS_ROOT = "/api/BusBookings";
 const BUS_SEARCH_LOGS_ROOT = "/api/admin/bus-search-logs";
@@ -466,7 +466,7 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
       ) || ""
     ),
     searchType: "Bus",
-    raw: record,
+    raw: record?.raw ? record.raw : record,
   };
 }
 
@@ -620,12 +620,12 @@ const CANDIDATE_BASE_URLS = [
   "https://localhost:7147",
   "http://localhost:7179",
   "https://localhost:7179",
-  "https://paycheck-baton-overfull.ngrok-free.dev"
+  "https://satin-eastcoast-musky.ngrok-free.dev"
 ];
 
 const CANDIDATE_ENDPOINTS = [
-  BUS_SEARCH_LOGS_ROOT,
   "/api/admin/bus/searches",
+  BUS_SEARCH_LOGS_ROOT,
   "/api/BusSearchLogs",
   "/api/admin/bus/search-history",
   "/api/admin/bus/bus-search-history",
@@ -645,7 +645,7 @@ async function listAdminBusSearchHistory({
   customerName,
   fromDate,
   toDate,
-  limit = 500,
+  limit = 200,
 } = {}) {
   const queryParams = {};
   if (limit) queryParams.limit = limit;
@@ -854,8 +854,8 @@ export default function AdminBusSearchHistoryPage() {
 
     const localRows = apiError
       ? readSearchHistoryEntries({ searchType: "Bus" }).map((record, index) =>
-          mapLocalSearchRecord(record, index)
-        )
+        mapLocalSearchRecord(record, index)
+      )
       : [];
     const mergedRows = mergeSearchHistory(apiRows, localRows);
     setHistoryRows(mergedRows);
@@ -1002,7 +1002,7 @@ export default function AdminBusSearchHistoryPage() {
   return (
     <section className="admin-b2c-page admin-search-history-page">
       <header className="admin-b2c-header admin-search-history-header">
-        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.85rem" }}>
+        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.25rem" }}>
           <span style={{ color: "#A51C49" }}>B2C Bus </span>
           <span style={{ color: "black" }}>Search List</span>
         </h1>
@@ -1106,6 +1106,7 @@ export default function AdminBusSearchHistoryPage() {
           <span>Depart Date</span>
           <span>Segment</span>
           <span>Customer / User</span>
+          <span>Action</span>
         </header>
 
         {isLoading ? (
@@ -1120,16 +1121,16 @@ export default function AdminBusSearchHistoryPage() {
                 onClick={() => setSelectedRecord(row)}
               >
                 <div className="admin-search-history-cell admin-cell-centered">
-                  <strong>{startIndex + index + 1}</strong>
+                  <span style={{ fontWeight: 500, color: "#1e293b" }}>{startIndex + index + 1}</span>
                 </div>
                 <div className="admin-search-history-cell">
-                  <strong>{formatSearchDate(row.searchDateUtc)}</strong>
+                  <span style={{ fontWeight: 500, color: "#1e293b" }}>{formatSearchDate(row.searchDateUtc)}</span>
                 </div>
                 <div className="admin-search-history-cell">
-                  <strong>{formatDepartDate(row.departDate)}</strong>
+                  <span style={{ fontWeight: 500, color: "#1e293b" }}>{formatDepartDate(row.departDate)}</span>
                 </div>
                 <div className="admin-search-history-cell">
-                  <strong>{buildSegmentLabel(row)}</strong>
+                  <span style={{ fontWeight: 500, color: "#0f172a" }}>{buildSegmentLabel(row)}</span>
                 </div>
                 <div className="admin-search-history-cell">
                   <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
@@ -1138,15 +1139,27 @@ export default function AdminBusSearchHistoryPage() {
                         padding: "1px 6px",
                         borderRadius: "4px",
                         fontSize: "0.72rem",
-                        fontWeight: 600,
+                        fontWeight: 500,
                         backgroundColor: row.isGuest ? "#fef3c7" : "#e0f2fe",
                         color: row.isGuest ? "#92400e" : "#075985",
                       }}
                     >
                       {row.isGuest ? "Guest" : "User"}
                     </span>
-                    <strong>{row.userOrGuestId || buildCustomerLabel(row)}</strong>
+                    <span style={{ fontWeight: 500, color: "#334155" }}>{row.userOrGuestId || buildCustomerLabel(row)}</span>
                   </div>
+                </div>
+                <div className="admin-search-history-cell admin-cell-centered">
+                  <button
+                    type="button"
+                    className="admin-search-history-view-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRecord(row);
+                    }}
+                  >
+                    View
+                  </button>
                 </div>
               </article>
             ))}
@@ -1172,7 +1185,8 @@ export default function AdminBusSearchHistoryPage() {
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(15, 23, 42, 0.4)",
+            backgroundColor: "rgba(15, 23, 42, 0.48)",
+            backdropFilter: "blur(3px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1184,44 +1198,58 @@ export default function AdminBusSearchHistoryPage() {
           <article
             style={{
               background: "#ffffff",
-              borderRadius: "16px",
-              width: "min(560px, 95vw)",
-              padding: "20px",
-              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+              borderRadius: "18px",
+              width: "min(600px, 95vw)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: "24px",
+              boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
               display: "flex",
               flexDirection: "column",
-              gap: "16px",
+              gap: "20px",
             }}
             onClick={(event) => event.stopPropagation()}
           >
-            <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px" }}>
+            <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "14px" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#0f172a" }}>Bus Search Log #{selectedRecord.id}</h3>
-                <small style={{ color: "#64748b" }}>{selectedRecord.userOrGuestId}</small>
+                <h3 style={{ margin: 0, fontSize: "1.28rem", color: "#0f172a", fontWeight: 700 }}>
+                  Bus Search Log Details
+                </h3>
+                <small style={{ color: "#64748b", fontSize: "0.83rem" }}>
+                  Record ID: #{selectedRecord.id}
+                </small>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedRecord(null)}
                 style={{
-                  padding: "6px 14px",
+                  padding: "6px 16px",
                   borderRadius: "8px",
                   border: "1px solid #cbd5e1",
                   background: "#f8fafc",
                   cursor: "pointer",
                   fontWeight: 600,
+                  color: "#334155",
+                  fontSize: "0.83rem",
+                  transition: "all 0.15s ease",
                 }}
               >
                 Close
               </button>
             </header>
 
-            <section style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px" }}>
+            <section style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>User Type</span>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Log ID</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.92rem" }}>#{selectedRecord.id}</p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>User Type</span>
                 <div style={{ marginTop: "4px" }}>
                   <span
                     style={{
-                      padding: "2px 8px",
+                      padding: "3px 10px",
                       borderRadius: "6px",
                       fontSize: "0.78rem",
                       fontWeight: 600,
@@ -1233,27 +1261,81 @@ export default function AdminBusSearchHistoryPage() {
                   </span>
                 </div>
               </div>
-              <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>User / Guest ID</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{selectedRecord.userOrGuestId || "N/A"}</p>
-              </div>
-              <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Route Segment</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{buildSegmentLabel(selectedRecord)}</p>
-              </div>
-              <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Journey Date</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{formatDepartDate(selectedRecord.departDate)}</p>
-              </div>
+
               <div style={{ gridColumn: "1 / -1" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Search Timestamp (IST)</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{formatSearchDate(selectedRecord.searchDateUtc)}</p>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>User / Guest ID</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem", wordBreak: "break-all" }}>
+                  {selectedRecord.userOrGuestId || selectedRecord.userId || "N/A"}
+                </p>
               </div>
+
               <div>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Data Source</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#0f172a" }}>{selectedRecord.isLocalFallback ? "Local Backup" : "Live Backend API"}</p>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Registered User ID</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>
+                  {selectedRecord.userId ? `#${selectedRecord.userId}` : "None (Guest)"}
+                </p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Search Type</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>Bus</p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Origin City (From)</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{selectedRecord.fromCity || "--"}</p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Destination City (To)</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{selectedRecord.toCity || "--"}</p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Route Segment</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{buildSegmentLabel(selectedRecord)}</p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Journey Date</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{formatDepartDate(selectedRecord.departDate)}</p>
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Search Date & Time (IST)</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#A51C49", fontSize: "0.95rem" }}>{formatSearchDate(selectedRecord.searchDateUtc)}</p>
+              </div>
+
+              <div>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Data Source</span>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: selectedRecord.isLocalFallback ? "#d97706" : "#059669", fontSize: "0.9rem" }}>
+                  {selectedRecord.isLocalFallback ? "Local Backup" : "Live Backend API"}
+                </p>
               </div>
             </section>
+
+            {selectedRecord.raw ? (
+              <details style={{ borderTop: "1px solid #e2e8f0", paddingTop: "12px", marginTop: "4px" }}>
+                <summary style={{ cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, color: "#64748b" }}>
+                  View Raw API Response JSON
+                </summary>
+                <pre
+                  style={{
+                    margin: "10px 0 0",
+                    padding: "12px",
+                    background: "#0f172a",
+                    color: "#38bdf8",
+                    borderRadius: "8px",
+                    fontSize: "0.76rem",
+                    overflowX: "auto",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {JSON.stringify(selectedRecord.raw, null, 2)}
+                </pre>
+              </details>
+            ) : null}
           </article>
         </div>
       ) : null}

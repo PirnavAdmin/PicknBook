@@ -12,11 +12,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   const [localError, setLocalError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Agent Wallet Info
-  const [isAgent, setIsAgent] = useState(false);
-  const [agentProfile, setAgentProfile] = useState(null);
-
-  // B2C Wallet Info
+  // Wallet data is always read from the authenticated B2C customer's wallet.
   const [b2cWallet, setB2cWallet] = useState(null);
   const [useWallet, setUseWallet] = useState(false);
 
@@ -46,25 +42,35 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   }, [isBlocked, blockTimeRemaining]);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
       setUseWallet(Number(flowState?.walletAppliedAmount || 0) > 0);
-      const b2bUser = localStorage.getItem("b2b_user");
-      if (b2bUser) {
-        setIsAgent(true);
-        setAgentProfile(JSON.parse(b2bUser));
-      } else {
-        const token = localStorage.getItem("token");
-        if (token) {
-          getWalletSummary()
-            .then(data => setB2cWallet(data))
-            .catch(err => console.warn("Failed to fetch B2C wallet summary", err));
-        }
+      const token =
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("token") ||
+        localStorage.getItem("authToken") ||
+        sessionStorage.getItem("authToken") ||
+        localStorage.getItem("accessToken") ||
+        sessionStorage.getItem("accessToken");
+
+      if (token) {
+        getWalletSummary()
+          .then((data) => {
+            if (isMounted) setB2cWallet(data);
+          })
+          .catch((err) => console.warn("Failed to fetch wallet summary", err));
       }
     } else {
       document.body.style.overflow = "";
+      setB2cWallet(null);
     }
-    return () => { document.body.style.overflow = ""; };
+
+    return () => {
+      isMounted = false;
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -78,50 +84,22 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     totalPayable = flowState?.payableAmount || flowState?.finalPayableAmount || 0;
   }
   totalPayable = Math.max(0, Number(totalPayable) || 0);
-  const walletBalance = Number(b2cWallet?.balance ?? b2cWallet?.availableBalance ?? 0) || 0;
-  const walletStatus = b2cWallet?.walletStatus || b2cWallet?.status || "Inactive";
+  const walletBalance = Number(
+    b2cWallet?.availableBalance ??
+    b2cWallet?.AvailableBalance ??
+    b2cWallet?.walletBalance ??
+    b2cWallet?.WalletBalance ??
+    b2cWallet?.balance ??
+    b2cWallet?.Balance ??
+    0,
+  ) || 0;
+  const walletStatus = b2cWallet?.walletStatus || b2cWallet?.WalletStatus || b2cWallet?.status || b2cWallet?.Status || "Inactive";
   const walletAppliedAmount = useWallet && walletStatus === "Active"
     ? Math.min(walletBalance, totalPayable)
     : 0;
   const gatewayPayableAmount = Math.max(0, totalPayable - walletAppliedAmount);
 
-  // --- Agent Wallet Logic ---
-  const handleAgentPay = async () => {
-    if (isProcessing) return;
-    setLocalError("");
-    setIsProcessing(true);
-
-    const markup = Number(fareSummary?.markup || 0);
-    const tierDiscount = Number(fareSummary?.tierDiscount || 0);
-    const volumeDiscount = Number(fareSummary?.volumeDiscount || 0);
-    const wholesalePrice = totalPayable - markup - tierDiscount - volumeDiscount;
-    const balance = Number(agentProfile?.walletBalance ?? 0);
-
-    if (balance < wholesalePrice) {
-      setLocalError(`Insufficient wallet balance. You need ₹ ${wholesalePrice.toFixed(2)} (wholesale price) but only have ₹ ${balance.toFixed(2)}.`);
-      setIsProcessing(false);
-      return;
-    }
-
-    try {
-      await new Promise(res => setTimeout(res, 1200));
-
-      // Update Agent Balance in localStorage
-      const updatedBalance = balance - wholesalePrice;
-      const updatedProfile = { ...agentProfile, walletBalance: updatedBalance };
-      localStorage.setItem("b2b_user", JSON.stringify(updatedProfile));
-      localStorage.setItem("user", JSON.stringify(updatedProfile));
-
-      onSuccess({ paymentMethod: "Agent Wallet", wholesalePrice });
-    } catch (err) {
-      setLocalError(err.message || "Failed to process agent payment.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // --- B2C Wallet Logic ---
-  // --- Cashfree B2C Logic ---
+  // --- B2C Wallet / Cashfree Logic ---
   const handleCashfreePay = async () => {
     if (isProcessing || cfIsSubmitting || cfStatus === "creating") return;
     clearError();
@@ -262,7 +240,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     }
   };
 
-  const handlePayNow = isAgent && bookingType !== "Flight" ? handleAgentPay : handleCashfreePay;
+  const handlePayNow = handleCashfreePay;
 
   return (
     <div className="modal-backdrop" onClick={onClose} style={{
@@ -348,7 +326,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
         <button
           onClick={handlePayNow}
-          disabled={isProcessing || cfIsSubmitting || (useWallet && (!b2cWallet || walletStatus !== "Active" || walletBalance <= 0))}
+          disabled={isProcessing || cfIsSubmitting || (useWallet && (walletStatus !== "Active" || walletBalance <= 0))}
           style={{
             width: "100%", padding: "14px", backgroundColor: "var(--pnb-red, #e60000)", color: "white",
             border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer",

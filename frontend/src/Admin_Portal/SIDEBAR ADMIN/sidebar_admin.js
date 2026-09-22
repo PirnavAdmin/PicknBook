@@ -48,7 +48,7 @@ const navGroups = [
   {
     section: null,
     items: [
-      { label: 'Dashboard', to: p(), icon: icons.dashboard, end: true, submenu: [] },
+      { label: 'Dashboard', to: p('dashbord'), icon: icons.dashboard, end: true, submenu: [] },
       {
         label: 'Bookings',
         to: p('bookings'),
@@ -81,7 +81,7 @@ const navGroups = [
         to: p('promotions'),
         icon: icons.offer,
         submenu: [
-          { label: 'Promotions', to: p('b2c-bus/coupon-list') },
+          { label: 'Promotions', to: p('promotions') },
           {
             label: 'Markup',
             to: p('promotions/markup'),
@@ -113,10 +113,7 @@ const navGroups = [
       },
       {
         label: 'Payment Management', to: p('payment-management'), icon: icons.payment, submenu: [
-          { label: 'Wallet Settings', to: p('payment-management/payment-settings') },
           { label: 'Wallet Transactions', to: p('payment-management/wallet-transactions') },
-          { label: 'Reconciliation', to: p('payment-management/reconciliation') },
-          { label: 'Transaction Log', to: p('payment-management/transaction-log') },
           { label: 'Payments / Failed', to: p('payments') },
         ],
       },
@@ -127,8 +124,7 @@ const navGroups = [
         submenu: [
           { label: 'Customers', to: p('customer-management/customer-list') },
           { label: 'Queries', to: p('query-management/query-list') },
-          { label: 'Deposit Requests', to: p('customer-management/deposit-request-list') },
-          { label: 'Testimonial', to: p('testimonial-management/dashboard') },
+          { label: 'Testimonial', to: p('testimonial-management/testimonial-list') },
           {
             label: 'Search History',
             to: p('customers/search-history'),
@@ -164,41 +160,91 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
 
   const [openMenus, setOpenMenus] = useState(new Set());
 
-  const toggleLevel1 = (toKey) => {
-    setOpenMenus(prev => {
-      const next = new Set();
-      if (!prev.has(toKey)) {
-        next.add(toKey);
-      }
-      return next;
-    });
-  };
-
-  const toggleLevel2 = (parentKey, toKey) => {
-    setOpenMenus(prev => {
-      const next = new Set();
-      next.add(parentKey);
-      if (!prev.has(toKey)) {
-        next.add(toKey);
-      }
-      return next;
-    });
+  const isChildActive = (child) => {
+    if (!child || !child.to) return false;
+    if (child.end !== undefined ? child.end : true) {
+      if (currentPath === child.to) return true;
+    }
+    return currentPath === child.to || currentPath.startsWith(child.to + '/');
   };
 
   const isSubItemActive = (sub) => {
-    if (sub.to && (currentPath === sub.to || currentPath.startsWith(sub.to + '/'))) return true;
+    if (!sub) return false;
     if (sub.submenu && sub.submenu.length > 0) {
-      return sub.submenu.some(child => currentPath === child.to || currentPath.startsWith(child.to + '/'));
+      return sub.submenu.some(isChildActive);
+    }
+    if (sub.to) {
+      if (sub.to.includes('testimonial-management') && currentPath.includes('testimonial-management')) return true;
+      return currentPath === sub.to || currentPath.startsWith(sub.to + '/');
     }
     return false;
   };
 
   const isParentActive = (item) => {
-    if (item.end ? currentPath === item.to : (item.to && currentPath.startsWith(item.to + '/'))) return true;
+    if (!item) return false;
     if (item.submenu && item.submenu.length > 0) {
       return item.submenu.some(isSubItemActive);
     }
+    if (item.to) {
+      const isDashboardItem = item.to === p('dashbord') || item.to === p('dashboard') || item.to === p();
+      if (isDashboardItem) {
+        return currentPath === p('dashbord') || currentPath === p('dashboard') || currentPath === ADMIN || currentPath === `${ADMIN}/`;
+      }
+      return item.end ? currentPath === item.to : (currentPath === item.to || currentPath.startsWith(item.to + '/'));
+    }
     return false;
+  };
+
+  const getAutoOpenKeys = (path) => {
+    const keys = new Set();
+    navGroups.forEach(group => {
+      group.items.forEach(item => {
+        if (item.submenu && item.submenu.length > 0) {
+          let itemActive = false;
+          item.submenu.forEach(sub => {
+            if (isSubItemActive(sub)) {
+              itemActive = true;
+              if (sub.submenu && sub.submenu.length > 0 && sub.to) {
+                keys.add(sub.to);
+              }
+            }
+          });
+          if (itemActive && item.to) {
+            keys.add(item.to);
+          }
+        }
+      });
+    });
+    return keys;
+  };
+
+  React.useEffect(() => {
+    const autoKeys = getAutoOpenKeys(currentPath);
+    setOpenMenus(prev => {
+      const next = new Set(prev);
+      autoKeys.forEach(k => next.add(k));
+      return next;
+    });
+  }, [currentPath]);
+
+  const toggleLevel1 = (toKey) => {
+    setOpenMenus(prev => {
+      if (prev.has(toKey)) {
+        return new Set();
+      } else {
+        return new Set([toKey]);
+      }
+    });
+  };
+
+  const toggleLevel2 = (parentKey, toKey) => {
+    setOpenMenus(prev => {
+      if (prev.has(toKey)) {
+        return new Set([parentKey]);
+      } else {
+        return new Set([parentKey, toKey]);
+      }
+    });
   };
 
   // Filter by search query
@@ -259,7 +305,7 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
               {group.items.map((item) => {
                 const isMenuOpen = openMenus.has(item.to);
                 const hasSubmenu = item.submenu && item.submenu.length > 0;
-                const active = hasSubmenu ? isMenuOpen : (item.end ? currentPath === item.to : (item.to && (currentPath === item.to || currentPath.startsWith(item.to + '/'))));
+                const active = isParentActive(item);
 
                 return (
                   <div key={item.to} className="ds-item-wrap">
@@ -298,7 +344,7 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
                         {filterSubmenu(item.submenu).map(sub => {
                           const hasLevel2Sub = sub.submenu && sub.submenu.length > 0;
                           const isLevel2Open = openMenus.has(sub.to);
-                          const isLevel2HeaderActive = isLevel2Open;
+                          const isLevel2HeaderActive = isSubItemActive(sub);
 
                           if (hasLevel2Sub) {
                             return (

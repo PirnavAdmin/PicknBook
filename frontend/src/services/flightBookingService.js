@@ -2961,6 +2961,13 @@ export async function listAdminCancellations() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function createAdminCancellation(payload) {
+  return requestJson(`${ADMIN_FLIGHT_ROOT}/cancellations`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function updateAdminCancellation(cancellationId, payload) {
   return requestJson(`${ADMIN_FLIGHT_ROOT}/cancellations/${cancellationId}`, {
     method: "PUT",

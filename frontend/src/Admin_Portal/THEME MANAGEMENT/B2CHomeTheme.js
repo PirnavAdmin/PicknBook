@@ -42,8 +42,8 @@ export default function B2CHomeTheme() {
   const [showPreviewModal, setShowPreviewModal] = useState(null);
 
   // SEO settings states
-  const [seoTitle, setSeoTitle] = useState("Best Travel Booking Website | Pick & Book");
-  const [seoDesc, setSeoDesc] = useState("Pick & Book offers the best travel packages, hotel bookings, flight tickets and holiday experiences.");
+  const [seoTitle, setSeoTitle] = useState("Best Travel Booking Website | PickNBook");
+  const [seoDesc, setSeoDesc] = useState("PickNBook offers the best travel packages, hotel bookings, flight tickets and holiday experiences.");
   const [seoKeywords, setSeoKeywords] = useState("travel, booking, hotels, flights, packages, holidays");
   const [seoCanonical, setSeoCanonical] = useState("https://picknbook.com/");
   const [seoRobots, setSeoRobots] = useState("Index, Follow");

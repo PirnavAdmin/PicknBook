@@ -616,9 +616,9 @@
   grid-template-columns: 0.8fr 1.3fr 1.2fr 1.4fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr !important;
   min-width: 0 !important;
   width: 100% !important;
-  padding: 8px !important;
+  padding: 10px 8px !important;
   gap: 8px !important;
-  min-height: 34px !important;
+  min-height: 44px !important;
   height: auto !important;
   align-items: center !important;
   box-sizing: border-box !important;
@@ -651,7 +651,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 2px 4px !important;
+  padding: 6px 4px !important;
+  margin: 0 !important;
   text-align: center !important;
   color: #ffffff !important;
   white-space: nowrap !important;
@@ -888,10 +889,20 @@
 }
 
 .admin-flight-booking-page .admin-action-btn {
-  height: 22px !important;
-  padding: 0 8px !important;
-  font-size: 0.66rem !important;
-  border-radius: 5px !important;
+  height: 26px !important;
+  padding: 0 14px !important;
+  font-size: 0.76rem !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #A51C49 !important;
+  background: #ffffff !important;
+  color: #A51C49 !important;
+  font-weight: 600 !important;
+}
+
+.admin-flight-booking-page .admin-action-btn:hover {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #A51C49 !important;
 }
 
 /* Dark theme filter & glass table overrides */

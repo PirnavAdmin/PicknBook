@@ -12,6 +12,7 @@ namespace PickNBook.Api.Services
     public interface IFeaturedOffersService
     {
         Task<IReadOnlyList<FeaturedOfferDto>> GetFeaturedOffersAsync();
+        Task<IReadOnlyList<FeaturedOfferDto>> GetFeaturedOffersAsync(string? bookingType);
     }
 
     public class FeaturedOffersService : IFeaturedOffersService
@@ -30,11 +31,21 @@ namespace PickNBook.Api.Services
             _publicApiBaseUrl = configuration["PublicApiBaseUrl"]?.Trim().TrimEnd('/');
         }
 
-        public async Task<IReadOnlyList<FeaturedOfferDto>> GetFeaturedOffersAsync()
+        public Task<IReadOnlyList<FeaturedOfferDto>> GetFeaturedOffersAsync() => GetFeaturedOffersAsync(null);
+
+        public async Task<IReadOnlyList<FeaturedOfferDto>> GetFeaturedOffersAsync(string? bookingType)
         {
-            var offers = await _context.FeaturedOffers
+            var query = _context.FeaturedOffers
                 .Include(x => x.Conditions)
-                .Where(x => x.IsActive && x.BookingType.ToLower() != "flight")
+                .Where(x => x.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(bookingType) && !string.Equals(bookingType, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                var normalizedType = bookingType.Trim().ToLowerInvariant();
+                query = query.Where(x => x.BookingType.ToLower() == normalizedType);
+            }
+
+            var offers = await query
                 .OrderBy(x => x.DisplayOrder)
                 .ToListAsync();
 

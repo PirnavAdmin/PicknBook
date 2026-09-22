@@ -9,6 +9,7 @@ using PickNBook.Api.Services;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using PickNBook.Api.Helpers;
+using PickNBook.Api.Models.Entities;
 
 namespace PickNBook.Api.Controllers
 {
@@ -685,11 +686,36 @@ namespace PickNBook.Api.Controllers
                 .Take(limit)
                 .ToListAsync();
 
+            var bookingReferences = rows
+                .Select(x => x.FlightReservation?.BookingReference)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .Distinct()
+                .ToList();
+
+            var bookingCancellations = bookingReferences.Count > 0
+                ? await dbContext.BookingCancellations
+                    .AsNoTracking()
+                    .Where(c => c.BookingType == "Flight" && bookingReferences.Contains(c.BookingReference))
+                    .OrderByDescending(c => c.CreatedAtUtc)
+                    .ToListAsync()
+                : new List<BookingCancellation>();
+
+            var cancellationLookup = bookingCancellations
+                .GroupBy(c => c.BookingReference)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
             var response = rows
                 .Where(x => x.FlightReservation != null)
                 .Select(x =>
                 {
                     var booking = x.FlightReservation!;
+
+                    cancellationLookup.TryGetValue(booking.BookingReference, out var cancellation);
+                    var resolvedRefundStatus = CancellationStatusMapper.ResolveRefundStatus(
+                        cancellation?.RefundStatus ?? x.CustomerRefundStatus,
+                        cancellation?.Status ?? x.CancellationStatus,
+                        x.CustomerRefundAmountInr);
+
                     return new AdminFlightCancellationRequestDto
                     {
                         Id = x.Id,
@@ -708,8 +734,8 @@ namespace PickNBook.Api.Controllers
                         Details = new AdminFlightCancellationDetailsDto
                         {
                             CancellationStatus = x.CancellationStatus,
-                            CustomerRefundStatus = x.CustomerRefundStatus,
-                            AdminRefundStatus = x.AdminRefundStatus,
+                            CustomerRefundStatus = resolvedRefundStatus,
+                            AdminRefundStatus = resolvedRefundStatus,
                             CustomerRefundAmountInr = x.CustomerRefundAmountInr,
                             CustomerCancellationChargeInr = x.CustomerCancellationChargeInr,
                             CustomerServiceChargeInr = x.CustomerServiceChargeInr,

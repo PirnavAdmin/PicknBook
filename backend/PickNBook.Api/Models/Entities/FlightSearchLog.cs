@@ -16,9 +16,15 @@ namespace PickNBook.Api.Models
         [MaxLength(80)]
         public string FromCity { get; set; } = string.Empty;
 
+        [MaxLength(100)]
+        public string? FromCityName { get; set; }
+
         [Required]
         [MaxLength(80)]
         public string ToCity { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string? ToCityName { get; set; }
 
         public DateOnly? DepartDate { get; set; }
         public DateOnly? ReturnDate { get; set; }
@@ -30,6 +36,12 @@ namespace PickNBook.Api.Models
         [Required]
         [MaxLength(20)]
         public string TripType { get; set; } = string.Empty;
+
+        [MaxLength(255)]
+        public string? RouteSummary { get; set; }
+
+        [Column(TypeName = "longtext")]
+        public string? SegmentsJson { get; set; }
 
         [MaxLength(80)]
         public string? UserId { get; set; }

@@ -94,6 +94,7 @@ const formatDateCell = (value) => formatAdminDate(value);
 const formatSingleTimeAmPm = (timeStr) => {
   if (!timeStr || timeStr === "--" || timeStr === "00:00") return "";
   const raw = String(timeStr).trim();
+  if (raw.startsWith("0001")) return "";
 
   const hhmmMatch = raw.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
   if (hhmmMatch) {
@@ -108,6 +109,7 @@ const formatSingleTimeAmPm = (timeStr) => {
 
   const parsed = new Date(raw);
   if (!Number.isNaN(parsed.getTime())) {
+    if (parsed.getFullYear() <= 1) return "";
     let hours = parsed.getHours();
     const minutes = String(parsed.getMinutes()).padStart(2, "0");
     const ampm = hours >= 12 ? "PM" : "AM";
@@ -135,8 +137,55 @@ const formatJourneyTimeAmPm = (journeyTime) => {
   return single || journeyTime || "--:--";
 };
 
+const resolveJourneyTimings = (record) => {
+  const segments = Array.isArray(record?.segments) && record.segments.length > 0
+    ? record.segments
+    : (Array.isArray(record?.raw?.segments) ? record.raw.segments : []);
+    
+  if (segments.length > 0) {
+    const firstSeg = segments[0];
+    const lastSeg = segments[segments.length - 1];
+    const depTimeRaw = firstSeg.departureTimeIst || firstSeg.departureTimeUtc || firstSeg.departureTime;
+    const arrTimeRaw = lastSeg.arrivalTimeIst || lastSeg.arrivalTimeUtc || lastSeg.arrivalTime;
+    
+    const depAmPm = formatSingleTimeAmPm(depTimeRaw);
+    const arrAmPm = formatSingleTimeAmPm(arrTimeRaw);
+    
+    if (depAmPm && arrAmPm) {
+      return `${depAmPm} - ${arrAmPm}`;
+    }
+    if (depAmPm) {
+      return depAmPm;
+    }
+  }
+
+  // Fallback to top-level fields
+  const depTimeRaw = record?.departureTimeIst || record?.departureTimeUtc || record?.departureTime;
+  const arrTimeRaw = record?.arrivalTimeIst || record?.arrivalTimeUtc || record?.arrivalTime;
+  const depAmPm = formatSingleTimeAmPm(depTimeRaw);
+  const arrAmPm = formatSingleTimeAmPm(arrTimeRaw);
+
+  if (depAmPm && arrAmPm) {
+    return `${depAmPm} - ${arrAmPm}`;
+  }
+  if (depAmPm) {
+    return depAmPm;
+  }
+
+  const rawJourneyDate = record?.journeyDateIst || record?.departureTimeUtc || null;
+  const isInvalidJourneyDate = !rawJourneyDate || rawJourneyDate === "0001-01-01" || String(rawJourneyDate).startsWith("0001");
+  if (!isInvalidJourneyDate && rawJourneyDate) {
+    const timeKey = toTimeKey(rawJourneyDate);
+    if (timeKey && timeKey !== "--") {
+      return formatSingleTimeAmPm(timeKey);
+    }
+  }
+
+  return "--:--";
+};
+
 const FALLBACK_API_BASE_URL =
-  "https://paycheck-baton-overfull.ngrok-free.dev";
+  "https://satin-eastcoast-musky.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
@@ -318,10 +367,11 @@ function pickFirst(source, keys, fallback = null) {
 
 function normalizeFlightPassenger(passenger, index = 0) {
   return {
+    id: pickFirst(passenger, ["id", "Id"], index + 1),
     fullName: String(
       pickFirst(
         passenger,
-        ["fullName", "FullName", "name", "Name"],
+        ["fullName", "FullName", "name", "Name", "passengerName", "PassengerName"],
         `Passenger ${index + 1}`
       )
     ),
@@ -330,8 +380,28 @@ function normalizeFlightPassenger(passenger, index = 0) {
     ),
     gender: String(pickFirst(passenger, ["gender", "Gender"], "")),
     seatNumber: pickFirst(passenger, ["seatNumber", "SeatNumber"], null),
+    ticketNumber: pickFirst(passenger, ["ticketNumber", "TicketNumber"], null),
+    status: String(pickFirst(passenger, ["status", "Status"], "Booked")),
   };
 }
+
+function normalizeFlightSegment(seg, index = 0) {
+  return {
+    segmentIndicator: Number(seg?.segmentIndicator || seg?.segmentIndex || index + 1),
+    tripIndicator: Number(seg?.tripIndicator || index + 1),
+    airline: String(seg?.airline || seg?.carrierName || seg?.operator || ""),
+    flightNumber: String(seg?.flightNumber || seg?.flightNo || seg?.tripNumber || ""),
+    origin: String(seg?.origin || seg?.originCity || seg?.fromCity || seg?.from || ""),
+    destination: String(seg?.destination || seg?.destinationCity || seg?.toCity || seg?.to || ""),
+    departureTimeIst: seg?.departureTimeIst || seg?.departureTimeUtc || seg?.departureTime || null,
+    arrivalTimeIst: seg?.arrivalTimeIst || seg?.arrivalTimeUtc || seg?.arrivalTime || null,
+    durationMinutes: Number(seg?.durationMinutes || seg?.duration) || null,
+    pnr: String(seg?.pnr || ""),
+    baggage: String(seg?.baggage || "15 Kgs"),
+    cabinBaggage: String(seg?.cabinBaggage || "7 Kgs"),
+  };
+}
+
 
 function normalizeFlightBookingRecord(record) {
   const passengersRaw = pickFirst(record, ["passengers", "Passengers"], []);
@@ -345,13 +415,18 @@ function normalizeFlightBookingRecord(record) {
       String(passenger.passengerType || "").toLowerCase() !== "infant"
   ).length;
 
+  const segmentsRaw = pickFirst(record, ["segments", "Segments"], []);
+  const segments = Array.isArray(segmentsRaw)
+    ? segmentsRaw.map((seg, index) => normalizeFlightSegment(seg, index))
+    : [];
+
   let fromCity = pickFirst(record, ["fromCity", "FromCity"], "");
   let toCity = pickFirst(record, ["toCity", "ToCity"], "");
   if (!fromCity && !toCity && record?.segment) {
     const parts = String(record.segment).split("-");
     if (parts.length >= 2) {
       fromCity = parts[0].trim();
-      toCity = parts[1].trim();
+      toCity = parts[parts.length - 1].trim();
     } else {
       fromCity = record.segment;
     }
@@ -362,6 +437,7 @@ function normalizeFlightBookingRecord(record) {
     bookingReference: String(
       pickFirst(record, ["bookingReference", "BookingReference"], "") || ""
     ),
+    pnr: String(pickFirst(record, ["pnr", "Pnr", "PNR"], "") || ""),
     tripType: String(
       pickFirst(record, ["tripType", "TripType"], "Flight") || "Flight"
     ),
@@ -376,13 +452,18 @@ function normalizeFlightBookingRecord(record) {
       ""
     ),
     passengerEmail: String(
-      pickFirst(record, ["passengerEmail", "PassengerEmail"], "") || ""
+      pickFirst(record, ["passengerEmail", "PassengerEmail", "email", "Email", "customerEmail", "CustomerEmail", "userEmail", "UserEmail"], "") ||
+      pickFirst(record?.contact, ["email", "Email"], "") ||
+      pickFirst(record?.raw, ["passengerEmail", "PassengerEmail", "email", "Email"], "") ||
+      (Array.isArray(record?.passengers) && record.passengers[0]?.email ? record.passengers[0].email : "") ||
+      ""
     ),
     fromCity,
     toCity,
     segment: String(pickFirst(record, ["segment", "Segment"], "") || ""),
+    route: String(pickFirst(record, ["route", "Route"], "") || ""),
     providerName: String(
-      pickFirst(record, ["providerName", "ProviderName", "airline", "Airline"], "") ||
+      pickFirst(record, ["airline", "Airline", "providerName", "ProviderName", "operator", "Operator"], "") ||
       pickFirst(record?.raw, ["airline", "Airline", "airlineName", "AirlineName", "providerName", "ProviderName"], "") ||
       ""
     ),
@@ -439,8 +520,8 @@ function normalizeFlightBookingRecord(record) {
           "flightClass",
           "FlightClass"
         ],
-        ""
-      ) || ""
+        "Economy"
+      ) || "Economy"
     ),
     children: Number(pickFirst(record, ["children", "Children"], 0)) || 0,
     infants: Number(pickFirst(record, ["infants", "Infants"], 0)) || 0,
@@ -453,6 +534,13 @@ function normalizeFlightBookingRecord(record) {
       Number(pickFirst(record, ["customerFareInr", "CustomerFareInr", "totalPriceInr", "TotalPriceInr"], 0)) || 0,
     netFareInr:
       Number(pickFirst(record, ["netFareInr", "NetFareInr"], 0)) || 0,
+    baseFareInr: Number(pickFirst(record, ["baseFareInr", "BaseFareInr", "baseFare", "BaseFare"], 0)) || 0,
+    taxInr: Number(pickFirst(record, ["taxInr", "TaxInr", "tax", "Tax", "taxes", "Taxes"], 0)) || 0,
+    markupAmountInr: Number(pickFirst(record, ["markupAmountInr", "MarkupAmountInr", "markupAmount", "MarkupAmount"], 0)) || 0,
+    discountAmountInr: Number(pickFirst(record, ["discountAmountInr", "DiscountAmountInr", "discountAmount", "DiscountAmount"], 0)) || 0,
+    convenienceFeeInr: Number(pickFirst(record, ["convenienceFeeInr", "ConvenienceFeeInr", "convenienceFee", "ConvenienceFee"], 0)) || 0,
+    ssrAmountInr: Number(pickFirst(record, ["ssrAmountInr", "SsrAmountInr", "ssrAmount", "SsrAmount"], 0)) || 0,
+    profitInr: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], 0)),
     status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
     paymentStatus: pickFirst(record, ["paymentStatus", "PaymentStatus"], null),
     refundStatus: pickFirst(record, ["refundStatus", "RefundStatus"], null),
@@ -462,14 +550,15 @@ function normalizeFlightBookingRecord(record) {
     bookingDateIst: pickFirst(record, ["bookingDateIst", "BookingDateIst"], null),
     journeyDateIst: pickFirst(record, ["journeyDateIst", "JourneyDateIst"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
-    cancellationReason: String(
-      pickFirst(record, ["cancellationReason", "CancellationReason"], "") || ""
-    ),
+    cancellationReason: pickFirst(record, ["cancellationReason", "CancellationReason"], null),
+    cancellationChargeInr: pickFirst(record, ["cancellationChargeInr", "CancellationChargeInr"], null),
+    refundAmountInr: pickFirst(record, ["refundAmountInr", "RefundAmountInr"], null),
     tripNumber: String(
-      pickFirst(record, ["tripNumber", "TripNumber", "flightNumber", "FlightNumber"], "") ||
+      pickFirst(record, ["flightNumber", "FlightNumber", "tripNumber", "TripNumber", "airline"], "") ||
       pickFirst(record?.raw, ["flightNumber", "FlightNumber", "tripNumber", "TripNumber"], "") ||
       ""
     ),
+    segments,
     passengers,
     profit: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], 0)),
   };
@@ -591,7 +680,9 @@ async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDat
 
     try {
       const data = await requestJson(url, { method: "GET" });
-      const rawList = Array.isArray(data) ? data : (data?.data || data?.results || data?.items || data?.bookings || []);
+      const rawList = Array.isArray(data)
+        ? data
+        : (data?.data || data?.results || data?.result || data?.items || data?.bookings || data?.$values || data?.value || []);
       if (Array.isArray(rawList) && rawList.length > 0) {
         fetchedList = rawList.map((record) => normalizeFlightBookingRecord(record));
         break;
@@ -701,54 +792,29 @@ const toTimeKey = (value) => {
   return `${hours}:${minutes}`;
 };
 
-const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed"]);
-const HOLD_STATUS_SET = new Set(["hold", "onhold", "on-hold", "on_hold"]);
-const PENDING_STATUS_SET = new Set(["pending", "processing"]);
-const CANCELLED_STATUS_SET = new Set(["cancelled", "canceled"]);
+const BOOKED_STATUS_SET = new Set(["booked", "success", "confirmed", "ticketed", "completed", "finished"]);
+const CANCELLED_STATUS_SET = new Set(["cancelled", "canceled", "cancel"]);
 
 const toAdminStatusLabel = (statusValue) => {
-  const normalized = normalizeText(statusValue, "Unknown");
+  const normalized = normalizeText(statusValue, "Booked");
   const key = normalized.toLowerCase();
 
-  if (HOLD_STATUS_SET.has(key) || key.includes("hold")) {
-    return "Hold";
-  }
-
-  if (CANCELLED_STATUS_SET.has(key)) {
+  if (CANCELLED_STATUS_SET.has(key) || key.includes("cancel")) {
     return "Cancelled";
   }
 
-  if (PENDING_STATUS_SET.has(key)) {
-    return "Pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
+  if (BOOKED_STATUS_SET.has(key) || key.includes("book") || key.includes("success") || key.includes("confirm") || key.includes("complet")) {
     return "Booked";
   }
 
-  return normalized;
+  return "Expired";
 };
 
 const mapAdminStatusClass = (statusValue) => {
-  const key = normalizeText(statusValue, "").toLowerCase();
-
-  if (HOLD_STATUS_SET.has(key) || key.includes("hold")) {
-    return "hold";
-  }
-
-  if (CANCELLED_STATUS_SET.has(key)) {
-    return "cancelled";
-  }
-
-  if (PENDING_STATUS_SET.has(key)) {
-    return "pending";
-  }
-
-  if (BOOKED_STATUS_SET.has(key)) {
-    return "success";
-  }
-
-  return "pending";
+  const label = toAdminStatusLabel(statusValue);
+  if (label === "Cancelled") return "cancelled";
+  if (label === "Booked") return "success";
+  return "expired";
 };
 
 const mapBookingFilterStatusToApi = (filterStatus) => {
@@ -758,19 +824,11 @@ const mapBookingFilterStatusToApi = (filterStatus) => {
     return undefined;
   }
 
-  if (key === "booked" || key === "success") {
-    return "Booked";
-  }
-
-  if (key === "pending") {
-    return "Pending";
-  }
-
-  if (key === "cancelled") {
+  if (key === "cancelled" || key === "canceled") {
     return "Cancelled";
   }
 
-  return undefined;
+  return "Booked";
 };
 
 const resolveTripType = (record) => {
@@ -823,23 +881,28 @@ const toUnifiedAdminBooking = (record, sourceType) => {
   const bookingId = normalizeText(record?.bookingId, "");
   const pnr = normalizeText(record?.pnr, "");
   const tripNumber = normalizeText(record?.tripNumber, "");
-  const bookedAtValue = record?.bookingDateIst || record?.bookedAtUtc || null;
+  const bookedAtValue = record?.bookingDateIst || record?.bookedAtUtc || record?.bookingDateUtc || null;
 
-  const rawJourneyDate = record?.journeyDateIst || record?.departureTimeUtc || null;
+  const rawJourneyDate = record?.journeyDateIst || record?.departureTimeUtc || record?.segments?.[0]?.departureTimeIst || null;
   const isInvalidJourneyDate = !rawJourneyDate || rawJourneyDate === "0001-01-01" || String(rawJourneyDate).startsWith("0001");
-  const validJourneyDate = isInvalidJourneyDate ? null : rawJourneyDate;
+  const fallbackDate = record?.bookingDateIst || record?.bookingDateUtc || record?.bookedAtUtc || null;
+  const validJourneyDate = isInvalidJourneyDate ? fallbackDate : rawJourneyDate;
 
   const tripType = resolveTripType(record);
 
   const fare = Math.max(
-    parseNumber(record?.customerFareInr ?? record?.totalPriceInr, 0),
+    parseNumber(record?.customerFareInr, 0) ||
+    parseNumber(record?.totalPriceInr, 0) ||
+    parseNumber(record?.customerFare, 0) ||
+    parseNumber(record?.netFareInr, 0) ||
+    parseNumber(record?.baseFareInr, 0),
     0
   );
   
   const explicitProfit =
-    record?.profit !== undefined && record?.profit !== null
-      ? parseNumber(record?.profit, 0)
-      : (record?.profitInr !== undefined && record?.profitInr !== null ? parseNumber(record?.profitInr, 0) : null);
+    record?.profitInr !== undefined && record?.profitInr !== null
+      ? parseNumber(record?.profitInr, null)
+      : (record?.profit !== undefined && record?.profit !== null ? parseNumber(record?.profit, null) : null);
 
   const profit = explicitProfit !== null ? explicitProfit : Math.round(fare * 0.04);
 
@@ -848,26 +911,48 @@ const toUnifiedAdminBooking = (record, sourceType) => {
       ? parseNumber(record?.netFareInr, Math.max(fare - profit, 0))
       : Math.max(fare - profit, 0);
 
-  const rawJourneyTime = toTimeKey(validJourneyDate);
-  const journeyTime =
-    validJourneyDate && rawJourneyTime && rawJourneyTime !== "--"
-      ? rawJourneyTime
-      : (toTimeKey(bookedAtValue) || "--:--");
+  const journeyTime = resolveJourneyTimings(record);
 
   const displayId = bookingId || bookingReference || "--";
   const displayPnr = pnr || bookingReference || tripNumber || bookingId || "--";
 
-  const rawPassenger = normalizeText(record?.passengerName || record?.passenger, "");
-  const rawPhone = normalizeText(record?.passengerPhone, "");
+  const firstPax = record?.passengers?.[0];
+  const firstPaxName = firstPax?.fullName || firstPax?.passengerName || firstPax?.name;
+  const firstPaxPhone = firstPax?.passengerPhone || firstPax?.phone || firstPax?.mobile;
+
+  const rawPassenger = normalizeText(record?.passengerName || record?.passenger || firstPaxName, "");
+  const rawPhone = normalizeText(record?.passengerPhone || firstPaxPhone, "");
   const bookedBy = normalizeText(record?.bookedBy, "");
 
-  const passengerName = rawPassenger || (bookedBy ? `User: ${bookedBy}` : "--");
-  const passengerPhone = rawPhone || (bookedBy ? `ID: ${bookedBy}` : "--");
+  let passengerName = rawPassenger;
+  if (!passengerName) {
+    if (bookedBy) {
+      passengerName = bookedBy.startsWith("test_user") ? "Test User" : `User: ${bookedBy}`;
+    } else {
+      passengerName = "Test Passenger";
+    }
+  }
+
+  let passengerPhone = rawPhone;
+  if (!passengerPhone) {
+    passengerPhone = bookedBy ? `ID: ${bookedBy}` : "--";
+  }
+
+  const ticketNo = normalizeText(
+    record?.ticketNumber ||
+    record?.ticketNo ||
+    record?.ticket_number ||
+    record?.ticket_no ||
+    record?.passengers?.[0]?.ticketNumber ||
+    record?.bookingReference,
+    ""
+  );
 
   return {
     id: displayId,
     bookingId: bookingId || "--",
     bookingReference: bookingReference || "--",
+    ticketNo: ticketNo || bookingReference || "--",
     tripType,
     createdAt: toDateKey(bookedAtValue),
     createdAtValue: bookedAtValue,
@@ -884,16 +969,24 @@ const toUnifiedAdminBooking = (record, sourceType) => {
         ? `${record.fromCity} - ${record.toCity}`
         : "--"),
     journeyDate: validJourneyDate ? toDateKey(validJourneyDate) : "--",
-    journeyTime: validJourneyDate ? journeyTime : "--:--",
+    journeyTime: journeyTime || "--:--",
     pnr: displayPnr,
     rawPnr: pnr,
     status,
-    operator: normalizeText(record?.providerName || record?.airline || record?.operator, "--"),
+    operator: normalizeText(record?.providerName || record?.airline || record?.operator || record?.segments?.[0]?.airline, "Flight Airline"),
     vehicleType: normalizeText(record?.travelClass, safeSourceType),
     travelClass: normalizeText(record?.travelClass, "Economy"),
     fare,
     netFareInr,
     profit,
+    baseFareInr: parseNumber(record?.baseFareInr, 0),
+    taxInr: parseNumber(record?.taxInr, 0),
+    markupAmountInr: parseNumber(record?.markupAmountInr, 0),
+    discountAmountInr: parseNumber(record?.discountAmountInr, 0),
+    convenienceFeeInr: parseNumber(record?.convenienceFeeInr, 0),
+    ssrAmountInr: parseNumber(record?.ssrAmountInr, 0),
+    route: normalizeText(record?.route || record?.segment, "--"),
+    segments: Array.isArray(record?.segments) ? record.segments : [],
     paymentStatus: record?.paymentStatus || null,
     refundStatus: record?.refundStatus || null,
     fulfillmentStatus: record?.fulfillmentStatus || null,
@@ -920,27 +1013,23 @@ const toNumberDate = (value) => {
 const resolveFlightStatusClass = (statusValue) => {
   const key = String(statusValue || "").trim().toLowerCase();
 
-  if (!key) {
-    return "pending";
-  }
-
-  if (key.includes("hold")) {
-    return "hold";
-  }
-
-  if (key.includes("fail") || key.includes("error") || key.includes("reject")) {
-    return "failed";
+  if (key.includes("complet")) {
+    return "completed";
   }
 
   if (key.includes("cancel")) {
     return "cancelled";
   }
 
-  if (key.includes("pend")) {
-    return "pending";
+  if (key.includes("expir") || key.includes("fail") || key.includes("error") || key.includes("reject") || key.includes("hold")) {
+    return "expired";
   }
 
-  return "success";
+  if (key.includes("book") || key.includes("success") || key.includes("confirm")) {
+    return "success";
+  }
+
+  return "pending";
 };
 
 const resolveNetFare = (booking) => {
@@ -1009,6 +1098,11 @@ export default function AdminFlightBookingListPage() {
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
+      const resolvedStatus = toAdminStatusLabel(booking.status);
+      if (resolvedStatus === "Expired") {
+        return false;
+      }
+
       const statusFilterKey = String(filters.status || "").toLowerCase();
 
       if (statusFilterKey && statusFilterKey !== "all") {
@@ -1388,9 +1482,7 @@ export default function AdminFlightBookingListPage() {
               onChange={(event) => handleDraftChange("status", event.target.value)}
             >
               <option value="all">All Status</option>
-              <option value="booked">Success</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
+              <option value="booked">Booked</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </label>
@@ -1409,9 +1501,9 @@ export default function AdminFlightBookingListPage() {
       <section className="admin-table-shell admin-flight-table-shell">
         <header className="admin-table-head admin-flight-table-head" style={{ gridTemplateColumns: "0.8fr 1.1fr 1.4fr 1.3fr 1.4fr 1.1fr 1.1fr 1fr 0.7fr" }}>
           <span>B. ID / B.D.</span>
-          <span>Name</span>
+          <span>Passenger Details</span>
           <span>Segment / Journey Date</span>
-          <span>Timings</span>
+          <span>Journey Timings</span>
           <span>PNR / Status</span>
           <span>Operator / Type</span>
           <span>Fare</span>
@@ -1422,11 +1514,11 @@ export default function AdminFlightBookingListPage() {
         {isLoading ? (
           <div className="admin-table-empty">Loading flight bookings...</div>
         ) : errorMessage ? (
-          <div className="admin-table-empty">Data not found</div>
+          <div className="admin-table-empty">No records found.</div>
         ) : filteredBookings.length ? (
           <div className="admin-table-body">
             {paginatedBookings.map((booking, idx) => {
-              const statusClass = resolveFlightStatusClass(booking.paymentStatus || booking.status);
+              const statusClass = resolveFlightStatusClass(booking.status);
               const flightNumber = safeValue(booking.raw?.tripNumber, "--");
               const fare = Number(booking.fare) || 0;
               const profit = Number(booking.profit) || 0;
@@ -1455,8 +1547,11 @@ export default function AdminFlightBookingListPage() {
                     <strong className="admin-name-text" style={{ color: "#000000", fontWeight: 800, fontSize: "0.76rem", display: "block", width: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>
                       {safeValue(booking.passengerName)}
                     </strong>
-                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center" }}>
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#475569" }}>
                       {safeValue(booking.passengerPhone)}
+                    </small>
+                    <small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", display: "block", textAlign: "center", color: "#64748b", fontSize: "0.68rem" }}>
+                      {safeValue(booking.passengerEmail || booking.email)}
                     </small>
                   </div>
 
@@ -1473,18 +1568,30 @@ export default function AdminFlightBookingListPage() {
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong>{formatJourneyTimeAmPm(booking.journeyTime)}</strong>
+                    <strong style={{ fontSize: "0.80rem", whiteSpace: "nowrap" }}>
+                      {booking.journeyTime && booking.journeyTime !== "--:--" ? booking.journeyTime : "--:--"}
+                    </strong>
+                    {booking.segments && booking.segments.length > 1 ? (
+                      <small style={{ display: "block", color: "#A51C49", fontWeight: "700", fontSize: "0.68rem", marginTop: "2px" }}>
+                        Multi-Stop ({booking.segments.length} Legs)
+                      </small>
+                    ) : null}
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ fontSize: "0.82rem", marginBottom: "3px" }}>{safeValue(booking.pnr)}</strong>
+                    <strong style={{ fontSize: "0.82rem", marginBottom: "2px" }}>{safeValue(booking.pnr)}</strong>
+                    {booking.ticketNo && booking.ticketNo !== "--" && booking.ticketNo !== booking.pnr && (
+                      <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.72rem", marginBottom: "3px" }}>
+                        Tkt No: {safeValue(booking.ticketNo)}
+                      </small>
+                    )}
                     <span className={`admin-status-pill ${statusClass}`}>
-                      {safeValue(booking.paymentStatus || booking.status)}
+                      {safeValue(booking.status)}
                     </span>
                   </div>
 
                   <div className="admin-table-cell">
-                    <span>{booking.operator !== "--" ? booking.operator : "Flight Airlines"}</span>
+                    <span>{booking.operator && booking.operator !== "--" ? booking.operator : "--"}</span>
                     <small>
                       {flightNumber !== "--" ? `${flightNumber} • ` : ""}{booking.tripType} ({booking.travelClass})
                     </small>
@@ -1494,11 +1601,23 @@ export default function AdminFlightBookingListPage() {
                     <strong>{adminCurrencyFormatter.format(fare)}</strong>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ color: profit < 0 ? "#ef4444" : "#10b981" }}>
-                      {profit < 0 ? `- ₹${Math.abs(profit).toLocaleString("en-IN")}` : `₹${profit.toLocaleString("en-IN")}`}
-                    </strong>
-                    <small style={{ color: profit < 0 ? "#ef4444" : "#10b981", fontWeight: "600" }}>{profit < 0 ? "Loss" : "Profit"}</small>
+                  <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: profit < 0 ? "#dc2626" : "#16a34a",
+                      lineHeight: "1.2"
+                    }}>
+                      {profit < 0 ? `-₹${Math.abs(profit).toFixed(2)}` : `₹${profit.toFixed(2)}`}
+                    </span>
+                    <span style={{
+                      fontSize: "0.68rem",
+                      color: "#64748b",
+                      fontWeight: "500",
+                      marginTop: "2px"
+                    }}>
+                      {profit < 0 ? "Loss" : "Profit"}
+                    </span>
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
@@ -1515,7 +1634,7 @@ export default function AdminFlightBookingListPage() {
             })}
           </div>
         ) : (
-          <div className="admin-table-empty">No flight bookings available.</div>
+          <div className="admin-table-empty">No records found.</div>
         )}
 
         <AdminPagination
@@ -1618,9 +1737,17 @@ export default function AdminFlightBookingListPage() {
                   </tr>
                   <tr>
                     <th>Departure Time</th>
-                    <td>{formatJourneyTimeAmPm(selectedBooking.raw?.departureTimeUtc || selectedBooking.journeyTime)}</td>
+                    <td>
+                      {selectedBooking.segments && selectedBooking.segments.length > 0
+                        ? (formatSingleTimeAmPm(selectedBooking.segments[0].departureTimeIst || selectedBooking.segments[0].departureTimeUtc || selectedBooking.segments[0].departureTime) || "--:--")
+                        : formatJourneyTimeAmPm(selectedBooking.raw?.departureTimeUtc || selectedBooking.journeyTime)}
+                    </td>
                     <th>Arrival Time</th>
-                    <td>{formatJourneyTimeAmPm(selectedBooking.raw?.arrivalTimeUtc || "--:--")}</td>
+                    <td>
+                      {selectedBooking.segments && selectedBooking.segments.length > 0
+                        ? (formatSingleTimeAmPm(selectedBooking.segments[selectedBooking.segments.length - 1].arrivalTimeIst || selectedBooking.segments[selectedBooking.segments.length - 1].arrivalTimeUtc || selectedBooking.segments[selectedBooking.segments.length - 1].arrivalTime) || "--:--")
+                        : formatJourneyTimeAmPm(selectedBooking.raw?.arrivalTimeUtc || "--:--")}
+                    </td>
                   </tr>
                   <tr>
                     <th>Airline / Carrier</th>
@@ -1633,6 +1760,12 @@ export default function AdminFlightBookingListPage() {
                     <td>{safeValue(selectedBooking.passengerName, "--")}</td>
                     <th>Phone Number (P.no)</th>
                     <td>{safeValue(selectedBooking.passengerPhone, "--")}</td>
+                  </tr>
+                  <tr>
+                    <th>Passenger Email</th>
+                    <td>{safeValue(selectedBooking.passengerEmail, "--")}</td>
+                    <th>Booked By</th>
+                    <td>{safeValue(selectedBooking.bookedBy, "--")}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1659,37 +1792,37 @@ export default function AdminFlightBookingListPage() {
                   <tr>
                     <td>Net Fare</td>
                     <td>{adminCurrencyFormatter.format(Number(selectedBooking.netFareInr) || resolveNetFare(selectedBooking))}</td>
-                    <td>Net payable fare amount</td>
+                    <td>Net payable supplier cost</td>
                   </tr>
                   <tr>
                     <td>Base Fare</td>
-                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.baseFareInr || selectedBooking.raw?.baseFareInr || selectedBooking.fare) || 0)}</td>
                     <td>Base ticket fare cost</td>
                   </tr>
                   <tr>
-                    <td>Taxable Fare</td>
-                    <td>₹0.00</td>
-                    <td>Fare amount subject to taxes</td>
+                    <td>Tax / Taxes</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.taxInr || selectedBooking.raw?.taxInr) || 0)}</td>
+                    <td>Supplier tax amount</td>
                   </tr>
                   <tr>
                     <td>Markup Amount</td>
-                    <td>₹0.00</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.markupAmountInr || selectedBooking.raw?.markupAmountInr) || 0)}</td>
                     <td>Admin markup added</td>
                   </tr>
                   <tr>
                     <td>Discount Amount</td>
-                    <td>₹0.00</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.discountAmountInr || selectedBooking.raw?.discountAmountInr) || 0)}</td>
                     <td>Applied coupon / promo discount</td>
                   </tr>
                   <tr>
                     <td>Convenience Fee</td>
-                    <td>₹0.00</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.convenienceFeeInr || selectedBooking.raw?.convenienceFeeInr) || 0)}</td>
                     <td>Platform convenience fee</td>
                   </tr>
                   <tr>
-                    <td>GST Percent / Amount</td>
-                    <td>0.00% / ₹0.00</td>
-                    <td>Applicable GST taxes</td>
+                    <td>SSR Amount (Baggage/Seat/Meal)</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.ssrAmountInr || selectedBooking.raw?.ssrAmountInr) || 0)}</td>
+                    <td>Ancillary services charge</td>
                   </tr>
                   <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>
                     <td><strong>Calculated Profit / Loss</strong></td>
@@ -1705,7 +1838,47 @@ export default function AdminFlightBookingListPage() {
                 </tbody>
               </table>
 
-              {/* SECTION 3: PAYMENT INFORMATION */}
+              {/* SECTION 3: FLIGHT SEGMENTS / LEGS (IF MULTICITY / ROUND TRIP) */}
+              {((selectedBooking.segments && selectedBooking.segments.length > 0) || (selectedBooking.raw?.segments && selectedBooking.raw.segments.length > 0)) && (
+                <div style={{ marginTop: "16px" }}>
+                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                    FLIGHT ROUTE SEGMENTS ({(selectedBooking.segments || selectedBooking.raw?.segments).length} LEGS)
+                  </div>
+                  <table className="admin-view-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "6%" }}>#</th>
+                        <th style={{ width: "18%" }}>Airline / Flight</th>
+                        <th style={{ width: "20%" }}>Origin ➔ Destination</th>
+                        <th style={{ width: "18%" }}>Dep / Arr (IST)</th>
+                        <th style={{ width: "12%" }}>Duration</th>
+                        <th style={{ width: "14%" }}>Baggage (Check/Cabin)</th>
+                        <th style={{ width: "12%" }}>Leg PNR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(selectedBooking.segments || selectedBooking.raw?.segments).map((seg, sIdx) => (
+                        <tr key={`seg-${sIdx}`}>
+                          <td>Leg {seg.segmentIndicator || sIdx + 1}</td>
+                          <td><strong>{seg.airline || selectedBooking.operator} {seg.flightNumber || ""}</strong></td>
+                          <td>{seg.origin || "--"} ➔ {seg.destination || "--"}</td>
+                          <td>
+                            {formatSingleTimeAmPm(seg.departureTimeIst || seg.departureTimeUtc || seg.departureTime) || "--"}
+                            {" - "}
+                            {formatSingleTimeAmPm(seg.arrivalTimeIst || seg.arrivalTimeUtc || seg.arrivalTime) || "--"}
+                          </td>
+                          <td>{seg.durationMinutes ? `${seg.durationMinutes} m` : "--"}</td>
+                          <td>{seg.baggage || "15 Kgs"} / {seg.cabinBaggage || "7 Kgs"}</td>
+                          <td><strong>{seg.pnr || selectedBooking.rawPnr || "--"}</strong></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* SECTION 4: PAYMENT INFORMATION */}
               <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
                 PAYMENT INFORMATION
@@ -1722,7 +1895,7 @@ export default function AdminFlightBookingListPage() {
                     <th>Refund Status</th>
                     <td>
                       <span className="admin-ps-pill ps-na">
-                        {safeValue(selectedBooking.refundStatus, "N/A")}
+                        {safeValue(selectedBooking.refundStatus, "None")}
                       </span>
                     </td>
                   </tr>
@@ -1730,13 +1903,44 @@ export default function AdminFlightBookingListPage() {
                     <th>Fulfillment Status</th>
                     <td colSpan="3">
                       <span className="admin-ps-pill ps-na">
-                        {safeValue(selectedBooking.fulfillmentStatus, "N/A")}
+                        {safeValue(selectedBooking.fulfillmentStatus, "Completed")}
                       </span>
                     </td>
                   </tr>
                 </tbody>
               </table>
 
+              {/* SECTION 5: CANCELLATION DETAILS IF CANCELLED */}
+              {(selectedBooking.status === "Cancelled" || selectedBooking.raw?.cancellationReason || selectedBooking.raw?.cancelledAtUtc) && (
+                <div style={{ marginTop: "16px" }}>
+                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#ef4444", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#ef4444", borderRadius: "2px" }}></span>
+                    CANCELLATION & REFUND BREAKDOWN
+                  </div>
+                  <table className="admin-view-table">
+                    <tbody>
+                      <tr>
+                        <th>Cancelled Date (UTC)</th>
+                        <td>{formatAdminDate(selectedBooking.raw?.cancelledAtUtc)}</td>
+                        <th>Cancellation Charge</th>
+                        <td>{selectedBooking.raw?.cancellationChargeInr ? adminCurrencyFormatter.format(selectedBooking.raw.cancellationChargeInr) : "--"}</td>
+                      </tr>
+                      <tr>
+                        <th>Refund Amount</th>
+                        <td>{selectedBooking.raw?.refundAmountInr ? adminCurrencyFormatter.format(selectedBooking.raw.refundAmountInr) : "--"}</td>
+                        <th>Refund Status</th>
+                        <td>{safeValue(selectedBooking.refundStatus, "None")}</td>
+                      </tr>
+                      <tr>
+                        <th>Cancellation Reason</th>
+                        <td colSpan="3" style={{ color: "#ef4444", fontWeight: "600" }}>{safeValue(selectedBooking.raw?.cancellationReason, "N/A")}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* SECTION 6: PASSENGER DETAILS */}
               {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
                 <div style={{ marginTop: "16px" }}>
                   <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1746,11 +1950,13 @@ export default function AdminFlightBookingListPage() {
                   <table className="admin-view-table">
                     <thead>
                       <tr>
-                        <th style={{ width: "10%" }}>#</th>
-                        <th style={{ width: "40%" }}>Full Name</th>
-                        <th style={{ width: "20%" }}>Type</th>
-                        <th style={{ width: "15%" }}>Gender</th>
-                        <th style={{ width: "15%" }}>Seat</th>
+                        <th style={{ width: "6%" }}>#</th>
+                        <th style={{ width: "30%" }}>Full Name</th>
+                        <th style={{ width: "14%" }}>Type</th>
+                        <th style={{ width: "12%" }}>Gender</th>
+                        <th style={{ width: "12%" }}>Seat</th>
+                        <th style={{ width: "14%" }}>Ticket No</th>
+                        <th style={{ width: "12%" }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1761,6 +1967,12 @@ export default function AdminFlightBookingListPage() {
                           <td>{p.passengerType || "Adult"}</td>
                           <td>{p.gender || "--"}</td>
                           <td>{p.seatNumber || "--"}</td>
+                          <td>{p.ticketNumber || "--"}</td>
+                          <td>
+                            <span className={`admin-status-pill ${resolveFlightStatusClass(p.status || selectedBooking.status)}`}>
+                              {p.status || "Booked"}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
