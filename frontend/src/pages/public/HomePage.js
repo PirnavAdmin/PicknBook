@@ -106,9 +106,10 @@ import { listHotBusRoutes, searchBusCities } from "../../services/busBookingServ
 import { getPopularBusRoutesFromSearchHistory } from "../../services/busSearchHistoryService";
 import { listHotFlightRoutes } from "../../services/flightBookingService";
 import { searchHotels } from "../../services/hotelBookingService";
-import { toApiUrl } from "../../services/apiClient";
+import { toApiAssetUrl, toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
 import { getPublicTestimonials } from "../../services/testimonialService";
+import { getPublicBlogs } from "../../services/blogService";
 
 function StatCountUp({ endValue, duration = 2000, decimals = 0, suffix = "", formatComma = false }) {
   const [value, setValue] = useState(0);
@@ -2490,6 +2491,22 @@ function FeaturedOfferImage({ offer }) {
   );
 }
 
+function getBlogImageUrl(blog) {
+  return toApiAssetUrl(
+    blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
+    blog?.imagePath || blog?.ImagePath || blog?.filePath || blog?.photoUrl ||
+    blog?.picture || blog?.url || ""
+  );
+}
+
+function formatBlogDate(dateValue) {
+  if (!dateValue) return "";
+  const date = new Date(dateValue);
+  return Number.isNaN(date.getTime())
+    ? String(dateValue)
+    : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 const formatFlightDate = (dateStr) => {
   if (!dateStr) return { date: "DD/MM/YYYY", day: "" };
   try {
@@ -2617,9 +2634,31 @@ export default function HomePage() {
   const [testimonials, setTestimonials] = useState([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [testimonialsError, setTestimonialsError] = useState("");
+  const [homeBlogs, setHomeBlogs] = useState([]);
+  const [homeBlogsLoading, setHomeBlogsLoading] = useState(true);
   const [isDealsDialogOpen, setIsDealsDialogOpen] = useState(false);
   const [offerForDetailPopup, setOfferForDetailPopup] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getPublicBlogs({ page: 1, pageSize: 3 })
+      .then((data) => {
+        if (isMounted) setHomeBlogs(Array.isArray(data?.blogs) ? data.blogs.slice(0, 3) : []);
+      })
+      .catch((error) => {
+        console.error("Failed to load home page blogs", error);
+        if (isMounted) setHomeBlogs([]);
+      })
+      .finally(() => {
+        if (isMounted) setHomeBlogsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [selectedRtcOperator, setSelectedRtcOperator] = useState(null);
   const [rtcSearchFrom, setRtcSearchFrom] = useState("");
@@ -9495,6 +9534,58 @@ export default function HomePage() {
             </form>
           </div>
         </div>
+      </section>
+
+      <section className="home-blog-section section-shell" aria-labelledby="home-blog-heading">
+        <div className="home-blog-header section-header">
+          <div>
+            <span className="section-kicker">Travel Inspiration</span>
+            <h2 id="home-blog-heading">Latest from our Travel Blog</h2>
+          </div>
+          <button type="button" className="home-blog-view-more" onClick={() => navigate("/blog")}>
+            View all posts <ArrowRight size={14} />
+          </button>
+        </div>
+
+        {homeBlogsLoading ? (
+          <div className="home-blog-status">Loading the latest stories...</div>
+        ) : homeBlogs.length > 0 ? (
+          <div className="home-blog-grid">
+            {homeBlogs.map((blog) => {
+              const imageUrl = getBlogImageUrl(blog);
+              const summary = blog.shortDescription || blog.subTitle || blog.metaDescription || "Discover useful travel tips and inspiration for your next journey.";
+              return (
+                <article className="home-blog-card" key={blog.id || blog.slug}>
+                  <button
+                    type="button"
+                    className="home-blog-image-button"
+                    onClick={() => navigate(`/blog/${blog.slug}`)}
+                    aria-label={`Read ${blog.title}`}
+                  >
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={blog.title} className="home-blog-image" />
+                    ) : (
+                      <div className="home-blog-image home-blog-image-fallback">Pick N Book</div>
+                    )}
+                    <span className="home-blog-category">{blog.category || "Travel"}</span>
+                  </button>
+                  <div className="home-blog-card-body">
+                    <h3>{blog.title}</h3>
+                    <p>{summary}</p>
+                    <div className="home-blog-card-footer">
+                      <span>{formatBlogDate(blog.publishedAtUtc || blog.createdAtUtc)}</span>
+                      <button type="button" onClick={() => navigate(`/blog/${blog.slug}`)}>
+                        Read <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="home-blog-status">New travel stories are coming soon.</div>
+        )}
       </section>
 
 

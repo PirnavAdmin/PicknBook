@@ -431,20 +431,38 @@ export default function HotelDetail({
               {hotel.offers[0].roomCategory ? hotel.offers[0].roomCategory.replace(/_/g, " ") : "Standard Room"}
             </h3>
             
-            {/* Amenities (can shrink and scroll if needed) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", flexGrow: 1, minHeight: 0, overflowY: "auto", paddingRight: "4px" }}>
-              <div style={{ fontSize: "0.78rem", color: hotel.offers[0].cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+            {/* Amenities (1-line scroll-snapped ticker) */}
+            <div 
+              className="hotel-deal-amenities-scroller"
+              style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                height: "24px",
+                minHeight: "24px",
+                overflowY: "auto", 
+                scrollSnapType: "y mandatory",
+                scrollbarWidth: "thin",
+                scrollbarColor: "#cbd5e1 transparent"
+              }}
+            >
+              <style>{`
+                .hotel-deal-amenities-scroller::-webkit-scrollbar { width: 4px; }
+                .hotel-deal-amenities-scroller::-webkit-scrollbar-track { background: transparent; }
+                .hotel-deal-amenities-scroller::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+                .hotel-deal-amenities-scroller::-webkit-scrollbar-button { display: none; }
+              `}</style>
+              <div style={{ fontSize: "0.78rem", height: "24px", flexShrink: 0, scrollSnapAlign: "start", color: hotel.offers[0].cancellationPolicy?.includes("Charge") ? "#d32f2f" : "#2e7d32", display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ fontSize: "0.9rem", lineHeight: "1" }}>{hotel.offers[0].cancellationPolicy?.includes("Charge") ? "⊗" : "✓"}</span> 
                 <span>{hotel.offers[0].cancellationPolicy?.includes("Charge") ? "Non-refundable" : "Free Cancellation"}</span>
               </div>
-              <div style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+              <div style={{ fontSize: "0.78rem", height: "24px", flexShrink: 0, scrollSnapAlign: "start", color: "var(--hotel-ink)", display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ fontSize: "0.9rem", lineHeight: "1", color: "#2e7d32" }}>✓</span> <span>Complimentary Wifi</span>
               </div>
               {(() => {
                 const mealPlan = (Array.isArray(hotel.offers[0].servicesStatus) && hotel.offers[0].servicesStatus.find(s => s.name === "Meal Basis")?.value) || hotel.offers[0].hotelSupplements;
                 if (!mealPlan || mealPlan.toLowerCase() === "room only") return null;
                 return (
-                  <div style={{ fontSize: "0.78rem", color: "var(--hotel-ink)", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                  <div style={{ fontSize: "0.78rem", height: "24px", flexShrink: 0, scrollSnapAlign: "start", color: "var(--hotel-ink)", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ fontSize: "0.9rem", lineHeight: "1", color: "#2e7d32" }}>✓</span> <span>Includes {mealPlan}</span>
                   </div>
                 );

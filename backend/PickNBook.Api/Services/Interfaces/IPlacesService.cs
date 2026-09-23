@@ -12,7 +12,7 @@ namespace PickNBook.Api.Services.Interfaces
             string tripType = "all",
             string field = "all",
             string? requestType = null,
-            int limit = 20,
+            int limit = 50,
             CancellationToken cancellationToken = default);
     }
 }

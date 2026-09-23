@@ -1,4 +1,4 @@
-
+﻿
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -1732,9 +1732,8 @@ export default function BusSearchResults() {
                     {boardingList.map((bp, idx) => {
                       const detail = formatPointDetail(bp.name, bp.location);
                       return (
-                        <div key={idx} style={{ borderLeft: "3px solid #3b82f6", paddingLeft: "12px" }}>
-                          <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{bp.time}</strong>
-                          <span style={{ display: "block", fontSize: "13.5px", color: "#0f172a", lineHeight: "1.35" }}>
+                        <div key={idx} style={{ borderLeft: "3px solid #3b82f6", paddingLeft: "12px", display: "flex", gap: "10px", alignItems: "baseline" }}><strong style={{ whiteSpace: "nowrap", fontSize: "13px", color: "#1e293b" }}>{bp.time}</strong>
+                          <span style={{ fontSize: "13.5px", color: "#0f172a", lineHeight: "1.35" }}>
                             <span style={{ fontWeight: "700" }}>{bp.name}</span>
                             {detail && (
                               <span style={{ color: "#64748b", fontSize: "12.5px", fontWeight: "400", marginLeft: "5px" }}>
@@ -1764,9 +1763,8 @@ export default function BusSearchResults() {
                     {droppingList.map((dp, idx) => {
                       const detail = formatPointDetail(dp.name, dp.location);
                       return (
-                        <div key={idx} style={{ borderLeft: "3px solid #ef4444", paddingLeft: "12px" }}>
-                          <strong style={{ display: "block", fontSize: "13px", color: "#1e293b" }}>{dp.time}</strong>
-                          <span style={{ display: "block", fontSize: "13.5px", color: "#0f172a", lineHeight: "1.35" }}>
+                        <div key={idx} style={{ borderLeft: "3px solid #ef4444", paddingLeft: "12px", display: "flex", gap: "10px", alignItems: "baseline" }}><strong style={{ whiteSpace: "nowrap", fontSize: "13px", color: "#1e293b" }}>{dp.time}</strong>
+                          <span style={{ fontSize: "13.5px", color: "#0f172a", lineHeight: "1.35" }}>
                             <span style={{ fontWeight: "700" }}>{dp.name}</span>
                             {detail && (
                               <span style={{ color: "#64748b", fontSize: "12.5px", fontWeight: "400", marginLeft: "5px" }}>
@@ -1807,7 +1805,7 @@ export default function BusSearchResults() {
                           chargeText = `${item.CancellationChargePercentage}% Charge`;
                         } else if (item.CancellationCharge !== undefined) {
                           const isPercent = String(item.CancellationChargeType || "").toLowerCase() === "percentage";
-                          chargeText = isPercent ? `${item.CancellationCharge}%` : `₹${item.CancellationCharge}`;
+                          chargeText = isPercent ? `${item.CancellationCharge}%` : `â‚¹${item.CancellationCharge}`;
                         } else if (item.RefundPercentage !== undefined) {
                           chargeText = `${item.RefundPercentage}% Refund`;
                         }
@@ -1886,7 +1884,7 @@ export default function BusSearchResults() {
                           <div key={idx} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
                               <strong>{rev.user || rev.name || "Customer"}</strong>
-                              <span style={{ color: "#16a34a" }}>{rev.rating ? `★ ${rev.rating}` : ""}</span>
+                              <span style={{ color: "#16a34a" }}>{rev.rating ? `â˜… ${rev.rating}` : ""}</span>
                             </div>
                             <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>{rev.comment || rev.text}</p>
                           </div>
@@ -1956,16 +1954,16 @@ export default function BusSearchResults() {
               const maxDiscount = offer.maxDiscountAmount || offer.MaxDiscountAmount;
               if (dVal) {
                 if (String(dType).toLowerCase() === "percentage") {
-                  conds.push(`Discount: ${dVal}% OFF${maxDiscount ? ` (Up to ₹${maxDiscount})` : ""}`);
+                  conds.push(`Discount: ${dVal}% OFF${maxDiscount ? ` (Up to â‚¹${maxDiscount})` : ""}`);
                 } else {
-                  conds.push(`Discount: Flat ₹${dVal} OFF`);
+                  conds.push(`Discount: Flat â‚¹${dVal} OFF`);
                 }
               }
 
               // Min booking amount
               const minAmt = offer.minBookingAmount || offer.MinBookingAmount;
               if (minAmt && Number(minAmt) > 0) {
-                conds.push(`Minimum booking amount: ₹${minAmt}`);
+                conds.push(`Minimum booking amount: â‚¹${minAmt}`);
               }
 
               // Parse conditions list
@@ -1997,7 +1995,7 @@ export default function BusSearchResults() {
                       conds.push(`Valid on travel days: ${val1}`);
                       break;
                     case "MinimumFare":
-                      conds.push(`Minimum fare per seat: ₹${val1}`);
+                      conds.push(`Minimum fare per seat: â‚¹${val1}`);
                       break;
                     default:
                       conds.push(`${type}: ${val1}${val2 ? ` - ${val2}` : ""}`);
@@ -2058,7 +2056,7 @@ export default function BusSearchResults() {
                                 onClick={() => handleCopyCoupon(couponCode)}
                                 style={{ background: isCopied ? "#15803d" : "#16a34a", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "800", cursor: "pointer", transition: "all 0.2s ease" }}
                               >
-                                {isCopied ? "COPIED ✓" : "COPY CODE"}
+                                {isCopied ? "COPIED âœ“" : "COPY CODE"}
                               </button>
                             </div>
                           )}
@@ -2073,7 +2071,7 @@ export default function BusSearchResults() {
                               </ul>
                             ) : (
                               <div style={{ color: "#16a34a", fontSize: "11.5px", fontWeight: "600" }}>
-                                ✓ Valid on all routes, seat types & operators. No minimum booking amount required.
+                                âœ“ Valid on all routes, seat types & operators. No minimum booking amount required.
                               </div>
                             )}
                           </div>
@@ -2122,23 +2120,22 @@ export default function BusSearchResults() {
         </div>
       </div>
 
-      <div className="bus-depart-cell">
-        <strong>{bus.departureTime}</strong>
-        <span>{formatShortDate(bus.departureDate)}</span>
-        <p>{bus.boardingPoint}</p>
-      </div>
-
-      <div className="bus-duration-cell">
-        <span>{bus.duration}</span>
-        <div className="duration-dash">
-          <i />
+      {/* Route cell spans grid cols 2-4 so the dashed line can stretch from departure to arrival */}
+      <div className="bus-route-cell">
+        <div className="bus-depart-cell">
+          <strong>{bus.departureTime}</strong>
+          <span>{formatShortDate(bus.departureDate)}</span>
+          <p>{bus.boardingPoint}</p>
         </div>
-      </div>
-
-      <div className="bus-arrive-cell">
-        <strong>{bus.arrivalTime}</strong>
-        <span>{formatShortDate(bus.arrivalDate)}</span>
-        <p>{bus.droppingPoint}</p>
+        <div className="bus-duration-cell">
+          <span>{bus.duration}</span>
+          <div className="duration-dash"><i /></div>
+        </div>
+        <div className="bus-arrive-cell">
+          <strong>{bus.arrivalTime}</strong>
+          <span>{formatShortDate(bus.arrivalDate)}</span>
+          <p>{bus.droppingPoint}</p>
+        </div>
       </div>
 
       <div className="bus-fare-cell">
@@ -2566,7 +2563,7 @@ export default function BusSearchResults() {
 
                   {/* Route Label */}
                   {(() => {
-                    const routeText = `${sourceName} → ${destinationName}`;
+                    const routeText = `${sourceName} â†’ ${destinationName}`;
                     const calculatedWidth = Math.max(160, Math.min(520, routeText.length * 8.5 + 36));
                     const calculatedX = 470 - calculatedWidth / 2;
                     return (
@@ -2862,17 +2859,18 @@ export default function BusSearchResults() {
             <section className="bus-results-column">
 
               <header className="bus-sort-strip">
-                <div className="bus-found-count">
-                  <strong>{filteredBuses.length} Buses</strong> found
+                <div className="bus-sort-col bus-sort-col-1">
+                  <div className="bus-found-count">
+                    <strong>{filteredBuses.length} Buses</strong> found
+                  </div>
+                  <div className="sort-by-label">SORT BY:</div>
                 </div>
-                <div className="sort-controls">
-                  <span>Sort by:</span>
-                  <div className="sort-control-list">
-                    {SORT_OPTIONS.map((option) => (
+                <div className="bus-route-cell">
+                  {SORT_OPTIONS.filter(o => ["departure", "duration", "arrival"].includes(o.key)).map((option) => (
+                    <div className="bus-sort-col" key={option.key}>
                       <button
-                        key={option.key}
                         type="button"
-                        className={sortBy === option.key ? "active" : ""}
+                        className={`sort-btn ${sortBy === option.key ? "active" : ""}`}
                         onClick={() => handleSortSelect(option.key)}
                         aria-label={
                           sortBy === option.key
@@ -2882,15 +2880,37 @@ export default function BusSearchResults() {
                             : `Sort by ${option.label}`
                         }
                       >
-                        <option.icon size={17} />
-                        <span>{option.label}</span>
+                        <span className="sort-label-text">{option.label}</span>
+                        <option.icon size={15} className="sort-label-icon" />
                         <span className="sort-direction-arrow" aria-hidden="true">
                           {sortBy === option.key && sortDirection === "desc" ? "\u2193" : "\u2191"}
                         </span>
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
+                {SORT_OPTIONS.filter(o => !["departure", "duration", "arrival"].includes(o.key)).map((option) => (
+                  <div className="bus-sort-col" key={option.key}>
+                      <button
+                        type="button"
+                        className={`sort-btn ${sortBy === option.key ? "active" : ""}`}
+                        onClick={() => handleSortSelect(option.key)}
+                        aria-label={
+                          sortBy === option.key
+                            ? sortDirection === "asc"
+                              ? `Sort by ${option.label} ascending`
+                              : `Sort by ${option.label} descending`
+                            : `Sort by ${option.label}`
+                        }
+                      >
+                        <span className="sort-label-text">{option.label}</span>
+                        <option.icon size={15} className="sort-label-icon" />
+                        <span className="sort-direction-arrow" aria-hidden="true">
+                          {sortBy === option.key && sortDirection === "desc" ? "\u2193" : "\u2191"}
+                        </span>
+                      </button>
+                  </div>
+                ))}
               </header>
 
               <div className="bus-card-list">

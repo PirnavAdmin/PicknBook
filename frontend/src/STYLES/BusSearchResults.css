@@ -1674,24 +1674,77 @@
   min-width: 0;
 }
 
+/* ============================================================
+   SHARED GRID TEMPLATE
+   Sort strip + result card use exactly the same 7-column grid.
+   Col 1 = operator/label, cols 2-6 = data columns, col 7 = action
+   The sort strip only fills cols 1-6; col 7 stays empty (above the
+   action buttons in the card).
+   ============================================================ */
+.bus-sort-strip,
+.bus-result-card {
+  display: grid;
+  grid-template-columns:
+    minmax(155px, 1.35fr)   /* col 1: operator / sort label  */
+    minmax(90px,  0.78fr)   /* col 2: departure              */
+    minmax(74px,  0.62fr)   /* col 3: duration               */
+    minmax(90px,  0.78fr)   /* col 4: arrival                */
+    minmax(106px, 0.76fr)   /* col 5: fare                   */
+    minmax(96px,  0.82fr)   /* col 6: seats available        */
+    minmax(110px, 0.74fr);  /* col 7: action buttons         */
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden; /* clip children so they cannot expand their grid column */
+}
+
 .bus-sort-strip {
   border: 1px solid var(--bus-border, #E5E7EB);
   border-radius: 10px;
   min-height: 42px;
   background: #ffffff;
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 12px;
   box-shadow: 0 8px 18px rgba(15, 32, 54, 0.08);
-  width: 100%;
-  box-sizing: border-box;
+}
+
+.bus-result-card {
+  border: 1px solid var(--bus-border, #E5E7EB);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(14, 29, 48, 0.08);
+  align-items: stretch;
+}
+
+.bus-sort-col {
+  /* Padding matches data cell horizontal padding (8px) so sort label text
+     left-edge aligns with data text in the column below it */
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: visible;
+}
+
+/* Ensure sort buttons inside the route-cell span identically to data cells */
+.bus-sort-strip .bus-route-cell .bus-sort-col:nth-child(1) {
+  flex: 0 0 auto;
+}
+.bus-sort-strip .bus-route-cell .bus-sort-col:nth-child(2) {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+.bus-sort-strip .bus-route-cell .bus-sort-col:nth-child(3) {
+  flex: 0 0 auto;
+}
+
+.bus-sort-col-1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 8px;
+  overflow: hidden;
 }
 
 .bus-found-count {
-  padding: 0 4px;
   color: var(--theme-navy, #1f2a44);
   font-size: 0.936rem;
   font-weight: 600;
@@ -1702,88 +1755,109 @@
   font-weight: 800;
 }
 
-.sort-controls {
-  border-left: 1px solid #d4dde9;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-left: 10px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.sort-controls>span {
+.sort-by-label {
   text-transform: uppercase;
   font-size: 0.675rem;
   color: var(--theme-navy, #1f2a44);
   font-weight: 800;
   white-space: nowrap;
+  border-left: 1px solid #d4dde9;
+  padding-left: 12px;
 }
 
-.sort-control-list {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
-  max-width: 100%;
-  padding-bottom: 2px;
-}
-
-.sort-control-list::-webkit-scrollbar {
-  display: none;
-}
-
-.sort-control-list button {
+.bus-sort-col button.sort-btn {
   border: 0;
   border-radius: 8px;
   min-height: 36px;
-  padding: 0 10px;
+  /* Padding: 0 on the button itself. The .bus-sort-col wrapper provides
+     8px horizontal padding (matching data cells), so the label text
+     left-edge aligns perfectly with the data text in the column below. */
+  padding: 0;
   background: transparent;
   color: var(--theme-navy, #1f2a44);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  min-width: 100%;
+  width: max-content;
 }
 
-.sort-control-list button .sort-direction-arrow {
+/* Label text: flush-left, aligns with data cell text below */
+.bus-sort-col button.sort-btn .sort-label-text {
+  flex: 0 0 auto;
+  /* No extra margin — text starts at 0, matching the data cell content start */
+}
+
+/* Icon: small, subtle, trailing after label text */
+.bus-sort-col button.sort-btn .sort-label-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+/* Arrow: pushed to right end of button */
+.bus-sort-col button.sort-btn .sort-direction-arrow {
   color: rgba(31, 42, 68, 0.36);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 900;
   line-height: 1;
-  margin-left: 1px;
+  margin-left: auto;
   transform: translateY(-1px);
 }
 
-.sort-control-list button.active .sort-direction-arrow {
-  color: var(--bus-primary, #ff0000);
+.bus-sort-col button.sort-btn.active .sort-direction-arrow {
+  color: #ffffff;
 }
 
-.sort-control-list button svg {
-  width: 22px;
-  height: 22px;
-  padding: 3px;
-  border-radius: 5px;
-  color: var(--theme-navy, #1f2a44);
+.bus-sort-col button.sort-btn svg {
   stroke-width: 2.2;
 }
 
-.sort-control-list button.active {
+.bus-sort-col button.sort-btn.active {
   color: #ffffff !important;
   background: linear-gradient(135deg, var(--bus-primary), var(--bus-primary-strong)) !important;
   box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
+  border-radius: 6px;
+  /* Small horizontal padding so the pill background doesn't clip the text */
+  padding: 0 6px;
+  /* Compensate for added padding so text still starts at the column's 8px left edge:
+     The wrapper has 8px padding. We add 6px button-internal padding.
+     Net left start of text = 8px + 6px = 14px from column edge.
+     Data cells = 8px. Offset = 6px — acceptable for the active highlighted state. */
 }
 
-.sort-control-list button.active svg,
-.sort-control-list button.active .sort-direction-arrow {
+.bus-sort-col button.sort-btn.active .sort-label-icon,
+.bus-sort-col button.sort-btn.active .sort-direction-arrow {
   color: #ffffff !important;
+  opacity: 1;
+}
+
+@media (max-width: 1250px) {
+  .bus-sort-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 12px;
+  }
+  .bus-sort-col {
+    padding: 0;
+    width: auto;
+  }
+  .bus-sort-col-1 {
+    padding-left: 0;
+  }
+  .bus-sort-col button.sort-btn {
+    width: auto;
+  }
+  .bus-sort-col button.sort-btn .sort-direction-arrow {
+    margin-left: 1px;
+  }
 }
 
 .bus-card-list {
@@ -1864,30 +1938,60 @@
   padding-left: 12px;
 }
 
-.bus-result-card {
-  border: 1px solid var(--bus-border, #E5E7EB);
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 10px 24px rgba(14, 29, 48, 0.08);
-  display: grid;
-  grid-template-columns:
-    minmax(170px, 1.35fr) minmax(106px, 0.78fr) minmax(88px, 0.62fr) minmax(106px, 0.78fr) minmax(116px, 0.76fr) minmax(132px, 0.82fr);
-  align-items: stretch;
-  overflow: hidden;
-}
+/* .bus-result-card grid is defined in the shared rule with .bus-sort-strip above */
 
 .operator-group-bus-card {
   border-color: #e3ebf5;
 }
 
-.bus-operator-cell,
-.bus-depart-cell,
-.bus-duration-cell,
-.bus-arrive-cell,
-.bus-fare-cell,
-.bus-seat-cell {
-  padding: 12px 10px;
+/* ================================================================
+   ROUTE CELL: wraps departure + duration + arrival.
+   Spans grid columns 2-4 so the dashed line can stretch
+   all the way from departure to arrival.
+   ================================================================ */
+.bus-route-cell {
+  grid-column: 2 / 5;   /* spans departure + duration + arrival columns */
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
 }
+
+/* Departure: left-aligned, fixed size */
+.bus-depart-cell {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8px 8px 8px 8px;
+  min-width: 0;
+}
+
+/* Duration: stretches between departure and arrival */
+.bus-duration-cell {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  min-width: 60px;
+  padding: 0;
+}
+
+/* Arrival: right-aligned, fixed size */
+.bus-arrive-cell {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8px 8px 8px 8px;
+  min-width: 0;
+}
+
 
 .bus-operator-cell {
   display: flex;
@@ -1963,9 +2067,6 @@
 }
 
 .bus-duration-cell {
-  text-align: center;
-  display: grid;
-  align-content: center;
   gap: 8px;
 }
 
@@ -2000,6 +2101,11 @@
 .bus-fare-cell,
 .bus-seat-cell {
   border-left: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8px 8px;
 }
 
 .bus-fare-cell span {
@@ -3413,11 +3519,11 @@
        locations, duration, fare, seats, Bus Details, View Seats) visible.
    ========================================================================== */
 
-/* --- 7-column card grid: action column is now column 7 --- */
-.bus-result-card {
-  grid-template-columns:
-    minmax(155px, 1.35fr) minmax(90px, 0.72fr) minmax(74px, 0.52fr) minmax(90px, 0.72fr) minmax(106px, 0.70fr) minmax(96px, 0.62fr) minmax(124px, 0.74fr) !important;
-  min-height: 0 !important;
+/* Shared grid children: prevent content from expanding their column */
+.bus-result-card > div,
+.bus-sort-strip > div {
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* --- Action cell: vertical column on the right, NOT full-width bottom row --- */
@@ -3447,14 +3553,17 @@
   min-width: 0 !important;
 }
 
-/* --- Tighten all data-cell padding --- */
+/* --- Tighten non-route data-cell padding --- */
 .bus-operator-cell,
-.bus-depart-cell,
-.bus-duration-cell,
-.bus-arrive-cell,
 .bus-fare-cell,
 .bus-seat-cell {
   padding: 8px 8px !important;
+}
+
+/* Route cell: ensure vertical centering stays intact */
+.bus-route-cell {
+  padding: 0 !important;
+  align-items: center !important;
 }
 
 /* --- Operator cell: compact logo + text stack --- */
@@ -3516,9 +3625,11 @@
   line-height: 1.22 !important;
 }
 
-/* --- Duration cell --- */
+/* --- Duration cell (inside route-cell flex layout) --- */
 .bus-duration-cell {
   gap: 3px !important;
+  align-items: center !important;
+  padding: 0 !important;
 }
 
 .bus-duration-cell>span {
@@ -3559,7 +3670,7 @@
 /* --- Slim sort strip --- */
 .bus-sort-strip {
   min-height: 36px !important;
-  padding: 4px 10px !important;
+  padding: 4px 0 !important;
 }
 
 /* --- Page-level: reduce top padding slightly --- */
@@ -3605,7 +3716,6 @@
 
   .bus-operator-cell,
   .bus-depart-cell,
-  .bus-duration-cell,
   .bus-arrive-cell,
   .bus-fare-cell,
   .bus-seat-cell {
@@ -3717,7 +3827,7 @@
 
 .bus-sort-strip {
   min-height: 38px !important;
-  padding: 4px 10px !important;
+  padding: 4px 0 !important;
 }
 
 .bus-filter-card {

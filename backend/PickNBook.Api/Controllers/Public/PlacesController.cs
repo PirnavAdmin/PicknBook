@@ -17,12 +17,12 @@ namespace PickNBook.Api.Controllers
             [FromQuery] string tripType = "all",
             [FromQuery] string field = "all",
             [FromQuery] string? requestType = null,
-            [FromQuery] int limit = 20,
+            [FromQuery] int limit = 50,
             CancellationToken cancellationToken = default)
         {
             if (limit <= 0)
             {
-                return BadRequest("limit must be greater than 0.");
+                limit = 50;
             }
 
             var normalizedTripType = tripType.Trim().ToLowerInvariant();

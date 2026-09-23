@@ -3522,6 +3522,157 @@ select.field-control option {
 }
 
 /* Booking info static content */
+.home-blog-section {
+  display: grid;
+  gap: 14px;
+}
+
+.home-blog-header {
+  align-items: flex-end;
+  margin-bottom: 0;
+}
+
+.home-blog-header h2 {
+  font-size: clamp(20px, 2.1vw, 25px);
+}
+
+.home-blog-view-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #e33d20;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.home-blog-card {
+  overflow: hidden;
+  border: 1px solid #d7e1ee;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(21, 43, 76, 0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-blog-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(21, 43, 76, 0.12);
+}
+
+.home-blog-image-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 154px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: #dbe5ef;
+  cursor: pointer;
+}
+
+.home-blog-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.home-blog-card:hover .home-blog-image {
+  transform: scale(1.04);
+}
+
+.home-blog-image-fallback {
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1c4966, #e33d20);
+  font-weight: 800;
+}
+
+.home-blog-category {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.home-blog-card-body {
+  padding: 16px;
+}
+
+.home-blog-card-body h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0 0 8px;
+  color: #17233a;
+  font-size: 16px;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.home-blog-card-body p {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 38px;
+  margin: 0 0 14px;
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.home-blog-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.home-blog-card-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.home-blog-status {
+  padding: 28px;
+  border: 1px solid #d7e1ee;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #64748b;
+  text-align: center;
+  font-size: 13px;
+}
+
 .india-booking-section {
   display: grid;
   gap: 14px;
@@ -3883,7 +4034,9 @@ select.field-control option {
 
 @media (max-width: 600px) {
   .faq-modal {
-    height: calc(100dvh - 24px);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
     max-height: calc(100dvh - 24px);
     border-radius: 16px;
   }
@@ -14875,4 +15028,19 @@ button:focus-visible {
 .brand-slide span,
 .homepage .brand-slide span {
   font-size: 9.5px !important;
+}
+
+@media (max-width: 640px) {
+  .home-blog-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .home-blog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-blog-image-button {
+    height: 190px;
+  }
 }

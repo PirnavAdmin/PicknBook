@@ -1672,7 +1672,7 @@ export default function HotelPassengerDetailsPage() {
                         <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(basePrice)}</strong>
                       </div>
                       <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
-                        <span>Taxes and GST (12%)</span>
+                        <span>Taxes & GST</span>
                         <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(tax)}</strong>
                       </div>
                     </div>

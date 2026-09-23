@@ -291,10 +291,106 @@ public class CustomersController : AdminApiController
         customer.WalletStatus = "Active"; // Ensure wallet is Active when balance is added
         await _context.SaveChangesAsync();
 
-        string subject = "Wallet Balance Added";
-        string body = $"Hello {customer.FirstName},<br><br>An amount of ₹{request.Amount} has been added to your Pick&amp;book wallet.<br>Your updated wallet balance is ₹{customer.WalletBalance}.";
-        
-        await _emailService.SendEmailAsync(customer.Email, subject, body);
+        var customerFullName = $"{customer.FirstName} {customer.LastName}".Trim();
+        if (string.IsNullOrWhiteSpace(customerFullName))
+        {
+            customerFullName = "Valued Customer";
+        }
+
+        string subject = "Wallet Balance Added Successfully – Pick&book";
+        string transactionDate = DateTime.UtcNow.ToString("dd MMMM yyyy");
+
+        string body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Wallet Balance Added</title>
+</head>
+<body style='margin:0; padding:0; background-color:#f4f6f9; font-family:-apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif;'>
+    <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color:#f4f6f9; padding:30px 15px;'>
+        <tr>
+            <td align='center'>
+                <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%' style='max-width:580px; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.06); border:1px solid #e5e7eb;'>
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style='background:linear-gradient(135deg, #BE123C 0%, #E11D48 100%); padding:28px 30px; text-align:center;'>
+                            <h1 style='margin:0; font-size:26px; font-weight:800; color:#ffffff; letter-spacing:0.5px;'>Pick&amp;book</h1>
+                            <p style='margin:6px 0 0; font-size:14px; color:#ffe4e6; font-weight:500;'>Wallet Balance Added Successfully</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style='padding:32px 30px;'>
+                            <p style='margin:0 0 16px; font-size:16px; color:#111827; font-weight:600;'>
+                                Dear {customerFullName},
+                            </p>
+                            <p style='margin:0 0 24px; font-size:15px; color:#4b5563; line-height:1.6;'>
+                                Your Pick&amp;book wallet has been successfully credited. The updated balance is now available for your future bookings.
+                            </p>
+
+                            <!-- Transaction Details Card -->
+                            <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:18px 20px; margin-bottom:24px;'>
+                                <tr>
+                                    <td colspan='2' style='padding-bottom:12px; border-bottom:1px solid #e5e7eb;'>
+                                        <span style='font-size:12px; font-weight:700; text-transform:uppercase; color:#6b7280; letter-spacing:0.5px;'>Transaction Details</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='padding:10px 0 6px; font-size:14px; color:#6b7280;'>Amount Added:</td>
+                                    <td style='padding:10px 0 6px; font-size:16px; font-weight:700; color:#059669; text-align:right;'>+₹{request.Amount:N2}</td>
+                                </tr>
+                                <tr>
+                                    <td style='padding:6px 0; font-size:14px; color:#6b7280;'>Updated Wallet Balance:</td>
+                                    <td style='padding:6px 0; font-size:16px; font-weight:700; color:#111827; text-align:right;'>₹{customer.WalletBalance:N2}</td>
+                                </tr>
+                                <tr>
+                                    <td style='padding:6px 0 2px; font-size:14px; color:#6b7280;'>Transaction Date:</td>
+                                    <td style='padding:6px 0 2px; font-size:14px; font-weight:500; color:#374151; text-align:right;'>{transactionDate}</td>
+                                </tr>
+                            </table>
+
+                            <p style='margin:0 0 24px; font-size:14px; color:#6b7280; line-height:1.6;'>
+                                You can use your wallet balance to book flights, hotels, and buses seamlessly across Pick&amp;book.
+                            </p>
+
+                            <p style='margin:0 0 6px; font-size:15px; color:#111827;'>
+                                Thank you for choosing <strong>Pick&amp;book</strong>.
+                            </p>
+
+                            <p style='margin:20px 0 0; font-size:14px; color:#4b5563; line-height:1.5;'>
+                                Regards,<br>
+                                <strong style='color:#BE123C;'>Pick&amp;book Support Team</strong><br>
+                                <span style='font-size:12px; color:#9ca3af;'>Travel made easier.</span>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style='background-color:#f9fafb; padding:18px 30px; text-align:center; border-top:1px solid #f3f4f6; font-size:12px; color:#9ca3af; line-height:1.5;'>
+                            This is an automated notification from Pick&amp;book. Please do not reply directly to this email.<br>
+                            &copy; 2026 Pick&amp;book Travel Services. All rights reserved.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
+        try
+        {
+            await _emailService.SendEmailAsync(customer.Email, subject, body);
+        }
+        catch
+        {
+            // Email sending failure should not prevent wallet balance update
+        }
 
         return Ok(new { message = "Wallet balance updated successfully.", walletBalance = customer.WalletBalance });
     }

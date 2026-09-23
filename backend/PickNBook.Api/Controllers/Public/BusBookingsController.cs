@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Helpers;
 using PickNBook.Api.Services;
 using PickNBook.Api.Services.SeatLayouts;
 using Microsoft.Extensions.Caching.Memory;
@@ -622,17 +623,17 @@ namespace PickNBook.Api.Controllers
         {
             if (request == null)
             {
-                return BadRequest("Request body cannot be null.");
+                return BadRequest(ValidationErrorDto.Create("Request body cannot be null.", "request"));
             }
 
             if (string.IsNullOrWhiteSpace(request.TraceId) || !long.TryParse(request.TraceId, out var traceIdNum) || traceIdNum <= 0)
             {
-                return BadRequest("TraceId must be present, numeric, and greater than 0.");
+                return BadRequest(ValidationErrorDto.Create("TraceId must be present, numeric, and greater than 0.", "TraceId"));
             }
 
             if (string.IsNullOrWhiteSpace(request.ResultIndex))
             {
-                return BadRequest("ResultIndex is required.");
+                return BadRequest(ValidationErrorDto.Create("ResultIndex is required.", "ResultIndex"));
             }
 
             var compositeResultIndex = SrdvBusService.BuildCompositeResultIndex(request.ResultIndex, request.SrdvIndex.ToString());
@@ -641,7 +642,7 @@ namespace PickNBook.Api.Controllers
 
             if (!foundSearchCtx || busCtx == null)
             {
-                return BadRequest(new { message = "Invalid or expired search workflow session. TraceId and ResultIndex must belong to an active search within 1 hour." });
+                return BadRequest(ValidationErrorDto.Create("Invalid or expired search workflow session. TraceId and ResultIndex must belong to an active search within 1 hour.", "TraceId", "SESSION_EXPIRED"));
             }
 
             if (request.SrdvIndex <= 0 && busCtx.SrdvIndex > 0)
@@ -651,11 +652,11 @@ namespace PickNBook.Api.Controllers
 
             if (string.IsNullOrWhiteSpace(request.BoardingPointId))
             {
-                return BadRequest(new { message = "BoardingPointId is required." });
+                return BadRequest(ValidationErrorDto.Create("BoardingPointId is required.", "BoardingPointId"));
             }
             if (string.IsNullOrWhiteSpace(request.DroppingPointId))
             {
-                return BadRequest(new { message = "DroppingPointId is required." });
+                return BadRequest(ValidationErrorDto.Create("DroppingPointId is required.", "DroppingPointId"));
             }
 
             // Validate against retained Boarding Point workflow state if available
@@ -666,79 +667,137 @@ namespace PickNBook.Api.Controllers
             {
                 if (bpCtx.BoardingPointIds.Count > 0 && !bpCtx.BoardingPointIds.Contains(request.BoardingPointId.Trim()))
                 {
-                    return BadRequest(new { message = $"BoardingPointId '{request.BoardingPointId}' does not belong to the valid boarding points for this bus." });
+                    return BadRequest(ValidationErrorDto.Create($"BoardingPointId '{request.BoardingPointId}' does not belong to the valid boarding points for this bus.", "BoardingPointId"));
                 }
                 if (bpCtx.DroppingPointIds.Count > 0 && !bpCtx.DroppingPointIds.Contains(request.DroppingPointId.Trim()))
                 {
-                    return BadRequest(new { message = $"DroppingPointId '{request.DroppingPointId}' does not belong to the valid dropping points for this bus." });
+                    return BadRequest(ValidationErrorDto.Create($"DroppingPointId '{request.DroppingPointId}' does not belong to the valid dropping points for this bus.", "DroppingPointId"));
                 }
             }
 
             if (request.Passengers == null || request.Passengers.Count < 1 || request.Passengers.Count > 10)
             {
-                return BadRequest(new { message = "Passengers count must be between 1 and 10." });
+                return BadRequest(ValidationErrorDto.Create("Passengers count must be between 1 and 10.", "Passengers"));
             }
 
             int leadPassengerCount = request.Passengers.Count(p => p.LeadPassenger == true);
             if (leadPassengerCount > 1)
             {
-                return BadRequest(new { message = "Exactly one passenger must be designated as the lead passenger." });
+                return BadRequest(ValidationErrorDto.Create("Exactly one passenger must be designated as the lead passenger.", "LeadPassenger"));
             }
             else if (leadPassengerCount == 0)
             {
                 request.Passengers[0].LeadPassenger = true;
             }
 
+            var leadPax = request.Passengers.First(p => p.LeadPassenger == true);
+
+            // Validate Lead passenger Email and Mobile
+            var leadEmailVal = TravelValidationHelper.ValidateEmail(leadPax.Email, isRequired: true, "Lead passenger email");
+            if (!leadEmailVal.IsValid)
+            {
+                return BadRequest(ValidationErrorDto.Create(leadEmailVal.ErrorMessage!, "Email", "INVALID_EMAIL"));
+            }
+            leadPax.Email = leadEmailVal.CleanedEmail;
+
+            var leadMobileVal = TravelValidationHelper.ValidateMobileNumber(leadPax.ContactNo, isRequired: true, "Lead passenger mobile number");
+            if (!leadMobileVal.IsValid)
+            {
+                return BadRequest(ValidationErrorDto.Create(leadMobileVal.ErrorMessage!, "ContactNo", "INVALID_PHONE"));
+            }
+            leadPax.ContactNo = leadMobileVal.CleanedPhone;
+
             var seatNamesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
 
             for (int i = 0; i < request.Passengers.Count; i++)
             {
                 var p = request.Passengers[i];
+
                 if (string.IsNullOrWhiteSpace(p.Title) || p.Title.Trim().Length > 20)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: Title is required and must be max 20 characters." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: Title is required and must be max 20 characters.", $"Passengers[{i}].Title"));
                 }
-                if (string.IsNullOrWhiteSpace(p.FirstName) || p.FirstName.Trim().Length > 100)
+
+                var firstNameVal = TravelValidationHelper.ValidateName(p.FirstName, isRequired: true, $"Passenger {i + 1} first name");
+                if (!firstNameVal.IsValid)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: FirstName is required and must be max 100 characters." });
+                    return BadRequest(ValidationErrorDto.Create(firstNameVal.ErrorMessage!, $"Passengers[{i}].FirstName"));
                 }
-                if (string.IsNullOrWhiteSpace(p.LastName) || p.LastName.Trim().Length > 100)
+                p.FirstName = p.FirstName.Trim();
+
+                // LastName is optional. If provided, validate. If omitted, fallback to FirstName for upstream supplier
+                if (!string.IsNullOrWhiteSpace(p.LastName))
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: LastName is required and must be max 100 characters." });
+                    var lastNameVal = TravelValidationHelper.ValidateName(p.LastName, isRequired: false, $"Passenger {i + 1} last name");
+                    if (!lastNameVal.IsValid)
+                    {
+                        return BadRequest(ValidationErrorDto.Create(lastNameVal.ErrorMessage!, $"Passengers[{i}].LastName"));
+                    }
+                    p.LastName = p.LastName.Trim();
+                }
+                else
+                {
+                    p.LastName = p.FirstName;
                 }
 
                 var gStr = p.Gender.ToString().Trim();
                 if (gStr != "1" && gStr != "2" && !gStr.Equals("Male", StringComparison.OrdinalIgnoreCase) && !gStr.Equals("Female", StringComparison.OrdinalIgnoreCase))
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: Gender must be '1' (Male) or '2' (Female)." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: Gender must be '1' (Male) or '2' (Female).", $"Passengers[{i}].Gender"));
                 }
                 if (gStr.Equals("Male", StringComparison.OrdinalIgnoreCase)) p.Gender = 1;
                 else if (gStr.Equals("Female", StringComparison.OrdinalIgnoreCase)) p.Gender = 2;
 
+                var titleGenderVal = TravelValidationHelper.ValidateTitleAndGender(p.Title, p.Gender, $"Passenger {i + 1}");
+                if (!titleGenderVal.IsValid)
+                {
+                    return BadRequest(ValidationErrorDto.Create(titleGenderVal.ErrorMessage!, $"Passengers[{i}].Title"));
+                }
+
                 if (p.Age < 1 || p.Age > 120)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: Age must be between 1 and 120." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: Age must be between 1 and 120.", $"Passengers[{i}].Age"));
                 }
 
-                if (string.IsNullOrWhiteSpace(p.Email) || p.Email.Length > 254 || !emailRegex.IsMatch(p.Email.Trim()))
+                // Secondary passengers inherit lead email/contact if not provided, or validate if provided
+                if (p.LeadPassenger != true)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: A valid email (max 254 characters) is required." });
-                }
+                    if (string.IsNullOrWhiteSpace(p.Email))
+                    {
+                        p.Email = leadPax.Email;
+                    }
+                    else
+                    {
+                        var emailVal = TravelValidationHelper.ValidateEmail(p.Email, isRequired: false, $"Passenger {i + 1} email");
+                        if (!emailVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(emailVal.ErrorMessage!, $"Passengers[{i}].Email", "INVALID_EMAIL"));
+                        }
+                        p.Email = emailVal.CleanedEmail;
+                    }
 
-                var cleanPhone = p.ContactNo?.Trim() ?? "";
-                if (cleanPhone.Length < 5 || cleanPhone.Length > 20)
-                {
-                    return BadRequest(new { message = $"Passenger {i + 1}: PhoneNo must be between 5 and 20 characters." });
+                    if (string.IsNullOrWhiteSpace(p.ContactNo))
+                    {
+                        p.ContactNo = leadPax.ContactNo;
+                    }
+                    else
+                    {
+                        var phoneVal = TravelValidationHelper.ValidateMobileNumber(p.ContactNo, isRequired: false, $"Passenger {i + 1} mobile number");
+                        if (!phoneVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(phoneVal.ErrorMessage!, $"Passengers[{i}].ContactNo", "INVALID_PHONE"));
+                        }
+                        p.ContactNo = phoneVal.CleanedPhone;
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(p.IdNumber) && p.IdNumber.Trim().Length > 100)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: IdNumber must be max 100 characters." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: IdNumber must be max 100 characters.", $"Passengers[{i}].IdNumber"));
                 }
                 if (!string.IsNullOrWhiteSpace(p.IdType) && p.IdType.Trim().Length > 50)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: IdType must be max 50 characters." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: IdType must be max 50 characters.", $"Passengers[{i}].IdType"));
                 }
 
                 if (string.IsNullOrWhiteSpace(p.Address))
@@ -747,34 +806,44 @@ namespace PickNBook.Api.Controllers
                 }
                 else if (p.Address.Trim().Length > 500)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: Address must be max 500 characters." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: Address must be max 500 characters.", $"Passengers[{i}].Address"));
                 }
 
                 if (string.IsNullOrWhiteSpace(p.SeatName) || p.SeatName.Trim().Length > 100)
                 {
-                    return BadRequest(new { message = $"Passenger {i + 1}: SeatName is required and must be max 100 characters." });
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: SeatName is required and must be max 100 characters.", $"Passengers[{i}].SeatName"));
                 }
 
                 var trimmedSeat = p.SeatName.Trim();
                 if (!seatNamesSet.Add(trimmedSeat))
                 {
-                    return BadRequest(new { message = $"Duplicate seat '{trimmedSeat}' detected in passenger list. Duplicate seats are not allowed." });
+                    return BadRequest(ValidationErrorDto.Create($"Duplicate seat '{trimmedSeat}' detected in passenger list. Duplicate seats are not allowed.", $"Passengers[{i}].SeatName"));
                 }
 
                 // GST validation
                 if (!string.IsNullOrWhiteSpace(p.GSTNumber))
                 {
+                    var gstVal = TravelValidationHelper.ValidateGstin(p.GSTNumber);
+                    if (!gstVal.IsValid)
+                    {
+                        return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: {gstVal.ErrorMessage}", $"Passengers[{i}].GSTNumber"));
+                    }
                     if (string.IsNullOrWhiteSpace(p.GSTCompanyName))
                     {
-                        return BadRequest(new { message = $"Passenger {i + 1}: GSTCompanyName is required when GSTNumber is provided." });
+                        return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: GSTCompanyName is required when GSTNumber is provided.", $"Passengers[{i}].GSTCompanyName"));
                     }
                     if (string.IsNullOrWhiteSpace(p.GSTCompanyAddress))
                     {
-                        return BadRequest(new { message = $"Passenger {i + 1}: GSTCompanyAddress is required when GSTNumber is provided." });
+                        return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: GSTCompanyAddress is required when GSTNumber is provided.", $"Passengers[{i}].GSTCompanyAddress"));
                     }
-                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyEmail) && !emailRegex.IsMatch(p.GSTCompanyEmail.Trim()))
+                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyEmail))
                     {
-                        return BadRequest(new { message = $"Passenger {i + 1}: GSTCompanyEmail must be a valid email." });
+                        var gstEmailVal = TravelValidationHelper.ValidateEmail(p.GSTCompanyEmail, isRequired: true, $"Passenger {i + 1} GST company email");
+                        if (!gstEmailVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(gstEmailVal.ErrorMessage!, $"Passengers[{i}].GSTCompanyEmail", "INVALID_EMAIL"));
+                        }
+                        p.GSTCompanyEmail = gstEmailVal.CleanedEmail;
                     }
                 }
             }
@@ -790,11 +859,11 @@ namespace PickNBook.Api.Controllers
                     var seatName = p.SeatName.Trim();
                     if (!layoutMap.TryGetValue(seatName, out var layoutSeat))
                     {
-                        return BadRequest(new { message = $"Seat '{seatName}' does not exist in the valid seat layout for this bus." });
+                        return BadRequest(ValidationErrorDto.Create($"Seat '{seatName}' does not exist in the valid seat layout for this bus.", "SeatName"));
                     }
                     if (!layoutSeat.IsAvailable)
                     {
-                        return BadRequest(new { message = $"Seat '{seatName}' is not available for booking." });
+                        return BadRequest(ValidationErrorDto.Create($"Seat '{seatName}' is not available for booking.", "SeatName"));
                     }
 
                     // RedBus forcedSeats rule check
@@ -835,6 +904,24 @@ namespace PickNBook.Api.Controllers
                         }
                     });
                 }
+            }
+
+            // Purge any stale unconfirmed BusBlockedSeatPrices for this TraceId before blocking
+            try
+            {
+                var scopedDb = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var staleBlocked = await scopedDb.BusBlockedSeatPrices
+                    .Where(x => x.TraceId == request.TraceId)
+                    .ToListAsync();
+                if (staleBlocked.Any())
+                {
+                    scopedDb.BusBlockedSeatPrices.RemoveRange(staleBlocked);
+                    await scopedDb.SaveChangesAsync();
+                }
+            }
+            catch (Exception dbEx)
+            {
+                logger.LogWarning(dbEx, "Failed to purge previous BusBlockedSeatPrices for TraceId {TraceId}", request.TraceId);
             }
 
             try

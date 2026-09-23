@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using PickNBook.Api.Data;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Helpers;
 using PickNBook.Api.Services;
 using PickNBook.Api.Filters;
 using System;
@@ -149,6 +150,7 @@ namespace PickNBook.Api.Controllers
                 // Fire-and-forget logging to the database
                 var userId = _currentUserService.GetUserOrGuestId();
                 var cityId = hasCityId ? request.CityId!.Value.ToString() : (request.HotelCodes != null ? string.Join(",", request.HotelCodes) : "HOTEL_CODES");
+                var reqCityId = request.CityId;
                 var checkInStr = request.CheckInDate;
                 var checkOutStr = request.CheckOutDate;
                 var roomGuests = request.RoomGuests;
@@ -167,9 +169,24 @@ namespace PickNBook.Api.Controllers
                         int adults = roomGuests?.Sum(rg => rg.NoOfAdults) ?? 1;
                         int rooms = roomGuests != null && roomGuests.Count > 0 ? roomGuests.Count : (int.TryParse(noOfRoomsStr, out var r) ? r : 1);
 
+                        string? resolvedCityName = null;
+                        long? resolvedCityId = reqCityId;
+
+                        if (hasCityId && reqCityId.HasValue)
+                        {
+                            var city = await dbContext.HotelCities.AsNoTracking()
+                                .FirstOrDefaultAsync(c => c.CityId == reqCityId.Value);
+                            if (city != null)
+                            {
+                                resolvedCityName = city.CityName;
+                            }
+                        }
+
                         var searchLog = new HotelSearchLog
                         {
                             SearchQuery = cityId,
+                            CityName = resolvedCityName,
+                            CityId = resolvedCityId,
                             CheckInDate = DateOnly.FromDateTime(parsedCheckIn),
                             CheckOutDate = DateOnly.FromDateTime(parsedCheckOut),
                             Adults = adults,
@@ -411,18 +428,18 @@ namespace PickNBook.Api.Controllers
         {
             if (request == null)
             {
-                return BadRequest(new { message = "Invalid request format." });
+                return BadRequest(ValidationErrorDto.Create("Request body cannot be null.", "request"));
             }
 
             if (request.TraceId <= 0)
             {
-                return BadRequest(new { message = "TraceId is required and must be a positive integer." });
+                return BadRequest(ValidationErrorDto.Create("TraceId must be present and greater than 0.", "TraceId"));
             }
 
             var resultIndex = request.ResultIndex?.Trim();
             if (string.IsNullOrWhiteSpace(resultIndex) || resultIndex.Length < 3 || resultIndex.Length > 500)
             {
-                return BadRequest(new { message = "ResultIndex is required and must be between 3 and 500 characters." });
+                return BadRequest(ValidationErrorDto.Create("ResultIndex is required and must be between 3 and 500 characters.", "ResultIndex"));
             }
 
             // If flat single-room properties are supplied, populate HotelRoomsDetails
@@ -442,14 +459,20 @@ namespace PickNBook.Api.Controllers
 
             if (request.HotelRoomsDetails == null || request.HotelRoomsDetails.Count == 0 || request.HotelRoomsDetails.Count > 9)
             {
-                return BadRequest(new { message = "HotelRoomsDetails is required and must contain between 1 and 9 rooms." });
+                return BadRequest(ValidationErrorDto.Create("HotelRoomsDetails is required and must contain between 1 and 9 rooms.", "HotelRoomsDetails"));
             }
 
-            foreach (var room in request.HotelRoomsDetails)
+            if (request.NoOfRooms > 0 && request.NoOfRooms != request.HotelRoomsDetails.Count)
             {
+                return BadRequest(ValidationErrorDto.Create($"NoOfRooms ({request.NoOfRooms}) does not match the count of HotelRoomsDetails ({request.HotelRoomsDetails.Count}).", "NoOfRooms"));
+            }
+
+            for (int i = 0; i < request.HotelRoomsDetails.Count; i++)
+            {
+                var room = request.HotelRoomsDetails[i];
                 if (string.IsNullOrWhiteSpace(room.OptionId) && string.IsNullOrWhiteSpace(room.RoomTypeCode) && string.IsNullOrWhiteSpace(room.RoomIndex))
                 {
-                    return BadRequest(new { message = "Each room in HotelRoomsDetails requires at least one identifier (OptionId, RoomTypeCode, or RoomIndex)." });
+                    return BadRequest(ValidationErrorDto.Create($"Room {i + 1} requires at least one identifier (OptionId, RoomTypeCode, or RoomIndex).", $"HotelRoomsDetails[{i}]"));
                 }
             }
 
@@ -458,6 +481,20 @@ namespace PickNBook.Api.Controllers
             try
             {
                 var blockRes = await _hotelService.BlockRoomAsync(request);
+
+                if (blockRes?.BlockRoomResult?.Error != null && blockRes.BlockRoomResult.Error.ErrorCode != 0)
+                {
+                    var errMsg = blockRes.BlockRoomResult.Error.ErrorMessage ?? "Room block failed with supplier.";
+                    if (errMsg.Contains("expired", StringComparison.OrdinalIgnoreCase) || 
+                        errMsg.Contains("session", StringComparison.OrdinalIgnoreCase) ||
+                        errMsg.Contains("trace", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return StatusCode(StatusCodes.Status410Gone, ValidationErrorDto.Create(errMsg, "TraceId", "TRACE_ID_EXPIRED"));
+                    }
+
+                    return BadRequest(ValidationErrorDto.Create(errMsg, "BlockRoom", $"SUPPLIER_ERROR_{blockRes.BlockRoomResult.Error.ErrorCode}"));
+                }
+
                 return Ok(blockRes);
             }
             catch (Exception ex)
@@ -475,13 +512,13 @@ namespace PickNBook.Api.Controllers
         {
             if (traceId <= 0)
             {
-                return BadRequest(new { message = "traceId is required and must be a positive integer." });
+                return BadRequest(ValidationErrorDto.Create("traceId is required and must be a positive integer.", "traceId"));
             }
 
             var trimmedResultIndex = resultIndex?.Trim();
             if (string.IsNullOrWhiteSpace(trimmedResultIndex) || trimmedResultIndex.Length < 3 || trimmedResultIndex.Length > 500)
             {
-                return BadRequest(new { message = "resultIndex is required and must be between 3 and 500 characters." });
+                return BadRequest(ValidationErrorDto.Create("resultIndex is required and must be between 3 and 500 characters.", "resultIndex"));
             }
 
             var roomsList = new List<BlockRoomRequestRoomDto>();
@@ -508,6 +545,20 @@ namespace PickNBook.Api.Controllers
             try
             {
                 var blockRes = await _hotelService.BlockRoomAsync(req);
+
+                if (blockRes?.BlockRoomResult?.Error != null && blockRes.BlockRoomResult.Error.ErrorCode != 0)
+                {
+                    var errMsg = blockRes.BlockRoomResult.Error.ErrorMessage ?? "Room block failed with supplier.";
+                    if (errMsg.Contains("expired", StringComparison.OrdinalIgnoreCase) || 
+                        errMsg.Contains("session", StringComparison.OrdinalIgnoreCase) ||
+                        errMsg.Contains("trace", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return StatusCode(StatusCodes.Status410Gone, ValidationErrorDto.Create(errMsg, "TraceId", "TRACE_ID_EXPIRED"));
+                    }
+
+                    return BadRequest(ValidationErrorDto.Create(errMsg, "BlockRoom", $"SUPPLIER_ERROR_{blockRes.BlockRoomResult.Error.ErrorCode}"));
+                }
+
                 return Ok(blockRes);
             }
             catch (Exception ex)
@@ -529,18 +580,18 @@ namespace PickNBook.Api.Controllers
         {
             if (request == null)
             {
-                return BadRequest(new { message = "Invalid request payload." });
+                return BadRequest(ValidationErrorDto.Create("Request body cannot be null.", "request"));
             }
 
             if (request.TraceId <= 0)
             {
-                return BadRequest(new { message = "TraceId is required and must be a positive integer." });
+                return BadRequest(ValidationErrorDto.Create("TraceId is required and must be a positive integer.", "TraceId"));
             }
 
             var resultIndex = request.ResultIndex?.Trim();
             if (string.IsNullOrWhiteSpace(resultIndex) || resultIndex.Length < 3 || resultIndex.Length > 500)
             {
-                return BadRequest(new { message = "ResultIndex is required and must be between 3 and 500 characters." });
+                return BadRequest(ValidationErrorDto.Create("ResultIndex is required and must be between 3 and 500 characters.", "ResultIndex"));
             }
 
             // If flat passenger fields provided, auto-populate HotelRoomsDetails
@@ -549,7 +600,7 @@ namespace PickNBook.Api.Controllers
             {
                 var nameParts = (request.GuestName ?? "Guest User").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
                 string fName = nameParts.Length > 0 ? nameParts[0] : "Guest";
-                string lName = nameParts.Length > 1 ? nameParts[1] : "User";
+                string lName = nameParts.Length > 1 ? nameParts[1] : fName;
 
                 request.HotelRoomsDetails = new List<BookRoomDetailItemDto>
                 {
@@ -575,30 +626,103 @@ namespace PickNBook.Api.Controllers
 
             if (request.HotelRoomsDetails == null || request.HotelRoomsDetails.Count == 0 || request.HotelRoomsDetails.Count > 9)
             {
-                return BadRequest(new { message = "HotelRoomsDetails is required and must contain between 1 and 9 rooms." });
+                return BadRequest(ValidationErrorDto.Create("HotelRoomsDetails is required and must contain between 1 and 9 rooms.", "HotelRoomsDetails"));
             }
 
             bool hasPassengers = request.HotelRoomsDetails.Any(r => r.HotelPassenger != null && r.HotelPassenger.Count > 0);
             if (!hasPassengers)
             {
-                return BadRequest(new { message = "At least one room must carry passengers." });
+                return BadRequest(ValidationErrorDto.Create("At least one room must carry passengers.", "HotelRoomsDetails"));
             }
 
+            // Validate all passenger details across all rooms
+            int roomIdx = 1;
             foreach (var r in request.HotelRoomsDetails)
             {
                 if (r.HotelPassenger != null && r.HotelPassenger.Count > 12)
                 {
-                    return BadRequest(new { message = "Maximum 12 passengers allowed per room." });
+                    return BadRequest(ValidationErrorDto.Create($"Room {roomIdx}: Maximum 12 passengers allowed per room.", $"HotelRoomsDetails[{roomIdx - 1}]"));
                 }
+
+                if (r.HotelPassenger != null)
+                {
+                    for (int pIdx = 0; pIdx < r.HotelPassenger.Count; pIdx++)
+                    {
+                        var pax = r.HotelPassenger[pIdx];
+
+                        if (string.IsNullOrWhiteSpace(pax.Title))
+                        {
+                            pax.Title = "Mr";
+                        }
+
+                        // FirstName is mandatory
+                        var firstNameVal = TravelValidationHelper.ValidateName(pax.FirstName, isRequired: true, $"Room {roomIdx} Guest {pIdx + 1} first name");
+                        if (!firstNameVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(firstNameVal.ErrorMessage!, $"HotelRoomsDetails[{roomIdx - 1}].HotelPassenger[{pIdx}].FirstName"));
+                        }
+                        pax.FirstName = pax.FirstName.Trim();
+
+                        // LastName is optional: if provided, validate; if omitted, fallback to FirstName for upstream supplier
+                        if (!string.IsNullOrWhiteSpace(pax.LastName))
+                        {
+                            var lastNameVal = TravelValidationHelper.ValidateName(pax.LastName, isRequired: false, $"Room {roomIdx} Guest {pIdx + 1} last name");
+                            if (!lastNameVal.IsValid)
+                            {
+                                return BadRequest(ValidationErrorDto.Create(lastNameVal.ErrorMessage!, $"HotelRoomsDetails[{roomIdx - 1}].HotelPassenger[{pIdx}].LastName"));
+                            }
+                            pax.LastName = pax.LastName.Trim();
+                        }
+                        else
+                        {
+                            pax.LastName = pax.FirstName;
+                        }
+
+                        // PAN check if provided
+                        if (!string.IsNullOrWhiteSpace(pax.PAN))
+                        {
+                            var panVal = TravelValidationHelper.ValidatePan(pax.PAN);
+                            if (!panVal.IsValid)
+                            {
+                                return BadRequest(ValidationErrorDto.Create(panVal.ErrorMessage!, $"HotelRoomsDetails[{roomIdx - 1}].HotelPassenger[{pIdx}].PAN"));
+                            }
+                        }
+                    }
+                }
+                roomIdx++;
             }
 
             var leadPax = request.HotelRoomsDetails.SelectMany(r => r.HotelPassenger ?? new List<HotelPassengerDto>())
                 .FirstOrDefault(p => p.LeadPassenger) 
                 ?? request.HotelRoomsDetails.SelectMany(r => r.HotelPassenger ?? new List<HotelPassengerDto>()).FirstOrDefault();
 
+            string rawEmail = !string.IsNullOrWhiteSpace(leadPax?.Email) ? leadPax.Email : (request.GuestEmail ?? "");
+            string rawPhone = !string.IsNullOrWhiteSpace(leadPax?.Phoneno) ? leadPax.Phoneno : (request.GuestPhone ?? "");
+
+            // Validate primary guest Email (with domain typo interceptor) and Mobile (clean 10-digit)
+            var emailVal = TravelValidationHelper.ValidateEmail(rawEmail, isRequired: true, "Primary guest email");
+            if (!emailVal.IsValid)
+            {
+                return BadRequest(ValidationErrorDto.Create(emailVal.ErrorMessage!, "GuestEmail", "INVALID_EMAIL"));
+            }
+
+            var phoneVal = TravelValidationHelper.ValidateMobileNumber(rawPhone, isRequired: true, "Primary guest mobile number");
+            if (!phoneVal.IsValid)
+            {
+                return BadRequest(ValidationErrorDto.Create(phoneVal.ErrorMessage!, "GuestPhone", "INVALID_PHONE"));
+            }
+
+            string guestEmail = emailVal.CleanedEmail;
+            string guestPhone = phoneVal.CleanedPhone;
+
+            if (leadPax != null)
+            {
+                leadPax.Email = guestEmail;
+                leadPax.Phoneno = guestPhone;
+            }
+            request.GuestEmail = guestEmail;
+            request.GuestPhone = guestPhone;
             string guestName = leadPax != null ? $"{leadPax.Title} {leadPax.FirstName} {leadPax.LastName}".Trim() : (request.GuestName ?? "Guest User");
-            string guestEmail = !string.IsNullOrWhiteSpace(leadPax?.Email) ? leadPax.Email : (request.GuestEmail ?? "");
-            string guestPhone = !string.IsNullOrWhiteSpace(leadPax?.Phoneno) ? leadPax.Phoneno : (request.GuestPhone ?? "");
 
             _logger.LogInformation("Book room POST request received: TraceId: {TraceId}, ResultIndex: {ResultIndex}, Guest: {GuestName}", request.TraceId, resultIndex, guestName);
 
@@ -641,7 +765,7 @@ namespace PickNBook.Api.Controllers
                 var validationResult = await ValidateCouponInternalAsync(request.CouponCode, markedUpPrice, userId, cinDate);
                 if (!validationResult.IsValid)
                 {
-                    return BadRequest(new { message = $"Coupon error: {validationResult.Message}" });
+                    return BadRequest(ValidationErrorDto.Create($"Coupon error: {validationResult.Message}", "CouponCode"));
                 }
                 couponDiscount = validationResult.DiscountAmount;
                 couponApplied = validationResult.Coupon;

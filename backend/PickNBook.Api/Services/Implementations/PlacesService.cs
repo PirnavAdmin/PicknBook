@@ -31,17 +31,20 @@ namespace PickNBook.Api.Services.Implementations
         private readonly IMemoryCache _cache;
         private readonly SrdvMasterDataSettings _settings;
         private readonly ILogger<PlacesService> _logger;
+        private readonly BusCityCacheService? _busCityCacheService;
 
         public PlacesService(
             AppDbContext dbContext,
             IMemoryCache cache,
             IOptions<SrdvMasterDataSettings> settings,
-            ILogger<PlacesService> logger)
+            ILogger<PlacesService> logger,
+            BusCityCacheService? busCityCacheService = null)
         {
             _dbContext = dbContext;
             _cache = cache;
             _settings = settings.Value;
             _logger = logger;
+            _busCityCacheService = busCityCacheService;
         }
 
         public async Task<List<PlaceSuggestionDto>> GetPlacesAsync(
@@ -49,7 +52,7 @@ namespace PickNBook.Api.Services.Implementations
             string tripType = "all",
             string field = "all",
             string? requestType = null,
-            int limit = 20,
+            int limit = 50,
             CancellationToken cancellationToken = default)
         {
             limit = Math.Clamp(limit, 1, 100);
@@ -200,76 +203,158 @@ namespace PickNBook.Api.Services.Implementations
                 cityCandidates.AddRange(hotelCities);
             }
 
-            // 4. Query Bus Cities from DB
+            // 4. Query Bus Cities from In-Memory Cache or DB Fallback
             if (normalizedTripType is "all" or "bus")
             {
-                var busQuery = _dbContext.BusCities.AsNoTracking().Where(b => b.IsActive);
+                List<PlaceSuggestionDto> busCities;
 
-                if (!string.IsNullOrWhiteSpace(queryLower))
+                if (_busCityCacheService != null && _busCityCacheService.BusCities.Count > 0)
                 {
-                    if (queryLower.Length < 3)
-                    {
-                        // Single/double character: strict prefix match on CityName or CityCode
-                        var prefix = $"{queryLower}%";
-                        busQuery = busQuery.Where(b =>
-                            EF.Functions.Like(b.CityName, prefix) ||
-                            b.CityCode == queryLower);
-                    }
-                    else
-                    {
-                        busQuery = busQuery.Where(b =>
-                            b.CityCode == queryLower ||
-                            b.CityName.StartsWith(queryLower) ||
-                            b.CityName.Contains(queryLower));
-                    }
+                    busCities = _busCityCacheService.SearchBusCities(trimmedQuery, busPlacePopularity, candidateLimit);
                 }
-
-                var busCities = await busQuery
-                    .OrderBy(b => b.CityName)
-                    .Take(candidateLimit)
-                    .Select(b => new PlaceSuggestionDto
-                    {
-                        CityName = b.CityName,
-                        CityCode = b.CityCode,
-                        StateName = b.StateName,
-                        CountryCode = b.CountryCode ?? "IN",
-                        CountryName = b.CountryName ?? "India",
-                        TripType = "bus",
-                        UsageCount = 1
-                    })
-                    .ToListAsync(cancellationToken);
-
-                // For short bus queries (< 3 chars), ensure any top-popularity cities starting with queryLower
-                // are guaranteed to be in cityCandidates even if alphabetical Take(candidateLimit) truncated them
-                if (queryLower.Length < 3 && busPlacePopularity.Count > 0)
+                else
                 {
-                    var popularMatchingNames = busPlacePopularity
-                        .Where(kvp => kvp.Key.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase))
-                        .OrderByDescending(kvp => kvp.Value)
-                        .Take(candidateLimit)
-                        .Select(kvp => kvp.Key)
-                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var busQuery = _dbContext.BusCities.AsNoTracking().Where(b => b.IsActive);
+                    var terms = queryLower.Split(new[] { ' ', '(', ')', ',', '-', '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    var existingNames = busCities.Select(c => c.CityName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                    var missingNames = popularMatchingNames.Where(name => !existingNames.Contains(name)).ToList();
-
-                    if (missingNames.Count > 0)
+                    if (!string.IsNullOrWhiteSpace(queryLower))
                     {
-                        var missingCities = await _dbContext.BusCities.AsNoTracking()
-                            .Where(b => b.IsActive && missingNames.Contains(b.CityName))
-                            .Select(b => new PlaceSuggestionDto
+                        if (queryLower.Length < 3)
+                        {
+                            // Single/double character: strict prefix match on CityName or CityCode, or qualifier
+                            var prefix = $"{queryLower}%";
+                            var parenPrefix = $"%({queryLower}%";
+                            busQuery = busQuery.Where(b =>
+                                EF.Functions.Like(b.CityName, prefix) ||
+                                EF.Functions.Like(b.CityName, parenPrefix) ||
+                                b.CityCode == queryLower);
+                        }
+                        else
+                        {
+                            foreach (var term in terms)
                             {
-                                CityName = b.CityName,
-                                CityCode = b.CityCode,
-                                StateName = b.StateName,
-                                CountryCode = b.CountryCode ?? "IN",
-                                CountryName = b.CountryName ?? "India",
-                                TripType = "bus",
-                                UsageCount = 1
-                            })
-                            .ToListAsync(cancellationToken);
+                                var pat = $"%{term}%";
+                                busQuery = busQuery.Where(b =>
+                                    b.CityCode == term ||
+                                    EF.Functions.Like(b.CityName, pat) ||
+                                    (b.StateName != null && EF.Functions.Like(b.StateName, pat)));
+                            }
+                        }
+                    }
 
-                        busCities.AddRange(missingCities);
+                    var rawBusCities = await busQuery
+                        .OrderBy(b => b.CityName)
+                        .Take(candidateLimit)
+                        .ToListAsync(cancellationToken);
+
+                    busCities = rawBusCities.Select(b => {
+                        string fullName = b.CityName?.Trim() ?? string.Empty;
+                        string baseCityName = fullName;
+                        string? subArea = null;
+
+                        var parenOpen = fullName.IndexOf('(');
+                        var parenClose = fullName.IndexOf(')', parenOpen > 0 ? parenOpen : 0);
+                        if (parenOpen > 0 && parenClose > parenOpen)
+                        {
+                            baseCityName = fullName.Substring(0, parenOpen).Trim();
+                            subArea = fullName.Substring(parenOpen + 1, parenClose - parenOpen - 1).Trim();
+                        }
+                        else if (fullName.Contains(','))
+                        {
+                            var commaIdx = fullName.IndexOf(',');
+                            baseCityName = fullName.Substring(0, commaIdx).Trim();
+                            subArea = fullName.Substring(commaIdx + 1).Trim();
+                        }
+
+                        int tier = 999;
+                        var fullNameLower = fullName.ToLowerInvariant();
+                        var baseLower = baseCityName.ToLowerInvariant();
+                        var subLower = subArea?.ToLowerInvariant();
+                        var stateLower = (b.StateName ?? string.Empty).ToLowerInvariant();
+
+                        if (b.CityCode == queryLower || fullNameLower == queryLower) tier = 1;
+                        else if (baseLower == queryLower) tier = 2;
+                        else if (baseLower.StartsWith(queryLower)) tier = 3;
+                        else if (!string.IsNullOrEmpty(subLower) && (subLower == queryLower || subLower.StartsWith(queryLower))) tier = 4;
+                        else if (terms.Length > 1 && terms.All(t => fullNameLower.Contains(t) || stateLower.Contains(t))) tier = 5;
+                        else if (fullNameLower.Contains(queryLower) || stateLower.Contains(queryLower)) tier = 6;
+                        else tier = 7;
+
+                        return new PlaceSuggestionDto
+                        {
+                            CityName = fullName,
+                            BaseCityName = baseCityName,
+                            SubArea = subArea,
+                            DisplayName = !string.IsNullOrWhiteSpace(b.StateName) ? $"{fullName}, {b.StateName}" : fullName,
+                            CityCode = b.CityCode,
+                            CityId = b.CityCode,
+                            StateName = b.StateName,
+                            CountryCode = b.CountryCode ?? "IN",
+                            CountryName = b.CountryName ?? "India",
+                            LocationType = b.Type ?? "CITY",
+                            TripType = "bus",
+                            UsageCount = 1,
+                            MatchTier = tier
+                        };
+                    }).ToList();
+
+                    // For short bus queries (< 3 chars), ensure any top-popularity cities starting with queryLower
+                    // are guaranteed to be in cityCandidates even if alphabetical Take(candidateLimit) truncated them
+                    if (queryLower.Length < 3 && busPlacePopularity.Count > 0)
+                    {
+                        var popularMatchingNames = busPlacePopularity
+                            .Where(kvp => kvp.Key.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase))
+                            .OrderByDescending(kvp => kvp.Value)
+                            .Take(candidateLimit)
+                            .Select(kvp => kvp.Key)
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                        var existingNames = busCities.Select(c => c.CityName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                        var missingNames = popularMatchingNames.Where(name => !existingNames.Contains(name)).ToList();
+
+                        if (missingNames.Count > 0)
+                        {
+                            var missingCities = await _dbContext.BusCities.AsNoTracking()
+                                .Where(b => b.IsActive && missingNames.Contains(b.CityName))
+                                .ToListAsync(cancellationToken);
+
+                            foreach (var b in missingCities)
+                            {
+                                string fullName = b.CityName?.Trim() ?? string.Empty;
+                                string baseCityName = fullName;
+                                string? subArea = null;
+
+                                var parenOpen = fullName.IndexOf('(');
+                                var parenClose = fullName.IndexOf(')', parenOpen > 0 ? parenOpen : 0);
+                                if (parenOpen > 0 && parenClose > parenOpen)
+                                {
+                                    baseCityName = fullName.Substring(0, parenOpen).Trim();
+                                    subArea = fullName.Substring(parenOpen + 1, parenClose - parenOpen - 1).Trim();
+                                }
+                                else if (fullName.Contains(','))
+                                {
+                                    var commaIdx = fullName.IndexOf(',');
+                                    baseCityName = fullName.Substring(0, commaIdx).Trim();
+                                    subArea = fullName.Substring(commaIdx + 1).Trim();
+                                }
+
+                                busCities.Add(new PlaceSuggestionDto
+                                {
+                                    CityName = fullName,
+                                    BaseCityName = baseCityName,
+                                    SubArea = subArea,
+                                    DisplayName = !string.IsNullOrWhiteSpace(b.StateName) ? $"{fullName}, {b.StateName}" : fullName,
+                                    CityCode = b.CityCode,
+                                    CityId = b.CityCode,
+                                    StateName = b.StateName,
+                                    CountryCode = b.CountryCode ?? "IN",
+                                    CountryName = b.CountryName ?? "India",
+                                    LocationType = b.Type ?? "CITY",
+                                    TripType = "bus",
+                                    UsageCount = 1
+                                });
+                            }
+                        }
                     }
                 }
 
@@ -318,8 +403,8 @@ namespace PickNBook.Api.Services.Implementations
                         !string.IsNullOrWhiteSpace(queryLower) &&
                         (string.Equals(x.AirportCode, queryLower, StringComparison.OrdinalIgnoreCase) ||
                          x.CityName.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase)) ? 1 : 0)
-                    .ThenByDescending(x => x.UsageCount)
                     .ThenByDescending(x => string.Equals(x.CountryCode, "IN", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                    .ThenByDescending(x => x.UsageCount)
                     .ThenBy(x => x.CityName)
                     .Take(limit)
                     .ToList();
@@ -328,24 +413,36 @@ namespace PickNBook.Api.Services.Implementations
             {
                 response = cityCandidates
                     .Where(x => !string.IsNullOrWhiteSpace(x.CityName))
-                    .GroupBy(x => x.CityName.Split('(')[0].Trim(), StringComparer.OrdinalIgnoreCase)
+                    .GroupBy(x => x.CityCode ?? x.CityName.Trim(), StringComparer.OrdinalIgnoreCase)
                     .Select(g => {
-                        var best = g.OrderByDescending(x => x.UsageCount).First();
+                        var best = g.OrderBy(x => x.MatchTier).ThenByDescending(x => x.UsageCount).First();
                         return new PlaceSuggestionDto
                         {
-                            CityName = g.Key,
+                            CityName = best.CityName,
+                            BaseCityName = best.BaseCityName,
+                            SubArea = best.SubArea,
+                            DisplayName = best.DisplayName ?? (!string.IsNullOrWhiteSpace(best.StateName) ? $"{best.CityName}, {best.StateName}" : best.CityName),
                             CityCode = best.CityCode,
+                            CityId = best.CityId ?? best.CityCode,
+                            LocationType = best.LocationType ?? "CITY",
+                            ParentCityId = best.ParentCityId,
+                            ParentCityName = best.ParentCityName,
+                            SearchCityId = best.SearchCityId ?? best.CityId ?? best.CityCode,
+                            ChildStopCount = best.ChildStopCount,
                             StateName = best.StateName,
                             CountryCode = best.CountryCode,
                             CountryName = best.CountryName,
                             TripType = "bus",
-                            UsageCount = g.Sum(x => x.UsageCount)
+                            UsageCount = best.UsageCount,
+                            MatchTier = best.MatchTier
                         };
                     })
-                    .OrderByDescending(x =>
-                        !string.IsNullOrWhiteSpace(queryLower) &&
-                        x.CityName.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                    .OrderBy(x => x.MatchTier)
                     .ThenByDescending(x => x.UsageCount)
+                    .ThenBy(x => (string.IsNullOrEmpty(x.SubArea) || string.Equals(x.SubArea, x.StateName, StringComparison.OrdinalIgnoreCase)) ? 0 : 1)
+                    .ThenByDescending(x => x.ChildStopCount)
+                    .ThenByDescending(x => string.Equals(x.LocationType, "CITY", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                    .ThenBy(x => x.CityName.Length)
                     .ThenBy(x => x.CityName)
                     .Take(limit)
                     .ToList();
@@ -354,20 +451,28 @@ namespace PickNBook.Api.Services.Implementations
             {
                 response = cityCandidates
                     .Where(x => !string.IsNullOrWhiteSpace(x.CityName))
-                    .GroupBy(x => x.CityName.Trim(), StringComparer.OrdinalIgnoreCase)
-                    .Select(g => new PlaceSuggestionDto
-                    {
-                        CityName = g.OrderBy(x => x.CityName).First().CityName,
-                        UsageCount = g.Sum(x => x.UsageCount),
-                        AirportCode = g.First().AirportCode,
-                        AirportName = g.First().AirportName,
-                        CityCode = g.First().CityCode,
-                        CityId = g.First().CityId,
-                        CountryCode = g.First().CountryCode,
-                        CountryName = g.First().CountryName,
-                        TripType = g.First().TripType
+                    .GroupBy(x => x.CityCode ?? x.CityName.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => {
+                        var best = g.OrderBy(x => x.MatchTier).ThenByDescending(x => x.UsageCount).First();
+                        return new PlaceSuggestionDto
+                        {
+                            CityName = best.CityName,
+                            BaseCityName = best.BaseCityName,
+                            SubArea = best.SubArea,
+                            DisplayName = best.DisplayName,
+                            UsageCount = g.Sum(x => x.UsageCount),
+                            AirportCode = best.AirportCode,
+                            AirportName = best.AirportName,
+                            CityCode = best.CityCode,
+                            CityId = best.CityId,
+                            CountryCode = best.CountryCode,
+                            CountryName = best.CountryName,
+                            TripType = best.TripType,
+                            MatchTier = best.MatchTier
+                        };
                     })
-                    .OrderByDescending(x => x.UsageCount)
+                    .OrderBy(x => x.MatchTier)
+                    .ThenByDescending(x => x.UsageCount)
                     .ThenBy(x => x.CityName)
                     .Take(limit)
                     .ToList();
@@ -398,18 +503,33 @@ namespace PickNBook.Api.Services.Implementations
                     string.Equals(item.CityId, queryLower, StringComparison.OrdinalIgnoreCase))
                 {
                     score += 100;
+                    item.MatchTier = Math.Min(item.MatchTier, 1);
                 }
                 else if (nameLower.Equals(queryLower, StringComparison.OrdinalIgnoreCase))
                 {
                     score += 90;
+                    item.MatchTier = Math.Min(item.MatchTier, 1);
                 }
-                else if (nameLower.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase))
+                else if (!string.IsNullOrEmpty(item.BaseCityName) && item.BaseCityName.Equals(queryLower, StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 85;
+                    item.MatchTier = Math.Min(item.MatchTier, 2);
+                }
+                else if (nameLower.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase) ||
+                         (!string.IsNullOrEmpty(item.BaseCityName) && item.BaseCityName.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase)))
                 {
                     score += 70;
+                    item.MatchTier = Math.Min(item.MatchTier, 3);
+                }
+                else if (!string.IsNullOrEmpty(item.SubArea) && (item.SubArea.Equals(queryLower, StringComparison.OrdinalIgnoreCase) || item.SubArea.StartsWith(queryLower, StringComparison.OrdinalIgnoreCase)))
+                {
+                    score += 65;
+                    item.MatchTier = Math.Min(item.MatchTier, 4);
                 }
                 else if (nameLower.Contains(queryLower, StringComparison.OrdinalIgnoreCase))
                 {
                     score += 50;
+                    item.MatchTier = Math.Min(item.MatchTier, 6);
                 }
                 else if (!string.IsNullOrEmpty(item.AirportName) && item.AirportName.Contains(queryLower, StringComparison.OrdinalIgnoreCase))
                 {
@@ -419,6 +539,15 @@ namespace PickNBook.Api.Services.Implementations
                 {
                     score += 40;
                 }
+                else if (!string.IsNullOrEmpty(item.StateName) && item.StateName.Contains(queryLower, StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 35;
+                    item.MatchTier = Math.Min(item.MatchTier, 6);
+                }
+                else if (item.MatchTier <= 7)
+                {
+                    score += 100 - (item.MatchTier * 10);
+                }
                 else if (queryLower.Length >= 3)
                 {
                     // Existing Levenshtein fuzzy distance fallback (allow up to 2 typos only for 3+ chars)
@@ -426,6 +555,16 @@ namespace PickNBook.Api.Services.Implementations
                     if (distance <= 2)
                     {
                         score += (distance == 1 ? 30 : 15);
+                        item.MatchTier = Math.Min(item.MatchTier, 7);
+                    }
+                    else if (!string.IsNullOrEmpty(item.SubArea))
+                    {
+                        var distSub = FuzzyMatcher.ComputeLevenshteinDistance(queryLower, item.SubArea.ToLowerInvariant());
+                        if (distSub <= 2)
+                        {
+                            score += (distSub == 1 ? 30 : 15);
+                            item.MatchTier = Math.Min(item.MatchTier, 7);
+                        }
                     }
                 }
 

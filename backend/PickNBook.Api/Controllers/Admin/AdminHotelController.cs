@@ -357,23 +357,31 @@ public class AdminHotelController : AdminApiController
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.Trim().ToLowerInvariant();
-            query = query.Where(s => s.SearchQuery.ToLower().Contains(term) || (s.UserId != null && s.UserId.ToLower().Contains(term)));
+            query = query.Where(s => 
+                (s.CityName != null && s.CityName.ToLower().Contains(term)) ||
+                s.SearchQuery.ToLower().Contains(term) ||
+                (s.UserId != null && s.UserId.ToLower().Contains(term)));
         }
 
-        var list = await query
+        var logs = await query
             .OrderByDescending(s => s.SearchedAtUtc)
-            .Select(s => new
-            {
-                SearchId = "sh-" + s.Id,
-                SearchQuery = MapCityCodeToName(s.SearchQuery),
-                CheckInDate = s.CheckInDate.ToString("yyyy-MM-dd"),
-                CheckOutDate = s.CheckOutDate.ToString("yyyy-MM-dd"),
-                Adults = s.Adults,
-                Rooms = s.Rooms,
-                UserId = s.UserId,
-                SearchedAtUtc = DateTime.SpecifyKind(s.SearchedAtUtc, DateTimeKind.Utc)
-            })
             .ToListAsync();
+
+        var list = logs.Select(s => new
+        {
+            SearchId = "sh-" + s.Id,
+            SearchQuery = s.CityName ?? s.SearchQuery,
+            CityName = s.CityName ?? s.SearchQuery,
+            CityId = s.CityId.HasValue 
+                ? s.CityId.Value.ToString() 
+                : (long.TryParse(s.SearchQuery, out _) ? s.SearchQuery : null),
+            CheckInDate = s.CheckInDate.ToString("yyyy-MM-dd"),
+            CheckOutDate = s.CheckOutDate.ToString("yyyy-MM-dd"),
+            Adults = s.Adults,
+            Rooms = s.Rooms,
+            UserId = s.UserId,
+            SearchedAtUtc = DateTime.SpecifyKind(s.SearchedAtUtc, DateTimeKind.Utc)
+        }).ToList();
 
         return Ok(list);
     }
@@ -410,23 +418,6 @@ public class AdminHotelController : AdminApiController
             _logger.LogError(ex, "Failed to retrieve PickNBook Hotel API balance log.");
             return StatusCode(500, new { message = $"Failed to retrieve PickNBook Hotel API balance log: {ex.Message}" });
         }
-    }
-
-    private static string MapCityCodeToName(string code)
-    {
-        var upper = code.Trim().ToUpperInvariant();
-        return upper switch
-        {
-            "DEL" => "New Delhi (DEL)",
-            "HYD" => "Hyderabad (HYD)",
-            "BOM" => "Mumbai (BOM)",
-            "BLR" => "Bengaluru (BLR)",
-            "MAA" => "Chennai (MAA)",
-            "CCU" => "Kolkata (CCU)",
-            "GOI" => "Goa (GOI)",
-            "PNQ" => "Pune (PNQ)",
-            _ => $"{upper} ({upper})"
-        };
     }
 
     // 7. Hotel Markup Management Endpoints: GET /api/admin/hotel/markup

@@ -260,7 +260,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
         {isBlocked && blockTimeRemaining > 0 && (
           <div style={{ backgroundColor: "#fff3cd", color: "#856404", padding: "12px", borderRadius: "8px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #ffeeba" }}>
-            <strong>Seats Blocked!</strong>
+            <strong>{bookingType === "Hotel" ? "Room Blocked!" : "Seats Blocked!"}</strong>
             <span>Time remaining: {Math.floor(blockTimeRemaining / 60)}:{String(blockTimeRemaining % 60).padStart(2, '0')}</span>
           </div>
         )}

@@ -2379,7 +2379,7 @@ export default function BusPassengerDetailsPage() {
                       ) : null;
                     })()}
                     <div>
-                      <span>Tax</span>
+                      <span>Operator GST</span>
                       <strong>(+) {formatCurrency(pricingPreview.gstAmount)}</strong>
                     </div>
 

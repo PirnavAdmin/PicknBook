@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PickNBook.Api.Models.Config;
 using PickNBook.Api.Models.DTOs;
+using PickNBook.Api.Helpers;
 using PickNBook.Api.Models.Entities;
 using PickNBook.Api.Services.Interfaces;
 using PickNBook.Api.Services.Implementations;
@@ -1012,6 +1013,202 @@ namespace PickNBook.Api.Controllers.Public
         [HttpPost("/api/flight/v8/TicketLCC")]
         public async Task<IActionResult> TicketLCC([FromBody] FlightTicketLCCProxyRequestDto proxyRequest)
         {
+            if (proxyRequest == null)
+            {
+                return BadRequest(ValidationErrorDto.Create("Request body cannot be null.", "request"));
+            }
+
+            if (proxyRequest.TraceId <= 0)
+            {
+                return BadRequest(ValidationErrorDto.Create("TraceId is required and must be a positive integer.", "TraceId"));
+            }
+
+            if (string.IsNullOrWhiteSpace(proxyRequest.ResultIndex))
+            {
+                return BadRequest(ValidationErrorDto.Create("ResultIndex is required.", "ResultIndex"));
+            }
+
+            if (proxyRequest.Passengers == null || proxyRequest.Passengers.Count < 1 || proxyRequest.Passengers.Count > 9)
+            {
+                return BadRequest(ValidationErrorDto.Create("Passengers count must be between 1 and 9.", "Passengers"));
+            }
+
+            // Check adult count
+            int adultCount = proxyRequest.Passengers.Count(p => p.PaxType == 1);
+            if (adultCount < 1)
+            {
+                return BadRequest(ValidationErrorDto.Create("At least one adult passenger (PaxType = 1) is required.", "Passengers"));
+            }
+
+            // Check infant count <= adult count
+            int infantCount = proxyRequest.Passengers.Count(p => p.PaxType == 3);
+            if (infantCount > adultCount)
+            {
+                return BadRequest(ValidationErrorDto.Create($"Number of infants ({infantCount}) cannot exceed number of adult passengers ({adultCount}).", "Passengers"));
+            }
+
+            // Ensure exactly one lead passenger
+            int leadCount = proxyRequest.Passengers.Count(p => p.IsLeadPax);
+            if (leadCount == 0)
+            {
+                var firstAdult = proxyRequest.Passengers.FirstOrDefault(p => p.PaxType == 1) ?? proxyRequest.Passengers[0];
+                firstAdult.IsLeadPax = true;
+            }
+            else if (leadCount > 1)
+            {
+                bool firstFound = false;
+                foreach (var pax in proxyRequest.Passengers)
+                {
+                    if (pax.IsLeadPax)
+                    {
+                        if (firstFound) pax.IsLeadPax = false;
+                        else firstFound = true;
+                    }
+                }
+            }
+
+            var leadPax = proxyRequest.Passengers.First(p => p.IsLeadPax);
+
+            // Lead Passenger Email validation
+            var leadEmailVal = TravelValidationHelper.ValidateEmail(leadPax.Email, isRequired: true, "Lead passenger email");
+            if (!leadEmailVal.IsValid)
+            {
+                return BadRequest(ValidationErrorDto.Create(leadEmailVal.ErrorMessage!, "Email", "INVALID_EMAIL"));
+            }
+            leadPax.Email = leadEmailVal.CleanedEmail;
+
+            // Lead Passenger Mobile validation (strip +91, clean 10-digit)
+            var leadMobileVal = TravelValidationHelper.ValidateMobileNumber(leadPax.ContactNo, isRequired: true, "Lead passenger mobile number");
+            if (!leadMobileVal.IsValid)
+            {
+                return BadRequest(ValidationErrorDto.Create(leadMobileVal.ErrorMessage!, "ContactNo", "INVALID_PHONE"));
+            }
+            leadPax.ContactNo = leadMobileVal.CleanedPhone;
+
+            DateTime departureDate = DateTime.UtcNow.Date;
+
+            // Validate all passengers
+            for (int i = 0; i < proxyRequest.Passengers.Count; i++)
+            {
+                var p = proxyRequest.Passengers[i];
+
+                if (string.IsNullOrWhiteSpace(p.Title) || p.Title.Trim().Length > 20)
+                {
+                    return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: Title is required and must be max 20 characters.", $"Passengers[{i}].Title"));
+                }
+
+                // FirstName is mandatory
+                var firstNameVal = TravelValidationHelper.ValidateName(p.FirstName, isRequired: true, $"Passenger {i + 1} first name");
+                if (!firstNameVal.IsValid)
+                {
+                    return BadRequest(ValidationErrorDto.Create(firstNameVal.ErrorMessage!, $"Passengers[{i}].FirstName"));
+                }
+                p.FirstName = p.FirstName.Trim();
+
+                // LastName is optional: if provided, validate; if omitted, fallback to FirstName for upstream supplier
+                if (!string.IsNullOrWhiteSpace(p.LastName))
+                {
+                    var lastNameVal = TravelValidationHelper.ValidateName(p.LastName, isRequired: false, $"Passenger {i + 1} last name");
+                    if (!lastNameVal.IsValid)
+                    {
+                        return BadRequest(ValidationErrorDto.Create(lastNameVal.ErrorMessage!, $"Passengers[{i}].LastName"));
+                    }
+                    p.LastName = p.LastName.Trim();
+                }
+                else
+                {
+                    p.LastName = p.FirstName; // Mononym fallback for airline GDS/CRS
+                }
+
+                // Gender validation
+                int gVal = 1;
+                var gStr = p.Gender?.Trim() ?? "1";
+                if (gStr == "2" || gStr.Equals("Female", StringComparison.OrdinalIgnoreCase)) gVal = 2;
+                else if (gStr == "1" || gStr.Equals("Male", StringComparison.OrdinalIgnoreCase)) gVal = 1;
+                p.Gender = gVal.ToString();
+
+                var titleGenVal = TravelValidationHelper.ValidateTitleAndGender(p.Title, gVal, $"Passenger {i + 1}");
+                if (!titleGenVal.IsValid)
+                {
+                    return BadRequest(ValidationErrorDto.Create(titleGenVal.ErrorMessage!, $"Passengers[{i}].Title"));
+                }
+
+                // Validate PaxType & DOB
+                var paxAgeVal = TravelValidationHelper.ValidatePaxTypeAndAge(p.PaxType, p.DateOfBirth, departureDate, $"Passenger {i + 1}");
+                if (!paxAgeVal.IsValid)
+                {
+                    return BadRequest(ValidationErrorDto.Create(paxAgeVal.ErrorMessage!, $"Passengers[{i}].DateOfBirth"));
+                }
+
+                // Passport validation if provided
+                if (!string.IsNullOrWhiteSpace(p.PassportNo))
+                {
+                    var passportVal = TravelValidationHelper.ValidatePassport(
+                        p.PassportNo, 
+                        p.PassportExpiry, 
+                        p.PassportIssueDate, 
+                        p.PassportIssueCountryCode, 
+                        departureDate, 
+                        isInternational: false, 
+                        $"Passenger {i + 1}");
+                    if (!passportVal.IsValid)
+                    {
+                        return BadRequest(ValidationErrorDto.Create(passportVal.ErrorMessage!, $"Passengers[{i}].PassportNo"));
+                    }
+                }
+
+                // Secondary passengers inherit contact info if not provided
+                if (!p.IsLeadPax)
+                {
+                    if (string.IsNullOrWhiteSpace(p.Email))
+                    {
+                        p.Email = leadPax.Email;
+                    }
+                    else
+                    {
+                        var emailVal = TravelValidationHelper.ValidateEmail(p.Email, isRequired: false, $"Passenger {i + 1} email");
+                        if (!emailVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(emailVal.ErrorMessage!, $"Passengers[{i}].Email", "INVALID_EMAIL"));
+                        }
+                        p.Email = emailVal.CleanedEmail;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(p.ContactNo))
+                    {
+                        p.ContactNo = leadPax.ContactNo;
+                    }
+                    else
+                    {
+                        var phoneVal = TravelValidationHelper.ValidateMobileNumber(p.ContactNo, isRequired: false, $"Passenger {i + 1} mobile number");
+                        if (!phoneVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(phoneVal.ErrorMessage!, $"Passengers[{i}].ContactNo", "INVALID_PHONE"));
+                        }
+                        p.ContactNo = phoneVal.CleanedPhone;
+                    }
+                }
+
+                // GST validation if provided
+                if (!string.IsNullOrWhiteSpace(p.GSTNumber))
+                {
+                    var gstVal = TravelValidationHelper.ValidateGstin(p.GSTNumber);
+                    if (!gstVal.IsValid)
+                    {
+                        return BadRequest(ValidationErrorDto.Create($"Passenger {i + 1}: {gstVal.ErrorMessage}", $"Passengers[{i}].GSTNumber"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(p.GSTCompanyEmail))
+                    {
+                        var gstEmailVal = TravelValidationHelper.ValidateEmail(p.GSTCompanyEmail, isRequired: true, $"Passenger {i + 1} GST company email");
+                        if (!gstEmailVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(gstEmailVal.ErrorMessage!, $"Passengers[{i}].GSTCompanyEmail", "INVALID_EMAIL"));
+                        }
+                        p.GSTCompanyEmail = gstEmailVal.CleanedEmail;
+                    }
+                }
+            }
+
             var srdvIndex = string.IsNullOrWhiteSpace(proxyRequest.SrdvIndex)
                 ? (proxyRequest.ResultIndex?.Contains('_') == true ? proxyRequest.ResultIndex.Split('_')[0] : "1")
                 : proxyRequest.SrdvIndex.Trim();
@@ -1037,9 +1234,6 @@ namespace PickNBook.Api.Controllers.Public
                 Passengers = proxyRequest.Passengers
             };
 
-            var passportValidationResult = ValidatePassengersPassport(request.Passengers);
-            if (passportValidationResult != null) return passportValidationResult;
-
             try
             {
                 var responseRaw = await _srdvFlightService.TicketLCCRawAsync(request);
@@ -1049,6 +1243,8 @@ namespace PickNBook.Api.Controllers.Public
                 
                 bool isSuccess = false;
                 bool isPending = false;
+                string? errMessage = null;
+                int actualErrCode = -1;
                 
                 if (root.TryGetProperty("ResponseStatus", out var status))
                 {
@@ -1056,15 +1252,37 @@ namespace PickNBook.Api.Controllers.Public
                     if (status.ValueKind == JsonValueKind.String && status.ToString() == "1") isSuccess = true;
                 }
                 
-                if (root.TryGetProperty("Error", out var err) && err.TryGetProperty("ErrorCode", out var errCode))
+                if (root.TryGetProperty("Error", out var err))
                 {
-                    if (errCode.ValueKind == JsonValueKind.Number && errCode.GetInt32() == 0) isSuccess = true;
-                    if (errCode.ValueKind == JsonValueKind.String && (errCode.ToString() == "0" || errCode.ToString() == "")) isSuccess = true;
-                    if (errCode.ValueKind == JsonValueKind.Null) isSuccess = true;
+                    if (err.TryGetProperty("ErrorMessage", out var errMsgProp))
+                    {
+                        errMessage = errMsgProp.GetString();
+                    }
 
-                    // ErrorCode 10 = Pending (booking in process)
-                    if (errCode.ValueKind == JsonValueKind.Number && errCode.GetInt32() == 10) isPending = true;
-                    if (errCode.ValueKind == JsonValueKind.String && errCode.ToString() == "10") isPending = true;
+                    if (err.TryGetProperty("ErrorCode", out var errCode))
+                    {
+                        if (errCode.ValueKind == JsonValueKind.Number && errCode.GetInt32() == 0) isSuccess = true;
+                        if (errCode.ValueKind == JsonValueKind.String && (errCode.ToString() == "0" || errCode.ToString() == "")) isSuccess = true;
+                        if (errCode.ValueKind == JsonValueKind.Null) isSuccess = true;
+
+                        if (errCode.ValueKind == JsonValueKind.Number) actualErrCode = errCode.GetInt32();
+                        else if (errCode.ValueKind == JsonValueKind.String && int.TryParse(errCode.ToString(), out var parsedEc)) actualErrCode = parsedEc;
+
+                        // ErrorCode 10 = Pending (booking in process)
+                        if (actualErrCode == 10) isPending = true;
+                    }
+                }
+
+                // Check for expired TraceId or Session in supplier response
+                if (!isSuccess && !isPending)
+                {
+                    var msg = errMessage ?? "";
+                    if (msg.Contains("expired", StringComparison.OrdinalIgnoreCase) || 
+                        msg.Contains("trace", StringComparison.OrdinalIgnoreCase) ||
+                        msg.Contains("session", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return StatusCode(StatusCodes.Status410Gone, ValidationErrorDto.Create("Flight search session or TraceId has expired. Please refresh flight search to view latest fares and availability.", "TraceId", "TRACE_ID_EXPIRED"));
+                    }
                 }
 
                 JsonElement resp = root;
