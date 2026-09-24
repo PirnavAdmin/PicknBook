@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Bus booking confirmed. Ref {Reference}, Pnr {Pnr}. Boarding: {Boarding} at {Time}.',
+                    body = 'Pick&Book: Bus booking confirmed. Ref {Reference}, Pnr {Pnr}. Boarding: {Boarding} at {Time}.',
                     provider_template_id = '1777178997159302603',
                     provider_template_name = 'newBUS_BOOKING_CONFIRMED',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Bus booking confirmed. Ref {Reference}, Pnr {Pnr}. Boarding: {Boarding} at {Time}.',
+                    body = 'PickNBook: Bus booking confirmed. Ref {Reference}, Pnr {Pnr}. Boarding: {Boarding} at {Time}.',
                     provider_template_id = '1777178954051622003',
                     provider_template_name = 'BUS_BOOKING_CONFIRMED',
                     subject = 'PICNBK',

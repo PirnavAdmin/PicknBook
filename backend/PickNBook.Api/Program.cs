@@ -79,29 +79,46 @@ builder.Services.AddScoped<IBookingOrchestratorService, BookingOrchestratorServi
 builder.Services.AddScoped<ICancellationRefundCalculator, CancellationRefundCalculator>();
 
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
-builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>()
+builder.Services.AddHttpClient<ISrdvFlightService, SrdvFlightService>(client =>
+{
+    client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate");
+})
     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
         UseProxy = false,
-        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+        EnableMultipleHttp2Connections = true,
         AutomaticDecompression = System.Net.DecompressionMethods.All
     })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvFlightLoggingHandler>();
+
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
-builder.Services.AddHttpClient<IHotelService, SrdvHotelService>()
+builder.Services.AddHttpClient<IHotelService, SrdvHotelService>(client =>
+{
+    client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate");
+})
     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
         UseProxy = false,
-        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+        EnableMultipleHttp2Connections = true,
         AutomaticDecompression = System.Net.DecompressionMethods.All
     })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvHotelLoggingHandler>();
+
 builder.Services.AddTransient<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
-builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>()
+builder.Services.AddHttpClient<ISrdvBusService, SrdvBusService>(client =>
+{
+    client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate");
+})
     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
         UseProxy = false,
-        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+        EnableMultipleHttp2Connections = true,
         AutomaticDecompression = System.Net.DecompressionMethods.All
     })
     .AddHttpMessageHandler<PickNBook.Api.Infrastructure.Logging.SrdvBusLoggingHandler>();
@@ -171,9 +188,11 @@ builder.Services.AddSingleton<PickNBook.Api.Services.Notifications.Interfaces.IW
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.NotificationOutboxWorker>();
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.BusBoardingReminderHostedService>();
 builder.Services.AddHostedService<PickNBook.Api.Services.Background.HotelCheckInReminderHostedService>();
+builder.Services.AddHostedService<PickNBook.Api.Services.Background.DailyAdminSummaryHostedService>();
 
 // In-App Bell Notification Service DI
 builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IInAppNotificationService, PickNBook.Api.Services.Implementations.InAppNotificationService>();
+builder.Services.AddScoped<PickNBook.Api.Services.Interfaces.IDailyAdminSummaryService, PickNBook.Api.Services.Implementations.DailyAdminSummaryService>();
 
 builder.Services.AddScoped<IExclusiveOfferSubscriptionService, ExclusiveOfferSubscriptionService>();
 builder.Services.AddScoped<ITicketPdfService, TicketPdfService>();
@@ -191,6 +210,7 @@ builder.Services.AddScoped<IFlightPricingService, FlightPricingService>();
 builder.Services.AddScoped<IUserBookingHistoryService, UserBookingHistoryService>();
 builder.Services.AddScoped<IAgentWalletService, AgentWalletService>();
 builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IAdminWalletQueryService, AdminWalletQueryService>();
 builder.Services.AddScoped<IWalletReservationService, WalletReservationService>();
 builder.Services.AddScoped<IHybridRefundSplitStrategy, ProportionalHybridRefundSplitStrategy>();
 builder.Services.AddScoped<IRefundRouterService, RefundRouterService>();
@@ -384,7 +404,7 @@ app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/Auth/send-l
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pick&book API v1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "PickNBook API v1");
     c.RoutePrefix = "swagger";
     c.ConfigObject.AdditionalItems.Add("syntaxHighlight", false);
     c.DefaultModelsExpandDepth(-1);

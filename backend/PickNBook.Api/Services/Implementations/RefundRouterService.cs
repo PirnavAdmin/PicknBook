@@ -168,7 +168,7 @@ namespace PickNBook.Api.Services.Implementations
 
             if (isUserPreferWallet)
             {
-                // Customer explicitly chose Pick&book Wallet: 100% of refundable amount to Wallet
+                // Customer explicitly chose PickNBook Wallet: 100% of refundable amount to Wallet
                 targetWalletAmount = context.RefundAmount;
                 targetGatewayAmount = 0m;
             }
@@ -411,6 +411,19 @@ namespace PickNBook.Api.Services.Implementations
                                 idempotencyKey: $"REFUND_DONE_{cancellation.Id}",
                                 targetUserId: cancellation.UserId
                             );
+
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "WALLET_REFUND",
+                                category: "FINANCIAL",
+                                title: "Refund Completed",
+                                message: $"Refund completed for booking {cancellation.BookingReference} (Wallet: INR {actualWalletRefunded:N2}, Gateway: INR {actualGatewayRefunded:N2}).",
+                                severity: "INFO",
+                                referenceType: "BookingCancellation",
+                                referenceId: cancellation.Id.ToString(),
+                                actionUrl: $"/admin/refunds/{cancellation.Id}",
+                                idempotencyKey: $"ADMIN_REFUND_SUCCESS_{cancellation.Id}",
+                                targetRole: "ADMIN"
+                            );
                         }
                         else if (overallRefundStatus == "PartiallyRefunded")
                         {
@@ -428,8 +441,8 @@ namespace PickNBook.Api.Services.Implementations
                             );
 
                             await _inAppNotificationService.CreateNotificationAsync(
-                                type: "Refund",
-                                category: "Admin",
+                                type: "WALLET_REFUND",
+                                category: "FINANCIAL",
                                 title: "Partial Refund Needs Attention",
                                 message: $"Partial refund for {cancellation.BookingReference} (Wallet: ₹{actualWalletRefunded:N2}, Gateway: ₹{actualGatewayRefunded:N2}).",
                                 severity: "Warning",
@@ -437,7 +450,7 @@ namespace PickNBook.Api.Services.Implementations
                                 referenceId: cancellation.Id.ToString(),
                                 actionUrl: $"/admin/refunds/{cancellation.Id}",
                                 idempotencyKey: $"ADMIN_REFUND_PARTIAL_{cancellation.Id}",
-                                targetRole: "Admin"
+                                targetRole: "ADMIN"
                             );
                         }
                         else if (overallRefundStatus == "Failed")
@@ -456,16 +469,16 @@ namespace PickNBook.Api.Services.Implementations
                             );
 
                             await _inAppNotificationService.CreateNotificationAsync(
-                                type: "Refund",
-                                category: "Admin",
+                                type: "WALLET_REFUND",
+                                category: "FINANCIAL",
                                 title: "Refund Failed",
                                 message: $"Refund for booking {cancellation.BookingReference} failed: {walletError ?? gatewayError ?? "Unknown error"}",
-                                severity: "Error",
+                                severity: "ERROR",
                                 referenceType: "BookingCancellation",
                                 referenceId: cancellation.Id.ToString(),
                                 actionUrl: $"/admin/refunds/{cancellation.Id}",
                                 idempotencyKey: $"ADMIN_REFUND_FAIL_{cancellation.Id}",
-                                targetRole: "Admin"
+                                targetRole: "ADMIN"
                             );
                         }
                     }

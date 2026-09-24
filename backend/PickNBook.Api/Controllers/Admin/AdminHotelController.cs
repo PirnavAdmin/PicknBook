@@ -386,11 +386,11 @@ public class AdminHotelController : AdminApiController
         return Ok(list);
     }
 
-    // 5. Query Pick&book Hotel API Balance: GET /api/admin/hotel/picknbook-balance
+    // 5. Query PickNBook Hotel API Balance: GET /api/admin/hotel/picknbook-balance
     [HttpGet("picknbook-balance")]
     public async Task<IActionResult> GetPickNBookBalance()
     {
-        _logger.LogInformation("Retrieving Pick&book Hotel API Balance for admin.");
+        _logger.LogInformation("Retrieving PickNBook Hotel API Balance for admin.");
         try
         {
             var endUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1"; var balance = await _hotelService.GetApiBalanceAsync(endUserIp);
@@ -398,16 +398,16 @@ public class AdminHotelController : AdminApiController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to retrieve Pick&book Hotel API balance.");
-            return StatusCode(500, new { message = $"Failed to retrieve Pick&book Hotel API balance: {ex.Message}" });
+            _logger.LogError(ex, "Failed to retrieve PickNBook Hotel API balance.");
+            return StatusCode(500, new { message = $"Failed to retrieve PickNBook Hotel API balance: {ex.Message}" });
         }
     }
 
-    // 6. Query Pick&book Hotel API Balance Log: GET /api/admin/hotel/picknbook-balance-log
+    // 6. Query PickNBook Hotel API Balance Log: GET /api/admin/hotel/picknbook-balance-log
     [HttpGet("picknbook-balance-log")]
     public async Task<IActionResult> GetPickNBookBalanceLog()
     {
-        _logger.LogInformation("Retrieving Pick&book Hotel API Balance Log for admin.");
+        _logger.LogInformation("Retrieving PickNBook Hotel API Balance Log for admin.");
         try
         {
             var endUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1"; var logs = await _hotelService.GetApiBalanceLogAsync(endUserIp);
@@ -415,8 +415,8 @@ public class AdminHotelController : AdminApiController
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to retrieve Pick&book Hotel API balance log.");
-            return StatusCode(500, new { message = $"Failed to retrieve Pick&book Hotel API balance log: {ex.Message}" });
+            _logger.LogError(ex, "Failed to retrieve PickNBook Hotel API balance log.");
+            return StatusCode(500, new { message = $"Failed to retrieve PickNBook Hotel API balance log: {ex.Message}" });
         }
     }
 

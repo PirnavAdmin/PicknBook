@@ -848,11 +848,9 @@ export default function BusPassengerDetailsPage() {
         : promotionId !== null && promotionId !== undefined && promotionId !== ""
           ? promotionId
           : null;
-    const couponCodeParam = featuredOfferIdParam
-      ? null
-      : couponCode
-        ? String(couponCode).trim().toUpperCase()
-        : null;
+    const couponCodeParam = couponCode
+      ? String(couponCode).trim().toUpperCase()
+      : null;
 
     setIsCalculatingPrice(true);
     try {
@@ -1481,7 +1479,7 @@ export default function BusPassengerDetailsPage() {
 
     try {
       const preview = await loadPricingPreview(
-        { selectedFeaturedOfferId: featuredOfferId, couponCode: null }
+        { selectedFeaturedOfferId: featuredOfferId, couponCode: offer.couponCode || null }
       );
 
       if (hasBackendConfirmedPromotion(preview)) {

@@ -147,8 +147,15 @@ function renderTermsDocument(lines) {
 
   return (
     <>
-      <h1 className="terms-document-title">{title}</h1>
-      <p className="terms-effective-date">{effectiveDate}</p>
+      <div className="terms-effective-date">
+        {effectiveDate
+          .split(/\s*\|\s*/)
+          .filter(Boolean)
+          .map((dateLabel, index) => (
+            <span key={`terms-date-${index}`}>{dateLabel}</span>
+          ))}
+      </div>
+          <h1 className="terms-document-title">{title}</h1>
       <div className="terms-opening-copy">
         {openingLines.map((line, index) => (
           <p key={`terms-opening-${index}`}>{line}</p>

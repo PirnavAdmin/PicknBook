@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Booking {Reference} has been cancelled. Cancellation status: {Status}.',
+                    body = 'Pick&Book: Booking {Reference} has been cancelled. Cancellation status: {Status}.',
                     provider_template_id = '1777178997200725228',
                     provider_template_name = 'newBOOKING_CANCELLED',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Booking {Reference} has been cancelled. Cancellation status: {Status}.',
+                    body = 'PickNBook: Booking {Reference} has been cancelled. Cancellation status: {Status}.',
                     provider_template_id = '1777178903406742408',
                     provider_template_name = 'BOOKING_CANCELLED',
                     subject = 'PICKBK',

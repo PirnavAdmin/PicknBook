@@ -1,7 +1,7 @@
 namespace PickNBook.Api.Models.Payments
 {
     /// <summary>
-    /// Pick&book's response DTO for the payment verification endpoint.
+    /// PickNBook's response DTO for the payment verification endpoint.
     /// Returns internal payment state after reconciling with Cashfree's API.
     /// </summary>
     public class PaymentVerificationResponse

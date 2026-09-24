@@ -174,25 +174,58 @@ namespace PickNBook.Api.Services
 
         public async Task<string> SearchBusesProxyAsync(BusSearchProxyRequestDto request)
         {
+            var cacheKey = $"srdv:bus:search:{request.FromCityCode}:{request.ToCityCode}:{request.DepartDate}";
+            if (_cache.TryGetValue(cacheKey, out string? cachedResponse) && !string.IsNullOrWhiteSpace(cachedResponse))
+            {
+                return cachedResponse;
+            }
+
             var fromAliases = _cityCache != null ? _cityCache.GetCityAliases(request.FromCityCode) : new[] { request.FromCityCode };
             var toAliases = _cityCache != null ? _cityCache.GetCityAliases(request.ToCityCode) : new[] { request.ToCityCode };
 
-            if (fromAliases.Count <= 1 && toAliases.Count <= 1)
+            // 1. Primary-first search: Query the exact requested city codes
+            var primaryResponse = await ExecuteSingleSearchProxyAsync(request.FromCityCode, request.ToCityCode, request.DepartDate);
+
+            // Check if primary search returned valid buses
+            bool hasPrimaryBuses = !string.IsNullOrWhiteSpace(primaryResponse) && 
+                                   primaryResponse.Contains("\"Result\":[") && 
+                                   !primaryResponse.Contains("\"Result\":[]");
+
+            if (hasPrimaryBuses || (fromAliases.Count <= 1 && toAliases.Count <= 1))
             {
-                return await ExecuteSingleSearchProxyAsync(request.FromCityCode, request.ToCityCode, request.DepartDate);
+                if (!string.IsNullOrWhiteSpace(primaryResponse) && primaryResponse.Contains("\"ErrorCode\":0"))
+                {
+                    _cache.Set(cacheKey, primaryResponse, TimeSpan.FromMinutes(5));
+                }
+                return primaryResponse;
             }
 
+            // 2. Fallback: Only if primary search returned 0 buses, query secondary aliases
             var tasks = new List<Task<string>>();
             foreach (var fCode in fromAliases)
             {
                 foreach (var tCode in toAliases)
                 {
-                    tasks.Add(ExecuteSingleSearchProxyAsync(fCode, tCode, request.DepartDate));
+                    if (fCode == request.FromCityCode && tCode == request.ToCityCode)
+                    {
+                        tasks.Add(Task.FromResult(primaryResponse));
+                    }
+                    else
+                    {
+                        tasks.Add(ExecuteSingleSearchProxyAsync(fCode, tCode, request.DepartDate));
+                    }
                 }
             }
 
             var results = await Task.WhenAll(tasks);
-            return MergeBusSearchResults(results);
+            var merged = MergeBusSearchResults(results);
+
+            if (!string.IsNullOrWhiteSpace(merged) && merged.Contains("\"ErrorCode\":0"))
+            {
+                _cache.Set(cacheKey, merged, TimeSpan.FromMinutes(5));
+            }
+
+            return merged;
         }
 
         private async Task<string> ExecuteSingleSearchProxyAsync(long fromCityCode, long toCityCode, string departDate)

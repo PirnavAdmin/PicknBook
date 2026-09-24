@@ -652,7 +652,7 @@ namespace PickNBook.Api.Data
                 entity.HasData(new AboutUs
                 {
                     Id = 1,
-                    AboutDescription = "<p>Pick&book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>",
+                    AboutDescription = "<p>Pick N Book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>",
                     Status = "active",
                     Module = "B2C",
                     WhoWeAreHeading = "Who We Are",

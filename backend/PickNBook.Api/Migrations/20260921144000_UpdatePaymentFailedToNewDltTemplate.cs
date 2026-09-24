@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Payment failed for reference {Reference}. Reason: {Reason}.',
+                    body = 'Pick&Book: Payment failed for reference {Reference}. Reason: {Reason}.',
                     provider_template_id = '1777178997180999327',
                     provider_template_name = 'newPAYMENT_FAILED',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Payment failed for reference {Reference}. Reason: {Reason}. Please retry or contact support.',
+                    body = 'PickNBook: Payment failed for reference {Reference}. Reason: {Reason}. Please retry or contact support.',
                     provider_template_id = '1777178903298120394',
                     provider_template_name = 'PAYMENT_FAILED',
                     subject = 'PICKBK',

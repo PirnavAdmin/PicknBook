@@ -75,7 +75,7 @@ namespace PickNBook.Api.Migrations
                         new
                         {
                             Id = 1,
-                            AboutDescription = "<p>Pick&book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>",
+                            AboutDescription = "<p>Pick N Book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>",
                             CreatedAtUtc = new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc),
                             Module = "B2C",
                             Status = "active",

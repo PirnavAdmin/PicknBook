@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
                     'SMS', 
                     'en', 
                     'PICNBK', 
-                    'Pick&book: Refund {Status} for booking {Reference}. Refund Ref {RefundRef}.Please contact support : {SupportUrl}', 
+                    'PickNBook: Refund {Status} for booking {Reference}. Refund Ref {RefundRef}.Please contact support : {SupportUrl}', 
                     '1777178955322468054', 
                     'REFUND_FAILED', 
                     1, 

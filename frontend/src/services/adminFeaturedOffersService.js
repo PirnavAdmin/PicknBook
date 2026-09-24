@@ -12,9 +12,9 @@ async function request(path, options = {}) {
 
 const unwrap = (data) => data?.value || data?.data || data?.offers || data || [];
 
-export const getPublicFeaturedOffers = () => request("/api/FeaturedOffers").then(unwrap);
+export const getPublicFeaturedOffers = () => request("/api/Coupons?serviceType=all&category=Offer").then(unwrap);
 export const getActiveOffers = (bookingType) =>
-  request(`/api/FeaturedOffers${bookingType ? `?bookingType=${encodeURIComponent(bookingType)}` : ""}`).then(unwrap);
+  request(`/api/Coupons?serviceType=${bookingType ? encodeURIComponent(bookingType.toLowerCase()) : "all"}&category=Offer`).then(unwrap);
 export const getPublicPromotions = getActiveOffers;
 
 /**

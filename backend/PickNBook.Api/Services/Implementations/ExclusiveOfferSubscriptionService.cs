@@ -81,7 +81,7 @@ namespace PickNBook.Api.Services
                 var emailBody = BuildOffersEmailBody(activeOffers);
                 await _emailService.SendEmailAsync(
                     email,
-                    "Your Pick&book Exclusive Offers",
+                    "Your PickNBook Exclusive Offers",
                     emailBody);
                 emailSent = true;
             }
@@ -159,12 +159,12 @@ namespace PickNBook.Api.Services
             var topOffers = offers.Take(5).ToList();
             if (!topOffers.Any())
             {
-                return "Pick&book: You are subscribed successfully. New offers will be shared soon.";
+                return "PickNBook: You are subscribed successfully. New offers will be shared soon.";
             }
 
             var lines = new List<string>
             {
-                "Pick&book Exclusive Offers:"
+                "PickNBook Exclusive Offers:"
             };
 
             foreach (var offer in topOffers)

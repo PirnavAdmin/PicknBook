@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
                     'SMS', 
                     'en', 
                     'PICKBK', 
-                    'Your Pick&book password reset OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP.', 
+                    'Your PickNBook password reset OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP.', 
                     '1777178886723752988', 
                     'Password Reset', 
                     1, 

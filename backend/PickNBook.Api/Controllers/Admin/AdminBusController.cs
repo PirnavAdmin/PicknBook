@@ -961,7 +961,8 @@ namespace PickNBook.Api.Controllers
                 UsedCount = 0,
                 Status = NormalizeStatus(request.Status),
                 EntryDateUtc = now,
-                Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim()
+                Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim(),
+                ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim()
             };
 
             dbContext.BusCoupons.Add(coupon);
@@ -1074,8 +1075,8 @@ namespace PickNBook.Api.Controllers
             }
 
             coupon.PromotionCategory = string.IsNullOrWhiteSpace(request.PromotionCategory) ? "Coupon" : request.PromotionCategory.Trim();
-            coupon.Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim();
-            coupon.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+            if (request.Title != null) coupon.Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim();
+            if (request.Description != null) coupon.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
             coupon.Value = request.Value;
             coupon.CouponType = NormalizeDiscountType(request.CouponType);
             coupon.CouponCode = normalizedCode;
@@ -1091,7 +1092,10 @@ namespace PickNBook.Api.Controllers
             coupon.Priority = request.Priority;
             coupon.Status = NormalizeStatus(request.Status);
             coupon.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
-            coupon.ImageUrl = request.ImageUrl;
+            if (request.ImageUrl != null)
+            {
+                coupon.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim();
+            }
 
             try
             {

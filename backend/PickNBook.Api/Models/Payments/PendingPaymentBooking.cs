@@ -15,7 +15,7 @@ namespace PickNBook.Api.Models.Payments
         /// <summary>"Bus", "Hotel", or "Flight".</summary>
         public string BookingType { get; set; } = string.Empty;
 
-        /// <summary>Pick&book user ID.</summary>
+        /// <summary>PickNBook user ID.</summary>
         public string UserId { get; set; } = string.Empty;
 
         /// <summary>Payment amount (should match Payment.FinalPayableAmount).</summary>

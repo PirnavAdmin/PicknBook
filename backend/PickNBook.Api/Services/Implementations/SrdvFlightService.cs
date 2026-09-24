@@ -75,6 +75,18 @@ namespace PickNBook.Api.Services
 
         public async Task<string> SearchFlightsRawAsync(AirSearchRequestDto request)
         {
+            var seg = request.Segments?.FirstOrDefault();
+            var origin = seg?.Origin?.Trim().ToUpperInvariant() ?? "NA";
+            var dest = seg?.Destination?.Trim().ToUpperInvariant() ?? "NA";
+            var deptTime = seg?.PreferredDepartureTime.ToString("yyyyMMdd") ?? "NA";
+            var cabin = seg?.FlightCabinClass ?? "1";
+            var cacheKey = $"srdv:flight:search:{origin}:{dest}:{deptTime}:{request.AdultCount}:{request.ChildCount}:{request.InfantCount}:{cabin}:{request.DirectFlight}";
+
+            if (_cache.TryGetValue(cacheKey, out string? cachedResult) && !string.IsNullOrWhiteSpace(cachedResult))
+            {
+                return cachedResult;
+            }
+
             var apiToken = string.IsNullOrWhiteSpace(request.ApiToken)
                 ? _settings.ApiToken
                 : request.ApiToken.Trim();
@@ -111,7 +123,14 @@ namespace PickNBook.Api.Services
             var response = await _httpClient.SendAsync(requestMessage);
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsStringAsync();
+            var result = await response.Content.ReadAsStringAsync();
+
+            if (!string.IsNullOrWhiteSpace(result) && (result.Contains("\"ErrorCode\":\"0\"") || result.Contains("\"ErrorCode\":0")))
+            {
+                _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+            }
+
+            return result;
         }
 
         public async Task<string> RecheckSearchRawAsync(AirRecheckSearchRequestDto request)

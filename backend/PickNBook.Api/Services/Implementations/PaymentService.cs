@@ -164,6 +164,8 @@ namespace PickNBook.Api.Services.Implementations
                 var payment = await _dbContext.Payments.FindAsync(paymentId);
                 if (payment == null) return;
 
+                var oldStatus = payment.Status;
+
                 // Terminal status protection: Never overwrite a successful payment with a failed/cancelled/expired status
                 if (payment.Status == PaymentStatus.Success)
                 {
@@ -301,7 +303,7 @@ namespace PickNBook.Api.Services.Implementations
                     cleanReason = cleanReason.Substring(0, 42) + "...";
                 }
 
-                if (status == PaymentStatus.Success && payment.Status != PaymentStatus.Success)
+                if (status == PaymentStatus.Success && oldStatus != PaymentStatus.Success)
                 {
                     // 1. Enqueue SMS notification if customer mobile is available
                     if (!string.IsNullOrWhiteSpace(customerPhone))
@@ -343,7 +345,7 @@ namespace PickNBook.Api.Services.Implementations
                         );
                     }
                 }
-                else if (status == PaymentStatus.Failed && payment.Status != PaymentStatus.Failed)
+                else if (status == PaymentStatus.Failed && oldStatus != PaymentStatus.Failed)
                 {
                     // 1. Enqueue SMS notification if customer mobile is available
                     if (!string.IsNullOrWhiteSpace(customerPhone))
@@ -404,7 +406,7 @@ namespace PickNBook.Api.Services.Implementations
                 {
                     try
                     {
-                        if (status == PaymentStatus.Success && payment.Status != PaymentStatus.Success)
+                        if (status == PaymentStatus.Success && oldStatus != PaymentStatus.Success)
                         {
                             await _inAppNotificationService.CreateNotificationAsync(
                                 type: "Payment",
@@ -419,7 +421,7 @@ namespace PickNBook.Api.Services.Implementations
                                 targetUserId: payment.UserId
                             );
                         }
-                        else if (status == PaymentStatus.Failed && payment.Status != PaymentStatus.Failed)
+                        else if (status == PaymentStatus.Failed && oldStatus != PaymentStatus.Failed)
                         {
                             await _inAppNotificationService.CreateNotificationAsync(
                                 type: "Payment",
@@ -475,6 +477,94 @@ namespace PickNBook.Api.Services.Implementations
                 }
 
                 await _dbContext.SaveChangesAsync();
+
+                try
+                {
+                    if (_inAppNotificationService != null)
+                    {
+                        if (status == PaymentStatus.Success && oldStatus != PaymentStatus.Success)
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Payment",
+                                category: "Admin",
+                                title: "Payment Successful",
+                                message: $"Payment of {payment.Currency} {payment.FinalPayableAmount:F2} for {payment.BookingType} booking ({payment.PaymentReference}) was successful.",
+                                severity: "Success",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/admin/payments/{payment.PaymentReference}",
+                                idempotencyKey: $"PAY_SUCCESS_{payment.Id}",
+                                targetUserId: null,
+                                targetRole: "Admin"
+                            );
+
+                            // Revenue milestone check
+                            if (payment.GatewayPaidAmount > 0)
+                            {
+                                var totalRevenue = await _dbContext.Payments
+                                    .Where(p => p.Status == PaymentStatus.Success)
+                                    .SumAsync(p => p.GatewayPaidAmount);
+
+                                var revenueMilestone = 100000m;
+                                var currentMilestone = Math.Floor((totalRevenue - payment.GatewayPaidAmount) / revenueMilestone) * revenueMilestone;
+                                var newMilestone = Math.Floor(totalRevenue / revenueMilestone) * revenueMilestone;
+
+                                if (newMilestone > currentMilestone && newMilestone > 0)
+                                {
+                                    await _inAppNotificationService.CreateNotificationAsync(
+                                        type: "Revenue",
+                                        category: "Admin",
+                                        title: "Revenue Milestone Reached",
+                                        message: $"Total revenue has exceeded {newMilestone:F2}!",
+                                        severity: "Info",
+                                        referenceType: "Revenue",
+                                        referenceId: payment.Id.ToString(),
+                                        actionUrl: "/admin/reports/revenue",
+                                        idempotencyKey: $"REV_MILESTONE_{newMilestone}",
+                                        targetUserId: null,
+                                        targetRole: "Admin"
+                                    );
+                                }
+                            }
+                        }
+                        else if (status == PaymentStatus.Failed && oldStatus != PaymentStatus.Failed)
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Payment",
+                                category: "Admin",
+                                title: "Payment Failed",
+                                message: $"Payment of {payment.Currency} {payment.FinalPayableAmount:F2} for {payment.BookingType} booking ({payment.PaymentReference}) failed.",
+                                severity: "Warning",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/admin/payments/{payment.PaymentReference}",
+                                idempotencyKey: $"PAY_FAILED_{payment.Id}",
+                                targetUserId: null,
+                                targetRole: "Admin"
+                            );
+                        }
+                        else if (status == PaymentStatus.Expired && oldStatus != PaymentStatus.Expired)
+                        {
+                            await _inAppNotificationService.CreateNotificationAsync(
+                                type: "Payment",
+                                category: "Admin",
+                                title: "Payment Expired",
+                                message: $"Payment session for {payment.BookingType} booking ({payment.PaymentReference}) has expired.",
+                                severity: "Warning",
+                                referenceType: "Payment",
+                                referenceId: payment.Id.ToString(),
+                                actionUrl: $"/admin/payments/{payment.PaymentReference}",
+                                idempotencyKey: $"PAY_EXPIRED_{payment.Id}",
+                                targetUserId: null,
+                                targetRole: "Admin"
+                            );
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Admin notification creation failed for Payment {PaymentId}", payment.Id);
+                }
             }
             finally
             {

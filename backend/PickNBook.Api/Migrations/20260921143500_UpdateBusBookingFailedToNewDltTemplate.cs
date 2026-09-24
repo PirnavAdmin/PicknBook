@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.',
+                    body = 'Pick&Book: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.',
                     provider_template_id = '1777178997190921279',
                     provider_template_name = 'newBUS_BOOKING_FAILED',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.',
+                    body = 'PickNBook: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.',
                     provider_template_id = '1777178903385892614',
                     provider_template_name = 'BUS_BOOKING_FAILED',
                     subject = 'PICKBK',

@@ -130,7 +130,7 @@
 }
 
 .legal-page-terms .terms-document-title {
-  margin: 0 0 8px;
+  margin: 8px 0 8px;
   color: var(--theme-primary, #ff0000);
   font-size: 1.55rem;
   font-weight: 800;
@@ -139,11 +139,19 @@
 }
 
 .legal-page-terms .terms-effective-date {
-  margin: 0 0 28px;
+  margin: 0 0 8px;
   color: #475569;
   font-size: 0.9rem;
-  text-align: center;
   font-weight: 400;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  text-align: left;
+}
+
+.legal-page-terms .terms-effective-date span:last-child {
+  text-align: right;
 }
 
 .legal-page-terms .terms-opening-copy {
@@ -198,12 +206,17 @@
 .legal-page-terms .terms-bullet-list {
   column-count: 2;
   column-gap: 24px;
-  margin: 0 0 6px;
+  margin: 0 0 6px 40px;
   padding-left: 18px;
   color: #475569;
   font-size: 0.95rem;
   line-height: 1.65;
-  text-align: justify;
+  list-style-position: outside;
+  text-align: left;
+}
+
+.legal-page-terms .terms-section:first-of-type .terms-bullet-list {
+  column-count: 1;
 }
 
 .legal-page-terms .terms-bullet-list li {
@@ -211,6 +224,7 @@
   margin: 0 0 6px;
   padding-left: 2px;
   font-weight: 400;
+  text-align: left;
 }
 
 .legal-page-terms .terms-body-line {

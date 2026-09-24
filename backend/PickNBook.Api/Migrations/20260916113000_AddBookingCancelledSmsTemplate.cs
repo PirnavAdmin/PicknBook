@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
                     'SMS', 
                     'en', 
                     'PICKBK', 
-                    'Pick&book: Booking {Reference} has been cancelled. Cancellation status: {Status}.', 
+                    'PickNBook: Booking {Reference} has been cancelled. Cancellation status: {Status}.', 
                     '1777178903406742408', 
                     'BOOKING_CANCELLED', 
                     1, 

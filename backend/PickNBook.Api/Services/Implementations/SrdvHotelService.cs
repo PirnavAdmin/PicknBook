@@ -205,6 +205,12 @@ namespace PickNBook.Api.Services
                 supplierReq.MinRating = supplierReq.MaxRating;
             }
 
+            var cacheKey = $"srdv:hotel:search:{supplierReq.CityId}:{supplierReq.CheckInDate}:{supplierReq.NoOfNights}:{supplierReq.RoomGuests.Count}:{supplierReq.MinRating}:{supplierReq.MaxRating}";
+            if (_cache.TryGetValue(cacheKey, out PickNBookHotelSearchResponseDto? cachedDto) && cachedDto != null)
+            {
+                return cachedDto;
+            }
+
             try
             {
                 var searchUrl = $"{_settings.HotelBaseUrl.TrimEnd('/')}/Search";
@@ -345,6 +351,11 @@ namespace PickNBook.Api.Services
                             break;
                         }
                     }
+                }
+
+                if (responseDto != null && responseDto.Error.ErrorCode == 0 && responseDto.Results != null && responseDto.Results.Count > 0)
+                {
+                    _cache.Set(cacheKey, responseDto, TimeSpan.FromMinutes(10));
                 }
 
                 return responseDto;

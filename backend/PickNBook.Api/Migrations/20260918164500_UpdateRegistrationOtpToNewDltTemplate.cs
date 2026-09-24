@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Your Pick&book Registration OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP with anyone.',
+                    body = 'Your Pick&Book Registration OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP with anyone.',
                     provider_template_id = '1777178972156267667',
                     provider_template_name = 'NEWREGISTRATION_OTP',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Your Pick&book Registration OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP with anyone -- Pirnav Software Solutions',
+                    body = 'Your PickNBook Registration OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP with anyone -- Pirnav Software Solutions',
                     provider_template_id = '1777178884304449300',
                     provider_template_name = 'REGISTRATION_OTP',
                     subject = 'PICNBK',

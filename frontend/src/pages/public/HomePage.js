@@ -3263,12 +3263,6 @@ export default function HomePage() {
           isExclusive: offer.isExclusive
         }));
 
-        // FALLBACK: If backend returns empty (e.g. 404 because API is not yet deployed), use mock data
-        if (activeOffers.length === 0) {
-          activeOffers = DEFAULT_BUS_FEATURED_OFFERS.filter(
-            (offer) => (offer.bookingType || "bus").toLowerCase() === serviceType.toLowerCase()
-          );
-        }
 
         if (isMounted) {
           setFeaturedOffers(activeOffers);

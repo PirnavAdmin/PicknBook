@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Hotel booking confirmed. Ref {Reference}. Hotel: {Hotel}. Check-in: {CheckIn}. Check-out: {CheckOut}.',
+                    body = 'Pick&Book: Hotel booking confirmed. Ref {Reference}. Hotel: {Hotel}. Check-in: {CheckIn}. Check-out: {CheckOut}.',
                     provider_template_id = '1777178997026681565',
                     provider_template_name = 'newHOTEL_BOOKING_CONFIRMED',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&book: Hotel booking confirmed. Ref ${var1}. Hotel: ${var2}. Check-in: ${var3}. Check-out: ${var4}.',
+                    body = 'PickNBook: Hotel booking confirmed. Ref ${var1}. Hotel: ${var2}. Check-in: ${var3}. Check-out: ${var4}.',
                     provider_template_id = '1777178962451868362',
                     provider_template_name = 'HOTEL_BOOKING_CONFIRMED',
                     subject = 'PICNBK',

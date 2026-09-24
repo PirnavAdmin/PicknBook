@@ -2256,6 +2256,9 @@ export async function listBusCoupons() {
   }
 }
 
+
+
+
 export function isBusCategoryOfferOrCoupon(item) {
   if (!item || typeof item !== "object") return false;
 
@@ -2319,7 +2322,7 @@ export function isBusCategoryOfferOrCoupon(item) {
 export async function listAvailableBusCoupons() {
   const data = await requestJsonWithFallback(
     [
-      "/api/Coupons?serviceType=bus",
+      "/api/Coupons?serviceType=bus&category=Coupon",
       `${BUS_BOOKINGS_ROOT}/user/available`,
       `${LEGACY_BUS_BOOKINGS_ROOT}/user/available`,
     ],
@@ -2468,17 +2471,17 @@ function normalizeFeaturedOffer(record) {
 
   const discountType = promo
     ? pickFirst(promo, ["discountType", "DiscountType"], "")
-    : pickFirst(record, ["discountType", "DiscountType"], "");
+    : pickFirst(record, ["discountType", "DiscountType", "couponType", "CouponType"], "");
   const isPercentageDiscount = String(discountType).toLowerCase() === "percentage"
     || Boolean(pickFirst(record, ["isPercentageDiscount", "IsPercentageDiscount"], false));
 
   const discountValue = promo
     ? Number(pickFirst(promo, ["discountValue", "DiscountValue"], 0)) || 0
-    : Number(pickFirst(record, ["discountValue", "DiscountValue"], 0)) || 0;
+    : Number(pickFirst(record, ["discountValue", "DiscountValue", "value", "Value"], 0)) || 0;
 
   const couponExpiresAtUtc = promo
-    ? pickFirst(promo, ["endDateUtc", "EndDateUtc"], null)
-    : pickFirst(record, ["couponExpiresAtUtc", "CouponExpiresAtUtc"], null);
+    ? pickFirst(promo, ["endDateUtc", "EndDateUtc", "expiryDate", "ExpiryDate"], null)
+    : pickFirst(record, ["couponExpiresAtUtc", "CouponExpiresAtUtc", "expiryDate", "ExpiryDate"], null);
 
   return {
     id: rawId !== null ? Number(rawId) : null,
@@ -2500,13 +2503,13 @@ function normalizeFeaturedOffer(record) {
     discountValue,
     couponExpiresAtUtc,
     startDateUtc: promo
-      ? pickFirst(promo, ["startDateUtc", "StartDateUtc"], null)
-      : pickFirst(record, ["startDateUtc", "StartDateUtc"], null),
+      ? pickFirst(promo, ["startDateUtc", "StartDateUtc", "startDate", "StartDate"], null)
+      : pickFirst(record, ["startDateUtc", "StartDateUtc", "startDate", "StartDate"], null),
     endDateUtc: promo
-      ? pickFirst(promo, ["endDateUtc", "EndDateUtc"], null)
-      : pickFirst(record, ["endDateUtc", "EndDateUtc"], null),
+      ? pickFirst(promo, ["endDateUtc", "EndDateUtc", "expiryDate", "ExpiryDate"], null)
+      : pickFirst(record, ["endDateUtc", "EndDateUtc", "expiryDate", "ExpiryDate"], null),
     isCouponActive: pickFirst(record, ["isCouponActive", "IsCouponActive"], true) !== false,
-    bookingType: String(pickFirst(record, ["bookingType", "BookingType"], "") || ""),
+    bookingType: String(pickFirst(record, ["bookingType", "BookingType", "serviceType", "ServiceType"], "") || ""),
     imageUrl: absoluteImageUrl,
     previewFinalPrice: Number(pickFirst(record, ["previewFinalPrice", "PreviewFinalPrice"], 0)) || 0,
   };
@@ -2514,7 +2517,7 @@ function normalizeFeaturedOffer(record) {
 
 export async function getFeaturedBusOffers() {
   try {
-    const data = await requestJson("/api/FeaturedOffers?bookingType=Bus", {
+    const data = await requestJson("/api/Coupons?serviceType=bus&category=Offer", {
       method: "GET",
       skipAuth: true,
     });
