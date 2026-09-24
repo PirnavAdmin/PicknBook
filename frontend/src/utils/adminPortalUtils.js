@@ -1,5 +1,7 @@
 /* eslint-disable */
 import React from "react";
+import { Loader2, RefreshCw, AlertTriangle, CheckCircle, Clock, XCircle, FileText } from "lucide-react";
+
 const DATE_ONLY_FORMATTER = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
   month: "short",
@@ -100,102 +102,335 @@ export function toViewId(value) {
   return label.startsWith("#") ? label : `#${label}`;
 }
 
-// ── React UI Components ────────────────────────────────────────────────────────
-
-const CANCELLATION_STATUS_COLORS = {
-  Pending:    { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
-  Approved:   { bg: "#f0fdf4", color: "#15803d", border: "#bbf7d0" },
-  Rejected:   { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" },
-  Processing: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
-  Refunded:   { bg: "#f5f3ff", color: "#6d28d9", border: "#ddd6fe" },
-  Cancelled:  { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
-};
-
+/**
+ * Render Ticket/Inventory Cancellation Status Badge
+ * Standards:
+ * - Pending: 🟡 Yellow / Warning
+ * - Cancelled: 🟢 Green / Success
+ * - Rejected: 🔴 Red / Danger
+ */
 export function CancellationStatusBadge({ status }) {
-  const s = CANCELLATION_STATUS_COLORS[status] || CANCELLATION_STATUS_COLORS["Cancelled"];
-  return (
-    <span style={{
-      display: "inline-block",
-      padding: "2px 10px",
-      borderRadius: "999px",
-      fontSize: "0.75rem",
-      fontWeight: 600,
-      background: s.bg,
-      color: s.color,
-      border: `1px solid ${s.border}`,
-      whiteSpace: "nowrap",
-    }}>
-      {status || "—"}
-    </span>
-  );
-}
+  const normStatus = String(status || "Pending").trim();
+  const lower = normStatus.toLowerCase();
 
-const REFUND_STATUS_COLORS = {
-  Pending:    { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
-  Processed:  { bg: "#f0fdf4", color: "#15803d", border: "#bbf7d0" },
-  Failed:     { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" },
-  Initiated:  { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
-  NA:         { bg: "#f8fafc", color: "#64748b", border: "#e2e8f0" },
-};
-
-export function RefundStatusBadge({ status }) {
-  const s = REFUND_STATUS_COLORS[status] || REFUND_STATUS_COLORS["NA"];
-  return (
-    <span style={{
-      display: "inline-block",
-      padding: "2px 10px",
-      borderRadius: "999px",
-      fontSize: "0.75rem",
-      fontWeight: 600,
-      background: s.bg,
-      color: s.color,
-      border: `1px solid ${s.border}`,
-      whiteSpace: "nowrap",
-    }}>
-      {status || "NA"}
-    </span>
-  );
-}
-
-export function RefundAmountDisplay({ amount, currency = "INR" }) {
-  const num = Number(amount);
-  if (!Number.isFinite(num) || num === 0) return <span style={{ color: "#94a3b8" }}>—</span>;
-  const formatted = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(num);
-  return (
-    <span style={{ fontWeight: 600, color: num < 0 ? "#b91c1c" : "#15803d" }}>
-      {formatted}
-    </span>
-  );
-}
-
-export function RefundActionButton({ label = "Process Refund", onClick, disabled = false, variant = "primary" }) {
-  const styles = {
-    primary:  { background: "#A51C49", color: "#fff", border: "none" },
-    outline:  { background: "transparent", color: "#A51C49", border: "1px solid #A51C49" },
-    danger:   { background: "#b91c1c", color: "#fff", border: "none" },
-    success:  { background: "#15803d", color: "#fff", border: "none" },
+  let badgeStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    padding: "3px 8px",
+    borderRadius: "12px",
+    fontSize: "0.72rem",
+    fontWeight: "700",
+    lineHeight: "1.2",
+    letterSpacing: "0.02em",
   };
-  const s = styles[variant] || styles.primary;
+
+  if (lower.includes("cancelled") || lower.includes("canceled") || lower.includes("success")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#dcfce7",
+      color: "#15803d",
+      border: "1px solid #bbf7d0",
+    };
+    return (
+      <span style={badgeStyle} title="Cancellation successfully processed with provider">
+        <CheckCircle size={11} /> Cancelled
+      </span>
+    );
+  }
+
+  if (lower.includes("reject")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#fee2e2",
+      color: "#b91c1c",
+      border: "1px solid #fca5a5",
+    };
+    return (
+      <span style={badgeStyle} title="Supplier rejected the cancellation">
+        <XCircle size={11} /> Rejected
+      </span>
+    );
+  }
+
+  // Pending default
+  badgeStyle = {
+    ...badgeStyle,
+    backgroundColor: "#fef3c7",
+    color: "#b45309",
+    border: "1px solid #fde68a",
+  };
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        ...s,
-        padding: "5px 14px",
-        borderRadius: "6px",
-        fontSize: "0.8rem",
-        fontWeight: 600,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.55 : 1,
-        transition: "opacity 0.2s",
-      }}
-    >
-      {label}
+    <span style={badgeStyle} title="Cancellation requested; awaiting operator confirmation">
+      <Clock size={11} /> Pending
+    </span>
+  );
+}
+
+/**
+ * Render Financial Customer Refund Status Badge
+ * Standards:
+ * - Pending: 🟡 Amber / Orange
+ * - Processing: 🔵 Blue / Info (Spinner)
+ * - Refunded: 🟢 Green / Success
+ * - Completed: ⚪ Gray / Secondary
+ * - Failed: 🔴 Red / Danger
+ */
+export function RefundStatusBadge({ status, refundAmount = 0, cancellationStatus = "" }) {
+  const normStatus = String(status || "").trim();
+  const lower = normStatus.toLowerCase();
+  const cancelLower = String(cancellationStatus || "").toLowerCase();
+
+  let badgeStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    padding: "3px 8px",
+    borderRadius: "12px",
+    fontSize: "0.72rem",
+    fontWeight: "700",
+    lineHeight: "1.2",
+    letterSpacing: "0.02em",
+  };
+
+  if (lower.includes("pending") || cancelLower.includes("pending") || (!lower && !cancelLower)) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#fff7ed",
+      color: "#c2410c",
+      border: "1px solid #ffedd5",
+    };
+    return (
+      <span style={badgeStyle} title="Refund status is pending operator / admin processing">
+        <Clock size={11} /> Pending
+      </span>
+    );
+  }
+
+  if (lower.includes("refunded") || lower.includes("refund_success")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#d1fae5",
+      color: "#047857",
+      border: "1px solid #a7f3d0",
+    };
+    return (
+      <span style={badgeStyle} title="Money successfully credited to customer">
+        <CheckCircle size={11} /> Refunded
+      </span>
+    );
+  }
+
+  if (lower.includes("process") || lower.includes("in_flight")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#dbeafe",
+      color: "#1d4ed8",
+      border: "1px solid #bfdbfe",
+    };
+    return (
+      <span style={badgeStyle} title="Gateway or wallet refund is in-flight">
+        <Loader2 size={11} className="spin-animation" style={{ animation: "spin 1s linear infinite" }} /> Processing
+      </span>
+    );
+  }
+
+  if (lower.includes("failed") || lower.includes("error")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#fee2e2",
+      color: "#dc2626",
+      border: "1px solid #fca5a5",
+    };
+    return (
+      <span style={badgeStyle} title="Payout failed (bank rejection / gateway timeout)">
+        <AlertTriangle size={11} /> Failed
+      </span>
+    );
+  }
+
+  if (lower.includes("completed")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#f1f5f9",
+      color: "#475569",
+      border: "1px solid #cbd5e1",
+    };
+    return (
+      <span style={badgeStyle} title="Settled with ₹0.00 refund (100% penalty)">
+        <FileText size={11} /> Completed
+      </span>
+    );
+  }
+
+  // Pending default
+  badgeStyle = {
+    ...badgeStyle,
+    backgroundColor: "#fff7ed",
+    color: "#c2410c",
+    border: "1px solid #ffedd5",
+  };
+  return (
+    <span style={badgeStyle} title="Refund amount calculated & queued. Payout not started yet.">
+      <Clock size={11} /> Pending
+    </span>
+  );
+}
+
+/**
+ * Display Refund Amount with special subtext/tooltips per specification:
+ * - If customerRefundAmountInr == 0 && customerRefundStatus == "Completed" -> "₹0.00 (Non-refundable / 100% Charges)"
+ */
+export function RefundAmountDisplay({ amount, adminAmount, refundStatus }) {
+  const cusNum = Number(amount) || 0;
+  const hasAdmin = adminAmount !== undefined && adminAmount !== null;
+  const admNum = hasAdmin ? Number(adminAmount) || 0 : null;
+  const isZeroCompleted = cusNum === 0 && String(refundStatus).toLowerCase().includes("completed");
+
+  const formatShortINR = (num) => {
+    const val = Number(num) || 0;
+    return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  return (
+    <div style={{ textAlign: "center", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      {hasAdmin ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2px", width: "100%" }}>
+          <small style={{ color: "#0369a1", fontSize: "0.72rem", fontWeight: "700", whiteSpace: "nowrap", display: "block", textAlign: "center" }}>
+            Cust Ref: {formatShortINR(cusNum)}
+          </small>
+          <small style={{ color: "#059669", fontSize: "0.72rem", fontWeight: "700", whiteSpace: "nowrap", display: "block", textAlign: "center" }}>
+            Admin Ref: {formatShortINR(admNum)}
+          </small>
+        </div>
+      ) : (
+        <>
+          <strong style={{ fontSize: "0.82rem", color: isZeroCompleted ? "#475569" : "#0f766e", fontWeight: "700", textAlign: "center" }}>
+            {formatShortINR(cusNum)}
+          </strong>
+          {isZeroCompleted && (
+            <small
+              style={{
+                display: "block",
+                fontSize: "0.64rem",
+                color: "#64748b",
+                fontWeight: "500",
+                whiteSpace: "nowrap",
+                marginTop: "1px",
+                textAlign: "center",
+              }}
+            >
+              (Non-refundable / 100% Charges)
+            </small>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Standard Contextual Action Buttons per section 5 checklist:
+ * - Pending + >0 -> "Process Refund"
+ * - Processing -> "Refresh Status"
+ * - Failed -> "Retry Payout"
+ * - Completed / Refunded -> "View Details"
+ */
+export function RefundActionButton({ refundStatus, refundAmount, onClick, disabled = false }) {
+  const lower = String(refundStatus || "").toLowerCase();
+  const amount = Number(refundAmount) || 0;
+
+  let btnText = "View";
+  let btnStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    padding: "3px 10px",
+    fontSize: "0.74rem",
+    fontWeight: "600",
+    borderRadius: "6px",
+    border: "none",
+    cursor: "pointer",
+    transition: "all 0.15s ease-in-out",
+  };
+
+  if (lower.includes("failed")) {
+    btnText = "Retry Payout";
+    btnStyle = {
+      ...btnStyle,
+      backgroundColor: "#dc2626",
+      color: "#ffffff",
+      boxShadow: "0 2px 4px rgba(220,38,38,0.2)",
+    };
+    return (
+      <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
+        <RefreshCw size={11} /> {btnText}
+      </button>
+    );
+  }
+
+  if (lower.includes("process")) {
+    btnText = "Refresh Status";
+    btnStyle = {
+      ...btnStyle,
+      backgroundColor: "#0284c7",
+      color: "#ffffff",
+      boxShadow: "0 2px 4px rgba(2,132,199,0.2)",
+    };
+    return (
+      <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
+        <RefreshCw size={11} className="spin-animation" style={{ animation: "spin 1.5s linear infinite" }} /> {btnText}
+      </button>
+    );
+  }
+
+  if (amount > 0 && (lower.includes("pending") || !lower)) {
+    btnText = "Process Refund";
+    btnStyle = {
+      ...btnStyle,
+      backgroundColor: "#d97706",
+      color: "#ffffff",
+      boxShadow: "0 2px 4px rgba(217,119,6,0.2)",
+    };
+    return (
+      <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
+        {btnText}
+      </button>
+    );
+  }
+
+  // Default view button
+  btnStyle = {
+    ...btnStyle,
+    backgroundColor: "#f1f5f9",
+    color: "#334155",
+    border: "1px solid #cbd5e1",
+  };
+  return (
+    <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
+      View
     </button>
   );
 }
+
+export function translateCityCode(code) {
+  if (code === null || code === undefined) return "";
+  const str = String(code).trim();
+  if (!str) return "";
+  const c = str.toUpperCase();
+
+  if (c === "9" || c === "HYD" || c.includes("HYDERABAD")) return "Hyderabad";
+  if (c === "11" || c === "BLR" || c.includes("BANGALORE") || c.includes("BENGALURU")) return "Bangalore";
+  if (c === "30" || c === "VGA" || c.includes("VIJAYAWADA")) return "Vijayawada";
+  if (c === "4" || c === "DEL" || c.includes("DELHI")) return "Delhi";
+  if (c === "3" || c === "BOM" || c.includes("MUMBAI")) return "Mumbai";
+  if (c === "14" || c === "MAA" || c.includes("CHENNAI")) return "Chennai";
+  if (c === "6" || c === "PNQ" || c.includes("PUNE")) return "Pune";
+  if (c === "8" || c === "CCU" || c.includes("KOLKATA")) return "Kolkata";
+  if (c === "15" || c === "GOI" || c === "GOX" || c.includes("GOA")) return "Goa";
+  if (c === "21" || c === "JAI" || c.includes("JAIPUR")) return "Jaipur";
+
+  return str;
+}
+

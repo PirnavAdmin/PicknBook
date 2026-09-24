@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Search, Eye } from "lucide-react";
 import "./FlightSearchHistory.css";
 import AdminPagination from "../../../components/AdminPagination";
@@ -103,7 +104,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://satin-eastcoast-musky.ngrok-free.dev";
+  "https://humiliate-eatery-humvee.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/FlightBookings";
 const DEFAULT_API_USER_ID =
@@ -674,7 +675,7 @@ const CANDIDATE_BASE_URLS = [
   "",
   "http://localhost:7179",
   "https://localhost:7179",
-  "https://satin-eastcoast-musky.ngrok-free.dev"
+  "https://humiliate-eatery-humvee.ngrok-free.dev"
 ];
 
 const CANDIDATE_ENDPOINTS = [
@@ -933,6 +934,25 @@ export default function AdminFlightSearchHistoryPage() {
     loadSearchHistory(filters);
   }, [filters, loadSearchHistory]);
 
+  const location = useLocation();
+  const highlightId = new URLSearchParams(location.search).get("highlightId");
+
+  useEffect(() => {
+    if (highlightId && historyRows.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`row-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.style.backgroundColor = "#fef08a";
+          el.style.transition = "background-color 1s ease";
+          setTimeout(() => {
+            el.style.backgroundColor = "transparent";
+          }, 3000);
+        }
+      }, 350);
+    }
+  }, [location.search, highlightId, historyRows]);
+
   useEffect(() => {
     setActivePage(1);
   }, [filters, deletedRecordIds.length]);
@@ -1126,7 +1146,7 @@ export default function AdminFlightSearchHistoryPage() {
       {infoMessage ? <div className="admin-data-info">{infoMessage}</div> : null}
 
       {isFiltersOpen ? (
-        <section className="flight-ops-filters admin-ops-filters admin-search-filters">
+        <section className="admin-search-filters">
           <label>
             <span>Search Query</span>
             <input
@@ -1138,11 +1158,11 @@ export default function AdminFlightSearchHistoryPage() {
                   query: event.target.value,
                 }))
               }
-              placeholder="Route or customer"
+              placeholder="Segment, airport, or ID"
             />
           </label>
           <label>
-            <span>Customer Name</span>
+            <span>Customer / User</span>
             <input
               type="text"
               value={draftFilters.customerName}
@@ -1152,7 +1172,7 @@ export default function AdminFlightSearchHistoryPage() {
                   customerName: event.target.value,
                 }))
               }
-              placeholder="Enter customer name"
+              placeholder="User ID or Guest"
             />
           </label>
           <label>
@@ -1177,32 +1197,6 @@ export default function AdminFlightSearchHistoryPage() {
                 setDraftFilters((previous) => ({
                   ...previous,
                   toDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label>
-            <span>Search Date From</span>
-            <input
-              type="date"
-              value={draftFilters.searchFromDate}
-              onChange={(event) =>
-                setDraftFilters((previous) => ({
-                  ...previous,
-                  searchFromDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label>
-            <span>Search Date To</span>
-            <input
-              type="date"
-              value={draftFilters.searchToDate}
-              onChange={(event) =>
-                setDraftFilters((previous) => ({
-                  ...previous,
-                  searchToDate: event.target.value,
                 }))
               }
             />
@@ -1241,6 +1235,7 @@ export default function AdminFlightSearchHistoryPage() {
               return (
                 <article
                   key={`${row.id}-${row.searchDateUtc}-${index}`}
+                  id={`row-${row.id || row.searchId || index}`}
                   className="admin-search-history-row"
                   style={{ cursor: "pointer" }}
                   onClick={() => setSelectedRecord(row)}
@@ -1312,7 +1307,9 @@ export default function AdminFlightSearchHistoryPage() {
                         {row.isGuest ? "Guest" : "User"}
                       </span>
                       <strong style={{ fontWeight: 500, color: "#334155" }}>
-                        {row.userOrGuestId || (row.userId ? `User #${row.userId}` : "Guest")}
+                        {row.isGuest
+                          ? (row.userOrGuestId && row.userOrGuestId.toLowerCase().includes("guest") ? row.userOrGuestId : "Guest")
+                          : (row.userId ? `User #${row.userId}` : row.userOrGuestId ? (row.userOrGuestId.toLowerCase().startsWith("user #") ? row.userOrGuestId : `User #${row.userOrGuestId}`) : "User")}
                       </strong>
                     </div>
                   </div>

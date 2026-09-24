@@ -3370,7 +3370,14 @@ export default function HomePage() {
       try {
         const raw = await getPublicTestimonials();
         if (!isMounted) return;
-        const items = Array.isArray(raw) ? raw : raw?.data ?? [];
+        let items = [];
+        if (Array.isArray(raw)) {
+          items = raw;
+        } else if (Array.isArray(raw?.data)) {
+          items = raw.data;
+        } else if (Array.isArray(raw?.data?.testimonials)) {
+          items = raw.data.testimonials;
+        }
         const normalized = items
           .filter((t) => {
             const status = (t.status || t.Status || "").toString().toLowerCase();
@@ -3399,10 +3406,11 @@ export default function HomePage() {
 
         setTestimonials(normalized);
         setTestimonialsError("");
-      } catch {
+      } catch (err) {
+        console.error("TESTIMONIAL ERROR:", err);
         if (isMounted) {
           setTestimonials([]);
-          setTestimonialsError("Customer reviews are unavailable right now.");
+          setTestimonialsError(`Error: ${err.message || err.toString()}`);
         }
       } finally {
         if (isMounted) setTestimonialsLoading(false);

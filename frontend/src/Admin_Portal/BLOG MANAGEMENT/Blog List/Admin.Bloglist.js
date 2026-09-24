@@ -1129,7 +1129,7 @@ function BlogList() {
                                     </td>
                                 </tr>
                             ) : filteredBlogs.length > 0 ? (
-                                filteredBlogs.map((blog, index) => (
+                                filteredBlogs.slice((page - 1) * pageSize, page * pageSize).map((blog, index) => (
                                     <tr key={blog.id} style={styles.tr}>
                                         <td style={styles.td}>
                                             <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>

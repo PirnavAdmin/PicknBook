@@ -124,7 +124,7 @@ const navGroups = [
         submenu: [
           { label: 'Customers', to: p('customer-management/customer-list') },
           { label: 'Queries', to: p('query-management/query-list') },
-          { label: 'Testimonial', to: p('testimonial-management/testimonial-list') },
+          { label: 'Testimonial', to: p('testimonial-management/dashboard') },
           {
             label: 'Search History',
             to: p('customers/search-history'),
@@ -175,6 +175,13 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
     }
     if (sub.to) {
       if (sub.to.includes('testimonial-management') && currentPath.includes('testimonial-management')) return true;
+      if (sub.to.includes('blog-management') && currentPath.includes('blog-management')) return true;
+      if (sub.to.includes('page-management') && currentPath.includes('page-management')) return true;
+      if (sub.to.includes('customer-management') && currentPath.includes('customer-management')) return true;
+      if (sub.to.includes('query-management') && currentPath.includes('query-management')) return true;
+      if (sub.to.includes('security-management') && currentPath.includes('security-management')) return true;
+      if (sub.to.includes('email-management') && currentPath.includes('email-management')) return true;
+      if (sub.to.includes('payment-management') && currentPath.includes('payment-management')) return true;
       return currentPath === sub.to || currentPath.startsWith(sub.to + '/');
     }
     return false;
@@ -218,15 +225,13 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
     return keys;
   };
 
+  // Auto-open ONLY the active page's menu on initial load and route changes
   React.useEffect(() => {
     const autoKeys = getAutoOpenKeys(currentPath);
-    setOpenMenus(prev => {
-      const next = new Set(prev);
-      autoKeys.forEach(k => next.add(k));
-      return next;
-    });
+    setOpenMenus(autoKeys);
   }, [currentPath]);
 
+  // Exclusive Accordion Level 1 toggle: closing any other open dropdown when a new one is opened
   const toggleLevel1 = (toKey) => {
     setOpenMenus(prev => {
       if (prev.has(toKey)) {
@@ -237,6 +242,7 @@ function Sidebar({ isOpen = false, onClose, searchQuery = '', setSearchQuery }) 
     });
   };
 
+  // Exclusive Accordion Level 2 toggle
   const toggleLevel2 = (parentKey, toKey) => {
     setOpenMenus(prev => {
       if (prev.has(toKey)) {

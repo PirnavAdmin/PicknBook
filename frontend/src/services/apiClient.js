@@ -71,10 +71,10 @@ export function isLocalDevelopment() {
 }
 
 export function resolveApiBaseUrl() {
-  // In local dev, return "" so the CRA proxy (setupProxy.js) handles routing.
+  // In local dev, return "" so the CRA/Vite proxy handles routing.
   if (isLocalDevelopment()) return "";
-  // In production/staging, use the env variable set at build time.
-  return (process.env.REACT_APP_API_BASE_URL || "").trim();
+  // In production/staging, use the env variable or fallback ngrok URL.
+  return (process.env.REACT_APP_API_BASE_URL || "https://humiliate-eatery-humvee.ngrok-free.dev").trim();
 }
 
 export function toApiUrl(urlOrPath) {
@@ -122,15 +122,38 @@ function isApiAssetOrigin(urlValue) {
 
   try {
     const assetUrl = new URL(urlValue);
+    const origin = assetUrl.origin.toLowerCase();
+
+    if (
+      origin.includes("unsplash.com") ||
+      origin.includes("cloudinary.com") ||
+      origin.includes("googleapis.com") ||
+      origin.includes("githubusercontent.com") ||
+      origin.includes("placeholder.com")
+    ) {
+      return false;
+    }
+
+    const defaultNgrokUrl = "https://humiliate-eatery-humvee.ngrok-free.dev";
+    const configuredBase = process.env.REACT_APP_API_BASE_URL || defaultNgrokUrl;
+    const configuredProxy = process.env.REACT_APP_API_PROXY_TARGET || defaultNgrokUrl;
 
     const assetOrigins = [
-      resolveApiBaseUrl(),
-      process.env.REACT_APP_API_BASE_URL,
+      configuredBase,
+      configuredProxy,
+      defaultNgrokUrl,
+      "http://localhost:5000",
+      "https://localhost:5000",
+      "http://127.0.0.1:5000",
     ]
       .map(getAbsoluteOrigin)
       .filter(Boolean);
 
-    return assetOrigins.includes(assetUrl.origin);
+    if (assetOrigins.includes(origin) || origin.includes("ngrok")) {
+      return true;
+    }
+
+    return false;
   } catch {
     return false;
   }
@@ -187,7 +210,24 @@ export async function readResponsePayload(response) {
 
 export function normalizeResponseMessage(payload, fallbackMessage = "") {
   if (payload && typeof payload === "object") {
-    return String(payload.message || payload.Message || fallbackMessage || "").trim();
+    if (payload.message || payload.Message) {
+      return String(payload.message || payload.Message).trim();
+    }
+    if (payload.errors && typeof payload.errors === "object") {
+      const messages = [];
+      Object.values(payload.errors).forEach(err => {
+        if (Array.isArray(err)) messages.push(...err);
+        else if (typeof err === 'string') messages.push(err);
+      });
+      if (messages.length > 0) return messages.join(" ");
+    }
+    if (payload.title || payload.detail) {
+      return String(payload.title || payload.detail).trim();
+    }
+    if (payload.error) {
+      return String(payload.error).trim();
+    }
+    return String(fallbackMessage || "").trim();
   }
 
   const text = String(payload || "").trim();
@@ -242,18 +282,39 @@ export function normalizeResponseMessage(payload, fallbackMessage = "") {
   return text;
 }
 
-export function NgrokSafeImage({ src, alt, style, className, onClick, onError, title }) {
+export function NgrokSafeImage({ src, alt, style, className, onClick, onError, title, fallbackSrc }) {
+  const defaultPlaceholder = fallbackSrc !== undefined ? fallbackSrc : "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600";
+
   const handleNativeError = (e) => {
-    e.target.src = "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600";
+    if (defaultPlaceholder) {
+      e.target.src = defaultPlaceholder;
+    } else {
+      e.target.style.display = 'none';
+    }
     if (onError) onError(e);
   };
 
-  const defaultPlaceholder = "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600";
+  if (!src) {
+    if (defaultPlaceholder) {
+      return (
+        <img
+          src={defaultPlaceholder}
+          alt={alt || ''}
+          title={title}
+          style={style}
+          className={className}
+          onClick={onClick}
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+      );
+    }
+    return null;
+  }
 
   return (
     <img
-      src={src || defaultPlaceholder}
-      alt={alt}
+      src={src}
+      alt={alt || ''}
       title={title}
       style={style}
       className={className}

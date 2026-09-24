@@ -39,6 +39,8 @@ namespace PickNBook.Api.Helpers
         private static readonly Dictionary<string, string> DomainTypoSuggestions = new(StringComparer.OrdinalIgnoreCase)
         {
             // Gmail typos
+            ["gmil.com"] = "gmail.com",
+            ["gmeil.com"] = "gmail.com",
             ["gmal.com"] = "gmail.com",
             ["gail.com"] = "gmail.com",
             ["gmial.com"] = "gmail.com",
@@ -74,6 +76,29 @@ namespace PickNBook.Api.Helpers
             ["icoud.com"] = "icloud.com"
         };
 
+        // Known legitimate email providers that might be 1 edit away from major ones (e.g. mail.com or ymail.com vs gmail.com)
+        private static readonly HashSet<string> LegitimateExemptDomains = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "mail.com",
+            "ymail.com",
+            "zoho.com",
+            "proton.me",
+            "protonmail.com",
+            "live.com"
+        };
+
+        // Major email providers for universal algorithmic typo detection
+        private static readonly string[] MajorEmailProviders =
+        {
+            "gmail.com",
+            "yahoo.com",
+            "yahoo.co.in",
+            "outlook.com",
+            "hotmail.com",
+            "icloud.com",
+            "rediffmail.com"
+        };
+
         // Disposable temporary email domains blacklist
         private static readonly HashSet<string> DisposableDomains = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -104,6 +129,70 @@ namespace PickNBook.Api.Helpers
             "1234567890",
             "9876543210"
         };
+
+        /// <summary>
+        /// Algorithmic typo detector using Damerau-Levenshtein distance (handles single insertion, deletion, substitution, or transposition).
+        /// Returns suggested major domain if a typo is detected, otherwise null.
+        /// </summary>
+        public static string? CheckMajorDomainTypo(string domain)
+        {
+            if (string.IsNullOrWhiteSpace(domain) || LegitimateExemptDomains.Contains(domain))
+            {
+                return null;
+            }
+
+            foreach (var major in MajorEmailProviders)
+            {
+                if (domain.Equals(major, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                if (ComputeDamerauLevenshteinDistance(domain, major) == 1)
+                {
+                    return major;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Computes Damerau-Levenshtein distance between two strings with early exit if length difference > 1.
+        /// </summary>
+        public static int ComputeDamerauLevenshteinDistance(string s, string t)
+        {
+            int n = s.Length;
+            int m = t.Length;
+
+            if (Math.Abs(n - m) > 1) return 99;
+
+            int[,] d = new int[n + 1, m + 1];
+
+            for (int i = 0; i <= n; i++) d[i, 0] = i;
+            for (int j = 0; j <= m; j++) d[0, j] = j;
+
+            for (int i = 1; i <= n; i++)
+            {
+                for (int j = 1; j <= m; j++)
+                {
+                    int cost = (char.ToLowerInvariant(s[i - 1]) == char.ToLowerInvariant(t[j - 1])) ? 0 : 1;
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+
+                    // Adjacent character transposition
+                    if (i > 1 && j > 1 &&
+                        char.ToLowerInvariant(s[i - 1]) == char.ToLowerInvariant(t[j - 2]) &&
+                        char.ToLowerInvariant(s[i - 2]) == char.ToLowerInvariant(t[j - 1]))
+                    {
+                        d[i, j] = Math.Min(d[i, j], d[i - 2, j - 2] + 1);
+                    }
+                }
+            }
+
+            return d[n, m];
+        }
 
         /// <summary>
         /// Validates email address: RFC 5322 regex, TLD length >= 2, domain typo guard, and disposable domain blacklist.
@@ -141,11 +230,20 @@ namespace PickNBook.Api.Helpers
             {
                 var domain = clean.Substring(atIdx + 1);
 
+                // 1. Explicit fast dictionary lookup
                 if (DomainTypoSuggestions.TryGetValue(domain, out var suggestedDomain))
                 {
                     return (false, $"Invalid email domain '@{domain}'. Did you mean '@{suggestedDomain}'?", clean);
                 }
 
+                // 2. Universal algorithmic typo check (Damerau-Levenshtein distance == 1)
+                var algorithmicSuggestion = CheckMajorDomainTypo(domain);
+                if (!string.IsNullOrEmpty(algorithmicSuggestion))
+                {
+                    return (false, $"Invalid email domain '@{domain}'. Did you mean '@{algorithmicSuggestion}'?", clean);
+                }
+
+                // 3. Disposable temporary email check
                 if (DisposableDomains.Contains(domain))
                 {
                     return (false, $"{fieldName}: Disposable or temporary email addresses are not allowed.", clean);

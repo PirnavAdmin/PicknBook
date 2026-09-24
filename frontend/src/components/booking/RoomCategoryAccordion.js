@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BedDouble, ChevronDown, Loader2, Info } from 'lucide-react';
+import { getAmenityIcon, getAmenityName } from '../../utils/amenityIconMap';
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-IN', {
@@ -23,6 +24,7 @@ export default function RoomCategoryAccordion({
   const [refundableOnly, setRefundableOnly] = useState(false);
   const [sortBy, setSortBy] = useState("Recommended");
   const [openPolicyIndex, setOpenPolicyIndex] = useState(null);
+  const [amenitiesModalCategory, setAmenitiesModalCategory] = useState(null);
 
   // Group and filter logic
   const processedCategories = useMemo(() => {
@@ -192,10 +194,27 @@ export default function RoomCategoryAccordion({
                     </h4>
                     {cat.firstOption.amenities && cat.firstOption.amenities.length > 0 && (
                       <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
-                         {cat.firstOption.amenities.slice(0, 3).map(a => typeof a === "object" ? (a.name || a.Name) : a).filter(Boolean).map((amenity, i) => (
-                           <span key={i} style={{ background: "rgba(0,0,0,0.04)", padding: "2px 6px", borderRadius: "6px", color: "var(--hotel-ink)", fontSize: "9px" }}>{amenity}</span>
-                         ))}
-                         {cat.firstOption.amenities.length > 3 && <span style={{ background: "rgba(0,0,0,0.04)", padding: "2px 6px", borderRadius: "6px", color: "var(--hotel-ink)", fontSize: "9px" }}>+{cat.firstOption.amenities.length - 3} more</span>}
+                         {cat.firstOption.amenities.slice(0, 3).map((a, i) => {
+                           const amenityName = getAmenityName(a);
+                           if (!amenityName) return null;
+                           const { icon, color } = getAmenityIcon(a);
+                           return (
+                             <span key={i} style={{ background: "rgba(0,0,0,0.04)", padding: "2px 6px", borderRadius: "6px", color: "var(--hotel-ink)", fontSize: "9px", display: "flex", alignItems: "center", gap: "3px" }}>
+                               <i className={icon} style={{ color }}></i>
+                               {amenityName}
+                             </span>
+                           );
+                         })}
+                         {cat.firstOption.amenities.length > 3 && (
+                           <span 
+                             onClick={(e) => { e.stopPropagation(); setAmenitiesModalCategory(cat); }}
+                             style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: "6px", color: "var(--hotel-ink)", fontSize: "9px", cursor: "pointer", border: "1px solid #e2e8f0", transition: "background 0.2s" }}
+                             onMouseOver={e => e.currentTarget.style.background = "#e2e8f0"}
+                             onMouseOut={e => e.currentTarget.style.background = "#f1f5f9"}
+                           >
+                             +{cat.firstOption.amenities.length - 3} more
+                           </span>
+                         )}
                       </div>
                     )}
                   </div>
@@ -363,6 +382,49 @@ export default function RoomCategoryAccordion({
           </div>
         )}
       </div>
+
+      {/* Amenities Modal */}
+      {amenitiesModalCategory && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setAmenitiesModalCategory(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 4000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)" }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: "16px", width: "100%", maxWidth: "500px", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}
+          >
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
+              <div>
+                <h3 style={{ margin: "0 0 4px 0", fontSize: "1.1rem", fontWeight: 700, color: "var(--hotel-ink)" }}>Room Amenities</h3>
+                <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--hotel-muted)" }}>{amenitiesModalCategory.categoryName}</p>
+              </div>
+              <button 
+                onClick={() => setAmenitiesModalCategory(null)}
+                style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: "24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {amenitiesModalCategory.firstOption.amenities.map((a, i) => {
+                  const amenityName = getAmenityName(a);
+                  if (!amenityName) return null;
+                  const { icon, color } = getAmenityIcon(a);
+                  return (
+                    <div key={i} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "6px 12px", borderRadius: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <i className={icon} style={{ color, fontSize: "1rem", flexShrink: 0, width: "18px", textAlign: "center" }}></i>
+                      <span>{amenityName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

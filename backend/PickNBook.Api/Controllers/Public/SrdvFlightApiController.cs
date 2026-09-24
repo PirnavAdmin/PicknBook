@@ -1791,6 +1791,34 @@ namespace PickNBook.Api.Controllers.Public
             var passportValidationResult = ValidatePassengersPassport(request.Passengers);
             if (passportValidationResult != null) return passportValidationResult;
 
+            if (request.Passengers != null && request.Passengers.Any())
+            {
+                var leadPax = request.Passengers.FirstOrDefault(p => p.IsLeadPax) ?? request.Passengers.First();
+                if (!string.IsNullOrWhiteSpace(leadPax.Email))
+                {
+                    var leadEmailVal = TravelValidationHelper.ValidateEmail(leadPax.Email, isRequired: true, "Lead passenger email");
+                    if (!leadEmailVal.IsValid)
+                    {
+                        return BadRequest(ValidationErrorDto.Create(leadEmailVal.ErrorMessage!, "Email", "INVALID_EMAIL"));
+                    }
+                    leadPax.Email = leadEmailVal.CleanedEmail;
+                }
+
+                for (int i = 0; i < request.Passengers.Count; i++)
+                {
+                    var p = request.Passengers[i];
+                    if (!string.IsNullOrWhiteSpace(p.Email))
+                    {
+                        var emailVal = TravelValidationHelper.ValidateEmail(p.Email, isRequired: false, $"Passenger {i + 1} email");
+                        if (!emailVal.IsValid)
+                        {
+                            return BadRequest(ValidationErrorDto.Create(emailVal.ErrorMessage!, $"Passengers[{i}].Email", "INVALID_EMAIL"));
+                        }
+                        p.Email = emailVal.CleanedEmail;
+                    }
+                }
+            }
+
             try
             {
                 var responseRaw = await _srdvFlightService.HoldGDSRawAsync(request);

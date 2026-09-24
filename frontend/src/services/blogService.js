@@ -24,16 +24,86 @@ blogApi.interceptors.request.use((config) => {
   const originalUrl = config.url || "";
   const token = getStoredAdminToken();
 
+  const requestHeaders = {
+    Accept: "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(config.headers || {}),
+  };
+
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete requestHeaders["Content-Type"];
+    delete requestHeaders["content-type"];
+    if (config.headers) {
+      delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
+    }
+  }
+
   return {
     ...config,
     url: toApiUrl(originalUrl),
-    headers: withNgrokSkipWarningHeader(originalUrl, {
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(config.headers || {}),
-    }),
+    headers: withNgrokSkipWarningHeader(originalUrl, requestHeaders),
   };
 });
+
+/**
+ * Robust helper function to handle PUT updates for ASP.NET Controllers.
+ * 1. If payload is FormData without a File, converts to JSON object (ASP.NET PUT endpoints expect JSON).
+ * 2. If PUT fails with 500/405/415, automatically retries with POST or JSON fallback.
+ */
+async function sendUpdateWithFallback(endpointPath, payload) {
+  const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
+  const hasFile = isFormData && Array.from(payload.values()).some(v => typeof File !== "undefined" && v instanceof File);
+
+  // 1. If it's FormData without a File, convert to JSON object first because ASP.NET PUT endpoints expect JSON
+  if (isFormData && !hasFile) {
+    const jsonObj = {};
+    for (const [k, v] of payload.entries()) {
+      jsonObj[k] = v;
+      // Add camelCase key as well for ASP.NET ModelBinder flexibility
+      jsonObj[k.charAt(0).toLowerCase() + k.slice(1)] = v;
+    }
+
+    try {
+      const res = await blogApi.put(endpointPath, jsonObj, {
+        headers: { "Content-Type": "application/json" }
+      });
+      return res.data;
+    } catch (err) {
+      console.warn(`[blogService] JSON PUT to ${endpointPath} failed (${err?.response?.status}), trying FormData PUT...`);
+    }
+  }
+
+  // 2. Try standard PUT with payload
+  try {
+    const res = await blogApi.put(endpointPath, payload);
+    return res.data;
+  } catch (err) {
+    const status = err?.response?.status;
+    // 3. Fallback for 500/405/415 errors on ASP.NET IIS servers
+    if (status === 500 || status === 405 || status === 415) {
+      console.warn(`[blogService] PUT to ${endpointPath} returned ${status}, attempting POST fallback...`);
+      try {
+        const postRes = await blogApi.post(endpointPath, payload);
+        return postRes.data;
+      } catch (postErr) {
+        if (isFormData) {
+          const jsonFallback = {};
+          for (const [k, v] of payload.entries()) {
+            jsonFallback[k] = v;
+            jsonFallback[k.charAt(0).toLowerCase() + k.slice(1)] = v;
+          }
+          const jsonRes = await blogApi.put(endpointPath, jsonFallback, {
+            headers: { "Content-Type": "application/json" }
+          });
+          return jsonRes.data;
+        }
+        throw postErr;
+      }
+    }
+    throw err;
+  }
+}
 
 // Blog Posts API
 export async function getAdminBlogs({ page = 1, pageSize = 20, isPublished = null } = {}) {
@@ -48,21 +118,12 @@ export async function getAdminBlogs({ page = 1, pageSize = 20, isPublished = nul
 }
 
 export async function createAdminBlog(formData) {
-  const response = await blogApi.post("/api/Blogs/admin", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await blogApi.post("/api/Blogs/admin", formData);
   return response.data;
 }
 
 export async function updateAdminBlog(id, formData) {
-  const response = await blogApi.put(`/api/Blogs/admin/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  return await sendUpdateWithFallback(`/api/Blogs/admin/${id}`, formData);
 }
 
 export async function deleteAdminBlog(id) {
@@ -77,26 +138,25 @@ export async function getBlogCategories() {
 }
 
 export async function createBlogCategory(formData) {
-  const response = await blogApi.post("/api/BlogCategories/admin", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await blogApi.post("/api/BlogCategories/admin", formData);
   return response.data;
 }
 
 export async function updateBlogCategory(id, formData) {
-  const response = await blogApi.put(`/api/BlogCategories/admin/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  return await sendUpdateWithFallback(`/api/BlogCategories/admin/${id}`, formData);
 }
 
 export async function toggleBlogCategoryStatus(id) {
-  const response = await blogApi.put(`/api/BlogCategories/admin/${id}/status`);
-  return response.data;
+  try {
+    const response = await blogApi.put(`/api/BlogCategories/admin/${id}/status`);
+    return response.data;
+  } catch (err) {
+    if (err?.response?.status === 500 || err?.response?.status === 405) {
+      const postRes = await blogApi.post(`/api/BlogCategories/admin/${id}/status`);
+      return postRes.data;
+    }
+    throw err;
+  }
 }
 
 export async function deleteBlogCategory(id) {
@@ -111,26 +171,25 @@ export async function getBlogSubCategories() {
 }
 
 export async function createBlogSubCategory(formData) {
-  const response = await blogApi.post("/api/BlogSubCategories/admin", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await blogApi.post("/api/BlogSubCategories/admin", formData);
   return response.data;
 }
 
 export async function updateBlogSubCategory(id, formData) {
-  const response = await blogApi.put(`/api/BlogSubCategories/admin/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  return await sendUpdateWithFallback(`/api/BlogSubCategories/admin/${id}`, formData);
 }
 
 export async function toggleBlogSubCategoryStatus(id) {
-  const response = await blogApi.put(`/api/BlogSubCategories/admin/${id}/status`);
-  return response.data;
+  try {
+    const response = await blogApi.put(`/api/BlogSubCategories/admin/${id}/status`);
+    return response.data;
+  } catch (err) {
+    if (err?.response?.status === 500 || err?.response?.status === 405) {
+      const postRes = await blogApi.post(`/api/BlogSubCategories/admin/${id}/status`);
+      return postRes.data;
+    }
+    throw err;
+  }
 }
 
 export async function deleteBlogSubCategory(id) {
@@ -158,4 +217,3 @@ export async function getPublicBlogBySlug(slug) {
 }
 
 export default blogApi;
-

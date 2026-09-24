@@ -684,3 +684,28 @@ input:checked+.tm-slider {
 input:checked+.tm-slider:before {
   transform: translateX(18px);
 }
+
+/* Full-page full-width form & container styling */
+.tm-form-card,
+.tm-table-card,
+.tm-glass-card,
+.tm-detail-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.tm-form-fullpage {
+  width: 100% !important;
+  min-height: calc(100vh - 180px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.tm-form-grid-full {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+  gap: 16px 24px !important;
+  width: 100% !important;
+}

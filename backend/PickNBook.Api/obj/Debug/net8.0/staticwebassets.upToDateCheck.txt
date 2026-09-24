@@ -55,9 +55,10 @@ wwwroot\blogs\images\f8375def6e9b4cd5b8d20628037708f4.jpg
 wwwroot\blogs\images\ffd5d08559944e61aa3ba67be115bb35.jpg
 wwwroot\blogs\og-images\.gitkeep
 wwwroot\blogs\og-images\79d9e1792a3146a6b9b30c9dcf43ad9b.png
+wwwroot\blogs\subcategories\4639367d6bd94584a2e2ad7fe5030c55.png
 wwwroot\blogs\subcategories\50ad59369b5e44deb74d2a2b752caad7.jpg
+wwwroot\blogs\subcategories\5acec48f0b614ae6b1b25ade468827ee.png
 wwwroot\blogs\subcategories\5ed0704b7b174a92aa2326a79fc8466f.jpg
-wwwroot\blogs\subcategories\6bf67832aee8478b85bf13196cdfd420.jpg
 wwwroot\offers\.gitkeep
 wwwroot\offers\02e85695-1d5c-4db2-adb9-c3365973d4f7.jpg
 wwwroot\offers\0a31e1eb-d45e-428f-baba-2a63cd7164fb.png

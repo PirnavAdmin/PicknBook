@@ -89,7 +89,7 @@ function formatFlightTripType(booking) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://satin-eastcoast-musky.ngrok-free.dev";
+  "https://humiliate-eatery-humvee.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =

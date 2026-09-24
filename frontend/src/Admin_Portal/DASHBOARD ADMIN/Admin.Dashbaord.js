@@ -15,6 +15,7 @@ import {
   getAdminDashboardRevenueOverview,
 } from '../../services/adminDashboardService';
 import { getStoredValue, setStoredValue } from '../../utils/adminPortalStorage';
+import { translateCityCode } from '../../utils/adminPortalUtils';
 import { getCustomers } from '../../services/customerService';
 import { listHotFlightRoutes } from '../../services/flightBookingService';
 import { getPopularBusRoutesFromSearchHistory } from '../../services/busSearchHistoryService';
@@ -491,12 +492,16 @@ const AdminDashboard = () => {
       }
 
       if (summaryResult?.topSellingRoutes?.flights && Array.isArray(summaryResult.topSellingRoutes.flights) && summaryResult.topSellingRoutes.flights.length > 0) {
-        setTopFlights(summaryResult.topSellingRoutes.flights);
+        setTopFlights(summaryResult.topSellingRoutes.flights.slice(0, 5).map(f => ({
+          ...f,
+          fromCity: translateCityCode(f.fromCity),
+          toCity: translateCityCode(f.toCity)
+        })));
         setIsLoadingFlights(false);
       } else {
         try {
           const flights = await listHotFlightRoutes();
-          setTopFlights(Array.isArray(flights) ? flights : []);
+          setTopFlights(Array.isArray(flights) ? flights.slice(0, 5) : []);
         } catch (e) {
           console.error('Flights fetch error:', e);
         } finally {
@@ -505,13 +510,17 @@ const AdminDashboard = () => {
       }
 
       if (summaryResult?.topSellingRoutes?.buses && Array.isArray(summaryResult.topSellingRoutes.buses) && summaryResult.topSellingRoutes.buses.length > 0) {
-        setTopBuses(summaryResult.topSellingRoutes.buses);
+        setTopBuses(summaryResult.topSellingRoutes.buses.slice(0, 5).map(b => ({
+          ...b,
+          fromCity: translateCityCode(b.fromCity),
+          toCity: translateCityCode(b.toCity)
+        })));
         setIsLoadingBuses(false);
       } else {
         try {
           const buses = await getPopularBusRoutesFromSearchHistory({ limit: 5 });
           if (Array.isArray(buses) && buses.length > 0) {
-            setTopBuses(buses);
+            setTopBuses(buses.slice(0, 5));
           } else {
             setTopBuses([
               { fromCity: 'Hyderabad', toCity: 'Vijayawada', bookingCount: 0 },
@@ -533,8 +542,9 @@ const AdminDashboard = () => {
       }
 
       if (summaryResult?.topHotels && Array.isArray(summaryResult.topHotels) && summaryResult.topHotels.length > 0) {
-        const maxVal = Math.max(...summaryResult.topHotels.map(h => h.bookingCount || h.count || 1), 1);
-        setTopHotels(summaryResult.topHotels.map(h => ({
+        const top5 = summaryResult.topHotels.slice(0, 5);
+        const maxVal = Math.max(...top5.map(h => h.bookingCount || h.count || 1), 1);
+        setTopHotels(top5.map(h => ({
           name: h.hotelName || h.name || 'Hotel',
           count: h.bookingCount || h.count || 0,
           width: Math.max(10, Math.min(100, ((h.bookingCount || h.count || 1) / maxVal) * 100))

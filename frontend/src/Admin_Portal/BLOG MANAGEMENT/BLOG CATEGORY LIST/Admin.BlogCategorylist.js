@@ -201,6 +201,7 @@ function BlogCategoryList() {
 
             const result = await updateBlogCategory(editingCategory.id, formData);
             console.log('[Category Update] Response:', result);
+            showToast('Category updated successfully.', 'success');
             await loadCategories();
             setEditModalOpen(false);
             setEditingCategory(null);

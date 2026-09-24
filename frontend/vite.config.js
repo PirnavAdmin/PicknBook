@@ -24,7 +24,7 @@ function isFrontendHost(urlValue) {
     const port = String(parsed.port || (parsed.protocol === "https:" ? "443" : "80"));
     return (
       (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0") &&
-      (port === "3000" || port === "5173")
+      (port === "5173")
     );
   } catch {
     return false;
@@ -35,6 +35,7 @@ function resolveProxyTarget() {
   const candidates = [
     process.env.REACT_APP_API_PROXY_TARGET,
     process.env.REACT_APP_API_BASE_URL,
+    "http://localhost:3000",
   ];
 
   const explicit = candidates
@@ -152,7 +153,7 @@ export default defineConfig(({ mode }) => {
   ],
   esbuild: {
     loader: "jsx",
-    include: /src\/.*\.jsx?$/,
+    include: /src[\\\/].*\.jsx?$/,
     exclude: [],
   },
   optimizeDeps: {
@@ -161,7 +162,7 @@ export default defineConfig(({ mode }) => {
         {
           name: "load-js-files-as-jsx",
           setup(build) {
-            build.onLoad({ filter: /src\/.*\.js$/ }, async (args) => ({
+            build.onLoad({ filter: /src[\\\/].*\.js$/ }, async (args) => ({
               loader: "jsx",
               contents: await fs.promises.readFile(args.path, "utf8"),
             }));

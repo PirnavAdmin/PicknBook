@@ -86,7 +86,7 @@ export const categorizeFacilities = (facilitiesArray) => {
     }
 
     // Push the ORIGINAL unmutated value into the respective category
-    result[category].push(val);
+    result[category].push(item);
   });
 
   return result;

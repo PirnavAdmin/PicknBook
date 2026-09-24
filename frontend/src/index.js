@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import 'icofont/dist/icofont.min.css';
 import App from './App';
 import { clearAuthSession, isTokenExpired } from './services/authSession';
 

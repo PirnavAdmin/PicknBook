@@ -1,16 +1,20 @@
 /* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import {
   listHotelSearchHistory,
   normalizeHotelSearchHistoryItem,
   formatStayInfo,
 } from "../../../services/adminHotelService";
+import { toDdMmYyyy } from "../../../utils/apiDateFormat";
 import AdminPagination from "../../../components/AdminPagination";
 import "../../B2C BUS MANAGEMENT/Search History/BusSearchHistory.css";
 
 const DEFAULT_FILTERS = {
   query: "",
   customerName: "",
+  checkInDate: "",
+  checkOutDate: "",
 };
 
 const safeValue = (value, fallback = "--") => {
@@ -24,6 +28,25 @@ export default function HotelSearchHistory() {
   const [error, setError] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [deletedRecordIds, setDeletedRecordIds] = useState([]);
+
+  const location = useLocation();
+  const highlightId = new URLSearchParams(location.search).get("highlightId");
+
+  useEffect(() => {
+    if (highlightId && logs.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`row-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.style.backgroundColor = "#fef08a";
+          el.style.transition = "background-color 1s ease";
+          setTimeout(() => {
+            el.style.backgroundColor = "transparent";
+          }, 3000);
+        }
+      }, 350);
+    }
+  }, [location.search, highlightId, logs]);
 
   // Filters state
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -111,7 +134,13 @@ export default function HotelSearchHistory() {
       const matchesCustomer =
         !customer || String(log.userId || "").toLowerCase().includes(customer);
 
-      return matchesQuery && matchesCustomer;
+      const matchesCheckIn =
+        !filters.checkInDate || String(log.checkInDate || "").startsWith(filters.checkInDate);
+
+      const matchesCheckOut =
+        !filters.checkOutDate || String(log.checkOutDate || "").startsWith(filters.checkOutDate);
+
+      return matchesQuery && matchesCustomer && matchesCheckIn && matchesCheckOut;
     });
   }, [logs, filters, deletedRecordIds]);
 
@@ -126,7 +155,16 @@ export default function HotelSearchHistory() {
     try {
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return value;
-      return date.toLocaleString("en-IN");
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      const timeStr = date.toLocaleTimeString("en-GB", {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+      return `${day}-${month}-${year}, ${timeStr}`;
     } catch {
       return value;
     }
@@ -245,16 +283,18 @@ export default function HotelSearchHistory() {
         }
 
         .admin-search-history-table-head {
-          padding: 10px 14px !important;
+          padding: 6px 14px !important;
+          min-height: 28px !important;
           background: #A51C49 !important;
           border-radius: 12px 12px 0 0 !important;
+          align-items: center !important;
         }
         .admin-search-history-table-head span {
           color: #ffffff !important;
-          font-size: 0.8rem !important;
-          font-weight: 700 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
+          font-size: 0.73rem !important;
+          font-weight: 600 !important;
+          text-transform: none !important;
+          letter-spacing: 0.02em !important;
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -327,14 +367,14 @@ export default function HotelSearchHistory() {
       </header>
 
       {/* Toolbar row */}
-      <div className="admin-toolbar-row admin-search-history-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      <div className="admin-toolbar-row admin-search-history-toolbar">
         <div className="admin-chip-row">
-          <span className="admin-search-history-chip" style={{ color: "#A51C49", borderColor: "#A51C49", backgroundColor: "rgba(194, 24, 91, 0.05)" }}>
-            Total Records {filteredLogs.length}
+          <span className="admin-search-history-chip">
+            Total Records - {filteredLogs.length}
           </span>
         </div>
 
-        <div className="admin-actions-row" style={{ display: "flex", gap: "10px" }}>
+        <div className="admin-actions-row">
           <button
             type="button"
             className="search-history-filter-btn"
@@ -361,43 +401,47 @@ export default function HotelSearchHistory() {
 
       {/* Filters Form */}
       {isFiltersOpen && (
-        <section className="flight-ops-filters admin-ops-filters admin-search-filters" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "15px", background: "var(--panel)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>Search Query / City Name / City ID</span>
+        <section className="admin-search-filters">
+          <label>
+            <span>Search Query</span>
             <input
               type="text"
               value={draftFilters.query}
               onChange={(e) => setDraftFilters(prev => ({ ...prev, query: e.target.value }))}
-              placeholder="Filter by city name (e.g. Hyderabad), City ID, or log ID"
-              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
+              placeholder="City name, City ID, or log ID"
             />
           </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)" }}>Customer / User</span>
+          <label>
+            <span>Customer / User</span>
             <input
               type="text"
               value={draftFilters.customerName}
               onChange={(e) => setDraftFilters(prev => ({ ...prev, customerName: e.target.value }))}
-              placeholder="Enter customer or user ID"
-              style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", outline: "none" }}
+              placeholder="User ID or Guest"
+            />
+          </label>
+          <label>
+            <span>Check-In Date</span>
+            <input
+              type="date"
+              value={draftFilters.checkInDate || ""}
+              onChange={(e) => setDraftFilters(prev => ({ ...prev, checkInDate: e.target.value }))}
+            />
+          </label>
+          <label>
+            <span>Check-Out Date</span>
+            <input
+              type="date"
+              value={draftFilters.checkOutDate || ""}
+              onChange={(e) => setDraftFilters(prev => ({ ...prev, checkOutDate: e.target.value }))}
             />
           </label>
 
-          <div className="filters-actions" style={{ gridColumn: "span 2", display: "flex", gap: "10px", marginTop: "10px" }}>
-            <button
-              type="button"
-              className="primary"
-              onClick={applyFilters}
-              style={{ padding: "8px 20px", borderRadius: "6px", border: "none", backgroundColor: "#A51C49", color: "#ffffff", fontWeight: "600", cursor: "pointer" }}
-            >
+          <div className="filters-actions">
+            <button type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button
-              type="button"
-              className="secondary"
-              onClick={clearFilters}
-              style={{ padding: "8px 20px", borderRadius: "6px", border: "1px solid var(--border)", backgroundColor: "transparent", cursor: "pointer" }}
-            >
+            <button type="button" className="secondary" onClick={clearFilters}>
               Reset
             </button>
           </div>
@@ -421,89 +465,14 @@ export default function HotelSearchHistory() {
           <div className="admin-search-history-empty" style={{ color: "red", fontWeight: "600" }}>Error: {error}</div>
         ) : paginatedLogs.length ? (
           <div className="admin-search-history-table-body">
-            {paginatedLogs.map((row, idx) => {
-              const stay = formatStayInfo(row);
-              const rawUserId = String(row.userId ?? "").trim();
-              const isGuest =
-                !rawUserId ||
-                rawUserId === "0" ||
-                rawUserId.toLowerCase() === "no login" ||
-                rawUserId.toLowerCase().includes("guest") ||
-                rawUserId.includes(":") ||
-                rawUserId.includes(".");
-
-              const userLabel = isGuest
-                ? rawUserId && rawUserId.toLowerCase().startsWith("guest_")
-                  ? rawUserId
-                  : rawUserId
-                  ? `Guest (${rawUserId})`
-                  : "Guest User"
-                : `User #${rawUserId}`;
-
-              const displayCity = row.cityName || row.searchQuery || "--";
-
-              return (
-                <article key={row.searchId || idx} className="admin-search-history-row" style={{ cursor: "pointer" }} onClick={() => setSelectedRecord(row)}>
-                  <div className="admin-search-history-cell admin-cell-centered">
-                    <span style={{ fontWeight: 500, color: "#1e293b" }}>{startIndex + idx + 1}</span>
-                  </div>
-                  <div className="admin-search-history-cell">
-                    <span style={{ fontWeight: 500, color: "#1e293b" }}>{formatSearchDate(row.searchedAtUtc)}</span>
-                  </div>
-                  <div className="admin-search-history-cell">
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
-                      <span className="font-semibold text-gray-900" style={{ fontWeight: 600, color: "#0f172a" }}>
-                        {displayCity}
-                      </span>
-                      {row.cityId && (
-                        <span className="city-id-badge">
-                          ID: {row.cityId}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="admin-search-history-cell">
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
-                      <span style={{ fontWeight: 500, color: "#0f172a" }}>
-                        {safeValue(row.checkInDate)} to {safeValue(row.checkOutDate)}
-                      </span>
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
-                        {stay.guests}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="admin-search-history-cell">
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
-                      <span
-                        style={{
-                          padding: "1px 6px",
-                          borderRadius: "4px",
-                          fontSize: "0.72rem",
-                          fontWeight: 500,
-                          backgroundColor: isGuest ? "#fef3c7" : "#e0f2fe",
-                          color: isGuest ? "#92400e" : "#075985",
-                        }}
-                      >
-                        {isGuest ? "Guest" : "User"}
-                      </span>
-                      <span style={{ fontWeight: 500, color: "#334155" }}>{userLabel}</span>
-                    </div>
-                  </div>
-                  <div className="admin-search-history-cell admin-cell-centered">
-                    <button
-                      type="button"
-                      className="admin-search-history-view-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedRecord(row);
-                      }}
-                    >
-                      View
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+            {paginatedLogs.map((row, idx) => (
+              <HotelSearchHistoryRow
+                key={row.searchId || idx}
+                item={row}
+                index={(currentPage - 1) * itemsPerPage + idx}
+                onView={setSelectedRecord}
+              />
+            ))}
           </div>
         ) : (
           <div className="admin-search-history-empty">Result Not Found.</div>
@@ -593,7 +562,7 @@ export default function HotelSearchHistory() {
 
               <div>
                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>City Name</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#A51C49", fontSize: "0.95rem" }}>
+                <p style={{ margin: "4px 0 0", fontWeight: 500, color: "#A51C49", fontSize: "0.95rem" }}>
                   {selectedRecord.cityName || selectedRecord.searchQuery || "--"}
                 </p>
               </div>
@@ -612,12 +581,12 @@ export default function HotelSearchHistory() {
 
               <div>
                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Check-In Date</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{selectedRecord.checkInDate || "--"}</p>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{toDdMmYyyy(selectedRecord.checkInDate) || "--"}</p>
               </div>
 
               <div>
                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Check-Out Date</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{selectedRecord.checkOutDate || "--"}</p>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem" }}>{toDdMmYyyy(selectedRecord.checkOutDate) || "--"}</p>
               </div>
 
               <div style={{ gridColumn: "1 / -1" }}>
@@ -664,5 +633,128 @@ export default function HotelSearchHistory() {
     </section>
   );
 }
+
+export const HotelSearchHistoryRow = ({ item, index, onView }) => {
+  const displayCity = item?.cityName || item?.searchQuery || "N/A";
+
+  const formatDate = (value) => {
+    if (!value) return "--";
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      const timeStr = date.toLocaleTimeString("en-GB", {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+      return `${day}-${month}-${year}, ${timeStr}`;
+    } catch {
+      return value;
+    }
+  };
+
+  const rawUserId = String(item?.userId ?? "").trim();
+  const isGuest =
+    !rawUserId ||
+    rawUserId === "0" ||
+    rawUserId.toLowerCase() === "no login" ||
+    rawUserId.toLowerCase().includes("guest") ||
+    rawUserId.includes(":") ||
+    rawUserId.includes(".");
+
+  const userLabel = isGuest
+    ? rawUserId && rawUserId.toLowerCase().startsWith("guest_")
+      ? rawUserId
+      : rawUserId
+      ? `Guest (${rawUserId})`
+      : "Guest"
+    : `User #${rawUserId}`;
+
+  const stay = formatStayInfo(item);
+
+  return (
+    <article
+      id={`row-${item?.searchId || item?.id}`}
+      className="admin-search-history-row"
+      style={{ cursor: "pointer" }}
+      onClick={() => onView && onView(item)}
+    >
+      {/* S.NO */}
+      <div className="admin-search-history-cell admin-cell-centered">
+        <span style={{ fontWeight: 500, color: "#1e293b" }}>{index + 1}</span>
+      </div>
+
+      {/* SEARCH DATE */}
+      <div className="admin-search-history-cell">
+        <span style={{ fontWeight: 500, color: "#1e293b" }}>
+          {formatDate(item?.searchedAtUtc)}
+        </span>
+      </div>
+
+      {/* CITY NAME & CITY ID */}
+      <div className="admin-search-history-cell">
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
+          <span className="font-medium text-gray-900 text-sm tracking-wide" style={{ fontWeight: 500, color: "#0f172a" }}>
+            {displayCity}
+          </span>
+          {item?.cityId && (
+            <span className="city-id-badge">
+              ID: {item.cityId}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* STAY DATES & GUESTS */}
+      <div className="admin-search-history-cell">
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
+          <span style={{ fontWeight: 500, color: "#0f172a" }}>
+            {safeValue(toDdMmYyyy(item?.checkInDate))} to {safeValue(toDdMmYyyy(item?.checkOutDate))}
+          </span>
+          <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
+            {stay.guests}
+          </span>
+        </div>
+      </div>
+
+      {/* CUSTOMER / USER */}
+      <div className="admin-search-history-cell">
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
+          <span
+            style={{
+              padding: "1px 6px",
+              borderRadius: "4px",
+              fontSize: "0.72rem",
+              fontWeight: 500,
+              backgroundColor: isGuest ? "#fef3c7" : "#e0f2fe",
+              color: isGuest ? "#92400e" : "#075985",
+            }}
+          >
+            {isGuest ? "Guest" : "User"}
+          </span>
+          <span style={{ fontWeight: 500, color: "#334155" }}>{userLabel}</span>
+        </div>
+      </div>
+
+      {/* ACTION */}
+      <div className="admin-search-history-cell admin-cell-centered">
+        <button
+          type="button"
+          className="admin-search-history-view-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onView && onView(item);
+          }}
+        >
+          View
+        </button>
+      </div>
+    </article>
+  );
+};
 
 

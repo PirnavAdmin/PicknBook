@@ -70,7 +70,7 @@ function validateEmailAddress(emailStr) {
     return { valid: false, error: "Enter an email address." };
   }
 
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const emailRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9_%+-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9_%+-]*[a-zA-Z0-9])?)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
   if (!emailRegex.test(trimmed)) {
     return { valid: false, error: "Enter a valid email address (e.g., name@example.com)." };
   }
@@ -82,6 +82,10 @@ function validateEmailAddress(emailStr) {
 
   const localPart = parts[0];
   const domain = parts[1];
+
+  if (trimmed.length > 254 || localPart.length > 64) {
+    return { valid: false, error: "Enter a valid email address (maximum 64 characters before @)." };
+  }
 
   const typoSuggestions = {
     "gail.com": "gmail.com",
@@ -186,6 +190,7 @@ export default function AuthPage() {
   const [mobile, setMobile]               = useState("");
   const [email, setEmail]                 = useState("");
   const [password, setPassword]           = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp]                     = useState("");
   const [otpSent, setOtpSent]             = useState(false);
   const [timeLeft, setTimeLeft]           = useState(0);
@@ -194,6 +199,7 @@ export default function AuthPage() {
   const [loading, setLoading]             = useState(false);
   const [viewMode, setViewMode]           = useState(initialMode === "register" ? "register" : "login");
   const [showPassword, setShowPassword]   = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [keepSignedIn, setKeepSignedIn]   = useState(false);
   const [adminChallengeId, setAdminChallengeId] = useState("");
 
@@ -266,6 +272,11 @@ export default function AuthPage() {
   /* ── Input handlers (UNCHANGED) ─────────────────────────── */
   const handleMobileChange   = (e) => { setMobile(e.target.value.replace(/\D/g,"").slice(0,10)); setErrors({}); setStatus({type:"",message:""}); };
   const handleEmailChange    = (e) => { setEmail(e.target.value.trimStart()); setErrors({}); setStatus({type:"",message:""}); };
+  const handleEmailBlur = () => {
+    if (viewMode !== "register" || !email.trim()) return;
+    const emailResult = validateEmailAddress(email);
+    setErrors((current) => ({ ...current, ...(emailResult.valid ? {} : { email: emailResult.error }) }));
+  };
   const handlePasswordChange = (e) => { setPassword(e.target.value); setErrors({}); setStatus({type:"",message:""}); };
   const handleOtpChange      = (e) => { setOtp(e.target.value.replace(/\D/g,"").slice(0,OTP_LENGTH)); setErrors({}); setStatus({type:"",message:""}); };
   const switchAuthMethod = (method) => { setAuthMethod(method); setOtpSent(false); setOtp(""); setErrors({}); setStatus({type:"",message:""}); setTimeLeft(0); };
@@ -280,6 +291,10 @@ export default function AuthPage() {
       setFpNewPassword(""); setFpConfirmPassword("");
       setFpStatus({type:"",message:""}); setFpErrors({});
       setFpTimeLeft(0); setFpResetToken("");
+    }
+    if (mode === "register") {
+      setConfirmPassword("");
+      setShowConfirmPassword(false);
     }
     bump();
   };
@@ -338,14 +353,28 @@ export default function AuthPage() {
   /* ── sendRegisterOtp (UNCHANGED) ────────────────────────── */
   const sendRegisterOtp = async (e) => {
     if (e) e.preventDefault(); if (loading) return;
-    if (!fullName || !mobile || !email || !password) { setStatus({type:"error", message:"Please fill in all required fields."}); return; }
-    if (!/^[6-9]\d{9}$/.test(mobile)) { setErrors({ mobile:"Enter a valid 10-digit mobile number" }); return; }
+    const nextErrors = {};
+    if (!fullName.trim()) nextErrors.fullName = "Enter your full name.";
+    if (!mobile.trim()) {
+      nextErrors.mobile = "Enter your mobile number.";
+    } else if (!/^[6-9]\d{9}$/.test(mobile)) {
+      nextErrors.mobile = "Enter a valid 10-digit mobile number.";
+    }
     const registerEmailVal = validateEmailAddress(email);
-    if (!registerEmailVal.valid) { setErrors({ email: registerEmailVal.error }); return; }
+    if (!registerEmailVal.valid) nextErrors.email = registerEmailVal.error;
     const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[^\s]{8,64}$/;
-    if (!pwdRegex.test(password)) {
-      setErrors({ password: "Password does not meet all requirements." });
-      setStatus({type:"error", message:"Please fix the password requirements."});
+    if (!password) {
+      nextErrors.password = "Create a password.";
+    } else if (!pwdRegex.test(password)) {
+      nextErrors.password = "Password does not meet all requirements.";
+    }
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = "Confirm your password.";
+    } else if (password !== confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match.";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
     setLoading(true); setStatus({type:"",message:""});
@@ -758,6 +787,7 @@ export default function AuthPage() {
                     <User size={15} className="auth-field-icon" />
                     <input id="r-name" type="text" placeholder="Enter your full name" value={fullName} onChange={(e) => { setFullName(e.target.value); setErrors({}); setStatus({type:"",message:""}); }} className="auth-field-input" />
                   </div>
+                  {errors.fullName && <span className="auth-field-error">{errors.fullName}</span>}
                 </div>
                 <div className="auth-field-group">
                   <label className="auth-field-label" htmlFor="r-mobile">Mobile Number</label>
@@ -774,7 +804,7 @@ export default function AuthPage() {
                   <label className="auth-field-label" htmlFor="r-email">Email Address</label>
                   <div className="auth-field-input-wrap">
                     <Mail size={15} className="auth-field-icon" />
-                    <input id="r-email" type="email" placeholder="Enter your email address" value={email} onChange={handleEmailChange} className="auth-field-input" />
+                    <input id="r-email" type="email" placeholder="Enter your email address" value={email} onChange={handleEmailChange} onBlur={handleEmailBlur} className="auth-field-input" aria-invalid={Boolean(errors.email)} />
                   </div>
                   {errors.email && <span className="auth-field-error">{errors.email}</span>}
                 </div>
@@ -788,6 +818,26 @@ export default function AuthPage() {
                     </button>
                   </div>
                   <PasswordRequirements password={password} />
+                  {errors.password && <span className="auth-field-error">{errors.password}</span>}
+                </div>
+                <div className="auth-field-group">
+                  <label className="auth-field-label" htmlFor="r-confirm-pwd">Confirm Password</label>
+                  <div className="auth-field-input-wrap">
+                    <LockKeyhole size={15} className="auth-field-icon" />
+                    <input
+                      id="r-confirm-pwd"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Re-enter your password"
+                      value={confirmPassword}
+                      onChange={(e) => { setConfirmPassword(e.target.value); setErrors({}); setStatus({ type: "", message: "" }); }}
+                      className="auth-field-input"
+                      aria-invalid={Boolean(errors.confirmPassword)}
+                    />
+                    <button type="button" className="auth-eye-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? "Hide" : "Show"}>
+                      {showConfirmPassword ? <EyeOff size={15}/> : <Eye size={15}/>} 
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <span className="auth-field-error">{errors.confirmPassword}</span>}
                 </div>
                 <button type="submit" className="auth-primary-btn auth-white-primary-btn" disabled={loading}>
                   {loading ? <><Spinner />Please wait…</> : "Send OTP"}

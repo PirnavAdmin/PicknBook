@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAdminDashboardSummary, deriveAdminMetrics } from '../../services/adminDashboardService';
+import { adminNotificationService } from '../../services/adminNotificationService';
 import { clearAuthSession } from '../../services/authSession';
 import pickNBookLogo from '../../assets/images/brand/pick-n-book-logo.png';
 
@@ -427,58 +428,90 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     });
                 }
 
-                // Build dynamic notifications from backend summary
-                const list = [];
-                const pending = summary?.pendingActions || {};
-                const bus = summary?.busBookings || {};
-
-                if (pending.cancellations > 0) {
-                    list.push({
-                        id: 'cancellation',
-                        title: 'New Cancellation',
-                        message: `${pending.cancellations} Cancellation Review Required`,
-                        color: '#1e75ff',
-                        path: '/admin/b2c-bus/cancellation-list',
-                    });
-                }
-                if (pending.deposits > 0) {
-                    list.push({
-                        id: 'deposit',
-                        title: 'Payment Pending',
-                        message: `${pending.deposits} Deposits Pending Verification`,
-                        color: '#10b981',
-                        path: '/admin/customer-management/deposit-request-list',
-                    });
-                }
-                if (pending.travelerUpdates > 0) {
-                    list.push({
-                        id: 'updates',
-                        title: 'Pending Updates',
-                        message: `${pending.travelerUpdates} Traveler Modifications Ready`,
-                        color: '#f97316',
-                        path: '/admin/customer-management/customer-list',
-                    });
-                }
-                if (bus.total > 0 && !(pending.cancellations > 0)) {
-                    list.push({
-                        id: 'bookings',
-                        title: 'Total Bookings',
-                        message: `${bus.total} Total Bookings`,
-                        color: '#6366f1',
-                        path: '/admin/b2c-bus/booking-list',
-                    });
+                // 1. Fetch live unread count from API Endpoint 2
+                try {
+                    const count = await adminNotificationService.getUnreadCount();
+                    if (typeof count === 'number') {
+                        setNotificationCount(count);
+                        setHasUnread(count > 0);
+                    }
+                } catch (cntErr) {
+                    console.error("Unread count fetch error:", cntErr);
                 }
 
-                setNotifications(prev => {
-                    const isDifferent = prev.length !== list.length ||
-                        list.some((item, i) => !prev[i] || prev[i].id !== item.id || prev[i].message !== item.message);
+                // 2. Fetch notifications list from API Endpoint 1
+                let apiItems = [];
+                try {
+                    const apiRes = await adminNotificationService.getNotifications({ page: 1, pageSize: 10 });
+                    if (apiRes) {
+                        if (Array.isArray(apiRes.items)) apiItems = apiRes.items;
+                        else if (Array.isArray(apiRes)) apiItems = apiRes;
+                        else if (Array.isArray(apiRes.notifications)) apiItems = apiRes.notifications;
+                        else if (Array.isArray(apiRes.data)) apiItems = apiRes.data;
+                    }
+                } catch (notifErr) {
+                    console.error("Notifications list fetch error:", notifErr);
+                }
 
-                    if (isDifferent && list.length > 0) {
+                if (apiItems.length > 0) {
+                    const mappedList = apiItems.map(item => ({
+                        id: item.id || item.notificationId || `notif-${Math.random()}`,
+                        title: item.title || item.type || 'Notification',
+                        message: item.message || item.content || item.description || '',
+                        isRead: !!item.isRead,
+                        severity: item.severity || item.category || 'Info',
+                        time: item.createdAt || item.timestamp || item.createdDate || '',
+                        color: item.severity === 'Critical' ? '#ef4444' : item.severity === 'Warning' ? '#f59e0b' : '#1e75ff'
+                    }));
+                    setNotifications(mappedList);
+                } else {
+                    // Fallback to dynamic dashboard action items if no API notifications returned yet
+                    const list = [];
+                    const pending = summary?.pendingActions || {};
+                    const bus = summary?.busBookings || {};
+
+                    if (pending.cancellations > 0) {
+                        list.push({
+                            id: 'cancellation',
+                            title: 'New Cancellation',
+                            message: `${pending.cancellations} Cancellation Review Required`,
+                            color: '#1e75ff',
+                            path: '/admin/b2c-bus/cancellation-list',
+                        });
+                    }
+                    if (pending.deposits > 0) {
+                        list.push({
+                            id: 'deposit',
+                            title: 'Payment Pending',
+                            message: `${pending.deposits} Deposits Pending Verification`,
+                            color: '#10b981',
+                            path: '/admin/customer-management/deposit-request-list',
+                        });
+                    }
+                    if (pending.travelerUpdates > 0) {
+                        list.push({
+                            id: 'updates',
+                            title: 'Pending Updates',
+                            message: `${pending.travelerUpdates} Traveler Modifications Ready`,
+                            color: '#f97316',
+                            path: '/admin/customer-management/customer-list',
+                        });
+                    }
+                    if (bus.total > 0 && !(pending.cancellations > 0)) {
+                        list.push({
+                            id: 'bookings',
+                            title: 'Total Bookings',
+                            message: `${bus.total} Total Bookings`,
+                            color: '#6366f1',
+                            path: '/admin/b2c-bus/booking-list',
+                        });
+                    }
+                    setNotifications(list);
+                    if (list.length > 0 && notificationCount === 0) {
+                        setNotificationCount(list.length);
                         setHasUnread(true);
                     }
-                    return list;
-                });
-                setNotificationCount(list.length);
+                }
             } catch (err) {
                 console.error("Error fetching Topbar dashboard summary data:", err);
             }
@@ -1228,11 +1261,11 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                 top: '100%',
                                 right: 0,
                                 marginTop: '10px',
-                                background: 'var(--panel)',
-                                border: '1px solid var(--admin-border)',
+                                background: 'var(--panel, #ffffff)',
+                                border: '1px solid var(--admin-border, #e2e8f0)',
                                 borderRadius: '12px',
-                                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
-                                width: '280px',
+                                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+                                width: '320px',
                                 zIndex: 1100,
                                 overflow: 'hidden',
                             }}>
@@ -1241,13 +1274,36 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     padding: '12px 14px',
-                                    background: 'var(--admin-soft)',
-                                    borderBottom: '1px solid var(--admin-border)',
+                                    background: 'var(--admin-soft, #f8fafc)',
+                                    borderBottom: '1px solid var(--admin-border, #e2e8f0)',
                                 }}>
-                                    <strong style={{ fontSize: '0.85rem', color: 'var(--admin-text)' }}>System Notifications</strong>
-                                    <span style={{ fontSize: '0.62rem', background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 'bold' }}>Active</span>
+                                    <strong style={{ fontSize: '0.85rem', color: 'var(--admin-text, #0f172a)' }}>Admin Notifications</strong>
+                                    {notifications.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await adminNotificationService.markAllAsRead();
+                                                setHasUnread(false);
+                                                setNotificationCount(0);
+                                                setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                                                showToastMessage("All notifications marked as read", "success");
+                                            }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#3b82f6',
+                                                fontSize: '0.72rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                padding: '2px 4px'
+                                            }}
+                                        >
+                                            Mark all read
+                                        </button>
+                                    )}
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '200px', overflowY: 'auto' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '260px', overflowY: 'auto' }}>
                                     {notifications.length > 0 ? (
                                         notifications.map((notif, idx) => (
                                             <div
@@ -1255,33 +1311,68 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                                 style={{
                                                     padding: '10px 14px',
                                                     borderBottom: idx === notifications.length - 1 ? 'none' : '1px solid #f1f5f9',
-                                                    fontSize: '0.74rem',
+                                                    fontSize: '0.76rem',
                                                     color: '#334155',
-                                                    cursor: notif.path ? 'pointer' : 'default',
+                                                    cursor: 'pointer',
+                                                    backgroundColor: notif.isRead ? 'transparent' : 'rgba(59, 130, 246, 0.04)',
                                                     transition: 'background 0.2s ease',
                                                 }}
-                                                onClick={() => {
+                                                onClick={async () => {
+                                                    if (notif.id) {
+                                                        await adminNotificationService.markAsRead(notif.id);
+                                                        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+                                                        setNotificationCount(prev => Math.max(0, prev - 1));
+                                                    }
                                                     if (notif.path) {
                                                         navigate(notif.path);
                                                         setShowNotifications(false);
                                                     }
                                                 }}
                                                 onMouseEnter={(e) => {
-                                                    if (notif.path) e.currentTarget.style.backgroundColor = '#f8fafc';
+                                                    e.currentTarget.style.backgroundColor = '#f8fafc';
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    if (notif.path) e.currentTarget.style.backgroundColor = 'transparent';
+                                                    e.currentTarget.style.backgroundColor = notif.isRead ? 'transparent' : 'rgba(59, 130, 246, 0.04)';
                                                 }}
                                             >
-                                                <div style={{ fontWeight: 700, color: notif.color || '#1e75ff', marginBottom: '1px' }}>{notif.title}</div>
-                                                <span>{notif.message}</span>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                                    <div style={{ fontWeight: 700, color: notif.color || '#1e75ff' }}>{notif.title}</div>
+                                                    {!notif.isRead && (
+                                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }}></span>
+                                                    )}
+                                                </div>
+                                                <span style={{ color: '#64748b' }}>{notif.message}</span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div style={{ padding: '16px', textAlign: 'center', fontSize: '0.78rem', color: '#64748b' }}>
-                                            No active notifications
+                                        <div style={{ padding: '20px', textAlign: 'center', fontSize: '0.78rem', color: '#64748b' }}>
+                                            No notifications found
                                         </div>
                                     )}
+                                </div>
+                                <div style={{
+                                    padding: '8px 14px',
+                                    borderTop: '1px solid var(--admin-border, #e2e8f0)',
+                                    textAlign: 'center',
+                                    background: 'var(--admin-soft, #f8fafc)'
+                                }}>
+                                    <button
+                                        type="button"
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#1e75ff',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => {
+                                            setShowNotifications(false);
+                                            navigate('/admin/notifications');
+                                        }}
+                                    >
+                                        View Categorized Notification Center →
+                                    </button>
                                 </div>
                             </div>
                         )}

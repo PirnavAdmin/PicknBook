@@ -33,11 +33,20 @@ export default function AdminTestimonialList() {
     try {
       setLoading(true);
       const res = await getAdminTestimonials();
-      const list = Array.isArray(res)
-        ? res
-        : (res?.testimonials || res?.data || res?.items || res?.results || res?.result || []);
+      let list = [];
+      if (Array.isArray(res)) {
+        list = res;
+      } else if (res && typeof res === 'object') {
+        const payload = res.data || res.result || res.payload || res;
+        if (Array.isArray(payload)) {
+          list = payload;
+        } else if (payload && typeof payload === 'object') {
+          list = payload.testimonials || payload.items || payload.list || payload.data || [];
+        }
+      }
       setTestimonials(Array.isArray(list) ? list : []);
     } catch (err) {
+      console.error("Failed to load testimonials:", err);
       showToast("Failed to load testimonials.", "error");
       setTestimonials([]);
     } finally {
@@ -505,47 +514,37 @@ export default function AdminTestimonialList() {
                         <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
                       </td>
                       <td style={styles.td}>
-                        <div style={{ position: "relative", width: "36px", height: "36px", margin: "0 auto" }}>
-                          {imgSrc ? (
-                            <img
-                              src={imgSrc}
-                              alt={t.name || "Testimonial"}
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                borderRadius: "50%",
-                                objectFit: "cover",
-                                display: "block",
-                                border: "1px solid var(--border, #cbd5e1)",
-                              }}
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                if (e.currentTarget.nextSibling) {
-                                  e.currentTarget.nextSibling.style.display = "flex";
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <div
+                        {imgSrc ? (
+                          <img
+                            src={imgSrc}
+                            alt={t.name || "Testimonial"}
                             style={{
                               width: "36px",
                               height: "36px",
                               borderRadius: "50%",
-                              background: "linear-gradient(135deg, #A51C49, #851237)",
-                              color: "#ffffff",
-                              fontWeight: 700,
-                              fontSize: "0.85rem",
-                              display: imgSrc ? "none" : "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
+                              objectFit: "cover",
+                              display: "block",
                               margin: "0 auto",
-                              textTransform: "uppercase",
-                              boxShadow: "0 2px 6px rgba(165, 28, 73, 0.25)",
+                              border: "1px solid var(--border, #cbd5e1)",
                             }}
-                          >
-                            {(t.name && t.name.trim()) ? t.name.trim().charAt(0) : "T"}
-                          </div>
-                        </div>
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              if (e.currentTarget.nextSibling) {
+                                e.currentTarget.nextSibling.style.display = "inline-block";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <span
+                          style={{
+                            color: "#94a3b8",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            display: imgSrc ? "none" : "inline-block",
+                          }}
+                        >
+                          ---
+                        </span>
                       </td>
                       <td style={styles.td}>{t.name}</td>
                       <td style={styles.td}>{t.designation}</td>
@@ -724,6 +723,10 @@ export default function AdminTestimonialList() {
               totalItems={filteredTestimonials.length}
               itemsPerPage={pageSize}
               onPageChange={setPage}
+              onItemsPerPageChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
               itemName="testimonials"
             />
           </div>

@@ -4,17 +4,19 @@
 }
 
 .admin-flight-search-history-page .admin-search-history-table-head {
-  padding: 10px 14px !important;
+  padding: 6px 14px !important;
+  min-height: 28px !important;
   background: #A51C49 !important;
   border-radius: 12px 12px 0 0 !important;
+  align-items: center !important;
 }
 
 .admin-flight-search-history-page .admin-search-history-table-head span {
   color: #ffffff !important;
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
+  font-size: 0.73rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;

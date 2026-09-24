@@ -41,8 +41,17 @@ export default function TestimonialsPage() {
       try {
         setLoading(true);
         const data = await getPublicTestimonials();
-        if (data && Array.isArray(data) && data.length > 0) {
-          setTestimonials(data.filter(t => t.status === "Active"));
+        let items = [];
+        if (Array.isArray(data)) {
+          items = data;
+        } else if (Array.isArray(data?.data)) {
+          items = data.data;
+        } else if (Array.isArray(data?.data?.testimonials)) {
+          items = data.data.testimonials;
+        }
+
+        if (items && items.length > 0) {
+          setTestimonials(items.filter(t => t.status === "Active"));
         } else {
           setTestimonials(FALLBACK_TESTIMONIALS);
         }

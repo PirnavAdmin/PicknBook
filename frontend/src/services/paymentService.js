@@ -30,25 +30,26 @@ export async function createCashfreeOrder({
   bookingPayloadJson,
   couponCode,
   promotionId,
-  useWallet = false,
 }) {
-  const returnUrl = ""; // Explicitly empty to prevent Cashfree auto-redirect in _modal checkout. We handle redirect via Promise.then.
+  const returnUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/payment/cashfree/return?order_id={order_id}`
+      : "/payment/cashfree/return?order_id={order_id}";
 
   const notifyUrl = typeof window !== "undefined"
     ? toApiUrl("/api/cashfree/webhook")
-    : "https://www.picknbook.in/api/cashfree/webhook";
+    : "https://humiliate-eatery-humvee.ngrok-free.dev/api/cashfree/webhook";
 
   const payload = {
     orderAmount: Number(orderAmount) || 0,
     orderCurrency: "INR",
-    customerId: String(customerId || "").trim(),
+    customerId: String(customerId || "GUEST_001"),
     customerName: String(customerName || "Customer").trim(),
     customerEmail: String(customerEmail || "").trim(),
     customerPhone: String(customerPhone || "").replace(/\D/g, "").slice(-10),
     returnUrl,
     notifyUrl,
     bookingType,
-    useWallet,
     bookingPayloadJson,
     couponCode: couponCode || null,
     promotionId: promotionId || null,
@@ -88,19 +89,17 @@ export async function createCashfreeOrder({
 
   const data = await response.json();
 
-  const sessionId = data?.paymentSessionId || data?.payment_session_id;
-  if (!data || (!sessionId && !data.isWalletFullyPaid)) {
-    throw new Error("Invalid response from payment server: paymentSessionId missing.");
+  if (!data || !data.payment_session_id) {
+    throw new Error("Invalid response from payment server: payment_session_id missing.");
   }
 
   return {
-    order_id: data.cashfreeOrderId || data.order_id || "",
-    payment_session_id: sessionId || "",
-    cf_order_id: data.cfOrderId || data.cf_order_id || "",
-    order_amount: data.gatewayPaidAmount ?? data.totalAmount ?? data.order_amount ?? orderAmount,
+    order_id: data.order_id || "",
+    payment_session_id: data.payment_session_id || "",
+    cf_order_id: data.cf_order_id || "",
+    order_amount: data.order_amount || orderAmount,
     order_currency: data.order_currency || "INR",
-    order_status: data.orderStatus || data.order_status || "ACTIVE",
-    isWalletFullyPaid: data.isWalletFullyPaid || false,
+    order_status: data.order_status || "ACTIVE",
   };
 }
 

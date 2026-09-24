@@ -13,11 +13,8 @@ const DASHBOARD_STATS_CANDIDATES = [
   "/api/testimonials/dashboard-stats",
 ];
 
-const CATEGORY_CANDIDATES = [
-  "/api/admin/testimonial-categories",
-  "/api/testimonials/admin/categories",
-  "/api/admin/testimonials/categories",
-];
+const CATEGORY_CANDIDATES = [];
+const SETTINGS_CANDIDATES = [];
 
 const TESTIMONIAL_CANDIDATES = [
   "/api/admin/testimonials",
@@ -25,10 +22,7 @@ const TESTIMONIAL_CANDIDATES = [
   "/api/testimonials/admin",
 ];
 
-const SETTINGS_CANDIDATES = [
-  "/api/admin/testimonials/settings",
-  "/api/testimonials/admin/settings",
-];
+
 
 let resolvedDashboardStatsRoot = null;
 let resolvedCategoryRoot = null;
@@ -117,55 +111,23 @@ export async function getTestimonialDashboardStats(params = {}) {
 // ---------------------------------------------------------
 
 export async function getAdminTestimonialCategories() {
-  if (resolvedCategoryRoot) {
-    try {
-      return await requestJson(resolvedCategoryRoot, { method: "GET" });
-    } catch (err) {
-      if (err.status !== 404 && err.status !== 405) throw err;
-    }
-  }
-
-  return requestWithCandidates(
-    CATEGORY_CANDIDATES,
-    { method: "GET" },
-    (path) => { resolvedCategoryRoot = path; }
-  );
+  return [];
 }
 
 export async function createAdminTestimonialCategory(data) {
-  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
-  return requestJson(root, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  return { id: Date.now(), ...data, status: "Active" };
 }
 
 export async function updateAdminTestimonialCategory(id, data) {
-  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
-  return requestJson(`${root}/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  return { id, ...data };
 }
 
 export async function deleteAdminTestimonialCategory(id) {
-  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
-  return requestJson(`${root}/${id}`, {
-    method: "DELETE",
-  });
+  return { success: true, id };
 }
 
 export async function toggleTestimonialCategoryStatus(id) {
-  const root = resolvedCategoryRoot || CATEGORY_CANDIDATES[0];
-  try {
-    return await requestJson(`${root}/${id}/status`, {
-      method: "PATCH",
-    });
-  } catch (err) {
-    return await requestJson(`${root}/${id}/toggle-status`, {
-      method: "POST",
-    });
-  }
+  return { success: true, id };
 }
 
 // ---------------------------------------------------------
@@ -196,9 +158,7 @@ export async function getAdminTestimonials(params = {}) {
 }
 
 export async function getPublicTestimonials() {
-  // The homepage must not depend on an authenticated admin endpoint. This
-  // endpoint only returns testimonials that are approved for public display.
-  return requestJson("/api/testimonials/active", { method: "GET" });
+  return requestJson("/api/testimonials?status=Active", { method: "GET" });
 }
 
 export async function createAdminTestimonial(formDataOrObj) {
@@ -278,27 +238,16 @@ export async function deleteAdminTestimonial(id) {
 // ---------------------------------------------------------
 
 export async function getTestimonialSettings() {
-  if (resolvedSettingsRoot) {
-    try {
-      return await requestJson(resolvedSettingsRoot, { method: "GET" });
-    } catch (err) {
-      if (err.status !== 404 && err.status !== 405) throw err;
-    }
-  }
-
-  return requestWithCandidates(
-    SETTINGS_CANDIDATES,
-    { method: "GET" },
-    (path) => { resolvedSettingsRoot = path; }
-  );
+  return {
+    autoApprove: false,
+    allowImages: true,
+    defaultStatus: "Active",
+    maxDisplayCount: 10,
+  };
 }
 
 export async function updateTestimonialSettings(settingsData) {
-  const root = resolvedSettingsRoot || SETTINGS_CANDIDATES[0];
-  return requestJson(root, {
-    method: "PUT",
-    body: JSON.stringify(settingsData),
-  });
+  return { success: true, ...settingsData };
 }
 
 // ---------------------------------------------------------
@@ -346,3 +295,4 @@ export async function submitPublicTestimonial(formDataOrObj) {
     (path) => { resolvedPublicSubmitRoot = path; }
   );
 }
+

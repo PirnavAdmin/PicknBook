@@ -1,0 +1,290 @@
+/* Admin Notification Center Page Styles */
+.anp-container {
+  padding: 16px 20px;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 62px);
+  color: #0f172a;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+/* Header Banner Card */
+.anp-header-card {
+  background: linear-gradient(135deg, #A51C49 0%, #701030 100%);
+  border-radius: 12px;
+  padding: 20px 24px;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 4px 14px rgba(165, 28, 73, 0.22);
+  margin-bottom: 20px;
+}
+
+.anp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.anp-header-icon {
+  width: 46px;
+  height: 46px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.anp-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.anp-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
+.anp-header-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.anp-stat-chip {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+}
+
+/* Cards Grid */
+.anp-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.anp-category-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.anp-category-card:hover {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+/* Category Card Headers */
+.anp-card-header {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.anp-card-header-bus {
+  background: #f0fdf4;
+  border-top: 3px solid #16a34a;
+}
+
+.anp-card-header-flight {
+  background: #eff6ff;
+  border-top: 3px solid #2563eb;
+}
+
+.anp-card-header-hotel {
+  background: #fff7ed;
+  border-top: 3px solid #ea580c;
+}
+
+.anp-card-header-security {
+  background: #fef2f2;
+  border-top: 3px solid #dc2626;
+}
+
+.anp-card-header-wallet {
+  background: #f0fdfa;
+  border-top: 3px solid #0d9488;
+}
+
+.anp-card-header-payments {
+  background: #faf5ff;
+  border-top: 3px solid #9333ea;
+}
+
+.anp-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.anp-card-header h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.anp-badge-count {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 12px;
+}
+
+/* Card Body Items */
+.anp-card-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anp-notif-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+  position: relative;
+}
+
+.anp-notif-item:hover {
+  background: #ffffff;
+  border-color: #A51C49;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(165, 28, 73, 0.08);
+}
+
+.anp-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.anp-item-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.anp-status-pill {
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.anp-status-active, .anp-status-low, .anp-status-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.anp-status-pending, .anp-status-medium {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.anp-status-critical, .anp-status-high, .anp-status-action {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.anp-item-route {
+  font-size: 0.80rem;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.anp-item-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #64748b;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+.anp-item-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.anp-item-hover-hint {
+  font-size: 0.68rem;
+  color: #A51C49;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.anp-notif-item:hover .anp-item-hover-hint {
+  opacity: 1;
+}
+
+/* Card Footer Toggle Button */
+.anp-card-footer {
+  padding: 10px 14px;
+  border-top: 1px solid #f1f5f9;
+  background: #fafafa;
+  text-align: center;
+}
+
+.anp-toggle-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.anp-toggle-btn:hover {
+  background: #A51C49;
+  color: #ffffff;
+  border-color: #A51C49;
+}

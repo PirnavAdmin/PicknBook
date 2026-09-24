@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Wallet,
   ArrowUpRight,
@@ -121,39 +122,13 @@ export default function WalletTransactionList() {
     setLoading(true);
     setError(null);
     try {
-      let rawList = null;
-      try {
-        const res = await WalletApi.getTransactions(1, 100);
-        if (res) rawList = res;
-      } catch (errApi) {
-        console.warn("WalletApi.getTransactions failed, checking fallbacks...", errApi);
-        const fallbackEndpoints = [
-          "/api/Wallet/transactions",
-          "/api/wallet/transactions",
-          "/api/admin/deposits",
-          "/api/deposits"
-        ];
-        const token = localStorage.getItem("token") || localStorage.getItem("adminToken") || localStorage.getItem("b2b_token") || "";
-        for (const ep of fallbackEndpoints) {
-          try {
-            const resp = await fetch(toApiUrl(ep), {
-              headers: {
-                Accept: "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {})
-              }
-            });
-            if (resp.ok) {
-              const data = await resp.json();
-              if (data) {
-                rawList = data;
-                break;
-              }
-            }
-          } catch (e) {
-            // continue
-          }
-        }
-      }
+      const rawList = await adminWalletService.getAdminLedger({
+        page: 1,
+        pageSize: 100,
+        search: searchTerm || undefined,
+        transactionType: typeFilter !== 'ALL' ? typeFilter : undefined,
+        status: statusFilter !== 'ALL' ? statusFilter : undefined,
+      });
 
       const list = Array.isArray(rawList)
         ? rawList
@@ -300,17 +275,20 @@ export default function WalletTransactionList() {
     e.preventDefault();
     if (!adjForm.customerId || !adjForm.amount) return;
 
+    const rawUserId = String(adjForm.customerId).replace(/^(AGT-|CUST-)/i, '').trim();
+    const amountVal = parseFloat(adjForm.amount) || 0;
+
     const newTxn = {
       id: `WLT-${Math.floor(10000 + Math.random() * 90000)}`,
       dateTime: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-      customer: adjForm.customerName || 'Admin User',
+      customer: adjForm.customerName || `Customer #${rawUserId || adjForm.customerId}`,
       customerId: adjForm.customerId,
       type: adjForm.type,
       category: 'Adjustment',
       description: `Admin Adjustment: ${adjForm.reason || 'Manual Balance Correction'}`,
       referenceId: `ADJ-${Math.floor(1000 + Math.random() * 9000)}`,
-      amount: parseFloat(adjForm.amount),
-      balanceAfter: (metrics.totalBalance || 0) + (adjForm.type === 'Credit' ? parseFloat(adjForm.amount) : -parseFloat(adjForm.amount)),
+      amount: amountVal,
+      balanceAfter: (metrics.totalBalance || 0) + (adjForm.type === 'Credit' ? amountVal : -amountVal),
       status: 'Success',
       method: `Admin ${adjForm.type}`,
     };
@@ -528,9 +506,9 @@ export default function WalletTransactionList() {
       </div>
 
       {/* Transaction Details Modal */}
-      {selectedTxn && (
+      {selectedTxn && createPortal(
         <div className="wt-modal-overlay" onClick={() => setSelectedTxn(null)}>
-          <div className="wt-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="wt-modal" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
             <div className="wt-modal-header">
               <h3 className="wt-modal-title">Transaction Details - {selectedTxn.id}</h3>
               <button className="wt-icon-btn" onClick={() => setSelectedTxn(null)}>
@@ -538,46 +516,46 @@ export default function WalletTransactionList() {
               </button>
             </div>
             <div className="wt-modal-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px', marginBottom: '12px' }}>
                 <div>
                   <div className="wt-label">Customer Name</div>
-                  <div style={{ fontWeight: 600 }}>{selectedTxn.customer}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.84rem' }}>{selectedTxn.customer}</div>
                 </div>
                 <div>
                   <div className="wt-label">Customer ID</div>
-                  <div style={{ fontWeight: 600 }}>{selectedTxn.customerId}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.84rem' }}>{selectedTxn.customerId}</div>
                 </div>
                 <div>
                   <div className="wt-label">Date & Time</div>
-                  <div>{selectedTxn.dateTime}</div>
+                  <div style={{ fontSize: '0.82rem' }}>{selectedTxn.dateTime}</div>
                 </div>
                 <div>
                   <div className="wt-label">Transaction Type</div>
-                  <div>{selectedTxn.type} ({selectedTxn.category})</div>
+                  <div style={{ fontSize: '0.82rem' }}>{selectedTxn.type} ({selectedTxn.category})</div>
                 </div>
                 <div>
                   <div className="wt-label">Reference ID</div>
-                  <div style={{ fontFamily: 'monospace' }}>{selectedTxn.referenceId}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.78rem', wordBreak: 'break-all' }}>{selectedTxn.referenceId}</div>
                 </div>
                 <div>
                   <div className="wt-label">Payment Method</div>
-                  <div>{selectedTxn.method}</div>
+                  <div style={{ fontSize: '0.82rem' }}>{selectedTxn.method}</div>
                 </div>
                 <div>
                   <div className="wt-label">Transaction Amount</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 700, color: selectedTxn.type === 'Credit' ? '#15803d' : '#b91c1c' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: selectedTxn.type === 'Credit' ? '#15803d' : '#b91c1c' }}>
                     {selectedTxn.type === 'Credit' ? '+' : '-'}₹{selectedTxn.amount.toLocaleString('en-IN')}
                   </div>
                 </div>
                 <div>
                   <div className="wt-label">Balance After Txn</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>₹{selectedTxn.balanceAfter.toLocaleString('en-IN')}</div>
+                  <div style={{ fontSize: '0.98rem', fontWeight: 600 }}>₹{selectedTxn.balanceAfter.toLocaleString('en-IN')}</div>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px' }}>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
                 <div className="wt-label">Description / Remarks</div>
-                <div style={{ color: '#475569', fontSize: '0.88rem' }}>{selectedTxn.description}</div>
+                <div style={{ color: '#475569', fontSize: '0.82rem' }}>{selectedTxn.description}</div>
               </div>
             </div>
             <div className="wt-modal-footer">
@@ -586,13 +564,14 @@ export default function WalletTransactionList() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Manual Adjustment Modal */}
-      {isAdjModalOpen && (
+      {isAdjModalOpen && createPortal(
         <div className="wt-modal-overlay" onClick={() => setIsAdjModalOpen(false)}>
-          <div className="wt-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="wt-modal" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleAddAdjustment}>
               <div className="wt-modal-header">
                 <h3 className="wt-modal-title">Manual Wallet Adjustment</h3>
@@ -671,13 +650,14 @@ export default function WalletTransactionList() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Customer Wallet Profile Modal */}
-      {isCustomerModalOpen && (
+      {isCustomerModalOpen && createPortal(
         <div className="wt-modal-overlay" onClick={() => setIsCustomerModalOpen(false)}>
-          <div className="wt-modal" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="wt-modal" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <div className="wt-modal-header">
               <h3 className="wt-modal-title">Customer Consolidated Wallet Profile</h3>
               <button className="wt-icon-btn" onClick={() => setIsCustomerModalOpen(false)}>
@@ -692,46 +672,46 @@ export default function WalletTransactionList() {
                 </div>
               ) : customerSummary ? (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', marginBottom: '14px', border: '1px solid #e2e8f0' }}>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a' }}>{customerSummary.customerName}</h4>
-                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>User ID: #{customerSummary.userId}</span>
+                      <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a' }}>{customerSummary.customerName}</h4>
+                      <span style={{ fontSize: '0.78rem', color: '#64748b' }}>User ID: #{customerSummary.userId}</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span className={`wt-badge ${customerSummary.walletStatus === 'Active' ? 'wt-badge-success' : 'wt-badge-failed'}`}>
                         {customerSummary.walletStatus || 'Active'}
                       </span>
-                      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#A51C49', marginTop: '4px' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#A51C49', marginTop: '2px' }}>
                         ₹{(customerSummary.walletBalance || 0).toLocaleString('en-IN')}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px' }}>
-                    <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>Total Deposits</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#166534' }}>₹{(customerSummary.totalDeposits || 0).toLocaleString('en-IN')}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '14px' }}>
+                    <div style={{ background: '#f0fdf4', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.70rem', color: '#15803d', fontWeight: 600 }}>Total Deposits</div>
+                      <div style={{ fontSize: '0.90rem', fontWeight: 700, color: '#166534' }}>₹{(customerSummary.totalDeposits || 0).toLocaleString('en-IN')}</div>
                     </div>
-                    <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#b91c1c', fontWeight: 600 }}>Booking Spend</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#991b1b' }}>₹{(customerSummary.totalBookingSpend || 0).toLocaleString('en-IN')}</div>
+                    <div style={{ background: '#fef2f2', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.70rem', color: '#b91c1c', fontWeight: 600 }}>Booking Spend</div>
+                      <div style={{ fontSize: '0.90rem', fontWeight: 700, color: '#991b1b' }}>₹{(customerSummary.totalBookingSpend || 0).toLocaleString('en-IN')}</div>
                     </div>
-                    <div style={{ background: '#eff6ff', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#1d4ed8', fontWeight: 600 }}>Total Refunds</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e40af' }}>₹{(customerSummary.totalRefunds || 0).toLocaleString('en-IN')}</div>
+                    <div style={{ background: '#eff6ff', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.70rem', color: '#1d4ed8', fontWeight: 600 }}>Total Refunds</div>
+                      <div style={{ fontSize: '0.90rem', fontWeight: 700, color: '#1e40af' }}>₹{(customerSummary.totalRefunds || 0).toLocaleString('en-IN')}</div>
                     </div>
-                    <div style={{ background: '#faf5ff', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>Adjustments</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#581c87' }}>₹{(customerSummary.totalAdjustments || 0).toLocaleString('en-IN')}</div>
+                    <div style={{ background: '#faf5ff', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.70rem', color: '#6b21a8', fontWeight: 600 }}>Adjustments</div>
+                      <div style={{ fontSize: '0.90rem', fontWeight: 700, color: '#581c87' }}>₹{(customerSummary.totalAdjustments || 0).toLocaleString('en-IN')}</div>
                     </div>
                   </div>
 
                   {customerSummary.recentTransactions && customerSummary.recentTransactions.length > 0 && (
                     <div>
-                      <h5 style={{ margin: '0 0 10px', fontSize: '0.9rem', color: '#334155' }}>Recent Wallet Transactions</h5>
-                      <div style={{ fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <h5 style={{ margin: '0 0 8px', fontSize: '0.85rem', color: '#334155' }}>Recent Wallet Transactions</h5>
+                      <div style={{ fontSize: '0.80rem', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         {customerSummary.recentTransactions.map((rt, idx) => (
-                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#f8fafc', borderRadius: '6px' }}>
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: '#f8fafc', borderRadius: '6px' }}>
                             <div>
                               <span style={{ fontWeight: 600 }}>{rt.type || rt.transactionType}</span> - {rt.description || rt.referenceType || rt.refCode}
                             </div>
@@ -754,7 +734,8 @@ export default function WalletTransactionList() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

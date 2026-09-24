@@ -67,29 +67,7 @@ function AvatarImage({ src, name, size = 36, className = "" }) {
   }, [src]);
 
   if (!fullUrl || imgError) {
-    return (
-      <div
-        className={className}
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          borderRadius: '50%',
-          background: '#A51C49',
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 700,
-          fontSize: size <= 30 ? '0.72rem' : size >= 50 ? '1.1rem' : '0.82rem',
-          margin: '0 auto',
-          flexShrink: 0,
-          userSelect: 'none'
-        }}
-        title={name || 'Customer'}
-      >
-        {initial}
-      </div>
-    );
+    return <span style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>---</span>;
   }
 
   return (
@@ -137,6 +115,7 @@ export default function TestimonialManagement() {
   // Pagination, Dropdown and Modal States
   const [catPage, setCatPage] = useState(1);
   const [testPage, setTestPage] = useState(1);
+  const [testPageSize, setTestPageSize] = useState(10);
   const [recentPage, setRecentPage] = useState(1);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [hoveredStatus, setHoveredStatus] = useState(null);
@@ -210,7 +189,7 @@ export default function TestimonialManagement() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const extractArrayPayload = (val) => {
+  const extractArrayPayload = (val, targetKey = null) => {
     if (!val) return [];
     if (Array.isArray(val)) return val;
     if (val && Array.isArray(val.$values)) return val.$values;
@@ -219,7 +198,15 @@ export default function TestimonialManagement() {
     if (Array.isArray(inner)) return inner;
     if (inner && Array.isArray(inner.$values)) return inner.$values;
 
-    const arrayKeys = ['categories', 'testimonials', 'items', 'list', 'records', 'data'];
+    if (targetKey && inner && typeof inner === 'object') {
+      if (Array.isArray(inner[targetKey])) return inner[targetKey];
+      if (inner[targetKey] && Array.isArray(inner[targetKey].$values)) return inner[targetKey].$values;
+    }
+
+    const arrayKeys = targetKey
+      ? [targetKey, 'testimonials', 'categories', 'items', 'list', 'records', 'data']
+      : ['testimonials', 'categories', 'items', 'list', 'records', 'data'];
+
     for (const key of arrayKeys) {
       if (inner && Array.isArray(inner[key])) return inner[key];
       if (inner && inner[key] && Array.isArray(inner[key].$values)) return inner[key].$values;
@@ -346,7 +333,7 @@ export default function TestimonialManagement() {
       if (unifiedCategories) {
         setCategories(unifiedCategories.map(normalizeCategory));
       } else if (cats.status === 'fulfilled') {
-        const rawCats = extractArrayPayload(cats.value);
+        const rawCats = extractArrayPayload(cats.value, 'categories');
         setCategories(rawCats.map(normalizeCategory));
       } else {
         setCategories([]);
@@ -355,7 +342,7 @@ export default function TestimonialManagement() {
       if (unifiedTestimonials) {
         setTestimonials(unifiedTestimonials.map(normalizeTestimonial));
       } else if (tests.status === 'fulfilled') {
-        const rawTests = extractArrayPayload(tests.value);
+        const rawTests = extractArrayPayload(tests.value, 'testimonials');
         setTestimonials(rawTests.map(normalizeTestimonial));
       } else {
         setTestimonials([]);
@@ -1105,25 +1092,7 @@ export default function TestimonialManagement() {
         </div>
       )}
 
-      {/* Top Breadcrumb */}
-      <div className="tm-breadcrumb">
-        <Link to="/admin/dashbord">Home</Link>
-        <span>&gt;</span>
-        <span className="link" onClick={() => changeView('dashboard')}>Testimonial Management</span>
-        <span>&gt;</span>
-        <span className="active">
-          {activeView === 'category_list' ? 'CATEGORY LIST' :
-           activeView === 'testimonial_list' ? 'TESTIMONIAL LIST' :
-           activeView === 'add_category' ? 'ADD CATEGORY' :
-           activeView === 'edit_category' ? 'EDIT CATEGORY' :
-           activeView === 'add_testimonial' ? 'ADD TESTIMONIAL' :
-           activeView === 'edit_testimonial' ? 'EDIT TESTIMONIAL' :
-           activeView === 'testimonial_details' ? 'TESTIMONIAL DETAILS' :
-           activeView === 'review' ? 'REVIEW' :
-           activeView === 'settings' ? 'SETTINGS' :
-           'DASHBOARD'}
-        </span>
-      </div>
+
 
       {/* Main Module Navigation Bar */}
       <div className="tm-nav-tabs">
@@ -1885,11 +1854,11 @@ export default function TestimonialManagement() {
                     );
                   }
 
-                  const paginatedTestimonials = filteredTestimonials.slice((testPage - 1) * 10, testPage * 10);
+                  const paginatedTestimonials = filteredTestimonials.slice((testPage - 1) * testPageSize, testPage * testPageSize);
 
                   return paginatedTestimonials.map((t, idx) => (
                     <tr key={t.id || idx}>
-                        <td style={{ textAlign: 'center' }}><strong>{String(((testPage - 1) * 10) + idx + 1).padStart(2, '0')}</strong></td>
+                        <td style={{ textAlign: 'center' }}><strong>{String(((testPage - 1) * testPageSize) + idx + 1).padStart(2, '0')}</strong></td>
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ fontWeight: 700, color: '#0f172a' }}>{t.name || 'Customer'}</div>
                           <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{t.role || t.designation || 'Traveler'}</div>
@@ -2058,8 +2027,12 @@ export default function TestimonialManagement() {
                   .filter(t => statusFilter === 'All' ? true : (t.status || '').toLowerCase() === statusFilter.toLowerCase())
                   .filter(t => ratingFilter === 'All' ? true : String(t.rating) === ratingFilter).length
               }
-              itemsPerPage={10}
+              itemsPerPage={testPageSize}
               onPageChange={setTestPage}
+              onItemsPerPageChange={(newSize) => {
+                setTestPageSize(newSize);
+                setTestPage(1);
+              }}
               itemName="testimonials"
             />
           </div>
@@ -2080,7 +2053,7 @@ export default function TestimonialManagement() {
             </button>
           </div>
 
-          <form onSubmit={e => handleSaveTestimonial(e, 'Published')}>
+          <form className="tm-form-fullpage" onSubmit={e => handleSaveTestimonial(e, 'Published')}>
             {/* Customer Information */}
             <div className="tm-form-card">
               <h3 style={{ margin: '0 0 20px', fontSize: '0.9rem', fontWeight: 700, color: '#A51C49', textTransform: 'uppercase' }}>

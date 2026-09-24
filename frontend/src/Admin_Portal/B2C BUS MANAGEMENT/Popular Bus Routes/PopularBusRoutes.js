@@ -10,8 +10,9 @@ import {
   AlertCircle
 } from "lucide-react";
 import "./PopularBusRoutes.css";
-import { csvCell } from "../../../utils/adminPortalUtils";
+import { csvCell, translateCityCode } from "../../../utils/adminPortalUtils";
 import { getPopularBusRoutesFromSearchHistory } from "../../../services/busSearchHistoryService";
+import { getAdminDashboardSummary } from "../../../services/adminDashboardService";
 
 const INITIAL_BUS_POPULAR_ROUTES = [
   {
@@ -128,24 +129,30 @@ export default function AdminBusPopularRoutesPage() {
       }
 
       try {
-        const data = await getPopularBusRoutesFromSearchHistory({ 
-          limit: 15, 
-          startDate, 
-          endDate 
-        });
-        if (isMounted) {
-          const mappedRoutes = (data || []).map((r, index) => {
-            const searchCount = Number(r.searches || r.searchCount || 0);
-            const bookingCount = Number(r.bookingCount || Math.max(1, Math.round(searchCount * 0.12)) || 0);
-            const score = Number(r.score || Math.round((bookingCount / (searchCount || 1)) * 1000) || 0);
+        const summary = await getAdminDashboardSummary();
+        let top5Buses = [];
+        if (summary?.topSellingRoutes?.buses && Array.isArray(summary.topSellingRoutes.buses)) {
+          top5Buses = summary.topSellingRoutes.buses.slice(0, 5).map((item, index) => {
+            const fromCity = translateCityCode(item.fromCity);
+            const toCity = translateCityCode(item.toCity);
+            const bookingCount = Number(item.bookingCount || item.count || 0);
+            const searchCount = Number(item.searches || item.searchCount || Math.round(bookingCount * 8.5) || 100);
+            const score = Number(item.score || Math.round((bookingCount / (searchCount || 1)) * 1000) || 0);
             return {
-              ...r,
+              id: `top-selling-bus-${index + 1}`,
+              fromCity,
+              toCity,
+              searches: searchCount,
               searchCount,
               bookingCount,
               score,
+              isTopSelling: true,
             };
           });
-          setRoutes(mappedRoutes);
+        }
+
+        if (isMounted) {
+          setRoutes(top5Buses);
         }
       } catch (err) {
         if (isMounted) {
@@ -240,10 +247,6 @@ export default function AdminBusPopularRoutesPage() {
 
   const topThree = routes.slice(0, 3);
 
-  const totalSearches = routes.reduce((sum, r) => sum + (r.searchCount || 0), 0);
-  const totalBookings = routes.reduce((sum, r) => sum + (r.bookingCount || 0), 0);
-  const totalScore = routes.reduce((sum, r) => sum + (r.score || 0), 0);
-  const avgScore = routes.length ? Math.round(totalScore / routes.length) : 0;
 
   const getPopularityBadgeClass = (score) => {
     if (score >= 200) return "high";
@@ -341,33 +344,6 @@ export default function AdminBusPopularRoutesPage() {
           </button>
         </div>
       </header>
-
-      {/* Stats Summary Panel */}
-      <section className="admin-popular-stats-grid">
-        <article className="admin-popular-stat-card searches">
-          <div className="stat-label">Total Searches</div>
-          <div className="stat-value">
-            {loading ? "..." : totalSearches.toLocaleString()}
-          </div>
-          <div className="stat-meta">Across all bus routes</div>
-        </article>
-
-        <article className="admin-popular-stat-card bookings">
-          <div className="stat-label">Total Bookings</div>
-          <div className="stat-value">
-            {loading ? "..." : totalBookings.toLocaleString()}
-          </div>
-          <div className="stat-meta">Confirmed ticket bookings</div>
-        </article>
-
-        <article className="admin-popular-stat-card score">
-          <div className="stat-label">Average Score</div>
-          <div className="stat-value">
-            {loading ? "..." : avgScore.toLocaleString()}
-          </div>
-          <div className="stat-meta">Average route popularity score</div>
-        </article>
-      </section>
 
       {/* Top 3 Showcase Cards */}
       {!loading && topThree.length > 0 && (

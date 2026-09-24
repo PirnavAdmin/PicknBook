@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import adminFeaturedOffersService from "../../../services/adminFeaturedOffersService";
 import "./BusSearchHistory.css";
 import AdminPagination from "../../../components/AdminPagination";
@@ -103,7 +104,7 @@ function clearSearchHistoryEntries({ searchType } = {}) {
 }
 
 const FALLBACK_API_BASE_URL =
-  "https://satin-eastcoast-musky.ngrok-free.dev";
+  "https://humiliate-eatery-humvee.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const BUS_BOOKINGS_ROOT = "/api/BusBookings";
 const BUS_SEARCH_LOGS_ROOT = "/api/admin/bus-search-logs";
@@ -620,7 +621,7 @@ const CANDIDATE_BASE_URLS = [
   "https://localhost:7147",
   "http://localhost:7179",
   "https://localhost:7179",
-  "https://satin-eastcoast-musky.ngrok-free.dev"
+  "https://humiliate-eatery-humvee.ngrok-free.dev"
 ];
 
 const CANDIDATE_ENDPOINTS = [
@@ -873,6 +874,25 @@ export default function AdminBusSearchHistoryPage() {
     loadSearchHistory(filters);
   }, [filters, loadSearchHistory]);
 
+  const location = useLocation();
+  const highlightId = new URLSearchParams(location.search).get("highlightId");
+
+  useEffect(() => {
+    if (highlightId && historyRows.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`row-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.style.backgroundColor = "#fef08a";
+          el.style.transition = "background-color 1s ease";
+          setTimeout(() => {
+            el.style.backgroundColor = "transparent";
+          }, 3000);
+        }
+      }, 350);
+    }
+  }, [location.search, highlightId, historyRows]);
+
   useEffect(() => {
     setActivePage(1);
   }, [filters, deletedRecordIds.length]);
@@ -1116,6 +1136,7 @@ export default function AdminBusSearchHistoryPage() {
             {pagedRows.map((row, index) => (
               <article
                 key={`${row.id}-${row.searchDateUtc}-${index}`}
+                id={`row-${row.id || row.searchId || index}`}
                 className="admin-search-history-row"
                 style={{ cursor: "pointer" }}
                 onClick={() => setSelectedRecord(row)}

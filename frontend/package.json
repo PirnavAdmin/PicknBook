@@ -12,6 +12,7 @@
     "framer-motion": "^12.42.2",
     "html2canvas": "^1.4.1",
     "http-proxy-middleware": "^2.0.9",
+    "icofont": "^1.0.0",
     "jspdf": "^4.2.0",
     "lucide-react": "^0.575.0",
     "puppeteer": "^25.9.0",
@@ -30,6 +31,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },

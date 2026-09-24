@@ -20,6 +20,18 @@ const formatCurrency = (amount) => `INR ${new Intl.NumberFormat("en-IN", { maxim
 const calculateNights = (inDate, outDate) => (!inDate || !outDate ? 1 : Math.ceil(Math.abs(new Date(outDate) - new Date(inDate)) / 86400000) || 1);
 const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(String(email || "").trim());
 const isValidMobile = (mobile) => String(mobile || "").replace(/\D/g, "").length >= 10 && String(mobile || "").replace(/\D/g, "").length <= 13;
+const getTitleGenderError = (title, gender) => {
+  if (!title || !gender || gender === "Other" || title === "Dr") return "";
+  const femaleTitles = ["Ms", "Mrs", "Miss"];
+  const maleTitles = ["Mr", "Mstr"];
+  if (femaleTitles.includes(title) && gender !== "Female") {
+    return `${title === "Miss" ? "Miss" : title === "Mrs" ? "Mrs." : "Ms."} title requires Female gender.`;
+  }
+  if (maleTitles.includes(title) && gender !== "Male") {
+    return `${title === "Mstr" ? "Mstr" : "Mr."} title requires Male gender.`;
+  }
+  return "";
+};
 const readQueryValue = (params, key, fallback = "") => String(params.get(key) ?? "").trim() || fallback;
 const toTitleCase = (str) => {
   if (!str) return "";
@@ -210,9 +222,9 @@ export default function HotelPassengerDetailsPage() {
   const [offerLoadError, setOfferLoadError] = useState("");
   const [isLoadingOffer, setIsLoadingOffer] = useState(Boolean(!incomingState.offer && initialOfferId));
   const [selectingOfferId, setSelectingOfferId] = useState("");
-  const [selectedMultiRooms, setSelectedMultiRooms] = useState([]);
+  const [selectedMultiRooms, setSelectedMultiRooms] = useState(() => incomingState.selectedMultiRooms || []);
   const roomsCount = searchContext?.roomsConfig ? searchContext.roomsConfig.length : 1;
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => incomingState.currentStep || 1);
   const [specialRequests, setSpecialRequests] = useState([]);
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [gstNumber, setGstNumber] = useState("");
@@ -365,6 +377,13 @@ export default function HotelPassengerDetailsPage() {
       delete next[`guest_${index}_${field}`];
       delete next[`guest_${index}_firstName`];
       delete next[`guest_${index}_lastName`];
+      const nextGuest = { ...guests[index], [field]: value };
+      const titleGenderError = getTitleGenderError(nextGuest.title, nextGuest.gender);
+      if (titleGenderError) {
+        next[`guest_${index}_titleGender`] = titleGenderError;
+      } else {
+        delete next[`guest_${index}_titleGender`];
+      }
       return next;
     });
   };
@@ -553,8 +572,9 @@ export default function HotelPassengerDetailsPage() {
         
         if (hotelDetailsObj) {
             const rawFacilities = hotelDetailsObj.HotelFacilities || hotelDetailsObj.hotelFacilities || [];
+
             const normalizedAmenities = Array.isArray(rawFacilities)
-              ? rawFacilities.map(f => typeof f === "object" && f !== null ? String(f.name || f.Name || f.title || "").trim() : String(f || "").trim()).filter(Boolean)
+              ? rawFacilities.filter(f => f)
               : [];
               
             const rawAttractions = hotelDetailsObj.Attractions || hotelDetailsObj.attractions || [];
@@ -699,9 +719,11 @@ export default function HotelPassengerDetailsPage() {
         isPANMandatory,
         isPassportMandatory,
         blockRoomResponse,
+        currentStep,
+        selectedMultiRooms,
       });
     }
-  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse]);
+  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse, currentStep, selectedMultiRooms]);
 
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
     // If user is re-selecting (replacing an already chosen room), drop the previous
@@ -829,8 +851,21 @@ export default function HotelPassengerDetailsPage() {
   if (blockedRooms.length > 0) {
       blockedRooms.forEach(room => {
           const price = room.Price || room.price || {};
-          let roomBase = Number(price.RoomPrice ?? price.roomPrice ?? price.PublishedPrice ?? price.publishedPrice ?? 0);
-          let roomTax = Number(price.Tax ?? price.tax ?? price.TotalGSTAmount ?? price.totalGSTAmount ?? 0);
+            let roomBase = Number(
+              room.B2CBasePrice || room.b2CBasePrice ||
+              price.B2CBasePrice || price.b2cBasePrice ||
+              price.RoomPrice || price.roomPrice || price.PublishedPrice || price.publishedPrice || 0
+            );
+        const gst = price.GST || price.gst || {};
+        const gstBreakupTotal = [
+          gst.CGSTAmount, gst.cgstAmount,
+          gst.SGSTAmount, gst.sgstAmount,
+          gst.IGSTAmount, gst.igstAmount,
+          gst.CessAmount, gst.cessAmount
+        ].reduce((sum, value) => sum + (Number(value) || 0), 0);
+        const totalGstAmount = Number(price.TotalGSTAmount ?? price.totalGSTAmount ?? 0);
+        const declaredTax = Number(price.Tax ?? price.tax ?? 0);
+        let roomTax = totalGstAmount || declaredTax || gstBreakupTotal;
           let roomMarkup = Number(price.AgentMarkUp ?? price.agentMarkUp ?? price.agentMarkup ?? 0);
           
           if (!isAgent) {
@@ -844,7 +879,10 @@ export default function HotelPassengerDetailsPage() {
           couponDiscount += Number(price.CouponDiscount ?? price.couponDiscount ?? 0);
           convenienceFee += Number(price.ConvenienceFee ?? price.convenienceFee ?? 0);
           
-          const rawTotal = price.b2cDisplayFare ?? price.B2CDisplayFare ?? price.b2cFinalFare ?? price.B2CFinalFare ?? price.b2CTotalPrice ?? price.b2cTotalPrice ?? price.OfferedPrice ?? price.offeredPrice ?? price.PublishedPrice ?? price.publishedPrice ?? 0;
+                const rawTotal = room.B2CTotalPrice || room.b2cTotalPrice ||
+                  price.B2CTotalPrice || price.b2cTotalPrice || price.b2cFinalFare || price.B2CFinalFare ||
+                  price.b2cDisplayFare || price.B2CDisplayFare || price.OfferedPrice || price.offeredPrice ||
+                  price.PublishedPrice || price.publishedPrice || 0;
           finalPayable += Number(rawTotal);
       });
   } else if (offer) {
@@ -927,6 +965,10 @@ export default function HotelPassengerDetailsPage() {
     if (!primary.gender) {
       nextErrors.guest_0_gender = "Please select gender.";
     }
+    const primaryTitleGenderError = getTitleGenderError(primary.title, primary.gender);
+    if (primaryTitleGenderError) {
+      nextErrors.guest_0_titleGender = primaryTitleGenderError;
+    }
     if (!primary.email?.trim()) {
       nextErrors.guest_0_email = "Please enter email.";
     } else if (!isValidEmail(primary.email)) {
@@ -976,6 +1018,10 @@ export default function HotelPassengerDetailsPage() {
           }
         }
       }
+      const titleGenderError = getTitleGenderError(guest.title, guest.gender);
+      if (titleGenderError && (guest.fullName?.trim() || guest.type === "child")) {
+        nextErrors[`guest_${idx}_titleGender`] = titleGenderError;
+      }
     });
 
     if (!agreedToAll) {
@@ -1015,6 +1061,8 @@ export default function HotelPassengerDetailsPage() {
       guests, 
       agreedToTerms, 
       blockRoomResponse,
+      currentStep,
+      selectedMultiRooms,
       payableAmount: finalPayable, 
       fareSummary: { 
         baseFare: basePrice, 
@@ -1296,6 +1344,7 @@ export default function HotelPassengerDetailsPage() {
                       <option value="Dr">Dr.</option>
                     </select>
                     {errors.guest_0_title && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_title}</span>}
+                    {errors.guest_0_titleGender && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_titleGender}</span>}
                   </div>
 
                   {/* Full Name */}
@@ -1326,6 +1375,7 @@ export default function HotelPassengerDetailsPage() {
                       <option value="Other">Other</option>
                     </select>
                     {errors.guest_0_gender && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_gender}</span>}
+                    {errors.guest_0_titleGender && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_titleGender}</span>}
                   </div>
 
                   {/* Age */}
@@ -1426,6 +1476,8 @@ export default function HotelPassengerDetailsPage() {
                                 </>
                               )}
                             </select>
+                            {errors[`guest_${actualIdx}_title`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_title`]}</span>}
+                            {errors[`guest_${actualIdx}_titleGender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_titleGender`]}</span>}
                           </div>
                           <div>
                             <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
@@ -1469,6 +1521,8 @@ export default function HotelPassengerDetailsPage() {
                                 <option value="Female">Female</option>
                                 <option value="Other">Other</option>
                               </select>
+                              {errors[`guest_${actualIdx}_gender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_gender`]}</span>}
+                              {errors[`guest_${actualIdx}_titleGender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_titleGender`]}</span>}
                             </div>
                           )}
                         </div>
@@ -1572,32 +1626,30 @@ export default function HotelPassengerDetailsPage() {
                 </label>
                 {errors.agreedToAll && <p style={{ margin: "4px 0 0 0", color: "red", fontSize: "0.74rem" }}>{errors.agreedToAll}</p>}
                 {formError && <p className="hotel-helper hotel-helper--error" style={{ margin: "8px 0 0 0", color: "red", fontSize: "0.78rem" }}>{formError}</p>}
+                {agreedToAll && (
+                  <div className="booking-action-buttons-row" style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                      <button
+                        type="button"
+                        className="hotel-primary-button"
+                        style={{ minHeight: "44px", padding: "0 22px", borderRadius: "12px", fontWeight: 700, background: "var(--hotel-rose)" }}
+                        onClick={handleContinue}
+                      >
+                        Continue to Payment →
+                      </button>
+                      {!hasValidToken && (
+                        <span style={{ fontSize: "0.72rem", color: "var(--hotel-rose)", marginTop: "4px", fontWeight: 600 }}>
+                          * Login mandatory to pay
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </section>
-
-              {/* Bottom Actions Row */}
-              <div className="booking-action-buttons-row" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                  {agreedToAll && (
-                    <button
-                      type="button"
-                      className="hotel-primary-button"
-                      style={{ minHeight: "44px", padding: "0 22px", borderRadius: "12px", fontWeight: 700, background: "var(--hotel-rose)" }}
-                      onClick={handleContinue}
-                    >
-                      Continue to Payment →
-                    </button>
-                  )}
-                  {!hasValidToken && agreedToAll && (
-                    <span style={{ fontSize: "0.72rem", color: "var(--hotel-rose)", marginTop: "4px", fontWeight: 600 }}>
-                      * Login mandatory to pay
-                    </span>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Right Column Booking Sidebar */}
-            <aside className="hotel-reserve-rail" style={{ position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+            <aside className="hotel-reserve-rail hotel-checkout-side" style={{ position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
               {/* Booking Summary Card */}
               <div className="hotel-reserve-card hotel-your-stay-card" style={{ background: "var(--hotel-surface)", borderRadius: "24px", border: "1px solid var(--hotel-border)", padding: "24px", boxShadow: "var(--hotel-shadow)" }}>
                 <div className="hotel-your-stay-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "16px" }}>
@@ -1698,7 +1750,7 @@ export default function HotelPassengerDetailsPage() {
                     <span>📱</span> <strong>+91 98765 43210</strong>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
-                    <span>✉️</span> <strong>support@pick&book.com</strong>
+                    <span>✉️</span> <strong>contact@picknbook.in</strong>
                   </div>
                 </div>
                 <button 
