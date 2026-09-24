@@ -1089,7 +1089,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.75'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
-                        <img src={pickNBookLogo} alt="PickNBook Logo" style={{ height: '24px', width: 'auto', maxWidth: '125px', objectFit: 'contain', display: 'block' }} />
+                        <img src={pickNBookLogo} alt="Pick&book Logo" style={{ height: '24px', width: 'auto', maxWidth: '125px', objectFit: 'contain', display: 'block' }} />
                     </div>
  
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '440px' }}>

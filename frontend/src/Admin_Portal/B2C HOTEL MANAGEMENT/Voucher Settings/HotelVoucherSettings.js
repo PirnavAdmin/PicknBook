@@ -5,7 +5,7 @@ import "./HotelVoucherSettings.css";
 
 export default function HotelVoucherSettings() {
   const [title, setTitle] = useState("B2C Hotel Booking Confirmation");
-  const [logoUrl, setLogoUrl] = useState("PickNBook");
+  const [logoUrl, setLogoUrl] = useState("Pick&book");
   const [email, setEmail] = useState("hotels@picknbook.com");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [address, setAddress] = useState("102, Prime Square, Hitech City, Hyderabad, India");

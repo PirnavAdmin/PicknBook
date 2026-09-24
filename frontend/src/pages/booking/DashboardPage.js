@@ -617,7 +617,7 @@ export default function DashboardPage() {
             <span style={{ fontSize: '11px', background: walletSummary.walletStatus === 'Active' ? '#d4edda' : '#f8d7da', color: walletSummary.walletStatus === 'Active' ? '#155724' : '#721c24', padding: '4px 8px', borderRadius: '4px', fontWeight: '600' }}>Status: {walletSummary.walletStatus}</span>
           </div>
           <div>
-            <p style={{ fontSize: '11px', color: '#5b7494', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', margin: '0 0 6px 0' }}>Pick&Book Coins</p>
+            <p style={{ fontSize: '11px', color: '#5b7494', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', margin: '0 0 6px 0' }}>Pick&book Coins</p>
             <h2 style={{ margin: '0 0 6px 0', fontSize: '28px', color: '#1c385d', letterSpacing: '-0.02em' }}>{walletSummary.picknbookCoins}</h2>
             <span style={{ fontSize: '11px', color: '#5e7695' }}>Loyalty Rewards</span>
           </div>

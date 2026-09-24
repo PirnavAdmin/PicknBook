@@ -79,7 +79,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PICKNBOOK CLEAN LUXURY 4-TIER FOOTER (INCREASED SIZE)
+   Pick&book CLEAN LUXURY 4-TIER FOOTER (INCREASED SIZE)
 ═══════════════════════════════════════════════════════════════ */
 .pnb-site-footer {
   background-color: #0b1120;
@@ -243,6 +243,7 @@
   transition: all 0.2s ease;
   font-family: inherit;
   text-align: left;
+  text-decoration: none;
 }
 
 .pnb-link-chevron {

@@ -526,7 +526,7 @@ namespace PickNBook.Api.Services.Implementations
                             Gender = p.Gender == "Male" ? 1 : 2,
                             SeatName = p.SeatNumber,
                             Fare = p.BaseFareInr,
-                            Address = "PickNBook Address",
+                            Address = "Pick&book Address",
                             City = bus.FromCity,
                             State = "State",
                             ContactNo = reservation.PassengerPhone,

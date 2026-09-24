@@ -143,7 +143,7 @@ namespace PickNBook.Api.Controllers
                 Date = DateTime.UtcNow.ToString("yyyy-MM-dd"),
                 Time = DateTime.UtcNow.ToString("HH:mm:ss"),
                 Status = "Active",
-                ApplicationName = "PickNBook Admin"
+                ApplicationName = "Pick&book Admin"
             };
 
             await _templateService.SendTemplatedEmailAsync(req.RecipientEmail, req.TemplateKey, testData);

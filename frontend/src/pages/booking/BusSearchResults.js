@@ -1,4 +1,4 @@
-﻿
+
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -1511,7 +1511,7 @@ export default function BusSearchResults() {
     } else if (name.includes("metro")) {
       bgColor = "#faf5ff"; // purple
       textColor = "#9333ea";
-    } else if (name.includes("pick&book")) {
+    } else if (name.includes("Pick&book")) {
       bgColor = "#fef2f2"; // red
       textColor = "#ff0000";
     }

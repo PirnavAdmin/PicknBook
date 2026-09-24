@@ -5,7 +5,7 @@ import { Check, Edit3, Settings, ShieldCheck, X, Upload, Trash2, Info, Save } fr
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.svg";
 
 const DEFAULT_SITE_SETTINGS = {
-  siteName: "PickNBook",
+  siteName: "Pick&book",
   currency: "INR - Indian Rupee",
   siteLogo: "picknbook_logo.png",
   timeZone: "Asia/Kolkata",

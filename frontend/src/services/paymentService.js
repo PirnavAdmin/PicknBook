@@ -2,7 +2,7 @@
 /**
  * paymentService.js
  *
- * Handles all Cashfree payment gateway interactions via the PicknBook backend.
+ * Handles all Cashfree payment gateway interactions via the Pick&book backend.
  * The frontend NEVER calls Cashfree''s server-side API directly.
  * API keys live entirely on the backend.
  */
@@ -12,7 +12,7 @@ import { toApiUrl } from "./apiClient";
 const CASHFREE_CREATE_ORDER_PATH = "/api/cashfree/create-order";
 
 /**
- * Creates a Cashfree payment order via PicknBook backend.
+ * Creates a Cashfree payment order via Pick&book backend.
  * @param {Object} params
  * @param {number} params.orderAmount
  * @param {string} params.customerId

@@ -5,7 +5,7 @@ import "./BusVocherSettings.css";
 
 export default function BusVoucherSettings() {
   const [title, setTitle] = useState("B2C Bus E-Voucher");
-  const [logoUrl, setLogoUrl] = useState("PickNBook");
+  const [logoUrl, setLogoUrl] = useState("Pick&book");
   const [email, setEmail] = useState("support@picknbook.com");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [address, setAddress] = useState("102, Prime Square, Hitech City, Hyderabad, India");

@@ -23,6 +23,21 @@ import {
 } from "lucide-react";
 import { getPublicBlogs } from "../../services/blogService";
 import { toApiAssetUrl } from "../../services/apiClient";
+
+function getBlogImageUrl(blog) {
+  const cat = (blog?.category || "").toLowerCase();
+  const slug = (blog?.slug || "").toLowerCase();
+
+  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
+  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
+  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
+
+  const rawUrl = blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
+    blog?.imagePath || blog?.ImagePath || blog?.filePath || blog?.photoUrl ||
+    blog?.picture || blog?.url || "";
+
+  return rawUrl ? toApiAssetUrl(rawUrl) : "";
+}
 import "../../STYLES/BlogPage.css";
 
 const CATEGORIES = [
@@ -397,7 +412,7 @@ export default function BlogListPage() {
                       <div className="story-card-media">
                         <Link to={`${basePath}/${blog.slug}`}>
                           <img
-                            src={toApiAssetUrl(blog.imageUrl)}
+                            src={getBlogImageUrl(blog)}
                             alt={blog.title}
                             className="story-card-img"
                             onError={(e) => {
@@ -521,7 +536,7 @@ export default function BlogListPage() {
                       <span className="trending-rank">0{idx + 1}</span>
                       <div className="trending-thumb-wrapper">
                         <img
-                          src={toApiAssetUrl(post.imageUrl)}
+                          src={getBlogImageUrl(post)}
                           alt={post.title}
                           className="trending-thumb"
                           onError={(e) => {

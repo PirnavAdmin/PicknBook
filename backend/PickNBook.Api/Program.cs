@@ -384,7 +384,7 @@ app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/Auth/send-l
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "PickNBook API v1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pick&book API v1");
     c.RoutePrefix = "swagger";
     c.ConfigObject.AdditionalItems.Add("syntaxHighlight", false);
     c.DefaultModelsExpandDepth(-1);

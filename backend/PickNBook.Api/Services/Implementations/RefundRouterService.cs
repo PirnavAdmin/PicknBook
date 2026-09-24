@@ -168,7 +168,7 @@ namespace PickNBook.Api.Services.Implementations
 
             if (isUserPreferWallet)
             {
-                // Customer explicitly chose PickNBook Wallet: 100% of refundable amount to Wallet
+                // Customer explicitly chose Pick&book Wallet: 100% of refundable amount to Wallet
                 targetWalletAmount = context.RefundAmount;
                 targetGatewayAmount = 0m;
             }

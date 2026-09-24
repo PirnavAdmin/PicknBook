@@ -232,7 +232,7 @@ export default function Topbar() {
           </button>
 
           <button type="button" className="brand" onClick={handleLogoClick}>
-            <img className="brand-logo" src={pickNBookLogo} alt="Pick N Book" />
+            <img className="brand-logo" src={pickNBookLogo} alt="Pick&book" />
           </button>
 
           <div className="nav-menu-links visible airbnb-nav-container">
@@ -358,7 +358,7 @@ export default function Topbar() {
                 onClick={(e) => { setMobileMenuOpen(false); handleLogoClick(e); }}
                 style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
               >
-                <img className="brand-logo" src={pickNBookLogo} alt="Pick N Book" />
+                <img className="brand-logo" src={pickNBookLogo} alt="Pick&book" />
               </button>
               <button
                 type="button"

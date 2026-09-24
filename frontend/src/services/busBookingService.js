@@ -2318,7 +2318,11 @@ export function isBusCategoryOfferOrCoupon(item) {
 
 export async function listAvailableBusCoupons() {
   const data = await requestJsonWithFallback(
-    [`${BUS_BOOKINGS_ROOT}/user/available`, `${LEGACY_BUS_BOOKINGS_ROOT}/user/available`],
+    [
+      "/api/Coupons?serviceType=bus",
+      `${BUS_BOOKINGS_ROOT}/user/available`,
+      `${LEGACY_BUS_BOOKINGS_ROOT}/user/available`,
+    ],
     { method: "GET", skipAuth: true, allowAuthFallback: true }
   );
 
@@ -2462,9 +2466,11 @@ function normalizeFeaturedOffer(record) {
     ? String(pickFirst(promo, ["code", "Code"], "") || "").toUpperCase()
     : String(pickFirst(record, ["couponCode", "CouponCode"], "") || "").toUpperCase();
 
-  const isPercentageDiscount = promo
-    ? String(pickFirst(promo, ["discountType", "DiscountType"], "")).toLowerCase() === "percentage"
-    : Boolean(pickFirst(record, ["isPercentageDiscount", "IsPercentageDiscount"], false));
+  const discountType = promo
+    ? pickFirst(promo, ["discountType", "DiscountType"], "")
+    : pickFirst(record, ["discountType", "DiscountType"], "");
+  const isPercentageDiscount = String(discountType).toLowerCase() === "percentage"
+    || Boolean(pickFirst(record, ["isPercentageDiscount", "IsPercentageDiscount"], false));
 
   const discountValue = promo
     ? Number(pickFirst(promo, ["discountValue", "DiscountValue"], 0)) || 0
@@ -2493,6 +2499,12 @@ function normalizeFeaturedOffer(record) {
     isPercentageDiscount,
     discountValue,
     couponExpiresAtUtc,
+    startDateUtc: promo
+      ? pickFirst(promo, ["startDateUtc", "StartDateUtc"], null)
+      : pickFirst(record, ["startDateUtc", "StartDateUtc"], null),
+    endDateUtc: promo
+      ? pickFirst(promo, ["endDateUtc", "EndDateUtc"], null)
+      : pickFirst(record, ["endDateUtc", "EndDateUtc"], null),
     isCouponActive: pickFirst(record, ["isCouponActive", "IsCouponActive"], true) !== false,
     bookingType: String(pickFirst(record, ["bookingType", "BookingType"], "") || ""),
     imageUrl: absoluteImageUrl,

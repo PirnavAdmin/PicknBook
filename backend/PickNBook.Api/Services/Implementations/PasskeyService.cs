@@ -234,7 +234,7 @@ namespace PickNBook.Api.Services.Implementations
                 await MigrateGuestDataAsync(guestId, user.Id.ToString());
             }
 
-            // Generate standard PickNBook JWT token
+            // Generate standard Pick&book JWT token
             string token = _jwtService.GenerateToken(user, user.Role);
 
             var userData = new

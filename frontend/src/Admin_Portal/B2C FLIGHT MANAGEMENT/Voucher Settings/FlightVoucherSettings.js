@@ -4,7 +4,7 @@ import "./FlightVoucherSettings.css";
 
 export default function FlightVoucherSettings() {
   const [title, setTitle] = useState("B2C Flight E-Ticket Receipt");
-  const [logoUrl, setLogoUrl] = useState("PickNBook");
+  const [logoUrl, setLogoUrl] = useState("Pick&book");
   const [email, setEmail] = useState("flights@picknbook.com");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [address, setAddress] = useState("102, Prime Square, Hitech City, Hyderabad, India");

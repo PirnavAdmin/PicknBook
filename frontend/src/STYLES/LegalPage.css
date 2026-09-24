@@ -118,6 +118,105 @@
   margin-top: 0;
 }
 
+.legal-page-terms .legal-content-card {
+  width: 100%;
+  max-width: none;
+  border-radius: 4px;
+  padding: 40px 48px;
+}
+
+.legal-page-terms .legal-shell {
+  max-width: none;
+}
+
+.legal-page-terms .terms-document-title {
+  margin: 0 0 8px;
+  color: var(--theme-primary, #ff0000);
+  font-size: 1.55rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.legal-page-terms .terms-effective-date {
+  margin: 0 0 28px;
+  color: #475569;
+  font-size: 0.9rem;
+  text-align: center;
+  font-weight: 400;
+}
+
+.legal-page-terms .terms-opening-copy {
+  margin: 0 0 16px;
+}
+
+.legal-page-terms .terms-opening-copy p,
+.legal-page-terms .terms-body-line {
+  margin: 0 0 6px;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  font-weight: 400;
+  text-align: justify;
+}
+
+.legal-page-terms .terms-section h2 {
+  margin: 16px 0 6px;
+  color: #0f172a;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.legal-page-terms .terms-section-content {
+  margin-left: 40px;
+}
+
+.legal-page-terms .terms-clause {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 0;
+  margin: 0 0 6px;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  font-weight: 400;
+  text-align: justify;
+}
+
+.legal-page-terms .terms-clause-number {
+  color: #475569;
+  font-weight: 400;
+  text-align: left;
+}
+
+.legal-page-terms .terms-clause-text {
+  min-width: 0;
+}
+
+.legal-page-terms .terms-bullet-list {
+  column-count: 2;
+  column-gap: 24px;
+  margin: 0 0 6px;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  text-align: justify;
+}
+
+.legal-page-terms .terms-bullet-list li {
+  break-inside: avoid;
+  margin: 0 0 6px;
+  padding-left: 2px;
+  font-weight: 400;
+}
+
+.legal-page-terms .terms-body-line {
+  margin-bottom: 6px;
+}
+
 .legal-empty {
   min-height: 50vh;
   display: flex;
@@ -158,5 +257,17 @@
   .legal-content-card {
     border-radius: 16px;
     padding: 32px 24px;
+  }
+
+  .legal-page-terms .legal-content-card {
+    padding: 32px 20px;
+  }
+
+  .legal-page-terms .terms-section-content {
+    margin-left: 0;
+  }
+
+  .legal-page-terms .terms-bullet-list {
+    column-count: 1;
   }
 }

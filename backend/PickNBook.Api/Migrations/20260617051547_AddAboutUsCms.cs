@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -96,7 +96,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.InsertData(
                 table: "about_us",
                 columns: new[] { "Id", "AboutDescription", "CreatedAtUtc", "Module", "Status", "UpdatedAtUtc", "WhoWeAreDescription", "WhoWeAreHeading", "WhoWeAreImageUrl" },
-                values: new object[] { 1, "<p>Pick N Book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>", new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc), "B2C", "active", new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc), "<p>We are a dedicated team of travel enthusiasts and product engineers building seamless transport bookings.</p>", "Who We Are", "/uploads/about/who.png" });
+                values: new object[] { 1, "<p>Pick&book is a leading travel booking provider delivering flights and bus bookings to travelers worldwide.</p>", new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc), "B2C", "active", new DateTime(2026, 6, 17, 0, 0, 0, 0, DateTimeKind.Utc), "<p>We are a dedicated team of travel enthusiasts and product engineers building seamless transport bookings.</p>", "Who We Are", "/uploads/about/who.png" });
 
             migrationBuilder.InsertData(
                 table: "about_us_counts",

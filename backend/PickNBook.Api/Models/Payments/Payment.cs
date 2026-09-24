@@ -1,7 +1,7 @@
 namespace PickNBook.Api.Models.Payments
 {
     /// <summary>
-    /// Represents a PickNBook payment record that tracks a Cashfree payment lifecycle.
+    /// Represents a Pick&book payment record that tracks a Cashfree payment lifecycle.
     /// Stores the full pricing breakdown (original amount, markup, discount, final amount)
     /// and all Cashfree identifiers needed for reconciliation.
     /// </summary>
@@ -9,7 +9,7 @@ namespace PickNBook.Api.Models.Payments
     {
         public int Id { get; set; }
 
-        /// <summary>PickNBook internal payment reference (e.g., "PAY-20260826143000-1234").</summary>
+        /// <summary>Pick&book internal payment reference (e.g., "PAY-20260826143000-1234").</summary>
         public string PaymentReference { get; set; } = string.Empty;
 
         /// <summary>Cashfree's order_id returned from create-order API.</summary>
@@ -21,7 +21,7 @@ namespace PickNBook.Api.Models.Payments
         /// <summary>Cashfree's payment_session_id for frontend checkout.</summary>
         public string? PaymentSessionId { get; set; }
 
-        /// <summary>PickNBook user ID (links to Users table).</summary>
+        /// <summary>Pick&book user ID (links to Users table).</summary>
         public string UserId { get; set; } = string.Empty;
 
         /// <summary>"Bus", "Hotel", or "Flight" — see BookingType constants.</summary>
@@ -56,13 +56,13 @@ namespace PickNBook.Api.Models.Payments
         // Pricing Breakdown
         // =============================
 
-        /// <summary>Provider/SRDV validated price before PickNBook markup/discount.</summary>
+        /// <summary>Provider/SRDV validated price before Pick&book markup/discount.</summary>
         public decimal OriginalAmount { get; set; }
 
-        /// <summary>PickNBook markup amount added on top of provider price.</summary>
+        /// <summary>Pick&book markup amount added on top of provider price.</summary>
         public decimal MarkupAmount { get; set; }
 
-        /// <summary>PickNBook convenience fee.</summary>
+        /// <summary>Pick&book convenience fee.</summary>
         public decimal ConvenienceFee { get; set; }
 
         /// <summary>Total discount applied (coupon + promotion + auto-discount).</summary>
@@ -115,7 +115,7 @@ namespace PickNBook.Api.Models.Payments
         /// <summary>Status of the final SRDV booking fulfillment (Phase 2).</summary>
         public string FulfillmentStatus { get; set; } = "Pending";
 
-        /// <summary>The PickNBook reservation ID (BusReservationId, HotelReservationId, etc.) once fulfilled.</summary>
+        /// <summary>The Pick&book reservation ID (BusReservationId, HotelReservationId, etc.) once fulfilled.</summary>
         public int? BookingReferenceId { get; set; }
 
         /// <summary>Payment method used (e.g., "upi", "card", "netbanking").</summary>

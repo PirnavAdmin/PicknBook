@@ -2152,7 +2152,7 @@ namespace PickNBook.Api.Controllers
                             Gender = p.Gender == "Male" ? 1 : 2,
                             SeatName = p.SeatNumber,
                             Fare = pricing.Seats.FirstOrDefault(s => s.SeatCode == p.SeatNumber)?.BaseFare ?? bus.PriceInr,
-                            Address = "PickNBook Address",
+                            Address = "Pick&book Address",
                             City = bus.FromCity,
                             State = "State",
                             ContactNo = reservation.PassengerPhone,

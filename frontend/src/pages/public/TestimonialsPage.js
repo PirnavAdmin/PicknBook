@@ -19,7 +19,7 @@ const FALLBACK_TESTIMONIALS = [
     name: "Priya Patel",
     designation: "Verified Customer",
     rating: 5,
-    comment: "Pick&Book made booking our family vacation a breeze. Best customer service I have experienced in a long time.",
+    comment: "Pick&book made booking our family vacation a breeze. Best customer service I have experienced in a long time.",
     status: "Active"
   },
   {
@@ -27,7 +27,7 @@ const FALLBACK_TESTIMONIALS = [
     name: "David K.",
     designation: "Business Consultant",
     rating: 4,
-    comment: "I use Pick&Book for all my business flights. Fast, robust checkout, and accurate ticket confirmation.",
+    comment: "I use Pick&book for all my business flights. Fast, robust checkout, and accurate ticket confirmation.",
     status: "Active"
   }
 ];

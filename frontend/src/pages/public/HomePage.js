@@ -962,10 +962,10 @@ const HOME_GUIDE_NOTES = [
 const HOME_SERVICE_BLOCKS = [
   {
     id: "services",
-    kicker: "Pick & Book Services",
+    kicker: "Pick&book Services",
     title: "Online Bus Booking Made Simple",
     text:
-      "Search routes, compare departures, check fares, and keep booking details in one clear flow. Pick & Book is built for quick city-to-city planning without jumping between different tools.",
+      "Search routes, compare departures, check fares, and keep booking details in one clear flow. Pick&book is built for quick city-to-city planning without jumping between different tools.",
     points: [
       "Live route search with practical filters",
       "Boarding, dropping, and timing details in one place",
@@ -1037,13 +1037,13 @@ const HOME_BUS_FAQS = [
     id: "faq-1",
     question: "How do I book bus tickets online?",
     answer:
-      "Booking bus tickets online on Pick & Book is simple, fast, and secure:\n\n1. Search Routes: Enter your origin city, destination, and travel date, then click 'Search Buses'.\n2. Compare & Filter: Choose from government RTCs and top private fleet operators. Filter results by AC/Non-AC, Seater/Sleeper, departure timing, fare, and boarding points.\n3. Select Your Preferred Seat: Open the interactive live seat layout to select window, aisle, or sleeper berths (lower/upper). Female-friendly seats are clearly marked for privacy and safety.\n4. Pick Boarding & Dropping Points: Select the most convenient pickup and drop-off points closest to you with exact landmarks and arrival times.\n5. Secure Payment & Instant Confirmation: Fill in passenger details, apply promotional discount coupons, and complete payment via UPI, Credit/Debit Card, Net Banking, or mobile wallets. You will instantly receive your confirmed m-ticket via WhatsApp, SMS, and email.",
+      "Booking bus tickets online on Pick&book is simple, fast, and secure:\n\n1. Search Routes: Enter your origin city, destination, and travel date, then click 'Search Buses'.\n2. Compare & Filter: Choose from government RTCs and top private fleet operators. Filter results by AC/Non-AC, Seater/Sleeper, departure timing, fare, and boarding points.\n3. Select Your Preferred Seat: Open the interactive live seat layout to select window, aisle, or sleeper berths (lower/upper). Female-friendly seats are clearly marked for privacy and safety.\n4. Pick Boarding & Dropping Points: Select the most convenient pickup and drop-off points closest to you with exact landmarks and arrival times.\n5. Secure Payment & Instant Confirmation: Fill in passenger details, apply promotional discount coupons, and complete payment via UPI, Credit/Debit Card, Net Banking, or mobile wallets. You will instantly receive your confirmed m-ticket via WhatsApp, SMS, and email.",
   },
   {
     id: "faq-2",
     question: "Can I book RTC and private bus operators?",
     answer:
-      "Yes, Pick & Book is an authorized booking platform for all major government RTC corporations as well as over 2,500+ premier private bus operators across India:\n\n• Government State RTCs: Book official tickets for APSRTC, TSRTC, KSRTC (Karnataka), MSRTC, HRTC, GSRTC, UPSRTC, RSRTC, and more with scheduled reliability.\n• Premium Private Operators: Choose from leading private fleets such as IntrCity SmartBus, VRL Travels, SRS Travels, Orange Tours, Zingbus, Kallada, and SRM.\n• Diverse Bus Types: Select from multi-axle Volvo AC Sleeper, Scania Luxury, BharatBenz, Mercedes-Benz, Non-AC Seater, and semi-sleepers equipped with charging sockets, blankets, water bottles, and GPS tracking.",
+      "Yes, Pick&book is an authorized booking platform for all major government RTC corporations as well as over 2,500+ premier private bus operators across India:\n\n• Government State RTCs: Book official tickets for APSRTC, TSRTC, KSRTC (Karnataka), MSRTC, HRTC, GSRTC, UPSRTC, RSRTC, and more with scheduled reliability.\n• Premium Private Operators: Choose from leading private fleets such as IntrCity SmartBus, VRL Travels, SRS Travels, Orange Tours, Zingbus, Kallada, and SRM.\n• Diverse Bus Types: Select from multi-axle Volvo AC Sleeper, Scania Luxury, BharatBenz, Mercedes-Benz, Non-AC Seater, and semi-sleepers equipped with charging sockets, blankets, water bottles, and GPS tracking.",
   },
   {
     id: "faq-3",
@@ -1055,7 +1055,7 @@ const HOME_BUS_FAQS = [
     id: "faq-4",
     question: "Where can I check boarding point and ticket details?",
     answer:
-      "Your boarding point and confirmed ticket details are accessible anytime across multiple channels:\n\n• Instant SMS & WhatsApp Notification: As soon as your booking succeeds, a confirmation message containing your PNR, bus operator contact, assigned seat numbers, and bus details is sent to your phone.\n• Email E-Ticket: A complete PDF ticket and tax invoice with fare breakdown and terms is delivered to your inbox.\n• 'My Bookings' Dashboard: Log in to your Pick & Book profile and navigate to 'My Bookings' to view, download, print, or cancel tickets with 1-click.\n• GPS Boarding Location: Your ticket includes a direct Google Maps link for the designated pickup stop, making navigation seamless.\n• Live Bus Tracking: A live GPS tracking link is typically sent via SMS 30–60 minutes before scheduled departure so you can monitor your bus in real time.",
+      "Your boarding point and confirmed ticket details are accessible anytime across multiple channels:\n\n• Instant SMS & WhatsApp Notification: As soon as your booking succeeds, a confirmation message containing your PNR, bus operator contact, assigned seat numbers, and bus details is sent to your phone.\n• Email E-Ticket: A complete PDF ticket and tax invoice with fare breakdown and terms is delivered to your inbox.\n• 'My Bookings' Dashboard: Log in to your Pick&book profile and navigate to 'My Bookings' to view, download, print, or cancel tickets with 1-click.\n• GPS Boarding Location: Your ticket includes a direct Google Maps link for the designated pickup stop, making navigation seamless.\n• Live Bus Tracking: A live GPS tracking link is typically sent via SMS 30–60 minutes before scheduled departure so you can monitor your bus in real time.",
   },
 ];
 
@@ -1250,13 +1250,13 @@ const HOME_FLIGHT_FAQS = [
     id: "flight-faq-1",
     question: "How do I search for flights online?",
     answer:
-      "Searching for flights on Pick & Book is fast and intuitive:\n\n1. Enter your origin departure airport and final destination city.\n2. Choose your journey date (and return date if planning a round trip, or add legs for multi-city routes).\n3. Select traveller count (Adults, Children, Infants) and preferred cabin class (Economy, Premium Economy, Business, First Class).\n4. Click 'Search Flights' to compare real-time airline fares, non-stop vs connecting routes, baggage allowances, and departure schedules across IndiGo, Air India, SpiceJet, Akasa Air, and international carriers.",
+      "Searching for flights on Pick&book is fast and intuitive:\n\n1. Enter your origin departure airport and final destination city.\n2. Choose your journey date (and return date if planning a round trip, or add legs for multi-city routes).\n3. Select traveller count (Adults, Children, Infants) and preferred cabin class (Economy, Premium Economy, Business, First Class).\n4. Click 'Search Flights' to compare real-time airline fares, non-stop vs connecting routes, baggage allowances, and departure schedules across IndiGo, Air India, SpiceJet, Akasa Air, and international carriers.",
   },
   {
     id: "flight-faq-2",
     question: "Can I search one-way, round-trip, and multi-city flights?",
     answer:
-      "Yes, Pick & Book offers full flexibility for all travel itineraries:\n\n• One-Way Trips: Quick point-to-point flight booking with direct price comparison.\n• Round-Trip Bookings: Search outbound and return flights together to take advantage of exclusive round-trip discounts and coordinated flight connections.\n• Multi-City Journeys: Seamlessly plan complex multi-city routes and layovers across different dates in a single unified booking flow.",
+      "Yes, Pick&book offers full flexibility for all travel itineraries:\n\n• One-Way Trips: Quick point-to-point flight booking with direct price comparison.\n• Round-Trip Bookings: Search outbound and return flights together to take advantage of exclusive round-trip discounts and coordinated flight connections.\n• Multi-City Journeys: Seamlessly plan complex multi-city routes and layovers across different dates in a single unified booking flow.",
   },
   {
     id: "flight-faq-3",
@@ -1268,7 +1268,7 @@ const HOME_FLIGHT_FAQS = [
     id: "flight-faq-4",
     question: "Where do I complete web check-in?",
     answer:
-      "You can complete mandatory airline web check-in directly through Pick & Book's Web Check-In page:\n\n• Access direct links to all major domestic and international airline check-in portals.\n• Web check-in usually opens 48 to 24 hours prior to departure.\n• Enter your airline PNR and surname to select your seats, declare baggage, and instantly download or print your boarding passes.",
+      "You can complete mandatory airline web check-in directly through Pick&book's Web Check-In page:\n\n• Access direct links to all major domestic and international airline check-in portals.\n• Web check-in usually opens 48 to 24 hours prior to departure.\n• Enter your airline PNR and surname to select your seats, declare baggage, and instantly download or print your boarding passes.",
   },
 ];
 
@@ -1472,7 +1472,7 @@ const HOME_HOTEL_FAQS = [
     id: "hotel-faq-1",
     question: "How do I search for hotels online?",
     answer:
-      "Finding and booking your ideal stay on Pick & Book takes just moments:\n\n1. Enter your destination city, tourist landmark, or preferred neighborhood.\n2. Choose check-in and check-out dates along with the number of rooms and guests.\n3. Use smart filters to sort by customer ratings, price range, free cancellation, complimentary breakfast, swimming pool, and proximity to city centers.\n4. Browse verified photos, amenities, room types, and authentic guest reviews before booking.",
+      "Finding and booking your ideal stay on Pick&book takes just moments:\n\n1. Enter your destination city, tourist landmark, or preferred neighborhood.\n2. Choose check-in and check-out dates along with the number of rooms and guests.\n3. Use smart filters to sort by customer ratings, price range, free cancellation, complimentary breakfast, swimming pool, and proximity to city centers.\n4. Browse verified photos, amenities, room types, and authentic guest reviews before booking.",
   },
   {
     id: "hotel-faq-2",
@@ -1490,7 +1490,7 @@ const HOME_HOTEL_FAQS = [
     id: "hotel-faq-4",
     question: "Can I compare popular city stays?",
     answer:
-      "Yes, Pick & Book curates handpicked collections of top business hotels, luxury resorts, boutique villas, and budget stays across major destinations including Goa, Jaipur, Mumbai, Bengaluru, Hyderabad, Delhi, and Kerala.\n\nCompare verified guest ratings, room categories, location highlights, and exclusive member discounts side-by-side to book the best stay.",
+      "Yes, Pick&book curates handpicked collections of top business hotels, luxury resorts, boutique villas, and budget stays across major destinations including Goa, Jaipur, Mumbai, Bengaluru, Hyderabad, Delhi, and Kerala.\n\nCompare verified guest ratings, room categories, location highlights, and exclusive member discounts side-by-side to book the best stay.",
   },
 ];
 
@@ -1517,7 +1517,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every bus booking feel clear before you pay.",
     insightsText:
-      "Pick & Book helps users compare the full bus journey, not just the price, so the final booking feels easier to trust.",
+      "Pick&book helps users compare the full bus journey, not just the price, so the final booking feels easier to trust.",
     highlights: HIGHLIGHTS,
     services: HOME_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book buses with clearer choices",
@@ -1545,13 +1545,13 @@ const HOME_MODE_CONTENT = {
       "Save routes, compare fares, and keep tickets ready for city-to-city journeys.",
     appOffer: "",
     appBenefits: HOME_APP_BENEFITS,
-    aboutTitle: "About Pick & Book Bus Booking",
+    aboutTitle: "About Pick&book Bus Booking",
     aboutParagraphs: [
-      "Pick & Book makes city-to-city road travel seamless and dependable by letting you easily compare routes, fares, travel durations, and live seat availability across top private operators and state transport corporations. Every booking undergoes real-time verification, direct operator mapping, and instant confirmation, with completely transparent pricing and secure payments. From precise departure dates and live seat selection to boarding point clarity and flexible cancellation policies, every detail of your journey is thoroughly validated before you pay, all backed by 24/7 dedicated customer support for total peace of mind."
+      "Pick&book makes city-to-city road travel seamless and dependable by letting you easily compare routes, fares, travel durations, and live seat availability across top private operators and state transport corporations. Every booking undergoes real-time verification, direct operator mapping, and instant confirmation, with completely transparent pricing and secure payments. From precise departure dates and live seat selection to boarding point clarity and flexible cancellation policies, every detail of your journey is thoroughly validated before you pay, all backed by 24/7 dedicated customer support for total peace of mind."
     ],
     bannerBadge: "INTERCITY BUS & SEAT GUARANTEE",
     bannerTitle: "Book Bus Tickets Smarter. Travel Farther.",
-    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick & Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes.",
+    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick&book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes.",
     bannerStats: [
       ["99.8%", "On-Time Departure"],
       ["5,000+", "Daily Bus Routes"],
@@ -1576,7 +1576,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every flight search feel organized before you book.",
     insightsText:
-      "Pick & Book brings fare comparison, traveller details, cabin choices, and airline actions into a calmer flight booking flow.",
+      "Pick&book brings fare comparison, traveller details, cabin choices, and airline actions into a calmer flight booking flow.",
     highlights: FLIGHT_HIGHLIGHTS,
     services: FLIGHT_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book flights with clearer choices",
@@ -1604,14 +1604,14 @@ const HOME_MODE_CONTENT = {
       "Save frequent flight routes, compare airline choices, and keep PNR and check-in actions ready.",
     appOffer: "",
     appBenefits: HOME_FLIGHT_APP_BENEFITS,
-    aboutTitle: "About Pick & Book Flight Booking",
+    aboutTitle: "About Pick&book Flight Booking",
     aboutParagraphs: [
-      "Pick & Book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
+      "Pick&book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
       "Manage booking passenger details, select your seats, view cabin class conditions, and complete check-in procedures directly from your personalized portal."
     ],
     bannerBadge: "FLIGHT DESK & PASSENGER GUARANTEE",
     bannerTitle: "Book Flights Smarter. Fly Higher.",
-    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick & Book for domestic & international flights with real-time fare comparison and web check-in.",
+    bannerText: "Join over 10 Lakh+ happy passengers who trust Pick&book for domestic & international flights with real-time fare comparison and web check-in.",
     bannerStats: [
       ["99.9%", "Flight Reliability"],
       ["500+", "Global Airlines"],
@@ -1636,7 +1636,7 @@ const HOME_MODE_CONTENT = {
     features: [],
     insightsTitle: "Make every hotel search feel clear before you choose.",
     insightsText:
-      "Pick & Book hotel mode brings destination, dates, room count, guest details, and stay choices into the same calm booking flow.",
+      "Pick&book hotel mode brings destination, dates, room count, guest details, and stay choices into the same calm booking flow.",
     highlights: HOTEL_HIGHLIGHTS,
     services: HOTEL_SERVICE_BLOCKS,
     serviceHeading: "Plan, compare, and book hotels with clearer choices",
@@ -1664,14 +1664,14 @@ const HOME_MODE_CONTENT = {
       "Save favourite cities, compare stay options, and keep room and guest details ready.",
     appOffer: "",
     appBenefits: HOME_HOTEL_APP_BENEFITS,
-    aboutTitle: "About Pick & Book Hotel Booking",
+    aboutTitle: "About Pick&book Hotel Booking",
     aboutParagraphs: [
-      "Pick & Book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
+      "Pick&book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
       "Whether it is a business trip, weekend break, family stay, or stopover, hotel mode keeps room choices, stay dates, amenities, and booking details easy to compare.",
     ],
     bannerBadge: "STAY & ROOM CONFIRMATION GUARANTEE",
     bannerTitle: "Book Hotels Smarter. Stay Better.",
-    bannerText: "Join over 10 Lakh+ happy travelers who trust Pick & Book for verified hotel stays, luxury resorts, and instant check-in confirmation.",
+    bannerText: "Join over 10 Lakh+ happy travelers who trust Pick&book for verified hotel stays, luxury resorts, and instant check-in confirmation.",
     bannerStats: [
       ["100%", "Stay Assurance"],
       ["10,000+", "Verified Stays"],
@@ -2492,11 +2492,18 @@ function FeaturedOfferImage({ offer }) {
 }
 
 function getBlogImageUrl(blog) {
-  return toApiAssetUrl(
-    blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
+  const cat = (blog?.category || "").toLowerCase();
+  const slug = (blog?.slug || "").toLowerCase();
+
+  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
+  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
+  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
+
+  const rawUrl = blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
     blog?.imagePath || blog?.ImagePath || blog?.filePath || blog?.photoUrl ||
-    blog?.picture || blog?.url || ""
-  );
+    blog?.picture || blog?.url || "";
+
+  return rawUrl ? toApiAssetUrl(rawUrl) : "";
 }
 
 function formatBlogDate(dateValue) {
@@ -8705,7 +8712,7 @@ export default function HomePage() {
               btnAction: () => openPopularBusRoutes(),
               bgImage: sunsetHighwayBg,
               vehicleImg: busCoastBanner,
-              vehicleAlt: "Pick & Book Luxury Bus",
+              vehicleAlt: "Pick&book Luxury Bus",
               vehicleTag: "",
               stats: [
                 { color: "red", icon: <MapPin size={13} />, value: "5000+", label: "Routes Covered" },
@@ -9098,7 +9105,7 @@ export default function HomePage() {
                 {/* Modern Header Inside Background Card */}
                 <div className="flight-master-header">
                   <div className="flight-master-header-left">
-                    <h2 className="flight-master-title">Why Book Flights With Pick & Book</h2>
+                    <h2 className="flight-master-title">Why Book Flights With Pick&book</h2>
                     <p className="flight-master-subtitle">Enjoy automated travel perks, guaranteed price transparency, and zero cancellation delays.</p>
                   </div>
                 </div>
@@ -9286,7 +9293,7 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="assurance-paragraph-text">
-            Every booking made through Pick & Book undergoes real-time verification, transparent fare comparison, and instant confirmation. From exact travel dates, passenger counts, and room amenity conditions to live seat selection and flexible cancellation policies, we ensure your trip parameters are completely validated before you pay. Enjoy complete peace of mind with 24/7 dedicated support.
+            Every booking made through Pick&book undergoes real-time verification, transparent fare comparison, and instant confirmation. From exact travel dates, passenger counts, and room amenity conditions to live seat selection and flexible cancellation policies, we ensure your trip parameters are completely validated before you pay. Enjoy complete peace of mind with 24/7 dedicated support.
           </p>
         </div>
       </section>
@@ -9365,7 +9372,7 @@ export default function HomePage() {
             <div className="world-class-banner-copy">
               <span className="banner-badge">{homeContent.bannerBadge || "INTERCITY BUS & SEAT GUARANTEE"}</span>
               <h2>{homeContent.bannerTitle || "Book Bus Tickets Smarter. Travel Farther."}</h2>
-              <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick & Book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
+              <p>{homeContent.bannerText || "Join over 10 Lakh+ happy passengers who trust Pick&book for comfortable AC Volvo, sleeper, and luxury bus bookings across 5,000+ routes."}</p>
               <div className="banner-stats-row">
                 {(homeContent.bannerStats || [
                   ["99.8%", "On-Time Departure"],
@@ -9397,7 +9404,7 @@ export default function HomePage() {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = "/picknbook-scenic-panorama-banner.jpg";
               }}
-              alt="Pick & book Journeys Made Simple"
+              alt="Pick&book Journeys Made Simple"
               className="client-testimonial-landscape-img"
             />
           </div>
@@ -9581,7 +9588,7 @@ export default function HomePage() {
                     {imageUrl ? (
                       <img src={imageUrl} alt={blog.title} className="home-blog-image" />
                     ) : (
-                      <div className="home-blog-image home-blog-image-fallback">Pick N Book</div>
+                      <div className="home-blog-image home-blog-image-fallback">Pick&book</div>
                     )}
                     <span className="home-blog-category">{blog.category || "Travel"}</span>
                   </button>

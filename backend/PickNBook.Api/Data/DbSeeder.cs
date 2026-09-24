@@ -49,14 +49,14 @@ public static class DbSeeder
                     Slug = "terms-conditions",
                     Module = "All",
                     Status = "Active",
-                    MetaTitle = "Terms & Conditions | Pick N Book",
-                    MetaKeyword = "Pick N Book terms, booking terms, travel terms",
-                    MetaDescription = "Read the Pick N Book Terms & Conditions for using our travel booking services.",
+                    MetaTitle = "Terms & Conditions | Pick&book",
+                    MetaKeyword = "Pick&book terms, booking terms, travel terms",
+                    MetaDescription = "Read the Pick&book Terms & Conditions for using our travel booking services.",
                     Description = """
-Welcome to Pick N Book! By accessing and using our website, services, and mobile app (collectively referred to as "Services"), you agree to comply with and be bound by the following terms and conditions ("Terms"). Please read them carefully before using our Services.
+Welcome to Pick&book! By accessing and using our website, services, and mobile app (collectively referred to as "Services"), you agree to comply with and be bound by the following terms and conditions ("Terms"). Please read them carefully before using our Services.
 
 1. Acceptance of Terms
-By accessing or using the Pick N Book website or services, you agree to be bound by these Terms and our Privacy Policy, which is incorporated by reference. If you do not agree to these Terms, you should not use our website or services.
+By accessing or using the Pick&book website or services, you agree to be bound by these Terms and our Privacy Policy, which is incorporated by reference. If you do not agree to these Terms, you should not use our website or services.
 
 2. Modifications to Terms
 We reserve the right to update, modify, or revise these Terms at any time. When we do, we will update the effective date at the top of this page. Your continued use of the website or Services after such changes constitutes your acceptance of the revised Terms.
@@ -72,7 +72,7 @@ You agree to use our Services solely for lawful purposes and in accordance with 
 To access certain features of our Services, you may need to create an account. You agree to provide accurate, current, and complete information when registering, and to update your information as necessary. You are solely responsible for the confidentiality of your account information, including your username and password. You agree to notify us immediately if you suspect unauthorized access to your account.
 
 5. Booking and Payment
-When booking flights, buses, or other services via Pick N Book, you agree to:
+When booking flights, buses, or other services via Pick&book, you agree to:
 - Provide accurate and truthful information during the booking process.
 - Pay the applicable fees, including taxes, service charges, and other costs associated with your booking.
 - Acknowledge that all transactions made on the website are subject to availability, and that your booking is not confirmed until payment is processed and confirmed by us.
@@ -85,21 +85,21 @@ Refunds, cancellations, or modifications to bookings are subject to the specific
 Your use of our website and Services is also governed by our Privacy Policy, which describes how we collect, use, and protect your personal information. By using our Services, you consent to the practices described in the Privacy Policy.
 
 8. Intellectual Property
-All content available on the Pick N Book website, including but not limited to text, graphics, logos, images, software, and trademarks, is the property of Pick N Book or its licensors and is protected by copyright and intellectual property laws. You may not reproduce, modify, distribute, or otherwise use the content without our prior written consent.
+All content available on the Pick&book website, including but not limited to text, graphics, logos, images, software, and trademarks, is the property of Pick&book or its licensors and is protected by copyright and intellectual property laws. You may not reproduce, modify, distribute, or otherwise use the content without our prior written consent.
 
 9. Third-Party Links
 Our website may contain links to third-party websites that are not operated or controlled by Pick N Book. We are not responsible for the content, privacy policies, or practices of third-party websites. We encourage you to review the terms and privacy policies of any third-party websites before using them.
 
 10. Disclaimers
-Pick N Book provides the website and Services "as is" and makes no representations or warranties of any kind, express or implied, regarding the accuracy, completeness, reliability, or availability of the Services.
+Pick&book provides the website and Services "as is" and makes no representations or warranties of any kind, express or implied, regarding the accuracy, completeness, reliability, or availability of the Services.
 - We do not guarantee that the Services will be free from errors, viruses, or other harmful components.
 - We do not assume liability for any issues arising from the use of our Services, including but not limited to booking errors, cancellations, delays, or other travel-related issues.
 
 11. Limitation of Liability
-To the maximum extent permitted by law, Pick N Book and its affiliates, officers, employees, or agents shall not be liable for any indirect, incidental, special, punitive, or consequential damages arising out of or in connection with your use of the website or Services, even if we have been advised of the possibility of such damages.
+To the maximum extent permitted by law, Pick&book and its affiliates, officers, employees, or agents shall not be liable for any indirect, incidental, special, punitive, or consequential damages arising out of or in connection with your use of the website or Services, even if we have been advised of the possibility of such damages.
 
 12. Indemnification
-You agree to indemnify, defend, and hold harmless Pick N Book and its affiliates, officers, employees, and agents from any claims, losses, damages, liabilities, and expenses (including legal fees) arising out of your use of the website or Services, your violation of these Terms, or your violation of any rights of another.
+You agree to indemnify, defend, and hold harmless Pick&book and its affiliates, officers, employees, and agents from any claims, losses, damages, liabilities, and expenses (including legal fees) arising out of your use of the website or Services, your violation of these Terms, or your violation of any rights of another.
 
 13. Governing Law and Dispute Resolution
 These Terms shall be governed by and construed in accordance with the laws of India. Any dispute arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts located in India.
@@ -119,11 +119,11 @@ If any provision of these Terms is found to be invalid, illegal, or unenforceabl
                     Slug = "privacy-policy",
                     Module = "All",
                     Status = "Active",
-                    MetaTitle = "Privacy Policy | Pick N Book",
-                    MetaKeyword = "Pick N Book privacy, travel booking privacy, data protection",
-                    MetaDescription = "Read how Pick N Book collects, uses, and safeguards your personal information.",
+                    MetaTitle = "Privacy Policy | Pick&book",
+                    MetaKeyword = "Pick&book privacy, travel booking privacy, data protection",
+                    MetaDescription = "Read how Pick&book collects, uses, and safeguards your personal information.",
                     Description = """
-At Pick N Book, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website, use our services, or make a booking for flights and bus services. By using our website, you agree to the terms and conditions outlined in this Privacy Policy.
+At Pick&book, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website, use our services, or make a booking for flights and bus services. By using our website, you agree to the terms and conditions outlined in this Privacy Policy.
 
 1. Information We Collect
 We collect various types of information to provide and improve our services to you, including:
@@ -169,9 +169,9 @@ We may update this Privacy Policy from time to time.
                     Slug = "refund-cancellation-policy",
                     Module = "All",
                     Status = "Active",
-                    MetaTitle = "Refund & Cancellation Policy | Pick N Book",
-                    MetaKeyword = "PickNBook refunds, cancellation policy, flight refund, bus refund",
-                    MetaDescription = "Read the PickNBook refund and cancellation terms for flight and bus bookings.",
+                    MetaTitle = "Refund & Cancellation Policy | Pick&book",
+                    MetaKeyword = "Pick&book refunds, cancellation policy, flight refund, bus refund",
+                    MetaDescription = "Read the Pick&book refund and cancellation terms for flight and bus bookings.",
                     Description = """
 1. Introduction
 Welcome to PickNBook. This Refund and Cancellation Policy outlines the terms and conditions applicable to all flight and bus bookings made through our platform.

@@ -13,7 +13,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'Pick&Book: Payment successful. Ref {Reference}. Amount Rs. {Amount}',
+                    body = 'Pick&book: Payment successful. Ref {Reference}. Amount Rs. {Amount}',
                     provider_template_id = '1777178997110621673',
                     provider_template_name = 'newPAYMENT_SUCCESS',
                     subject = 'PICNBK',
@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
             migrationBuilder.Sql(@"
                 UPDATE notification_templates 
                 SET 
-                    body = 'PickNBook: Payment successful. Ref {Reference}. Amount Rs. {Amount}',
+                    body = 'Pick&book: Payment successful. Ref {Reference}. Amount Rs. {Amount}',
                     provider_template_id = '1777178954083284292',
                     provider_template_name = 'PAYMENT_SUCCESS',
                     subject = 'PICNBK',

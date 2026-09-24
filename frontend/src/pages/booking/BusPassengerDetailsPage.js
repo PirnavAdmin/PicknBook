@@ -246,7 +246,7 @@ function formatCouponErrorMessage(rawMessage) {
   if (
     msg.includes("System.Exception:") ||
     msg.includes("Exception:") ||
-    msg.includes("at Pick&Book") ||
+    msg.includes("at Pick&book") ||
     msg.includes("Stack trace") ||
     msg.includes("PromotionEngine")
   ) {
@@ -1534,6 +1534,13 @@ export default function BusPassengerDetailsPage() {
     }
     setCouponMessage("");
     setCouponMessageType("");
+    if (submitAttempted) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.coupon;
+        return next;
+      });
+    }
   };
 
   const applyCouponCode = async (code) => {
@@ -2418,7 +2425,7 @@ export default function BusPassengerDetailsPage() {
                         style={{ width: "18px", height: "18px", accentColor: "var(--flow-primary, #ff0000)" }}
                       />
                       <span>
-                        Use Pick&Book Wallet
+                        Use Pick&book Wallet
                         <small style={{ display: "block", color: "#66757b", marginTop: "3px" }}>
                           Available: {formatCurrency(walletBalance)}
                           {walletStatus !== "Active" ? ` (${walletStatus})` : ""}
@@ -2482,6 +2489,12 @@ export default function BusPassengerDetailsPage() {
                       >{isApplyingCoupon ? "Applying..." : "APPLY"}</button>
                     )}
                   </div>
+
+                  {errors.coupon && (
+                    <span className="field-error-text coupon-field-error">
+                      {errors.coupon}
+                    </span>
+                  )}
 
                   {selectedFeaturedOffer && (
                     <p className="coupon-featured-note">

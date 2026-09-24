@@ -1049,7 +1049,7 @@ input[type="radio"] {
   background: var(--theme-primary-soft) !important;
 }
 
-/* Reference-style auth glass composition in Pick N Book theme */
+/* Reference-style auth glass composition in Pick&book theme */
 .travel-auth-page,
 .cp-auth-page {
   --auth-orange: var(--theme-primary, #ff0000) !important;

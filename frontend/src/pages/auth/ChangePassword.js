@@ -142,7 +142,7 @@ function ChangePassword() {
             <section className="cp-auth-form-panel">
               <img
                 src={brandLogo}
-                alt="Pick N Book"
+                alt="Pick&book"
                 className="auth-brand-logo auth-brand-logo-form"
               />
               <h2 className="cp-auth-heading">Change Password</h2>

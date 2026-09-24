@@ -56,7 +56,7 @@ function Reports() {
   const triggerExport = (format) => {
     setToastMsg(`Preparing ${activeTab} Report in ${format} format...`);
     setTimeout(() => {
-      setToastMsg(`Successfully downloaded PickNBook_${activeTab}_Report.${format.toLowerCase()}`);
+      setToastMsg(`Successfully downloaded Pick&book_${activeTab}_Report.${format.toLowerCase()}`);
       setTimeout(() => setToastMsg(''), 3000);
     }, 1500);
   };

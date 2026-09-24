@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
                     'SMS', 
                     'en', 
                     'PICKBK', 
-                    'PickNBook: Payment failed for reference {Reference}. Reason: {Reason}. Please retry or contact support.', 
+                    'Pick&book: Payment failed for reference {Reference}. Reason: {Reason}. Please retry or contact support.', 
                     '1777178903298120394', 
                     'PAYMENT_FAILED', 
                     1, 

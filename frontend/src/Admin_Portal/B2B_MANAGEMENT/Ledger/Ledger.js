@@ -128,7 +128,7 @@ function Ledger() {
         <div className="b2b-card printable-ledger" style={{ border: '1px solid var(--b2b-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', borderBottom: '2px solid var(--b2b-primary)', paddingBottom: '16px' }}>
             <div>
-              <h2 style={{ margin: '0 0 6px', color: 'var(--b2b-primary)' }}>Pick N Book B2B Ledger Account</h2>
+              <h2 style={{ margin: '0 0 6px', color: 'var(--b2b-primary)' }}>Pick&book B2B Ledger Account</h2>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--b2b-muted)' }}>Corporate Account Statement</p>
             </div>
             <div style={{ textAlign: 'right' }}>

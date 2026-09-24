@@ -15,7 +15,7 @@ namespace PickNBook.Api.Migrations
                 (template_key, event_type, channel, language, body, provider_template_id, provider_template_name, is_active, created_at, updated_at)
                 VALUES 
                 ('REGISTRATION_OTP', 'Registration', 'SMS', 'en', 
-                 'Your PickNBook Registration OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP with anyone -- Pirnav Software Solutions', 
+                 'Your Pick&book Registration OTP is {OtpCode}. It is valid for {ExpiryMinutes} minutes. Do not share this OTP with anyone -- Pirnav Software Solutions', 
                  '1777178884304449300', 'REGISTRATION_OTP', 1, NOW(), NOW())
                 ON DUPLICATE KEY UPDATE 
                     body = VALUES(body), 

@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
                     'SMS', 
                     'en', 
                     'PICNBK', 
-                    'PickNBook: Payment successful. Ref {Reference}. Amount Rs. {Amount}', 
+                    'Pick&book: Payment successful. Ref {Reference}. Amount Rs. {Amount}', 
                     '1777178954083284292', 
                     'PAYMENT_SUCCESS', 
                     1, 

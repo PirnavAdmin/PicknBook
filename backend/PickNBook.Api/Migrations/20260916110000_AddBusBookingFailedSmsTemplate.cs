@@ -29,7 +29,7 @@ namespace PickNBook.Api.Migrations
                     'SMS', 
                     'en', 
                     'PICKBK', 
-                    'PickNBook: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.', 
+                    'Pick&book: Bus booking could not be completed. Ref {Reference}. Reason: {Reason}.', 
                     '1777178903385892614', 
                     'BUS_BOOKING_FAILED', 
                     1, 

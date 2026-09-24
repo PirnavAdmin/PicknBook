@@ -21,7 +21,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "left",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&book. All Rights Reserved.",
       paymentIcons: true,
       textAlignment: "center"
     },
@@ -55,7 +55,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "left",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&book. All Rights Reserved.",
       paymentIcons: true,
       textAlignment: "left"
     },
@@ -87,7 +87,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "center",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&book. All Rights Reserved.",
       paymentIcons: false,
       textAlignment: "center"
     },
@@ -118,7 +118,7 @@ const INITIAL_FOOTER_TEMPLATES = [
     columnAlignment: "left",
     bottomBar: {
       enable: true,
-      copyrightText: "© 2024 PickNBook. All Rights Reserved.",
+      copyrightText: "© 2024 Pick&book. All Rights Reserved.",
       paymentIcons: true,
       textAlignment: "center"
     },

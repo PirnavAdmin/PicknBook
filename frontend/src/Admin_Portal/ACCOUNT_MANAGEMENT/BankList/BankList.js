@@ -25,7 +25,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-001',
     bankName: 'HDFC Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '123456784582',
     ifscCode: 'HDFC0001234',
     branch: 'Banjara Hills, Hyderabad',
@@ -45,7 +45,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-002',
     bankName: 'ICICI Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '987654327021',
     ifscCode: 'ICIC0004567',
     branch: 'MG Road, Bangalore',
@@ -65,7 +65,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-003',
     bankName: 'State Bank of India',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '112233442345',
     ifscCode: 'SBIN0005678',
     branch: 'Connaught Place, New Delhi',
@@ -85,7 +85,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-004',
     bankName: 'Axis Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '556677886055',
     ifscCode: 'UTIB0001111',
     branch: 'BKC, Mumbai',
@@ -105,7 +105,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-005',
     bankName: 'Kotak Mahindra Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '998877663987',
     ifscCode: 'KKBK0002222',
     branch: 'Park Street, Kolkata',
@@ -125,7 +125,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-006',
     bankName: 'Canara Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '443322118878',
     ifscCode: 'CNRB0003333',
     branch: 'T Nagar, Chennai',
@@ -145,7 +145,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-007',
     bankName: 'IndusInd Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '667788994455',
     ifscCode: 'INDB0004444',
     branch: 'Gachibowli, Hyderabad',
@@ -165,7 +165,7 @@ const INITIAL_BANK_ACCOUNTS = [
   {
     id: 'BANK-008',
     bankName: 'YES Bank',
-    accountHolder: 'PickNBook Pvt Ltd',
+    accountHolder: 'Pick&book Pvt Ltd',
     accountNumber: '334455667766',
     ifscCode: 'YESB0005555',
     branch: 'Viman Nagar, Pune',
@@ -187,7 +187,7 @@ const INITIAL_BANK_ACCOUNTS = [
 const DEFAULT_FORM = {
   id: '',
   bankName: 'HDFC Bank',
-  accountHolder: 'PickNBook Pvt Ltd',
+  accountHolder: 'Pick&book Pvt Ltd',
   accountNumber: '',
   confirmAccountNumber: '',
   ifscCode: '',

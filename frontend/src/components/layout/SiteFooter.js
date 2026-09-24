@@ -107,17 +107,14 @@ export default function SiteFooter() {
     loadFooterConfig();
   }, []);
 
+  const openFooterPage = (path) => {
+    window.open(path, "_blank", "noopener,noreferrer");
+  };
 
 
   const handleServiceClick = (tab, e) => {
     e.preventDefault();
-    navigate(`/?tab=${tab}`);
-    window.setTimeout(() => {
-      const rootEl = document.getElementById("root");
-      if (rootEl) {
-        rootEl.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    }, 100);
+    openFooterPage(`/?tab=${tab}`);
   };
 
   const copyContact = async (value, type) => {
@@ -163,7 +160,7 @@ export default function SiteFooter() {
               >
                 <img
                   src={pickNBookLogo}
-                  alt="Pick&Book Logo"
+                  alt="Pick&book Logo"
                   className="pnb-footer-brand-logo-img"
                 />
               </div>
@@ -209,7 +206,7 @@ export default function SiteFooter() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate("/offers")}
+                    onClick={(e) => handleServiceClick("offers", e)}
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Exclusive Offers
@@ -228,7 +225,7 @@ export default function SiteFooter() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate("/contact")}
+                    onClick={() => openFooterPage("/contact")}
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Contact Us
@@ -237,7 +234,7 @@ export default function SiteFooter() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate("/travel-guide")}
+                    onClick={() => openFooterPage("/travel-guide")}
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Travel Guide &amp; Blogs
@@ -246,7 +243,7 @@ export default function SiteFooter() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate("/fetch-ticket")}
+                    onClick={() => openFooterPage("/fetch-ticket")}
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Track Booking Status
@@ -255,7 +252,7 @@ export default function SiteFooter() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate("/print-ticket")}
+                    onClick={() => openFooterPage("/print-ticket")}
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Print / Download E-Ticket
@@ -272,36 +269,39 @@ export default function SiteFooter() {
               </h4>
               <ul className="pnb-col-links-list">
                 <li>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/legal/terms-conditions")}
+                  <a
+                    href="/legal/terms-conditions"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Terms &amp; Conditions
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/legal/privacy-policy")}
+                  <a
+                    href="/legal/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Privacy Policy
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/legal/refund-cancellation-policy")}
+                  <a
+                    href="/legal/refund-cancellation-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> Refund &amp; Cancellation Policy
-                  </button>
+                  </a>
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate("/contact")}
+                    onClick={() => openFooterPage("/contact")}
                     className="pnb-footer-link"
                   >
                     <span className="pnb-link-chevron">›</span> 24/7 Support Center
@@ -421,7 +421,7 @@ export default function SiteFooter() {
 
         {/* ── 4. Bottom Copyright & Legal Line ─────────────────── */}
         <div className="pnb-footer-bottom-line">
-          <span className="pnb-bottom-brand">Pick&Book</span>
+          <span className="pnb-bottom-brand">Pick&book</span>
           <span className="pnb-bottom-sep">|</span>
           <span className="pnb-bottom-item">Explore</span>
           <span className="pnb-bottom-sep">|</span>
@@ -435,7 +435,7 @@ export default function SiteFooter() {
           <span className="pnb-bottom-sep">|</span>
           <button
             type="button"
-            onClick={() => navigate("/legal/terms-conditions")}
+            onClick={() => openFooterPage("/legal/terms-conditions")}
             className="pnb-bottom-link"
           >
             Terms
@@ -443,7 +443,7 @@ export default function SiteFooter() {
           <span className="pnb-bottom-sep">|</span>
           <button
             type="button"
-            onClick={() => navigate("/legal/privacy-policy")}
+            onClick={() => openFooterPage("/legal/privacy-policy")}
             className="pnb-bottom-link"
           >
             Privacy
@@ -451,7 +451,7 @@ export default function SiteFooter() {
           <span className="pnb-bottom-sep">|</span>
           <button
             type="button"
-            onClick={() => navigate("/legal/refund-cancellation-policy")}
+            onClick={() => openFooterPage("/legal/refund-cancellation-policy")}
             className="pnb-bottom-link"
           >
             Cancellation Policy

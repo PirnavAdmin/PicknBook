@@ -16,7 +16,7 @@ const DEFAULT_PENDING_AIRLINES = [
     airlineCode: "UK",
     fareType: "SpecialReturn",
     remark: "",
-    updatedBy: "Pick N Book",
+    updatedBy: "Pick&book",
     updatedAtUtc: "2026-03-18T10:21:00+05:30",
   },
 ];
