@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import {
   ArrowLeft, CalendarDays, CheckCircle2, Clock3, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble
 } from "lucide-react";
@@ -230,6 +230,19 @@ export default function HotelPassengerDetailsPage() {
   const [gstNumber, setGstNumber] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] = useState(null);
+
+  useLayoutEffect(() => {
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      document.getElementById("root")?.scrollTo(0, 0);
+    };
+
+    resetScroll();
+    const frameId = window.requestAnimationFrame(resetScroll);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [location.key, location.pathname, location.search]);
 
   const autoContinueProcessed = useRef(false);
   useEffect(() => {
@@ -1546,7 +1559,7 @@ export default function HotelPassengerDetailsPage() {
                     <span>🛏️ <strong>Selected Room:</strong></span>
                     <div style={{ textAlign: "right" }}>
                       <span style={{ display: "block", color: "var(--hotel-ink)", fontWeight: 700 }}>
-                        {offer?.roomCategory ? offer.roomCategory.split(",")[0].trim().replace(/_/g, " ") : "Standard Room"}
+                        {offer?.roomCategory ? offer.roomCategory.split(",")[0].trim().replace(/_/g, " ") : ""}
                       </span>
                       {offer?.roomCategory && offer.roomCategory.includes(",") && (
                         <span style={{ display: "block", fontSize: "0.74rem", color: "var(--hotel-muted)", marginTop: "2px" }}>
@@ -1564,7 +1577,7 @@ export default function HotelPassengerDetailsPage() {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span>👤 <strong>Primary Guest:</strong></span>
                     <span style={{ color: "var(--hotel-ink)", fontWeight: 700 }}>
-                      {guests[0]?.fullName ? `${guests[0].title || "Mr."} ${guests[0].fullName}` : "(Awaiting guest details)"}
+                      {guests[0]?.fullName ? `${guests[0].title || ""} ${guests[0].fullName}`.trim() : ""}
                     </span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "10px", marginTop: "4px" }}>
@@ -1656,7 +1669,7 @@ export default function HotelPassengerDetailsPage() {
                   <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Booking Summary</h3>
                 </div>
 
-                {offer && (
+                {(offer || hotel) && (
                   <>
                     {/* Hotel Mini details */}
                     <div style={{ display: "grid", gridTemplateColumns: "70px 1fr", gap: "12px", marginBottom: "16px" }}>
@@ -1673,7 +1686,7 @@ export default function HotelPassengerDetailsPage() {
                             <strong style={{ color: "var(--hotel-ink)" }}>{Number(hotel.rating).toFixed(1)}</strong>
                           </div>
                         )}
-                        <span style={{ fontSize: "0.78rem", color: "var(--hotel-muted)" }}>📍 {hotel.city || hotel.area || "Location"}</span>
+                        <span style={{ fontSize: "0.78rem", color: "var(--hotel-muted)" }}>📍 {[hotel.city, hotel.area].filter(Boolean).join(", ")}</span>
                       </div>
                     </div>
 
@@ -1707,9 +1720,9 @@ export default function HotelPassengerDetailsPage() {
                         <span style={{ color: "var(--hotel-muted)" }}>Selected Room</span>
                         <div style={{ textAlign: "right" }}>
                           <strong style={{ display: "block", color: "var(--hotel-ink)" }}>
-                            {offer.roomCategory ? offer.roomCategory.split(",")[0].trim().replace(/_/g, " ") : "Standard Room"}
+                            {offer?.roomCategory ? offer.roomCategory.split(",")[0].trim().replace(/_/g, " ") : ""}
                           </strong>
-                          {offer.roomCategory && offer.roomCategory.includes(",") && (
+                          {offer?.roomCategory && offer.roomCategory.includes(",") && (
                             <span style={{ display: "block", fontSize: "0.74rem", color: "var(--hotel-muted)", marginTop: "2px" }}>
                               {offer.roomCategory.split(",").slice(1).join(", ").trim().replace(/_/g, " ")}
                             </span>

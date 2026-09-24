@@ -130,8 +130,8 @@ function getTravelerEmail(traveler) {
 }
 
 function buildContactFromPassenger(passenger, fallback = {}) {
-  const email = String(passenger?.email || fallback.email || "").trim();
-  const mobile = String(passenger?.mobile || passenger?.phone || fallback.mobile || "").trim();
+  const email = String(fallback.email || passenger?.email || "").trim();
+  const mobile = String(fallback.mobile || passenger?.mobile || passenger?.phone || "").trim();
   const whatsappNumber = fallback.whatsappUpdates
     ? String(fallback.whatsappNumber || mobile || "").trim()
     : String(fallback.whatsappNumber || "").trim();
@@ -145,7 +145,15 @@ function buildContactFromPassenger(passenger, fallback = {}) {
 }
 
 function isValidEmail(email) {
-  return /^\S+@\S+\.\S+$/.test(String(email || "").trim());
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const trimmedEmail = String(email || "").trim().toLowerCase();
+  if (!emailRegex.test(trimmedEmail)) return false;
+
+  const invalidDomains = ['gmil.com', 'gmal.com', 'gamil.com', 'gmaill.com', 'yaho.com', 'yahoot.com', 'hotmal.com', 'gmail.co', 'yahoo.co'];
+  const domain = trimmedEmail.split('@')[1];
+  if (invalidDomains.includes(domain)) return false;
+
+  return true;
 }
 
 function isValidMobile(mobile) {
@@ -1268,35 +1276,35 @@ export default function BusPassengerDetailsPage() {
 
     // Validate contact
     if (!contact.email) {
-      newErrors.contact_email = "Required";
+      newErrors.contact_email = "Email address is required";
       errorDetails.push("Contact Email: Email address is required.");
     } else if (!isValidEmail(contact.email)) {
-      newErrors.contact_email = "Invalid";
+      newErrors.contact_email = "Invalid email format. Please check for typos.";
       errorDetails.push("Contact Email: Enter a valid email address (e.g. name@example.com) to receive the e-ticket.");
     }
 
     if (!contact.mobile) {
-      newErrors.contact_mobile = "Required";
+      newErrors.contact_mobile = "Mobile number is required";
       errorDetails.push("Contact Mobile: Mobile number is required.");
     } else if (!isValidMobile(contact.mobile)) {
-      newErrors.contact_mobile = "Invalid";
+      newErrors.contact_mobile = "Enter a valid 10-digit mobile number";
       errorDetails.push("Contact Mobile: Mobile number must be exactly 10 digits to receive SMS updates.");
     }
 
     if (contact.whatsappUpdates) {
       const whatsappValue = contact.whatsappNumber || contact.mobile;
       if (!whatsappValue) {
-        newErrors.contact_whatsappNumber = "Required";
+        newErrors.contact_whatsappNumber = "WhatsApp number is required";
         errorDetails.push("WhatsApp Updates: WhatsApp number is required when WhatsApp updates are enabled.");
       } else if (!isValidMobile(whatsappValue)) {
-        newErrors.contact_whatsappNumber = "Invalid";
+        newErrors.contact_whatsappNumber = "Enter a valid 10-digit WhatsApp number";
         errorDetails.push("WhatsApp Updates: WhatsApp number must be exactly 10 digits.");
       }
     }
 
     // Validate agreement
     if (!agreedToFare) {
-      newErrors.agreedToFare = "Required";
+      newErrors.agreedToFare = "You must agree to the rules and restrictions";
       errorDetails.push("Terms Agreement: You must accept the fare rules and booking terms to proceed.");
     }
 
@@ -1651,7 +1659,6 @@ export default function BusPassengerDetailsPage() {
     setSubmitAttempted(true);
     const isValid = validateForm();
     if (!isValid) {
-      setFormError("Please correct the errors in the form to proceed.");
       return;
     }
     setFormError("");
@@ -2196,6 +2203,13 @@ export default function BusPassengerDetailsPage() {
                       placeholder="Email id *"
                       value={contact.email}
                       onChange={(e) => updateContactField("email", e.target.value)}
+                      onBlur={() => {
+                        if (contact.email && !isValidEmail(contact.email)) {
+                          setErrors(prev => ({ ...prev, contact_email: "Invalid email format. Please check for typos." }));
+                        } else if (!contact.email) {
+                          setErrors(prev => ({ ...prev, contact_email: "Email address is required" }));
+                        }
+                      }}
                     />
                   </div>
                   {errors.contact_email && (
@@ -2212,6 +2226,13 @@ export default function BusPassengerDetailsPage() {
                       placeholder="Mobile *"
                       value={contact.mobile}
                       onChange={(e) => updateContactField("mobile", e.target.value)}
+                      onBlur={() => {
+                        if (contact.mobile && !isValidMobile(contact.mobile)) {
+                          setErrors(prev => ({ ...prev, contact_mobile: "Enter a valid 10-digit mobile number" }));
+                        } else if (!contact.mobile) {
+                          setErrors(prev => ({ ...prev, contact_mobile: "Mobile number is required" }));
+                        }
+                      }}
                     />
                   </div>
                   {errors.contact_mobile && (
@@ -2237,6 +2258,16 @@ export default function BusPassengerDetailsPage() {
                       value={contact.whatsappNumber}
                       onChange={(e) => updateContactField("whatsappNumber", e.target.value)}
                       disabled={!contact.whatsappUpdates}
+                      onBlur={() => {
+                        if (contact.whatsappUpdates) {
+                          const whatsappValue = contact.whatsappNumber || contact.mobile;
+                          if (whatsappValue && !isValidMobile(whatsappValue)) {
+                            setErrors(prev => ({ ...prev, contact_whatsappNumber: "Enter a valid 10-digit WhatsApp number" }));
+                          } else if (!whatsappValue) {
+                            setErrors(prev => ({ ...prev, contact_whatsappNumber: "WhatsApp number is required" }));
+                          }
+                        }
+                      }}
                     />
                   </div>
                   {errors.contact_whatsappNumber && (
@@ -2272,7 +2303,7 @@ export default function BusPassengerDetailsPage() {
                   <span className="field-error-text" style={{ marginTop: '2px' }}>{errors.agreedToFare}</span>
                 )}
 
-                {formError && (
+                {formError && typeof formError === 'string' && (
                   <div className="form-error-summary-box">
                     <div className="error-summary-header">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none">
@@ -2282,18 +2313,9 @@ export default function BusPassengerDetailsPage() {
                       </svg>
                       <span>Please correct the following issues to proceed:</span>
                     </div>
-                    {typeof formError === 'string' && (
-                      <div style={{ padding: '0 12px 12px', fontSize: '0.85rem', color: '#ef4444' }}>
-                        {formError}
-                      </div>
-                    )}
-                    {formErrorList && formErrorList.length > 0 && (
-                      <ul className="error-summary-list">
-                        {formErrorList.map((err, i) => (
-                          <li key={i}>{err}</li>
-                        ))}
-                      </ul>
-                    )}
+                    <div style={{ padding: '0 12px 12px', fontSize: '0.85rem', color: '#ef4444' }}>
+                      {formError}
+                    </div>
                   </div>
                 )}
 

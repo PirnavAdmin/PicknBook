@@ -31,10 +31,13 @@ export async function createCashfreeOrder({
   couponCode,
   promotionId,
 }) {
-  const returnUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/payment/cashfree/return?order_id={order_id}`
-      : "/payment/cashfree/return?order_id={order_id}";
+  let origin = typeof window !== "undefined" ? window.location.origin : "";
+  if (origin && origin.startsWith("http://localhost")) {
+    origin = origin.replace("http://", "https://");
+  }
+  const returnUrl = origin
+    ? `${origin}/payment/cashfree/return?order_id={order_id}`
+    : "/payment/cashfree/return?order_id={order_id}";
 
   const notifyUrl = typeof window !== "undefined"
     ? toApiUrl("/api/cashfree/webhook")
@@ -89,17 +92,22 @@ export async function createCashfreeOrder({
 
   const data = await response.json();
 
-  if (!data || !data.payment_session_id) {
+  const paymentSessionId = data.payment_session_id || data.paymentSessionId;
+  const orderId = data.order_id || data.cashfreeOrderId || data.orderId;
+  const cfOrderId = data.cf_order_id || data.cfOrderId;
+  const orderStatus = data.order_status || data.orderStatus || "ACTIVE";
+
+  if (!data || !paymentSessionId) {
     throw new Error("Invalid response from payment server: payment_session_id missing.");
   }
 
   return {
-    order_id: data.order_id || "",
-    payment_session_id: data.payment_session_id || "",
-    cf_order_id: data.cf_order_id || "",
-    order_amount: data.order_amount || orderAmount,
+    order_id: orderId || "",
+    payment_session_id: paymentSessionId || "",
+    cf_order_id: cfOrderId || "",
+    order_amount: data.order_amount || data.totalAmount || orderAmount,
     order_currency: data.order_currency || "INR",
-    order_status: data.order_status || "ACTIVE",
+    order_status: orderStatus,
   };
 }
 

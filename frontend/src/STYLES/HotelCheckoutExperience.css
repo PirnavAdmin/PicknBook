@@ -271,7 +271,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
   gap: 12px;
-  align-items: end;
+  align-items: start;
   margin-bottom: 12px;
 }
  
@@ -281,12 +281,12 @@
   min-width: 0;
   height: max-content;
   align-content: start;
-  align-self: end;
+  align-self: start;
 }
 
 .hotel-checkout-side {
   min-width: 0;
-  align-self: end;
+  align-self: start;
   gap: 12px !important;
 }
 
@@ -660,7 +660,7 @@
  
 .hotel-reserve-rail {
   position: sticky;
-  top: 90px;
+  top: 24px;
 }
  
 .hotel-reserve-card {

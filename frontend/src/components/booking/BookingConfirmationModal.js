@@ -154,11 +154,11 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         CheckOutDate: checkOutStr,
         checkInDate: checkInStr,
         checkOutDate: checkOutStr,
-        TraceId: String(blockRoomResponse?.TraceId || blockRoomResponse?.traceId || hotel?.TraceId || ""),
-        ResultIndex: String(hotel?.ResultIndex || ""),
-        SrdvType: String(hotel?.SrdvType || "MixAPI"),
-        SrdvIndex: String(hotel?.SrdvIndex || ""),
-        HotelCode: String(hotel?.hotelId || hotel?.hotelCode || ""),
+        TraceId: String(blockRoomResponse?.TraceId || blockRoomResponse?.traceId || hotel?.TraceId || hotel?.traceId || ""),
+        ResultIndex: String(hotel?.ResultIndex || hotel?.resultIndex || ""),
+        SrdvType: String(hotel?.SrdvType || hotel?.srdvType || "MixAPI"),
+        SrdvIndex: String(hotel?.SrdvIndex || hotel?.srdvIndex || ""),
+        HotelCode: String(hotel?.hotelId || hotel?.hotelCode || hotel?.HotelCode || ""),
         HotelName: hotel?.name || "",
         GuestNationality: "IN",
         NoOfRooms: 1, // simplified for fallback
@@ -296,8 +296,12 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             <span>₹ {fareSummary?.baseFare || 0}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span>Taxes & Fees</span>
-            <span>₹ {(fareSummary?.tax || 0) + (fareSummary?.fee || 0)}</span>
+            <span>{bookingType === "Bus" ? "Operator GST" : "Taxes & Fees"}</span>
+            <span>
+              ₹ {bookingType === "Bus"
+                ? Number(fareSummary?.gstAmount ?? fareSummary?.tax ?? 0)
+                : (fareSummary?.tax || 0) + (fareSummary?.fee || 0)}
+            </span>
           </div>
           {(flowState?.couponDiscount > 0 || fareSummary?.discount > 0) && (
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", color: "green" }}>
