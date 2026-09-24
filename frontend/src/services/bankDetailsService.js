@@ -3,8 +3,7 @@
 const BANK_DETAILS_ROOT = "/api/BankDetails";
 const BANK_UPI_DETAILS_ROOT = "/api/BankUpiDetails";
 
-const IS_LOCAL_DEV = process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && ['localhost','127.0.0.1','0.0.0.0'].includes(window.location.hostname);
-const API_BASE_URL = IS_LOCAL_DEV ? '' : (process.env.REACT_APP_API_BASE_URL || '').trim();
+const API_BASE_URL = "";
 
 function toAbsoluteUrl(urlOrPath) {
   if (/^https?:\/\//i.test(urlOrPath)) {

@@ -87,9 +87,7 @@ export async function getPublicPages() {
 }
 
 export function getCmsApiBaseUrl() {
-  const envUrl = (process.env.REACT_APP_API_BASE_URL || "").trim();
-  if (envUrl) return envUrl.replace(/\/+$/, "");
-  return "https://humiliate-eatery-humvee.ngrok-free.dev";
+  return "";
 }
 
 export function resolveCmsImageUrl(pathOrUrl, type) {

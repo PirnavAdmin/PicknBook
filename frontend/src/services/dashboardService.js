@@ -24,23 +24,6 @@ function resolveApiBaseUrl() {
     return "";
   }
 
-  const explicitBase =
-    process.env.REACT_APP_API_BASE_URL ||
-    process.env.REACT_APP_DASHBOARD_API_BASE_URL;
-
-  if (explicitBase && explicitBase.trim()) {
-    return explicitBase.trim();
-  }
-
-  const placesUrl = process.env.REACT_APP_PLACES_API_URL;
-  if (placesUrl && placesUrl.trim()) {
-    try {
-      return new URL(placesUrl.trim()).origin;
-    } catch {
-      // Fall through to fallback.
-    }
-  }
-
   return "";
 }
 

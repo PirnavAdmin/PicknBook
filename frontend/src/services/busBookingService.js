@@ -43,14 +43,6 @@ function resolveApiBaseUrl() {
     return "";
   }
 
-  const explicitBase =
-    process.env.REACT_APP_API_BASE_URL ||
-    process.env.REACT_APP_BUS_API_BASE_URL;
-
-  if (explicitBase && explicitBase.trim()) {
-    return explicitBase.trim();
-  }
-
   return "";
 }
 

@@ -41,7 +41,7 @@ export async function createCashfreeOrder({
 
   const notifyUrl = typeof window !== "undefined"
     ? toApiUrl("/api/cashfree/webhook")
-    : "https://humiliate-eatery-humvee.ngrok-free.dev/api/cashfree/webhook";
+    : "/api/cashfree/webhook";
 
   const payload = {
     orderAmount: Number(orderAmount) || 0,

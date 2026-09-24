@@ -34,40 +34,8 @@ async function adminWalletRequest(path, options = {}) {
       return data;
     }
 
-    // If relative request returns non-200 (e.g. 404 from un-restarted proxy), fallback directly to backend target:
-    if (path.startsWith("/")) {
-      const directTarget = (process.env.REACT_APP_API_PROXY_TARGET || "http://localhost:3000").replace(/\/+$/, "");
-      const directUrl = `${directTarget}${path}`;
-      try {
-        const directResp = await fetch(directUrl, {
-          ...options,
-          headers,
-        });
-        if (directResp.ok) {
-          return await directResp.json().catch(() => null);
-        }
-      } catch (directErr) {
-        // Ignore direct fallback error
-      }
-    }
-
     return null;
   } catch (err) {
-    if (path.startsWith("/")) {
-      const directTarget = (process.env.REACT_APP_API_PROXY_TARGET || "http://localhost:3000").replace(/\/+$/, "");
-      const directUrl = `${directTarget}${path}`;
-      try {
-        const directResp = await fetch(directUrl, {
-          ...options,
-          headers,
-        });
-        if (directResp.ok) {
-          return await directResp.json().catch(() => null);
-        }
-      } catch {
-        // Ignore direct fallback error
-      }
-    }
     return null;
   }
 }

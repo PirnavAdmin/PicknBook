@@ -88,8 +88,6 @@ function formatFlightTripType(booking) {
   return "One-Way";
 }
 
-const FALLBACK_API_BASE_URL =
-  "https://humiliate-eatery-humvee.ngrok-free.dev";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const FLIGHT_BOOKINGS_ROOT = "/api/flight/srdv/bookings";
 const DEFAULT_API_USER_ID =
@@ -117,29 +115,10 @@ function resolveApiBaseUrl(...explicitBases) {
     return "";
   }
 
-  for (const candidate of explicitBases) {
-    const trimmed = String(candidate || "").trim();
-    if (trimmed) {
-      return trimmed;
-    }
-  }
-
-  const placesUrl = process.env.REACT_APP_PLACES_API_URL;
-  if (placesUrl && placesUrl.trim()) {
-    try {
-      return new URL(placesUrl.trim()).origin;
-    } catch {
-      // Fall through to default.
-    }
-  }
-
-  return FALLBACK_API_BASE_URL;
+  return "";
 }
 
-const FLIGHT_API_BASE_URL = resolveApiBaseUrl(
-  process.env.REACT_APP_API_BASE_URL,
-  process.env.REACT_APP_FLIGHT_API_BASE_URL
-);
+const FLIGHT_API_BASE_URL = "";
 
 function toAbsoluteUrl(urlOrPath) {
   if (/^https?:\/\//i.test(urlOrPath)) {

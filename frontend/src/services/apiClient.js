@@ -71,10 +71,8 @@ export function isLocalDevelopment() {
 }
 
 export function resolveApiBaseUrl() {
-  // In local dev, return "" so the CRA/Vite proxy handles routing.
-  if (isLocalDevelopment()) return "";
-  // In production/staging, use the env variable or fallback ngrok URL.
-  return (process.env.REACT_APP_API_BASE_URL || "https://humiliate-eatery-humvee.ngrok-free.dev").trim();
+  // Always use same-origin relative API paths. Vite and Nginx proxy /api requests.
+  return "";
 }
 
 export function toApiUrl(urlOrPath) {
@@ -134,14 +132,12 @@ function isApiAssetOrigin(urlValue) {
       return false;
     }
 
-    const defaultNgrokUrl = "https://humiliate-eatery-humvee.ngrok-free.dev";
-    const configuredBase = process.env.REACT_APP_API_BASE_URL || defaultNgrokUrl;
-    const configuredProxy = process.env.REACT_APP_API_PROXY_TARGET || defaultNgrokUrl;
+    const configuredBase = process.env.REACT_APP_API_BASE_URL || "";
+    const configuredProxy = process.env.REACT_APP_API_PROXY_TARGET || "";
 
     const assetOrigins = [
       configuredBase,
       configuredProxy,
-      defaultNgrokUrl,
       "http://localhost:5000",
       "https://localhost:5000",
       "http://127.0.0.1:5000",
