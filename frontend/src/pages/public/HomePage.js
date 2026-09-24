@@ -2543,7 +2543,14 @@ export default function HomePage() {
 
   useEffect(() => {
     setOpenFaqId(null);
+    setFaqModalSectionId(null);
+    setFaqModalOpenQuestionId(null);
   }, [activeTab]);
+
+  useEffect(() => {
+    setFaqModalOpenQuestionId(null);
+  }, [faqModalSectionId]);
+
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const [aiChatInput, setAiChatInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
@@ -4109,6 +4116,7 @@ export default function HomePage() {
                       <summary
                         onClick={(event) => {
                           event.preventDefault();
+                          setFaqModalOpenQuestionId(null);
                           setFaqModalSectionId((current) =>
                             current === section.id ? null : section.id,
                           );
@@ -9609,6 +9617,7 @@ export default function HomePage() {
               className="india-faq-link"
               onClick={() => {
                 setFaqModalSectionId(null);
+                setFaqModalOpenQuestionId(null);
                 setIsFaqModalOpen(true);
               }}
             >

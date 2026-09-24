@@ -12999,7 +12999,6 @@ button:focus-visible {
 }
 
 .client-testimonials-scroller:hover .client-testimonials-track,
-.client-testimonials-scroller:focus-within .client-testimonials-track,
 .client-testimonials-track:hover {
   animation-play-state: paused !important;
 }

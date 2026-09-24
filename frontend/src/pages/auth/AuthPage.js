@@ -27,6 +27,7 @@ import {
 import { loginWithPasskey } from "../../services/passkeyService";
 
 const OTP_LENGTH = 6;
+const CUSTOMER_OTP_DURATION_SECONDS = 120;
 
 /* ─── Helpers (unchanged) ─────────────────────────────────── */
 function pickFirst(source, keys, fallback = "") {
@@ -307,7 +308,7 @@ export default function AuthPage() {
     setLoading(true); setStatus({type:"",message:""});
     try {
       const payload = await sendLoginOtp({ phoneNumber: mobile });
-      setOtpSent(true); setOtp(""); setTimeLeft(300);
+      setOtpSent(true); setOtp(""); setTimeLeft(CUSTOMER_OTP_DURATION_SECONDS);
       setStatus({ type:"success", message: readApiMessage(payload, "OTP sent to your mobile number.") });
     } catch (error) {
       setStatus({ type:"error", message: error?.message || "Mobile number not registered." });
@@ -380,7 +381,7 @@ export default function AuthPage() {
     setLoading(true); setStatus({type:"",message:""});
     try {
       const payload = await sendRegistrationOtp({ phoneNumber: mobile, channel: "Mobile" });
-      setOtpSent(true); setOtp(""); setTimeLeft(300); setViewMode("register-otp");
+      setOtpSent(true); setOtp(""); setTimeLeft(CUSTOMER_OTP_DURATION_SECONDS); setViewMode("register-otp");
       setStatus({ type:"success", message: readApiMessage(payload, "OTP sent to your mobile number.") });
     } catch (error) {
       setStatus({ type:"error", message: error?.message || "Failed to send OTP. Please try again." });

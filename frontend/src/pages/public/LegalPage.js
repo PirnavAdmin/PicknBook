@@ -99,7 +99,6 @@ export default function LegalPage() {
 
 
         <header className="legal-hero">
-          <p>Pick&book Policy</p>
           <h1>{replaceBrandName(page.title)}</h1>
           {page.metaDescription ? <span>{replaceBrandName(page.metaDescription)}</span> : null}
         </header>
@@ -109,7 +108,8 @@ export default function LegalPage() {
             <div dangerouslySetInnerHTML={{ __html: rawDescription }} />
           ) : contentLines.length > 0 ? (
             contentLines.map((line, index) => {
-              const isHeading = /^\d+\.\s+[A-Za-z]/.test(line) || /^[a-z]\.\s+[A-Za-z]/.test(line);
+              // Detect lines that look like headings (numbered, lettered, or short capitalized lines)
+              const isHeading = /^\d+\.\s+[A-Za-z]/.test(line) || /^[a-z]\.\s+[A-Za-z]/.test(line) || (line.length < 60 && !line.includes('.') && line === line.toUpperCase()) || line.endsWith(':');
 
               if (isHeading) {
                 return (
