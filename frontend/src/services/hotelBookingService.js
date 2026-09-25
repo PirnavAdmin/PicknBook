@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { toAuthUrl, readApiMessage } from "./authService";
+import { fetchCouponsAndOffers } from "./unifiedCouponService";
 
 async function requestHotelJson(urlOrPath, options = {}, fallbackMessage = "Hotel request failed.") {
   const activePortal = window.sessionStorage.getItem("active_portal") || "b2c";
@@ -246,7 +247,7 @@ export async function getMyHotelBookings() {
 
 export async function cancelHotelBooking(booking, reason = "User requested cancellation", { refundPreference = "Original" } = {}) {
   const internalId = booking.id || booking.bookingId;
-  
+
   if (!internalId) {
     throw new Error("Unable to identify internal booking ID for cancellation.");
   }
@@ -265,6 +266,10 @@ export async function cancelHotelBooking(booking, reason = "User requested cance
 }
 
 export async function getHotelActiveCoupons() {
+  try {
+    const unifiedData = await fetchCouponsAndOffers({ type: "hotel" }).catch(() => null);
+    if (Array.isArray(unifiedData) && unifiedData.length > 0) return unifiedData;
+  } catch (e) { }
   try {
     const response = await requestHotelJson(
       "/api/Hotels/coupons/active",

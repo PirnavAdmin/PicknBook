@@ -158,6 +158,9 @@ wwwroot\profile-images\e46b1b29-7718-4ef7-92f9-3f5438d05d46.webp
 wwwroot\profile-images\e54f35f0-19db-45a6-8e5e-0dccac338e59.png
 wwwroot\profile-images\f319d2fc-2328-476c-b3d3-1f740b60b345.webp
 wwwroot\profile-images\f9baac9f-6176-4482-b8ed-9d184052bfa4.webp
+wwwroot\uploads\promotions\ae35c6edfa1e43a1b3fede3c845eea58.jpeg
+wwwroot\uploads\promotions\e05f53d02bda4883baafe30e4c622a3e.jpeg
+wwwroot\uploads\promotions\f9463cdbd48e406b8444f0f59b48c07a.jpeg
 wwwroot\uploads\testimonials\05f99d19e7924445bac51e33cf06cf58.jpg
 wwwroot\uploads\testimonials\595d0203aa7a42fb9e35bac68dafe100.jpg
 wwwroot\uploads\testimonials\b498cd84213b42ab8f4c3e9190db2c6c.jpg

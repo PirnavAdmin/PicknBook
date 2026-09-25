@@ -30,22 +30,51 @@ const AddPage = () => {
   const pageListPath = "/admin/page-management/all-pages";
 
   const editingPage = useMemo(() => location.state?.page || null, [location.state]);
-  
-  const [formData, setFormData] = useState(() => ({
-    ...DEFAULT_FORM,
-    title: editingPage?.title || "",
-    slug: editingPage?.slug || "",
-    status: editingPage?.status || "Active",
-    module: editingPage?.module || "All",
-    metaTitle: editingPage?.metaTitle || "",
-    metaKeyword: editingPage?.metaKeyword || "",
-    metaDescription: editingPage?.metaDescription || "",
-    description: editingPage?.description || "",
-    imageName: editingPage?.imagePath ? editingPage.imagePath.split(/[/\\]/).pop() : (editingPage?.imageName || ""),
-    bannerName: editingPage?.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage?.bannerName || ""),
-  }));
+
+  const isImageRemovedInOverrides = (page) => {
+    if (!page) return false;
+    try {
+      const overrides = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
+      const keys = [
+        page.slug,
+        page.slug ? buildSlug(page.slug) : "",
+        page.title,
+        page.title ? buildSlug(page.title) : "",
+        page.id,
+        page.id ? String(page.id) : ""
+      ].filter(Boolean);
+      return keys.some(k => overrides[k] === "__REMOVED__" || overrides[k] === "");
+    } catch {
+      return false;
+    }
+  };
+
+  const [formData, setFormData] = useState(() => {
+    const isRemoved = isImageRemovedInOverrides(editingPage);
+    const initialImgPath = isRemoved ? "" : (editingPage?.imagePath || editingPage?.image || "");
+    const initialImgName = isRemoved
+      ? ""
+      : initialImgPath
+      ? initialImgPath.split(/[/\\]/).pop()
+      : (editingPage?.imageName || "");
+
+    return {
+      ...DEFAULT_FORM,
+      title: editingPage?.title || "",
+      slug: editingPage?.slug || "",
+      status: editingPage?.status || "Active",
+      module: editingPage?.module || "All",
+      metaTitle: editingPage?.metaTitle || "",
+      metaKeyword: editingPage?.metaKeyword || "",
+      metaDescription: editingPage?.metaDescription || "",
+      description: editingPage?.description || "",
+      imageName: initialImgName,
+      bannerName: editingPage?.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage?.bannerName || ""),
+    };
+  });
 
   const [imagePreview, setImagePreview] = useState(() => {
+    if (isImageRemovedInOverrides(editingPage)) return "";
     const existingImg = editingPage?.imagePath || editingPage?.image || editingPage?.imageUrl || "";
     if (existingImg) {
       return resolveCmsImageUrl(existingImg, "image") || existingImg;
@@ -55,6 +84,14 @@ const AddPage = () => {
 
   useEffect(() => {
     if (editingPage) {
+      const isRemoved = isImageRemovedInOverrides(editingPage);
+      const initialImgPath = isRemoved ? "" : (editingPage.imagePath || editingPage.image || "");
+      const initialImgName = isRemoved
+        ? ""
+        : initialImgPath
+        ? initialImgPath.split(/[/\\]/).pop()
+        : (editingPage.imageName || "");
+
       setFormData({
         title: editingPage.title || "",
         slug: editingPage.slug || "",
@@ -64,12 +101,19 @@ const AddPage = () => {
         metaKeyword: editingPage.metaKeyword || "",
         metaDescription: editingPage.metaDescription || "",
         description: editingPage.description || "",
-        imageName: editingPage.imagePath ? editingPage.imagePath.split(/[/\\]/).pop() : (editingPage.imageName || ""),
+        imageName: initialImgName,
         bannerName: editingPage.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage.bannerName || ""),
       });
-      const existingImg = editingPage.imagePath || editingPage.image || editingPage.imageUrl || "";
-      if (existingImg) {
-        setImagePreview(resolveCmsImageUrl(existingImg, "image") || existingImg);
+
+      if (isRemoved) {
+        setImagePreview("");
+      } else {
+        const existingImg = editingPage.imagePath || editingPage.image || editingPage.imageUrl || "";
+        if (existingImg) {
+          setImagePreview(resolveCmsImageUrl(existingImg, "image") || existingImg);
+        } else {
+          setImagePreview("");
+        }
       }
     }
   }, [editingPage]);
@@ -123,6 +167,36 @@ const AddPage = () => {
       setFormData((previous) => ({ ...previous, imageName: "" }));
       const fileInput = document.getElementById("image-input");
       if (fileInput) fileInput.value = "";
+      try {
+        const pageSlug = formData.slug?.trim() || formData.title?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const pageTitle = formData.title?.trim();
+        const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
+        if (pageSlug) {
+          current[pageSlug] = "__REMOVED__";
+          const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (norm) current[norm] = "__REMOVED__";
+        }
+        if (pageTitle) {
+          current[pageTitle] = "__REMOVED__";
+          const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (normTitle) current[normTitle] = "__REMOVED__";
+        }
+        if (editingPage?.id) {
+          current[editingPage.id] = "__REMOVED__";
+          current[String(editingPage.id)] = "__REMOVED__";
+        }
+        if (editingPage?.slug) {
+          current[editingPage.slug] = "__REMOVED__";
+          const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (normEditSlug) current[normEditSlug] = "__REMOVED__";
+        }
+        if (editingPage?.title) {
+          current[editingPage.title] = "__REMOVED__";
+          const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (normEditTitle) current[normEditTitle] = "__REMOVED__";
+        }
+        localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
+      } catch (e) {}
     } else if (field === "banner") {
       setBannerFile(null);
       setFormData((previous) => ({ ...previous, bannerName: "" }));
@@ -195,6 +269,38 @@ const AddPage = () => {
     setLoading(true);
     try {
       const pageSlug = formData.slug.trim() || formData.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const pageTitle = formData.title.trim();
+
+      const setOverrideValue = (val) => {
+        try {
+          const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
+          if (pageSlug) {
+            current[pageSlug] = val;
+            const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (norm) current[norm] = val;
+          }
+          if (pageTitle) {
+            current[pageTitle] = val;
+            const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (normTitle) current[normTitle] = val;
+          }
+          if (editingPage?.id) {
+            current[editingPage.id] = val;
+            current[String(editingPage.id)] = val;
+          }
+          if (editingPage?.slug) {
+            current[editingPage.slug] = val;
+            const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (normEditSlug) current[normEditSlug] = val;
+          }
+          if (editingPage?.title) {
+            current[editingPage.title] = val;
+            const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (normEditTitle) current[normEditTitle] = val;
+          }
+          localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
+        } catch (e) {}
+      };
 
       if (imageFile) {
         try {
@@ -205,14 +311,11 @@ const AddPage = () => {
             reader.readAsDataURL(imageFile);
           });
           if (base64Url) {
-            const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
-            current[pageSlug] = base64Url;
-            const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (norm) current[norm] = base64Url;
-            if (editingPage?.id) current[editingPage.id] = base64Url;
-            localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
+            setOverrideValue(base64Url);
           }
         } catch (e) {}
+      } else if (!formData.imageName) {
+        setOverrideValue("__REMOVED__");
       }
 
       let res = null;
@@ -225,12 +328,7 @@ const AddPage = () => {
       if (res) {
         const savedImg = res.imagePath || res.ImagePath || res.image || res.Image;
         if (savedImg) {
-          try {
-            const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
-            current[pageSlug] = savedImg;
-            if (res.id) current[res.id] = savedImg;
-            localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
-          } catch (e) {}
+          setOverrideValue(savedImg);
         }
       }
 

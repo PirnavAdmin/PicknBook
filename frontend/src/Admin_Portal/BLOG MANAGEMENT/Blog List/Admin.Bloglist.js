@@ -20,8 +20,8 @@ import {
     ChevronDown,
 } from 'lucide-react';
 import AdminPagination from '../../../components/AdminPagination';
-import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
-import { toApiAssetUrl, NgrokSafeImage, normalizeResponseMessage } from '../../../services/apiClient';
+import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories, getBlogImageSrc, saveBlogImageLocally } from '../../../services/blogService';
+import { toApiAssetUrl, NgrokSafeImage, normalizeResponseMessage, getDisplayFileName } from '../../../services/apiClient';
 
 const formatDate = (dateString) => {
     if (!dateString || dateString === '-') return '-';
@@ -36,6 +36,50 @@ const formatDate = (dateString) => {
     } catch {
         return dateString;
     }
+};
+
+const getCategoryBadgeStyle = (categoryName) => {
+    const name = (categoryName || '').toLowerCase().trim();
+    let bg = '#f8fafc';
+    let color = '#475569';
+    let border = '1px solid #cbd5e1';
+
+    if (name.includes('hotel')) {
+        bg = '#fff7ed';
+        color = '#c2410c';
+        border = '1px solid #fed7aa';
+    } else if (name.includes('bus')) {
+        bg = '#eff6ff';
+        color = '#1d4ed8';
+        border = '1px solid #bfdbfe';
+    } else if (name.includes('flight') || name.includes('air')) {
+        bg = '#f0fdf4';
+        color = '#15803d';
+        border = '1px solid #bbf7d0';
+    } else if (name.includes('holiday') || name.includes('package') || name.includes('tour')) {
+        bg = '#fdf4ff';
+        color = '#7e22ce';
+        border = '1px solid #f5d0fe';
+    } else if (name.includes('train') || name.includes('rail')) {
+        bg = '#fef2f2';
+        color = '#b91c1c';
+        border = '1px solid #fecaca';
+    }
+
+    return {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4px 12px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        backgroundColor: bg,
+        color: color,
+        border: border,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+    };
 };
 
 function BlogList() {
@@ -107,13 +151,22 @@ function BlogList() {
                 pageSize,
                 isPublished: isPublishedParam
             });
-            const mapped = (data.blogs || []).map(blog => ({
-                ...blog,
-                entryDate: blog.createdAtUtc ? formatDate(blog.createdAtUtc) : 'Draft',
-                image: blog.imageUrl || blog.ImageUrl || blog.image || blog.Image || blog.imagePath || blog.ImagePath || blog.filePath || blog.photo || blog.photoUrl || blog.picture || blog.url || '',
-                status: blog.isPublished ? 'Active' : 'Inactive',
-                author: blog.addedByName || blog.author || blog.addedBy || 'Admin'
-            }));
+            const mapped = (data.blogs || []).map(blog => {
+                const resolvedImg = getBlogImageSrc(blog) || blog.imageUrl || blog.ImageUrl || blog.image || '';
+                if (resolvedImg) {
+                    saveBlogImageLocally(blog.id, resolvedImg);
+                    if (blog.title) saveBlogImageLocally(blog.title, resolvedImg);
+                    if (blog.slug) saveBlogImageLocally(blog.slug, resolvedImg);
+                }
+                return {
+                    ...blog,
+                    entryDate: blog.createdAtUtc ? formatDate(blog.createdAtUtc) : 'Draft',
+                    image: resolvedImg,
+                    imageUrl: resolvedImg,
+                    status: blog.isPublished ? 'Active' : 'Inactive',
+                    author: blog.addedByName || blog.author || blog.addedBy || 'Admin'
+                };
+            });
             setBlogs(mapped);
             setTotalBlogs(data.total || 0);
         } catch (error) {
@@ -210,6 +263,13 @@ function BlogList() {
         const blogToToggle = blogs.find(b => b.id === id);
         if (!blogToToggle) return;
 
+        const existingImg = getBlogImageSrc(blogToToggle) || blogToToggle.image || blogToToggle.imageUrl;
+        if (existingImg) {
+            saveBlogImageLocally(id, existingImg);
+            if (blogToToggle.title) saveBlogImageLocally(blogToToggle.title, existingImg);
+            if (blogToToggle.slug) saveBlogImageLocally(blogToToggle.slug, existingImg);
+        }
+
         try {
             const formData = new FormData();
             formData.append("Id", id);
@@ -305,13 +365,32 @@ function BlogList() {
         }));
         
         if (file) {
-            const previewUrl = URL.createObjectURL(file);
-            if (name === 'image') {
-                setEditImagePreview(previewUrl);
-            } else if (name === 'ogImage') {
-                setEditOgImagePreview(previewUrl);
-            }
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const dataUrl = evt.target.result;
+                if (name === 'image') {
+                    setEditImagePreview(dataUrl);
+                    if (editingBlog?.id) {
+                        saveBlogImageLocally(editingBlog.id, dataUrl);
+                    }
+                    if (editFormData.title) {
+                        saveBlogImageLocally(editFormData.title, dataUrl);
+                    }
+                } else if (name === 'ogImage') {
+                    setEditOgImagePreview(dataUrl);
+                }
+            };
+            reader.readAsDataURL(file);
         }
+    };
+
+    const handleRemoveEditImage = (name, labelField, previewSetter) => {
+        setEditFormData((prev) => ({
+            ...prev,
+            [name]: null,
+            [labelField]: '',
+        }));
+        if (previewSetter) previewSetter('');
     };
 
     const buildSlug = (title) =>
@@ -361,11 +440,8 @@ function BlogList() {
             dataToSend.append("ShortDescription", editFormData.shortDescription.trim());
             dataToSend.append("LongDescription", editFormData.longDescription.trim());
             
-            if (editFormData.slug?.trim()) {
-                dataToSend.append("Slug", editFormData.slug.trim());
-            } else {
-                dataToSend.append("Slug", buildSlug(editFormData.title));
-            }
+            const computedSlug = editFormData.slug?.trim() || buildSlug(editFormData.title);
+            dataToSend.append("Slug", computedSlug);
 
             if (editFormData.subTitle?.trim()) {
                 dataToSend.append("SubTitle", editFormData.subTitle.trim());
@@ -388,6 +464,12 @@ function BlogList() {
             }
             if (editFormData.ogImage && typeof editFormData.ogImage !== "string") {
                 dataToSend.append("OgImage", editFormData.ogImage);
+            }
+
+            if (editImagePreview) {
+                saveBlogImageLocally(editingBlog.id, editImagePreview);
+                saveBlogImageLocally(editFormData.title, editImagePreview);
+                saveBlogImageLocally(computedSlug, editImagePreview);
             }
 
             await updateAdminBlog(editingBlog.id, dataToSend);
@@ -453,37 +535,37 @@ function BlogList() {
             paddingBottom: '16px',
         },
         titleMain: {
-            fontSize: '1.8rem',
-            fontWeight: 500,
-            color: '#be185d',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#A51C49',
             margin: 0,
             letterSpacing: '-0.5px',
         },
         titleSub: {
-            fontSize: '1.8rem',
-            fontWeight: 500,
-            color: 'black',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#A51C49',
             margin: 0,
         },
         actions: {
             display: 'flex',
-            gap: '12px',
+            gap: '10px',
             alignItems: 'center',
             flexWrap: 'nowrap',
         },
         button: {
-            padding: '8px 14px',
-            borderRadius: '10px',
+            padding: '6px 12px',
+            borderRadius: '6px',
             border: '1px solid transparent',
-            fontWeight: 600,
+            fontWeight: 500,
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
-            fontSize: '0.85rem',
-            height: '38px',
+            gap: '6px',
+            fontSize: '0.8rem',
+            height: '34px',
             boxSizing: 'border-box',
             whiteSpace: 'nowrap',
         },
@@ -509,11 +591,11 @@ function BlogList() {
             boxShadow: '0 4px 14px rgba(22, 163, 74, 0.25)',
         },
         searchBox: {
-            padding: '8px 12px',
-            border: '1.5px solid var(--border)',
-            borderRadius: '10px',
-            fontSize: '0.85rem',
-            width: '220px',
+            padding: '6px 10px',
+            border: '1px solid var(--border)',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            width: '180px',
             outline: 'none',
             transition: 'all 0.3s ease',
             background: 'var(--panel)',
@@ -542,7 +624,7 @@ function BlogList() {
         },
         filterLabel: {
             fontSize: '0.8rem',
-            fontWeight: 800,
+            fontWeight: 700,
             color: 'var(--text-secondary)',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -595,7 +677,7 @@ function BlogList() {
             letterSpacing: '0.5px',
         },
         detailValue: {
-            fontSize: '0.95rem',
+            fontSize: '0.9rem',
             color: 'var(--text-primary)',
             fontWeight: 600,
             marginTop: '4px',
@@ -615,18 +697,17 @@ function BlogList() {
             gap: '6px',
         },
         tableWrapper: {
-            background: 'rgba(255, 255, 255, 0.55)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.7)',
-            boxShadow: '0 8px 32px rgba(165, 28, 73, 0.05)',
-            overflow: 'visible',
+            background: '#ffffff',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden',
         },
         table: {
             width: '100%',
             borderCollapse: 'collapse',
-            fontSize: '12px',
+            fontSize: '11px',
+            background: '#ffffff',
         },
         thead: {
             background: '#A51C49',
@@ -634,34 +715,38 @@ function BlogList() {
             fontWeight: 500,
         },
         th: {
-            padding: '12px 10px',
+            padding: '10px 8px',
             textAlign: 'center',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)',
             whiteSpace: 'nowrap',
             fontSize: '11px',
             textTransform: 'none',
-            letterSpacing: '0.6px',
             fontWeight: 500,
             verticalAlign: 'middle',
-            height: '42px',
+            height: '38px',
             background: '#A51C49',
             color: '#ffffff',
         },
         td: {
             padding: '6px 8px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            color: 'var(--text-primary)',
+            borderBottom: '1px solid #f1f5f9',
+            color: '#334155',
             verticalAlign: 'middle',
             textAlign: 'center',
             height: '36px',
+            fontSize: '11px',
+            fontWeight: 400,
+            background: '#ffffff',
         },
         tbody: {
-            fontSize: '12px',
+            fontSize: '11px',
+            background: '#ffffff',
         },
         tr: {
             transition: 'background-color 0.2s ease',
-            borderBottom: '1px solid var(--border)',
+            borderBottom: '1px solid #f1f5f9',
             height: '36px',
+            background: '#ffffff',
         },
         sn: {
             fontWeight: 500,
@@ -1078,6 +1163,24 @@ function BlogList() {
                                     <div style={{ fontWeight: 600 }}>{selectedBlog.title}</div>
                                 </div>
                                 <div>
+                                    <strong style={{ color: 'var(--text-secondary)' }}>Blog Image:</strong>
+                                    <div style={{ marginTop: '6px' }}>
+                                        {(() => {
+                                            const imgSrc = getBlogImageSrc(selectedBlog) || selectedBlog?.imageUrl || selectedBlog?.image || '';
+                                            if (!imgSrc) return <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>-</span>;
+                                            const safeSrc = imgSrc.startsWith('blob:') || imgSrc.startsWith('data:') ? imgSrc : toApiAssetUrl(imgSrc);
+                                            return (
+                                                <NgrokSafeImage
+                                                    src={safeSrc}
+                                                    alt={selectedBlog.title}
+                                                    style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                                    onClick={() => setActivePopupImage(safeSrc)}
+                                                />
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                                <div>
                                     <strong style={{ color: 'var(--text-secondary)' }}>Category:</strong>
                                     <div style={{ fontWeight: 600 }}>{selectedBlog.category}</div>
                                 </div>
@@ -1107,6 +1210,66 @@ function BlogList() {
                     document.body
                 )}
 
+                {activePopupImage && createPortal(
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 99999,
+                            padding: '20px'
+                        }}
+                        onClick={() => setActivePopupImage(null)}
+                    >
+                        <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+                            <button
+                                type="button"
+                                onClick={() => setActivePopupImage(null)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-12px',
+                                    right: '-12px',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    background: '#ef4444',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    fontWeight: 'bold',
+                                    fontSize: '16px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                    zIndex: 10
+                                }}
+                            >
+                                ✕
+                            </button>
+                            <NgrokSafeImage
+                                src={activePopupImage}
+                                alt="Enlarged blog image"
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '85vh',
+                                    objectFit: 'contain',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                                }}
+                            />
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
                 <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead style={styles.thead}>
@@ -1129,172 +1292,158 @@ function BlogList() {
                                     </td>
                                 </tr>
                             ) : filteredBlogs.length > 0 ? (
-                                filteredBlogs.slice((page - 1) * pageSize, page * pageSize).map((blog, index) => (
-                                    <tr key={blog.id} style={styles.tr}>
-                                        <td style={styles.td}>
-                                            <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
-                                        </td>
-                                        <td style={{ ...styles.td, ...styles.blogTitle, textAlign: 'center' }}>
-                                            {blog.title}
-                                        </td>
-                                        <td style={styles.td}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', fontWeight: 500, color: '#334155' }}>
-                                                <span style={{ fontSize: '15px', lineHeight: 1 }}>🗓️</span>
-                                                <span>{formatDate(blog.createdAtUtc || blog.createdAt || blog.entryDate)}</span>
-                                            </span>
-                                        </td>
-                                        <td style={styles.td}>
-                                            {blog.image && blog.image !== '-' ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <NgrokSafeImage
-                                                        src={toApiAssetUrl(blog.image)}
-                                                        fallbackSrc={null}
-                                                        alt={blog.title}
-                                                        title={blog.title}
-                                                        style={{
-                                                            width: '45px',
-                                                            height: '45px',
-                                                            objectFit: 'cover',
-                                                            borderRadius: '6px',
-                                                            display: 'block',
-                                                            cursor: 'pointer',
-                                                            border: '1.5px solid rgba(0, 0, 0, 0.08)'
-                                                        }}
-                                                        onClick={() => setActivePopupImage(toApiAssetUrl(blog.image))}
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                            if (e.target.nextSibling) e.target.nextSibling.style.display = 'inline-block';
-                                                        }}
-                                                    />
-                                                    <span style={{ display: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px' }}>No Image</span>
-                                                </div>
-                                            ) : (
-                                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>-</span>
-                                            )}
-                                        </td>
-                                        <td style={styles.td}>
-                                            {(() => {
-                                                const catObj = categories.find(c => 
-                                                    (c.name || '').trim().toLowerCase() === (blog.category || '').trim().toLowerCase() ||
-                                                    (c.id && blog.categoryId && c.id === blog.categoryId)
-                                                );
-                                                const catImg = catObj?.imageUrl || catObj?.image || catObj?.imagePath || catObj?.filePath || catObj?.icon || catObj?.iconUrl || catObj?.photo;
-                                                return (
-                                                    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'center', padding: '4px 0' }}>
-                                                        {catImg && catImg !== '-' && (
-                                                            <NgrokSafeImage
-                                                                src={`${toApiAssetUrl(catImg)}?t=${catObj?.updatedAtUtc || catObj?.updatedAt || ''}`}
-                                                                fallbackSrc={null}
-                                                                alt={blog.category}
-                                                                title={blog.category}
-                                                                style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
-                                                                onClick={() => setActivePopupImage(`${toApiAssetUrl(catImg)}?t=${catObj?.updatedAtUtc || catObj?.updatedAt || ''}`)}
-                                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                                            />
-                                                        )}
-                                                        <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>
-                                                            {blog.category && blog.category !== '-' ? blog.category : '-'}
-                                                        </span>
+                                filteredBlogs.slice((page - 1) * pageSize, page * pageSize).map((blog, index) => {
+                                    const blogImg = getBlogImageSrc(blog) || blog.imageUrl || blog.image || '';
+                                    const displayImgSrc = blogImg ? (blogImg.includes('?') || blogImg.startsWith('blob:') || blogImg.startsWith('data:') ? blogImg : `${blogImg}?t=${blog.updatedAtUtc || blog.updatedAt || ''}`) : '';
+                                    return (
+                                        <tr
+                                            key={blog.id}
+                                            style={styles.tr}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(165, 28, 73, 0.04)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = '#ffffff';
+                                            }}
+                                        >
+                                            <td style={styles.td}>
+                                                <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
+                                            </td>
+                                            <td style={{ ...styles.td, ...styles.blogTitle, textAlign: 'center' }}>
+                                                {blog.title}
+                                            </td>
+                                            <td style={styles.td}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', fontWeight: 500, color: '#334155' }}>
+                                                    <span style={{ fontSize: '15px', lineHeight: 1 }}>🗓️</span>
+                                                    <span>{formatDate(blog.createdAtUtc || blog.createdAt || blog.entryDate)}</span>
+                                                </span>
+                                            </td>
+                                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                                {blogImg ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <NgrokSafeImage
+                                                            src={displayImgSrc}
+                                                            fallbackSrc={blog.imageUrl || blog.image || null}
+                                                            alt={blog.title}
+                                                            title={blog.title}
+                                                            style={{
+                                                                width: '36px',
+                                                                height: '36px',
+                                                                objectFit: 'cover',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #e2e8f0',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                                transition: 'transform 0.2s ease'
+                                                            }}
+                                                            onClick={() => setActivePopupImage(displayImgSrc)}
+                                                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                        />
                                                     </div>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td style={styles.td}>
-                                            {(() => {
-                                                const subObj = subCategories.find(s => 
-                                                    (s.name || '').trim().toLowerCase() === (blog.subCategory || '').trim().toLowerCase() ||
-                                                    (s.id && blog.subCategoryId && s.id === blog.subCategoryId)
-                                                );
-                                                const subImg = subObj?.imageUrl || subObj?.image || subObj?.imagePath || subObj?.filePath || subObj?.icon || subObj?.iconUrl || subObj?.photo;
-                                                return (
-                                                    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', justifyContent: 'center', padding: '4px 0' }}>
-                                                        {subImg && subImg !== '-' && (
-                                                            <NgrokSafeImage
-                                                                src={`${toApiAssetUrl(subImg)}?t=${subObj?.updatedAtUtc || subObj?.updatedAt || ''}`}
-                                                                fallbackSrc={null}
-                                                                alt={blog.subCategory}
-                                                                title={blog.subCategory}
-                                                                style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}
-                                                                onClick={() => setActivePopupImage(`${toApiAssetUrl(subImg)}?t=${subObj?.updatedAtUtc || subObj?.updatedAt || ''}`)}
-                                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                                            />
-                                                        )}
-                                                        <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>
-                                                            {blog.subCategory && blog.subCategory !== '-' ? blog.subCategory : '-'}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={getStatusStyle(blog.status)}
-                                                onClick={() => handleToggleStatus(blog.id)}
-                                            >
-                                                {blog.status}
-                                            </button>
-                                        </td>
-                                        <td style={styles.td}>
-                                            <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
-                                                <button
-                                                    type="button"
-                                                    className={`actions-trigger-btn ${activeDropdownId === blog.id ? 'active' : ''}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveDropdownId(activeDropdownId === blog.id ? null : blog.id);
-                                                    }}
-                                                >
-                                                    <span>Actions</span>
-                                                    <ChevronDown size={14} />
-                                                </button>
-                                                {activeDropdownId === blog.id && (
+                                                ) : (
                                                     <div style={{
-                                                        position: 'absolute',
-                                                        ...(index >= filteredBlogs.length - 2 || filteredBlogs.length <= 3
-                                                            ? { bottom: '100%', marginBottom: '6px' }
-                                                            : { top: '100%', marginTop: '6px' }),
-                                                        right: 0,
-                                                        background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0',
-                                                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)', zIndex: 99999,
-                                                        minWidth: '160px', overflow: 'hidden'
+                                                        width: '36px',
+                                                        height: '36px',
+                                                        borderRadius: '6px',
+                                                        background: '#f1f5f9',
+                                                        border: '1px solid #e2e8f0',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '10px',
+                                                        fontWeight: 500,
+                                                        color: '#94a3b8',
+                                                        margin: '0 auto'
                                                     }}>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(blog); setActiveDropdownId(null); }}
-                                                            className="admin-view-action-btn"
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'all 0.15s ease' }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.background = '#2563eb';
-                                                                e.currentTarget.style.color = '#ffffff';
-                                                                e.currentTarget.style.border = 'none';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'none';
-                                                                e.currentTarget.style.color = '#334155';
-                                                                e.currentTarget.style.border = 'none';
-                                                            }}
-                                                        >
-                                                            <Eye size={14} /> <span>View Details</span>
-                                                        </button>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEditBlog(blog); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'background 0.15s ease' }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.background='none'}
-                                                        >
-                                                            <Edit2 size={14} /> <span>Edit Blog</span>
-                                                        </button>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteBlog(blog); setActiveDropdownId(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#ef4444', transition: 'background 0.15s ease' }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background='#fef2f2'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.background='none'}
-                                                        >
-                                                            <Trash2 size={14} /> <span>Delete Blog</span>
-                                                        </button>
+                                                        No Img
                                                     </div>
                                                 )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                            <td style={styles.td}>
+                                                {blog.category && blog.category !== '-' ? (
+                                                    <span style={getCategoryBadgeStyle(blog.category)}>
+                                                        {blog.category}
+                                                    </span>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </td>
+                                            <td style={styles.td}>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#334155' }}>
+                                                    {blog.subCategory && blog.subCategory !== '-' ? blog.subCategory : '-'}
+                                                </span>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <button
+                                                    type="button"
+                                                    style={getStatusStyle(blog.status)}
+                                                    onClick={() => handleToggleStatus(blog.id)}
+                                                >
+                                                    {blog.status}
+                                                </button>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
+                                                    <button
+                                                        type="button"
+                                                        className={`actions-trigger-btn ${activeDropdownId === blog.id ? 'active' : ''}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveDropdownId(activeDropdownId === blog.id ? null : blog.id);
+                                                        }}
+                                                    >
+                                                        <span>Actions</span>
+                                                        <ChevronDown size={14} />
+                                                    </button>
+                                                    {activeDropdownId === blog.id && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            ...(index >= filteredBlogs.length - 2 || filteredBlogs.length <= 3
+                                                                ? { bottom: '100%', marginBottom: '6px' }
+                                                                : { top: '100%', marginTop: '6px' }),
+                                                            right: 0,
+                                                            background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0',
+                                                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)', zIndex: 99999,
+                                                            minWidth: '160px', overflow: 'hidden'
+                                                        }}>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(blog); setActiveDropdownId(null); }}
+                                                                className="admin-view-action-btn"
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'all 0.15s ease' }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.background = '#2563eb';
+                                                                    e.currentTarget.style.color = '#ffffff';
+                                                                    e.currentTarget.style.border = 'none';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.background = 'none';
+                                                                    e.currentTarget.style.color = '#334155';
+                                                                    e.currentTarget.style.border = 'none';
+                                                                }}
+                                                            >
+                                                                <Eye size={14} /> <span>View Details</span>
+                                                            </button>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleEditBlog(blog); }}
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'background 0.15s ease' }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.background='none'}
+                                                            >
+                                                                <Edit2 size={14} /> <span>Edit Blog</span>
+                                                            </button>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteBlog(blog); setActiveDropdownId(null); }}
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#ef4444', transition: 'background 0.15s ease' }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background='#fef2f2'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.background='none'}
+                                                            >
+                                                                <Trash2 size={14} /> <span>Delete Blog</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
                                     <td colSpan="8" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
@@ -1494,35 +1643,87 @@ function BlogList() {
                                         <option value="No">No</option>
                                     </select>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: '1 / -1' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Image [max_size: 1MB]</label>
-                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                        {editImagePreview && (
-                                            <NgrokSafeImage 
-                                                src={editImagePreview.startsWith('blob:') ? editImagePreview : toApiAssetUrl(editImagePreview)} 
-                                                alt="Blog Image" 
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
-                                            />
-                                        )}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            <label 
-                                                htmlFor="edit-blog-image"
-                                                style={{ padding: '8px 14px', background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-block', width: 'fit-content' }}
-                                            >
-                                                Choose File
-                                            </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <input
+                                            type="text"
+                                            name="imageName"
+                                            placeholder="Select or enter image path..."
+                                            value={editFormData.image?.name || editFormData.imageName || ''}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setEditFormData((prev) => ({ ...prev, imageName: val }));
+                                                if (val) setEditImagePreview(val);
+                                            }}
+                                            style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                        />
+                                        <label style={{
+                                            backgroundColor: '#800032',
+                                            color: '#ffffff',
+                                            borderRadius: '6px',
+                                            padding: '8px 16px',
+                                            fontWeight: 600,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            Choose File
                                             <input
-                                                id="edit-blog-image"
                                                 type="file"
                                                 accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                 onChange={handleEditFileChange('image', 'imageName')}
                                                 style={{ display: 'none' }}
                                             />
-                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>
-                                                {editFormData.image?.name || editFormData.imageName || 'No file chosen'}
-                                            </span>
-                                        </div>
+                                        </label>
                                     </div>
+                                    {(editImagePreview || editFormData.imageName) && (
+                                        <div style={{
+                                            padding: '10px 14px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '14px',
+                                            marginTop: '4px'
+                                        }}>
+                                            {editImagePreview ? (
+                                                <NgrokSafeImage
+                                                    src={editImagePreview.startsWith('blob:') || editImagePreview.startsWith('data:') ? editImagePreview : toApiAssetUrl(editImagePreview)}
+                                                    alt="Preview"
+                                                    style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '60px', height: '45px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b' }}>No Img</div>
+                                            )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                                                    IMAGE PREVIEW
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveEditImage('image', 'imageName', setEditImagePreview)}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#dc2626',
+                                                        fontSize: '13px',
+                                                        fontWeight: 500,
+                                                        cursor: 'pointer',
+                                                        padding: 0,
+                                                        textAlign: 'left',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Remove Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1555,31 +1756,87 @@ function BlogList() {
                                         style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none', background: 'var(--panel)', color: 'var(--text-primary)' }}
                                     />
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: '1 / -1' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Og Image [max_size: 1MB]</label>
-                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                        {editOgImagePreview && (
-                                            <NgrokSafeImage 
-                                                src={editOgImagePreview.startsWith('blob:') ? editOgImagePreview : toApiAssetUrl(editOgImagePreview)} 
-                                                alt="Og Image" 
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <input
+                                            type="text"
+                                            name="ogImageName"
+                                            placeholder="Select or enter OG image path..."
+                                            value={editFormData.ogImage?.name || editFormData.ogImageName || ''}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setEditFormData((prev) => ({ ...prev, ogImageName: val }));
+                                                if (val) setEditOgImagePreview(val);
+                                            }}
+                                            style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none', background: 'var(--panel)', color: 'var(--text-primary)' }}
+                                        />
+                                        <label style={{
+                                            backgroundColor: '#800032',
+                                            color: '#ffffff',
+                                            borderRadius: '6px',
+                                            padding: '8px 16px',
+                                            fontWeight: 600,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            Choose File
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
+                                                onChange={handleEditFileChange('ogImage', 'ogImageName')}
+                                                style={{ display: 'none' }}
                                             />
-                                        )}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            <label style={{ padding: '8px 14px', background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-block', width: 'fit-content' }}>
-                                                Choose File
-                                                <input
-                                                    type="file"
-                                                    accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
-                                                    onChange={handleEditFileChange('ogImage', 'ogImageName')}
-                                                    style={{ display: 'none' }}
-                                                />
-                                            </label>
-                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>
-                                                {editFormData.ogImage?.name || editFormData.ogImageName || 'No file chosen'}
-                                            </span>
-                                        </div>
+                                        </label>
                                     </div>
+                                    {(editOgImagePreview || editFormData.ogImageName) && (
+                                        <div style={{
+                                            padding: '10px 14px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '14px',
+                                            marginTop: '4px'
+                                        }}>
+                                            {editOgImagePreview ? (
+                                                <NgrokSafeImage
+                                                    src={editOgImagePreview.startsWith('blob:') || editOgImagePreview.startsWith('data:') ? editOgImagePreview : toApiAssetUrl(editOgImagePreview)}
+                                                    alt="Preview OG"
+                                                    style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '60px', height: '45px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b' }}>No Img</div>
+                                            )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                                                    IMAGE PREVIEW
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveEditImage('ogImage', 'ogImageName', setEditOgImagePreview)}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#dc2626',
+                                                        fontSize: '13px',
+                                                        fontWeight: 500,
+                                                        cursor: 'pointer',
+                                                        padding: 0,
+                                                        textAlign: 'left',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Remove Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Meta Description</label>

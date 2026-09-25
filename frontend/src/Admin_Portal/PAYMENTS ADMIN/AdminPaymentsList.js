@@ -637,7 +637,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                 <th className="status-col" style={{ minWidth: "80px" }}>Status</th>
                 <th style={{ minWidth: "85px" }}>Refund Status</th>
                 <th style={{ minWidth: "95px" }}>Date</th>
-                <th className="action-col" style={{ minWidth: "70px" }}>Action</th>
+                <th className="action-col" style={{ minWidth: "100px", width: "100px" }}>Action</th>
               </tr>
             </thead>
             <tbody>

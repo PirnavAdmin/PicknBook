@@ -115,13 +115,19 @@ const AllPages = () => {
     }
   };
 
-  const setStoredImageOverride = (slugOrId, imagePath) => {
+  const setStoredImageOverride = (slugOrId, imagePath, extraTitle = "") => {
     try {
       const current = getStoredImageOverrides();
-      if (slugOrId) {
+      if (slugOrId !== undefined && slugOrId !== null) {
         current[slugOrId] = imagePath;
+        current[String(slugOrId)] = imagePath;
         const norm = normalizeKey(slugOrId);
         if (norm) current[norm] = imagePath;
+      }
+      if (extraTitle) {
+        current[extraTitle] = imagePath;
+        const normTitle = normalizeKey(extraTitle);
+        if (normTitle) current[normTitle] = imagePath;
       }
       localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
     } catch (e) {
@@ -204,7 +210,16 @@ const AllPages = () => {
       const finalPages = filteredMerged.map((p) => {
         const pSlug = p.slug || "";
         const pTitle = p.title || "";
-        const pId = p.id || "";
+        const pId = String(p.id || "");
+
+        const keysToCheck = [
+          pSlug,
+          normalizeKey(pSlug),
+          pTitle,
+          normalizeKey(pTitle),
+          pId,
+          String(pId)
+        ].filter(Boolean);
 
         const overrideStatus =
           overrides[pSlug] ||
@@ -212,18 +227,36 @@ const AllPages = () => {
           overrides[normalizeKey(pTitle)] ||
           overrides[pId];
 
-        const overrideImg =
-          imageOverrides[pSlug] ||
-          imageOverrides[normalizeKey(pSlug)] ||
-          imageOverrides[normalizeKey(pTitle)] ||
-          imageOverrides[pId];
+        // 1. If ANY key is marked "__REMOVED__", the image is explicitly removed
+        const isRemoved = keysToCheck.some(
+          (k) => imageOverrides[k] === "__REMOVED__" || imageOverrides[k] === "" || imageOverrides[k] === null
+        );
 
-        const finalImg = overrideImg || getPageImageVal(p);
+        let overrideImg = undefined;
+        if (isRemoved) {
+          overrideImg = "__REMOVED__";
+        } else {
+          for (const k of keysToCheck) {
+            if (imageOverrides[k] !== undefined && imageOverrides[k] !== null) {
+              overrideImg = imageOverrides[k];
+              break;
+            }
+          }
+        }
+
+        let finalImg = getPageImageVal(p);
+        if (overrideImg === "__REMOVED__" || overrideImg === "" || overrideImg === null) {
+          finalImg = "";
+        } else if (overrideImg) {
+          finalImg = overrideImg;
+        }
 
         return {
           ...p,
           ...(overrideStatus ? { status: overrideStatus } : {}),
-          ...(finalImg ? { imagePath: finalImg } : {}),
+          imagePath: finalImg,
+          image: finalImg,
+          imageUrl: finalImg,
         };
       });
 
@@ -259,10 +292,6 @@ const AllPages = () => {
       page.Image ||
       page.imageUrl ||
       page.ImageUrl ||
-      page.bannerPath ||
-      page.BannerPath ||
-      page.banner ||
-      page.Banner ||
       ""
     );
   };
@@ -366,6 +395,10 @@ const AllPages = () => {
         setStoredImageOverride(slug, localDataUrl);
         if (editingPage.id) setStoredImageOverride(editingPage.id, localDataUrl);
       }
+    } else if (!editFormData.imageName) {
+      updatedData.imagePath = "";
+      setStoredImageOverride(slug, "__REMOVED__");
+      if (editingPage.id) setStoredImageOverride(editingPage.id, "__REMOVED__");
     }
 
     try {
@@ -384,6 +417,11 @@ const AllPages = () => {
         formData.append("image", editImageFile);
         formData.append("PageImage", editImageFile);
         formData.append("file", editImageFile);
+      } else if (!editFormData.imageName) {
+        formData.append("DeleteImage", "true");
+        formData.append("RemoveImage", "true");
+        formData.append("ClearImage", "true");
+        formData.append("IsImageDeleted", "true");
       }
       if (editBannerFile) {
         formData.append("Banner", editBannerFile);

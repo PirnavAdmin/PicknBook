@@ -1,6 +1,6 @@
 /* eslint-disable */
 import axios from "axios";
-import { toApiUrl, withNgrokSkipWarningHeader } from "./apiClient";
+import { toApiUrl, toApiAssetUrl, withNgrokSkipWarningHeader } from "./apiClient";
 
 const blogApi = axios.create({
   headers: {
@@ -214,6 +214,62 @@ export async function getPublicBlogs({ page = 1, pageSize = 20, category = "", f
 export async function getPublicBlogBySlug(slug) {
   const response = await blogApi.get(`/api/Blogs/${encodeURIComponent(slug)}`);
   return response.data;
+}
+
+export function saveBlogImageLocally(key, value) {
+  if (typeof window === "undefined" || !key || !value) return;
+  try {
+    const k = `blog_img_${String(key)}`;
+    window.localStorage.setItem(k, value);
+  } catch (err) {
+    // ignore
+  }
+}
+
+export function getBlogImageLocally(blog) {
+  if (typeof window === "undefined" || !blog) return "";
+  try {
+    const keys = [blog?.id, blog?.slug, blog?.title].filter(Boolean);
+    for (const key of keys) {
+      const stored = window.localStorage.getItem(`blog_img_${String(key)}`);
+      if (stored) return stored;
+    }
+  } catch (err) {
+    // ignore
+  }
+  return "";
+}
+
+export function getBlogImageSrc(blog) {
+  if (!blog) return "";
+  const raw =
+    blog.imageUrl ||
+    blog.ImageUrl ||
+    blog.image ||
+    blog.Image ||
+    blog.url ||
+    blog.Url ||
+    blog.thumbnail ||
+    blog.coverImage ||
+    blog.imageName ||
+    "";
+
+  if (raw && raw !== "-" && raw !== "null" && raw !== "undefined") {
+    if (raw.startsWith("data:") || raw.startsWith("blob:")) {
+      return raw;
+    }
+    return toApiAssetUrl(raw);
+  }
+
+  const local = getBlogImageLocally(blog);
+  if (local) {
+    if (local.startsWith("data:") || local.startsWith("blob:")) {
+      return local;
+    }
+    return toApiAssetUrl(local);
+  }
+
+  return "";
 }
 
 export default blogApi;

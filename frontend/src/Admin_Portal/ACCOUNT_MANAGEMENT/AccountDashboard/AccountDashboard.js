@@ -983,7 +983,7 @@ export default function AccountDashboard() {
 
       {/* Footer */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid #e2e8f0', fontSize: '11px', color: '#94a3b8' }}>
-        <span>© 2026 Pick&book. All rights reserved.</span>
+        <span>© 2026 PickNBook. All rights reserved.</span>
         <div style={{ display: 'flex', gap: '14px' }}>
           <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
           <span>|</span>

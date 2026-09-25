@@ -1,6 +1,7 @@
 // src/services/unifiedCouponService.js
 
-const API_BASE_URL = "";
+const IS_LOCAL_DEV = process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+const API_BASE_URL = IS_LOCAL_DEV ? '' : (process.env.REACT_APP_API_BASE_URL || '').trim();
 
 function toAbsoluteUrl(urlOrPath) {
   if (/^https?:\/\//i.test(urlOrPath)) return urlOrPath;
@@ -35,18 +36,25 @@ function getAuthHeaders() {
 /**
  * 1. GET Method — Fetch & Display Coupons / Offers
  * Fetch unified coupons and offers across the entire website and mobile app.
+ * Supports type query filtering: 'bus', 'flight', 'hotel', 'all'
  * 
  * @param {Object} params 
  * @param {string} [params.serviceType='all'] - 'bus', 'hotel', 'flight', 'all'
+ * @param {string} [params.type] - 'bus', 'hotel', 'flight', 'all'
  * @param {string} [params.category] - 'Coupon' (user discount codes) or 'Offer' (marketing cards/banners)
  */
-export async function fetchCouponsAndOffers({ serviceType = 'all', category } = {}) {
+export async function fetchCouponsAndOffers({ serviceType = 'all', type, bookingType, category } = {}) {
+  const targetType = type || (serviceType !== 'all' ? serviceType : bookingType);
   const query = {};
-  if (serviceType && serviceType !== 'all') query.serviceType = serviceType;
-  if (category) query.category = category;
+  if (targetType && targetType !== 'all') {
+    query.type = String(targetType).toLowerCase();
+  }
+  if (category && category !== 'all') {
+    query.category = category;
+  }
 
   const url = buildUrl("/api/coupons", query);
-  
+
   const response = await fetch(url, {
     method: "GET",
     headers: getAuthHeaders(),
@@ -83,3 +91,8 @@ export async function validateUnifiedCoupon(payload) {
 
   return response.json();
 }
+
+export const fetchBusCoupons = (params = {}) => fetchCouponsAndOffers({ ...params, type: 'bus' });
+export const fetchFlightCoupons = (params = {}) => fetchCouponsAndOffers({ ...params, type: 'flight' });
+export const fetchHotelCoupons = (params = {}) => fetchCouponsAndOffers({ ...params, type: 'hotel' });
+

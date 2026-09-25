@@ -720,6 +720,100 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "GetCouponConditions",
+    "RelativePath": "api/admin/bus/discounts/{couponId}/conditions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "couponId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "CreateCouponCondition",
+    "RelativePath": "api/admin/bus/discounts/{couponId}/conditions",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "couponId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CreateBusCouponConditionDto",
+        "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "UpdateCouponCondition",
+    "RelativePath": "api/admin/bus/discounts/conditions/{conditionId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conditionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.UpdateBusCouponConditionDto",
+        "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
+    "Method": "DeleteCouponCondition",
+    "RelativePath": "api/admin/bus/discounts/conditions/{conditionId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "conditionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "type",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminBusController",
     "Method": "GetGstSettings",
     "RelativePath": "api/admin/bus/gst-settings",
     "HttpMethod": "GET",

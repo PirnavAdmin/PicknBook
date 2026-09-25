@@ -1432,3 +1432,4 @@ c:\Users\ADMIN\Desktop\Local\PickNBook.Api\obj\Debug\net8.0\PickNBook.Api.pdb
 c:\Users\ADMIN\Desktop\Local\PickNBook.Api\obj\Debug\net8.0\PickNBook.Api.genruntimeconfig.cache
 c:\Users\ADMIN\Desktop\Local\PickNBook.Api\obj\Debug\net8.0\ref\PickNBook.Api.dll
 C:\Users\ADMIN\Desktop\Local\PickNBook.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\obj\Debug\net8.0\PickNBook.Api.sourcelink.json

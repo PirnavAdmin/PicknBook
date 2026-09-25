@@ -1,4 +1,5 @@
 /* eslint-disable */
+import React, { useState, useEffect } from "react";
 // ApiClient service
 
 function normalizeApiBaseUrlCandidate(candidate) {
@@ -113,6 +114,18 @@ export function sanitizeApiUrlValue(urlOrPath) {
   return value.trim().replace(/\\/g, "/");
 }
 
+function getHostnameWithoutWww(urlStr) {
+  if (!urlStr) return "";
+  try {
+    const trimmed = String(urlStr).trim();
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+    const u = new URL(withProtocol);
+    return u.hostname.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
 function isApiAssetOrigin(urlValue) {
   if (!isLocalDevelopment()) {
     return false;
@@ -120,14 +133,14 @@ function isApiAssetOrigin(urlValue) {
 
   try {
     const assetUrl = new URL(urlValue);
-    const origin = assetUrl.origin.toLowerCase();
+    const originHost = getHostnameWithoutWww(assetUrl.hostname);
 
     if (
-      origin.includes("unsplash.com") ||
-      origin.includes("cloudinary.com") ||
-      origin.includes("googleapis.com") ||
-      origin.includes("githubusercontent.com") ||
-      origin.includes("placeholder.com")
+      originHost.includes("unsplash.com") ||
+      originHost.includes("cloudinary.com") ||
+      originHost.includes("googleapis.com") ||
+      originHost.includes("githubusercontent.com") ||
+      originHost.includes("placeholder.com")
     ) {
       return false;
     }
@@ -135,17 +148,15 @@ function isApiAssetOrigin(urlValue) {
     const configuredBase = process.env.REACT_APP_API_BASE_URL || "";
     const configuredProxy = process.env.REACT_APP_API_PROXY_TARGET || "";
 
-    const assetOrigins = [
-      configuredBase,
-      configuredProxy,
-      "http://localhost:5000",
-      "https://localhost:5000",
-      "http://127.0.0.1:5000",
-    ]
-      .map(getAbsoluteOrigin)
-      .filter(Boolean);
+    const targetHosts = [
+      getHostnameWithoutWww(configuredBase),
+      getHostnameWithoutWww(configuredProxy),
+      "picknbook.in",
+      "localhost",
+      "127.0.0.1",
+    ].filter(Boolean);
 
-    if (assetOrigins.includes(origin) || origin.includes("ngrok")) {
+    if (targetHosts.some((th) => originHost === th || originHost.endsWith(`.${th}`)) || originHost.includes("ngrok")) {
       return true;
     }
 
@@ -155,6 +166,26 @@ function isApiAssetOrigin(urlValue) {
   }
 }
 
+export function getDisplayFileName(fileOrUrl) {
+  if (!fileOrUrl) return "No file chosen";
+  if (typeof fileOrUrl === "object" && fileOrUrl.name) {
+    return fileOrUrl.name;
+  }
+  if (typeof fileOrUrl === "string") {
+    const clean = fileOrUrl.trim();
+    if (!clean || clean === "-" || clean === "null" || clean === "undefined") return "No file chosen";
+    try {
+      const urlObj = clean.startsWith("http") ? new URL(clean) : null;
+      const pathStr = urlObj ? urlObj.pathname : clean;
+      const filename = pathStr.split("/").filter(Boolean).pop();
+      return filename ? decodeURIComponent(filename) : clean;
+    } catch {
+      return clean.split("/").filter(Boolean).pop() || clean;
+    }
+  }
+  return "No file chosen";
+}
+
 export function toApiAssetUrl(urlOrPath) {
   const normalizedUrlOrPath = sanitizeApiUrlValue(urlOrPath);
 
@@ -162,21 +193,48 @@ export function toApiAssetUrl(urlOrPath) {
     return "";
   }
 
-  if (/^https?:\/\//i.test(normalizedUrlOrPath)) {
-    if (isApiAssetOrigin(normalizedUrlOrPath)) {
+  let resultUrl = normalizedUrlOrPath;
+
+  if (isLocalDevelopment() && /^https?:\/\//i.test(normalizedUrlOrPath)) {
+    try {
       const parsed = new URL(normalizedUrlOrPath);
-      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      const parsedHost = getHostnameWithoutWww(parsed.hostname);
+      const configuredTarget = process.env.REACT_APP_API_PROXY_TARGET || process.env.REACT_APP_API_BASE_URL || "https://www.picknbook.in";
+      const targetHost = getHostnameWithoutWww(configuredTarget);
+
+      const isTargetMatch = (parsedHost && targetHost && parsedHost === targetHost) || parsedHost.includes("picknbook.in");
+      const isNgrok = parsed.hostname.includes("ngrok");
+
+      if (isTargetMatch || isNgrok) {
+        resultUrl = parsed.pathname + parsed.search;
+      }
+    } catch {
+      // ignore
     }
-
-    return normalizedUrlOrPath;
   }
 
-  if (isLocalDevelopment()) {
-    const cleanPath = String(normalizedUrlOrPath).replace(/^\/+/, "");
-    return `/${cleanPath}`;
+  if (/^https?:\/\//i.test(resultUrl) || resultUrl.startsWith("data:") || resultUrl.startsWith("blob:")) {
+    if (/^http:\/\//i.test(resultUrl)) {
+      const host = getHostnameWithoutWww(resultUrl);
+      if (host === "picknbook.in" || (typeof window !== "undefined" && window.location.protocol === "https:")) {
+        resultUrl = resultUrl.replace(/^http:\/\//i, "https://");
+      }
+    }
+  } else if (isLocalDevelopment()) {
+    const cleanPath = String(resultUrl).replace(/^\/+/, "");
+    resultUrl = `/${cleanPath}`;
+  } else {
+    resultUrl = toApiUrl(resultUrl);
   }
 
-  return toApiUrl(normalizedUrlOrPath);
+  if (resultUrl && (resultUrl.includes("ngrok") || resultUrl.includes("ngrok-free.dev"))) {
+    const sep = resultUrl.includes("?") ? "&" : "?";
+    if (!resultUrl.includes("ngrok-skip-browser-warning")) {
+      resultUrl = `${resultUrl}${sep}ngrok-skip-browser-warning=true`;
+    }
+  }
+
+  return resultUrl;
 }
 
 export function withNgrokSkipWarningHeader(urlOrPath, headers = {}) {
@@ -278,38 +336,74 @@ export function normalizeResponseMessage(payload, fallbackMessage = "") {
   return text;
 }
 
-export function NgrokSafeImage({ src, alt, style, className, onClick, onError, title, fallbackSrc }) {
-  const defaultPlaceholder = fallbackSrc !== undefined ? fallbackSrc : "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600";
+export function NgrokSafeImage({ src, alt, style, className, onClick, onError, title, fallbackSrc = null }) {
+  const [retryStage, setRetryStage] = useState(0);
+
+  useEffect(() => {
+    setRetryStage(0);
+  }, [src]);
+
+  let currentSrc = src;
+
+  if (retryStage === 1 && typeof src === "string") {
+    if (src.startsWith("/")) {
+      currentSrc = `https://www.picknbook.in${src}`;
+    } else if (src.startsWith("http://")) {
+      currentSrc = src.replace(/^http:\/\//i, "https://");
+    } else {
+      currentSrc = fallbackSrc || null;
+    }
+  } else if (retryStage >= 2) {
+    currentSrc = fallbackSrc || null;
+  }
+
+  const proxyTarget = process.env.REACT_APP_API_PROXY_TARGET || "";
+  const isNgrokProxy = proxyTarget.includes("ngrok");
+
+  if (currentSrc && typeof currentSrc === "string") {
+    if (currentSrc.includes("ngrok") || currentSrc.includes("ngrok-free.dev") || isNgrokProxy) {
+      const sep = currentSrc.includes("?") ? "&" : "?";
+      if (!currentSrc.includes("ngrok-skip-browser-warning")) {
+        currentSrc = `${currentSrc}${sep}ngrok-skip-browser-warning=true`;
+      }
+    }
+  }
 
   const handleNativeError = (e) => {
-    if (defaultPlaceholder) {
-      e.target.src = defaultPlaceholder;
+    if (retryStage === 0 && typeof src === "string" && (src.startsWith("/") || src.startsWith("http://"))) {
+      setRetryStage(1);
+    } else if (retryStage < 2 && fallbackSrc) {
+      setRetryStage(2);
     } else {
-      e.target.style.display = 'none';
+      setRetryStage(3);
     }
     if (onError) onError(e);
   };
 
-  if (!src) {
-    if (defaultPlaceholder) {
-      return (
-        <img
-          src={defaultPlaceholder}
-          alt={alt || ''}
-          title={title}
-          style={style}
-          className={className}
-          onClick={onClick}
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-      );
-    }
-    return null;
+  if (!currentSrc || retryStage >= 3) {
+    return (
+      <div style={{
+        width: style?.width || '36px',
+        height: style?.height || '36px',
+        borderRadius: style?.borderRadius || '6px',
+        background: '#f1f5f9',
+        border: '1px solid #e2e8f0',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '10px',
+        fontWeight: 500,
+        color: '#94a3b8',
+        margin: '0 auto'
+      }}>
+        No Img
+      </div>
+    );
   }
 
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={alt || ''}
       title={title}
       style={style}

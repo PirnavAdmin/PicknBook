@@ -137,7 +137,7 @@ const AddBlogForm = () => {
             [name]: file,
             [labelField]: file?.name || prev[labelField],
         }));
-        
+
         if (file) {
             const previewUrl = URL.createObjectURL(file);
             if (name === 'image') {
@@ -146,6 +146,15 @@ const AddBlogForm = () => {
                 setOgImagePreview(previewUrl);
             }
         }
+    };
+
+    const handleRemoveImage = (name, labelField, previewSetter) => () => {
+        setFormData((prev) => ({
+            ...prev,
+            [name]: null,
+            [labelField]: '',
+        }));
+        if (previewSetter) previewSetter('');
     };
 
     const buildSlug = (title) =>
@@ -193,7 +202,7 @@ const AddBlogForm = () => {
             dataToSend.append("SubCategory", formData.subCategory);
             dataToSend.append("ShortDescription", formData.shortDescription.trim());
             dataToSend.append("LongDescription", formData.longDescription.trim());
-            
+
             if (formData.slug?.trim()) {
                 dataToSend.append("Slug", formData.slug.trim());
             } else {
@@ -559,7 +568,7 @@ const AddBlogForm = () => {
                     </div>
 
                     <form onSubmit={handleSubmit}>
-                         <div style={styles.sectionHeader}>Basic Information</div>
+                        <div style={styles.sectionHeader}>Basic Information</div>
                         <table style={styles.tableForm}>
                             <tbody>
                                 <tr>
@@ -594,30 +603,86 @@ const AddBlogForm = () => {
                                         Image [max_size: 1MB]
                                     </td>
                                     <td style={styles.tableInputCell}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                            {imagePreview && (
-                                                <div style={{ marginBottom: '4px' }}>
-                                                    <NgrokSafeImage 
-                                                        src={imagePreview.startsWith('blob:') ? imagePreview : toApiAssetUrl(imagePreview)} 
-                                                        alt="Current Blog" 
-                                                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
-                                                    />
-                                                </div>
-                                            )}
-                                            <div style={styles.fileInputWrapper}>
-                                                <label style={styles.fileLabel}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <input
+                                                    type="text"
+                                                    name="imageName"
+                                                    placeholder="Select or enter image path..."
+                                                    value={formData.image?.name || formData.imageName || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setFormData((prev) => ({ ...prev, imageName: val }));
+                                                        if (val) setImagePreview(val);
+                                                    }}
+                                                    style={{ ...styles.input, flex: 1 }}
+                                                />
+                                                <label style={{
+                                                    backgroundColor: '#800032',
+                                                    color: '#ffffff',
+                                                    borderRadius: '6px',
+                                                    padding: '8px 16px',
+                                                    fontWeight: 600,
+                                                    fontSize: '13px',
+                                                    cursor: 'pointer',
+                                                    whiteSpace: 'nowrap',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
                                                     Choose File
                                                     <input
                                                         type="file"
                                                         accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                         onChange={handleFileChange('image', 'imageName')}
-                                                        style={styles.fileInputHidden}
+                                                        style={{ display: 'none' }}
                                                     />
                                                 </label>
-                                                <span style={styles.fileName}>
-                                                    {formData.image?.name || formData.imageName || 'No file chosen'}
-                                                </span>
                                             </div>
+                                            {(imagePreview || formData.imageName) && (
+                                                <div style={{
+                                                    padding: '10px 14px',
+                                                    backgroundColor: '#f8fafc',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '14px',
+                                                    marginTop: '4px'
+                                                }}>
+                                                    {imagePreview ? (
+                                                        <NgrokSafeImage
+                                                            src={imagePreview.startsWith('blob:') || imagePreview.startsWith('data:') ? imagePreview : toApiAssetUrl(imagePreview)}
+                                                            alt="Preview"
+                                                            style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ width: '60px', height: '45px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b' }}>No Img</div>
+                                                    )}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                                                            IMAGE PREVIEW
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRemoveImage('image', 'imageName', setImagePreview)}
+                                                            style={{
+                                                                background: 'none',
+                                                                border: 'none',
+                                                                color: '#dc2626',
+                                                                fontSize: '13px',
+                                                                fontWeight: 500,
+                                                                cursor: 'pointer',
+                                                                padding: 0,
+                                                                textAlign: 'left',
+                                                                textDecoration: 'underline'
+                                                            }}
+                                                        >
+                                                            Remove Image
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -782,30 +847,86 @@ const AddBlogForm = () => {
                                         OG Image [max_size: 1MB]
                                     </td>
                                     <td style={styles.tableInputCell}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                            {ogImagePreview && (
-                                                <div style={{ marginBottom: '4px' }}>
-                                                    <NgrokSafeImage 
-                                                        src={ogImagePreview.startsWith('blob:') ? ogImagePreview : toApiAssetUrl(ogImagePreview)} 
-                                                        alt="Current OG" 
-                                                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
-                                                    />
-                                                </div>
-                                            )}
-                                            <div style={styles.fileInputWrapper}>
-                                                <label style={styles.fileLabel}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <input
+                                                    type="text"
+                                                    name="ogImageName"
+                                                    placeholder="Select or enter OG image path..."
+                                                    value={formData.ogImage?.name || formData.ogImageName || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setFormData((prev) => ({ ...prev, ogImageName: val }));
+                                                        if (val) setOgImagePreview(val);
+                                                    }}
+                                                    style={{ ...styles.input, flex: 1 }}
+                                                />
+                                                <label style={{
+                                                    backgroundColor: '#800032',
+                                                    color: '#ffffff',
+                                                    borderRadius: '6px',
+                                                    padding: '8px 16px',
+                                                    fontWeight: 600,
+                                                    fontSize: '13px',
+                                                    cursor: 'pointer',
+                                                    whiteSpace: 'nowrap',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
                                                     Choose File
                                                     <input
                                                         type="file"
                                                         accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
                                                         onChange={handleFileChange('ogImage', 'ogImageName')}
-                                                        style={styles.fileInputHidden}
+                                                        style={{ display: 'none' }}
                                                     />
                                                 </label>
-                                                <span style={styles.fileName}>
-                                                    {formData.ogImage?.name || formData.ogImageName || 'No file chosen'}
-                                                </span>
                                             </div>
+                                            {(ogImagePreview || formData.ogImageName) && (
+                                                <div style={{
+                                                    padding: '10px 14px',
+                                                    backgroundColor: '#f8fafc',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '14px',
+                                                    marginTop: '4px'
+                                                }}>
+                                                    {ogImagePreview ? (
+                                                        <NgrokSafeImage
+                                                            src={ogImagePreview.startsWith('blob:') || ogImagePreview.startsWith('data:') ? ogImagePreview : toApiAssetUrl(ogImagePreview)}
+                                                            alt="Preview OG"
+                                                            style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ width: '60px', height: '45px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b' }}>No Img</div>
+                                                    )}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                                                            IMAGE PREVIEW
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRemoveImage('ogImage', 'ogImageName', setOgImagePreview)}
+                                                            style={{
+                                                                background: 'none',
+                                                                border: 'none',
+                                                                color: '#dc2626',
+                                                                fontSize: '13px',
+                                                                fontWeight: 500,
+                                                                cursor: 'pointer',
+                                                                padding: 0,
+                                                                textAlign: 'left',
+                                                                textDecoration: 'underline'
+                                                            }}
+                                                        >
+                                                            Remove Image
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -844,7 +965,7 @@ const AddBlogForm = () => {
                             >
                                 Reset
                             </button>
-                              <button
+                            <button
                                 type="submit"
                                 style={styles.submitBtn}
                                 disabled={isSubmitting}
@@ -874,3 +995,4 @@ const AddBlogForm = () => {
 };
 
 export default AddBlogForm;
+
