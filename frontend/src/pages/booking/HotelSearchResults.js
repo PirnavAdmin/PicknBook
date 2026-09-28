@@ -779,6 +779,7 @@ export default function HotelSearchResults() {
         children: String(totalChildren),
         guests,
       },
+      currentStep: 1,
     };
  
     const searchString = buildPassengerDetailsQuery(hotel, "", nextState.searchContext);
