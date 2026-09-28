@@ -961,7 +961,8 @@ namespace PickNBook.Api.Controllers
                 UsedCount = 0,
                 Status = NormalizeStatus(request.Status),
                 EntryDateUtc = now,
-                Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim()
+                Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim(),
+                ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim()
             };
 
             dbContext.BusCoupons.Add(coupon);
@@ -1074,8 +1075,8 @@ namespace PickNBook.Api.Controllers
             }
 
             coupon.PromotionCategory = string.IsNullOrWhiteSpace(request.PromotionCategory) ? "Coupon" : request.PromotionCategory.Trim();
-            coupon.Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim();
-            coupon.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+            if (request.Title != null) coupon.Title = string.IsNullOrWhiteSpace(request.Title) ? null : request.Title.Trim();
+            if (request.Description != null) coupon.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
             coupon.Value = request.Value;
             coupon.CouponType = NormalizeDiscountType(request.CouponType);
             coupon.CouponCode = normalizedCode;
@@ -1091,7 +1092,10 @@ namespace PickNBook.Api.Controllers
             coupon.Priority = request.Priority;
             coupon.Status = NormalizeStatus(request.Status);
             coupon.Remark = string.IsNullOrWhiteSpace(request.Remark) ? null : request.Remark.Trim();
-            coupon.ImageUrl = request.ImageUrl;
+            if (request.ImageUrl != null)
+            {
+                coupon.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim();
+            }
 
             try
             {
@@ -1113,6 +1117,7 @@ namespace PickNBook.Api.Controllers
         // COUPON CONDITION ENDPOINTS (Authoritative Condition Settings: DayOfWeek Only)
         // =========================================================================
         [HttpGet("coupons/{couponId:int}/conditions")]
+        [HttpGet("discounts/{couponId:int}/conditions")]
         public async Task<IActionResult> GetCouponConditions(int couponId, [FromQuery] string? type = "bus")
         {
             var serviceType = string.IsNullOrWhiteSpace(type) ? "bus" : type.Trim().ToLowerInvariant();
@@ -1156,6 +1161,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpPost("coupons/{couponId:int}/conditions")]
+        [HttpPost("discounts/{couponId:int}/conditions")]
         public async Task<IActionResult> CreateCouponCondition(int couponId, [FromBody] CreateBusCouponConditionDto request, [FromQuery] string? type = "bus")
         {
             if (string.IsNullOrWhiteSpace(request.ConditionType) || string.IsNullOrWhiteSpace(request.Value1))
@@ -1297,6 +1303,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpPut("coupons/conditions/{conditionId:int}")]
+        [HttpPut("discounts/conditions/{conditionId:int}")]
         public async Task<IActionResult> UpdateCouponCondition(int conditionId, [FromBody] UpdateBusCouponConditionDto request, [FromQuery] string? type = "bus")
         {
             if (string.IsNullOrWhiteSpace(request.ConditionType) || string.IsNullOrWhiteSpace(request.Value1))
@@ -1373,6 +1380,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpDelete("coupons/conditions/{conditionId:int}")]
+        [HttpDelete("discounts/conditions/{conditionId:int}")]
         public async Task<IActionResult> DeleteCouponCondition(int conditionId, [FromQuery] string? type = "bus")
         {
             var serviceType = string.IsNullOrWhiteSpace(type) ? "bus" : type.Trim().ToLowerInvariant();

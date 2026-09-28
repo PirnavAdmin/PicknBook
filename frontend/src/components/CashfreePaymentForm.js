@@ -133,7 +133,7 @@ export default function CashfreePaymentForm({ cashfree, paymentSessionId, onPaym
             P
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#111827" }}>PicknBook Payments</h2>
+            <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#111827" }}>Pick&book Payments</h2>
             <p style={{ margin: "2px 0 0 0", fontSize: "0.8rem", color: "#6b7280" }}>Transaction ID: {paymentSessionId?.split('_')[0] || "10293848"}</p>
           </div>
         </div>

@@ -48,7 +48,7 @@ export default function CancellationModal({ isOpen, onClose, onConfirm, title = 
               style={{ marginTop: "4px" }}
             >
               <option value="Original">Original Payment Method</option>
-              <option value="Wallet">Pick&Book Wallet</option>
+              <option value="Wallet">Pick&book Wallet</option>
             </select>
           </label>
           <div className="cancel-modal-actions">

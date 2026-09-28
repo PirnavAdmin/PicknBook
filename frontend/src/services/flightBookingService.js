@@ -3,7 +3,8 @@ import { clearFlightBookingFlowState } from "../pages/booking/flightBookingFlowS
 import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
 import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
 
-const API_BASE_URL = "";
+const IS_LOCAL_DEV = process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+const API_BASE_URL = IS_LOCAL_DEV ? '' : (process.env.REACT_APP_API_BASE_URL || '').trim();
 
 const ADMIN_FLIGHT_ROOT = "/api/admin/flight";
 const ADMIN_FLIGHT_MARKUPS_ROOT = "/api/admin/flight-markups";
@@ -3022,19 +3023,23 @@ async function requestFlightCancellation(bookingIdOrObj, { selectedLegIndexes = 
   const passengers = selectedPassengerIds.length
     ? booking.passengers.filter(p => selectedPassengerIds.some(id => String(id) === String(p.id))) : booking.passengers;
   if (!segments.length || segments.some(s => !s) || !passengers.length ||
-      (selectedPassengerIds.length && passengers.length !== selectedPassengerIds.length)) {
+    (selectedPassengerIds.length && passengers.length !== selectedPassengerIds.length)) {
     throw new Error("The selected cancellation details are incomplete. Refresh this booking.");
   }
   const sectors = segments.map(s => ({ Origin: s.fromCode || s.sourceCode || s.fromCity, Destination: s.toCode || s.destinationCode || s.toCity }));
-  const ticketData = passengers.map(p => ({ TicketId: String(p.ticketId || p.TicketId || ""),
-    FirstName: p.firstName || p.FirstName, LastName: p.lastName || p.LastName }));
+  const ticketData = passengers.map(p => ({
+    TicketId: String(p.ticketId || p.TicketId || ""),
+    FirstName: p.firstName || p.FirstName, LastName: p.lastName || p.LastName
+  }));
   if (sectors.some(s => !/^[A-Z]{3}$/.test(s.Origin) || !/^[A-Z]{3}$/.test(s.Destination)) ||
-      ticketData.some(p => !/^[1-9]\d*$/.test(p.TicketId) || !p.FirstName || !p.LastName)) {
+    ticketData.some(p => !/^[1-9]\d*$/.test(p.TicketId) || !p.FirstName || !p.LastName)) {
     throw new Error("The supplier ticket IDs, passenger names or airport codes are missing. Contact support to cancel this booking.");
   }
-  const raw = await sendChangeRequest({ BookingId: bookingId, PNR: pnr, RequestType: 2,
+  const raw = await sendChangeRequest({
+    BookingId: bookingId, PNR: pnr, RequestType: 2,
     CancellationType: selectedLegIndexes.length ? (selectedPassengerIds.length ? 3 : 2) : selectedPassengerIds.length ? 1 : 3,
-    Remarks: reason || "Customer requested cancellation", Sectors: sectors, TicketData: ticketData });
+    Remarks: reason || "Customer requested cancellation", Sectors: sectors, TicketData: ticketData
+  });
   const response = assertFlightResponse(raw);
   const change = response.Results || response;
   const changeRequestId = String(change.ChangeRequestId || change.TicketCRInfo?.[0]?.ChangeRequestId || "");
@@ -3046,11 +3051,13 @@ async function requestFlightCancellation(bookingIdOrObj, { selectedLegIndexes = 
   const statusData = statusResponse.Results || statusResponse;
   const supplierStatus = statusData.CancelStatus || statusData.RefundDetails?.CancellationStatus;
   const confirmed = ["cancelled", "canceled"].includes(String(supplierStatus || "").toLowerCase());
-  return { ...booking, changeRequestId,
+  return {
+    ...booking, changeRequestId,
     status: confirmed && !selectedLegIndexes.length && !selectedPassengerIds.length ? "Cancelled" : "Cancellation Requested",
     refundAmount: statusData.RefundAmount ?? statusData.RefundDetails?.RefundAmount ?? null,
     cancellationCharge: statusData.CancellationCharge ?? statusData.RefundDetails?.CancellationCharge ?? null,
-    message: confirmed ? "The supplier confirmed the requested cancellation." : "Cancellation submitted. Confirmation and refund details are pending." };
+    message: confirmed ? "The supplier confirmed the requested cancellation." : "Cancellation submitted. Confirmation and refund details are pending."
+  };
 }
 
 export function cancelFlightBooking(booking, reason) { return requestFlightCancellation(booking, { reason }); }

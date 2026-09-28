@@ -224,7 +224,7 @@
 }
 
 .admin-markup-coupon-table th {
-  padding: 12px 8px !important;
+  padding: 8px 8px !important;
   border-bottom: none !important;
   border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
   text-align: center !important;
@@ -232,8 +232,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  font-size: 0.78rem !important;
+  font-size: 11px !important;
   font-weight: 500 !important;
+  height: 38px !important;
   background: #A51C49 !important;
   color: #ffffff !important;
   border-top-left-radius: 0 !important;
@@ -250,16 +251,15 @@
 }
 
 .admin-markup-coupon-table tbody tr {
-  background: transparent !important;
+  background: #ffffff !important;
   transition: all 0.2s ease !important;
+  height: 36px !important;
 }
 
 .admin-markup-coupon-table tbody td {
-  padding: 12px 10px !important;
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  padding: 6px 8px !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
   border-top: none !important;
   border-right: none !important;
   border-left: none !important;
@@ -268,6 +268,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  font-size: 11px !important;
+  font-weight: 400 !important;
   box-shadow: none !important;
   border-radius: 0 !important;
 }
@@ -665,14 +667,15 @@
   align-items: center !important;
   justify-content: center !important;
   gap: 4px !important;
+  width: 84px !important;
   height: 28px !important;
   padding: 0 10px !important;
-  border-radius: 9999px !important;
+  border-radius: 8px !important;
   border: 1px solid #cbd5e1 !important;
   background: #ffffff !important;
   color: #1e293b !important;
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   box-shadow: none !important;

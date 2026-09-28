@@ -2,6 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createBlogCategory } from '../../../services/blogService';
+import { toApiAssetUrl } from '../../../services/apiClient';
 
 function AddBlogCategory() {
     const navigate = useNavigate();
@@ -32,11 +33,26 @@ function AddBlogCategory() {
         }));
     };
 
+    const [imagePreview, setImagePreview] = useState('');
+
     const handleFileChange = (e) => {
+        const file = e.target.files?.[0] || null;
         setFormData(prev => ({
             ...prev,
-            categoryImage: e.target.files[0]
+            categoryImage: file
         }));
+        if (file) {
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setFormData(prev => ({
+            ...prev,
+            categoryImage: null,
+            imageName: ''
+        }));
+        setImagePreview('');
     };
 
     const handleSubmit = async (e) => {
@@ -374,19 +390,86 @@ function AddBlogCategory() {
                                         Category Image <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>[max: 4MB]</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
-                                        <div style={styles.fileInputWrapper}>
-                                            <label style={styles.fileLabel}>
-                                                Choose File
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <input
-                                                    type="file"
-                                                    accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
-                                                    onChange={handleFileChange}
-                                                    style={styles.fileInputHidden}
+                                                    type="text"
+                                                    name="categoryImageName"
+                                                    placeholder="Select or enter image path..."
+                                                    value={formData.categoryImage?.name || formData.imageName || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setFormData((prev) => ({ ...prev, imageName: val }));
+                                                        if (val) setImagePreview(val);
+                                                    }}
+                                                    style={{ ...styles.input, flex: 1 }}
                                                 />
-                                            </label>
-                                            <span style={styles.fileName}>
-                                                {formData.categoryImage ? formData.categoryImage.name : 'No file chosen'}
-                                            </span>
+                                                <label style={{
+                                                    backgroundColor: '#800032',
+                                                    color: '#ffffff',
+                                                    borderRadius: '6px',
+                                                    padding: '8px 16px',
+                                                    fontWeight: 600,
+                                                    fontSize: '13px',
+                                                    cursor: 'pointer',
+                                                    whiteSpace: 'nowrap',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    Choose File
+                                                    <input
+                                                        type="file"
+                                                        accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
+                                                        onChange={handleFileChange}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                </label>
+                                            </div>
+                                            {(imagePreview || formData.categoryImage?.name || formData.imageName) && (
+                                                <div style={{
+                                                    padding: '10px 14px',
+                                                    backgroundColor: '#f8fafc',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '14px',
+                                                    marginTop: '4px'
+                                                }}>
+                                                    {imagePreview ? (
+                                                        <img
+                                                            src={imagePreview.startsWith('blob:') || imagePreview.startsWith('data:') ? imagePreview : toApiAssetUrl(imagePreview)}
+                                                            alt="Preview"
+                                                            style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ width: '60px', height: '45px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b' }}>No Img</div>
+                                                    )}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                                                            IMAGE PREVIEW
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRemoveImage}
+                                                            style={{
+                                                                background: 'none',
+                                                                border: 'none',
+                                                                color: '#dc2626',
+                                                                fontSize: '13px',
+                                                                fontWeight: 500,
+                                                                cursor: 'pointer',
+                                                                padding: 0,
+                                                                textAlign: 'left',
+                                                                textDecoration: 'underline'
+                                                            }}
+                                                        >
+                                                            Remove Image
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

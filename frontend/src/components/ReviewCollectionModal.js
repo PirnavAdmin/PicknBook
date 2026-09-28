@@ -106,7 +106,7 @@ const ReviewCollectionModal = ({ isOpen, onClose, tripData }) => {
         
         <div className="review-modal-header">
           <h2>How was your trip?</h2>
-          <p>We hope you had a great time{tripData?.destination ? ` in ${tripData.destination}` : ''}. We'd love to hear about your experience with Pick&Book.</p>
+          <p>We hope you had a great time{tripData?.destination ? ` in ${tripData.destination}` : ''}. We'd love to hear about your experience with Pick&book.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="review-modal-form">

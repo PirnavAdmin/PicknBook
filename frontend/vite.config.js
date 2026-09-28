@@ -175,7 +175,7 @@ export default defineConfig(({ mode }) => {
     port: 5173,
     open: true,
     proxy: {
-      '^/(api|uploads|offers|Images|images|Content)': {
+      '^/(api|uploads|offers|Images|images|blogs|Content)': {
         target,
         changeOrigin: true,
         secure: false,

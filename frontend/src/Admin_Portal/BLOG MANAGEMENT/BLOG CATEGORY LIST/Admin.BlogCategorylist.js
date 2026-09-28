@@ -22,6 +22,50 @@ const formatDate = (dateString) => {
     }
 };
 
+const getCategoryBadgeStyle = (categoryName) => {
+    const name = (categoryName || '').toLowerCase().trim();
+    let bg = '#f8fafc';
+    let color = '#475569';
+    let border = '1px solid #cbd5e1';
+
+    if (name.includes('hotel')) {
+        bg = '#fff7ed';
+        color = '#c2410c';
+        border = '1px solid #fed7aa';
+    } else if (name.includes('bus')) {
+        bg = '#eff6ff';
+        color = '#1d4ed8';
+        border = '1px solid #bfdbfe';
+    } else if (name.includes('flight') || name.includes('air')) {
+        bg = '#f0fdf4';
+        color = '#15803d';
+        border = '1px solid #bbf7d0';
+    } else if (name.includes('holiday') || name.includes('package') || name.includes('tour')) {
+        bg = '#fdf4ff';
+        color = '#7e22ce';
+        border = '1px solid #f5d0fe';
+    } else if (name.includes('train') || name.includes('rail')) {
+        bg = '#fef2f2';
+        color = '#b91c1c';
+        border = '1px solid #fecaca';
+    }
+
+    return {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4px 12px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        backgroundColor: bg,
+        color: color,
+        border: border,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+    };
+};
+
 function BlogCategoryList() {
     const navigate = useNavigate();
     const toastTimerRef = useRef(null);
@@ -256,15 +300,15 @@ function BlogCategoryList() {
             paddingBottom: '16px',
         },
         titleMain: {
-            fontSize: '1.8rem',
-            fontWeight: 500,
-            color: '#be185d',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#A51C49',
             margin: 0,
         },
         titleSub: {
-            fontSize: '1.8rem',
-            fontWeight: 500,
-            color: 'black',
+            fontSize: '1.6rem',
+            fontWeight: 600,
+            color: '#A51C49',
             margin: 0,
         },
         actions: {
@@ -274,17 +318,17 @@ function BlogCategoryList() {
             flexWrap: 'nowrap',
         },
         button: {
-            padding: '8px 14px',
-            borderRadius: '8px',
+            padding: '6px 12px',
+            borderRadius: '6px',
             border: '1px solid transparent',
-            fontWeight: 600,
+            fontWeight: 500,
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            fontSize: '0.85rem',
-            height: '38px',
+            fontSize: '0.8rem',
+            height: '34px',
             boxSizing: 'border-box',
             whiteSpace: 'nowrap',
         },
@@ -308,11 +352,11 @@ function BlogCategoryList() {
             borderColor: '#16a34a',
         },
         searchBox: {
-            padding: '8px 12px',
+            padding: '6px 10px',
             border: '1px solid var(--border)',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            width: '200px',
+            borderRadius: '6px',
+            fontSize: '0.8rem',
+            width: '180px',
             outline: 'none',
             transition: 'all 0.2s ease',
             background: 'var(--panel)',
@@ -395,16 +439,17 @@ function BlogCategoryList() {
             cursor: 'pointer',
         },
         tableWrapper: {
-            background: 'var(--panel)',
-            borderRadius: '14px',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
-            overflow: 'visible',
+            background: '#ffffff',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden',
         },
         table: {
             width: '100%',
             borderCollapse: 'collapse',
-            fontSize: '12px',
+            fontSize: '11px',
+            background: '#ffffff',
         },
         thead: {
             background: '#A51C49',
@@ -412,26 +457,30 @@ function BlogCategoryList() {
             fontWeight: 500,
         },
         th: {
-            padding: '12px 10px',
+            padding: '10px 8px',
             textAlign: 'center',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)',
             whiteSpace: 'nowrap',
             fontSize: '11px',
             fontWeight: 500,
-            height: '42px',
+            height: '38px',
             verticalAlign: 'middle',
             textTransform: 'none',
         },
         td: {
             padding: '6px 8px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            color: 'var(--text-primary)',
+            borderBottom: '1px solid #f1f5f9',
+            color: '#334155',
             textAlign: 'center',
             height: '36px',
+            fontSize: '11px',
+            fontWeight: 400,
+            background: '#ffffff',
         },
         tr: {
             transition: 'background-color 0.2s ease',
             height: '36px',
+            background: '#ffffff',
         },
         sn: {
             fontWeight: 500,
@@ -783,14 +832,74 @@ function BlogCategoryList() {
                     document.body
                 )}
 
+                {activePopupImage && createPortal(
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 99999,
+                            padding: '20px'
+                        }}
+                        onClick={() => setActivePopupImage(null)}
+                    >
+                        <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+                            <button
+                                type="button"
+                                onClick={() => setActivePopupImage(null)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-12px',
+                                    right: '-12px',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    background: '#ef4444',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    fontWeight: 'bold',
+                                    fontSize: '16px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                    zIndex: 10
+                                }}
+                            >
+                                ✕
+                            </button>
+                            <NgrokSafeImage
+                                src={activePopupImage}
+                                alt="Enlarged category image"
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '85vh',
+                                    objectFit: 'contain',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                                }}
+                            />
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
                 <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead style={styles.thead}>
                             <tr>
                                 <th style={styles.th}>S.No</th>
+                                <th style={styles.th}>Name</th>
                                 <th style={styles.th}>Entry Date</th>
                                 <th style={styles.th}>Image</th>
-                                <th style={styles.th}>Name</th>
                                 <th style={styles.th}>Status</th>
                                 <th style={styles.th}>Action</th>
                             </tr>
@@ -803,81 +912,110 @@ function BlogCategoryList() {
                                     </td>
                                 </tr>
                             ) : filteredCategories.length > 0 ? (
-                                filteredCategories.slice((page - 1) * pageSize, page * pageSize).map((category, index) => (
-                                    <tr
-                                        key={category.id}
-                                        style={styles.tr}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = 'rgba(74, 15, 26, 0.06)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'transparent';
-                                        }}
-                                    >
-                                        <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
-                                        <td style={styles.td}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', fontWeight: 500, color: '#334155' }}>
-                                                <span style={{ fontSize: '15px', lineHeight: 1 }}>🗓️</span>
-                                                <span>{formatDate(category.createdAtUtc || category.createdAt || category.entryDate)}</span>
-                                            </span>
-                                        </td>
-                                        <td style={styles.td}>
-                                            {(() => {
-                                                const catImg = category.imageUrl || category.image || category.imagePath || category.filePath || category.icon || category.iconUrl || category.photo;
-                                                return catImg && catImg !== '-' ? (
-                                                    <NgrokSafeImage 
-                                                        src={`${toApiAssetUrl(catImg)}?t=${category.updatedAtUtc || category.updatedAt || ''}`} 
-                                                        fallbackSrc={null}
-                                                        alt={category.name} 
-                                                        title={category.name}
-                                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', display: 'block', margin: '0 auto', cursor: 'pointer' }}
-                                                        onClick={() => setActivePopupImage(`${toApiAssetUrl(catImg)}?t=${category.updatedAtUtc || category.updatedAt || ''}`)}
-                                                        onError={(e) => { e.target.style.display = 'none'; }}
-                                                    />
+                                filteredCategories.slice((page - 1) * pageSize, page * pageSize).map((category, index) => {
+                                    const catImg = category.imageUrl || category.image || category.imagePath || category.filePath || category.icon || category.iconUrl || category.photo;
+                                    return (
+                                        <tr
+                                            key={category.id}
+                                            style={styles.tr}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(165, 28, 73, 0.04)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = '#ffffff';
+                                            }}
+                                        >
+                                            <td style={styles.td}><span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span></td>
+                                            <td style={styles.td}>
+                                                <span style={getCategoryBadgeStyle(category.name)}>
+                                                    {category.name}
+                                                </span>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', fontWeight: 500, color: '#334155' }}>
+                                                    <span style={{ fontSize: '15px', lineHeight: 1 }}>🗓️</span>
+                                                    <span>{formatDate(category.createdAtUtc || category.createdAt || category.entryDate)}</span>
+                                                </span>
+                                            </td>
+                                            <td style={styles.td}>
+                                                {catImg && catImg !== '-' ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <NgrokSafeImage
+                                                            src={`${toApiAssetUrl(catImg)}?t=${category.updatedAtUtc || category.updatedAt || ''}`}
+                                                            alt={category.name}
+                                                            onClick={() => setActivePopupImage(toApiAssetUrl(catImg))}
+                                                            style={{
+                                                                width: '36px',
+                                                                height: '36px',
+                                                                objectFit: 'cover',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #e2e8f0',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                                transition: 'transform 0.2s ease'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                        />
+                                                    </div>
                                                 ) : (
-                                                    '-'
-                                                );
-                                            })()}
-                                        </td>
-                                        <td style={styles.td}>{category.name}</td>
-                                        <td style={styles.td}>
-                                            <button
-                                                type="button"
-                                                style={getStatusStyle(category.status)}
-                                                onClick={() => handleToggleStatus(category.id)}
-                                            >
-                                                {category.status}
-                                            </button>
-                                        </td>
-                                        <td style={styles.td}>
-                                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                                                <button type="button" onClick={(e) => { e.stopPropagation(); setActiveDropdownId(activeDropdownId === category.id ? null : category.id); }}
-                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#ffffff', color: '#334155', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease' }}>
-                                                    <span>Actions</span><ChevronDown size={12} />
-                                                </button>
-                                                {activeDropdownId === category.id && (
-                                                    <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.12)', zIndex: 1000, minWidth: '160px', overflow: 'hidden' }}>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(category); setActiveDropdownId(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155' }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
-                                                            <Eye size={14} /> <span>View Details</span>
-                                                        </button>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleEditCategory(category); setActiveDropdownId(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155' }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
-                                                            <Edit2 size={14} /> <span>Edit Category</span>
-                                                        </button>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteCategory(category); setActiveDropdownId(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#ef4444' }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background='#fef2f2'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
-                                                            <Trash2 size={14} /> <span>Delete Category</span>
-                                                        </button>
+                                                    <div style={{
+                                                        width: '36px',
+                                                        height: '36px',
+                                                        borderRadius: '6px',
+                                                        background: '#f1f5f9',
+                                                        border: '1px solid #e2e8f0',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '10px',
+                                                        fontWeight: 500,
+                                                        color: '#94a3b8',
+                                                        margin: '0 auto'
+                                                    }}>
+                                                        No Img
                                                     </div>
                                                 )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                            <td style={styles.td}>
+                                                <button
+                                                    type="button"
+                                                    style={getStatusStyle(category.status)}
+                                                    onClick={() => handleToggleStatus(category.id)}
+                                                >
+                                                    {category.status}
+                                                </button>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <div style={{ position: 'relative', display: 'inline-block' }}>
+                                                    <button type="button" onClick={(e) => { e.stopPropagation(); setActiveDropdownId(activeDropdownId === category.id ? null : category.id); }}
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#ffffff', color: '#334155', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                                                        <span>Actions</span><ChevronDown size={12} />
+                                                    </button>
+                                                    {activeDropdownId === category.id && (
+                                                        <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.12)', zIndex: 1000, minWidth: '160px', overflow: 'hidden' }}>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(category); setActiveDropdownId(null); }}
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155' }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
+                                                                <Eye size={14} /> <span>View Details</span>
+                                                            </button>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleEditCategory(category); setActiveDropdownId(null); }}
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155' }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
+                                                                <Edit2 size={14} /> <span>Edit Category</span>
+                                                            </button>
+                                                            <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteCategory(category); setActiveDropdownId(null); }}
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#ef4444' }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.background='#fef2f2'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
+                                                                <Trash2 size={14} /> <span>Delete Category</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
                                     <td colSpan="6" style={{ padding: "30px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
@@ -967,39 +1105,96 @@ function BlogCategoryList() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: 'span 2' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Category Image</label>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
-                                        {editFormData.image ? (
-                                            <img 
-                                                src={URL.createObjectURL(editFormData.image)} 
-                                                alt="New Preview" 
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }} 
-                                            />
-                                        ) : (editingCategory?.imageUrl || editingCategory?.image) ? (
-                                            <NgrokSafeImage 
-                                                src={`${toApiAssetUrl(editingCategory.imageUrl || editingCategory.image)}?t=${editingCategory.updatedAtUtc || editingCategory.updatedAt || ''}`} 
-                                                alt="Current" 
-                                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }} 
-                                            />
-                                        ) : null}
-                                        <label 
-                                            htmlFor="edit-category-image"
-                                            style={{ padding: '8px 14px', background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-block', width: 'fit-content' }}
-                                        >
-                                            Choose File
-                                        </label>
-                                        <input 
-                                            id="edit-category-image"
-                                            type="file" 
-                                            accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
-                                            onChange={(e) => setEditFormData(prev => ({ ...prev, image: e.target.files[0] }))}
-                                            style={{ display: 'none' }}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <input
+                                            type="text"
+                                            name="imageName"
+                                            placeholder="Select or enter image path..."
+                                            value={editFormData.image?.name || editFormData.imageName || editingCategory?.imageUrl || editingCategory?.image || ''}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setEditFormData(prev => ({ ...prev, imageName: val }));
+                                            }}
+                                            style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none', background: 'var(--panel)', color: 'var(--text-primary)' }}
                                         />
-                                        {editFormData.image?.name && (
-                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                                {editFormData.image.name}
-                                            </span>
-                                        )}
+                                        <label style={{
+                                            backgroundColor: '#800032',
+                                            color: '#ffffff',
+                                            borderRadius: '6px',
+                                            padding: '8px 16px',
+                                            fontWeight: 600,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            Choose File
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg, image/png, image/webp, image/gif, image/svg+xml, image/bmp, image/tiff, image/x-icon, image/avif"
+                                                onChange={(e) => setEditFormData(prev => ({ ...prev, image: e.target.files[0] }))}
+                                                style={{ display: 'none' }}
+                                            />
+                                        </label>
                                     </div>
+                                    {(editFormData.image || editFormData.imageName || editingCategory?.imageUrl || editingCategory?.image) && (
+                                        <div style={{
+                                            padding: '10px 14px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '14px',
+                                            marginTop: '4px'
+                                        }}>
+                                            {editFormData.image ? (
+                                                <img
+                                                    src={URL.createObjectURL(editFormData.image)}
+                                                    alt="Preview"
+                                                    style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                />
+                                            ) : (editingCategory?.imageUrl || editingCategory?.image || editFormData.imageName) ? (
+                                                <NgrokSafeImage
+                                                    src={`${toApiAssetUrl(editFormData.imageName || editingCategory.imageUrl || editingCategory.image)}`}
+                                                    alt="Current"
+                                                    style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '60px', height: '45px', backgroundColor: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b' }}>No Img</div>
+                                            )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                                                    IMAGE PREVIEW
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setEditFormData(prev => ({ ...prev, image: null, imageName: '' }));
+                                                        if (editingCategory) {
+                                                            editingCategory.imageUrl = '';
+                                                            editingCategory.image = '';
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#dc2626',
+                                                        fontSize: '13px',
+                                                        fontWeight: 500,
+                                                        cursor: 'pointer',
+                                                        padding: 0,
+                                                        textAlign: 'left',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Remove Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

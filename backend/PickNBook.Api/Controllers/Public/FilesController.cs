@@ -28,8 +28,20 @@ public class FilesController : BaseApiController
             return BadRequest("No file was uploaded.");
         }
 
-        string subFolder = type?.ToLower() == "team" ? "team" : "about";
+        string subFolder = type?.ToLowerInvariant() switch
+        {
+            "team" => "team",
+            "promotions" or "coupons" or "offers" => "promotions",
+            _ => "about"
+        };
         string targetFolder = $"uploads/{subFolder}";
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".bmp", ".avif" };
+        if (Array.IndexOf(allowedExtensions, ext) < 0)
+        {
+            return BadRequest("Invalid image format. Allowed formats: JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, AVIF.");
+        }
 
         var root = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         var uploadPath = Path.Combine(root, targetFolder.Replace('/', Path.DirectorySeparatorChar));
@@ -39,7 +51,6 @@ public class FilesController : BaseApiController
             Directory.CreateDirectory(uploadPath);
         }
 
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         var uniqueName = $"{Guid.NewGuid():N}{ext}";
         var fullPath = Path.Combine(uploadPath, uniqueName);
 

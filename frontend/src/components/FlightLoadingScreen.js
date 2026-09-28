@@ -165,7 +165,7 @@ export default function FlightLoadingScreen({
             <div className="fls-brand-logo">
               <img
                 src={pickNBookLogo}
-                alt="Pick N Book"
+                alt="Pick&book"
                 className="fls-brand-logo-img"
               />
             </div>

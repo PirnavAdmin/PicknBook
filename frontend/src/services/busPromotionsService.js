@@ -8,11 +8,13 @@ import {
 import {
   getConditions,
   createCondition,
+  updateCondition,
   deleteCondition,
 } from "./adminBusService";
 
 const getBusCouponConditions = getConditions;
 const createBusCouponCondition = createCondition;
+const updateBusCouponCondition = updateCondition;
 const deleteBusCouponCondition = deleteCondition;
 
 export const APPROVED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
@@ -59,8 +61,63 @@ export const saveCouponServiceLocally = (couponCode, id, serviceType) => {
   }
 };
 
-export const getImagePreviewSrc = (imageUrl) => {
-  return imageUrl || "";
+export const saveCouponMetadataLocally = (couponCode, id, metadata) => {
+  try {
+    const meta = JSON.parse(localStorage.getItem("admin_coupon_metadata") || "{}");
+    const cleanCode = couponCode ? String(couponCode).trim().toUpperCase() : "";
+    const cleanId = id !== null && id !== undefined ? String(id).trim() : "";
+
+    const existingIdMeta = cleanId ? meta[cleanId] || {} : {};
+    const existingCodeMeta = cleanCode ? meta[cleanCode] || {} : {};
+    const merged = { ...existingCodeMeta, ...existingIdMeta, ...metadata };
+
+    if (cleanId) meta[cleanId] = merged;
+    if (cleanCode) meta[cleanCode] = merged;
+
+    localStorage.setItem("admin_coupon_metadata", JSON.stringify(meta));
+  } catch (e) {
+    console.warn("Could not save coupon metadata locally", e);
+  }
+};
+
+export const getStoredCouponMetadataLocally = (couponCode, id) => {
+  try {
+    const meta = JSON.parse(localStorage.getItem("admin_coupon_metadata") || "{}");
+    const cleanCode = couponCode ? String(couponCode).trim().toUpperCase() : "";
+    const cleanId = id !== null && id !== undefined ? String(id).trim() : "";
+    return (cleanId && meta[cleanId]) || (cleanCode && meta[cleanCode]) || {};
+  } catch (e) {
+    return {};
+  }
+};
+
+export const getImagePreviewSrc = (imageUrl, coupon) => {
+  if (imageUrl && typeof imageUrl === "string" && imageUrl.trim()) {
+    return imageUrl.trim();
+  }
+  if (coupon && typeof coupon === "object") {
+    const raw =
+      coupon.imageUrl ||
+      coupon.ImageUrl ||
+      coupon.image ||
+      coupon.Image ||
+      coupon.bannerUrl ||
+      coupon.BannerUrl ||
+      coupon.imgUrl ||
+      coupon.ImgUrl ||
+      "";
+    if (raw && typeof raw === "string" && raw.trim()) return raw.trim();
+  }
+  if (coupon) {
+    try {
+      const code = String(coupon.couponCode || coupon.code || "").toUpperCase();
+      const id = String(coupon.id || "");
+      const images = JSON.parse(localStorage.getItem("admin_coupon_images") || "{}");
+      const found = images[id] || images[code];
+      if (found && typeof found === "string" && found.trim()) return found.trim();
+    } catch (e) {}
+  }
+  return "";
 };
 
 export const uploadCouponImage = async (file) => {
@@ -78,5 +135,6 @@ export {
   updateBusCoupon,
   getBusCouponConditions,
   createBusCouponCondition,
+  updateBusCouponCondition,
   deleteBusCouponCondition,
 };

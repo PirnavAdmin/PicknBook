@@ -19,6 +19,21 @@ import {
 } from "lucide-react";
 import { getPublicBlogBySlug, getPublicBlogs } from "../../services/blogService";
 import { toApiAssetUrl } from "../../services/apiClient";
+
+function getBlogImageUrl(blog) {
+  const cat = (blog?.category || "").toLowerCase();
+  const slug = (blog?.slug || "").toLowerCase();
+
+  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
+  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
+  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
+
+  const rawUrl = blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
+    blog?.imagePath || blog?.ImagePath || blog?.filePath || blog?.photoUrl ||
+    blog?.picture || blog?.url || "";
+
+  return rawUrl ? toApiAssetUrl(rawUrl) : "";
+}
 import "../../STYLES/BlogPage.css";
 
 export default function BlogDetailPage() {
@@ -71,14 +86,14 @@ export default function BlogDetailPage() {
   // Dynamically set HTML metadata tags
   useEffect(() => {
     if (blog) {
-      document.title = blog.metaTitle || blog.title || "Pick N Book Blog";
+      document.title = blog.metaTitle || blog.title || "Pick&book Blog";
       const metaDescription = document.querySelector('meta[name="description"]');
       if (metaDescription) {
         metaDescription.setAttribute("content", blog.metaDescription || blog.shortDescription || "");
       }
     }
     return () => {
-      document.title = "Pick N Book - Premium Travel Booking";
+      document.title = "Pick&book - Premium Travel Booking";
     };
   }, [blog]);
 
@@ -306,7 +321,7 @@ export default function BlogDetailPage() {
 
           <div className="blog-hero-right">
             <img
-              src={toApiAssetUrl(blog.imageUrl)}
+              src={getBlogImageUrl(blog)}
               alt={blog.title}
               className="detail-hero-img"
               onError={(e) => {
@@ -492,7 +507,7 @@ export default function BlogDetailPage() {
                   {relatedBlogs.map((rBlog) => (
                     <Link key={rBlog.id} to={`/blog/${rBlog.slug}`} className="related-post-item-row">
                       <img
-                        src={toApiAssetUrl(rBlog.imageUrl)}
+                        src={getBlogImageUrl(rBlog)}
                         alt={rBlog.title}
                         className="related-item-img"
                         onError={(e) => {

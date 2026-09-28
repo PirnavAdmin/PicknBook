@@ -593,7 +593,7 @@ export default function AuthPage() {
         =========================================== */}
         <div className="scenic-left-pane">
           {/* Logo - single element */}
-          <img src={brandLogo} alt="Pick N Book" className="scenic-logo" />
+          <img src={brandLogo} alt="Pick&book" className="scenic-logo" />
 
           {/* Typography */}
           <h1 className="scenic-headline">

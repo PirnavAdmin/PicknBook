@@ -340,7 +340,7 @@
 .admin-markup-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 11px;
   table-layout: auto;
 }
 
@@ -359,9 +359,10 @@
 
 .admin-markup-table th {
   background: var(--admin-primary) !important;
-  padding: 12px 8px !important;
+  padding: 8px 8px !important;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
+  height: 38px;
   color: #ffffff !important;
   border-bottom: 1px solid #e2e8f0;
   text-transform: uppercase;
@@ -378,10 +379,13 @@
 }
 
 .admin-markup-table td {
-  padding: 10px 8px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   text-align: center;
   vertical-align: middle;
+  font-size: 11px;
+  font-weight: 400;
+  height: 36px;
   overflow: visible;
 }
 

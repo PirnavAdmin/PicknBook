@@ -916,7 +916,7 @@ export default function FlightBookings() {
                           style={{ width: "100%", padding: "6px 10px", marginTop: 4, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 11.5 }}
                         >
                           <option value="Original">Original Payment Method</option>
-                          <option value="Wallet">Pick&Book Wallet</option>
+                          <option value="Wallet">Pick&book Wallet</option>
                         </select>
                       </label>
                       <button

@@ -65,7 +65,7 @@ function HotelDetailsPremiumLoader() {
   const statuses = [
     "Contacting properties for real-time rates...",
     "Verifying room availability...",
-    "Securing exclusive Pick&Book discounts...",
+    "Securing exclusive Pick&book discounts...",
     "Initializing checkout workflow...",
     "Polishing layout templates..."
   ];

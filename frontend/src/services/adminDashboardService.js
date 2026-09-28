@@ -248,42 +248,42 @@ export function deriveAdminMetrics(summary) {
     m.totalBookings !== undefined && m.totalBookings !== null
       ? Number(m.totalBookings)
       : todayStatus.totalBookings !== undefined && todayStatus.totalBookings !== null
-      ? Number(todayStatus.totalBookings)
-      : summary.totalBookings !== undefined && summary.totalBookings !== null
-      ? Number(summary.totalBookings)
-      : (bus.total || 0) + (flight.total || 0);
+        ? Number(todayStatus.totalBookings)
+        : summary.totalBookings !== undefined && summary.totalBookings !== null
+          ? Number(summary.totalBookings)
+          : (bus.total || 0) + (flight.total || 0);
 
   const successful =
     todayStatus.successfulBookings !== undefined
       ? Number(todayStatus.successfulBookings)
       : bookings.successfulToday !== undefined
-      ? Number(bookings.successfulToday)
-      : (flight.completed || 0) + (bus.completed || 0) || (summary.totalBookings || 0);
+        ? Number(bookings.successfulToday)
+        : (flight.completed || 0) + (bus.completed || 0) || (summary.totalBookings || 0);
 
   const failed =
     todayStatus.failedBookings !== undefined
       ? Number(todayStatus.failedBookings)
       : bookings.failedToday !== undefined
-      ? Number(bookings.failedToday)
-      : (flight.cancelled || 0) + (bus.cancelled || 0) || (pending.cancellations || 0);
+        ? Number(bookings.failedToday)
+        : (flight.cancelled || 0) + (bus.cancelled || 0) || (pending.cancellations || 0);
 
   const totalRevenue =
     m.totalRevenue !== undefined && m.totalRevenue !== null
       ? Number(m.totalRevenue)
       : revenueToday.amountInr !== undefined && revenueToday.amountInr !== null
-      ? Number(revenueToday.amountInr)
-      : todayStatus.revenueInr !== undefined && todayStatus.revenueInr !== null
-      ? Number(todayStatus.revenueInr)
-      : revenue.totalRevenueInr !== undefined && revenue.totalRevenueInr !== null
-      ? Number(revenue.totalRevenueInr)
-      : 0;
+        ? Number(revenueToday.amountInr)
+        : todayStatus.revenueInr !== undefined && todayStatus.revenueInr !== null
+          ? Number(todayStatus.revenueInr)
+          : revenue.totalRevenueInr !== undefined && revenue.totalRevenueInr !== null
+            ? Number(revenue.totalRevenueInr)
+            : 0;
 
   const totalUsers =
     m.totalUsers !== undefined && m.totalUsers !== null
       ? Number(m.totalUsers)
       : summary.usersCount !== undefined && summary.usersCount !== null
-      ? Number(summary.usersCount)
-      : 0;
+        ? Number(summary.usersCount)
+        : 0;
 
   const activeBookings =
     m.activeBookings !== undefined && m.activeBookings !== null
@@ -304,8 +304,8 @@ export function deriveAdminMetrics(summary) {
     todayStatus.pendingWorks !== undefined
       ? Number(todayStatus.pendingWorks)
       : pendingWorks.total !== undefined
-      ? Number(pendingWorks.total)
-      : pending.total || pending.travelerUpdates || 0;
+        ? Number(pendingWorks.total)
+        : pending.total || pending.travelerUpdates || 0;
 
   return {
     totalBookings,
